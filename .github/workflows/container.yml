@@ -1,6 +1,7 @@
 name: Build and publish containers
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
@@ -86,7 +87,7 @@ jobs:
         run: echo '${{ matrix.variant }} ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}' >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: containers
     runs-on: ubuntu-latest
     environment: production
@@ -109,12 +110,6 @@ jobs:
           test -n "$worker_digest"
           echo "web=$IMAGE_NAME@$web_digest" >> "$GITHUB_OUTPUT"
           echo "worker=$IMAGE_NAME@$worker_digest" >> "$GITHUB_OUTPUT"
-      - name: Check out deployment chart
-        uses: actions/checkout@v4
-        with:
-          repository: busykoala/server
-          path: server
-      - uses: azure/setup-helm@v4
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
       - name: Load kubeconfig
@@ -133,17 +128,15 @@ jobs:
         run: |
           set -euo pipefail
           kubectl version --client
-          if ! helm status benchly --namespace benchly >/dev/null 2>&1; then
+          if ! kubectl get deployment benchly --namespace benchly >/dev/null 2>&1; then
             echo "Benchly is not bootstrapped yet; Ansible will perform the first install." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          helm upgrade benchly server/deploy/benchly \
-            --namespace benchly \
-            --reuse-values \
-            --atomic \
-            --wait \
-            --timeout 20m \
-            --set-string "images.web=$WEB_IMAGE" \
-            --set-string "images.worker=$WORKER_IMAGE"
+          kubectl --namespace benchly set image deployment/benchly "web=$WEB_IMAGE"
+          kubectl --namespace benchly set image cronjob/benchly-import-osm "worker=$WORKER_IMAGE"
+          kubectl --namespace benchly set image cronjob/benchly-enrich "worker=$WORKER_IMAGE"
+          kubectl --namespace benchly set image cronjob/benchly-commons "worker=$WORKER_IMAGE"
+          kubectl --namespace benchly annotate deployment/benchly \
+            "benchly.io/revision=$GITHUB_SHA" --overwrite
           kubectl --namespace benchly rollout status deployment/benchly --timeout=10m
           echo "Deployed $WEB_IMAGE and $WORKER_IMAGE" >> "$GITHUB_STEP_SUMMARY"
