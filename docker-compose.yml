@@ -1,0 +1,28 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_PATH: /data/benchly.sqlite
+      CONTRIBUTOR_SECRET: ${CONTRIBUTOR_SECRET:-change-this-local-contributor-secret}
+      RATE_LIMIT_SECRET: ${RATE_LIMIT_SECRET:-change-this-local-rate-secret}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-change-this-local-admin-secret}
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    profiles: ["data"]
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    command: ["refresh", "--database", "/data/benchly.sqlite"]
+    volumes:
+      - ./data:/data

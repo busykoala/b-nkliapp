@@ -1,0 +1,12 @@
+node_modules
+.venv
+.next
+coverage
+playwright-report
+test-results
+.env*
+!.env.example
+data/*.sqlite*
+data/tmp
+public/sw.js.map
+*.log
