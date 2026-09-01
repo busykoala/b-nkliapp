@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const testDatabase = join(tmpdir(), `benchly-e2e-${process.pid}.sqlite`);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -8,16 +12,16 @@ export default defineConfig({
     reuseExistingServer: false,
     env: {
       ...process.env,
-      DATABASE_PATH: "/tmp/benchly-e2e-v2.sqlite",
+      DATABASE_PATH: testDatabase,
       BENCHLY_SEED_DEMO: "true",
       CONTRIBUTOR_SECRET: "playwright-contributor-secret-with-more-than-32-characters",
-      IP_HASH_SECRET: "playwright-ip-secret-with-more-than-32-characters",
+      RATE_LIMIT_SECRET: "playwright-rate-limit-secret-with-more-than-32-characters",
       ADMIN_SESSION_SECRET: "playwright-admin-secret-with-more-than-32-characters",
     },
   },
   use: { baseURL: "http://localhost:3100", trace: "on-first-retry" },
   projects: [
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
-    { name: "mobile-safari", use: { ...devices["iPhone 14"] } },
+    { name: "mobile-safari", use: { ...devices["iPhone 14"], browserName: "webkit" } },
   ],
 });

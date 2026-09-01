@@ -25,6 +25,13 @@ describe("sun obstruction", () => {
     expect(blocked.shadeCause).toBe("gebäude");
     expect(blocked.altitude).toBeGreaterThan(0);
   });
+  it("returns navigation degrees for the solar position", () => {
+    const state = calculateSunState({ date: new Date("2026-06-21T11:00:00Z"), latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(-5) });
+    expect(state.altitude).toBeGreaterThan(60);
+    expect(state.altitude).toBeLessThan(70);
+    expect(state.azimuth).toBeGreaterThan(160);
+    expect(state.azimuth).toBeLessThan(200);
+  });
   it("shortens direct sunshine when the local horizon is high", () => {
     const clear = getLocalSunSchedule({ date: new Date("2026-06-21T12:00:00Z"), latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(0) });
     const blocked = getLocalSunSchedule({ date: new Date("2026-06-21T12:00:00Z"), latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(35) });

@@ -2,6 +2,7 @@
 
 import { sqlite } from "@/db/client";
 import { displayMaterial, yesNoUnknown } from "@/lib/bench";
+import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { calculateSunState, getLocalSunSchedule, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { z } from "zod";
@@ -97,7 +98,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
   const { west, south, east, north } = parsed.bounds;
   const parameters: Array<string | number> = [west, east, south, north];
   const where = filterSql(parsed.filters, parameters);
-  if (parsed.zoom < 12 && !parsed.filters?.sunnyNow) {
+  if (parsed.zoom < 18 && !parsed.filters?.sunnyNow) {
     const cellSize = 360 / (2 ** parsed.zoom * 2.5);
     const grouped = sqlite.prepare(`
       SELECT CAST(b.longitude / ? AS INTEGER) grid_x, CAST(b.latitude / ? AS INTEGER) grid_y,
@@ -143,11 +144,44 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
   const individual = rows.map((row) => {
     const profile = parseArray<number>(row.horizon_profile);
     const obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
-    const sunnyNow = profile.length
-      ? calculateSunState({ date: now, latitude: row.latitude, longitude: row.longitude, horizonProfile: profile, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent }).sunny
-      : null;
+    const sunnyNow = calculateSunState({
+      date: now,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      horizonProfile: profile.length ? profile : null,
+      obstructionTypes,
+      covered: Boolean(row.covered),
+      canopyPercent: row.canopy_percent,
+    }).sunny;
     return { row, sunnyNow };
   }).filter((item) => !parsed.filters?.sunnyNow || item.sunnyNow === true);
+
+  if (parsed.zoom < 18) {
+    const cellSize = 360 / (2 ** parsed.zoom * 2.5);
+    const cells = new Map<string, typeof individual>();
+    for (const item of individual) {
+      const key = `${Math.trunc(item.row.longitude / cellSize)}:${Math.trunc(item.row.latitude / cellSize)}`;
+      const cell = cells.get(key);
+      if (cell) cell.push(item);
+      else cells.set(key, [item]);
+    }
+    return [...cells.entries()].slice(0, 2000).map(([key, items]) => items.length > 1 ? {
+      kind: "cluster" as const,
+      id: `cluster-${parsed.zoom}-${key}`,
+      latitude: items.reduce((sum, item) => sum + item.row.latitude, 0) / items.length,
+      longitude: items.reduce((sum, item) => sum + item.row.longitude, 0) / items.length,
+      count: items.length,
+    } : {
+      kind: "bench" as const,
+      id: items[0].row.id,
+      latitude: items[0].row.latitude,
+      longitude: items[0].row.longitude,
+      viewScore: items[0].row.view_score === null ? null : Math.max(1, Math.min(5, Math.round(items[0].row.view_score / 20))),
+      sunnyNow: items[0].sunnyNow,
+      rating: items[0].row.rating_average === null ? null : Number(items[0].row.rating_average.toFixed(1)),
+      viewType: mapViewType(parseArray<string>(items[0].row.view_labels)),
+    });
+  }
 
   return individual.slice(0, 2000).map(({ row, sunnyNow }) => ({
       kind: "bench", id: row.id, latitude: row.latitude, longitude: row.longitude,
@@ -179,25 +213,35 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
   try { components = row.view_components ? JSON.parse(String(row.view_components)) : {}; } catch { components = {}; }
   const sunInput = { latitude: Number(row.latitude), longitude: Number(row.longitude), horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent) };
-  const hasLocalSunModel = horizon.length > 0;
-  const sun = hasLocalSunModel ? calculateSunState(sunInput) : null;
-  const localSun = hasLocalSunModel ? getLocalSunSchedule(sunInput) : {
-    directSunrise: "Noch nicht berechnet", directSunset: "Noch nicht berechnet",
-    sunMinutes: 0, windows: [] as Array<{ start: string; end: string }>,
-  };
+  const hasTerrainModel = horizon.length > 0;
+  const contextModel = hasTerrainModel ? null : buildContextModel(
+    Number(row.latitude),
+    Number(row.longitude),
+    row.direction_degrees === null ? null : Number(row.direction_degrees),
+    getContextFeatures(Number(row.latitude), Number(row.longitude)),
+  );
+  if (contextModel) {
+    horizon = contextModel.horizonProfile;
+    obstructionTypes = contextModel.obstructionTypes;
+  }
+  const effectiveSunInput = { ...sunInput, horizonProfile: horizon, obstructionTypes, canopyPercent: contextModel?.canopyPercent ?? sunInput.canopyPercent };
+  const sun = calculateSunState(effectiveSunInput);
+  const localSun = getLocalSunSchedule(effectiveSunInput);
   const times = getSunTimes(new Date(), Number(row.latitude), Number(row.longitude));
   const recentRatings = sqlite.prepare(`SELECT id, overall, view_score as view, comfort, quiet, note, created_at as createdAt FROM ratings WHERE bench_row_id=? AND visible=1 ORDER BY updated_at DESC LIMIT 5`).all(row.row_id);
   const corrections = sqlite.prepare(`SELECT id, field, proposed_value as proposedValue, note, created_at as createdAt FROM corrections WHERE bench_row_id=? AND visible=1 ORDER BY created_at DESC LIMIT 20`).all(row.row_id);
   const media = sqlite.prepare(`SELECT id, relation, provider, source_url as sourceUrl, thumbnail_url as thumbnailUrl, author, license, distance_meters as distanceMeters, title FROM media WHERE bench_row_id=? ORDER BY relation, distance_meters LIMIT 12`).all(row.row_id);
   const ratingCount = Number(row.rating_count ?? 0);
-  const viewScore = row.view_score === null ? null : Math.max(1, Math.min(5, Math.round(Number(row.view_score) / 20)));
+  const rawViewScore = row.view_score === null ? contextModel?.viewScore ?? null : Number(row.view_score);
+  const viewScore = rawViewScore === null ? null : Math.max(1, Math.min(5, Math.round(rawViewScore / 20)));
   const explanation: string[] = [];
-  const viewLabels = parseArray<string>(row.view_labels);
+  const viewLabels = contextModel?.viewLabels ?? parseArray<string>(row.view_labels);
   if (viewLabels.length) explanation.push(...viewLabels);
   if ((components.openness ?? 0) > 0.8) explanation.push("Weiter, wenig verdeckter Horizont");
   if ((components.relief ?? 0) > 0.8) explanation.push("Ausgeprägtes Berg- oder Hügelrelief");
   if ((components.water ?? 0) > 0.75) explanation.push("Freie Sichtachse zu einer Wasserfläche");
   if ((components.naturalness ?? 0) > 0.8) explanation.push("Überwiegend natürliche Umgebung");
+  if (contextModel) explanation.push(...contextModel.viewExplanation);
   if (explanation.length === 0) explanation.push("Aus Gelände, Landbedeckung und Umgebung berechnet");
 
   const properties = [
@@ -213,32 +257,58 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     latitude: Number(row.latitude), longitude: Number(row.longitude), title: String(row.description || "Sitzbank"),
     description: row.operator ? `Betreiber: ${row.operator}` : null, properties,
     elevationMeters: row.elevation_meters === null ? null : Number(row.elevation_meters),
-    viewScore, viewConfidence: (row.view_confidence ?? "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
+    viewScore, viewConfidence: (contextModel ? "niedrig" : row.view_confidence ?? "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
     sunrise: times.sunrise, sunset: times.sunset,
     directSunrise: localSun.directSunrise, directSunset: localSun.directSunset,
     sunMinutesToday: localSun.sunMinutes, sunWindows: localSun.windows,
     shadeCause: sun?.shadeCause ?? "unbekannt",
     sunnyNow: sun?.sunny ?? null,
-    sunConfidence: (row.sun_confidence ?? "niedrig") as BenchDetail["sunConfidence"],
+    sunConfidence: (contextModel ? "niedrig" : row.sun_confidence ?? "niedrig") as BenchDetail["sunConfidence"],
     sunMinutesSummer: row.sun_minutes_summer === null ? null : Number(row.sun_minutes_summer),
     sunMinutesWinter: row.sun_minutes_winter === null ? null : Number(row.sun_minutes_winter),
     sunMinutesSpring: row.sun_minutes_spring === null ? null : Number(row.sun_minutes_spring),
     sunMinutesAutumn: row.sun_minutes_autumn === null ? null : Number(row.sun_minutes_autumn),
-    inForest: row.in_forest === null ? null : Boolean(row.in_forest),
-    canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent),
-    distanceWaterMeters: row.distance_water_meters === null ? null : Number(row.distance_water_meters),
-    distancePathMeters: row.distance_path_meters === null ? null : Number(row.distance_path_meters),
+    inForest: contextModel?.inForest ?? (row.in_forest === null ? null : Boolean(row.in_forest)),
+    canopyPercent: contextModel?.canopyPercent ?? (row.canopy_percent === null ? null : Number(row.canopy_percent)),
+    distanceWaterMeters: contextModel?.distanceWaterMeters ?? (row.distance_water_meters === null ? null : Number(row.distance_water_meters)),
+    distancePathMeters: contextModel?.distancePathMeters ?? (row.distance_path_meters === null ? null : Number(row.distance_path_meters)),
     directionDegrees: row.direction_degrees === null ? null : Number(row.direction_degrees),
-    buildingObstructionPercent: row.building_obstruction_percent === null ? null : Number(row.building_obstruction_percent),
-    vegetationObstructionPercent: row.vegetation_obstruction_percent === null ? null : Number(row.vegetation_obstruction_percent),
-    distanceBuildingMeters: row.distance_building_meters === null ? null : Number(row.distance_building_meters),
-    buildingCount100m: row.building_count_100m === null ? null : Number(row.building_count_100m),
+    buildingObstructionPercent: contextModel?.buildingObstructionPercent ?? (row.building_obstruction_percent === null ? null : Number(row.building_obstruction_percent)),
+    vegetationObstructionPercent: contextModel?.vegetationObstructionPercent ?? (row.vegetation_obstruction_percent === null ? null : Number(row.vegetation_obstruction_percent)),
+    distanceBuildingMeters: contextModel?.distanceBuildingMeters ?? (row.distance_building_meters === null ? null : Number(row.distance_building_meters)),
+    buildingCount100m: contextModel?.buildingCount100m ?? (row.building_count_100m === null ? null : Number(row.building_count_100m)),
     viewLabels,
     ratingAverage: row.rating_average === null ? null : Number(Number(row.rating_average).toFixed(1)), ratingCount,
     ratingBreakdown: ratingCount ? { overall: Number(Number(row.rating_average).toFixed(1)), view: Number(Number(row.rating_view).toFixed(1)), comfort: Number(Number(row.rating_comfort).toFixed(1)), quiet: Number(Number(row.rating_quiet).toFixed(1)) } : null,
     recentRatings: recentRatings as BenchDetail["recentRatings"], corrections: corrections as BenchDetail["corrections"], media: media as BenchDetail["media"],
-    sourceUpdatedAt: String(row.source_updated_at), pipelineVersion: row.pipeline_version ? String(row.pipeline_version) : null,
+    sourceUpdatedAt: String(row.source_updated_at), pipelineVersion: row.pipeline_version ? String(row.pipeline_version) : "OSM-Nahbereich v1",
   };
+}
+
+function getContextFeatures(latitude: number, longitude: number): ContextFeature[] {
+  const latitudeDelta = 500 / 111_320;
+  const longitudeDelta = 500 / (111_320 * Math.max(0.2, Math.cos(latitude * Math.PI / 180)));
+  const nearby = sqlite.prepare(`
+    SELECT f.kind,f.subtype,f.center_latitude,f.center_longitude,f.min_latitude,f.max_latitude,
+      f.min_longitude,f.max_longitude,f.height_meters
+    FROM environment_spatial_index s JOIN environment_features f ON f.row_id=s.row_id
+    WHERE s.max_longitude>=? AND s.min_longitude<=? AND s.max_latitude>=? AND s.min_latitude<=?
+    LIMIT 20000
+  `).all(longitude - longitudeDelta, longitude + longitudeDelta, latitude - latitudeDelta, latitude + latitudeDelta) as ContextFeature[];
+  const farLatitudeDelta = 10_000 / 111_320;
+  const farLongitudeDelta = 10_000 / (111_320 * Math.max(0.2, Math.cos(latitude * Math.PI / 180)));
+  const waters = sqlite.prepare(`
+    SELECT f.kind,f.subtype,f.center_latitude,f.center_longitude,f.min_latitude,f.max_latitude,
+      f.min_longitude,f.max_longitude,f.height_meters
+    FROM environment_spatial_index s JOIN environment_features f ON f.row_id=s.row_id
+    WHERE f.kind='water' AND s.max_longitude>=? AND s.min_longitude<=?
+      AND s.max_latitude>=? AND s.min_latitude<=? LIMIT 1000
+  `).all(longitude - farLongitudeDelta, longitude + farLongitudeDelta, latitude - farLatitudeDelta, latitude + farLatitudeDelta) as ContextFeature[];
+  const identities = new Map<string, ContextFeature>();
+  for (const feature of [...nearby, ...waters]) {
+    identities.set(`${feature.kind}:${feature.center_latitude}:${feature.center_longitude}`, feature);
+  }
+  return [...identities.values()];
 }
 
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {

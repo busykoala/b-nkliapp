@@ -4,7 +4,36 @@ test("opens the mobile map and a bench detail", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toBeVisible();
   await expect(page.getByLabel("Ort suchen")).toBeVisible();
-  await expect(page.getByText("Finde deinen Lieblingsplatz")).toBeVisible();
+  await expect(page.getByText("Bänke in meiner Nähe")).toBeVisible();
+});
+
+test("centers near the user only after an explicit location action", async ({ page, context }) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ longitude: 8.5417, latitude: 47.3769 });
+  await page.goto("/");
+  await page.getByText("Bänke in meiner Nähe").click();
+  await expect(page.getByText("Bänke in meiner Nähe")).toBeHidden();
+  await expect(page.getByText(/im Ausschnitt/)).toBeVisible();
+});
+
+test("publishes an installable portrait PWA manifest", async ({ request }) => {
+  const response = await request.get("/manifest.webmanifest");
+  expect(response.ok()).toBeTruthy();
+  const manifest = await response.json();
+  expect(manifest.display).toBe("standalone");
+  expect(manifest.orientation).toBe("portrait-primary");
+  expect(manifest.icons).toEqual(expect.arrayContaining([expect.objectContaining({ sizes: "192x192" }), expect.objectContaining({ purpose: "maskable" })]));
+});
+
+test("explains iOS Home Screen installation after location engagement", async ({ page, context, browserName }) => {
+  test.skip(browserName !== "webkit", "Safari-specific installation guidance");
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ longitude: 8.5417, latitude: 47.3769 });
+  await page.goto("/");
+  await page.getByText("Bänke in meiner Nähe").click();
+  await expect(page.getByLabel("Benchly installieren")).toBeVisible();
+  await page.getByRole("button", { name: "Installieren" }).click();
+  await expect(page.getByText(/Zum Home-Bildschirm/)).toBeVisible();
 });
 
 test("location denial leaves the map usable", async ({ page, context }) => {
@@ -29,6 +58,13 @@ test("publishes an anonymous rating and correction immediately", async ({ page }
   await page.getByPlaceholder("Zum Beispiel: Rückenlehne fehlt").fill("Sitzfläche beschädigt");
   await page.getByRole("button", { name: "Hinweis veröffentlichen" }).click();
   await expect(page.getByText("Danke – dein Hinweis wurde veröffentlicht.")).toBeVisible();
+});
+
+test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
+  await page.goto("/bank/osm-node-101");
+  await expect(page.getByText("Sonnenlage")).toBeVisible();
+  await expect(page.getByText(/Astronomisch auf/)).toBeVisible();
+  await expect(page.getByText(/Aussicht/).first()).toBeVisible();
 });
 
 test("opens the password-protected moderation view", async ({ page }) => {
