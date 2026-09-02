@@ -20,8 +20,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional, Sequence
 
-PROMPT_VERSION = "benchly-scene-1.0"
-RECONCILER_VERSION = "benchly-evidence-1.0"
+PROMPT_VERSION = "benchly-scene-1.1"
+RECONCILER_VERSION = "benchly-evidence-1.1"
 DEFAULT_MODEL = "benchly-vision"
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_REQUEST_BYTES = 24 * 1024 * 1024
@@ -377,6 +377,11 @@ water_probability, lake_view_probability, mountain_view_probability, open_view_p
 limited_view_probability, buildings_probability, road_rail_probability, bench_visible_probability.
 Judge the shared scene, not the identity of any person or object owner."""
 
+FRAME_PROMPT = """Analyze each numbered nearby, openly licensed photograph independently.
+Do not identify or describe people, faces, licence plates, addresses or other personal information.
+Mark indoor, blurred, historical/artwork, close-object and unrelated frames as irrelevant instead of
+letting them influence the other frames. Return one strict prediction for every input index."""
+
 
 PROBABILITY_KEYS = (
     "relevance_probability", "forest_probability", "park_probability", "open_probability", "urban_probability",
@@ -384,6 +389,22 @@ PROBABILITY_KEYS = (
     "open_view_probability", "limited_view_probability", "buildings_probability", "road_rail_probability",
     "bench_visible_probability",
 )
+
+
+def _prediction_schema() -> dict[str, object]:
+    return {
+        "type": "object", "additionalProperties": False,
+        "properties": {
+            **{key: {"type": "number", "minimum": 0, "maximum": 1} for key in PROBABILITY_KEYS},
+            "rejection_reason": {"type": "string", "enum": ["none", "blurred", "indoor", "close_object", "historical", "unrelated"]},
+            "canopy_context": {"type": "string", "enum": ["none", "partial", "dense", "unknown"]},
+        },
+        "required": [*PROBABILITY_KEYS, "rejection_reason", "canopy_context"],
+    }
+
+
+def _response_schema(name: str, schema: dict[str, object]) -> dict[str, object]:
+    return {"type": "json_schema", "json_schema": {"name": name, "strict": True, "schema": schema}}
 
 
 def validate_scene_prediction(value: object) -> dict[str, object]:
@@ -405,7 +426,7 @@ def validate_scene_prediction(value: object) -> dict[str, object]:
     return result
 
 
-def _prediction_from_response(payload: object) -> dict[str, object]:
+def _content_from_response(payload: object) -> object:
     if not isinstance(payload, dict):
         raise ValueError("invalid inference response")
     content = payload.get("choices", [{}])[0].get("message", {}).get("content")
@@ -414,26 +435,84 @@ def _prediction_from_response(payload: object) -> dict[str, object]:
     if not isinstance(content, str):
         raise ValueError("missing inference content")
     text = content.strip().removeprefix("```json").removesuffix("```").strip()
-    return validate_scene_prediction(json.loads(text))
+    return json.loads(text)
 
 
-def infer_scene(images: Sequence[tuple[bytes, str]], endpoint: str, api_key: str, model: str = DEFAULT_MODEL) -> dict[str, object]:
+def _prediction_from_response(payload: object) -> dict[str, object]:
+    return validate_scene_prediction(_content_from_response(payload))
+
+
+def _image_content(images: Sequence[tuple[bytes, str]], prompt: str, numbered: bool = False) -> list[dict[str, object]]:
+    content: list[dict[str, object]] = [{"type": "text", "text": prompt}]
+    for index, (payload, content_type) in enumerate(images):
+        if numbered:
+            content.append({"type": "text", "text": f"Frame {index}"})
+        encoded = base64.b64encode(payload).decode("ascii")
+        content.append({"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{encoded}"}})
+    return content
+
+
+def _inference_request(images: Sequence[tuple[bytes, str]], endpoint: str, api_key: str, model: str,
+                       prompt: str, response_format: dict[str, object], numbered: bool = False) -> object:
     encoded_bytes = sum(4 * math.ceil(len(payload) / 3) for payload, _ in images)
     if not images or encoded_bytes > MAX_REQUEST_BYTES:
         raise ValueError("invalid inference image payload")
-    content: list[dict[str, object]] = [{"type": "text", "text": SCENE_PROMPT}]
-    for payload, content_type in images:
-        encoded = base64.b64encode(payload).decode("ascii")
-        content.append({"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{encoded}"}})
     request_payload = json.dumps({
-        "model": model, "temperature": 0, "max_tokens": 900,
-        "messages": [{"role": "user", "content": content}],
-        "response_format": {"type": "json_object"},
+        "model": model, "temperature": 0, "max_tokens": 1800,
+        "messages": [{"role": "user", "content": _image_content(images, prompt, numbered)}],
+        "response_format": response_format,
     }, separators=(",", ":")).encode()
-    return _prediction_from_response(_request_json(
+    if len(request_payload) > MAX_REQUEST_BYTES:
+        raise ValueError("invalid inference request payload")
+    return _request_json(
         endpoint.rstrip("/") + "/v1/chat/completions", data=request_payload,
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, timeout=180,
-    ))
+    )
+
+
+def infer_scene(images: Sequence[tuple[bytes, str]], endpoint: str, api_key: str, model: str = DEFAULT_MODEL) -> dict[str, object]:
+    payload = _inference_request(
+        images, endpoint, api_key, model, SCENE_PROMPT,
+        _response_schema("benchly_scene", _prediction_schema()),
+    )
+    return _prediction_from_response(payload)
+
+
+def infer_scene_frames(images: Sequence[tuple[bytes, str]], endpoint: str, api_key: str,
+                       model: str = DEFAULT_MODEL) -> list[dict[str, object]]:
+    frame_schema = {
+        "type": "object", "additionalProperties": False,
+        "properties": {
+            "frames": {
+                "type": "array", "minItems": len(images), "maxItems": len(images),
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "properties": {"index": {"type": "integer", "minimum": 0, "maximum": max(0, len(images) - 1)},
+                                   "prediction": _prediction_schema()},
+                    "required": ["index", "prediction"],
+                },
+            },
+        },
+        "required": ["frames"],
+    }
+    payload = _inference_request(
+        images, endpoint, api_key, model, FRAME_PROMPT,
+        _response_schema("benchly_frames", frame_schema), numbered=True,
+    )
+    value = _content_from_response(payload)
+    if not isinstance(value, dict) or not isinstance(value.get("frames"), list):
+        raise ValueError("missing frame predictions")
+    predictions: list[Optional[dict[str, object]]] = [None] * len(images)
+    for item in value["frames"]:
+        if not isinstance(item, dict) or not isinstance(item.get("index"), int):
+            raise ValueError("invalid frame prediction")
+        index = item["index"]
+        if not 0 <= index < len(images) or predictions[index] is not None:
+            raise ValueError("invalid frame index")
+        predictions[index] = validate_scene_prediction(item.get("prediction"))
+    if any(prediction is None for prediction in predictions):
+        raise ValueError("incomplete frame predictions")
+    return [prediction for prediction in predictions if prediction is not None]
 
 
 def _diverse_frames(rows: Sequence[sqlite3.Row], maximum: int = 4) -> list[sqlite3.Row]:
@@ -481,18 +560,19 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
                 last_image_request = time.monotonic()
                 in_memory.append(_download_image(row["fetch_url"]))
             hashes = [hashlib.sha256(payload).hexdigest() for payload, _ in in_memory]
-            prediction = None
+            predictions = None
             for attempt in range(2):
                 try:
-                    prediction = infer_scene(in_memory, endpoint, api_key, model)
+                    predictions = infer_scene_frames(in_memory, endpoint, api_key, model)
                     break
                 except (ValueError, json.JSONDecodeError):
                     if attempt:
                         raise
-            assert prediction is not None
-            relevant = prediction["relevance_probability"] >= .55 and prediction["rejection_reason"] == "none"
-            status = "analyzed" if relevant else "irrelevant"
-            for index, row in enumerate(frames):
+            assert predictions is not None
+            relevant_count = 0
+            for index, (row, prediction) in enumerate(zip(frames, predictions)):
+                relevant = prediction["relevance_probability"] >= .55 and prediction["rejection_reason"] == "none"
+                status = "analyzed" if relevant else "irrelevant"
                 connection.execute("""
                     UPDATE image_observations SET analysis_status=?,relevance_probability=?,predictions=?,
                       image_sha256=?,model_version=?,prompt_version=?,analyzed_at=?,attempts=attempts+1,last_error=NULL
@@ -507,7 +587,11 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
             )
             stats["groups"] += 1
             stats["images"] += len(frames)
-            stats["irrelevant"] += int(not relevant)
+            relevant_count = sum(
+                prediction["relevance_probability"] >= .55 and prediction["rejection_reason"] == "none"
+                for prediction in predictions
+            )
+            stats["irrelevant"] += len(frames) - relevant_count
         except Exception as error:
             connection.executemany(
                 "UPDATE image_observations SET analysis_status='retry',attempts=attempts+1,last_error=? WHERE id=?",
@@ -526,6 +610,24 @@ def _weighted_probability(groups: Sequence[tuple[dict[str, object], float]], key
     return sum(value * weight for value, weight in values) / sum(weight for _, weight in values) if values else None
 
 
+def _fuse_frame_predictions(items: Sequence[tuple[dict[str, object], float]]) -> dict[str, object]:
+    if not items:
+        raise ValueError("cannot fuse an empty evidence group")
+    fused: dict[str, object] = {
+        key: _weighted_probability(items, key) for key in PROBABILITY_KEYS
+    }
+    canopy_scores = {
+        context: sum(
+            float(prediction["canopy_probability"]) * weight
+            for prediction, weight in items if prediction["canopy_context"] == context
+        )
+        for context in ("none", "partial", "dense", "unknown")
+    }
+    fused["canopy_context"] = max(canopy_scores, key=canopy_scores.get)
+    fused["rejection_reason"] = "none"
+    return validate_scene_prediction(fused)
+
+
 def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000) -> dict[str, int]:
     bench_rows = connection.execute("""
         SELECT DISTINCT b.row_id,e.in_forest,e.land_context,e.waterfront,e.canopy_context
@@ -540,24 +642,41 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000) -> 
     stats = {"reconciled": 0, "conflicts": 0}
     for bench in bench_rows:
         rows = connection.execute("""
-            SELECT io.provider,io.capture_group_id,io.predictions,io.model_version,
-              min(io.source_url) source_url,min(io.license) license,max(io.captured_at) captured_at,
-              min(bie.distance_meters) distance_meters,max(bie.evidence_weight) evidence_weight,
-              max(bie.direct_view_eligible) direct_view_eligible
+            SELECT io.id,io.provider,io.capture_group_id,io.predictions,io.model_version,
+              io.source_url,io.license,io.captured_at,io.relevance_probability,
+              bie.distance_meters,bie.evidence_weight,bie.direct_view_eligible
             FROM bench_image_evidence bie JOIN image_observations io ON io.id=bie.image_observation_id
             WHERE bie.bench_row_id=? AND io.analysis_status='analyzed' AND io.relevance_probability>=.55
-            GROUP BY io.provider,io.capture_group_id
+            ORDER BY io.provider,io.capture_group_id,bie.distance_meters,io.id
         """, (bench["row_id"],)).fetchall()
         groups: list[tuple[dict[str, object], float]] = []
         view_groups: list[tuple[dict[str, object], float]] = []
+        grouped_rows: dict[tuple[str, str], list[tuple[sqlite3.Row, dict[str, object], float]]] = {}
         for row in rows:
             try:
-                group = (validate_scene_prediction(json.loads(row["predictions"])), float(row["evidence_weight"]))
-                groups.append(group)
-                if row["direct_view_eligible"]:
-                    view_groups.append(group)
+                prediction = validate_scene_prediction(json.loads(row["predictions"]))
+                weight = max(.001, float(row["evidence_weight"]) * float(prediction["relevance_probability"]))
+                grouped_rows.setdefault((str(row["provider"]), str(row["capture_group_id"])), []).append((row, prediction, weight))
             except (ValueError, TypeError, json.JSONDecodeError):
                 continue
+        summary = []
+        models: set[str] = set()
+        for (provider, capture_group), items in grouped_rows.items():
+            fused = _fuse_frame_predictions([(prediction, weight) for _row, prediction, weight in items])
+            group_weight = max(float(row["evidence_weight"]) for row, _prediction, _weight in items)
+            groups.append((fused, group_weight))
+            direct_items = [(prediction, weight) for row, prediction, weight in items if row["direct_view_eligible"]]
+            if direct_items:
+                view_groups.append((_fuse_frame_predictions(direct_items), group_weight))
+            representative = min((row for row, _prediction, _weight in items), key=lambda row: float(row["distance_meters"]))
+            summary.append({
+                "provider": provider, "captureGroup": capture_group,
+                "distanceMeters": round(float(representative["distance_meters"])),
+                "sourceUrl": representative["source_url"], "license": representative["license"],
+                "capturedAt": max((row["captured_at"] for row, _prediction, _weight in items if row["captured_at"]), default=None),
+                "directView": bool(direct_items), "relevantFrames": len(items),
+            })
+            models.update(str(row["model_version"]) for row, _prediction, _weight in items if row["model_version"])
         if not groups:
             continue
         probabilities = {key: _weighted_probability(groups, key) for key in (
@@ -581,13 +700,6 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000) -> 
                 land_context, land_probability = max(alternatives.items(), key=lambda item: item[1]) if alternatives else (None, None)
         strongest = max((value for value in probabilities.values() if value is not None), default=0)
         confidence = "high" if len(groups) >= 2 and strongest >= .85 else "medium" if strongest >= .65 else "low"
-        summary = [{
-            "provider": row["provider"], "captureGroup": row["capture_group_id"],
-            "distanceMeters": round(float(row["distance_meters"])),
-            "sourceUrl": row["source_url"], "license": row["license"], "capturedAt": row["captured_at"],
-            "directView": bool(row["direct_view_eligible"]),
-        } for row in rows]
-        models = sorted({str(row["model_version"]) for row in rows if row["model_version"]})
         connection.execute("""
             INSERT INTO bench_likely_metadata(bench_row_id,land_context,land_context_probability,canopy_context,
               canopy_probability,lake_view_probability,mountain_view_probability,open_view_probability,
@@ -606,7 +718,7 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000) -> 
               probabilities["lake_view_probability"], probabilities["mountain_view_probability"],
               probabilities["open_view_probability"], probabilities["limited_view_probability"],
               probabilities["buildings_probability"], probabilities["road_rail_probability"], confidence,
-              len(groups), json.dumps(summary, separators=(",", ":")), ",".join(models), RECONCILER_VERSION, now_iso()))
+              len(groups), json.dumps(summary, separators=(",", ":")), ",".join(sorted(models)), RECONCILER_VERSION, now_iso()))
         stats["reconciled"] += 1
         if stats["reconciled"] % 100 == 0:
             connection.commit()

@@ -16,10 +16,13 @@ from benchly_worker import (
     context_kind,
     exclusive_worker_lock,
     expand_bounds,
+    finalize_swisstlm_import,
+    import_swisstlm_geopackage,
     parse_bool,
     parse_direction,
     parse_height,
     preferred_exact_features,
+    preferred_environment_context,
     import_osm,
     score_view,
     spatial_cell_bounds,
@@ -43,6 +46,7 @@ from visual_pipeline import (
     analyze_scenes,
     discover_open_images,
     infer_scene,
+    infer_scene_frames,
     reconcile_environment,
     validate_scene_prediction,
 )
@@ -171,6 +175,63 @@ class WorkerUnitTests(unittest.TestCase):
         preferred = preferred_exact_features(database.execute("SELECT * FROM features").fetchall(), "forest", True)
         self.assertEqual(len(preferred), 1)
         self.assertEqual(preferred[0]["source"], "swissTLM3D")
+
+    def test_current_official_version_replaces_stale_geometry_and_osm_buildings(self):
+        database = sqlite3.connect(":memory:")
+        database.row_factory = sqlite3.Row
+        database.execute("CREATE TABLE features(kind TEXT,source TEXT,source_version TEXT,geometry_wkb BLOB)")
+        geometry = to_wkb(point_lv95(47, 8).buffer(20))
+        database.executemany("INSERT INTO features VALUES(?,?,?,?)", [
+            ("forest", "swissTLM3D", "old", geometry),
+            ("forest", "swissTLM3D", "current", geometry),
+            ("building", "OpenStreetMap", "osm", geometry),
+            ("building", "swissTLM3D", "current", geometry),
+        ])
+        rows = database.execute("SELECT * FROM features").fetchall()
+        self.assertEqual([row["source_version"] for row in preferred_exact_features(rows, "forest", "current")], ["current"])
+        context = preferred_environment_context(rows, "current")
+        buildings = [row for row in context if row["kind"] == "building"]
+        self.assertEqual(len(buildings), 1)
+        self.assertEqual(buildings[0]["source"], "swissTLM3D")
+
+    def test_multifile_official_refresh_keeps_all_parts_and_invalidates_enrichment(self):
+        database = sqlite3.connect(":memory:")
+        database.row_factory = sqlite3.Row
+        database.executescript("""
+          CREATE TABLE environment_features(row_id INTEGER PRIMARY KEY AUTOINCREMENT,source TEXT,source_id TEXT,kind TEXT,
+            subtype TEXT,center_latitude REAL,center_longitude REAL,min_latitude REAL,max_latitude REAL,
+            min_longitude REAL,max_longitude REAL,height_meters REAL,raw_tags TEXT,imported_at TEXT,
+            geometry_wkb BLOB,geometry_crs INTEGER,source_version TEXT,source_updated_at TEXT,
+            UNIQUE(source,source_id,kind));
+          CREATE TABLE land_cover_features(row_id INTEGER PRIMARY KEY AUTOINCREMENT,source TEXT,source_id TEXT,class TEXT,
+            geometry_wkb BLOB,geometry_crs INTEGER,min_latitude REAL,max_latitude REAL,min_longitude REAL,max_longitude REAL,
+            source_version TEXT,source_updated_at TEXT,imported_at TEXT,UNIQUE(source,source_id,class));
+          CREATE TABLE bench_enrichments(bench_row_id INTEGER PRIMARY KEY,environment_computed_at TEXT,pipeline_version TEXT,context_source_version TEXT);
+          INSERT INTO environment_features(source,source_id,kind,center_latitude,center_longitude,min_latitude,max_latitude,
+            min_longitude,max_longitude,raw_tags,imported_at,geometry_crs,source_version)
+            VALUES('swissTLM3D','stale','forest',47,8,46.9,47.1,7.9,8.1,'{}','old',2056,'old');
+          INSERT INTO bench_enrichments VALUES(1,'old','old-pipeline','swissTLM3D:old');
+        """)
+        forest = {"id": "forest-one", "properties": {}, "geometry": {
+            "type": "Polygon", "coordinates": [[[8, 47], [8.001, 47], [8.001, 47.001], [8, 47.001], [8, 47]]],
+        }}
+        water = {"id": "water-one", "properties": {}, "geometry": {
+            "type": "Polygon", "coordinates": [[[8.01, 47], [8.011, 47], [8.011, 47.001], [8.01, 47.001], [8.01, 47]]],
+        }}
+        with patch("benchly_worker.geopackage_layers", side_effect=[["TLM_WALD"], ["TLM_GEWAESSER"]]), \
+             patch("benchly_worker.iter_layer_features", side_effect=[iter([forest]), iter([water])]):
+            import_swisstlm_geopackage(database, Path("part-one.gpkg"), "v2", "generation-v2", finalize=False)
+            import_swisstlm_geopackage(database, Path("part-two.gpkg"), "v2", "generation-v2", finalize=False)
+        finalize_swisstlm_import(database, "generation-v2")
+        rows = database.execute("SELECT source_id,kind,source_version FROM environment_features ORDER BY kind").fetchall()
+        self.assertEqual([(row["source_id"], row["kind"], row["source_version"]) for row in rows], [
+            ("TLM_WALD:forest-one", "forest", "v2"),
+            ("TLM_GEWAESSER:water-one", "water", "v2"),
+        ])
+        enrichment = database.execute("SELECT * FROM bench_enrichments").fetchone()
+        self.assertIsNone(enrichment["environment_computed_at"])
+        self.assertIsNone(enrichment["pipeline_version"])
+        self.assertIsNone(enrichment["context_source_version"])
 
     def test_scene_schema_rejects_missing_or_out_of_range_values(self):
         with self.assertRaises(ValueError):
@@ -316,12 +377,58 @@ class VisualPipelineTests(unittest.TestCase):
               latitude,longitude,analysis_status,discovered_at) VALUES(1,'Panoramax','one','group','https://source','https://image',47,8,'pending','2026-09-02')""")
             with TemporaryDirectory() as directory, patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
                  patch("visual_pipeline._download_image", return_value=(b"image-bytes", "image/jpeg")), \
-                 patch("visual_pipeline.infer_scene", side_effect=RuntimeError("model failed") if failure else None, return_value=self.prediction()):
+                 patch("visual_pipeline.infer_scene_frames", side_effect=RuntimeError("model failed") if failure else None, return_value=[self.prediction()]):
                 before = list(Path(directory).iterdir())
                 analyze_scenes(database, 1, time.monotonic() + 2, requests_per_second=1000)
                 self.assertEqual(list(Path(directory).iterdir()), before)
             status = database.execute("SELECT analysis_status FROM image_observations").fetchone()[0]
             self.assertEqual(status, "retry" if failure else "analyzed")
+
+    def test_frame_level_relevance_excludes_closeup_without_losing_scenic_group(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,0)")
+        database.execute("INSERT INTO bench_enrichments VALUES(1,0,'open',1,'partial')")
+        for image_id, heading in ((1, 0), (2, 45), (3, 90)):
+            database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
+              latitude,longitude,heading,license,analysis_status,discovered_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?,'pending','2026-09-02')""", (
+                image_id, "Panoramax", str(image_id), "daerligen-sequence", "https://source",
+                f"https://image/{image_id}", 46.6622, 7.8092, heading, "CC-BY-SA",
+            ))
+            database.execute("INSERT INTO bench_image_evidence VALUES(1,?,?,1,1)", (image_id, 20 + image_id))
+        closeup = self.prediction(
+            relevance_probability=.03, rejection_reason="close_object", forest_probability=.99,
+            lake_view_probability=.01, mountain_view_probability=.01, open_view_probability=.01,
+        )
+        with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
+             patch("visual_pipeline._download_image", return_value=(b"image-bytes", "image/jpeg")), \
+             patch("visual_pipeline.infer_scene_frames", return_value=[self.prediction(), self.prediction(), closeup]):
+            stats = analyze_scenes(database, 1, time.monotonic() + 2, requests_per_second=1000)
+        statuses = [row[0] for row in database.execute("SELECT analysis_status FROM image_observations ORDER BY id")]
+        self.assertEqual(statuses, ["analyzed", "analyzed", "irrelevant"])
+        self.assertEqual(stats["irrelevant"], 1)
+        reconcile_environment(database)
+        likely = database.execute("SELECT * FROM bench_likely_metadata").fetchone()
+        self.assertEqual(likely["evidence_group_count"], 1)
+        self.assertGreater(likely["lake_view_probability"], .85)
+        self.assertNotEqual(likely["land_context"], "forest")
+
+    def test_frame_inference_uses_strict_schema_and_requires_every_index(self):
+        predictions = [self.prediction(), self.prediction(open_probability=.7)]
+        response = {"choices": [{"message": {"content": json.dumps({"frames": [
+            {"index": 0, "prediction": predictions[0]}, {"index": 1, "prediction": predictions[1]},
+        ]})}}]}
+        captured = {}
+
+        def request(_url, **kwargs):
+            captured.update(json.loads(kwargs["data"]))
+            return response
+
+        with patch("visual_pipeline._request_json", side_effect=request):
+            actual = infer_scene_frames([(b"one", "image/jpeg"), (b"two", "image/jpeg")], "https://inference", "secret")
+        self.assertEqual(actual, predictions)
+        self.assertEqual(captured["response_format"]["type"], "json_schema")
+        self.assertTrue(captured["response_format"]["json_schema"]["strict"])
 
     def test_discovery_is_cell_based_and_resumable(self):
         database = self.database()

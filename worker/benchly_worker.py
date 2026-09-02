@@ -240,8 +240,14 @@ def _safe_extract_zip(archive: Path, destination: Path) -> None:
         bundle.extractall(destination)
 
 
-def import_swisstlm_geopackage(connection: sqlite3.Connection, geopackage: Path, source_version: str) -> dict[str, int]:
-    imported_at = now_iso()
+def import_swisstlm_geopackage(
+    connection: sqlite3.Connection,
+    geopackage: Path,
+    source_version: str,
+    imported_at: Optional[str] = None,
+    finalize: bool = True,
+) -> dict[str, int]:
+    imported_at = imported_at or now_iso()
     stats = {"building": 0, "forest": 0, "water": 0, "land_cover": 0, "skipped": 0}
     batch: list[tuple] = []
     land_batch: list[tuple] = []
@@ -310,11 +316,19 @@ def import_swisstlm_geopackage(connection: sqlite3.Connection, geopackage: Path,
             if len(batch) + len(land_batch) >= 1000:
                 flush()
     flush()
+    if finalize:
+        finalize_swisstlm_import(connection, imported_at)
+    return stats
+
+
+def finalize_swisstlm_import(connection: sqlite3.Connection, imported_at: str) -> None:
+    """Publish one complete swissTLM generation after every archive part was imported."""
     connection.execute("DELETE FROM environment_features WHERE source='swissTLM3D' AND imported_at<>?", (imported_at,))
     connection.execute("DELETE FROM land_cover_features WHERE source='swissTLM3D' AND imported_at<>?", (imported_at,))
-    connection.execute("UPDATE bench_enrichments SET environment_computed_at=NULL")
+    connection.execute("""
+      UPDATE bench_enrichments SET environment_computed_at=NULL,pipeline_version=NULL,context_source_version=NULL
+    """)
     connection.commit()
-    return stats
 
 
 def download_stac_tiles(connection: sqlite3.Connection, collection: str, destination: Path,
@@ -845,22 +859,36 @@ def nearby_context(connection: sqlite3.Connection, latitude: float, longitude: f
 def nearby_land_cover(connection: sqlite3.Connection, latitude: float, longitude: float, radius_meters: float = 50) -> list[sqlite3.Row]:
     latitude_delta = radius_meters / 111_320
     longitude_delta = radius_meters / (111_320 * max(0.2, math.cos(math.radians(latitude))))
+    official_context = official_context_version(connection)
+    source_clause = "AND f.source<>'swissTLM3D'"
+    parameters: list[object] = [
+        longitude - longitude_delta, longitude + longitude_delta,
+        latitude - latitude_delta, latitude + latitude_delta,
+    ]
+    if official_context:
+        source_clause = "AND (f.source<>'swissTLM3D' OR f.source_version=?)"
+        parameters.append(official_context)
     return connection.execute("""
         SELECT f.* FROM land_cover_spatial_index s
         JOIN land_cover_features f ON f.row_id=s.row_id
         WHERE s.max_longitude>=? AND s.min_longitude<=? AND s.max_latitude>=? AND s.min_latitude<=?
-    """, (longitude - longitude_delta, longitude + longitude_delta,
-          latitude - latitude_delta, latitude + latitude_delta)).fetchall()
+        {source_clause}
+    """.format(source_clause=source_clause), parameters).fetchall()
 
 
 def has_official_context(connection: sqlite3.Connection) -> bool:
-    return connection.execute(
-        "SELECT 1 FROM official_context_sources WHERE source='swissTLM3D' LIMIT 1"
-    ).fetchone() is not None
+    return official_context_version(connection) is not None
+
+
+def official_context_version(connection: sqlite3.Connection) -> Optional[str]:
+    row = connection.execute(
+        "SELECT version FROM official_context_sources WHERE source='swissTLM3D' LIMIT 1"
+    ).fetchone()
+    return str(row["version"]) if row else None
 
 
 def preferred_exact_features(
-    features: Sequence[sqlite3.Row], kind: str, official_context_available: bool,
+    features: Sequence[sqlite3.Row], kind: str, official_context: bool | str | None,
 ) -> list[sqlite3.Row]:
     """Use complete official geometry when available, otherwise exact OSM geometry."""
     exact = [
@@ -868,20 +896,24 @@ def preferred_exact_features(
         if feature["kind"] == kind and feature["geometry_wkb"] is not None
     ]
     official = [feature for feature in exact if feature["source"] == "swissTLM3D"]
-    return official if official_context_available else (official or exact)
+    if isinstance(official_context, str):
+        official = [feature for feature in official if feature["source_version"] == official_context]
+    non_official = [feature for feature in exact if feature["source"] != "swissTLM3D"]
+    return official if official_context else non_official
 
 
 def preferred_environment_context(
-    features: Sequence[sqlite3.Row], official_context_available: bool,
+    features: Sequence[sqlite3.Row], official_context: bool | str | None,
 ) -> list[sqlite3.Row]:
     other = [
         feature for feature in features
-        if feature["kind"] not in {"forest", "water"} and feature["geometry_wkb"] is not None
+        if feature["kind"] not in {"building", "forest", "water"} and feature["geometry_wkb"] is not None
     ]
     return [
         *other,
-        *preferred_exact_features(features, "forest", official_context_available),
-        *preferred_exact_features(features, "water", official_context_available),
+        *preferred_exact_features(features, "building", official_context),
+        *preferred_exact_features(features, "forest", official_context),
+        *preferred_exact_features(features, "water", official_context),
     ]
 
 
@@ -1052,7 +1084,7 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
         query += f" LIMIT {int(limit)}"
     rows = connection.execute(query, query_parameters).fetchall()
     updated = 0
-    official_context_available = has_official_context(connection)
+    official_context = official_context_version(connection)
     try:
         for row in rows:
             if deadline_monotonic is not None and time.monotonic() >= deadline_monotonic:
@@ -1064,13 +1096,13 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
             local_context = nearby_context(connection, row["latitude"], row["longitude"], 350)
             distant_context = nearby_context(connection, row["latitude"], row["longitude"], 10_000, ["water", "forest", "major_road"])
             context_by_identity = {feature["row_id"]: feature for feature in [*local_context, *distant_context]}
-            context = preferred_environment_context(list(context_by_identity.values()), official_context_available)
-            local_context = preferred_environment_context(local_context, official_context_available)
+            context = preferred_environment_context(list(context_by_identity.values()), official_context)
+            local_context = preferred_environment_context(local_context, official_context)
             buildings = [feature for feature in local_context if feature["kind"] == "building" and feature["geometry_wkb"] is not None]
             canopy = canopy_neighborhood(row["latitude"], row["longitude"], terrain, surface, buildings)
             canopy_percent = None if canopy["share_10m"] is None else round(float(canopy["share_10m"]) * 100, 1)
-            forests = preferred_exact_features(context, "forest", official_context_available)
-            waters = preferred_exact_features(context, "water", official_context_available)
+            forests = preferred_exact_features(context, "forest", official_context)
+            waters = preferred_exact_features(context, "water", official_context)
             environment = deterministic_environment(
                 row["latitude"], row["longitude"], forests, waters,
                 nearby_land_cover(connection, row["latitude"], row["longitude"]), str(canopy["context"]),
@@ -1128,7 +1160,8 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
                   json.dumps(horizon), json.dumps(terrain_horizon), json.dumps(obstruction_types), json.dumps(obstruction_distances),
                   building_percent, vegetation_percent, distance_building, building_count,
                   sun_summer, sun_winter, sun_spring, sun_autumn, sun_confidence, view, view_confidence,
-                  json.dumps(components), json.dumps(labels, ensure_ascii=False), json.dumps(view_sectors), PIPELINE_VERSION, PIPELINE_VERSION, now_iso()))
+                  json.dumps(components), json.dumps(labels, ensure_ascii=False), json.dumps(view_sectors),
+                  f"swissTLM3D:{official_context}" if official_context else "OpenStreetMap", PIPELINE_VERSION, now_iso()))
             connection.execute("""
               UPDATE bench_enrichments SET land_context=?,waterfront=?,canopy_context=?,canopy_share_3m=?,
                 canopy_share_10m=?,canopy_share_25m=?,vegetation_median_height=?,vegetation_max_height=?,
@@ -1257,10 +1290,14 @@ def run_import_official_context(args) -> None:
         geopackages = sorted(extract_dir.rglob("*.gpkg"))
         if not geopackages:
             raise RuntimeError("swissTLM3D archive contains no GeoPackage")
+        import_generation = now_iso()
         for geopackage in geopackages:
-            imported = import_swisstlm_geopackage(connection, geopackage, source_version)
+            imported = import_swisstlm_geopackage(
+                connection, geopackage, source_version, imported_at=import_generation, finalize=False,
+            )
             for key, value in imported.items():
                 stats[key] = int(stats.get(key, 0)) + value
+        finalize_swisstlm_import(connection, import_generation)
         checksum = sha256_file(archive)
         connection.execute("""
           INSERT INTO official_context_sources(source,version,asset_url,asset_checksum,imported_at,stats)
@@ -1316,11 +1353,11 @@ def reconcile_deterministic_context(connection: sqlite3.Connection, limit: int =
       ORDER BY b.row_id LIMIT ?
     """, (limit,)).fetchall()
     stats = {"deterministic_reconciled": 0, "forest": 0, "waterfront": 0}
-    official_context_available = has_official_context(connection)
+    official_context = official_context_version(connection)
     for row in rows:
         context = nearby_context(connection, row["latitude"], row["longitude"], 10_000, ["forest", "water"])
-        forests = preferred_exact_features(context, "forest", official_context_available)
-        waters = preferred_exact_features(context, "water", official_context_available)
+        forests = preferred_exact_features(context, "forest", official_context)
+        waters = preferred_exact_features(context, "water", official_context)
         result = deterministic_environment(
             row["latitude"], row["longitude"], forests, waters,
             nearby_land_cover(connection, row["latitude"], row["longitude"]),
@@ -1448,7 +1485,7 @@ def run_enrich_profile_batch(args) -> None:
             return
         deadline = time.monotonic() + args.max_runtime_minutes * 60
         minimum_interval = 1 / max(0.1, args.requests_per_second)
-        official_context_available = has_official_context(connection)
+        official_context = official_context_version(connection)
         for row in rows:
             if time.monotonic() >= deadline:
                 break
@@ -1463,9 +1500,9 @@ def run_enrich_profile_batch(args) -> None:
             distant_context = nearby_context(connection, row["latitude"], row["longitude"], 10_000, ["water", "forest", "major_road"])
             context = preferred_environment_context(
                 list({feature["row_id"]: feature for feature in [*local_context, *distant_context]}.values()),
-                official_context_available,
+                official_context,
             )
-            local_context = preferred_environment_context(local_context, official_context_available)
+            local_context = preferred_environment_context(local_context, official_context)
             profile, obstruction_types, obstruction_distances, canopy_percent, in_forest = merge_near_obstructions(
                 row["latitude"], row["longitude"], elevation, terrain_profile, elevation_samples, local_context,
             )
@@ -1476,9 +1513,9 @@ def run_enrich_profile_batch(args) -> None:
             components = {"openness": openness, "relief": relief, "water": water, "naturalness": naturalness, "remoteness": remoteness}
             buildings = [feature for feature in local_context if feature["kind"] == "building"]
             paths = [feature for feature in local_context if feature["kind"] == "path"]
-            waters = preferred_exact_features(context, "water", official_context_available)
+            waters = preferred_exact_features(context, "water", official_context)
             roads = [feature for feature in context if feature["kind"] == "major_road"]
-            forests = preferred_exact_features(context, "forest", official_context_available)
+            forests = preferred_exact_features(context, "forest", official_context)
             deterministic = deterministic_environment(
                 row["latitude"], row["longitude"], forests, waters,
                 nearby_land_cover(connection, row["latitude"], row["longitude"]),
@@ -1505,6 +1542,7 @@ def run_enrich_profile_batch(args) -> None:
                 "autumn": direct_sun_minutes(row["latitude"], row["longitude"], profile, canopy_percent, bool(row["covered"]), 9, 22),
                 "view_score": score_view(**components), "components": json.dumps(components),
                 "labels": json.dumps(labels, ensure_ascii=False), "sectors": json.dumps(view_sectors),
+                "context_version": f"swissTLM3D:{official_context} + GeoAdmin" if official_context else "OpenStreetMap + GeoAdmin",
             }
             with connection:
                 connection.execute("""
@@ -1517,7 +1555,7 @@ def run_enrich_profile_batch(args) -> None:
                     VALUES(:row_id,:elevation,'GeoAdmin-Höhenprofil',:computed_at,:in_forest,:canopy,:forest,:water_distance,:path,:road,
                       :horizon,:terrain_horizon,:obstruction_types,:obstruction_distances,:building_percent,:vegetation_percent,
                       :distance_building,:building_count,:summer,:winter,:spring,:autumn,'mittel',:view_score,'mittel',:components,
-                      :labels,:sectors,'OpenStreetMap + GeoAdmin',:pipeline_version,:computed_at)
+                      :labels,:sectors,:context_version,:pipeline_version,:computed_at)
                     ON CONFLICT(bench_row_id) DO UPDATE SET elevation_meters=excluded.elevation_meters,
                       elevation_source=excluded.elevation_source,elevation_updated_at=excluded.elevation_updated_at,
                       in_forest=excluded.in_forest,canopy_percent=excluded.canopy_percent,distance_forest_meters=excluded.distance_forest_meters,

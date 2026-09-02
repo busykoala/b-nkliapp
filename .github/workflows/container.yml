@@ -142,6 +142,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          diagnostics() {
+            echo '::group::Inference deployment diagnostics'
+            helm status inference --namespace inference || true
+            kubectl --namespace inference get pods,jobs -o wide || true
+            kubectl --namespace inference logs job/inference-model-sync --tail=200 || true
+            echo '::endgroup::'
+          }
+          recover_pending_release() {
+            release="$1"
+            namespace="$2"
+            status="$(helm status "$release" --namespace "$namespace" -o json | jq -r '.info.status')"
+            case "$status" in
+              pending-*)
+                deployed_revision="$(helm history "$release" --namespace "$namespace" -o json \
+                  | jq -r '[.[] | select(.status == "deployed")][-1].revision // empty')"
+                test -n "$deployed_revision"
+                echo "Recovering $release from $status via revision $deployed_revision"
+                helm rollback "$release" "$deployed_revision" --namespace "$namespace" --wait --timeout 20m
+                ;;
+            esac
+          }
+          trap diagnostics ERR
           kubectl version --client
           namespace_result="$(kubectl get namespace benchly -o name 2>&1)" || {
             if grep -q 'NotFound' <<<"$namespace_result"; then
@@ -164,6 +186,7 @@ jobs:
             --patch '{"imagePullSecrets":[{"name":"benchly-ghcr"}]}'
           kubectl --namespace benchly annotate secret benchly-ghcr \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
+          recover_pending_release inference inference
           helm upgrade inference "$GITHUB_WORKSPACE/deploy/charts/inference" \
             --namespace inference --atomic --wait --timeout 130m
           helm test inference --namespace inference --logs --timeout 10m
