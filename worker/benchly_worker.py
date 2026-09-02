@@ -1334,8 +1334,15 @@ def run_analyze_scenes(args) -> None:
     connection = connect_database(Path(args.database).resolve())
     run_id = begin_run(connection, "analyze-scenes", os.environ.get("BENCHLY_VISION_MODEL", "benchly-vision"))
     try:
-        deadline = time.monotonic() + args.max_runtime_hours * 3600
+        used_seconds = float(connection.execute("""
+          SELECT coalesce(sum((julianday(finished_at)-julianday(started_at))*86400),0)
+          FROM pipeline_runs WHERE kind='analyze-scenes' AND status='completed'
+            AND finished_at IS NOT NULL AND date(started_at)=date('now')
+        """).fetchone()[0])
+        remaining_seconds = max(0.0, min(args.max_runtime_hours * 3600, 7200 - used_seconds))
+        deadline = time.monotonic() + remaining_seconds
         stats = analyze_scenes(connection, args.limit, deadline, args.requests_per_second)
+        stats["daily_runtime_remaining_seconds"] = round(remaining_seconds)
         finish_run(connection, run_id, "completed", stats)
         print(json.dumps(stats, indent=2))
     except Exception as error:

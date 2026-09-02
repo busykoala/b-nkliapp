@@ -143,11 +143,25 @@ jobs:
         run: |
           set -euo pipefail
           diagnostics() {
+            failed_line="${1:-unknown}"
+            failed_command="${2:-unknown}"
+            echo "::error title=Benchly deployment failed::Line $failed_line: $failed_command"
             echo '::group::Inference deployment diagnostics'
             helm status inference --namespace inference || true
             kubectl --namespace inference get pods,jobs -o wide || true
             kubectl --namespace inference logs job/inference-model-sync --tail=200 || true
             echo '::endgroup::'
+            {
+              echo '### Deployment failure'
+              echo
+              echo "Command at line \`$failed_line\`: \`$failed_command\`"
+              echo
+              echo '```text'
+              helm status inference --namespace inference 2>&1 || true
+              kubectl --namespace inference get pods,jobs -o wide 2>&1 || true
+              kubectl --namespace inference logs job/inference-model-sync --tail=80 2>&1 || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
           }
           recover_pending_release() {
             release="$1"
@@ -163,7 +177,7 @@ jobs:
                 ;;
             esac
           }
-          trap diagnostics ERR
+          trap 'diagnostics "$LINENO" "$BASH_COMMAND"' ERR
           kubectl version --client
           namespace_result="$(kubectl get namespace benchly -o name 2>&1)" || {
             if grep -q 'NotFound' <<<"$namespace_result"; then

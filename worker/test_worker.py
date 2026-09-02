@@ -48,6 +48,7 @@ from visual_pipeline import (
     infer_scene,
     infer_scene_frames,
     reconcile_environment,
+    search_panoramax,
     validate_scene_prediction,
 )
 
@@ -249,6 +250,19 @@ class WorkerUnitTests(unittest.TestCase):
                 _request_json("https://example.test")
         self.assertEqual(raised.exception.seconds, 123)
 
+    def test_panoramax_uses_collection_as_one_capture_group(self):
+        payload = {"features": [{
+            "id": "image-one", "collection": "sequence-one",
+            "geometry": {"coordinates": [7.81, 46.662]},
+            "properties": {"view:azimuth": 123, "geovisio:producer": "Contributor", "license": "CC-BY-SA-4.0"},
+            "assets": {"sd": {"href": "https://example.test/image.jpg"}},
+        }]}
+        with patch("visual_pipeline._request_json", return_value=payload):
+            image = search_panoramax((7.8, 46.66, 7.82, 46.67))[0]
+        self.assertEqual(image.capture_group_id, "panoramax:sequence-one")
+        self.assertEqual(image.heading, 123)
+        self.assertEqual(image.author, "Contributor")
+
     def test_inference_limit_counts_base64_request_size(self):
         oversized_after_encoding = [(b"x" * (5 * 1024 * 1024), "image/jpeg")] * 4
         with self.assertRaisesRegex(ValueError, "payload"):
@@ -446,6 +460,27 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(first["images"], 1)
         self.assertEqual(second["images"], 0)
         self.assertEqual(database.execute("SELECT count(*) FROM bench_image_evidence").fetchone()[0], 1)
+
+    def test_daily_discovery_and_analysis_caps_survive_restarts(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,47,8,180)")
+        database.executemany("""INSERT INTO image_discovery_cells(provider,cell_id,min_latitude,max_latitude,
+          min_longitude,max_longitude,status,image_count,attempts,discovered_at)
+          VALUES('Panoramax',?,47,47.01,8,8.01,'completed',0,1,datetime('now'))""",
+          [(f"cell-{index}",) for index in range(500)])
+        with patch("visual_pipeline.PROVIDERS", {"Fake": lambda _bounds: self.fail("daily discovery cap was exceeded")}):
+            self.assertEqual(discover_open_images(database, max_cells=500, requests_per_second=1000)["cells"], 0)
+
+        database.executemany("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
+          latitude,longitude,analysis_status,analyzed_at,discovered_at)
+          VALUES(1+?,'Panoramax',?,?,'https://source','https://image',47,8,'analyzed',datetime('now'),datetime('now'))""",
+          [(index, f"done-{index}", f"group-{index}") for index in range(300)])
+        database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
+          latitude,longitude,analysis_status,discovered_at)
+          VALUES(999,'Panoramax','pending','pending-group','https://source','https://image',47,8,'pending',datetime('now'))""")
+        with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
+             patch("visual_pipeline._download_image", side_effect=AssertionError("daily analysis cap was exceeded")):
+            self.assertEqual(analyze_scenes(database, 300, time.monotonic() + 2, requests_per_second=1000)["groups"], 0)
 
 
 if __name__ == "__main__":

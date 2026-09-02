@@ -119,14 +119,14 @@ def search_panoramax(bounds: tuple[float, float, float, float]) -> list[Discover
         fetch_url = next((asset.get("href") for key in ("sd", "thumb", "hd", "original") if isinstance((asset := assets.get(key)), dict) and asset.get("href")), None)
         if not fetch_url:
             fetch_url = f"{endpoint.rsplit('/api/', 1)[0]}/api/pictures/{urllib.parse.quote(image_id)}/sd.jpg"
-        sequence = properties.get("sequence") or properties.get("sequence_id") or image_id
+        sequence = properties.get("sequence") or properties.get("sequence_id") or feature.get("collection") or image_id
         results.append(DiscoveredImage(
             provider="Panoramax", provider_image_id=image_id,
             capture_group_id=f"panoramax:{sequence}",
             source_url=str(properties.get("view_url") or f"https://panoramax.xyz/#focus=pic&pic={urllib.parse.quote(image_id)}"),
             fetch_url=str(fetch_url), latitude=float(coordinates[1]), longitude=float(coordinates[0]),
-            heading=_float(properties.get("heading") or properties.get("compass_angle")),
-            captured_at=properties.get("datetime"), author=properties.get("author"),
+            heading=_float(properties.get("heading") or properties.get("compass_angle") or properties.get("view:azimuth")),
+            captured_at=properties.get("datetime"), author=properties.get("author") or properties.get("geovisio:producer"),
             license=properties.get("license") or "CC-BY-SA-4.0",
         ))
     return results
@@ -231,7 +231,12 @@ def _candidate_cells(connection: sqlite3.Connection, cell_degrees: float, limit:
     return connection.execute("""
         SELECT CAST(latitude / ? AS INTEGER) lat_cell,CAST(longitude / ? AS INTEGER) lon_cell,
           min(latitude) min_latitude,max(latitude) max_latitude,min(longitude) min_longitude,max(longitude) max_longitude
-        FROM benches WHERE active=1
+        FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
+        LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id
+        WHERE b.active=1 AND lm.bench_row_id IS NULL AND (
+          e.land_context IS NULL OR e.land_context IN ('unknown','mixed','forest_edge')
+          OR e.canopy_context IS NULL
+        )
         GROUP BY lat_cell,lon_cell
         ORDER BY ((lat_cell * 1103515245 + lon_cell * 12345) & 2147483647)
         LIMIT ?
@@ -240,6 +245,13 @@ def _candidate_cells(connection: sqlite3.Connection, cell_degrees: float, limit:
 
 def discover_open_images(connection: sqlite3.Connection, max_cells: int = 500, cell_degrees: float = 0.02, requests_per_second: float = 1.0) -> dict[str, int]:
     stats = {"cells": 0, "requests": 0, "images": 0, "links": 0, "failed": 0}
+    cells_today = connection.execute("""
+      SELECT count(DISTINCT cell_id) FROM image_discovery_cells
+      WHERE discovered_at IS NOT NULL AND date(discovered_at)=date('now')
+    """).fetchone()[0]
+    max_cells = max(0, min(max_cells, 500 - int(cells_today)))
+    if max_cells == 0:
+        return stats
     minimum_interval = 1 / max(0.1, requests_per_second)
     failures: dict[str, int] = {provider: 0 for provider in PROVIDERS}
     for cell in _candidate_cells(connection, cell_degrees, max_cells):
@@ -535,6 +547,14 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
     model = os.environ.get("BENCHLY_VISION_MODEL", DEFAULT_MODEL)
     if not api_key:
         raise RuntimeError("INFERENCE_API_KEY is required")
+    groups_today = connection.execute("""
+      SELECT count(*) FROM (
+        SELECT provider,capture_group_id FROM image_observations
+        WHERE analyzed_at IS NOT NULL AND date(analyzed_at)=date('now')
+        GROUP BY provider,capture_group_id
+      )
+    """).fetchone()[0]
+    limit = max(0, min(limit, 300 - int(groups_today)))
     groups = connection.execute("""
         SELECT provider,capture_group_id,min(discovered_at) discovered_at
         FROM image_observations WHERE analysis_status IN ('pending','retry') AND attempts<3
