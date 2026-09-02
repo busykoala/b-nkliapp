@@ -5,7 +5,7 @@
   (dict "name" "horizon" "schedule" .Values.workers.horizonSchedule "deadline" 3300 "args" (list "enrich-profile-batch" "--database" "/data/benchly.sqlite" "--limit" "1000" "--requests-per-second" "1" "--max-runtime-minutes" "45"))
   (dict "name" "commons" "schedule" .Values.workers.commonsSchedule "deadline" 7200 "args" (list "refresh-commons" "--database" "/data/benchly.sqlite" "--limit" "500"))
   (dict "name" "official-context" "schedule" .Values.workers.officialContextSchedule "deadline" 29700 "args" (list "import-official-context" "--database" "/data/benchly.sqlite" "--first-sunday-only"))
-  (dict "name" "image-discovery" "schedule" .Values.workers.imageDiscoverySchedule "deadline" 3000 "args" (list "discover-open-images" "--database" "/data/benchly.sqlite" "--max-cells" "500" "--requests-per-second" "1"))
+  (dict "name" "image-discovery" "schedule" .Values.workers.imageDiscoverySchedule "deadline" 3000 "args" (list "discover-open-images" "--database" "/data/benchly.sqlite" "--max-cells" "50" "--requests-per-second" "1"))
   (dict "name" "scene-analysis" "schedule" .Values.workers.sceneAnalysisSchedule "deadline" 7500 "args" (list "analyze-scenes" "--database" "/data/benchly.sqlite" "--limit" "300" "--max-runtime-hours" "2" "--requests-per-second" "0.25"))
   (dict "name" "environment-reconcile" "schedule" .Values.workers.reconciliationSchedule "deadline" 3600 "args" (list "reconcile-environment" "--database" "/data/benchly.sqlite" "--limit" "5000"))
 }}

@@ -21,6 +21,6 @@ spec:
         - |
           test "$(curl -sS -o /dev/null -w '%{http_code}' http://inference-api:8080/v1/models)" = 401
           test "$(curl -sS -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer invalid' http://inference-api:8080/v1/models)" = 401
-          curl -fsS -H "Authorization: Bearer $INFERENCE_API_KEY" http://inference-api:8080/v1/models >/dev/null
+          curl -fsS -H "Authorization: Bearer $INFERENCE_API_KEY" http://inference-api:8080/v1/models | grep -q 'benchly-vision'
           curl -fsS http://embedding:80/health >/dev/null
           curl -fsS http://reranker:80/health >/dev/null

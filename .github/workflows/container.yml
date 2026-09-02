@@ -166,6 +166,7 @@ jobs:
             "benchly.io/revision=$GITHUB_SHA" --overwrite
           helm upgrade inference "$GITHUB_WORKSPACE/deploy/charts/inference" \
             --namespace inference --atomic --wait --timeout 130m
+          helm test inference --namespace inference --logs --timeout 10m
           inference_key="$(kubectl --namespace inference get secret inference-api -o jsonpath='{.data.api-key}')"
           test -n "$inference_key"
           kubectl --namespace benchly patch secret benchly-secrets --type merge \
