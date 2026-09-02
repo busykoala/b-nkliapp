@@ -2,6 +2,9 @@ name: Production data audit
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build and publish containers"]
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -16,6 +19,9 @@ concurrency:
 
 jobs:
   audit:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: [self-hosted, linux, x64, benchly]
     environment: production
     steps:
