@@ -494,6 +494,22 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(second["images"], 0)
         self.assertEqual(database.execute("SELECT count(*) FROM bench_image_evidence").fetchone()[0], 1)
 
+    def test_targeted_discovery_can_include_already_resolved_benches(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,180)")
+        database.execute("INSERT INTO bench_enrichments(bench_row_id,land_context,canopy_context) VALUES(1,'open','none')")
+        database.execute("INSERT INTO bench_likely_metadata(bench_row_id,land_context) VALUES(1,'open')")
+
+        with patch("visual_pipeline.PROVIDERS", {"Fake": lambda _bounds: []}):
+            regular = discover_open_images(database, max_cells=1, requests_per_second=1000,
+                                           bounds=(7.8085, 46.6618, 7.8100, 46.6629))
+            targeted = discover_open_images(database, max_cells=1, requests_per_second=1000,
+                                            bounds=(7.8085, 46.6618, 7.8100, 46.6629),
+                                            include_resolved=True)
+
+        self.assertEqual(regular["cells"], 0)
+        self.assertEqual(targeted["cells"], 1)
+
     def test_daily_discovery_and_analysis_caps_survive_restarts(self):
         database = self.database()
         database.execute("INSERT INTO benches VALUES(1,1,47,8,180)")

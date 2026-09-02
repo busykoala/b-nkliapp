@@ -243,7 +243,26 @@ jobs:
           kubectl --namespace benchly annotate deployment/benchly \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
           kubectl --namespace benchly rollout status deployment/benchly --timeout=10m
-          helm test benchly --namespace benchly --logs --timeout 10m
+          set +e
+          benchly_test_output="$(helm test benchly --namespace benchly --logs --timeout 10m 2>&1)"
+          benchly_test_status=$?
+          set -e
+          echo "$benchly_test_output"
+          if (( benchly_test_status != 0 )); then
+            {
+              echo '### Benchly smoke-test diagnostics'
+              echo
+              echo '```text'
+              echo "$benchly_test_output"
+              kubectl --namespace benchly get pods -o wide 2>&1 || true
+              for pod in benchly-test benchly-data-test; do
+                kubectl --namespace benchly logs "$pod" --all-containers --tail=200 2>&1 || true
+                kubectl --namespace benchly describe pod "$pod" 2>&1 || true
+              done
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit "$benchly_test_status"
+          fi
           echo "Deployed $WEB_IMAGE and $WORKER_IMAGE" >> "$GITHUB_STEP_SUMMARY"
       - name: Remove temporary kubeconfig
         if: always()

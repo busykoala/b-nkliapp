@@ -231,23 +231,36 @@ PROVIDERS = {
 }
 
 
-def _candidate_cells(connection: sqlite3.Connection, cell_degrees: float, limit: int) -> list[sqlite3.Row]:
-    return connection.execute("""
+def _candidate_cells(connection: sqlite3.Connection, cell_degrees: float, limit: int,
+                     bounds: Optional[tuple[float, float, float, float]] = None,
+                     include_resolved: bool = False) -> list[sqlite3.Row]:
+    bounds_clause = ""
+    parameters: list[object] = [cell_degrees, cell_degrees]
+    if bounds:
+        bounds_clause = "AND b.longitude BETWEEN ? AND ? AND b.latitude BETWEEN ? AND ?"
+        parameters.extend((bounds[0], bounds[2], bounds[1], bounds[3]))
+    parameters.append(limit * 20)
+    ambiguity_clause = "" if include_resolved else """AND lm.bench_row_id IS NULL AND (
+          e.land_context IS NULL OR e.land_context IN ('unknown','mixed','forest_edge')
+          OR e.canopy_context IS NULL
+        )"""
+    return connection.execute(f"""
         SELECT CAST(latitude / ? AS INTEGER) lat_cell,CAST(longitude / ? AS INTEGER) lon_cell,
           min(latitude) min_latitude,max(latitude) max_latitude,min(longitude) min_longitude,max(longitude) max_longitude
         FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
         LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id
-        WHERE b.active=1 AND lm.bench_row_id IS NULL AND (
-          e.land_context IS NULL OR e.land_context IN ('unknown','mixed','forest_edge')
-          OR e.canopy_context IS NULL
-        )
+        WHERE b.active=1 {ambiguity_clause}
+        {bounds_clause}
         GROUP BY lat_cell,lon_cell
         ORDER BY ((lat_cell * 1103515245 + lon_cell * 12345) & 2147483647)
         LIMIT ?
-    """, (cell_degrees, cell_degrees, limit * 20)).fetchall()
+    """, parameters).fetchall()
 
 
-def discover_open_images(connection: sqlite3.Connection, max_cells: int = 500, cell_degrees: float = 0.02, requests_per_second: float = 1.0) -> dict[str, int]:
+def discover_open_images(connection: sqlite3.Connection, max_cells: int = 500, cell_degrees: float = 0.02,
+                         requests_per_second: float = 1.0,
+                         bounds: Optional[tuple[float, float, float, float]] = None,
+                         include_resolved: bool = False) -> dict[str, int]:
     stats = {"cells": 0, "requests": 0, "images": 0, "links": 0, "failed": 0}
     cells_today = connection.execute("""
       SELECT count(DISTINCT cell_id) FROM image_discovery_cells
@@ -258,7 +271,7 @@ def discover_open_images(connection: sqlite3.Connection, max_cells: int = 500, c
         return stats
     minimum_interval = 1 / max(0.1, requests_per_second)
     failures: dict[str, int] = {provider: 0 for provider in PROVIDERS}
-    for cell in _candidate_cells(connection, cell_degrees, max_cells):
+    for cell in _candidate_cells(connection, cell_degrees, max_cells, bounds, include_resolved):
         if stats["cells"] >= max_cells:
             break
         cell_id = f"{cell['lat_cell']}:{cell['lon_cell']}:{cell_degrees}"

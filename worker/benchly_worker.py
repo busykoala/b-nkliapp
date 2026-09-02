@@ -1322,7 +1322,10 @@ def run_discover_open_images(args) -> None:
     connection = connect_database(Path(args.database).resolve())
     run_id = begin_run(connection, "discover-open-images")
     try:
-        stats = discover_open_images(connection, args.max_cells, args.cell_degrees, args.requests_per_second)
+        stats = discover_open_images(
+            connection, args.max_cells, args.cell_degrees, args.requests_per_second,
+            tuple(args.bounds) if args.bounds else None, args.include_resolved,
+        )
         finish_run(connection, run_id, "completed", stats)
         print(json.dumps(stats, indent=2))
     except Exception as error:
@@ -1717,6 +1720,8 @@ def build_parser() -> argparse.ArgumentParser:
     discovery.add_argument("--max-cells", type=int, default=500)
     discovery.add_argument("--cell-degrees", type=float, default=0.02)
     discovery.add_argument("--requests-per-second", type=float, default=1.0)
+    discovery.add_argument("--bounds", nargs=4, type=float, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
+    discovery.add_argument("--include-resolved", action="store_true", help="Include already classified benches inside an explicit pilot area")
     discovery.set_defaults(function=run_discover_open_images, uses_lock=True)
 
     analysis = subparsers.add_parser("analyze-scenes", help="Analyze temporary open images without storing their bytes")

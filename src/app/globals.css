@@ -158,6 +158,57 @@ button, a, input, select, textarea { touch-action: manipulation; }
   transform: rotate(-3deg);
 }
 .bench-hero > * { position: relative; z-index: 1; }
+.bench-scene {
+  position: absolute;
+  right: .55rem;
+  bottom: .45rem;
+  z-index: 2;
+  width: 7.7rem;
+  height: 6.4rem;
+  color: #315e50;
+  filter: drop-shadow(0 4px 8px rgb(39 66 57 / 14%));
+}
+.bench-scene-sun {
+  position: absolute;
+  top: -.15rem;
+  right: .1rem;
+  width: 2rem;
+  height: 2rem;
+  color: #d99b24;
+  stroke-width: 1.8;
+}
+.bench-scene-landmark {
+  position: absolute;
+  right: .2rem;
+  bottom: .15rem;
+  width: 5.6rem;
+  height: 3.9rem;
+  opacity: .46;
+  stroke-width: 1.45;
+}
+.bench-scene-seat {
+  position: absolute;
+  left: -.1rem;
+  bottom: .15rem;
+  width: 3.2rem;
+  height: 3.2rem;
+  padding: .52rem;
+  border: 1px solid rgb(42 79 65 / 20%);
+  border-radius: 1rem 1rem .75rem .75rem;
+  background: rgb(255 247 222 / 82%);
+  color: #285a4a;
+  transform: rotate(-4deg);
+}
+.bench-scene-sparkle {
+  position: absolute;
+  top: 1.2rem;
+  left: 1.3rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: #fff8dc;
+  animation: benchly-twinkle 2.8s ease-in-out infinite;
+}
+@keyframes benchly-twinkle { 50% { opacity: .35; transform: rotate(16deg) scale(.82); } }
 .story-tabs { border: 1px solid rgb(66 66 48 / 12%); background: rgb(232 219 189 / 58%); }
 .story-tabs .tab { border-radius: 999px; font-weight: 700; }
 .story-tabs .tab-active { background: #fff9e9; color: #29483e; box-shadow: 0 4px 14px rgb(46 62 51 / 10%); }

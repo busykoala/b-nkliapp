@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import {
-  Accessibility, Armchair, Camera, Clock3, Compass, ExternalLink,
+  Accessibility, Armchair, Building2, Camera, Clock3, Compass, ExternalLink,
   EyeOff, Flag, Hammer, Image as ImageIcon, Info, Leaf, MapPin, Moon, Mountain,
   MountainSnow, MoveHorizontal, Route, Sparkles, Star, Sun, Sunrise, Sunset,
   Telescope, TreePine, Trees, Umbrella, UsersRound, Waves,
@@ -26,8 +26,9 @@ export function BenchDetailContent({ bench }: { bench: BenchDetail }) {
   return (
     <div className="pb-8">
       <header className="bench-hero mb-4 p-5 pb-16 text-[#243c34]">
+        <BenchScene bench={bench} />
         <div className="story-eyebrow flex items-center gap-1.5"><Sparkles size={13} /> Ein Platz zum Verweilen</div>
-        <h2 className="mt-2 max-w-[85%] text-[1.75rem] font-black leading-[1.05] tracking-[-0.045em]">{bench.title}</h2>
+        <h2 className="mt-2 max-w-[72%] text-[1.75rem] font-black leading-[1.05] tracking-[-0.045em]">{bench.title}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <span className={`story-pill ${bench.shadeCause === "nacht" ? "story-pill-night" : bench.sunnyNow ? "story-pill-sun" : ""}`}>
             {bench.shadeCause === "nacht" ? <Moon size={14} /> : <Sun size={14} />}{sunStatusLabel(bench)}
@@ -53,6 +54,16 @@ export function BenchDetailContent({ bench }: { bench: BenchDetail }) {
       {tab === "details" ? <Details bench={bench} /> : <Community bench={bench} report={report} />}
     </div>
   );
+}
+
+function BenchScene({ bench }: { bench: BenchDetail }) {
+  const ContextIcon = bench.waterfront ? Waves : bench.inForest ? Trees : bench.landContext === "urban" ? Building2 : MountainSnow;
+  return <div className="bench-scene" aria-hidden="true">
+    <Sun className="bench-scene-sun" />
+    <ContextIcon className="bench-scene-landmark" />
+    <Armchair className="bench-scene-seat" />
+    <Sparkles className="bench-scene-sparkle" />
+  </div>;
 }
 
 function Community({ bench, report }: { bench: BenchDetail; report: (type: "rating" | "correction", id: number) => void }) {
