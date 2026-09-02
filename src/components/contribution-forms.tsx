@@ -7,30 +7,31 @@ import { submitCorrection, submitRating } from "@/app/actions/contributions";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
-  return <button className="btn btn-primary min-h-12 w-full" disabled={pending}>{pending ? <span className="loading loading-spinner loading-sm" /> : <Send size={18} />}{pending ? "Wird gespeichert …" : label}</button>;
+  return <button className="btn btn-primary min-h-12 w-full rounded-2xl" disabled={pending}>{pending ? <span className="loading loading-spinner loading-sm" /> : <Send size={18} />}{pending ? "Wird gespeichert …" : label}</button>;
 }
 
 export function RatingForm({ benchId }: { benchId: string }) {
   const action = submitRating.bind(null, benchId);
   const [state, formAction] = useActionState(action, null);
   return (
-    <form action={formAction} className="rounded-box border border-base-300 bg-base-100 p-4">
-      <h3 className="mb-1 flex items-center gap-2 font-bold"><Star size={19} className="text-warning" /> Bank bewerten</h3>
-      <p className="mb-3 text-sm opacity-65">Deine letzte Bewertung für diese Bank wird ersetzt.</p>
+    <form action={formAction} className="story-card p-4">
+      <div className="story-eyebrow flex items-center gap-1.5"><Star size={14} /> Dein Eindruck</div>
+      <h3 className="mt-1 text-lg font-extrabold">Wie war deine Pause?</h3>
+      <p className="mb-3 mt-1 text-sm opacity-60">Vier kleine Eindrücke helfen anderen bei der Wahl.</p>
       <div className="grid grid-cols-2 gap-3">
         {[["overall", "Gesamt"], ["view", "Aussicht"], ["comfort", "Komfort"], ["quiet", "Ruhe"]].map(([name, label]) => (
           <label className="form-control" key={name}>
-            <span className="label pb-1 text-sm font-semibold">{label}</span>
-            <select name={name} required defaultValue="" className="select select-bordered min-h-11 w-full" aria-label={`${label} bewerten`}>
-              <option value="" disabled>1–5</option>
+            <span className="label pb-1 text-xs font-bold">{label}</span>
+            <select name={name} required defaultValue="" className="select story-card min-h-11 w-full" aria-label={`${label} bewerten`}>
+              <option value="" disabled>Wählen</option>
               {[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score} {score === 1 ? "Stern" : "Sterne"}</option>)}
             </select>
           </label>
         ))}
       </div>
       <label className="form-control my-3 block">
-        <span className="label pb-1 text-sm font-semibold">Kurze Notiz <span className="font-normal opacity-60">(optional)</span></span>
-        <textarea name="note" maxLength={280} className="textarea textarea-bordered min-h-20 w-full" placeholder="Was hat dir gefallen?" />
+        <span className="label pb-1 text-sm font-bold">Ein Gedanke dazu <span className="font-normal opacity-50">(freiwillig)</span></span>
+        <textarea name="note" maxLength={280} className="textarea story-card min-h-20 w-full" placeholder="Was hat dir hier gefallen?" />
       </label>
       <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       <SubmitButton label="Bewertung veröffentlichen" />
@@ -43,12 +44,13 @@ export function CorrectionForm({ benchId }: { benchId: string }) {
   const action = submitCorrection.bind(null, benchId);
   const [state, formAction] = useActionState(action, null);
   return (
-    <form action={formAction} className="rounded-box border border-base-300 bg-base-100 p-4">
-      <h3 className="mb-1 flex items-center gap-2 font-bold"><MessageSquarePlus size={19} /> Korrektur vorschlagen</h3>
-      <p className="mb-3 text-sm opacity-65">Melde nur etwas, das du direkt vor Ort festgestellt hast. Der Hinweis verändert OpenStreetMap nicht.</p>
+    <form action={formAction} className="story-card p-4">
+      <div className="story-eyebrow flex items-center gap-1.5"><MessageSquarePlus size={14} /> Kurz Bescheid geben</div>
+      <h3 className="mt-1 text-lg font-extrabold">Etwas stimmt nicht?</h3>
+      <p className="mb-3 mt-1 text-sm opacity-60">Nur für Dinge, die du gerade vor Ort gesehen hast.</p>
       <label className="form-control block">
         <span className="label pb-1 text-sm font-semibold">Was stimmt nicht?</span>
-        <select aria-label="Was stimmt nicht?" name="field" required className="select select-bordered min-h-12 w-full" defaultValue="">
+        <select aria-label="Was stimmt nicht?" name="field" required className="select story-card min-h-12 w-full" defaultValue="">
           <option value="" disabled>Auswählen</option>
           <option value="removed">Bank fehlt oder wurde entfernt</option>
           <option value="location">Position ist ungenau</option>
@@ -57,8 +59,8 @@ export function CorrectionForm({ benchId }: { benchId: string }) {
         </select>
       </label>
       <label className="form-control my-3 block">
-        <span className="label pb-1 text-sm font-semibold">Kurzer Hinweis <span className="font-normal opacity-60">(optional)</span></span>
-        <textarea name="note" maxLength={160} className="textarea textarea-bordered min-h-20 w-full" placeholder="Zum Beispiel: Rückenlehne fehlt" />
+        <span className="label pb-1 text-sm font-bold">Was hast du gesehen? <span className="font-normal opacity-50">(freiwillig)</span></span>
+        <textarea name="note" maxLength={160} className="textarea story-card min-h-20 w-full" placeholder="Zum Beispiel: Die Rückenlehne fehlt" />
       </label>
       <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       <SubmitButton label="Hinweis veröffentlichen" />

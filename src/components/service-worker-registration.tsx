@@ -19,5 +19,5 @@ export function ServiceWorkerRegistration() {
     }
   }, []);
   if (!updateReady) return null;
-  return <div role="status" className="safe-bottom fixed inset-x-3 bottom-0 z-[60] mx-auto max-w-sm"><div className="alert border border-base-300 bg-base-100 shadow-2xl"><RefreshCw size={19} /><span className="text-sm">Eine neue Benchly-Version ist bereit.</span><button className="btn btn-primary btn-sm min-h-11" onClick={() => window.location.reload()}>Aktualisieren</button><button aria-label="Update-Hinweis schliessen" className="btn btn-circle btn-ghost btn-sm" onClick={() => setUpdateReady(false)}><X size={16} /></button></div></div>;
+  return <div role="status" className="safe-bottom fixed inset-x-3 bottom-0 z-[60] mx-auto max-w-sm"><div className="storybook-panel flex items-center gap-2 rounded-[1.5rem] p-3"><RefreshCw size={19} className="text-primary" /><span className="flex-1 text-sm font-semibold">Eine frischere Karte ist bereit.</span><button className="btn btn-primary btn-sm min-h-11 rounded-2xl" onClick={() => window.location.reload()}>Neu laden</button><button aria-label="Update-Hinweis schliessen" className="btn btn-circle btn-ghost btn-sm" onClick={() => setUpdateReady(false)}><X size={16} /></button></div></div>;
 }

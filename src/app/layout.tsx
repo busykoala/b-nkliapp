@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
 };
 
-export const viewport: Viewport = { themeColor: "#2f6b4f", viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#f6ecd5", viewportFit: "cover" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

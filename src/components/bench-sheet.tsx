@@ -25,17 +25,17 @@ export function BenchSheet({ bench, loading, onClose }: { bench: BenchDetail | n
     else { await navigator.clipboard.writeText(url); window.alert("Link kopiert."); }
   };
   return (
-    <aside aria-label="Bankdetails" className="desktop-sheet sheet-shadow fixed inset-x-0 bottom-0 z-40 h-[calc(100dvh-5rem)] rounded-t-[1.75rem] bg-base-100 transition-transform duration-300" style={{ transform: translate }}>
-      <div className="sticky top-0 z-10 rounded-t-[1.75rem] bg-base-100 px-4 pb-2 pt-2" onTouchStart={(e) => { touchStart.current = e.touches[0].clientY; }} onTouchEnd={(e) => finishDrag(e.changedTouches[0].clientY)}>
-        <button aria-label="Detailhöhe ändern" className="mx-auto block h-6 w-full" onClick={() => setSnap(snap === "full" ? "half" : "full")}><span className="mx-auto block h-1.5 w-11 rounded-full bg-base-300" /></button>
+    <aside aria-label="Bankdetails" className="desktop-sheet storybook-sheet sheet-shadow fixed inset-x-0 bottom-0 z-40 h-[calc(100dvh-4.5rem)] rounded-t-[2rem] transition-transform duration-300" style={{ transform: translate }}>
+      <div className="sticky top-0 z-20 rounded-t-[2rem] bg-[#fbf4e3]/92 px-4 pb-1 pt-2 backdrop-blur-md" onTouchStart={(e) => { touchStart.current = e.touches[0].clientY; }} onTouchEnd={(e) => finishDrag(e.changedTouches[0].clientY)}>
+        <button aria-label="Detailhöhe ändern" className="mx-auto block h-6 w-full" onClick={() => setSnap(snap === "full" ? "half" : "full")}><span className="mx-auto block h-1 w-12 rounded-full bg-primary/25" /></button>
         <div className="flex items-center justify-end gap-1">
           {bench && <button aria-label="Bank teilen" className="btn btn-circle btn-ghost btn-sm" onClick={share}><Share2 size={18} /></button>}
           <button aria-label="Details einklappen" className="btn btn-circle btn-ghost btn-sm" onClick={() => setSnap("peek")}><ChevronDown size={19} /></button>
           <button aria-label="Bank schliessen" className="btn btn-circle btn-ghost btn-sm" onClick={onClose}><X size={19} /></button>
         </div>
       </div>
-      <div className="h-[calc(100%-4.25rem)] overflow-y-auto px-4 safe-bottom">
-        {loading && <div className="flex h-48 items-center justify-center"><span className="loading loading-spinner loading-lg text-primary" /><span className="sr-only">Bank wird geladen</span></div>}
+      <div className="relative z-10 h-[calc(100%-4rem)] overflow-y-auto px-3.5 safe-bottom sm:px-5">
+        {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">Der Platz wird erkundet</span><span className="sr-only">Bank wird geladen</span></div>}
         {!loading && bench && <BenchDetailContent bench={bench} />}
       </div>
     </aside>

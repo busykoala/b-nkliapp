@@ -56,14 +56,14 @@ export function InstallPrompt() {
 
   return (
     <aside aria-label="Benchly installieren" className="safe-bottom fixed inset-x-3 bottom-0 z-50 mx-auto max-w-sm">
-      <div className="rounded-box border border-base-300 bg-base-100/98 p-2.5 shadow-2xl backdrop-blur">
+      <div className="storybook-panel rounded-[1.5rem] p-2.5">
         <div className="flex items-center gap-2">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-content"><Download size={19} /></div>
-          <div className="min-w-0 flex-1"><div className="font-bold leading-tight">Benchly installieren</div><p className="truncate text-xs opacity-60">Schneller zur nächsten Bank</p></div>
-          {!instructions && <button className="btn btn-primary btn-sm min-h-11" onClick={install}>{ios ? <Share size={17} /> : <Download size={17} />} Installieren</button>}
+          <div className="story-icon bg-primary text-primary-content"><Download size={19} /></div>
+          <div className="min-w-0 flex-1"><div className="font-bold leading-tight">Benchly mitnehmen</div><p className="truncate text-xs opacity-55">Schneller zum nächsten Lieblingsplatz</p></div>
+          {!instructions && <button className="btn btn-primary btn-sm min-h-11 rounded-2xl" onClick={install}>{ios ? <Share size={17} /> : <Download size={17} />} Installieren</button>}
           <button aria-label="Installationshinweis schliessen" className="btn btn-circle btn-ghost btn-sm" onClick={close}><X size={17} /></button>
         </div>
-        {instructions && <p className="mt-2 flex items-center gap-2 rounded-xl bg-base-200 p-2.5 text-sm"><Share size={18} className="shrink-0 text-primary" /> In Safari: „Teilen“ → „Zum Home-Bildschirm“.</p>}
+        {instructions && <p className="mt-2 flex items-center gap-2 rounded-xl bg-base-200/70 p-2.5 text-sm"><Share size={18} className="shrink-0 text-primary" /> In Safari: „Teilen“ → „Zum Home-Bildschirm“.</p>}
       </div>
     </aside>
   );
