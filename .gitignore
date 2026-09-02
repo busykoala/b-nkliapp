@@ -10,3 +10,7 @@ data/*.sqlite*
 data/tmp
 public/sw.js.map
 *.log
+*.tsbuildinfo
+__pycache__/
+*.pyc
+data/.benchly-worker.lock

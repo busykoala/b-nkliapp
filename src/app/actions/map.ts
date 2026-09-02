@@ -5,8 +5,10 @@ import { displayMaterial, yesNoUnknown } from "@/lib/bench";
 import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
 import { calculateSunState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
-import type { BenchDetail, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
+import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { z } from "zod";
+
+const aiLabelsEnabled = process.env.BENCHLY_AI_LABELS_ENABLED === "true";
 
 const boundsSchema = z.object({
   west: z.number().min(-180).max(180),
@@ -70,8 +72,11 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
     }
   }
   if (filters?.environment) {
-    clauses.push("e.in_forest = ?");
-    parameters.push(filters.environment === "forest" ? 1 : 0);
+    if (filters.environment === "forest") {
+      clauses.push(aiLabelsEnabled ? "(e.in_forest = 1 OR (lm.confidence='high' AND lm.land_context='forest' AND lm.land_context_probability>=0.9))" : "e.in_forest = 1");
+    } else {
+      clauses.push(aiLabelsEnabled ? "(e.land_context = 'open' OR (lm.confidence='high' AND lm.land_context='open' AND lm.land_context_probability>=0.85))" : "e.land_context = 'open'");
+    }
   }
   if (filters?.material) {
     clauses.push("lower(b.material) = lower(?)");
@@ -83,12 +88,17 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
   }
   if (filters?.viewType) {
     if (filters.viewType === "lake") {
-      clauses.push("(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ?)");
+      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.lake_view_probability>=0.85))" : "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ?)");
       parameters.push("%Seeblick%", "%Wasserblick%");
+    } else if (filters.viewType === "mountain") {
+      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.mountain_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
+      parameters.push("%Bergblick%");
+    } else if (filters.viewType === "open") {
+      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.open_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
+      parameters.push("%Weitsicht%");
     } else {
-      const label = { mountain: "%Bergblick%", open: "%Weitsicht%", limited: "%Eingeschränkte Aussicht%" }[filters.viewType];
-      clauses.push("coalesce(e.view_labels, '') LIKE ?");
-      parameters.push(label);
+      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.limited_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
+      parameters.push("%Eingeschränkte Aussicht%");
     }
   }
   return clauses.join(" AND ");
@@ -109,6 +119,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
       FROM bench_spatial_index s
       JOIN benches b ON b.row_id = s.row_id
       LEFT JOIN bench_enrichments e ON e.bench_row_id = b.row_id
+      LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id = b.row_id
       LEFT JOIN (
         SELECT bench_row_id, avg(overall) AS rating_average FROM ratings WHERE visible = 1 GROUP BY bench_row_id
       ) ra ON ra.bench_row_id = b.row_id
@@ -133,6 +144,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
     FROM bench_spatial_index s
     JOIN benches b ON b.row_id = s.row_id
     LEFT JOIN bench_enrichments e ON e.bench_row_id = b.row_id
+    LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id = b.row_id
     LEFT JOIN (
       SELECT bench_row_id, avg(overall) AS rating_average FROM ratings WHERE visible = 1 GROUP BY bench_row_id
     ) ra ON ra.bench_row_id = b.row_id
@@ -197,13 +209,21 @@ type DetailRow = Record<string, string | number | null>;
 export async function getBenchDetail(benchId: string): Promise<BenchDetail | null> {
   if (!/^osm-(node|way)-\d+$/.test(benchId)) return null;
   const row = sqlite.prepare(`
-    SELECT b.*, e.*, 
+    SELECT b.*, e.*,
+      lm.land_context likely_land_context,lm.land_context_probability likely_land_probability,
+      lm.canopy_context likely_canopy_context,lm.canopy_probability likely_canopy_probability,
+      lm.lake_view_probability likely_lake_view_probability,lm.mountain_view_probability likely_mountain_view_probability,
+      lm.open_view_probability likely_open_view_probability,lm.limited_view_probability likely_limited_view_probability,
+      lm.buildings_probability likely_buildings_probability,lm.road_rail_probability likely_road_rail_probability,
+      lm.confidence likely_confidence,lm.evidence_group_count likely_evidence_group_count,
+      lm.evidence_summary likely_evidence_summary,lm.model_version likely_model_version,lm.updated_at likely_updated_at,
       (SELECT avg(overall) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_average,
       (SELECT count(*) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_count,
       (SELECT avg(view_score) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_view,
       (SELECT avg(comfort) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_comfort,
       (SELECT avg(quiet) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_quiet
-    FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id WHERE b.id=? AND b.active=1
+    FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
+    LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id WHERE b.id=? AND b.active=1
   `).get(benchId) as DetailRow | undefined;
   if (!row) return null;
 
@@ -271,9 +291,9 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
         elevation: terrain.elevationMeters,
         elevationSource: terrain.source,
         computedAt,
-        inForest: contextModel.inForest ? 1 : 0,
-        canopy: contextModel.canopyPercent,
-        water: contextModel.distanceWaterMeters,
+        inForest: row.in_forest === null ? null : Number(row.in_forest),
+        canopy: row.canopy_percent === null ? null : Number(row.canopy_percent),
+        water: row.distance_water_meters === null ? null : Number(row.distance_water_meters),
         path: contextModel.distancePathMeters,
         horizon: JSON.stringify(contextModel.horizonProfile),
         terrainHorizon: JSON.stringify(terrain.horizonProfile),
@@ -338,6 +358,34 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   if (contextModel) explanation.push(...contextModel.viewExplanation);
   if (explanation.length === 0) explanation.push("Aus Gelände, Landbedeckung und Umgebung berechnet");
 
+  const likelyConfidence = String(row.likely_confidence ?? "low") as "high" | "medium" | "low";
+  const likelyEvidenceCount = Number(row.likely_evidence_group_count ?? 0);
+  const likelyUpdatedAt = String(row.likely_updated_at ?? "");
+  const likelyEvidence = parseArray<LikelyEnvironment["evidence"][number]>(row.likely_evidence_summary);
+  const directViewEvidenceCount = likelyEvidence.filter((item) => item.directView).length;
+  const likelyEnvironment = aiLabelsEnabled && row.likely_confidence ? {
+    confidence: likelyConfidence,
+    evidenceGroupCount: likelyEvidenceCount,
+    updatedAt: likelyUpdatedAt,
+    modelVersion: row.likely_model_version ? String(row.likely_model_version) : null,
+    traits: [
+      row.likely_land_context && row.likely_land_probability !== null ? { kind: "land" as const, label: landContextLabel(String(row.likely_land_context)), probability: Number(row.likely_land_probability) } : null,
+      row.likely_canopy_context && row.likely_canopy_probability !== null ? { kind: "canopy" as const, label: canopyContextLabel(String(row.likely_canopy_context)), probability: Number(row.likely_canopy_probability) } : null,
+      likelyTrait("lake", "Seeblick", row.likely_lake_view_probability),
+      likelyTrait("mountain", "Bergblick", row.likely_mountain_view_probability),
+      likelyTrait("open", "Weite Aussicht", row.likely_open_view_probability),
+      likelyTrait("limited", "Eingeschränkte Aussicht", row.likely_limited_view_probability),
+      likelyTrait("buildings", "Gebäude im Umfeld", row.likely_buildings_probability),
+      likelyTrait("roadRail", "Strasse oder Bahn im Umfeld", row.likely_road_rail_probability),
+    ].filter((trait): trait is NonNullable<typeof trait> => trait !== null && trait.probability >= .5)
+      .map((trait) => {
+        const isView = ["lake", "mountain", "open", "limited"].includes(trait.kind);
+        const evidenceCount = isView ? directViewEvidenceCount : likelyEvidenceCount;
+        return { ...trait, confidence: traitConfidence(trait.probability, evidenceCount), evidenceCount, updatedAt: likelyUpdatedAt };
+      }),
+    evidence: likelyEvidence,
+  } : null;
+
   const properties = [
     { label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: "OpenStreetMap" as const },
     { label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: "OpenStreetMap" as const },
@@ -364,21 +412,47 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     sunMinutesWinter,
     sunMinutesSpring,
     sunMinutesAutumn,
-    inForest: contextModel?.inForest ?? (row.in_forest === null ? null : Boolean(row.in_forest)),
-    canopyPercent: contextModel?.canopyPercent ?? (row.canopy_percent === null ? null : Number(row.canopy_percent)),
-    distanceWaterMeters: contextModel?.distanceWaterMeters ?? (row.distance_water_meters === null ? null : Number(row.distance_water_meters)),
+    inForest: row.in_forest === null ? null : Boolean(row.in_forest),
+    landContext: row.land_context === null ? null : String(row.land_context) as BenchDetail["landContext"],
+    waterfront: row.waterfront === null ? null : Boolean(row.waterfront),
+    canopyContext: row.canopy_context === null ? null : String(row.canopy_context) as BenchDetail["canopyContext"],
+    canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent),
+    canopyShare3m: row.canopy_share_3m === null ? null : Number(row.canopy_share_3m),
+    canopyShare10m: row.canopy_share_10m === null ? null : Number(row.canopy_share_10m),
+    canopyShare25m: row.canopy_share_25m === null ? null : Number(row.canopy_share_25m),
+    vegetationMedianHeight: row.vegetation_median_height === null ? null : Number(row.vegetation_median_height),
+    vegetationMaxHeight: row.vegetation_max_height === null ? null : Number(row.vegetation_max_height),
+    distanceWaterMeters: row.distance_water_meters === null ? null : Number(row.distance_water_meters),
     distancePathMeters: contextModel?.distancePathMeters ?? (row.distance_path_meters === null ? null : Number(row.distance_path_meters)),
     directionDegrees,
     buildingObstructionPercent: contextModel?.buildingObstructionPercent ?? (row.building_obstruction_percent === null ? null : Number(row.building_obstruction_percent)),
     vegetationObstructionPercent: contextModel?.vegetationObstructionPercent ?? (row.vegetation_obstruction_percent === null ? null : Number(row.vegetation_obstruction_percent)),
     distanceBuildingMeters: contextModel?.distanceBuildingMeters ?? (row.distance_building_meters === null ? null : Number(row.distance_building_meters)),
     buildingCount100m: contextModel?.buildingCount100m ?? (row.building_count_100m === null ? null : Number(row.building_count_100m)),
-    viewLabels,
+    viewLabels, likelyEnvironment,
     ratingAverage: row.rating_average === null ? null : Number(Number(row.rating_average).toFixed(1)), ratingCount,
     ratingBreakdown: ratingCount ? { overall: Number(Number(row.rating_average).toFixed(1)), view: Number(Number(row.rating_view).toFixed(1)), comfort: Number(Number(row.rating_comfort).toFixed(1)), quiet: Number(Number(row.rating_quiet).toFixed(1)) } : null,
     recentRatings: recentRatings as BenchDetail["recentRatings"], corrections: corrections as BenchDetail["corrections"], media: media as BenchDetail["media"],
     sourceUpdatedAt: String(row.source_updated_at), pipelineVersion,
   };
+}
+
+function likelyTrait(kind: "lake" | "mountain" | "open" | "limited" | "buildings" | "roadRail", label: string, value: string | number | null) {
+  return value === null ? null : { kind, label, probability: Number(value) };
+}
+
+function traitConfidence(probability: number, evidenceCount: number): "high" | "medium" | "low" {
+  if (probability >= .85 && evidenceCount >= 2) return "high";
+  if (probability >= .65 && evidenceCount >= 1) return "medium";
+  return "low";
+}
+
+function landContextLabel(value: string) {
+  return ({ forest: "Wald", forest_edge: "Am Waldrand", park: "Park", open: "Offenes Gelände", urban: "Im Ort", mixed: "Abwechslungsreiche Umgebung", unknown: "Umgebung noch unklar" } as Record<string, string>)[value] ?? value;
+}
+
+function canopyContextLabel(value: string) {
+  return ({ none: "Freier Himmel", partial: "Unter einzelnen Bäumen", dense: "Dichtes Blätterdach", unknown: "Baumbestand noch unklar" } as Record<string, string>)[value] ?? value;
 }
 
 function getContextFeatures(latitude: number, longitude: number): ContextFeature[] {

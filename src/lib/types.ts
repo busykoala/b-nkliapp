@@ -1,4 +1,24 @@
 export type Confidence = "hoch" | "mittel" | "niedrig";
+export type LandContext = "forest" | "forest_edge" | "park" | "open" | "urban" | "mixed" | "unknown";
+export type CanopyContext = "none" | "partial" | "dense" | "unknown";
+
+export type LikelyTrait = {
+  kind: "land" | "canopy" | "lake" | "mountain" | "open" | "limited" | "buildings" | "roadRail";
+  label: string;
+  probability: number;
+  confidence: "high" | "medium" | "low";
+  evidenceCount: number;
+  updatedAt: string;
+};
+
+export type LikelyEnvironment = {
+  confidence: "high" | "medium" | "low";
+  evidenceGroupCount: number;
+  updatedAt: string;
+  modelVersion: string | null;
+  traits: LikelyTrait[];
+  evidence: Array<{ provider: string; captureGroup: string; distanceMeters: number; sourceUrl: string; license: string | null; capturedAt: string | null; directView: boolean }>;
+};
 
 export type Bounds = {
   west: number;
@@ -112,7 +132,15 @@ export type BenchDetail = {
   sunMinutesSpring: number | null;
   sunMinutesAutumn: number | null;
   inForest: boolean | null;
+  landContext: LandContext | null;
+  waterfront: boolean | null;
+  canopyContext: CanopyContext | null;
   canopyPercent: number | null;
+  canopyShare3m: number | null;
+  canopyShare10m: number | null;
+  canopyShare25m: number | null;
+  vegetationMedianHeight: number | null;
+  vegetationMaxHeight: number | null;
   distanceWaterMeters: number | null;
   distancePathMeters: number | null;
   directionDegrees: number | null;
@@ -121,6 +149,7 @@ export type BenchDetail = {
   distanceBuildingMeters: number | null;
   buildingCount100m: number | null;
   viewLabels: string[];
+  likelyEnvironment: LikelyEnvironment | null;
   ratingAverage: number | null;
   ratingCount: number;
   ratingBreakdown: { overall: number; view: number; comfort: number; quiet: number } | null;

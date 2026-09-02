@@ -2,3 +2,5 @@ osmium==4.1.1
 numpy==2.3.4
 rasterio==1.4.3
 astral==3.2
+shapely==2.1.2
+pyproj==3.7.2

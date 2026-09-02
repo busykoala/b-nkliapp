@@ -1,5 +1,19 @@
 # Benchly data pipeline
 
+## Reliable environment evidence
+
+Environment features retain exact geometry in LV95. Candidate selection still uses geographic
+R*Tree bounds, but containment and distance decisions use Shapely against the WKB geometry.
+The deterministic dimensions are independent: land context, waterfront and canopy can coexist,
+for example “Am See, unter einzelnen Bäumen.” Only exact forest-polygon containment sets
+`in_forest=true`.
+
+Open imagery is progressive and never blocks a page request. Discovery, temporary scene
+analysis, evidence reconciliation and auditing are separate bounded commands. Images are never
+persisted; `image_observations`, `bench_image_evidence` and `bench_likely_metadata` contain only
+provenance and structured predictions. Same-sequence frames count as one evidence group, and
+only high-confidence reconciled values participate in map filters.
+
 ## Current national inventory
 
 The local development database was built from the 1 September 2026 Geofabrik Switzerland extract. It contains 106,146 active `amenity=bench` objects. The temporary 544 MB PBF is deleted after a successful run. The SQLite database also contains the OSM context required for later enrichment:

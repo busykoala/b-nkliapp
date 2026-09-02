@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import {
-  Accessibility, Armchair, Building2, CircleCheck, Clock3, Compass, ExternalLink,
+  Accessibility, Armchair, Building2, Camera, CircleCheck, Clock3, Compass, ExternalLink,
   EyeOff, Flag, Hammer, Image as ImageIcon, Info, Leaf, MapPin, Moon, Mountain,
   MountainSnow, MoveHorizontal, Route, Sparkles, Star, Sun, Sunrise, Sunset,
   Telescope, TreePine, Trees, Umbrella, UsersRound, Waves,
@@ -78,7 +78,7 @@ function Details({ bench }: { bench: BenchDetail }) {
         <div className="grid grid-cols-3 gap-2">
           <InsightCard icon={bench.shadeCause === "nacht" ? <Moon /> : <Sun />} title={sunStatusShort(bench)} detail={sunDuration(bench.sunMinutesToday)} tone="sun" />
           <InsightCard icon={<MountainSnow />} title={bench.viewLabels[0] ?? "Aussicht"} detail={bench.viewScore ? `${bench.viewScore} von 5` : "wird erkundet"} />
-          <InsightCard icon={bench.inForest ? <Trees /> : <Leaf />} title={bench.inForest ? "Im Wald" : "Im Freien"} detail={bench.elevationMeters !== null ? `${Math.round(bench.elevationMeters)} m` : "Umgebung"} />
+          <InsightCard icon={bench.waterfront ? <Waves /> : bench.inForest ? <Trees /> : <Leaf />} title={environmentTitle(bench)} detail={canopyTitle(bench)} />
         </div>
       </section>
 
@@ -104,15 +104,28 @@ function Details({ bench }: { bench: BenchDetail }) {
 
       <section>
         <SectionHeading icon={<Leaf />} eyebrow="Rundherum" title="Die Umgebung" />
-        <div className="grid grid-cols-2 gap-2"><InfoCell icon={<Trees />} label="Landschaft" value={bench.inForest ? "Wald" : "Offenes Gelände"} /><InfoCell icon={<Waves />} label="Wasser" value={distance(bench.distanceWaterMeters)} /><InfoCell icon={<Route />} label="Nächster Weg" value={distance(bench.distancePathMeters)} /><InfoCell icon={<Building2 />} label="Nächstes Haus" value={distance(bench.distanceBuildingMeters)} /></div>
-        <details className="story-card mt-2 px-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-base-content/65">Mehr zur Umgebung</summary><div className="grid grid-cols-2 gap-2 pb-3"><InfoCell icon={<TreePine />} label="Kronendach" value={bench.canopyPercent === null ? "Noch unbekannt" : `etwa ${Math.round(bench.canopyPercent)}%`} /><InfoCell icon={<Building2 />} label="Häuser in 100 m" value={bench.buildingCount100m === null ? "Noch unbekannt" : String(bench.buildingCount100m)} /></div></details>
+        <div className="grid grid-cols-2 gap-2"><InfoCell icon={<Trees />} label="Landschaft" value={environmentTitle(bench)} /><InfoCell icon={<Waves />} label="Wasser" value={bench.waterfront ? "direkt am Wasser" : distance(bench.distanceWaterMeters)} /><InfoCell icon={<Route />} label="Nächster Weg" value={distance(bench.distancePathMeters)} /><InfoCell icon={<Building2 />} label="Nächstes Haus" value={distance(bench.distanceBuildingMeters)} /></div>
+        <details className="story-card mt-2 px-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-base-content/65">Mehr zur Umgebung</summary><div className="grid grid-cols-2 gap-2 pb-3"><InfoCell icon={<TreePine />} label="Über der Bank" value={canopyTitle(bench)} /><InfoCell icon={<Building2 />} label="Häuser in 100 m" value={bench.buildingCount100m === null ? "Noch unbekannt" : String(bench.buildingCount100m)} />{bench.canopyShare25m !== null && <InfoCell icon={<Trees />} label="Bäume in 25 m" value={`auf etwa ${Math.round(bench.canopyShare25m * 100)}% der Fläche`} />}{bench.vegetationMedianHeight !== null && <InfoCell icon={<TreePine />} label="Typische Baumhöhe" value={`rund ${Math.round(bench.vegetationMedianHeight)} m`} />}</div></details>
       </section>
+
+      {bench.likelyEnvironment && bench.likelyEnvironment.confidence !== "low" && <VisualEvidence environment={bench.likelyEnvironment} />}
 
       {(exact.length > 0 || nearby.length > 0) && <section><SectionHeading icon={<ImageIcon />} eyebrow="Eindrücke" title="Bilder aus der Umgebung" />{exact.length > 0 && <MediaGrid media={exact} />}{nearby.length > 0 && <><p className="mb-2 mt-4 text-xs leading-relaxed opacity-55">Diese Fotos entstanden in der Nähe und zeigen nicht zwingend die Bank.</p><MediaGrid media={nearby} /></>}</section>}
 
-      <details className="story-card px-3 text-xs leading-relaxed text-base-content/60"><summary className="min-h-12 cursor-pointer py-3 font-bold"><span className="inline-flex items-center gap-2"><Info size={15} /> Daten & Herkunft</span></summary><div className="space-y-1 pb-4"><p>Position: {bench.latitude.toFixed(5)}, {bench.longitude.toFixed(5)}</p><p>Bank: OpenStreetMap · Analyse: Benchly {bench.pipelineVersion ? `(${bench.pipelineVersion})` : ""}</p>{bench.elevationSource && <p>Höhe: {bench.elevationSource}</p>}<p>Quelldaten vom {new Date(bench.sourceUpdatedAt).toLocaleDateString("de-CH")}</p><a className="link mt-2 inline-flex min-h-11 items-center gap-1 font-bold" href={`https://www.openstreetmap.org/${bench.osmType}/${bench.osmId}`} target="_blank" rel="noreferrer">In OpenStreetMap ansehen <ExternalLink size={13} /></a></div></details>
+      <details className="story-card px-3 text-xs leading-relaxed text-base-content/60"><summary className="min-h-12 cursor-pointer py-3 font-bold"><span className="inline-flex items-center gap-2"><Info size={15} /> Daten & Herkunft</span></summary><div className="space-y-1 pb-4"><p>Position: {bench.latitude.toFixed(5)}, {bench.longitude.toFixed(5)}</p><p>Bank: OpenStreetMap · Analyse: Benchly {bench.pipelineVersion ? `(${bench.pipelineVersion})` : ""}</p>{bench.elevationSource && <p>Höhe: {bench.elevationSource}</p>}<p>Quelldaten vom {new Date(bench.sourceUpdatedAt).toLocaleDateString("de-CH")}</p>{bench.likelyEnvironment?.confidence === "low" && <p>Es gibt erste Bildhinweise, sie sind aber noch zu unsicher für die Beschreibung oder Suche.</p>}<a className="link mt-2 inline-flex min-h-11 items-center gap-1 font-bold" href={`https://www.openstreetmap.org/${bench.osmType}/${bench.osmId}`} target="_blank" rel="noreferrer">In OpenStreetMap ansehen <ExternalLink size={13} /></a></div></details>
     </div>
   );
+}
+
+function VisualEvidence({ environment }: { environment: NonNullable<BenchDetail["likelyEnvironment"]> }) {
+  const traits = environment.traits.filter((trait) => trait.probability >= .65);
+  if (!traits.length) return null;
+  return <section className="visual-evidence-card p-4">
+    <SectionHeading icon={<Camera />} eyebrow="Aus offenen Aufnahmen" title="Was Bilder aus der Nähe erzählen" />
+    <p className="mb-3 text-sm leading-relaxed text-base-content/65">{environment.evidenceGroupCount === 1 ? "Eine Aufnahme" : "Mehrere Aufnahmen"} aus der Umgebung {environment.evidenceGroupCount === 1 ? "deutet" : "deuten"} auf Folgendes hin. Sie {environment.evidenceGroupCount === 1 ? "zeigt" : "zeigen"} nicht zwingend die Bank selbst.</p>
+    <div className="flex flex-wrap gap-2">{traits.map((trait) => <span className="story-pill" key={trait.kind}>{viewIcon(trait.label)}Wahrscheinlich: {trait.label}</span>)}</div>
+    <details className="technical-note mt-4 pt-1"><summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-base-content/65">Wie sicher ist diese Einschätzung?</summary><div className="space-y-2 pb-2 text-xs leading-relaxed text-base-content/60"><p>Verlässlichkeit: <strong>{environment.confidence === "high" ? "hoch" : "mittel"}</strong> · {environment.evidenceGroupCount} unabhängige {environment.evidenceGroupCount === 1 ? "Aufnahmegruppe" : "Aufnahmegruppen"}.</p>{environment.evidence.map((item) => <p key={`${item.provider}-${item.captureGroup}`}><a href={item.sourceUrl} target="_blank" rel="noreferrer" className="link inline-flex min-h-11 items-center gap-1 font-bold">{item.provider} · {item.distanceMeters} m <ExternalLink size={12} /></a>{item.license && <> · {item.license}</>}</p>)}<p>Aktualisiert am {new Date(environment.updatedAt).toLocaleDateString("de-CH")}. Modell: {environment.modelVersion ?? "Benchly Vision"}.</p></div></details>
+  </section>;
 }
 
 function SectionHeading({ icon, eyebrow, title }: { icon: React.ReactNode; eyebrow: string; title: string }) { return <div className="mb-3 flex items-center gap-3"><span className="story-icon [&>svg]:h-5 [&>svg]:w-5">{icon}</span><div><div className="story-eyebrow">{eyebrow}</div><h3 className="text-lg font-extrabold leading-tight tracking-[-0.025em]">{title}</h3></div></div>; }
@@ -136,6 +149,13 @@ function distance(value: number | null) { if (value === null) return "Noch unbek
 function sunDuration(value: number | null) { if (value === null) return "noch offen"; const hours = Math.floor(value / 60); const minutes = value % 60; if (!hours) return `${minutes} min`; return `${hours} h${minutes ? ` ${minutes} min` : ""}`; }
 function shadeLabel(value: BenchDetail["shadeCause"]) { return ({ frei: "der freien Lage", nacht: "der Nacht", überdacht: "der Überdachung", gebäude: "einem Gebäude", vegetation: "Bäumen oder Bewuchs", gelände: "dem Gelände", unbekannt: "der Umgebung" })[value]; }
 function percent(value: number | null) { return value === null ? "noch unbekannt" : `${Math.round(value)}% des Horizonts`; }
+function environmentTitle(bench: BenchDetail) {
+  if (bench.waterfront) return "Am Wasser";
+  return ({ forest: "Im Wald", forest_edge: "Am Waldrand", park: "Im Park", open: "Offenes Gelände", urban: "Im Ort", mixed: "Abwechslungsreich", unknown: "Umgebung offen" } as Record<string, string>)[bench.landContext ?? "unknown"];
+}
+function canopyTitle(bench: BenchDetail) {
+  return ({ none: "Freier Himmel", partial: "Unter einzelnen Bäumen", dense: "Unter dichtem Blätterdach", unknown: "Baumbestand wird geprüft" } as Record<string, string>)[bench.canopyContext ?? "unknown"];
+}
 
 /* External Commons hosts are intentionally rendered directly so thumbnails are not rehosted or proxied. */
 // eslint-disable-next-line @next/next/no-img-element

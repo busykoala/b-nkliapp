@@ -11,6 +11,8 @@ export type ContextFeature = {
   max_longitude: number;
   height_meters: number | null;
   subtype: string | null;
+  /** Set only by an exact projected-geometry test; bounding-box proximity is insufficient. */
+  containsBench?: boolean;
 };
 
 export type ContextModel = {
@@ -119,9 +121,8 @@ export function buildContextModel(latitude: number, longitude: number, direction
   const distanceWaterMeters = nearest(waters, latitude, longitude);
   const distanceBuildingMeters = nearest(buildings, latitude, longitude);
   const distancePathMeters = nearest(paths, latitude, longitude);
-  const distanceForestMeters = nearest(forests, latitude, longitude);
   const distanceRoadMeters = nearest(roads, latitude, longitude);
-  const inForest = distanceForestMeters !== null && distanceForestMeters <= 15;
+  const inForest = forests.some((feature) => feature.containsBench === true);
   if (inForest) {
     for (let index = 0; index < 72; index += 1) {
       if (horizonProfile[index] < 8) {

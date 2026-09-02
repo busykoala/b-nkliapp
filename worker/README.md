@@ -2,6 +2,10 @@
 
 The worker is deliberately separate from the web image. It downloads or reads a Geofabrik Switzerland PBF, imports every `amenity=bench` plus spatial building/tree/water/forest/path context, optionally computes terrain/surface evidence, and optionally stores nearby Wikimedia Commons metadata. Its only durable output is the same SQLite file used by the app.
 
+Forest, water and building decisions use exact LV95 WKB geometry. R*Tree bounds only select
+candidates. A surface-height peak is measured across 3 m, 10 m and 25 m neighborhoods and
+classified as canopy; it never proves that a bench is inside a forest.
+
 Run a small local pilot after starting the app once (which creates the schema):
 
 ```bash
@@ -34,6 +38,11 @@ python3 worker/benchly_worker.py enrich-batch --database /data/benchly.sqlite \
 python3 worker/benchly_worker.py enrich-profile-batch --database /data/benchly.sqlite \
   --limit 1000 --requests-per-second 1 --max-runtime-minutes 45
 python3 worker/benchly_worker.py refresh-commons --database /data/benchly.sqlite --limit 500
+python3 worker/benchly_worker.py import-official-context --database /data/benchly.sqlite
+python3 worker/benchly_worker.py discover-open-images --database /data/benchly.sqlite --max-cells 500
+python3 worker/benchly_worker.py analyze-scenes --database /data/benchly.sqlite --limit 300
+python3 worker/benchly_worker.py reconcile-environment --database /data/benchly.sqlite --limit 5000
+python3 worker/benchly_worker.py audit-environment --database /data/benchly.sqlite
 ```
 
 `enrich-batch` chooses the next stale geographic cell, requests only intersecting STAC
@@ -48,5 +57,26 @@ individual trees and forest in the first 350 m, then caches elevation, sun windo
 and the complete view score. The request rate and runtime are deliberately capped.
 
 Enrichment is resumable and skips rows already produced by the current pipeline version. Use `--recompute` only after the terrain/surface inputs change. See `docs/data-pipeline.md` for national counts, the staged update strategy and limitations.
+
+`import-official-context` follows the official swissTLM3D STAC collection and only downloads
+the GeoPackage archive when its version changes. It streams selected layers through GDAL and
+deletes the archive when the temporary work directory closes.
+
+The visual pipeline searches Panoramax, Commons and KartaView per spatial cell. A centered
+SWISSIMAGE crop is used only when a cell has no ground-level candidates. At most four diverse
+frames from one capture group are downloaded into memory, analyzed through the internal
+OpenAI-compatible inference service, and immediately released. No image is written to disk,
+SQLite, `media`, or a container layer. Only source/license metadata, an image hash and structured
+probabilities remain. Only a camera heading and a compatible recorded bench direction can
+produce a bench-view claim; other images may describe only the surroundings.
+
+Before enabling public AI labels, run the pinned models against a labelled 100-location JSONL
+set. Each line contains `images` (up to four open image URLs) and `expected` booleans for
+`forest`, `lake_view`, `mountain_view`, `open_view` and `limited_view`:
+
+```bash
+python3 worker/benchly_worker.py benchmark-vision --dataset evaluation.jsonl \
+  --models benchly-vision general
+```
 
 The production worker container uses `/data/benchly.sqlite`; mount the same single-writer PVC as the web container and avoid overlapping refresh jobs.

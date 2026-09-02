@@ -42,6 +42,24 @@ describe("near-field context model", () => {
     expect(model.viewLabels).not.toContain("Seeblick");
   });
 
+  it("does not turn a forest bounding-box overlap into forest containment", () => {
+    const model = buildContextModel(46.6622, 7.8092, null, [feature({
+      kind: "forest",
+      center_latitude: 46.663,
+      center_longitude: 7.81,
+      min_latitude: 46.661,
+      max_latitude: 46.665,
+      min_longitude: 7.808,
+      max_longitude: 7.813,
+    })]);
+    expect(model.inForest).toBe(false);
+  });
+
+  it("accepts forest only after an exact geometry containment test", () => {
+    const model = buildContextModel(47, 8, null, [feature({ kind: "forest", containsBench: true })]);
+    expect(model.inForest).toBe(true);
+  });
+
   it("produces a full view score once the terrain and far horizon are present", () => {
     const model = buildContextModel(47, 8, 180, [], {
       elevationMeters: 450,

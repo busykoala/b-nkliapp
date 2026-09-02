@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { blob, index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const benches = sqliteTable("benches", {
   rowId: integer("row_id").primaryKey({ autoIncrement: true }),
@@ -55,6 +55,15 @@ export const benchEnrichments = sqliteTable("bench_enrichments", {
   viewLabels: text("view_labels"),
   viewSectors: text("view_sectors"),
   contextSourceVersion: text("context_source_version"),
+  landContext: text("land_context"),
+  waterfront: integer("waterfront", { mode: "boolean" }),
+  canopyContext: text("canopy_context"),
+  canopyShare3m: real("canopy_share_3m"),
+  canopyShare10m: real("canopy_share_10m"),
+  canopyShare25m: real("canopy_share_25m"),
+  vegetationMedianHeight: real("vegetation_median_height"),
+  vegetationMaxHeight: real("vegetation_max_height"),
+  environmentComputedAt: text("environment_computed_at"),
   pipelineVersion: text("pipeline_version"),
   computedAt: text("computed_at"),
 });
@@ -83,3 +92,96 @@ export const corrections = sqliteTable("corrections", {
   visible: integer("visible", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
 });
+
+export const imageObservations = sqliteTable("image_observations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  provider: text("provider").notNull(),
+  providerImageId: text("provider_image_id").notNull(),
+  captureGroupId: text("capture_group_id").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  fetchUrl: text("fetch_url").notNull(),
+  latitude: real("latitude").notNull(),
+  longitude: real("longitude").notNull(),
+  heading: real("heading"),
+  capturedAt: text("captured_at"),
+  author: text("author"),
+  license: text("license"),
+  imageSha256: text("image_sha256"),
+  analysisStatus: text("analysis_status").notNull().default("pending"),
+  relevanceProbability: real("relevance_probability"),
+  predictions: text("predictions"),
+  modelVersion: text("model_version"),
+  promptVersion: text("prompt_version"),
+  analyzedAt: text("analyzed_at"),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  discoveredAt: text("discovered_at").notNull(),
+}, (t) => [
+  uniqueIndex("image_observations_identity").on(t.provider, t.providerImageId),
+  index("image_observations_status_idx").on(t.analysisStatus, t.discoveredAt),
+]);
+
+export const benchImageEvidence = sqliteTable("bench_image_evidence", {
+  benchRowId: integer("bench_row_id").notNull().references(() => benches.rowId, { onDelete: "cascade" }),
+  imageObservationId: integer("image_observation_id").notNull().references(() => imageObservations.id, { onDelete: "cascade" }),
+  distanceMeters: real("distance_meters").notNull(),
+  directViewEligible: integer("direct_view_eligible", { mode: "boolean" }).notNull().default(false),
+  evidenceWeight: real("evidence_weight").notNull().default(1),
+});
+
+export const benchLikelyMetadata = sqliteTable("bench_likely_metadata", {
+  benchRowId: integer("bench_row_id").primaryKey().references(() => benches.rowId, { onDelete: "cascade" }),
+  landContext: text("land_context"),
+  landContextProbability: real("land_context_probability"),
+  canopyContext: text("canopy_context"),
+  canopyProbability: real("canopy_probability"),
+  lakeViewProbability: real("lake_view_probability"),
+  mountainViewProbability: real("mountain_view_probability"),
+  openViewProbability: real("open_view_probability"),
+  limitedViewProbability: real("limited_view_probability"),
+  buildingsProbability: real("buildings_probability"),
+  roadRailProbability: real("road_rail_probability"),
+  confidence: text("confidence").notNull().default("low"),
+  evidenceGroupCount: integer("evidence_group_count").notNull().default(0),
+  evidenceSummary: text("evidence_summary").notNull().default("[]"),
+  modelVersion: text("model_version"),
+  reconcilerVersion: text("reconciler_version").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const environmentFeatures = sqliteTable("environment_features", {
+  rowId: integer("row_id").primaryKey({ autoIncrement: true }),
+  source: text("source").notNull(),
+  sourceId: text("source_id").notNull(),
+  kind: text("kind").notNull(),
+  subtype: text("subtype"),
+  centerLatitude: real("center_latitude").notNull(),
+  centerLongitude: real("center_longitude").notNull(),
+  minLatitude: real("min_latitude").notNull(),
+  maxLatitude: real("max_latitude").notNull(),
+  minLongitude: real("min_longitude").notNull(),
+  maxLongitude: real("max_longitude").notNull(),
+  heightMeters: real("height_meters"),
+  rawTags: text("raw_tags").notNull().default("{}"),
+  importedAt: text("imported_at").notNull(),
+  geometryWkb: blob("geometry_wkb", { mode: "buffer" }),
+  geometryCrs: integer("geometry_crs").notNull().default(2056),
+  sourceVersion: text("source_version"),
+  sourceUpdatedAt: text("source_updated_at"),
+}, (t) => [uniqueIndex("environment_source_identity").on(t.source, t.sourceId, t.kind)]);
+
+export const landCoverFeatures = sqliteTable("land_cover_features", {
+  rowId: integer("row_id").primaryKey({ autoIncrement: true }),
+  source: text("source").notNull(),
+  sourceId: text("source_id").notNull(),
+  class: text("class").notNull(),
+  geometryWkb: blob("geometry_wkb", { mode: "buffer" }).notNull(),
+  geometryCrs: integer("geometry_crs").notNull().default(2056),
+  minLatitude: real("min_latitude").notNull(),
+  maxLatitude: real("max_latitude").notNull(),
+  minLongitude: real("min_longitude").notNull(),
+  maxLongitude: real("max_longitude").notNull(),
+  sourceVersion: text("source_version").notNull(),
+  sourceUpdatedAt: text("source_updated_at"),
+  importedAt: text("imported_at").notNull(),
+}, (t) => [uniqueIndex("land_cover_source_identity").on(t.source, t.sourceId, t.class)]);

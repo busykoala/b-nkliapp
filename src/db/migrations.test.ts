@@ -16,4 +16,15 @@ describe("SQLite migrations and R*Tree", () => {
     expect((database.prepare("SELECT count(*) count FROM bench_spatial_index").get() as { count: number }).count).toBe(0);
     database.close();
   });
+
+  it("stores visual evidence metadata without any image blob column", () => {
+    const database = new Database(":memory:");
+    for (const migration of migrations) database.exec(migration.sql);
+    const columns = database.prepare("PRAGMA table_info(image_observations)").all() as Array<{ name: string }>;
+    expect(columns.map((column) => column.name)).toContain("image_sha256");
+    expect(columns.map((column) => column.name)).not.toContain("image_blob");
+    expect(columns.map((column) => column.name)).not.toContain("thumbnail");
+    expect(database.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='likely_land_context_idx'").get()).toBeTruthy();
+    database.close();
+  });
 });

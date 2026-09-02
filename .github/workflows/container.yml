@@ -27,12 +27,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: npm ci
+      - run: python -m pip install -r worker/requirements.txt
       - run: npm test
       - run: npm run lint
       - run: npm run build
       - name: Test worker
-        run: python3 -m unittest discover -s worker -p 'test_*.py'
+        run: PYTHONPATH=worker python -m unittest discover -s worker -p 'test_*.py'
 
   containers:
     needs: checks
@@ -148,6 +152,10 @@ jobs:
             exit 1
           }
           kubectl get deployment benchly --namespace benchly >/dev/null
+          deployment_repo="$RUNNER_TEMP/server-deployment"
+          git clone --depth 1 https://github.com/busykoala/server.git "$deployment_repo"
+          helm lint "$deployment_repo/deploy/inference"
+          helm lint "$deployment_repo/deploy/benchly"
           kubectl --namespace benchly create secret docker-registry benchly-ghcr \
             --docker-server=ghcr.io \
             --docker-username="$GITHUB_ACTOR" \
@@ -157,41 +165,20 @@ jobs:
             --patch '{"imagePullSecrets":[{"name":"benchly-ghcr"}]}'
           kubectl --namespace benchly annotate secret benchly-ghcr \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
-          kubectl --namespace benchly set image deployment/benchly "web=$WEB_IMAGE"
-          kubectl --namespace benchly set image cronjob/benchly-import-osm "worker=$WORKER_IMAGE"
-          kubectl --namespace benchly set image cronjob/benchly-enrich "worker=$WORKER_IMAGE"
-          kubectl --namespace benchly set image cronjob/benchly-commons "worker=$WORKER_IMAGE"
-          if kubectl --namespace benchly get cronjob benchly-horizon >/dev/null 2>&1; then
-            kubectl --namespace benchly set image cronjob/benchly-horizon "worker=$WORKER_IMAGE"
-          else
-            kubectl --namespace benchly get cronjob benchly-commons -o json \
-              | jq --arg image "$WORKER_IMAGE" '
-                  del(
-                    .metadata.creationTimestamp,
-                    .metadata.generation,
-                    .metadata.managedFields,
-                    .metadata.resourceVersion,
-                    .metadata.uid,
-                    .metadata.annotations."kubectl.kubernetes.io/last-applied-configuration",
-                    .status
-                  )
-                  | .metadata.name = "benchly-horizon"
-                  | .spec.schedule = "30 10 * * *"
-                  | .spec.jobTemplate.spec.activeDeadlineSeconds = 3300
-                  | .spec.jobTemplate.spec.template.spec.containers[0].image = $image
-                  | .spec.jobTemplate.spec.template.spec.containers[0].args = [
-                      "enrich-profile-batch",
-                      "--database", "/data/benchly.sqlite",
-                      "--limit", "1000",
-                      "--requests-per-second", "1",
-                      "--max-runtime-minutes", "45"
-                    ]
-                ' \
-              | kubectl apply -f -
-          fi
+          helm upgrade inference "$deployment_repo/deploy/inference" \
+            --namespace inference --atomic --wait --timeout 130m
+          inference_key="$(kubectl --namespace inference get secret inference-api -o jsonpath='{.data.api-key}')"
+          test -n "$inference_key"
+          kubectl --namespace benchly patch secret benchly-secrets --type merge \
+            --patch "$(jq -cn --arg key "$inference_key" '{data:{"inference-api-key":$key}}')"
+          helm upgrade benchly "$deployment_repo/deploy/benchly" \
+            --namespace benchly --atomic --wait --timeout 20m \
+            --set-string "images.web=$WEB_IMAGE" \
+            --set-string "images.worker=$WORKER_IMAGE"
           kubectl --namespace benchly annotate deployment/benchly \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
           kubectl --namespace benchly rollout status deployment/benchly --timeout=10m
+          helm test benchly --namespace benchly --logs --timeout 10m
           echo "Deployed $WEB_IMAGE and $WORKER_IMAGE" >> "$GITHUB_STEP_SUMMARY"
       - name: Remove temporary kubeconfig
         if: always()

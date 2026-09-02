@@ -245,4 +245,165 @@ export const migrations = [
         ON bench_enrichments(elevation_meters) WHERE elevation_meters IS NULL;
     `,
   },
+  {
+    id: "0005_exact_environment_and_visual_evidence",
+    sql: `
+      ALTER TABLE environment_features ADD COLUMN geometry_wkb BLOB;
+      ALTER TABLE environment_features ADD COLUMN geometry_crs INTEGER NOT NULL DEFAULT 2056;
+      ALTER TABLE environment_features ADD COLUMN source_version TEXT;
+      ALTER TABLE environment_features ADD COLUMN source_updated_at TEXT;
+
+      ALTER TABLE bench_enrichments ADD COLUMN land_context TEXT;
+      ALTER TABLE bench_enrichments ADD COLUMN waterfront INTEGER;
+      ALTER TABLE bench_enrichments ADD COLUMN canopy_context TEXT;
+      ALTER TABLE bench_enrichments ADD COLUMN canopy_share_3m REAL;
+      ALTER TABLE bench_enrichments ADD COLUMN canopy_share_10m REAL;
+      ALTER TABLE bench_enrichments ADD COLUMN canopy_share_25m REAL;
+      ALTER TABLE bench_enrichments ADD COLUMN vegetation_median_height REAL;
+      ALTER TABLE bench_enrichments ADD COLUMN vegetation_max_height REAL;
+      ALTER TABLE bench_enrichments ADD COLUMN environment_computed_at TEXT;
+
+      CREATE TABLE IF NOT EXISTS land_cover_features (
+        row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        class TEXT NOT NULL,
+        geometry_wkb BLOB NOT NULL,
+        geometry_crs INTEGER NOT NULL DEFAULT 2056,
+        min_latitude REAL NOT NULL,
+        max_latitude REAL NOT NULL,
+        min_longitude REAL NOT NULL,
+        max_longitude REAL NOT NULL,
+        source_version TEXT NOT NULL,
+        source_updated_at TEXT,
+        imported_at TEXT NOT NULL,
+        UNIQUE(source, source_id, class)
+      );
+      CREATE INDEX IF NOT EXISTS land_cover_class_idx ON land_cover_features(class);
+      CREATE VIRTUAL TABLE IF NOT EXISTS land_cover_spatial_index USING rtree(
+        row_id, min_longitude, max_longitude, min_latitude, max_latitude
+      );
+      CREATE TRIGGER IF NOT EXISTS land_cover_spatial_insert AFTER INSERT ON land_cover_features BEGIN
+        INSERT OR REPLACE INTO land_cover_spatial_index VALUES(
+          new.row_id,new.min_longitude,new.max_longitude,new.min_latitude,new.max_latitude
+        );
+      END;
+      CREATE TRIGGER IF NOT EXISTS land_cover_spatial_update
+        AFTER UPDATE OF min_longitude,max_longitude,min_latitude,max_latitude ON land_cover_features BEGIN
+        UPDATE land_cover_spatial_index SET min_longitude=new.min_longitude,max_longitude=new.max_longitude,
+          min_latitude=new.min_latitude,max_latitude=new.max_latitude WHERE row_id=new.row_id;
+      END;
+      CREATE TRIGGER IF NOT EXISTS land_cover_spatial_delete AFTER DELETE ON land_cover_features BEGIN
+        DELETE FROM land_cover_spatial_index WHERE row_id=old.row_id;
+      END;
+
+      CREATE TABLE IF NOT EXISTS official_context_sources (
+        source TEXT PRIMARY KEY,
+        version TEXT NOT NULL,
+        asset_url TEXT NOT NULL,
+        asset_checksum TEXT,
+        imported_at TEXT NOT NULL,
+        stats TEXT NOT NULL DEFAULT '{}'
+      );
+
+      CREATE TABLE IF NOT EXISTS image_discovery_cells (
+        provider TEXT NOT NULL,
+        cell_id TEXT NOT NULL,
+        min_latitude REAL NOT NULL,
+        max_latitude REAL NOT NULL,
+        min_longitude REAL NOT NULL,
+        max_longitude REAL NOT NULL,
+        status TEXT NOT NULL,
+        image_count INTEGER NOT NULL DEFAULT 0,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        discovered_at TEXT,
+        retry_after TEXT,
+        PRIMARY KEY(provider, cell_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS image_observations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider TEXT NOT NULL,
+        provider_image_id TEXT NOT NULL,
+        capture_group_id TEXT NOT NULL,
+        source_url TEXT NOT NULL,
+        fetch_url TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        heading REAL,
+        captured_at TEXT,
+        author TEXT,
+        license TEXT,
+        image_sha256 TEXT,
+        analysis_status TEXT NOT NULL DEFAULT 'pending',
+        relevance_probability REAL,
+        predictions TEXT,
+        model_version TEXT,
+        prompt_version TEXT,
+        analyzed_at TEXT,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        discovered_at TEXT NOT NULL,
+        UNIQUE(provider, provider_image_id)
+      );
+      CREATE INDEX IF NOT EXISTS image_observations_status_idx
+        ON image_observations(analysis_status, discovered_at);
+      CREATE INDEX IF NOT EXISTS image_observations_group_idx
+        ON image_observations(provider, capture_group_id);
+
+      CREATE TABLE IF NOT EXISTS bench_image_evidence (
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        image_observation_id INTEGER NOT NULL REFERENCES image_observations(id) ON DELETE CASCADE,
+        distance_meters REAL NOT NULL,
+        direct_view_eligible INTEGER NOT NULL DEFAULT 0,
+        evidence_weight REAL NOT NULL DEFAULT 1,
+        PRIMARY KEY(bench_row_id, image_observation_id)
+      );
+      CREATE INDEX IF NOT EXISTS bench_image_evidence_bench_idx
+        ON bench_image_evidence(bench_row_id, distance_meters);
+
+      CREATE TABLE IF NOT EXISTS bench_likely_metadata (
+        bench_row_id INTEGER PRIMARY KEY REFERENCES benches(row_id) ON DELETE CASCADE,
+        land_context TEXT,
+        land_context_probability REAL,
+        canopy_context TEXT,
+        canopy_probability REAL,
+        lake_view_probability REAL,
+        mountain_view_probability REAL,
+        open_view_probability REAL,
+        limited_view_probability REAL,
+        buildings_probability REAL,
+        road_rail_probability REAL,
+        confidence TEXT NOT NULL DEFAULT 'low',
+        evidence_group_count INTEGER NOT NULL DEFAULT 0,
+        evidence_summary TEXT NOT NULL DEFAULT '[]',
+        model_version TEXT,
+        reconciler_version TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS likely_land_context_idx
+        ON bench_likely_metadata(land_context, confidence);
+      CREATE INDEX IF NOT EXISTS likely_lake_view_idx
+        ON bench_likely_metadata(lake_view_probability, confidence);
+      CREATE INDEX IF NOT EXISTS likely_mountain_view_idx
+        ON bench_likely_metadata(mountain_view_probability, confidence);
+      CREATE INDEX IF NOT EXISTS likely_open_view_idx
+        ON bench_likely_metadata(open_view_probability, confidence);
+
+      CREATE INDEX IF NOT EXISTS enrichments_land_context_idx
+        ON bench_enrichments(land_context, waterfront, canopy_context);
+    `,
+  },
+  {
+    id: "0006_invalidate_legacy_forest_heuristic",
+    sql: `
+      UPDATE bench_enrichments
+      SET in_forest=NULL,
+          land_context='unknown',
+          distance_forest_meters=NULL,
+          environment_computed_at=NULL
+      WHERE environment_computed_at IS NULL;
+    `,
+  },
 ];
