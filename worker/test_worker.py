@@ -294,7 +294,8 @@ class WorkerUnitTests(unittest.TestCase):
               CREATE TABLE benches(row_id INTEGER PRIMARY KEY AUTOINCREMENT,id TEXT UNIQUE,osm_type TEXT,osm_id INTEGER,
                 latitude REAL,longitude REAL,backrest INTEGER,armrest INTEGER,covered INTEGER,wheelchair INTEGER,seats INTEGER,
                 material TEXT,direction_degrees REAL,operator TEXT,description TEXT,raw_tags TEXT,active INTEGER,
-                source_updated_at TEXT,imported_at TEXT,UNIQUE(osm_type,osm_id));
+                source_updated_at TEXT,imported_at TEXT,name TEXT,dedication TEXT,location_name TEXT,location_key TEXT,
+                location_postcode TEXT,location_canton TEXT,UNIQUE(osm_type,osm_id));
               CREATE TABLE bench_enrichments(bench_row_id INTEGER PRIMARY KEY,pipeline_version TEXT,environment_computed_at TEXT);
               CREATE TABLE media(id INTEGER PRIMARY KEY,bench_row_id INTEGER,relation TEXT,provider TEXT,external_id TEXT,
                 source_url TEXT,thumbnail_url TEXT,title TEXT,fetched_at TEXT,UNIQUE(provider,external_id,bench_row_id));
