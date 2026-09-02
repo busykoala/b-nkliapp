@@ -544,6 +544,9 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(actual, predictions)
         self.assertEqual(captured["response_format"]["type"], "json_schema")
         self.assertTrue(captured["response_format"]["json_schema"]["strict"])
+        prompt = captured["messages"][0]["content"][0]["text"]
+        self.assertIn("isolated canopy", prompt)
+        self.assertIn("are not forest", prompt)
 
     def test_evaluation_manifest_requires_labels_location_and_image_provenance(self):
         record = {

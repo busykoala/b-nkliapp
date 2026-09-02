@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
-PROMPT_VERSION = "benchly-scene-1.1"
+PROMPT_VERSION = "benchly-scene-1.2"
 RECONCILER_VERSION = "benchly-evidence-1.1"
 DEFAULT_MODEL = "benchly-vision"
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
@@ -403,6 +403,9 @@ def _download_image(url: str) -> tuple[bytes, str]:
 SCENE_PROMPT = """Analyze these nearby, openly licensed photographs only as environmental evidence.
 Do not identify or describe people, faces, licence plates, addresses or other personal information.
 Reject indoor, blurred, historical/artwork, close-object and otherwise irrelevant frames.
+Forest means predominantly continuous woodland with dense trees and understory. A park, waterfront,
+street, garden, orchard, row of trees or isolated overhead canopy is not forest. Never infer forest
+from one tree or canopy alone. Mark lake, mountain, open or limited view only when actually visible.
 Return JSON only with every key below. Probabilities are numbers from 0 to 1:
 relevance_probability, rejection_reason (none|blurred|indoor|close_object|historical|unrelated),
 forest_probability, park_probability, open_probability, urban_probability,
@@ -414,7 +417,9 @@ Judge the shared scene, not the identity of any person or object owner."""
 FRAME_PROMPT = """Analyze each numbered nearby, openly licensed photograph independently.
 Do not identify or describe people, faces, licence plates, addresses or other personal information.
 Mark indoor, blurred, historical/artwork, close-object and unrelated frames as irrelevant instead of
-letting them influence the other frames. Return one strict prediction for every input index."""
+letting them influence the other frames. Forest means predominantly continuous woodland with dense
+trees and understory; parks, waterfronts, streets, gardens, orchards, rows of trees and isolated canopy
+are not forest. Mark view traits only when actually visible. Return one strict prediction per index."""
 
 
 PROBABILITY_KEYS = (
