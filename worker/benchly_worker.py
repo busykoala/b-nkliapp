@@ -1410,7 +1410,10 @@ def run_reconcile_environment(args) -> None:
     try:
         bounds = tuple(args.bounds) if args.bounds else None
         stats = reconcile_deterministic_context(connection, args.limit, bounds)
-        stats.update({f"visual_{key}": value for key, value in reconcile_environment(connection, args.limit, bounds).items()})
+        stats.update({
+            f"visual_{key}": value
+            for key, value in reconcile_environment(connection, args.limit, bounds, args.max_total).items()
+        })
         finish_run(connection, run_id, "completed", stats)
         print(json.dumps(stats, indent=2))
     except Exception as error:
@@ -1748,6 +1751,7 @@ def build_parser() -> argparse.ArgumentParser:
     reconcile.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
     reconcile.add_argument("--limit", type=int, default=5000)
     reconcile.add_argument("--bounds", nargs=4, type=float, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
+    reconcile.add_argument("--max-total", type=int, default=1000, help="Keep the visual pilot capped until its quality gate passes")
     reconcile.set_defaults(function=run_reconcile_environment, uses_lock=True)
 
     audit = subparsers.add_parser("audit-environment", help="Report environment evidence coverage and conflicts")

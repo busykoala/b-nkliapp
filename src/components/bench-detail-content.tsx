@@ -155,10 +155,10 @@ function sunDuration(value: number | null) { if (value === null) return "noch of
 function friendlyViewLabel(label: string) { return ({ "Nahbereich weitgehend offen": "Viel freier Blick", "Nahbereich teilweise offen": "Etwas geschützter", "Nahbereich stark begrenzt": "Rundum gemütlich", "Keine besondere Aussicht": "Ruhiger Alltagsblick", "Eingeschränkte Aussicht": "Eher geschützt" } as Record<string, string>)[label] ?? label; }
 function environmentTitle(bench: BenchDetail) {
   if (bench.waterfront) return "Am Wasser";
-  return ({ forest: "Im Wald", forest_edge: "Am Waldrand", park: "Im Park", open: "Offenes Gelände", urban: "Im Ort", mixed: "Abwechslungsreich", unknown: "Umgebung offen" } as Record<string, string>)[bench.landContext ?? "unknown"];
+  return ({ forest: "Im Wald", forest_edge: "Am Waldrand", park: "Im Park", open: "Offenes Gelände", urban: "Im Ort", mixed: "Abwechslungsreich", unknown: "Wird erkundet" } as Record<string, string>)[bench.landContext ?? "unknown"];
 }
 function canopyTitle(bench: BenchDetail) {
-  return ({ none: "Freier Himmel", partial: "Unter einzelnen Bäumen", dense: "Unter dichtem Blätterdach", unknown: "Baumbestand wird geprüft" } as Record<string, string>)[bench.canopyContext ?? "unknown"];
+  return ({ none: "Freier Himmel", partial: "Unter einzelnen Bäumen", dense: "Unter dichtem Blätterdach", unknown: "Noch offen" } as Record<string, string>)[bench.canopyContext ?? "unknown"];
 }
 function environmentShort(bench: BenchDetail) {
   if (bench.waterfront) return "Am Wasser";

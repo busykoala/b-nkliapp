@@ -677,7 +677,8 @@ def _fuse_frame_predictions(items: Sequence[tuple[dict[str, object], float]]) ->
 
 
 def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
-                          bounds: Optional[tuple[float, float, float, float]] = None) -> dict[str, int]:
+                          bounds: Optional[tuple[float, float, float, float]] = None,
+                          max_total: Optional[int] = None) -> dict[str, int]:
     bounds_clause = ""
     parameters: list[object] = []
     if bounds:
@@ -685,7 +686,8 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
         parameters.extend((bounds[0], bounds[2], bounds[1], bounds[3]))
     parameters.append(limit)
     bench_rows = connection.execute(f"""
-        SELECT DISTINCT b.row_id,e.in_forest,e.land_context,e.waterfront,e.canopy_context
+        SELECT DISTINCT b.row_id,e.in_forest,e.land_context,e.waterfront,e.canopy_context,
+          CASE WHEN lm.bench_row_id IS NULL THEN 0 ELSE 1 END likely_exists
         FROM benches b JOIN bench_image_evidence bie ON bie.bench_row_id=b.row_id
         LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
         JOIN image_observations io ON io.id=bie.image_observation_id
@@ -696,7 +698,11 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
         ORDER BY b.row_id LIMIT ?
     """, parameters).fetchall()
     stats = {"reconciled": 0, "conflicts": 0}
+    existing_total = int(connection.execute("SELECT count(*) FROM bench_likely_metadata").fetchone()[0])
+    newly_created = 0
     for bench in bench_rows:
+        if max_total is not None and max_total > 0 and not bench["likely_exists"] and existing_total + newly_created >= max_total:
+            continue
         rows = connection.execute("""
             SELECT io.id,io.provider,io.capture_group_id,io.predictions,io.model_version,
               io.source_url,io.license,io.captured_at,io.relevance_probability,
@@ -775,6 +781,7 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
               probabilities["open_view_probability"], probabilities["limited_view_probability"],
               probabilities["buildings_probability"], probabilities["road_rail_probability"], confidence,
               len(groups), json.dumps(summary, separators=(",", ":")), ",".join(sorted(models)), RECONCILER_VERSION, now_iso()))
+        newly_created += int(not bench["likely_exists"])
         stats["reconciled"] += 1
         if stats["reconciled"] % 100 == 0:
             connection.commit()

@@ -7,7 +7,7 @@
   (dict "name" "official-context" "schedule" .Values.workers.officialContextSchedule "deadline" 29700 "args" (list "import-official-context" "--database" "/data/benchly.sqlite" "--first-sunday-only"))
   (dict "name" "image-discovery" "schedule" .Values.workers.imageDiscoverySchedule "deadline" 3000 "args" (list "discover-open-images" "--database" "/data/benchly.sqlite" "--max-cells" "50" "--requests-per-second" "1"))
   (dict "name" "scene-analysis" "schedule" .Values.workers.sceneAnalysisSchedule "deadline" 7500 "args" (list "analyze-scenes" "--database" "/data/benchly.sqlite" "--limit" "300" "--max-runtime-hours" "2" "--requests-per-second" "0.25"))
-  (dict "name" "environment-reconcile" "schedule" .Values.workers.reconciliationSchedule "deadline" 3600 "args" (list "reconcile-environment" "--database" "/data/benchly.sqlite" "--limit" "5000"))
+  (dict "name" "environment-reconcile" "schedule" .Values.workers.reconciliationSchedule "deadline" 3600 "args" (list "reconcile-environment" "--database" "/data/benchly.sqlite" "--limit" "5000" "--max-total" "1000"))
 }}
 apiVersion: batch/v1
 kind: CronJob

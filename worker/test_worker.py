@@ -373,6 +373,22 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(row["evidence_group_count"], 2)
         self.assertNotEqual(row["land_context"], "forest")
 
+    def test_visual_pilot_never_creates_more_than_its_total_cap(self):
+        database = self.database()
+        prediction = self.prediction()
+        for bench_id in (1, 2):
+            database.execute("INSERT INTO benches VALUES(?,?,?,?,180)", (bench_id, 1, 46.66 + bench_id / 1000, 7.8))
+            database.execute("INSERT INTO bench_enrichments VALUES(?,0,'open',0,'partial')", (bench_id,))
+            database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
+              latitude,longitude,license,analysis_status,relevance_probability,predictions,model_version,analyzed_at,discovered_at)
+              VALUES(?,'Panoramax',?,?, 'https://source','https://image',46.66,7.8,'CC-BY-SA','analyzed',.95,?,'benchly-vision','2026-09-02','2026-09-02')""",
+              (bench_id, str(bench_id), f"group-{bench_id}", json.dumps(prediction)))
+            database.execute("INSERT INTO bench_image_evidence VALUES(?,?,20,1,1)", (bench_id, bench_id))
+
+        stats = reconcile_environment(database, max_total=1)
+        self.assertEqual(stats["reconciled"], 1)
+        self.assertEqual(database.execute("SELECT count(*) FROM bench_likely_metadata").fetchone()[0], 1)
+
     def test_lake_railway_frames_fuse_once_and_irrelevant_closeup_is_ignored(self):
         database = self.database()
         database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,0)")

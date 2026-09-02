@@ -289,6 +289,14 @@ jobs:
             --requests-per-second 0.25 --bounds "${pilot_bounds[@]}"
           run_bounded_job benchly-environment-reconcile "benchly-daerligen-reconcile-$pilot_suffix" \
             reconcile-environment --database /data/benchly.sqlite --limit 100 --bounds "${pilot_bounds[@]}"
+          if ! kubectl --namespace benchly get job benchly-official-context-bootstrap >/dev/null 2>&1; then
+            bootstrap_args='["import-official-context","--database","/data/benchly.sqlite"]'
+            kubectl --namespace benchly create job --from=cronjob/benchly-official-context \
+              benchly-official-context-bootstrap --dry-run=client -o json \
+              | jq --argjson args "$bootstrap_args" '.spec.backoffLimit=1 | .spec.template.spec.containers[0].args=$args' \
+              | kubectl --namespace benchly apply -f -
+            echo 'Started the one-time exact swissTLM context import.' >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "Deployed $WEB_IMAGE and $WORKER_IMAGE" >> "$GITHUB_STEP_SUMMARY"
       - name: Remove temporary kubeconfig
         if: always()

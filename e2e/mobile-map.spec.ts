@@ -62,9 +62,9 @@ test("publishes an anonymous rating and correction immediately", async ({ page }
 
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
-  await expect(page.getByText("Licht & Schatten")).toBeVisible();
-  await expect(page.getByText("Schatten: Nacht", { exact: true })).toHaveCount(0);
-  await expect(page.getByText(/Wie wir das Licht einschätzen/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Gerade liegt die Bank|Der Tag ist zur Ruhe gekommen/ })).toBeVisible();
+  await expect(page.getByText("Durchs Jahr")).toBeVisible();
+  await expect(page.getByText("Augen auf")).toBeVisible();
   await expect(page.getByText(/Aussicht/).first()).toBeVisible();
 });
 
