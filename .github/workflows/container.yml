@@ -165,3 +165,6 @@ jobs:
             "benchly.io/revision=$GITHUB_SHA" --overwrite
           kubectl --namespace benchly rollout status deployment/benchly --timeout=10m
           echo "Deployed $WEB_IMAGE and $WORKER_IMAGE" >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove temporary kubeconfig
+        if: always()
+        run: rm -f "$RUNNER_TEMP/kubeconfig"
