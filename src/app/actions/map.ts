@@ -62,6 +62,15 @@ function parseArray<T>(value: unknown): T[] {
   catch { return []; }
 }
 
+function cacheEnrichment(write: () => void) {
+  try {
+    write();
+  } catch (error) {
+    // Enrichment is a cache: a concurrent worker must never make the bench itself unavailable.
+    console.warn("Bench enrichment could not be cached", error);
+  }
+}
+
 function mapViewType(labels: string[]): MapFilters["viewType"] | null {
   if (labels.includes("Bergblick")) return "mountain";
   if (labels.includes("Seeblick") || labels.includes("Wasserblick")) return "lake";
@@ -273,6 +282,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     obstructionTypes = contextModel.obstructionTypes;
     components = contextModel.viewComponents;
     if (terrain) {
+      const model = contextModel;
       hasTerrainModel = true;
       elevationMeters = terrain.elevationMeters;
       elevationSource = terrain.source;
@@ -283,7 +293,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       sunMinutesSpring = null;
       sunMinutesAutumn = null;
       const computedAt = new Date().toISOString();
-      sqlite.prepare(`
+      cacheEnrichment(() => sqlite.prepare(`
         INSERT INTO bench_enrichments (
           bench_row_id,elevation_meters,elevation_source,elevation_updated_at,in_forest,canopy_percent,
           distance_water_meters,distance_path_meters,horizon_profile,terrain_horizon_profile,obstruction_types,
@@ -312,18 +322,18 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
         inForest: row.in_forest === null ? null : Number(row.in_forest),
         canopy: row.canopy_percent === null ? null : Number(row.canopy_percent),
         water: row.distance_water_meters === null ? null : Number(row.distance_water_meters),
-        path: contextModel.distancePathMeters,
-        horizon: JSON.stringify(contextModel.horizonProfile),
+        path: model.distancePathMeters,
+        horizon: JSON.stringify(model.horizonProfile),
         terrainHorizon: JSON.stringify(terrain.horizonProfile),
-        obstructionTypes: JSON.stringify(contextModel.obstructionTypes),
-        buildingPercent: contextModel.buildingObstructionPercent,
-        vegetationPercent: contextModel.vegetationObstructionPercent,
-        distanceBuilding: contextModel.distanceBuildingMeters,
-        buildingCount: contextModel.buildingCount100m,
-        viewScore: contextModel.viewScore,
-        components: JSON.stringify(contextModel.viewComponents),
-        viewLabels: JSON.stringify(contextModel.viewLabels),
-      });
+        obstructionTypes: JSON.stringify(model.obstructionTypes),
+        buildingPercent: model.buildingObstructionPercent,
+        vegetationPercent: model.vegetationObstructionPercent,
+        distanceBuilding: model.distanceBuildingMeters,
+        buildingCount: model.buildingCount100m,
+        viewScore: model.viewScore,
+        components: JSON.stringify(model.viewComponents),
+        viewLabels: JSON.stringify(model.viewLabels),
+      }));
     }
   }
 
@@ -332,14 +342,14 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     if (elevation) {
       elevationMeters = elevation.meters;
       elevationSource = elevation.source;
-      sqlite.prepare(`
+      cacheEnrichment(() => sqlite.prepare(`
         INSERT INTO bench_enrichments (bench_row_id, elevation_meters, elevation_source, elevation_updated_at)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(bench_row_id) DO UPDATE SET
           elevation_meters=excluded.elevation_meters,
           elevation_source=excluded.elevation_source,
           elevation_updated_at=excluded.elevation_updated_at
-      `).run(row.row_id, elevationMeters, elevationSource, new Date().toISOString());
+      `).run(row.row_id, elevationMeters, elevationSource, new Date().toISOString()));
     }
   }
   const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent) };
@@ -353,10 +363,10 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     sunMinutesWinter = seasonal.winter;
     sunMinutesSpring = seasonal.spring;
     sunMinutesAutumn = seasonal.autumn;
-    sqlite.prepare(`
+    cacheEnrichment(() => sqlite.prepare(`
       UPDATE bench_enrichments SET sun_minutes_summer=?,sun_minutes_winter=?,sun_minutes_spring=?,sun_minutes_autumn=?
       WHERE bench_row_id=?
-    `).run(sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn, row.row_id);
+    `).run(sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn, row.row_id));
   }
   const times = getSunTimes(new Date(), latitude, longitude);
   const recentRatings = sqlite.prepare(`SELECT id, overall, view_score as view, comfort, quiet, note, created_at as createdAt FROM ratings WHERE bench_row_id=? AND visible=1 ORDER BY updated_at DESC LIMIT 5`).all(row.row_id);

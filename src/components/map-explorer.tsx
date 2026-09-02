@@ -76,6 +76,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const querySequence = useRef(0);
+  const detailSequence = useRef(0);
   const pendingPosition = useRef<UserPosition | null>(null);
   const filtersRef = useRef<MapFilters>({});
   const [features, setFeatures] = useState<MapFeature[]>([]);
@@ -84,6 +85,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bench, setBench] = useState<BenchDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -105,10 +107,23 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   }, []);
 
   const selectBench = useCallback(async (id: string) => {
-    setSelectedId(id); setDetailLoading(true); setBench(null);
-    try { setBench(await getBenchDetail(id)); }
-    catch { setMessage("Bankdetails konnten nicht geladen werden."); }
-    finally { setDetailLoading(false); }
+    const sequence = ++detailSequence.current;
+    setSelectedId(id); setDetailLoading(true); setDetailError(false); setBench(null);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const detail = await getBenchDetail(id);
+        if (!detail) throw new Error("Bench not found");
+        if (sequence === detailSequence.current) setBench(detail);
+        break;
+      } catch {
+        if (attempt === 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, 400));
+          continue;
+        }
+        if (sequence === detailSequence.current) setDetailError(true);
+      }
+    }
+    if (sequence === detailSequence.current) setDetailLoading(false);
   }, []);
 
   useEffect(() => {
@@ -227,7 +242,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center"><div className="storybook-panel grid h-14 w-14 place-items-center rounded-full"><span className="loading loading-ring text-primary" /></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
-      {selectedId && <BenchSheet bench={bench} loading={detailLoading} user={user} onClose={() => { setSelectedId(null); setBench(null); }} />}
+      {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} user={user} onClose={() => { detailSequence.current += 1; setSelectedId(null); setBench(null); setDetailError(false); }} />}
       <AddBenchDialog open={addOpen} coordinates={addCoordinates} onClose={() => setAddOpen(false)} />
       <footer className="pointer-events-none absolute bottom-1 left-1 z-10 hidden text-[10px] opacity-60 md:block">© swisstopo · © OpenStreetMap-Mitwirkende</footer>
     </main>

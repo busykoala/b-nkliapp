@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { BenchDetailContent } from "./bench-detail-content";
 import type { CurrentUser } from "@/lib/security";
 
 type Snap = "peek" | "half" | "full";
 
-export function BenchSheet({ bench, loading, onClose, user }: { bench: BenchDetail | null; loading: boolean; onClose: () => void; user: CurrentUser | null }) {
+export function BenchSheet({ bench, loading, error, onRetry, onClose, user }: { bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; user: CurrentUser | null }) {
   const [snap, setSnap] = useState<Snap>("half");
   const touchStart = useRef<number | null>(null);
   const translate = snap === "peek" ? "translateY(76%)" : snap === "half" ? "translateY(42%)" : "translateY(0)";
@@ -30,6 +30,11 @@ export function BenchSheet({ bench, loading, onClose, user }: { bench: BenchDeta
       <div className="relative z-10 h-[calc(100%-4rem)] overflow-y-auto px-3.5 safe-bottom sm:px-5">
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">Der Platz wird erkundet</span><span className="sr-only">Bank wird geladen</span></div>}
         {!loading && bench && <BenchDetailContent bench={bench} user={user} />}
+        {!loading && error && <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
+          <span className="text-5xl" aria-hidden="true">🍃</span>
+          <p className="max-w-64 text-lg font-semibold text-primary">Dieser Platz versteckt sich gerade.</p>
+          <button className="btn btn-ghost min-h-11 gap-2 rounded-full" onClick={onRetry}><RefreshCw size={18} />Noch einmal schauen</button>
+        </div>}
       </div>
     </aside>
   );
