@@ -239,6 +239,8 @@ def geopackage_layers(path: Path) -> list[str]:
         stripped = line.strip()
         if stripped and stripped[0].isdigit() and ": " in stripped:
             layers.append(stripped.split(": ", 1)[1].split(" (", 1)[0])
+        elif stripped.startswith("Layer: "):
+            layers.append(stripped.removeprefix("Layer: ").split(" (", 1)[0])
     return layers
 
 
