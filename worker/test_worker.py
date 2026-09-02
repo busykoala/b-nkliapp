@@ -49,6 +49,7 @@ from visual_pipeline import (
     discover_open_images,
     infer_scene,
     infer_scene_frames,
+    likely_provenance_issues,
     reconcile_environment,
     search_panoramax,
     validate_evaluation_dataset,
@@ -440,7 +441,7 @@ class VisualPipelineTests(unittest.TestCase):
         for failure in (False, True):
             database = self.database()
             database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
-              latitude,longitude,analysis_status,discovered_at) VALUES(1,'Panoramax','one','group','https://source','https://image',47,8,'pending','2026-09-02')""")
+              latitude,longitude,license,analysis_status,discovered_at) VALUES(1,'Panoramax','one','group','https://source','https://image',47,8,'CC-BY-SA','pending','2026-09-02')""")
             with TemporaryDirectory() as directory, patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
                  patch("visual_pipeline._download_image", return_value=(b"image-bytes", "image/jpeg")), \
                  patch("visual_pipeline.infer_scene_frames", side_effect=RuntimeError("model failed") if failure else None, return_value=[self.prediction()]):
@@ -457,8 +458,8 @@ class VisualPipelineTests(unittest.TestCase):
         ])
         for image_id, bench_id, group in ((1, 1, "daerligen"), (2, 2, "zurich")):
             database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
-              latitude,longitude,analysis_status,discovered_at)
-              VALUES(?,'Panoramax',?,?,?,'https://image',46.6622,7.8092,'pending','2026-09-02')""",
+              latitude,longitude,license,analysis_status,discovered_at)
+              VALUES(?,'Panoramax',?,?,?,'https://image',46.6622,7.8092,'CC-BY-SA','pending','2026-09-02')""",
               (image_id, str(image_id), group, "https://source"))
             database.execute("INSERT INTO bench_image_evidence VALUES(?,?,20,1,1)", (bench_id, image_id))
 
@@ -500,6 +501,19 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(likely["evidence_group_count"], 1)
         self.assertGreater(likely["lake_view_probability"], .85)
         self.assertNotEqual(likely["land_context"], "forest")
+
+    def test_likely_metadata_requires_complete_open_image_provenance(self):
+        database = self.database()
+        complete = [{
+            "provider": "Panoramax", "captureGroup": "group-1", "distanceMeters": 20,
+            "sourceUrl": "https://example.test/source", "license": "CC-BY-SA-4.0",
+        }]
+        database.execute("""INSERT INTO bench_likely_metadata
+          (bench_row_id,evidence_summary,model_version,reconciler_version,updated_at)
+          VALUES(1,?,'benchly-vision','benchly-evidence-1.1','2026-09-02')""", (json.dumps(complete),))
+        self.assertEqual(likely_provenance_issues(database), 0)
+        database.execute("UPDATE bench_likely_metadata SET evidence_summary=?", (json.dumps([{**complete[0], "license": None}]),))
+        self.assertEqual(likely_provenance_issues(database), 1)
 
     def test_frame_inference_uses_strict_schema_and_requires_every_index(self):
         predictions = [self.prediction(), self.prediction(open_probability=.7)]
@@ -607,6 +621,18 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(first["images"], 1)
         self.assertEqual(second["images"], 0)
         self.assertEqual(database.execute("SELECT count(*) FROM bench_image_evidence").fetchone()[0], 1)
+
+    def test_discovery_discards_images_without_reusable_license(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,47,8,180)")
+        unlicensed = DiscoveredImage(
+            "Fake", "image-1", "group-1", "https://source", "https://image", 47, 8,
+        )
+        with patch("visual_pipeline.PROVIDERS", {"Fake": lambda _bounds: [unlicensed]}), \
+             patch("visual_pipeline.time.sleep"):
+            stats = discover_open_images(database, max_cells=1, requests_per_second=1000)
+        self.assertEqual(stats["images"], 0)
+        self.assertEqual(database.execute("SELECT count(*) FROM image_observations").fetchone()[0], 0)
 
     def test_targeted_discovery_can_include_already_resolved_benches(self):
         database = self.database()

@@ -1433,6 +1433,7 @@ def run_audit_environment(args) -> None:
             or int(result["active_benches"]) < 100_000
             or int(result["raw_image_columns"]) != 0
             or int(result["image_files_on_data_volume"]) != 0
+            or int(result["likely_rows_without_provenance"]) != 0
         ):
             raise RuntimeError("production data audit failed")
     finally:

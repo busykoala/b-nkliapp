@@ -313,6 +313,10 @@ def discover_open_images(connection: sqlite3.Connection, max_cells: int = 500, c
                     images = [swissimage_at(row["latitude"], row["longitude"]) for row in ambiguous]
                 else:
                     images = search(expanded)
+                images = [
+                    image for image in images
+                    if image.license and image.source_url.startswith("https://") and image.fetch_url.startswith("https://")
+                ]
                 failures[provider] = 0
                 for image in images:
                     cursor = connection.execute("""
@@ -585,7 +589,9 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
     groups = connection.execute(f"""
         SELECT provider,capture_group_id,min(discovered_at) discovered_at
         FROM image_observations {target_join}
-        WHERE analysis_status IN ('pending','retry') AND attempts<3 {target_clause}
+        WHERE analysis_status IN ('pending','retry') AND attempts<3
+          AND coalesce(license,'')<>'' AND source_url LIKE 'https://%' AND fetch_url LIKE 'https://%'
+          {target_clause}
         GROUP BY provider,capture_group_id ORDER BY discovered_at LIMIT ?
     """, parameters).fetchall()
     stats = {"groups": 0, "images": 0, "failed": 0, "irrelevant": 0}
@@ -597,7 +603,9 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
         rows = connection.execute("""
             SELECT o.*,coalesce(min(e.distance_meters),999) nearest_bench
             FROM image_observations o LEFT JOIN bench_image_evidence e ON e.image_observation_id=o.id
-            WHERE o.provider=? AND o.capture_group_id=? GROUP BY o.id ORDER BY nearest_bench,o.id
+            WHERE o.provider=? AND o.capture_group_id=?
+              AND coalesce(o.license,'')<>'' AND o.source_url LIKE 'https://%' AND o.fetch_url LIKE 'https://%'
+            GROUP BY o.id ORDER BY nearest_bench,o.id
         """, (group["provider"], group["capture_group_id"])).fetchall()
         frames = _diverse_frames(rows)
         started = time.monotonic()
@@ -816,6 +824,8 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
       WHERE b.active=1 AND b.latitude BETWEEN 46.6618 AND 46.6629
         AND b.longitude BETWEEN 7.8085 AND 7.8100
     """).fetchone()
+    likely_total = scalar("SELECT count(*) FROM bench_likely_metadata")
+    provenance_issues = likely_provenance_issues(connection)
     return {
         "sqlite_quick_check": scalar("PRAGMA quick_check"),
         "active_benches": scalar("SELECT count(*) FROM benches WHERE active=1"),
@@ -824,18 +834,43 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
         "image_observations": scalar("SELECT count(*) FROM image_observations"),
         "analyzed_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status='analyzed'"),
         "irrelevant_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status='irrelevant'"),
-        "likely_metadata": scalar("SELECT count(*) FROM bench_likely_metadata"),
+        "likely_metadata": likely_total,
+        "pilot_remaining": max(0, 1000 - int(likely_total)),
         "high_confidence": scalar("SELECT count(*) FROM bench_likely_metadata WHERE confidence='high'"),
         "model_versions": model_versions,
         "pending_or_retry_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status IN ('pending','retry')"),
         "forest_conflicts": scalar("""SELECT count(*) FROM bench_likely_metadata lm JOIN bench_enrichments e USING(bench_row_id)
           WHERE lm.land_context='forest' AND e.land_context IN ('forest_edge','open','urban','park')"""),
-        "likely_rows_without_provenance": scalar("SELECT count(*) FROM bench_likely_metadata WHERE evidence_summary IS NULL OR evidence_summary='[]'"),
+        "likely_rows_without_provenance": provenance_issues,
         "raw_image_columns": scalar("""SELECT count(*) FROM pragma_table_info('image_observations')
           WHERE lower(name) LIKE '%blob%' OR lower(name) LIKE '%thumbnail%' OR lower(name) IN ('image','bytes','payload')"""),
         "image_files_on_data_volume": int(image_files_on_data_volume),
         "daerligen": dict(daerligen),
     }
+
+
+def likely_provenance_issues(connection: sqlite3.Connection) -> int:
+    issues = 0
+    for row in connection.execute("""
+      SELECT evidence_summary,model_version,reconciler_version,updated_at FROM bench_likely_metadata
+    """):
+        try:
+            evidence = json.loads(row["evidence_summary"] or "[]")
+        except (TypeError, json.JSONDecodeError):
+            evidence = None
+        valid = (
+            isinstance(evidence, list) and bool(evidence)
+            and bool(row["model_version"]) and bool(row["reconciler_version"]) and bool(row["updated_at"])
+        )
+        if valid:
+            valid = all(
+                isinstance(item, dict)
+                and all(item.get(key) for key in ("provider", "captureGroup", "sourceUrl", "license"))
+                and str(item["sourceUrl"]).startswith("https://")
+                for item in evidence
+            )
+        issues += int(not valid)
+    return issues
 
 
 def _binary_f1(expected: Sequence[bool], predicted: Sequence[bool]) -> float:
