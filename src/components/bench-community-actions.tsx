@@ -14,7 +14,8 @@ export function BenchCommunityActions({ bench, signedIn }: { bench: BenchDetail;
   return <div className="space-y-3">
     {bench.verificationStatus === "unverified" && <button disabled={pending} className="btn btn-primary min-h-12 w-full rounded-2xl" onClick={() => act(() => confirmBench(bench.id))}><CheckCircle2 size={19} /> Ja, dieses Bänkli gibt es</button>}
     <MetadataForm bench={bench} />
-    <button disabled={pending} className="btn btn-ghost min-h-11 w-full text-error" onClick={() => act(() => requestBenchRemoval(bench.id))}><Trash2 size={17} /> Bänkli ist nicht mehr da</button>
+    {bench.removalConfirmationCount > 0 && <div className="rounded-2xl bg-warning/15 p-3 text-sm"><strong>Ist es noch da?</strong><div className="mt-1 opacity-65">{bench.removalConfirmationCount}/{bench.verificationThreshold} Personen vermissen dieses Bänkli.</div></div>}
+    <button disabled={pending} className="btn btn-ghost min-h-11 w-full text-error" onClick={() => act(() => requestBenchRemoval(bench.id))}><Trash2 size={17} /> {bench.removalConfirmationCount ? "Fehlen bestätigen" : "Bänkli ist nicht mehr da"}</button>
   </div>;
 }
 

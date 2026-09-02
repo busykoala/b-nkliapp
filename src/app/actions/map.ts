@@ -5,6 +5,7 @@ import { displayMaterial, yesNoUnknown } from "@/lib/bench";
 import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
 import { parseWkbGeometry } from "@/lib/exact-geometry";
+import { normalizeLocationKey, searchGeoAdminLocations } from "@/lib/place-search";
 import { calculateSunState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { z } from "zod";
@@ -515,37 +516,18 @@ function getContextFeatures(latitude: number, longitude: number): ContextFeature
 
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   const clean = z.string().trim().min(2).max(80).parse(query);
-  const key = clean.normalize("NFKD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("de-CH");
+  const key = normalizeLocationKey(clean);
   const local = sqlite.prepare(`
     SELECT location_name,location_postcode,location_canton,avg(latitude) latitude,avg(longitude) longitude
-    FROM benches WHERE active=1 AND location_key LIKE ?
+    FROM benches WHERE active=1 AND (location_key LIKE ? OR lower(location_name) LIKE ?)
     GROUP BY location_key,location_postcode,location_canton ORDER BY count(*) DESC LIMIT 4
-  `).all(`${key}%`) as Array<{ location_name: string; location_postcode: string | null; location_canton: string | null; latitude: number; longitude: number }>;
+  `).all(`%${key}%`, `%${clean.toLocaleLowerCase("de-CH")}%`) as Array<{ location_name: string; location_postcode: string | null; location_canton: string | null; latitude: number; longitude: number }>;
   const localResults = local.map((place) => ({
     id: `local-${place.latitude}-${place.longitude}`,
     label: [place.location_postcode, place.location_name, place.location_canton].filter(Boolean).join(" "),
     latitude: place.latitude, longitude: place.longitude,
   }));
-  const url = new URL("https://api3.geo.admin.ch/rest/services/api/SearchServer");
-  url.searchParams.set("searchText", clean);
-  url.searchParams.set("type", "locations");
-  url.searchParams.set("origins", "zipcode,gg25,district");
-  url.searchParams.set("limit", "6");
-  url.searchParams.set("sr", "4326");
-  let data: { results?: Array<{ id?: string | number; attrs?: Record<string, string | number> }> } = {};
-  try {
-    const response = await fetch(url, { next: { revalidate: 86400 } });
-    if (!response.ok) return localResults;
-    data = await response.json();
-  } catch { return localResults; }
-  const remoteResults = (data.results ?? []).flatMap((result) => {
-    const attrs = result.attrs ?? {};
-    const latitude = Number(attrs.lat ?? attrs.y);
-    const longitude = Number(attrs.lon ?? attrs.x);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
-    const label = String(attrs.label ?? attrs.detail ?? clean).replace(/<[^>]*>/g, "");
-    return [{ id: String(result.id ?? `${latitude}-${longitude}`), label, latitude, longitude }];
-  });
+  const remoteResults = await searchGeoAdminLocations(clean);
   return [...localResults, ...remoteResults]
     .filter((item, index, all) => all.findIndex((candidate) => candidate.label.toLocaleLowerCase("de-CH") === item.label.toLocaleLowerCase("de-CH")) === index)
     .slice(0, 8);

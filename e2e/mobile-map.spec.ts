@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+async function registerUser(page: import("@playwright/test").Page, username: string) {
+  await page.goto("/");
+  await page.getByLabel("Anmelden").click();
+  await page.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
+  await page.getByLabel("Benutzername").fill(username);
+  await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
+  await page.getByRole("button", { name: "Konto erstellen" }).click();
+  await expect(page.getByLabel("Mein Profil")).toBeVisible();
+}
+
 test("opens the mobile map and a bench detail", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toBeVisible();
@@ -31,7 +41,7 @@ test("explains iOS Home Screen installation after location engagement", async ({
   await context.setGeolocation({ longitude: 8.5417, latitude: 47.3769 });
   await page.goto("/");
   await page.getByText("Schöne Plätze in meiner Nähe").click();
-  await expect(page.getByLabel("Benchly installieren")).toBeVisible();
+  await expect(page.getByLabel("Bänkli App installieren")).toBeVisible();
   await page.getByRole("button", { name: "Installieren" }).click();
   await expect(page.getByText(/Zum Home-Bildschirm/)).toBeVisible();
 });
@@ -43,7 +53,15 @@ test("location denial leaves the map usable", async ({ page, context }) => {
   await expect(page.getByLabel("Ort suchen")).toBeEnabled();
 });
 
-test("publishes an anonymous rating and correction immediately", async ({ page }) => {
+test("keeps browsing public but requires an account for contributions", async ({ page }) => {
+  await page.goto("/bank/osm-node-101");
+  await page.getByRole("tab", { name: /Stimmen/ }).click();
+  await expect(page.getByText("Zum Mitmachen kurz anmelden")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bewertung veröffentlichen" })).toHaveCount(0);
+});
+
+test("registers and writes a rating plus structured bench metadata", async ({ page, browserName }) => {
+  await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
   await page.getByRole("tab", { name: /Stimmen/ }).click();
   await page.getByLabel("Gesamt bewerten").selectOption("5");
@@ -53,11 +71,27 @@ test("publishes an anonymous rating and correction immediately", async ({ page }
   await page.getByPlaceholder("Was hat dir hier gefallen?").fill("Playwright-Testbewertung");
   await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
+  await page.getByText("Name, Widmung oder Ort ergänzen").click();
+  await page.getByRole("textbox", { name: "Ort", exact: true }).fill("Interlaken");
+  await page.getByLabel("PLZ").fill("3800");
+  await page.getByLabel("Kanton").fill("BE");
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.getByText("Angaben aktualisiert.")).toBeVisible();
+});
 
-  await page.getByLabel("Was stimmt nicht?").selectOption("condition");
-  await page.getByPlaceholder("Zum Beispiel: Die Rückenlehne fehlt").fill("Sitzfläche beschädigt");
-  await page.getByRole("button", { name: "Hinweis veröffentlichen" }).click();
-  await expect(page.getByText("Danke – dein Hinweis wurde veröffentlicht.")).toBeVisible();
+test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {
+  await registerUser(page, `scout-${browserName}`);
+  await page.getByLabel("Bänkli eintragen").click();
+  await page.getByLabel("Ort *").fill("Testhausen");
+  await page.getByLabel("PLZ").fill("3000");
+  await page.getByLabel("Kanton").fill("BE");
+  await page.getByLabel("Name").fill("Das Testbänkli");
+  await page.getByLabel("Widmung").fill("Für alle müden Tests");
+  await page.getByRole("button", { name: "Eintragen", exact: true }).click();
+  await expect(page.getByText(/noch 2 Bestätigungen/)).toBeVisible();
+  await page.waitForTimeout(900);
+  await page.getByLabel("Ort suchen").fill("Testhausen");
+  await expect(page.getByRole("button", { name: /Testhausen/ })).toBeVisible();
 });
 
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
@@ -72,6 +106,5 @@ test("opens the password-protected moderation view", async ({ page }) => {
   await page.goto("/admin");
   await page.getByLabel("Passwort").fill("benchly-admin");
   await page.getByRole("button", { name: "Anmelden" }).click();
-  await expect(page.getByRole("heading", { name: "Benchly Moderation" })).toBeVisible();
-  await expect(page.getByText("Playwright-Testbewertung").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bänkli App Moderation" })).toBeVisible();
 });
