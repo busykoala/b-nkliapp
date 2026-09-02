@@ -45,6 +45,7 @@ from visual_pipeline import (
     bearing_degrees,
     circular_difference,
     analyze_scenes,
+    benchmark_models,
     discover_open_images,
     infer_scene,
     infer_scene_frames,
@@ -506,7 +507,7 @@ class VisualPipelineTests(unittest.TestCase):
                 "url": "https://example.test/image.jpg", "provider": "Panoramax",
                 "source_url": "https://example.test/source", "license": "CC-BY-SA-4.0",
             }],
-            "expected": {"forest": False, "lake_view": True, "mountain_view": True, "open_view": True, "limited_view": False},
+            "expected": {"relevant": True, "forest": False, "lake_view": True, "mountain_view": True, "open_view": True, "limited_view": False},
         }
         self.assertEqual(validate_evaluation_dataset([record], allow_small=True)[0]["id"], record["id"])
         without_license = {**record, "id": "invalid", "images": [{**record["images"][0], "license": ""}]}
@@ -514,6 +515,33 @@ class VisualPipelineTests(unittest.TestCase):
             validate_evaluation_dataset([without_license], allow_small=True)
         with self.assertRaisesRegex(ValueError, "at least 100"):
             validate_evaluation_dataset([record])
+
+    def test_benchmark_scores_rejected_frames_as_irrelevant_not_forest(self):
+        record = {
+            "id": "irrelevant-close-object", "category": "irrelevant",
+            "latitude": 46.2, "longitude": 7.2,
+            "images": [{
+                "url": "https://example.test/image.jpg", "provider": "Panoramax",
+                "source_url": "https://example.test/source", "license": "CC-BY-SA-4.0",
+            }],
+            "expected": {"relevant": False, "forest": False, "lake_view": False,
+                         "mountain_view": False, "open_view": False, "limited_view": False},
+        }
+        rejected = self.prediction(
+            relevance_probability=.02, rejection_reason="close_object", forest_probability=.99,
+            lake_view_probability=.9, mountain_view_probability=.9, open_view_probability=.9,
+        )
+        with TemporaryDirectory() as directory:
+            dataset = Path(directory) / "evaluation.jsonl"
+            dataset.write_text(json.dumps(record) + "\n")
+            with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
+                 patch("visual_pipeline._download_image", return_value=(b"image", "image/jpeg")), \
+                 patch("visual_pipeline.time.sleep"), \
+                 patch("visual_pipeline.infer_scene", return_value=rejected):
+                result = benchmark_models(dataset, ["benchly-vision"], allow_small=True, requests_per_second=1000)
+        metrics = result["models"]["benchly-vision"]
+        self.assertEqual(metrics["macro_f1"], 1)
+        self.assertEqual(metrics["forest_false_positive_rate"], 0)
 
     def test_discovery_is_cell_based_and_resumable(self):
         database = self.database()

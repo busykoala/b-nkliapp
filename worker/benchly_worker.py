@@ -1440,9 +1440,9 @@ def run_audit_environment(args) -> None:
 
 
 def run_benchmark_vision(args) -> None:
-    result = benchmark_models(Path(args.dataset), args.models, args.allow_small)
+    result = benchmark_models(Path(args.dataset), args.models, args.allow_small, args.requests_per_second)
     print(json.dumps(result, indent=2))
-    if result["recommended"] is None:
+    if result["recommended"] is None and not args.report_only:
         raise RuntimeError("No vision model met the acceptance thresholds")
 
 
@@ -1764,6 +1764,8 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--dataset", required=True)
     benchmark.add_argument("--models", nargs="+", default=["benchly-vision", "general"])
     benchmark.add_argument("--allow-small", action="store_true", help="Allow a development-only fixture below 100 locations")
+    benchmark.add_argument("--requests-per-second", type=float, default=.25)
+    benchmark.add_argument("--report-only", action="store_true", help="Emit rejected benchmark metrics without failing the job")
     benchmark.set_defaults(function=run_benchmark_vision, uses_lock=False)
 
     refresh = subparsers.add_parser("refresh", help="Run the resumable national refresh pipeline")

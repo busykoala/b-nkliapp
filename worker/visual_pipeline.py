@@ -845,7 +845,7 @@ def _binary_f1(expected: Sequence[bool], predicted: Sequence[bool]) -> float:
 
 
 def validate_evaluation_dataset(records: Sequence[object], allow_small: bool = False) -> list[dict[str, object]]:
-    label_keys = ("forest", "lake_view", "mountain_view", "open_view", "limited_view")
+    label_keys = ("relevant", "forest", "lake_view", "mountain_view", "open_view", "limited_view")
     if len(records) < 100 and not allow_small:
         raise ValueError("the public-label benchmark requires at least 100 labelled locations")
     normalized: list[dict[str, object]] = []
@@ -888,7 +888,8 @@ def validate_evaluation_dataset(records: Sequence[object], allow_small: bool = F
     return normalized
 
 
-def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = False) -> dict[str, object]:
+def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = False,
+                     requests_per_second: float = .25) -> dict[str, object]:
     records = validate_evaluation_dataset(
         [json.loads(line) for line in dataset_path.read_text().splitlines() if line.strip()], allow_small,
     )
@@ -896,15 +897,21 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
     api_key = os.environ.get("INFERENCE_API_KEY", "")
     if not api_key:
         raise RuntimeError("INFERENCE_API_KEY is required")
-    label_keys = ("forest", "lake_view", "mountain_view", "open_view", "limited_view")
+    label_keys = ("relevant", "forest", "lake_view", "mountain_view", "open_view", "limited_view")
     results: dict[str, dict[str, object]] = {}
+    minimum_interval = 1 / max(.05, min(.25, requests_per_second))
+    last_image_request = 0.0
     for model in models:
         wanted: dict[str, list[bool]] = {key: [] for key in label_keys}
         actual: dict[str, list[bool]] = {key: [] for key in label_keys}
         durations: list[float] = []
         valid = 0
         for record in records:
-            images = [_download_image(str(image["url"])) for image in record.get("images", [])[:4]]
+            images = []
+            for image in record.get("images", [])[:4]:
+                time.sleep(max(0, minimum_interval - (time.monotonic() - last_image_request)))
+                last_image_request = time.monotonic()
+                images.append(_download_image(str(image["url"])))
             started = time.monotonic()
             prediction = None
             for attempt in range(2):
@@ -919,9 +926,13 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
                 continue
             valid += 1
             expected = record.get("expected", {})
+            relevant = prediction["relevance_probability"] >= .55 and prediction["rejection_reason"] == "none"
             for key in label_keys:
                 wanted[key].append(bool(expected.get(key)))
-                actual[key].append(float(prediction[f"{key}_probability"]) >= .5)
+                if key == "relevant":
+                    actual[key].append(relevant)
+                else:
+                    actual[key].append(relevant and float(prediction[f"{key}_probability"]) >= .5)
         f1_values = [_binary_f1(wanted[key], actual[key]) for key in label_keys if wanted[key]]
         non_forest = [(expected, predicted) for expected, predicted in zip(wanted["forest"], actual["forest"]) if not expected]
         forest_false_positive_rate = sum(predicted for _, predicted in non_forest) / len(non_forest) if non_forest else 0
