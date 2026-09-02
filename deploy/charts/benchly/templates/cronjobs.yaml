@@ -8,6 +8,7 @@
   (dict "name" "image-discovery" "schedule" .Values.workers.imageDiscoverySchedule "deadline" 3000 "args" (list "discover-open-images" "--database" "/data/benchly.sqlite" "--max-cells" "50" "--requests-per-second" "1"))
   (dict "name" "scene-analysis" "schedule" .Values.workers.sceneAnalysisSchedule "deadline" 7500 "args" (list "analyze-scenes" "--database" "/data/benchly.sqlite" "--limit" "300" "--max-runtime-hours" "2" "--requests-per-second" "0.25"))
   (dict "name" "environment-reconcile" "schedule" .Values.workers.reconciliationSchedule "deadline" 3600 "args" (list "reconcile-environment" "--database" "/data/benchly.sqlite" "--limit" "5000" "--max-total" "1000"))
+  (dict "name" "vision-benchmark" "schedule" .Values.workers.visionBenchmarkSchedule "deadline" 7500 "args" (list "benchmark-vision" "--database" "/data/benchly.sqlite" "--dataset" "/worker/evaluation/benchly-100.jsonl" "--models" "benchly-vision" "general" "--requests-per-second" "0.25"))
 }}
 apiVersion: batch/v1
 kind: CronJob
@@ -45,7 +46,7 @@ spec:
               env:
                 - {name: HOME, value: /tmp}
                 - {name: TMPDIR, value: /tmp}
-{{- if eq $job.name "scene-analysis" }}
+{{- if or (eq $job.name "scene-analysis") (eq $job.name "vision-benchmark") }}
                 - {name: INFERENCE_BASE_URL, value: "http://inference-api.inference.svc.cluster.local:8080"}
                 - {name: BENCHLY_VISION_MODEL, value: {{ $root.Values.workers.visionModel | quote }}}
                 - name: INFERENCE_API_KEY

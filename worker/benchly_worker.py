@@ -1452,10 +1452,21 @@ def run_audit_environment(args) -> None:
 
 
 def run_benchmark_vision(args) -> None:
-    result = benchmark_models(Path(args.dataset), args.models, args.allow_small, args.requests_per_second)
-    print(json.dumps(result, separators=(",", ":")))
-    if result["recommended"] is None and not args.report_only:
-        raise RuntimeError("No vision model met the acceptance thresholds")
+    connection = connect_database(Path(args.database).resolve())
+    run_id = begin_run(connection, "vision-benchmark")
+    try:
+        result = benchmark_models(Path(args.dataset), args.models, args.allow_small, args.requests_per_second)
+        finish_run(connection, run_id, "completed", result)
+        print(json.dumps(result, separators=(",", ":")))
+        if result["recommended"] is None and not args.report_only:
+            raise RuntimeError("No vision model met the acceptance thresholds")
+    except Exception as error:
+        current = connection.execute("SELECT status FROM pipeline_runs WHERE id=?", (run_id,)).fetchone()
+        if current and current["status"] == "running":
+            finish_run(connection, run_id, "failed", {"error": str(error)})
+        raise
+    finally:
+        connection.close()
 
 
 def run_enrich_batch(args) -> None:
@@ -1778,7 +1789,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--allow-small", action="store_true", help="Allow a development-only fixture below 100 locations")
     benchmark.add_argument("--requests-per-second", type=float, default=.25)
     benchmark.add_argument("--report-only", action="store_true", help="Emit rejected benchmark metrics without failing the job")
-    benchmark.set_defaults(function=run_benchmark_vision, uses_lock=False)
+    benchmark.set_defaults(function=run_benchmark_vision, uses_lock=True)
 
     refresh = subparsers.add_parser("refresh", help="Run the resumable national refresh pipeline")
     refresh.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))

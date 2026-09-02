@@ -6,6 +6,7 @@ import urllib.error
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from shapely import to_wkb
@@ -24,6 +25,7 @@ from benchly_worker import (
     preferred_exact_features,
     preferred_environment_context,
     import_osm,
+    run_benchmark_vision,
     score_view,
     spatial_cell_bounds,
     terrain_horizon_from_profile,
@@ -96,6 +98,27 @@ class WorkerUnitTests(unittest.TestCase):
                 self.assertTrue(first)
                 with exclusive_worker_lock(database) as second:
                     self.assertFalse(second)
+
+    def test_vision_benchmark_records_its_quality_gate_result(self):
+        with TemporaryDirectory() as directory:
+            database_path = Path(directory) / "benchly.sqlite"
+            database = sqlite3.connect(database_path)
+            database.executescript("""
+              CREATE TABLE benches(row_id INTEGER PRIMARY KEY);
+              CREATE TABLE pipeline_runs(id INTEGER PRIMARY KEY AUTOINCREMENT,kind TEXT,status TEXT,
+                source_version TEXT,pipeline_version TEXT,stats TEXT,started_at TEXT,finished_at TEXT);
+            """)
+            database.close()
+            result = {"models": {"benchly-vision": {"accepted": True}}, "recommended": "benchly-vision"}
+            args = SimpleNamespace(database=str(database_path), dataset="fixture.jsonl", models=["benchly-vision"],
+                                   allow_small=True, requests_per_second=.25, report_only=False)
+            with patch("benchly_worker.benchmark_models", return_value=result):
+                run_benchmark_vision(args)
+            stored = sqlite3.connect(database_path).execute(
+                "SELECT kind,status,stats FROM pipeline_runs ORDER BY id DESC LIMIT 1",
+            ).fetchone()
+            self.assertEqual(stored[0:2], ("vision-benchmark", "completed"))
+            self.assertEqual(json.loads(stored[2])["recommended"], "benchly-vision")
 
     def test_geo_admin_profile_builds_a_complete_horizon(self):
         easting, northing = wgs84_to_lv95(47.37674, 8.54183)

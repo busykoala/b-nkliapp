@@ -8,9 +8,17 @@ import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { normalizeLocationKey, searchGeoAdminLocations } from "@/lib/place-search";
 import { calculateSunState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
+import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { z } from "zod";
 
-const aiLabelsEnabled = process.env.BENCHLY_AI_LABELS_ENABLED === "true";
+function aiLabelsEnabled() {
+  const latest = sqlite.prepare(`
+    SELECT stats FROM pipeline_runs
+    WHERE kind='vision-benchmark' AND status='completed'
+    ORDER BY finished_at DESC,id DESC LIMIT 1
+  `).get() as { stats: string | null } | undefined;
+  return visionLabelsEnabled(process.env.BENCHLY_AI_LABELS_ENABLED, latest?.stats ?? null);
+}
 
 const boundsSchema = z.object({
   west: z.number().min(-180).max(180),
@@ -64,6 +72,7 @@ function mapViewType(labels: string[]): MapFilters["viewType"] | null {
 
 function filterSql(filters: MapFilters | undefined, parameters: Array<string | number>) {
   const clauses = ["b.active = 1"];
+  const useAiLabels = aiLabelsEnabled();
   if (filters?.minViewScore) {
     clauses.push("e.view_score >= ?");
     parameters.push(filters.minViewScore * 20);
@@ -76,9 +85,9 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
   }
   if (filters?.environment) {
     if (filters.environment === "forest") {
-      clauses.push(aiLabelsEnabled ? "(e.in_forest = 1 OR (lm.confidence='high' AND lm.land_context='forest' AND lm.land_context_probability>=0.9))" : "e.in_forest = 1");
+      clauses.push(useAiLabels ? "(e.in_forest = 1 OR (lm.confidence='high' AND lm.land_context='forest' AND lm.land_context_probability>=0.9))" : "e.in_forest = 1");
     } else {
-      clauses.push(aiLabelsEnabled ? "(e.land_context = 'open' OR (lm.confidence='high' AND lm.land_context='open' AND lm.land_context_probability>=0.85))" : "e.land_context = 'open'");
+      clauses.push(useAiLabels ? "(e.land_context = 'open' OR (lm.confidence='high' AND lm.land_context='open' AND lm.land_context_probability>=0.85))" : "e.land_context = 'open'");
     }
   }
   if (filters?.material) {
@@ -91,16 +100,16 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
   }
   if (filters?.viewType) {
     if (filters.viewType === "lake") {
-      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.lake_view_probability>=0.85))" : "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ?)");
+      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.lake_view_probability>=0.85))" : "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ?)");
       parameters.push("%Seeblick%", "%Wasserblick%");
     } else if (filters.viewType === "mountain") {
-      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.mountain_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
+      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.mountain_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
       parameters.push("%Bergblick%");
     } else if (filters.viewType === "open") {
-      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.open_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
+      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.open_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
       parameters.push("%Weitsicht%");
     } else {
-      clauses.push(aiLabelsEnabled ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.limited_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
+      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.limited_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
       parameters.push("%Eingeschränkte Aussicht%");
     }
   }
@@ -372,7 +381,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const likelyUpdatedAt = String(row.likely_updated_at ?? "");
   const likelyEvidence = parseArray<LikelyEnvironment["evidence"][number]>(row.likely_evidence_summary);
   const directViewEvidenceCount = likelyEvidence.filter((item) => item.directView).length;
-  const likelyEnvironment = aiLabelsEnabled && row.likely_confidence ? {
+  const likelyEnvironment = aiLabelsEnabled() && row.likely_confidence ? {
     confidence: likelyConfidence,
     evidenceGroupCount: likelyEvidenceCount,
     updatedAt: likelyUpdatedAt,
