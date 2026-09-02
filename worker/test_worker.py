@@ -33,6 +33,7 @@ from benchly_worker import (
 from environment_geometry import (
     canopy_neighborhood,
     deterministic_environment,
+    feature_angular_half_width,
     feature_contains_exact,
     feature_distance_exact,
     point_lv95,
@@ -49,6 +50,7 @@ from visual_pipeline import (
     infer_scene_frames,
     reconcile_environment,
     search_panoramax,
+    validate_evaluation_dataset,
     validate_scene_prediction,
 )
 
@@ -147,6 +149,20 @@ class WorkerUnitTests(unittest.TestCase):
         self.assertFalse(result["in_forest"])
         self.assertAlmostEqual(result["forest_distance"], 20, delta=.2)
         self.assertEqual(result["land_context"], "forest_edge")
+
+    def test_exact_building_shadow_uses_narrow_footprint_not_wide_bbox(self):
+        origin = point_lv95(47, 8)
+        building = {
+            "geometry_wkb": to_wkb(Polygon([
+                (origin.x - 2, origin.y + 20), (origin.x + 2, origin.y + 20),
+                (origin.x + 2, origin.y + 25), (origin.x - 2, origin.y + 25),
+            ])),
+            "min_latitude": 46.99, "max_latitude": 47.01,
+            "min_longitude": 7.99, "max_longitude": 8.01,
+        }
+        half_width = feature_angular_half_width(47, 8, building, 0)
+        self.assertIsNotNone(half_width)
+        self.assertLess(half_width, 10)
 
     def test_isolated_surface_peak_is_partial_canopy_not_forest(self):
         class Terrain:
@@ -443,6 +459,23 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(actual, predictions)
         self.assertEqual(captured["response_format"]["type"], "json_schema")
         self.assertTrue(captured["response_format"]["json_schema"]["strict"])
+
+    def test_evaluation_manifest_requires_labels_location_and_image_provenance(self):
+        record = {
+            "id": "daerligen-waterfront-1", "category": "waterfront",
+            "latitude": 46.6622, "longitude": 7.8092,
+            "images": [{
+                "url": "https://example.test/image.jpg", "provider": "Panoramax",
+                "source_url": "https://example.test/source", "license": "CC-BY-SA-4.0",
+            }],
+            "expected": {"forest": False, "lake_view": True, "mountain_view": True, "open_view": True, "limited_view": False},
+        }
+        self.assertEqual(validate_evaluation_dataset([record], allow_small=True)[0]["id"], record["id"])
+        without_license = {**record, "id": "invalid", "images": [{**record["images"][0], "license": ""}]}
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            validate_evaluation_dataset([without_license], allow_small=True)
+        with self.assertRaisesRegex(ValueError, "at least 100"):
+            validate_evaluation_dataset([record])
 
     def test_discovery_is_cell_based_and_resumable(self):
         database = self.database()

@@ -30,6 +30,7 @@ from environment_geometry import (
     canopy_neighborhood,
     classify_official_layer,
     deterministic_environment,
+    feature_angular_half_width,
     feature_contains_exact,
     feature_distance_exact,
     feature_nearest_location,
@@ -819,8 +820,9 @@ def merge_near_obstructions(latitude: float, longitude: float, origin_elevation:
         base_height = terrain_samples[sample_index] if len(terrain_samples) == 72 * len(PROFILE_DISTANCES_METERS) else origin_elevation
         relative_top = base_height + height - (origin_elevation + 1.1)
         angle = max(0.0, min(89.0, math.degrees(math.atan2(max(1.0, relative_top), distance))))
+        exact_half_angle = feature_angular_half_width(latitude, longitude, feature, bearing)
         width = max(4.0, distance_meters(feature["min_latitude"], feature["min_longitude"], feature["max_latitude"], feature["max_longitude"]))
-        half_angle = min(60.0, max(3.0, math.degrees(math.atan2(width / 2, distance))))
+        half_angle = exact_half_angle if exact_half_angle is not None else min(60.0, max(3.0, math.degrees(math.atan2(width / 2, distance))))
         for index in range(72):
             if circular_difference(index * 5, bearing) <= half_angle and angle > profile[index]:
                 profile[index] = round(angle, 2)

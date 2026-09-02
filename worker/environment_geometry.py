@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 from pyproj import Transformer
-from shapely import from_wkb, to_wkb
+from shapely import from_wkb, get_coordinates, to_wkb
 from shapely.geometry import LineString, Point, Polygon, shape
 from shapely.ops import nearest_points, transform
 
@@ -92,6 +92,25 @@ def feature_nearest_location(latitude: float, longitude: float, feature: sqlite3
     _origin, nearest = nearest_points(point_lv95(latitude, longitude), geometry)
     longitude_value, latitude_value = LV95_TO_WGS84.transform(nearest.x, nearest.y)
     return float(latitude_value), float(longitude_value)
+
+
+def feature_angular_half_width(
+    latitude: float, longitude: float, feature: sqlite3.Row, center_bearing: float,
+) -> Optional[float]:
+    """Return the exact visible angular footprint around a bench, including wrap at north."""
+    geometry = _feature_geometry(feature)
+    if geometry is None:
+        return None
+    origin = point_lv95(latitude, longitude)
+    bearings = [
+        (math.degrees(math.atan2(float(x) - origin.x, float(y) - origin.y)) + 360) % 360
+        for x, y in get_coordinates(geometry)
+        if float(x) != origin.x or float(y) != origin.y
+    ]
+    if not bearings:
+        return None
+    differences = [abs(((bearing - center_bearing + 540) % 360) - 180) for bearing in bearings]
+    return min(89.0, max(2.5, max(differences)))
 
 
 def feature_bounds_wgs84(geometry_wkb: bytes) -> tuple[float, float, float, float]:

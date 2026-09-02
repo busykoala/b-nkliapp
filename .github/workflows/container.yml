@@ -208,10 +208,28 @@ jobs:
           test -n "$inference_key"
           kubectl --namespace benchly patch secret benchly-secrets --type merge \
             --patch "$(jq -cn --arg key "$inference_key" '{data:{"inference-api-key":$key}}')"
-          helm upgrade benchly "$GITHUB_WORKSPACE/deploy/charts/benchly" \
+          recover_pending_release benchly benchly
+          set +e
+          benchly_upgrade_output="$(helm upgrade benchly "$GITHUB_WORKSPACE/deploy/charts/benchly" \
             --namespace benchly --atomic --wait --timeout 20m \
             --set-string "images.web=$WEB_IMAGE" \
-            --set-string "images.worker=$WORKER_IMAGE"
+            --set-string "images.worker=$WORKER_IMAGE" 2>&1)"
+          benchly_upgrade_status=$?
+          set -e
+          if (( benchly_upgrade_status != 0 )); then
+            escaped_output="${benchly_upgrade_output//'%'/'%25'}"
+            escaped_output="${escaped_output//$'\r'/'%0D'}"
+            escaped_output="${escaped_output//$'\n'/'%0A'}"
+            echo "::error title=Benchly Helm upgrade failed::$escaped_output"
+            {
+              echo '### Benchly Helm error'
+              echo
+              echo '```text'
+              echo "$benchly_upgrade_output"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit "$benchly_upgrade_status"
+          fi
           kubectl --namespace benchly annotate deployment/benchly \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
           kubectl --namespace benchly rollout status deployment/benchly --timeout=10m

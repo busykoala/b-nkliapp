@@ -71,8 +71,11 @@ probabilities remain. Only a camera heading and a compatible recorded bench dire
 produce a bench-view claim; other images may describe only the surroundings.
 
 Before enabling public AI labels, run the pinned models against a labelled 100-location JSONL
-set. Each line contains `images` (up to four open image URLs) and `expected` booleans for
-`forest`, `lake_view`, `mountain_view`, `open_view` and `limited_view`:
+set. Every location has an `id`, Swiss coordinates, one of `true_forest`, `forest_edge`, `park`,
+`urban`, `alpine_open`, `waterfront` or `irrelevant`, and complete image provenance
+(`url`, `source_url`, `provider`, `license`). `expected` contains booleans for `forest`,
+`lake_view`, `mountain_view`, `open_view` and `limited_view`. At least five locations from each
+category are required.
 
 ```bash
 python3 worker/benchly_worker.py benchmark-vision --dataset evaluation.jsonl \

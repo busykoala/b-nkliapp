@@ -25,6 +25,9 @@ RECONCILER_VERSION = "benchly-evidence-1.1"
 DEFAULT_MODEL = "benchly-vision"
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_REQUEST_BYTES = 24 * 1024 * 1024
+EVALUATION_CATEGORIES = {
+    "true_forest", "forest_edge", "park", "urban", "alpine_open", "waterfront", "irrelevant",
+}
 
 
 @dataclass(frozen=True)
@@ -780,10 +783,54 @@ def _binary_f1(expected: Sequence[bool], predicted: Sequence[bool]) -> float:
     return 1.0 if denominator == 0 else 2 * true_positive / denominator
 
 
-def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = False) -> dict[str, object]:
-    records = [json.loads(line) for line in dataset_path.read_text().splitlines() if line.strip()]
+def validate_evaluation_dataset(records: Sequence[object], allow_small: bool = False) -> list[dict[str, object]]:
+    label_keys = ("forest", "lake_view", "mountain_view", "open_view", "limited_view")
     if len(records) < 100 and not allow_small:
-        raise RuntimeError("The public-label benchmark requires at least 100 labelled locations")
+        raise ValueError("the public-label benchmark requires at least 100 labelled locations")
+    normalized: list[dict[str, object]] = []
+    identifiers: set[str] = set()
+    categories: dict[str, int] = {category: 0 for category in EVALUATION_CATEGORIES}
+    for raw in records:
+        if not isinstance(raw, dict):
+            raise ValueError("evaluation record is not an object")
+        identifier = str(raw.get("id") or "")
+        category = str(raw.get("category") or "")
+        latitude, longitude = _float(raw.get("latitude")), _float(raw.get("longitude"))
+        if not identifier or identifier in identifiers:
+            raise ValueError("evaluation ids must be present and unique")
+        if category not in EVALUATION_CATEGORIES:
+            raise ValueError(f"invalid evaluation category: {category}")
+        if latitude is None or longitude is None or not (45.7 <= latitude <= 47.9 and 5.7 <= longitude <= 10.7):
+            raise ValueError(f"invalid Swiss location: {identifier}")
+        expected = raw.get("expected")
+        if not isinstance(expected, dict) or any(not isinstance(expected.get(key), bool) for key in label_keys):
+            raise ValueError(f"missing boolean ground truth: {identifier}")
+        images = raw.get("images")
+        if not isinstance(images, list) or not 1 <= len(images) <= 4:
+            raise ValueError(f"evaluation needs one to four images: {identifier}")
+        normalized_images = []
+        for image in images:
+            if isinstance(image, str) and allow_small:
+                normalized_images.append({"url": image, "provider": "fixture", "source_url": image, "license": "fixture"})
+                continue
+            if not isinstance(image, dict):
+                raise ValueError(f"image provenance is required: {identifier}")
+            values = {key: str(image.get(key) or "") for key in ("url", "provider", "source_url", "license")}
+            if not values["url"].startswith("https://") or not values["source_url"].startswith("https://") or not values["provider"] or not values["license"]:
+                raise ValueError(f"invalid image provenance: {identifier}")
+            normalized_images.append(values)
+        identifiers.add(identifier)
+        categories[category] += 1
+        normalized.append({**raw, "latitude": latitude, "longitude": longitude, "images": normalized_images})
+    if not allow_small and any(count < 5 for count in categories.values()):
+        raise ValueError("evaluation must contain at least five locations in every required category")
+    return normalized
+
+
+def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = False) -> dict[str, object]:
+    records = validate_evaluation_dataset(
+        [json.loads(line) for line in dataset_path.read_text().splitlines() if line.strip()], allow_small,
+    )
     endpoint = os.environ.get("INFERENCE_BASE_URL", "http://inference-api.inference.svc.cluster.local:8080")
     api_key = os.environ.get("INFERENCE_API_KEY", "")
     if not api_key:
@@ -796,7 +843,7 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
         durations: list[float] = []
         valid = 0
         for record in records:
-            images = [_download_image(url) for url in record.get("images", [])[:4]]
+            images = [_download_image(str(image["url"])) for image in record.get("images", [])[:4]]
             started = time.monotonic()
             prediction = None
             for attempt in range(2):
