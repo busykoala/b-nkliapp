@@ -2,6 +2,24 @@ import * as SunCalc from "suncalc";
 
 export type ObstructionType = "building" | "vegetation" | "terrain" | "unknown";
 export type ShadeCause = "frei" | "nacht" | "überdacht" | "gebäude" | "vegetation" | "gelände" | "unbekannt";
+export type DayPhase = "dawn" | "day" | "dusk" | "night";
+
+export function getDaylightState(date: Date, latitude: number, longitude: number) {
+  const position = SunCalc.getPosition(date, latitude, longitude);
+  const times = SunCalc.getTimes(date, latitude, longitude);
+  const sunrise = times.sunrise?.getTime() ?? date.getTime();
+  const sunset = times.sunset?.getTime() ?? date.getTime();
+  const solarNoon = times.solarNoon?.getTime() ?? (sunrise + sunset) / 2;
+  const progress = sunset > sunrise
+    ? Math.max(0, Math.min(1, (date.getTime() - sunrise) / (sunset - sunrise)))
+    : .5;
+  const phase: DayPhase = position.altitude <= -6
+    ? "night"
+    : position.altitude < 8
+      ? date.getTime() < solarNoon ? "dawn" : "dusk"
+      : "day";
+  return { phase, progress, altitude: position.altitude, azimuth: position.azimuth };
+}
 
 export function interpolateHorizon(profile: number[] | null, azimuthDegrees: number): number {
   if (!profile || profile.length === 0) return 0;

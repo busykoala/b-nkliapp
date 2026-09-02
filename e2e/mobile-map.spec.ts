@@ -2,28 +2,30 @@ import { expect, test } from "@playwright/test";
 
 async function registerUser(page: import("@playwright/test").Page, username: string) {
   await page.goto("/");
+  await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Anmelden").click();
   await page.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
   await page.getByLabel("Benutzername").fill(username);
   await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await page.getByRole("button", { name: "Konto erstellen" }).click();
-  await expect(page.getByLabel("Mein Profil")).toBeVisible();
+  await page.getByLabel("Menü öffnen").click();
+  await expect(page.getByText("Mein Profil")).toBeVisible();
+  await page.getByLabel("Menü schliessen").click();
 }
 
 test("opens the mobile map and a bench detail", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toBeVisible();
   await expect(page.getByLabel("Ort suchen")).toBeVisible();
-  await expect(page.getByText("Schöne Plätze in meiner Nähe")).toBeVisible();
+  await expect(page.getByLabel("Menü öffnen")).toBeVisible();
 });
 
 test("centers near the user only after an explicit location action", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ longitude: 8.5417, latitude: 47.3769 });
   await page.goto("/");
-  await page.getByText("Schöne Plätze in meiner Nähe").click();
-  await expect(page.getByText("Schöne Plätze in meiner Nähe")).toBeHidden();
-  await expect(page.getByText(/Plätze/).first()).toBeVisible();
+  await page.getByLabel("Meinen Standort anzeigen").click();
+  await expect(page.getByText(/Standort auf etwa/)).toBeVisible();
 });
 
 test("publishes an installable portrait PWA manifest", async ({ request }) => {
@@ -40,9 +42,8 @@ test("explains iOS Home Screen installation after location engagement", async ({
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ longitude: 8.5417, latitude: 47.3769 });
   await page.goto("/");
-  await page.getByText("Schöne Plätze in meiner Nähe").click();
-  await expect(page.getByLabel("Bänkli App installieren")).toBeVisible();
-  await page.getByRole("button", { name: "Installieren" }).click();
+  await page.getByLabel("Menü öffnen").click();
+  await page.getByRole("button", { name: "App installieren" }).click();
   await expect(page.getByText(/Zum Home-Bildschirm/)).toBeVisible();
 });
 
@@ -55,7 +56,7 @@ test("location denial leaves the map usable", async ({ page, context }) => {
 
 test("keeps browsing public but requires an account for contributions", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("tab", { name: /Stimmen/ }).click();
+  await page.getByRole("button", { name: /Stimmen aus der Nähe/ }).click();
   await expect(page.getByText("Zum Mitmachen kurz anmelden")).toBeVisible();
   await expect(page.getByRole("button", { name: "Bewertung veröffentlichen" })).toHaveCount(0);
 });
@@ -63,7 +64,7 @@ test("keeps browsing public but requires an account for contributions", async ({
 test("registers and writes a rating plus structured bench metadata", async ({ page, browserName }) => {
   await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("tab", { name: /Stimmen/ }).click();
+  await page.getByRole("button", { name: /Stimmen aus der Nähe/ }).click();
   await page.getByLabel("Gesamt bewerten").selectOption("5");
   await page.getByLabel("Aussicht bewerten").selectOption("4");
   await page.getByLabel("Komfort bewerten").selectOption("4");
@@ -81,6 +82,7 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
 
 test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {
   await registerUser(page, `scout-${browserName}`);
+  await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Bänkli eintragen").click();
   await page.getByLabel("Ort *").fill("Testhausen");
   await page.getByLabel("PLZ").fill("3000");
@@ -96,10 +98,10 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
 
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
-  await expect(page.getByRole("heading", { name: /Gerade liegt die Bank|Der Tag ist zur Ruhe gekommen/ })).toBeVisible();
-  await expect(page.getByText("Durchs Jahr")).toBeVisible();
-  await expect(page.getByText("Augen auf")).toBeVisible();
-  await expect(page.getByText(/Aussicht/).first()).toBeVisible();
+  await expect(page.getByRole("figure")).toBeVisible();
+  await expect(page.getByText("Heute")).toBeVisible();
+  await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
+  await expect(page.getByText("Mehr über diesen Platz")).toBeVisible();
 });
 
 test("opens the password-protected moderation view", async ({ page }) => {

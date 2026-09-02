@@ -25,7 +25,7 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
     <div className="relative flex min-w-0 flex-1">
       <div className="relative flex-1">
         <Search className="pointer-events-none absolute left-3.5 top-3.5 z-10 text-primary/65" size={18} />
-        <input aria-label="Ort suchen" className="input storybook-panel min-h-12 w-full border-0 pl-10 pr-[4.8rem] text-sm placeholder:text-base-content/45" placeholder="Wohin möchtest du?" value={query} onChange={(e) => { setQuery(e.target.value); if (e.target.value.trim().length < 2) setResults([]); }} />
+        <input aria-label="Ort suchen" className="input calm-search min-h-12 w-full border-0 pl-10 pr-[4.8rem] text-sm placeholder:text-base-content/45" placeholder="Einen stillen Platz finden" value={query} onChange={(e) => { setQuery(e.target.value); if (e.target.value.trim().length < 2) setResults([]); }} />
         {query && <button aria-label="Suche leeren" className="btn btn-circle btn-ghost btn-sm absolute right-11 top-0.5 z-10" onClick={() => { setQuery(""); setResults([]); }}><X size={17} /></button>}
         <button aria-label="Meinen Standort anzeigen" className="btn btn-circle btn-ghost absolute right-0.5 top-0.5 z-10 min-h-11 min-w-11 text-primary" onClick={onLocate}><LocateFixed size={19} /></button>
         {(pending || results.length > 0) && query.length >= 2 && (

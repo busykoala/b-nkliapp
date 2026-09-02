@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, Share2, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { BenchDetailContent } from "./bench-detail-content";
 import type { CurrentUser } from "@/lib/security";
@@ -19,19 +19,11 @@ export function BenchSheet({ bench, loading, onClose, user }: { bench: BenchDeta
     if (delta > 45) setSnap(snap === "full" ? "half" : "peek");
     touchStart.current = null;
   };
-  const share = async () => {
-    if (!bench) return;
-    const url = `${window.location.origin}/bank/${bench.id}`;
-    if (navigator.share) await navigator.share({ title: bench.title, text: "Dieses Bänkli in der Bänkli App", url });
-    else { await navigator.clipboard.writeText(url); window.alert("Link kopiert."); }
-  };
   return (
     <aside aria-label="Bankdetails" className="desktop-sheet storybook-sheet sheet-shadow fixed inset-x-0 bottom-0 z-40 h-[calc(100dvh-4.5rem)] rounded-t-[2rem] transition-transform duration-300" style={{ transform: translate }}>
       <div className="sticky top-0 z-20 rounded-t-[2rem] bg-[#fbf4e3]/92 px-4 pb-1 pt-2 backdrop-blur-md" onTouchStart={(e) => { touchStart.current = e.touches[0].clientY; }} onTouchEnd={(e) => finishDrag(e.changedTouches[0].clientY)}>
         <button aria-label="Detailhöhe ändern" className="mx-auto block h-6 w-full" onClick={() => setSnap(snap === "full" ? "half" : "full")}><span className="mx-auto block h-1 w-12 rounded-full bg-primary/25" /></button>
-        <div className="flex items-center justify-end gap-1">
-          {bench && <button aria-label="Bank teilen" className="btn btn-circle btn-ghost btn-sm" onClick={share}><Share2 size={18} /></button>}
-          <button aria-label="Details einklappen" className="btn btn-circle btn-ghost btn-sm" onClick={() => setSnap("peek")}><ChevronDown size={19} /></button>
+        <div className="flex items-center justify-end">
           <button aria-label="Bank schliessen" className="btn btn-circle btn-ghost btn-sm" onClick={onClose}><X size={19} /></button>
         </div>
       </div>

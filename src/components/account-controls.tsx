@@ -17,7 +17,7 @@ export function AccountControls({ user, onAdd }: { user: CurrentUser | null; onA
   </div>;
 }
 
-function AccountDialog({ dialogRef }: { dialogRef: React.RefObject<HTMLDialogElement | null> }) {
+export function AccountDialog({ dialogRef }: { dialogRef: React.RefObject<HTMLDialogElement | null> }) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const action = mode === "login" ? login : register;
   const [state, formAction] = useActionState(action, null);

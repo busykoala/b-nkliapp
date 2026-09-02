@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
-import { InstallPrompt } from "@/components/install-prompt";
 
 export const metadata: Metadata = {
   applicationName: "Bänkli App",
@@ -21,7 +20,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="de" data-theme="benchly">
       <body>
         {children}
-        <InstallPrompt />
         <ServiceWorkerRegistration />
       </body>
     </html>

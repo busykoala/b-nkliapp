@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Armchair, Info, LocateFixed, MountainSnow, SlidersHorizontal, Sparkles, Sun, Waves } from "lucide-react";
+import { Info } from "lucide-react";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
 import { BenchSheet } from "./bench-sheet";
 import { FilterPanel } from "./filter-panel";
 import { SearchBox } from "./search-box";
-import { AccountControls } from "./account-controls";
 import { AddBenchDialog } from "./add-bench-dialog";
+import { AppMenu } from "./app-menu";
+import { getDaylightState } from "@/lib/sun";
 
 function circlePolygon(longitude: number, latitude: number, radiusMeters: number) {
   const points = 64;
@@ -36,6 +37,31 @@ function featureCollection(features: MapFeature[]) {
 
 type UserPosition = { longitude: number; latitude: number; accuracy: number };
 
+function applyMapAtmosphere(map: MapLibreMap) {
+  const center = map.getCenter();
+  const { phase } = getDaylightState(new Date(), center.lat, center.lng);
+  map.getContainer().dataset.phase = phase;
+  const paints = {
+    dawn: { min: .08, max: .84, saturation: -.42, hue: 10 },
+    day: { min: .12, max: .96, saturation: -.48, hue: 8 },
+    dusk: { min: .06, max: .72, saturation: -.38, hue: 18 },
+    night: { min: .02, max: .46, saturation: -.72, hue: 32 },
+  }[phase];
+  if (map.getLayer("swisstopo")) {
+    map.setPaintProperty("swisstopo", "raster-brightness-min", paints.min);
+    map.setPaintProperty("swisstopo", "raster-brightness-max", paints.max);
+    map.setPaintProperty("swisstopo", "raster-saturation", paints.saturation);
+    map.setPaintProperty("swisstopo", "raster-hue-rotate", paints.hue);
+  }
+  if (map.getLayer("clusters")) map.setPaintProperty("clusters", "circle-color", phase === "night" ? "#263f45" : "#294c45");
+  if (map.getLayer("benches")) {
+    map.setPaintProperty("benches", "circle-stroke-color", phase === "night" ? "#f2dca7" : "#fff4d8");
+    map.setPaintProperty("benches", "circle-color", phase === "night"
+      ? ["case", ["==", ["get", "verificationStatus"], "unverified"], "#bc765f", "#d1bd88"]
+      : ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"]);
+  }
+}
+
 function showUserPosition(map: MapLibreMap, position: UserPosition) {
   const positionSource = map.getSource("user-position") as GeoJSONSource | undefined;
   const accuracySource = map.getSource("user-accuracy") as GeoJSONSource | undefined;
@@ -60,7 +86,6 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-  const [located, setLocated] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
 
@@ -89,6 +114,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     let disposed = false;
+    let moveTimeout: number | undefined;
+    let ambientTimer: number | undefined;
     import("maplibre-gl").then(({ Map }) => {
       if (disposed || !containerRef.current) return;
       const map = new Map({
@@ -126,6 +153,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         map.addSource("user-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addLayer({ id: "user-accuracy", type: "fill", source: "user-accuracy", paint: { "fill-color": "#2d79c7", "fill-opacity": 0.12 } });
         map.addLayer({ id: "user-position", type: "circle", source: "user-position", paint: { "circle-color": "#2878c8", "circle-radius": 7, "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
+        applyMapAtmosphere(map);
+        ambientTimer = window.setInterval(() => applyMapAtmosphere(map), 5 * 60 * 1000);
         if (pendingPosition.current && showUserPosition(map, pendingPosition.current)) pendingPosition.current = null;
         const click = (event: MapLayerMouseEvent) => {
           const item = event.features?.[0]?.properties as MapFeature | undefined;
@@ -144,10 +173,12 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         }
         loadVisible(map, filtersRef.current);
       });
-      let timeout: number | undefined;
-      map.on("moveend", () => { window.clearTimeout(timeout); timeout = window.setTimeout(() => loadVisible(map, filtersRef.current), 220); });
+      map.on("moveend", () => {
+        window.clearTimeout(moveTimeout);
+        moveTimeout = window.setTimeout(() => { loadVisible(map, filtersRef.current); applyMapAtmosphere(map); }, 220);
+      });
     });
-    return () => { disposed = true; mapRef.current?.remove(); mapRef.current = null; };
+    return () => { disposed = true; window.clearTimeout(moveTimeout); window.clearInterval(ambientTimer); mapRef.current?.remove(); mapRef.current = null; };
   // Initialization is intentionally one-shot; filter changes are handled separately.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -171,52 +202,34 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       const { longitude, latitude, accuracy } = position.coords;
       const nextPosition = { longitude, latitude, accuracy };
       const map = mapRef.current;
-      setLocated(true);
-      window.dispatchEvent(new Event("benchly:engaged"));
       if (!map || !showUserPosition(map, nextPosition)) pendingPosition.current = nextPosition;
       setMessage(`Standort auf etwa ${Math.round(accuracy)} m genau.`);
       window.setTimeout(() => setMessage(null), 3500);
     }, () => setMessage("Standort nicht verfügbar. Du kannst die Karte weiterhin verwenden."), { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
   };
 
-  const choosePlace = (place: PlaceResult) => { setLocated(true); window.dispatchEvent(new Event("benchly:engaged")); mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: 14 }); };
+  const choosePlace = (place: PlaceResult) => { mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: 14 }); };
   const openAdd = () => {
     const center = mapRef.current?.getCenter();
     if (center) setAddCoordinates({ latitude: center.lat, longitude: center.lng });
     setAddOpen(true);
   };
   const activeFilterCount = Object.values(filters).filter((value) => value !== undefined && value !== false && value !== "").length;
-  const visibleBenchCount = features.reduce((sum, feature) => sum + (feature.kind === "cluster" ? feature.count : 1), 0);
-
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-base-200">
       <div ref={containerRef} className="benchly-map absolute inset-0" aria-label="Karte der Schweizer Sitzbänke" />
-      <header className="safe-top pointer-events-none absolute inset-x-0 top-0 z-20 px-3 md:max-w-2xl md:px-4">
+      <header className="map-topbar safe-top pointer-events-none absolute inset-x-0 top-0 z-20 px-3 md:max-w-xl md:px-4">
         <div className="pointer-events-auto flex items-center gap-2">
-          <div className="storybook-panel hidden h-12 items-center gap-2 rounded-[1.15rem] px-4 sm:flex">
-            <span className="story-icon h-8 w-8"><Armchair size={17} /></span>
-            <span className="font-black tracking-[-0.04em] text-primary">Bänkli App</span>
-          </div>
           <SearchBox onSelect={choosePlace} onLocate={locate} />
-          <button aria-label="Filter öffnen" className={`btn btn-circle storybook-panel relative min-h-12 min-w-12 border-0 ${activeFilterCount ? "text-accent" : "text-primary"}`} onClick={() => setFilterOpen((open) => !open)}><SlidersHorizontal size={20} />{activeFilterCount > 0 && <span className="badge badge-sm border-0 bg-accent text-accent-content absolute -right-1 -top-1">{activeFilterCount}</span>}</button>
-          <AccountControls user={user} onAdd={openAdd} />
-        </div>
-        <div className="pointer-events-auto mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <span className="story-pill whitespace-nowrap"><Armchair size={14} /> {new Intl.NumberFormat("de-CH").format(visibleBenchCount)} Plätze</span>
-          {filters.sunnyNow && <button className="story-pill story-pill-sun whitespace-nowrap" onClick={() => setFilters({ ...filters, sunnyNow: undefined })}><Sun size={14} /> Sonnig ×</button>}
-          {filters.minViewScore && <button className="story-pill whitespace-nowrap" onClick={() => setFilters({ ...filters, minViewScore: undefined })}><Sparkles size={14} /> Schöne Aussicht ×</button>}
-          {filters.viewType && <button className="story-pill whitespace-nowrap" onClick={() => setFilters({ ...filters, viewType: undefined })}>{filters.viewType === "mountain" ? <MountainSnow size={14} /> : filters.viewType === "lake" ? <Waves size={14} /> : null}{viewFilterLabel(filters.viewType)} ×</button>}
+          <AppMenu user={user} onAdd={openAdd} activeFilters={activeFilterCount} onFilter={() => setFilterOpen(true)} />
         </div>
       </header>
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center"><div className="storybook-panel grid h-14 w-14 place-items-center rounded-full"><span className="loading loading-ring text-primary" /></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
-      {!selectedId && !located && <div className="safe-bottom pointer-events-none absolute inset-x-3 bottom-0 z-20 flex justify-center"><button className="storybook-panel pointer-events-auto flex min-h-[4.5rem] w-full max-w-sm items-center gap-3 rounded-[1.5rem] px-3.5 py-3 text-left" onClick={locate}><span className="story-icon bg-primary text-primary-content"><LocateFixed size={20} /></span><span className="min-w-0 flex-1"><span className="story-eyebrow block">Deine Umgebung</span><span className="block font-bold">Schöne Plätze in meiner Nähe</span></span><span className="text-xl text-secondary">→</span></button></div>}
       {selectedId && <BenchSheet bench={bench} loading={detailLoading} user={user} onClose={() => { setSelectedId(null); setBench(null); }} />}
       <AddBenchDialog open={addOpen} coordinates={addCoordinates} onClose={() => setAddOpen(false)} />
       <footer className="pointer-events-none absolute bottom-1 left-1 z-10 hidden text-[10px] opacity-60 md:block">© swisstopo · © OpenStreetMap-Mitwirkende</footer>
     </main>
   );
 }
-
-function viewFilterLabel(value: NonNullable<MapFilters["viewType"]>) { return ({ mountain: "Bergblick", lake: "See/Wasser", open: "Weitsicht", limited: "Begrenzte Sicht" })[value]; }

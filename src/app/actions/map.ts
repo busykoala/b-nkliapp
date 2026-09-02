@@ -6,7 +6,7 @@ import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
 import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { normalizeLocationKey, searchGeoAdminLocations } from "@/lib/place-search";
-import { calculateSunState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
+import { calculateSunState, getDaylightState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { z } from "zod";
@@ -345,6 +345,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent) };
   const effectiveSunInput = { ...sunInput, horizonProfile: horizon, obstructionTypes, canopyPercent: contextModel?.canopyPercent ?? sunInput.canopyPercent };
   const sun = calculateSunState(effectiveSunInput);
+  const daylight = getDaylightState(new Date(), latitude, longitude);
   const localSun = getLocalSunSchedule(effectiveSunInput);
   if (hasTerrainModel && [sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn].some((value) => value === null)) {
     const seasonal = getSeasonalSunMinutes(effectiveSunInput);
@@ -435,6 +436,10 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     shadeCause: sun?.shadeCause ?? "unbekannt",
     sunnyNow: sun?.sunny ?? null,
     sunConfidence: (hasTerrainModel ? contextModel ? "mittel" : row.sun_confidence ?? "mittel" : "niedrig") as BenchDetail["sunConfidence"],
+    sunAltitudeDegrees: daylight.altitude,
+    sunAzimuthDegrees: daylight.azimuth,
+    daylightProgress: daylight.progress,
+    dayPhase: daylight.phase,
     sunMinutesSummer,
     sunMinutesWinter,
     sunMinutesSpring,

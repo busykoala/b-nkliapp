@@ -137,6 +137,10 @@ export type BenchDetail = {
   shadeCause: "frei" | "nacht" | "überdacht" | "gebäude" | "vegetation" | "gelände" | "unbekannt";
   sunnyNow: boolean | null;
   sunConfidence: Confidence;
+  sunAltitudeDegrees: number;
+  sunAzimuthDegrees: number;
+  daylightProgress: number;
+  dayPhase: "dawn" | "day" | "dusk" | "night";
   sunMinutesSummer: number | null;
   sunMinutesWinter: number | null;
   sunMinutesSpring: number | null;
