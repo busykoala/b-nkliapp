@@ -49,8 +49,8 @@ const FALLBACK_MAP_STYLE = {
     },
   },
   layers: [
-    { id: "background", type: "background", paint: { "background-color": "#e8dec5" } },
-    { id: "swisstopo", type: "raster", source: "swisstopo", paint: { "raster-opacity": .72, "raster-saturation": -.48, "raster-contrast": -.12 } },
+    { id: "background", type: "background", paint: { "background-color": "#ead9ad" } },
+    { id: "swisstopo", type: "raster", source: "swisstopo", paint: { "raster-opacity": .7, "raster-saturation": -.36, "raster-contrast": -.18, "raster-hue-rotate": 8 } },
   ],
 } satisfies StyleSpecification;
 
@@ -58,7 +58,49 @@ async function loadIllustratedMapStyle(): Promise<StyleSpecification> {
   try {
     const response = await fetch("https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json", { signal: AbortSignal.timeout(6_000) });
     if (!response.ok) throw new Error(`swisstopo style ${response.status}`);
-    return JSON.parse(await response.text(), (key, value) => key === "text-font" ? ["Frutiger Neue Regular"] : value) as StyleSpecification;
+    type MutableLayer = { id: string; type: string; "source-layer"?: string; paint?: Record<string, unknown>; layout?: Record<string, unknown> };
+    const style = JSON.parse(await response.text(), (key, value) => key === "text-font" ? ["Frutiger Neue Regular"] : value) as { layers: MutableLayer[] };
+    for (const layer of style.layers) {
+      const source = layer["source-layer"] ?? "";
+      const paint = layer.paint ??= {};
+      if (layer.type === "background") paint["background-color"] = "#f0e3bd";
+      if (source === "hillshade") { paint["fill-color"] = layer.id.includes("yellow") ? "#d0b782" : "#8a8576"; paint["fill-opacity"] = layer.id.includes("yellow") ? .035 : .065; }
+      if (source === "landcover") {
+        if (layer.type === "fill") { paint["fill-color"] = "#a9bc8d"; paint["fill-opacity"] = layer.id.includes("pattern") ? .08 : .25; paint["fill-outline-color"] = "#728265"; }
+        else { paint["line-color"] = "#728265"; paint["line-opacity"] = .4; }
+      }
+      if (source === "landuse") {
+        if (layer.type === "fill") { paint["fill-color"] = layer.id.includes("parking") ? "#ddc9a2" : "#e2d5b5"; paint["fill-opacity"] = .3; paint["fill-outline-color"] = "#9f8e69"; }
+        else { paint["line-color"] = "#9f8e69"; paint["line-opacity"] = .42; }
+      }
+      if (source === "water") {
+        if (layer.type === "fill") { paint["fill-color"] = "#78aeb5"; paint["fill-opacity"] = .78; paint["fill-outline-color"] = "#4e7f85"; }
+        else { paint["line-color"] = "#4e7f85"; paint["line-opacity"] = .7; }
+      }
+      if (source === "waterway" && layer.type === "line") { paint["line-color"] = "#4e858c"; paint["line-opacity"] = .78; paint["line-blur"] = .25; }
+      if (source === "contour_line") { paint["line-color"] = layer.id.includes("blue") ? "#668f91" : "#a99068"; paint["line-opacity"] = .32; paint["line-blur"] = .2; }
+      if (["scree", "hachure"].includes(source)) { paint["fill-color"] = "#aa956f"; paint["fill-opacity"] = .07; }
+      if (source === "building" || source === "building_ln") {
+        if (layer.type === "fill") { paint["fill-color"] = "#c9aa7c"; paint["fill-opacity"] = .58; paint["fill-outline-color"] = "#775d45"; }
+        else { paint["line-color"] = "#755a43"; paint["line-opacity"] = .62; paint["line-blur"] = .25; }
+      }
+      if (source === "transportation") {
+        const casing = layer.id.includes("casing");
+        paint["line-color"] = casing ? "#755b48" : layer.id.includes("public_transport") ? "#87708b" : layer.id.includes("path") || layer.id.includes("pedestrian") ? "#a27952" : "#cf9275";
+        paint["line-opacity"] = casing ? .56 : .68;
+        paint["line-blur"] = casing ? .35 : .18;
+      }
+      if (source === "boundary") { paint["line-color"] = "#995d4d"; paint["line-opacity"] = .52; paint["line-blur"] = .25; }
+      if (source === "park" && layer.type === "line") { paint["line-color"] = "#5f8065"; paint["line-opacity"] = .52; }
+      if (layer.type === "symbol") {
+        paint["text-color"] = source.includes("water") ? "#416f76" : source === "mountain_peak" ? "#604c3c" : "#3e493e";
+        paint["text-halo-color"] = "#efe2bd";
+        paint["text-halo-width"] = 1.3;
+        paint["text-halo-blur"] = .45;
+        if (["poi", "transportation_name", "spot_elevation"].includes(source)) paint["text-opacity"] = .7;
+      }
+    }
+    return style as unknown as StyleSpecification;
   } catch {
     return FALLBACK_MAP_STYLE;
   }

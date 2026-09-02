@@ -6,6 +6,7 @@ import { sqlite } from "@/db/client";
 import { refreshUserBadges } from "@/lib/badges";
 import { recordBenchConfirmation, recordRemovalConfirmation, resolveVerificationThreshold } from "@/lib/bench-verification";
 import { normalizeLocationKey } from "@/lib/place-search";
+import { reverseGeocodeSwiss, type SwissLocation } from "@/lib/reverse-geocode";
 import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
@@ -16,9 +17,6 @@ const addSchema = z.object({
   longitude: z.coerce.number().min(5.7).max(10.7),
   name: z.string().trim().max(80).optional(),
   dedication: z.string().trim().max(180).optional(),
-  locationName: z.string().trim().min(2).max(100),
-  postcode: z.string().trim().max(10).optional(),
-  canton: z.string().trim().max(30).optional(),
 });
 const editSchema = z.object({
   name: z.string().trim().max(80).optional(),
@@ -44,11 +42,32 @@ async function writeActor(action: string, dailyLimit: number, ipDailyLimit: numb
   return user;
 }
 
+function nearestKnownLocation(latitude: number, longitude: number): SwissLocation | null {
+  const row = sqlite.prepare(`
+    SELECT b.location_name AS name,b.location_postcode AS postcode,b.location_canton AS canton
+    FROM bench_spatial_index s JOIN benches b ON b.row_id=s.row_id
+    WHERE s.min_longitude BETWEEN ? AND ? AND s.min_latitude BETWEEN ? AND ?
+      AND b.location_name IS NOT NULL AND b.location_name<>''
+    ORDER BY ((b.latitude-?)*(b.latitude-?))+((b.longitude-?)*(b.longitude-?)) LIMIT 1
+  `).get(longitude - .25, longitude + .25, latitude - .18, latitude + .18, latitude, latitude, longitude, longitude) as SwissLocation | undefined;
+  return row ?? null;
+}
+
+async function locationFor(latitude: number, longitude: number) {
+  return await reverseGeocodeSwiss(latitude, longitude) ?? nearestKnownLocation(latitude, longitude) ?? { name: "Schweiz", postcode: null, canton: null };
+}
+
+export async function resolveBenchLocation(latitude: number, longitude: number): Promise<SwissLocation | null> {
+  const point = z.object({ latitude: z.number().min(45.7).max(47.9), longitude: z.number().min(5.7).max(10.7) }).safeParse({ latitude, longitude });
+  return point.success ? locationFor(point.data.latitude, point.data.longitude) : null;
+}
+
 export async function addBench(_previous: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const parsed = addSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, message: "Bitte Standort und Ort prüfen." };
+  if (!parsed.success) return { ok: false, message: "Bitte Standort prüfen." };
   try {
     const user = await writeActor("add-bench", 10, 25);
+    const location = await locationFor(parsed.data.latitude, parsed.data.longitude);
     const now = new Date().toISOString();
     const id = `community-${randomUUID()}`;
     const transaction = sqlite.transaction(() => {
@@ -58,7 +77,7 @@ export async function addBench(_previous: ActionResult | null, formData: FormDat
       ) VALUES(?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?,?,'unverified')`).run(
         id, "community", -randomInt(1, 2_000_000_000), parsed.data.latitude, parsed.data.longitude,
         parsed.data.name || "Sitzbank", "{}", now, now, parsed.data.name || null, parsed.data.dedication || null,
-        parsed.data.locationName, normalizeLocationKey(parsed.data.locationName), parsed.data.postcode || null, parsed.data.canton || null, user.id,
+        location.name, normalizeLocationKey(location.name), location.postcode, location.canton, user.id,
       );
       sqlite.prepare("INSERT INTO bench_confirmations(bench_row_id,user_id,created_at) VALUES(?,?,?)")
         .run(Number(result.lastInsertRowid), user.id, now);

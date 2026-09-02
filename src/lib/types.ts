@@ -140,6 +140,7 @@ export type BenchDetail = {
   sunAltitudeDegrees: number;
   sunAzimuthDegrees: number;
   daylightProgress: number;
+  localMinutesNow: number;
   dayPhase: "dawn" | "day" | "dusk" | "night";
   moonAltitudeDegrees: number;
   moonAzimuthDegrees: number;
@@ -148,7 +149,7 @@ export type BenchDetail = {
   moonVisible: boolean;
   moonrise: string;
   moonset: string;
-  weather: { temperatureC: number; precipitationMm10: number | null; sunshineMinutes10: number | null; windKmh: number | null; location: string; observedAt: string; source: "MeteoSchweiz" } | null;
+  weather: { temperatureC: number; precipitationMm10: number | null; sunshineMinutes10: number | null; windKmh: number | null; humidityPercent: number | null; globalRadiationWm2: number | null; cloudCover: number; location: string; observedAt: string; source: "MeteoSchweiz" } | null;
   sunMinutesSummer: number | null;
   sunMinutesWinter: number | null;
   sunMinutesSpring: number | null;

@@ -73,6 +73,13 @@ function cacheEnrichment(write: () => void) {
   }
 }
 
+function zurichMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  return hour * 60 + minute;
+}
+
 function mapViewType(labels: string[]): MapFilters["viewType"] | null {
   if (labels.includes("Bergblick")) return "mountain";
   if (labels.includes("Seeblick") || labels.includes("Wasserblick")) return "lake";
@@ -356,10 +363,11 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   }
   const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent) };
   const effectiveSunInput = { ...sunInput, horizonProfile: horizon, obstructionTypes, canopyPercent: contextModel?.canopyPercent ?? sunInput.canopyPercent };
-  const sun = calculateSunState(effectiveSunInput);
-  const daylight = getDaylightState(new Date(), latitude, longitude);
-  const moon = getMoonState(new Date(), latitude, longitude);
-  const weather = await getLocalWeather(latitude, longitude);
+  const now = new Date();
+  const sun = calculateSunState({ ...effectiveSunInput, date: now });
+  const daylight = getDaylightState(now, latitude, longitude);
+  const moon = getMoonState(now, latitude, longitude);
+  const weather = await getLocalWeather(latitude, longitude, daylight.altitude);
   const localSun = getLocalSunSchedule(effectiveSunInput);
   if (hasTerrainModel && [sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn].some((value) => value === null)) {
     const seasonal = getSeasonalSunMinutes(effectiveSunInput);
@@ -372,7 +380,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       WHERE bench_row_id=?
     `).run(sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn, row.row_id));
   }
-  const times = getSunTimes(new Date(), latitude, longitude);
+  const times = getSunTimes(now, latitude, longitude);
   const recentRatings = sqlite.prepare(`SELECT id, overall, view_score as view, comfort, quiet, note, created_at as createdAt FROM ratings WHERE bench_row_id=? AND visible=1 ORDER BY updated_at DESC LIMIT 5`).all(row.row_id);
   const corrections = sqlite.prepare(`SELECT id, field, proposed_value as proposedValue, note, created_at as createdAt FROM corrections WHERE bench_row_id=? AND visible=1 ORDER BY created_at DESC LIMIT 20`).all(row.row_id);
   const media = sqlite.prepare(`SELECT id, relation, provider, source_url as sourceUrl, thumbnail_url as thumbnailUrl, author, license, distance_meters as distanceMeters, title FROM media WHERE bench_row_id=? ORDER BY relation, distance_meters LIMIT 12`).all(row.row_id);
@@ -455,6 +463,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     sunAltitudeDegrees: daylight.altitude,
     sunAzimuthDegrees: daylight.azimuth,
     daylightProgress: daylight.progress,
+    localMinutesNow: zurichMinutes(now),
     dayPhase: daylight.phase,
     moonAltitudeDegrees: moon.altitude,
     moonAzimuthDegrees: moon.azimuth,

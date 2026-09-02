@@ -3,6 +3,9 @@ export type LocalWeather = {
   precipitationMm10: number | null;
   sunshineMinutes10: number | null;
   windKmh: number | null;
+  humidityPercent: number | null;
+  globalRadiationWm2: number | null;
+  cloudCover: number;
   location: string;
   observedAt: string;
   source: "MeteoSchweiz";
@@ -30,7 +33,7 @@ async function loadForecast() {
     .filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
 }
 
-export async function getLocalWeather(latitude: number, longitude: number): Promise<LocalWeather | null> {
+export async function getLocalWeather(latitude: number, longitude: number, sunAltitudeDegrees = 0): Promise<LocalWeather | null> {
   try {
     if (!weatherCache || weatherCache.expiresAt < Date.now()) weatherCache = { expiresAt: Date.now() + 30 * 60 * 1000, value: loadForecast() };
     const points = await weatherCache.value;
@@ -41,11 +44,23 @@ export async function getLocalWeather(latitude: number, longitude: number): Prom
     const latest = csvRows(measurements).at(-1);
     const temperatureC = Number(latest?.tre200s0);
     const optionalNumber = (value: string | undefined) => value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
+    const precipitationMm10 = optionalNumber(latest?.rre150z0);
+    const sunshineMinutes10 = optionalNumber(latest?.sre000z0);
+    const humidityPercent = optionalNumber(latest?.ure200s0);
+    const globalRadiationWm2 = optionalNumber(latest?.gre000z0);
+    const cloudCover = precipitationMm10 !== null && precipitationMm10 > 0
+      ? .96
+      : sunAltitudeDegrees > 3 && sunshineMinutes10 !== null
+        ? Math.max(0, Math.min(1, 1 - sunshineMinutes10 / 10))
+        : humidityPercent === null ? .2 : Math.max(.08, Math.min(.9, (humidityPercent - 52) / 45));
     return Number.isFinite(temperatureC) ? {
       temperatureC,
-      precipitationMm10: optionalNumber(latest?.rre150z0),
-      sunshineMinutes10: optionalNumber(latest?.sre000z0),
+      precipitationMm10,
+      sunshineMinutes10,
       windKmh: optionalNumber(latest?.fu3010z0),
+      humidityPercent,
+      globalRadiationWm2,
+      cloudCover,
       observedAt: latest?.reference_timestamp ?? "",
       location: nearest.name,
       source: "MeteoSchweiz",

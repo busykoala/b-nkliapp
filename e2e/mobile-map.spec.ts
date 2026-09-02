@@ -84,16 +84,13 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
   await registerUser(page, `scout-${browserName}`);
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Bänkli eintragen").click();
-  await page.getByLabel("Ort *").fill("Testhausen");
-  await page.getByLabel("PLZ").fill("3000");
-  await page.getByLabel("Kanton").fill("BE");
   await page.getByLabel("Name").fill("Das Testbänkli");
   await page.getByLabel("Widmung").fill("Für alle müden Tests");
   await page.getByRole("button", { name: "Eintragen", exact: true }).click();
   await expect(page.getByText(/noch 2 Bestätigungen/)).toBeVisible();
   await page.waitForTimeout(900);
-  await page.getByLabel("Ort suchen").fill("Testhausen");
-  await expect(page.getByRole("button", { name: /Testhausen/ })).toBeVisible();
+  await page.getByLabel("Ort suchen").fill("Das Testbänkli");
+  await expect(page.getByRole("button", { name: /Das Testbänkli/ })).toBeVisible();
 });
 
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
