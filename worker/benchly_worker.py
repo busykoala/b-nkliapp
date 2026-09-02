@@ -1442,7 +1442,7 @@ def run_audit_environment(args) -> None:
 
 def run_benchmark_vision(args) -> None:
     result = benchmark_models(Path(args.dataset), args.models, args.allow_small, args.requests_per_second)
-    print(json.dumps(result, indent=2))
+    print(json.dumps(result, separators=(",", ":")))
     if result["recommended"] is None and not args.report_only:
         raise RuntimeError("No vision model met the acceptance thresholds")
 

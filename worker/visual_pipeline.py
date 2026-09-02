@@ -12,6 +12,7 @@ import json
 import math
 import os
 import sqlite3
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -946,7 +947,7 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
         high_confidence_forest: list[tuple[bool, bool]] = []
         durations: list[float] = []
         valid = 0
-        for record in records:
+        for record_index, record in enumerate(records, start=1):
             images = []
             for image in record.get("images", [])[:4]:
                 time.sleep(max(0, minimum_interval - (time.monotonic() - last_image_request)))
@@ -977,6 +978,8 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
                     actual[key].append(relevant)
                 else:
                     actual[key].append(relevant and float(prediction[f"{key}_probability"]) >= .5)
+            if record_index % 10 == 0 or record_index == len(records):
+                print(f"benchmark {model}: {record_index}/{len(records)}", file=sys.stderr, flush=True)
         f1_values = [_binary_f1(wanted[key], actual[key]) for key in label_keys if wanted[key]]
         non_forest = [(expected, predicted) for expected, predicted in zip(wanted["forest"], actual["forest"]) if not expected]
         forest_false_positive_rate = sum(predicted for _, predicted in non_forest) / len(non_forest) if non_forest else 0

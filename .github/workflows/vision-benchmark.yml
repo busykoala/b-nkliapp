@@ -44,12 +44,15 @@ jobs:
             --dry-run=client -o json \
             | jq --argjson args "$benchmark_args" '.spec.backoffLimit=0 | .spec.activeDeadlineSeconds=7500 | .spec.template.spec.containers[0].args=$args' \
             | kubectl --namespace benchly apply -f -
+          kubectl --namespace benchly logs -f "job/$benchmark_job" --pod-running-timeout=2m &
+          log_pid=$!
           if ! kubectl --namespace benchly wait --for=condition=complete "job/$benchmark_job" --timeout=125m; then
             kubectl --namespace benchly logs "job/$benchmark_job" --all-containers --tail=300 || true
             kubectl --namespace benchly describe "job/$benchmark_job" || true
             exit 1
           fi
-          benchmark_result="$(kubectl --namespace benchly logs "job/$benchmark_job" --all-containers | jq -c .)"
+          wait "$log_pid" || true
+          benchmark_result="$(kubectl --namespace benchly logs "job/$benchmark_job" --all-containers | tail -n 1 | jq -c .)"
           escaped="${benchmark_result//'%'/'%25'}"
           escaped="${escaped//$'\r'/'%0D'}"
           escaped="${escaped//$'\n'/'%0A'}"
