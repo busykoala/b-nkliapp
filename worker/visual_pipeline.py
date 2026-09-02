@@ -753,15 +753,17 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
         canopy_votes = [(str(prediction["canopy_context"]), float(prediction["canopy_probability"]), weight) for prediction, weight in groups]
         canopy_context = max(("none", "partial", "dense", "unknown"), key=lambda value: sum(prob * weight for name, prob, weight in canopy_votes if name == value))
         canopy_probability = _weighted_probability(groups, "canopy_probability")
-        contradictory_exact = bool(bench["waterfront"]) or bench["land_context"] in {"open", "urban", "park"}
+        contradictory_exact = bool(bench["waterfront"]) or bench["land_context"] in {"forest_edge", "open", "urban", "park"}
+        conflicted = False
         if land_context == "forest" and not bench["in_forest"]:
             forest_allowed = land_probability >= .9 and bench["canopy_context"] == "dense" and len(groups) >= 2 and not contradictory_exact
             if not forest_allowed:
+                conflicted = True
                 stats["conflicts"] += 1
                 alternatives = {key: value for key, value in land_candidates.items() if key != "forest"}
                 land_context, land_probability = max(alternatives.items(), key=lambda item: item[1]) if alternatives else (None, None)
         strongest = max((value for value in probabilities.values() if value is not None), default=0)
-        confidence = "high" if len(groups) >= 2 and strongest >= .85 else "medium" if strongest >= .65 else "low"
+        confidence = "low" if conflicted else "high" if len(groups) >= 2 and strongest >= .85 else "medium" if strongest >= .65 else "low"
         connection.execute("""
             INSERT INTO bench_likely_metadata(bench_row_id,land_context,land_context_probability,canopy_context,
               canopy_probability,lake_view_probability,mountain_view_probability,open_view_probability,
@@ -827,7 +829,7 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
         "model_versions": model_versions,
         "pending_or_retry_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status IN ('pending','retry')"),
         "forest_conflicts": scalar("""SELECT count(*) FROM bench_likely_metadata lm JOIN bench_enrichments e USING(bench_row_id)
-          WHERE lm.land_context='forest' AND e.land_context IN ('open','urban','park')"""),
+          WHERE lm.land_context='forest' AND e.land_context IN ('forest_edge','open','urban','park')"""),
         "likely_rows_without_provenance": scalar("SELECT count(*) FROM bench_likely_metadata WHERE evidence_summary IS NULL OR evidence_summary='[]'"),
         "raw_image_columns": scalar("""SELECT count(*) FROM pragma_table_info('image_observations')
           WHERE lower(name) LIKE '%blob%' OR lower(name) LIKE '%thumbnail%' OR lower(name) IN ('image','bytes','payload')"""),
@@ -904,6 +906,7 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
     for model in models:
         wanted: dict[str, list[bool]] = {key: [] for key in label_keys}
         actual: dict[str, list[bool]] = {key: [] for key in label_keys}
+        high_confidence_forest: list[tuple[bool, bool]] = []
         durations: list[float] = []
         valid = 0
         for record in records:
@@ -927,6 +930,10 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
             valid += 1
             expected = record.get("expected", {})
             relevant = prediction["relevance_probability"] >= .55 and prediction["rejection_reason"] == "none"
+            high_confidence_forest.append((
+                bool(expected.get("forest")),
+                relevant and float(prediction["forest_probability"]) >= .9,
+            ))
             for key in label_keys:
                 wanted[key].append(bool(expected.get(key)))
                 if key == "relevant":
@@ -936,12 +943,17 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
         f1_values = [_binary_f1(wanted[key], actual[key]) for key in label_keys if wanted[key]]
         non_forest = [(expected, predicted) for expected, predicted in zip(wanted["forest"], actual["forest"]) if not expected]
         forest_false_positive_rate = sum(predicted for _, predicted in non_forest) / len(non_forest) if non_forest else 0
+        high_forest_predictions = sum(predicted for _, predicted in high_confidence_forest)
+        high_forest_true_positives = sum(expected and predicted for expected, predicted in high_confidence_forest)
+        high_forest_precision = high_forest_true_positives / high_forest_predictions if high_forest_predictions else None
         ordered = sorted(durations)
         p95 = ordered[min(len(ordered) - 1, math.ceil(len(ordered) * .95) - 1)] if ordered else math.inf
         macro_f1 = sum(f1_values) / len(f1_values) if f1_values else 0
         results[model] = {
             "locations": len(records), "valid_json_rate": valid / len(records) if records else 0,
             "forest_false_positive_rate": forest_false_positive_rate,
+            "high_confidence_forest_predictions": high_forest_predictions,
+            "high_confidence_forest_precision": high_forest_precision,
             "macro_f1": macro_f1, "p95_seconds": p95,
             "accepted": valid == len(records) and forest_false_positive_rate <= .02 and macro_f1 >= .85 and p95 <= 20,
         }

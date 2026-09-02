@@ -374,6 +374,25 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(row["evidence_group_count"], 2)
         self.assertNotEqual(row["land_context"], "forest")
 
+    def test_exact_forest_edge_blocks_a_visual_forest_override(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,180)")
+        database.execute("INSERT INTO bench_enrichments VALUES(1,0,'forest_edge',0,'dense')")
+        forest_prediction = self.prediction(forest_probability=.99, open_probability=.01)
+        for image_id, provider in ((1, "Panoramax"), (2, "KartaView")):
+            database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
+              latitude,longitude,license,analysis_status,relevance_probability,predictions,model_version,analyzed_at,discovered_at)
+              VALUES(?,?,?,?,?,?,?,?,?,'analyzed',.95,?,'benchly-vision','2026-09-02','2026-09-02')""",
+              (image_id, provider, str(image_id), f"group-{image_id}", "https://source", "https://image",
+               46.6622, 7.8092, "CC-BY-SA-4.0", json.dumps(forest_prediction)))
+            database.execute("INSERT INTO bench_image_evidence VALUES(1,?,?,0,1)", (image_id, 20 + image_id))
+
+        stats = reconcile_environment(database)
+        row = database.execute("SELECT land_context,confidence FROM bench_likely_metadata WHERE bench_row_id=1").fetchone()
+        self.assertEqual(stats["conflicts"], 1)
+        self.assertNotEqual(row["land_context"], "forest")
+        self.assertEqual(row["confidence"], "low")
+
     def test_visual_pilot_never_creates_more_than_its_total_cap(self):
         database = self.database()
         prediction = self.prediction()
@@ -542,6 +561,35 @@ class VisualPipelineTests(unittest.TestCase):
         metrics = result["models"]["benchly-vision"]
         self.assertEqual(metrics["macro_f1"], 1)
         self.assertEqual(metrics["forest_false_positive_rate"], 0)
+        self.assertEqual(metrics["high_confidence_forest_predictions"], 0)
+        self.assertIsNone(metrics["high_confidence_forest_precision"])
+
+    def test_benchmark_reports_high_confidence_forest_precision(self):
+        records = []
+        for identifier, forest in (("forest", True), ("open", False)):
+            records.append({
+                "id": identifier, "category": "true_forest" if forest else "alpine_open",
+                "latitude": 46.2, "longitude": 7.2,
+                "images": [{"url": f"https://example.test/{identifier}.jpg", "provider": "Panoramax",
+                            "source_url": "https://example.test/source", "license": "CC-BY-SA-4.0"}],
+                "expected": {"relevant": True, "forest": forest, "lake_view": False,
+                             "mountain_view": False, "open_view": not forest, "limited_view": forest},
+            })
+        predictions = [
+            self.prediction(forest_probability=.95, open_view_probability=.05, limited_view_probability=.95),
+            self.prediction(forest_probability=.95, open_view_probability=.95, limited_view_probability=.05),
+        ]
+        with TemporaryDirectory() as directory:
+            dataset = Path(directory) / "evaluation.jsonl"
+            dataset.write_text("\n".join(json.dumps(record) for record in records))
+            with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
+                 patch("visual_pipeline._download_image", return_value=(b"image", "image/jpeg")), \
+                 patch("visual_pipeline.time.sleep"), \
+                 patch("visual_pipeline.infer_scene", side_effect=predictions):
+                result = benchmark_models(dataset, ["benchly-vision"], allow_small=True, requests_per_second=1000)
+        metrics = result["models"]["benchly-vision"]
+        self.assertEqual(metrics["high_confidence_forest_predictions"], 2)
+        self.assertEqual(metrics["high_confidence_forest_precision"], .5)
 
     def test_discovery_is_cell_based_and_resumable(self):
         database = self.database()

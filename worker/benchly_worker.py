@@ -1341,7 +1341,7 @@ def run_analyze_scenes(args) -> None:
     try:
         used_seconds = float(connection.execute("""
           SELECT coalesce(sum((julianday(finished_at)-julianday(started_at))*86400),0)
-          FROM pipeline_runs WHERE kind='analyze-scenes' AND status='completed'
+          FROM pipeline_runs WHERE kind='analyze-scenes' AND status IN ('completed','failed')
             AND finished_at IS NOT NULL AND date(started_at)=date('now')
         """).fetchone()[0])
         remaining_seconds = max(0.0, min(args.max_runtime_hours * 3600, 7200 - used_seconds))

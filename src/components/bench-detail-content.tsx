@@ -119,7 +119,7 @@ function Details({ bench }: { bench: BenchDetail }) {
 
       {(exact.length > 0 || nearby.length > 0) && <section><SectionHeading icon={<ImageIcon />} eyebrow="Ein Blick vorab" title="Bilder aus der Nähe" />{exact.length > 0 && <MediaGrid media={exact} />}{nearby.length > 0 && <><p className="mb-2 mt-4 text-xs opacity-50">Aus der Nähe – nicht zwingend diese Bank.</p><MediaGrid media={nearby} /></>}</section>}
 
-      <details className="story-card px-3 text-xs text-base-content/55"><summary className="min-h-12 cursor-pointer py-3 font-bold"><span className="inline-flex items-center gap-2"><Info size={15} /> Kleingedrucktes</span></summary><div className="pb-4"><p>OpenStreetMap · swisstopo · Benchly</p><a className="link mt-2 inline-flex min-h-11 items-center gap-1 font-bold" href={`https://www.openstreetmap.org/${bench.osmType}/${bench.osmId}`} target="_blank" rel="noreferrer">Quelle öffnen <ExternalLink size={13} /></a></div></details>
+      <details className="story-card px-3 text-xs text-base-content/55"><summary className="min-h-12 cursor-pointer py-3 font-bold"><span className="inline-flex items-center gap-2"><Info size={15} /> Woher wir das wissen</span></summary><div className="pb-4">{bench.likelyEnvironment?.confidence === "low" && <p className="mb-2">Die Bildhinweise sind noch nicht klar genug.</p>}<p>OpenStreetMap · swisstopo · Benchly</p><a className="link mt-2 inline-flex min-h-11 items-center gap-1 font-bold" href={`https://www.openstreetmap.org/${bench.osmType}/${bench.osmId}`} target="_blank" rel="noreferrer">Quelle öffnen <ExternalLink size={13} /></a></div></details>
     </div>
   );
 }
