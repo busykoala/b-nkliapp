@@ -263,6 +263,32 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             exit "$benchly_test_status"
           fi
+          run_bounded_job() {
+            cronjob="$1"
+            job_name="$2"
+            shift 2
+            args_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
+            kubectl --namespace benchly create job --from="cronjob/$cronjob" "$job_name" \
+              --dry-run=client -o json \
+              | jq --argjson args "$args_json" '.spec.backoffLimit=0 | .spec.template.spec.containers[0].args=$args' \
+              | kubectl --namespace benchly apply -f -
+            if ! kubectl --namespace benchly wait --for=condition=complete "job/$job_name" --timeout=20m; then
+              kubectl --namespace benchly logs "job/$job_name" --all-containers --tail=200 || true
+              return 1
+            fi
+            kubectl --namespace benchly logs "job/$job_name" --all-containers --tail=200
+            kubectl --namespace benchly delete job "$job_name" --wait=false
+          }
+          pilot_suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          pilot_bounds=(7.8085 46.6618 7.8100 46.6629)
+          run_bounded_job benchly-image-discovery "benchly-daerligen-discover-$pilot_suffix" \
+            discover-open-images --database /data/benchly.sqlite --max-cells 1 --requests-per-second 1 \
+            --include-resolved --bounds "${pilot_bounds[@]}"
+          run_bounded_job benchly-scene-analysis "benchly-daerligen-analyze-$pilot_suffix" \
+            analyze-scenes --database /data/benchly.sqlite --limit 10 --max-runtime-hours 0.25 \
+            --requests-per-second 0.25 --bounds "${pilot_bounds[@]}"
+          run_bounded_job benchly-environment-reconcile "benchly-daerligen-reconcile-$pilot_suffix" \
+            reconcile-environment --database /data/benchly.sqlite --limit 100 --bounds "${pilot_bounds[@]}"
           echo "Deployed $WEB_IMAGE and $WORKER_IMAGE" >> "$GITHUB_STEP_SUMMARY"
       - name: Remove temporary kubeconfig
         if: always()

@@ -414,6 +414,28 @@ class VisualPipelineTests(unittest.TestCase):
             status = database.execute("SELECT analysis_status FROM image_observations").fetchone()[0]
             self.assertEqual(status, "retry" if failure else "analyzed")
 
+    def test_targeted_analysis_only_uses_groups_linked_inside_bounds(self):
+        database = self.database()
+        database.executemany("INSERT INTO benches VALUES(?,?,?,?,180)", [
+            (1, 1, 46.6622, 7.8092), (2, 1, 47.37, 8.54),
+        ])
+        for image_id, bench_id, group in ((1, 1, "daerligen"), (2, 2, "zurich")):
+            database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
+              latitude,longitude,analysis_status,discovered_at)
+              VALUES(?,'Panoramax',?,?,?,'https://image',46.6622,7.8092,'pending','2026-09-02')""",
+              (image_id, str(image_id), group, "https://source"))
+            database.execute("INSERT INTO bench_image_evidence VALUES(?,?,20,1,1)", (bench_id, image_id))
+
+        with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
+             patch("visual_pipeline._download_image", return_value=(b"image-bytes", "image/jpeg")), \
+             patch("visual_pipeline.infer_scene_frames", return_value=[self.prediction()]):
+            stats = analyze_scenes(database, 2, time.monotonic() + 2, requests_per_second=1000,
+                                   bounds=(7.8085, 46.6618, 7.8100, 46.6629))
+
+        self.assertEqual(stats["groups"], 1)
+        self.assertEqual(database.execute("SELECT analysis_status FROM image_observations WHERE id=1").fetchone()[0], "analyzed")
+        self.assertEqual(database.execute("SELECT analysis_status FROM image_observations WHERE id=2").fetchone()[0], "pending")
+
     def test_frame_level_relevance_excludes_closeup_without_losing_scenic_group(self):
         database = self.database()
         database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,0)")

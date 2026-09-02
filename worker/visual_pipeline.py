@@ -558,7 +558,8 @@ def _diverse_frames(rows: Sequence[sqlite3.Row], maximum: int = 4) -> list[sqlit
     return selected
 
 
-def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, requests_per_second: float = .25) -> dict[str, int]:
+def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, requests_per_second: float = .25,
+                   bounds: Optional[tuple[float, float, float, float]] = None) -> dict[str, int]:
     endpoint = os.environ.get("INFERENCE_BASE_URL", "http://inference-api.inference.svc.cluster.local:8080")
     api_key = os.environ.get("INFERENCE_API_KEY", "")
     model = os.environ.get("BENCHLY_VISION_MODEL", DEFAULT_MODEL)
@@ -572,11 +573,21 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
       )
     """).fetchone()[0]
     limit = max(0, min(limit, 300 - int(groups_today)))
-    groups = connection.execute("""
+    target_join = ""
+    target_clause = ""
+    parameters: list[object] = []
+    if bounds:
+        target_join = """JOIN bench_image_evidence target_e ON target_e.image_observation_id=image_observations.id
+          JOIN benches target_b ON target_b.row_id=target_e.bench_row_id"""
+        target_clause = "AND target_b.longitude BETWEEN ? AND ? AND target_b.latitude BETWEEN ? AND ?"
+        parameters.extend((bounds[0], bounds[2], bounds[1], bounds[3]))
+    parameters.append(limit)
+    groups = connection.execute(f"""
         SELECT provider,capture_group_id,min(discovered_at) discovered_at
-        FROM image_observations WHERE analysis_status IN ('pending','retry') AND attempts<3
+        FROM image_observations {target_join}
+        WHERE analysis_status IN ('pending','retry') AND attempts<3 {target_clause}
         GROUP BY provider,capture_group_id ORDER BY discovered_at LIMIT ?
-    """, (limit,)).fetchall()
+    """, parameters).fetchall()
     stats = {"groups": 0, "images": 0, "failed": 0, "irrelevant": 0}
     minimum_interval = 1 / max(.05, requests_per_second)
     last_image_request = 0.0
@@ -665,8 +676,15 @@ def _fuse_frame_predictions(items: Sequence[tuple[dict[str, object], float]]) ->
     return validate_scene_prediction(fused)
 
 
-def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000) -> dict[str, int]:
-    bench_rows = connection.execute("""
+def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
+                          bounds: Optional[tuple[float, float, float, float]] = None) -> dict[str, int]:
+    bounds_clause = ""
+    parameters: list[object] = []
+    if bounds:
+        bounds_clause = "AND b.longitude BETWEEN ? AND ? AND b.latitude BETWEEN ? AND ?"
+        parameters.extend((bounds[0], bounds[2], bounds[1], bounds[3]))
+    parameters.append(limit)
+    bench_rows = connection.execute(f"""
         SELECT DISTINCT b.row_id,e.in_forest,e.land_context,e.waterfront,e.canopy_context
         FROM benches b JOIN bench_image_evidence bie ON bie.bench_row_id=b.row_id
         LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
@@ -674,8 +692,9 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000) -> 
         LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id
         WHERE b.active=1 AND io.analysis_status='analyzed'
           AND (lm.updated_at IS NULL OR lm.updated_at<io.analyzed_at)
+          {bounds_clause}
         ORDER BY b.row_id LIMIT ?
-    """, (limit,)).fetchall()
+    """, parameters).fetchall()
     stats = {"reconciled": 0, "conflicts": 0}
     for bench in bench_rows:
         rows = connection.execute("""

@@ -1346,7 +1346,10 @@ def run_analyze_scenes(args) -> None:
         """).fetchone()[0])
         remaining_seconds = max(0.0, min(args.max_runtime_hours * 3600, 7200 - used_seconds))
         deadline = time.monotonic() + remaining_seconds
-        stats = analyze_scenes(connection, args.limit, deadline, args.requests_per_second)
+        stats = analyze_scenes(
+            connection, args.limit, deadline, args.requests_per_second,
+            tuple(args.bounds) if args.bounds else None,
+        )
         stats["daily_runtime_remaining_seconds"] = round(remaining_seconds)
         finish_run(connection, run_id, "completed", stats)
         print(json.dumps(stats, indent=2))
@@ -1357,13 +1360,21 @@ def run_analyze_scenes(args) -> None:
         connection.close()
 
 
-def reconcile_deterministic_context(connection: sqlite3.Connection, limit: int = 5000) -> dict[str, int]:
-    rows = connection.execute("""
+def reconcile_deterministic_context(connection: sqlite3.Connection, limit: int = 5000,
+                                    bounds: Optional[tuple[float, float, float, float]] = None) -> dict[str, int]:
+    bounds_clause = ""
+    parameters: list[object] = []
+    if bounds:
+        bounds_clause = "AND b.longitude BETWEEN ? AND ? AND b.latitude BETWEEN ? AND ?"
+        parameters.extend((bounds[0], bounds[2], bounds[1], bounds[3]))
+    parameters.append(limit)
+    unresolved_clause = "" if bounds else "AND (e.environment_computed_at IS NULL OR e.land_context IS NULL)"
+    rows = connection.execute(f"""
       SELECT b.row_id,b.latitude,b.longitude,e.canopy_context
       FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
-      WHERE b.active=1 AND (e.environment_computed_at IS NULL OR e.land_context IS NULL)
+      WHERE b.active=1 {unresolved_clause} {bounds_clause}
       ORDER BY b.row_id LIMIT ?
-    """, (limit,)).fetchall()
+    """, parameters).fetchall()
     stats = {"deterministic_reconciled": 0, "forest": 0, "waterfront": 0}
     official_context = official_context_version(connection)
     for row in rows:
@@ -1397,8 +1408,9 @@ def run_reconcile_environment(args) -> None:
     connection = connect_database(Path(args.database).resolve())
     run_id = begin_run(connection, "reconcile-environment")
     try:
-        stats = reconcile_deterministic_context(connection, args.limit)
-        stats.update({f"visual_{key}": value for key, value in reconcile_environment(connection, args.limit).items()})
+        bounds = tuple(args.bounds) if args.bounds else None
+        stats = reconcile_deterministic_context(connection, args.limit, bounds)
+        stats.update({f"visual_{key}": value for key, value in reconcile_environment(connection, args.limit, bounds).items()})
         finish_run(connection, run_id, "completed", stats)
         print(json.dumps(stats, indent=2))
     except Exception as error:
@@ -1729,11 +1741,13 @@ def build_parser() -> argparse.ArgumentParser:
     analysis.add_argument("--limit", type=int, default=300)
     analysis.add_argument("--max-runtime-hours", type=float, default=2)
     analysis.add_argument("--requests-per-second", type=float, default=.25)
+    analysis.add_argument("--bounds", nargs=4, type=float, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
     analysis.set_defaults(function=run_analyze_scenes, uses_lock=True)
 
     reconcile = subparsers.add_parser("reconcile-environment", help="Fuse deterministic context and visual evidence")
     reconcile.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
     reconcile.add_argument("--limit", type=int, default=5000)
+    reconcile.add_argument("--bounds", nargs=4, type=float, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
     reconcile.set_defaults(function=run_reconcile_environment, uses_lock=True)
 
     audit = subparsers.add_parser("audit-environment", help="Report environment evidence coverage and conflicts")
