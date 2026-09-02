@@ -112,6 +112,8 @@ jobs:
           echo "worker=$IMAGE_NAME@$worker_digest" >> "$GITHUB_OUTPUT"
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.4
       - name: Load kubeconfig
         env:
           KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
@@ -129,10 +131,16 @@ jobs:
         run: |
           set -euo pipefail
           kubectl version --client
-          if ! kubectl get deployment benchly --namespace benchly >/dev/null 2>&1; then
-            echo "Benchly is not bootstrapped yet; Ansible will perform the first install." | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
+          namespace_result="$(kubectl get namespace benchly -o name 2>&1)" || {
+            if grep -q 'NotFound' <<<"$namespace_result"; then
+              echo "Benchly is not bootstrapped yet; Ansible will perform the first install." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "$namespace_result" >&2
+            echo "Kubeconfig could not access the Benchly namespace." >&2
+            exit 1
+          }
+          kubectl get deployment benchly --namespace benchly >/dev/null
           kubectl --namespace benchly create secret docker-registry benchly-ghcr \
             --docker-server=ghcr.io \
             --docker-username="$GITHUB_ACTOR" \
