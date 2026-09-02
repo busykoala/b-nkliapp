@@ -13,3 +13,37 @@ spec:
     - name: test
       image: {{ .Values.images.test }}
       command: [sh, -ec, "curl -fsS --max-time 20 http://benchly/ >/dev/null"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-data-test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  nodeSelector: {kubernetes.io/hostname: {{ .Values.nodeName }}}
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
+  containers:
+    - name: audit
+      image: {{ .Values.images.worker }}
+      args: [audit-environment, --database, /data/benchly.sqlite, --require-production]
+      resources:
+        requests: {cpu: 50m, memory: 128Mi}
+        limits: {cpu: "1", memory: 1Gi}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: {drop: [ALL]}
+      volumeMounts:
+        - {name: data, mountPath: /data}
+        - {name: temporary, mountPath: /tmp}
+  volumes:
+    - {name: data, persistentVolumeClaim: {claimName: {{ .Release.Name }}-data}}
+    - {name: temporary, emptyDir: {sizeLimit: 64Mi}}

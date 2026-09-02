@@ -173,12 +173,22 @@ jobs:
                   | jq -r '[.[] | select(.status == "deployed")][-1].revision // empty')"
                 test -n "$deployed_revision"
                 echo "Recovering $release from $status via revision $deployed_revision"
-                helm rollback "$release" "$deployed_revision" --namespace "$namespace" --wait --timeout 20m
+                helm rollback "$release" "$deployed_revision" --namespace "$namespace" --wait --timeout 20m \
+                  "${helm_conflict_flags[@]}"
                 ;;
             esac
           }
           trap 'diagnostics "$LINENO" "$BASH_COMMAND"' ERR
           kubectl version --client
+          helm_version="$(helm version --template '{{.Version}}')"
+          helm_major="${helm_version#v}"
+          helm_major="${helm_major%%.*}"
+          helm_conflict_flags=()
+          helm_safety_flags=(--atomic)
+          if (( helm_major >= 4 )); then
+            helm_conflict_flags=(--force-conflicts)
+            helm_safety_flags=(--rollback-on-failure --force-conflicts)
+          fi
           namespace_result="$(kubectl get namespace benchly -o name 2>&1)" || {
             if grep -q 'NotFound' <<<"$namespace_result"; then
               echo "Benchly is not bootstrapped yet; Ansible will perform the first install." | tee -a "$GITHUB_STEP_SUMMARY"
@@ -202,7 +212,7 @@ jobs:
             "benchly.io/revision=$GITHUB_SHA" --overwrite
           recover_pending_release inference inference
           helm upgrade inference "$GITHUB_WORKSPACE/deploy/charts/inference" \
-            --namespace inference --atomic --wait --timeout 130m
+            --namespace inference --wait --timeout 130m "${helm_safety_flags[@]}"
           helm test inference --namespace inference --logs --timeout 10m
           inference_key="$(kubectl --namespace inference get secret inference-api -o jsonpath='{.data.api-key}')"
           test -n "$inference_key"
@@ -211,7 +221,7 @@ jobs:
           recover_pending_release benchly benchly
           set +e
           benchly_upgrade_output="$(helm upgrade benchly "$GITHUB_WORKSPACE/deploy/charts/benchly" \
-            --namespace benchly --atomic --wait --timeout 20m \
+            --namespace benchly --wait --timeout 20m "${helm_safety_flags[@]}" \
             --set-string "images.web=$WEB_IMAGE" \
             --set-string "images.worker=$WORKER_IMAGE" 2>&1)"
           benchly_upgrade_status=$?

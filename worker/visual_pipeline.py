@@ -18,6 +18,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 PROMPT_VERSION = "benchly-scene-1.1"
@@ -757,7 +758,25 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
             "SELECT model_version,count(*) count FROM image_observations WHERE analyzed_at IS NOT NULL GROUP BY model_version"
         )
     }
+    database_path = str(connection.execute("PRAGMA database_list").fetchone()[2] or "")
+    image_suffixes = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".heic"}
+    image_files_on_data_volume = 0
+    if database_path and database_path != ":memory:":
+        image_files_on_data_volume = sum(
+            path.is_file() and path.suffix.lower() in image_suffixes
+            for path in Path(database_path).resolve().parent.rglob("*")
+        )
+    daerligen = connection.execute("""
+      SELECT count(*) benches,
+        coalesce(sum(CASE WHEN e.in_forest=1 THEN 1 ELSE 0 END),0) forest_false_positives,
+        coalesce(sum(CASE WHEN e.waterfront=1 THEN 1 ELSE 0 END),0) waterfront_confirmed,
+        coalesce(sum(CASE WHEN e.environment_computed_at IS NOT NULL THEN 1 ELSE 0 END),0) classified
+      FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
+      WHERE b.active=1 AND b.latitude BETWEEN 46.6618 AND 46.6629
+        AND b.longitude BETWEEN 7.8085 AND 7.8100
+    """).fetchone()
     return {
+        "sqlite_quick_check": scalar("PRAGMA quick_check"),
         "active_benches": scalar("SELECT count(*) FROM benches WHERE active=1"),
         "exact_geometry_features": scalar("SELECT count(*) FROM environment_features WHERE geometry_wkb IS NOT NULL"),
         "deterministic_context": scalar("SELECT count(*) FROM bench_enrichments WHERE land_context IS NOT NULL"),
@@ -771,7 +790,10 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
         "forest_conflicts": scalar("""SELECT count(*) FROM bench_likely_metadata lm JOIN bench_enrichments e USING(bench_row_id)
           WHERE lm.land_context='forest' AND e.land_context IN ('open','urban','park')"""),
         "likely_rows_without_provenance": scalar("SELECT count(*) FROM bench_likely_metadata WHERE evidence_summary IS NULL OR evidence_summary='[]'"),
-        "raw_image_columns": 0,
+        "raw_image_columns": scalar("""SELECT count(*) FROM pragma_table_info('image_observations')
+          WHERE lower(name) LIKE '%blob%' OR lower(name) LIKE '%thumbnail%' OR lower(name) IN ('image','bytes','payload')"""),
+        "image_files_on_data_volume": int(image_files_on_data_volume),
+        "daerligen": dict(daerligen),
     }
 
 

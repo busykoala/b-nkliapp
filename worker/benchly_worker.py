@@ -1408,7 +1408,15 @@ def run_reconcile_environment(args) -> None:
 def run_audit_environment(args) -> None:
     connection = connect_database(Path(args.database).resolve())
     try:
-        print(json.dumps(audit_environment(connection), indent=2))
+        result = audit_environment(connection)
+        print(json.dumps(result, indent=2))
+        if args.require_production and (
+            result["sqlite_quick_check"] != "ok"
+            or int(result["active_benches"]) < 100_000
+            or int(result["raw_image_columns"]) != 0
+            or int(result["image_files_on_data_volume"]) != 0
+        ):
+            raise RuntimeError("production data audit failed")
     finally:
         connection.close()
 
@@ -1725,6 +1733,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     audit = subparsers.add_parser("audit-environment", help="Report environment evidence coverage and conflicts")
     audit.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
+    audit.add_argument("--require-production", action="store_true")
     audit.set_defaults(function=run_audit_environment, uses_lock=False)
 
     benchmark = subparsers.add_parser("benchmark-vision", help="Evaluate vision models against a labelled 100-location JSONL set")
