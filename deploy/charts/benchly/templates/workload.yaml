@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: web}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: web}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: {{ .Values.nodeName }}}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: web
+          image: {{ .Values.images.web }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          ports: [{name: http, containerPort: 3000}]
+          env:
+            - {name: DATABASE_PATH, value: /data/benchly.sqlite}
+            - {name: BENCHLY_SEED_DEMO, value: "false"}
+            - {name: BENCHLY_AI_LABELS_ENABLED, value: {{ .Values.web.aiLabelsEnabled | quote }}}
+            - {name: NEXT_PUBLIC_APP_URL, value: "https://bänkliapp.ch"}
+            - name: CONTRIBUTOR_SECRET
+              valueFrom: {secretKeyRef: {name: {{ .Values.existingSecret }}, key: contributor-secret}}
+            - name: RATE_LIMIT_SECRET
+              valueFrom: {secretKeyRef: {name: {{ .Values.existingSecret }}, key: rate-limit-secret}}
+            - name: ADMIN_PASSWORD_HASH
+              valueFrom: {secretKeyRef: {name: {{ .Values.existingSecret }}, key: admin-password-hash}}
+            - name: ADMIN_SESSION_SECRET
+              valueFrom: {secretKeyRef: {name: {{ .Values.existingSecret }}, key: admin-session-secret}}
+          startupProbe: {httpGet: {path: /, port: http}, failureThreshold: 60, periodSeconds: 5, timeoutSeconds: 3}
+          readinessProbe: {httpGet: {path: /, port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {httpGet: {path: /, port: http}, periodSeconds: 30, timeoutSeconds: 3, failureThreshold: 3}
+          resources:
+{{ toYaml .Values.web.resources | indent 12 }}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: {{ .Release.Name }}-data}}

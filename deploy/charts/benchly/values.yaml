@@ -1,0 +1,37 @@
+nodeName: blizzard
+existingSecret: benchly-secrets
+
+images:
+  web: ghcr.io/busykoala/b-nkliapp@sha256:0d06a9510eec2c4bf4412700f7c59bbc172443d3e57d90c59b92e91bdf7a2094
+  worker: ghcr.io/busykoala/b-nkliapp@sha256:7117f57c3845dbcf3d7e8ebb4e18564d57962cf5f03336a51e4340aca885515a
+  test: curlimages/curl:8.16.0
+
+storage:
+  className: benchly-local
+  root: /srv/data/benchly/data
+  size: 50Gi
+
+host: xn--bnkliapp-0za.ch
+gateway:
+  name: blizzard
+  namespace: gateway-system
+  listener: https-5
+
+web:
+  aiLabelsEnabled: false
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "2", memory: 4Gi}
+
+workers:
+  timeZone: Europe/Zurich
+  temporaryStorage: 80Gi
+  importSchedule: "15 1 * * 0"
+  enrichSchedule: "15 1 * * 1-6"
+  horizonSchedule: "30 10 * * *"
+  commonsSchedule: "0 19 * * *"
+  officialContextSchedule: "0 12 * * 0"
+  imageDiscoverySchedule: "0 20 * * *"
+  sceneAnalysisSchedule: "0 21 * * *"
+  reconciliationSchedule: "15 23 * * *"
+  visionModel: benchly-vision

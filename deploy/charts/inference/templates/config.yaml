@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-llama-swap
+data:
+  config.yaml: |
+    healthCheckTimeout: 600
+    globalTTL: 0
+    logLevel: info
+    startPort: {{ .Values.runtime.modelPortStart }}
+    includeAliasesInList: true
+    models:
+{{- range $id, $model := .Values.models }}
+{{- if $model.enabled }}
+      {{ $id }}:
+        cmd: >-
+          llama-server
+          --host 127.0.0.1
+          --port ${PORT}
+          --model /models/{{ $id }}/{{ $model.file }}
+{{- if $model.mmproj }}
+          --mmproj /models/{{ $id }}/{{ $model.mmproj }}
+          --image-max-tokens 4096
+{{- end }}
+          --n-gpu-layers 999
+          --ctx-size {{ $.Values.runtime.contextSize }}
+          --parallel 1
+          --cache-type-k q8_0
+          --cache-type-v q8_0
+          --flash-attn on
+          --jinja
+          --metrics
+        aliases:
+{{ toYaml $model.aliases | indent 10 }}
+{{- if eq $id "qwen35-general" }}
+        filters:
+          setParamsByID:
+            general:
+              chat_template_kwargs:
+                enable_thinking: false
+{{- end }}
+        concurrencyLimit: 1
+        metadata:
+          repository: {{ $model.repo | quote }}
+          revision: {{ $model.revision | quote }}
+{{- end }}
+{{- end }}
+{{- if .Values.tts.enabled }}
+      {{ .Values.tts.id }}:
+        name: Kartoffelbox German TTS
+        description: German speech synthesis with four bundled voice references
+        cmd: >-
+          /opt/kartoffelbox/bin/python
+          -m uvicorn tts_server:app
+          --app-dir /opt/kartoffelbox-server
+          --host 127.0.0.1
+          --port ${PORT}
+          --workers 1
+        checkEndpoint: /health
+        aliases:
+{{ toYaml .Values.tts.aliases | indent 10 }}
+        env:
+          - TTS_MODEL_DIR=/models/{{ .Values.tts.id }}
+          - TTS_VOICES_DIR=/models/{{ .Values.tts.id }}/voices
+          - TTS_DEVICE=cuda
+        concurrencyLimit: 1
+        capabilities:
+          in: [text]
+          out: [audio]
+        metadata:
+          repository: {{ .Values.tts.repo | quote }}
+          revision: {{ .Values.tts.revision | quote }}
+          language: de
+{{- end }}
+    hooks:
+      on_startup:
+        preload:
+          - {{ .Values.runtime.preload }}
+    routing:
+      router:
+        use: group
+        settings:
+          groups:
+            gpu:
+              swap: true
+              exclusive: true
+              members:
+{{- range $id, $model := .Values.models }}
+{{- if $model.enabled }}
+                - {{ $id }}
+{{- end }}
+{{- end }}
+{{- if .Values.tts.enabled }}
+                - {{ .Values.tts.id }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-nginx
+data:
+  nginx.conf: |
+    worker_processes auto;
+    pid /tmp/nginx.pid;
+    error_log /dev/stderr info;
+    events { worker_connections 1024; }
+    http {
+      include /etc/nginx/mime.types;
+      include /etc/nginx/auth/auth.conf;
+      access_log /dev/stdout;
+      client_body_temp_path /tmp/client_body;
+      proxy_temp_path /tmp/proxy;
+      client_max_body_size 24m;
+      limit_conn_zone $host zone=generative:1m;
+      limit_conn_zone $host zone=retrieval:1m;
+      server {
+        listen 8080;
+        if ($inference_authorized = 0) { return 401; }
+{{- range list "/v1/chat/completions" "/v1/responses" "/v1/completions" }}
+        location = {{ . }} {
+          limit_conn generative 1;
+          limit_conn_status 429;
+          proxy_pass http://llama-swap:8080;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Request-ID $request_id;
+          proxy_buffering off;
+          proxy_request_buffering off;
+          proxy_cache off;
+          proxy_read_timeout 7200s;
+          proxy_send_timeout 7200s;
+        }
+{{- end }}
+        location = /v1/audio/speech {
+          limit_conn generative 1;
+          limit_conn_status 429;
+          proxy_pass http://llama-swap:8080;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Request-ID $request_id;
+          proxy_buffering off;
+          proxy_request_buffering off;
+          proxy_cache off;
+          proxy_read_timeout 7200s;
+          proxy_send_timeout 7200s;
+        }
+        location = /v1/audio/voices {
+          proxy_pass http://llama-swap:8080;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Request-ID $request_id;
+          proxy_buffering off;
+          proxy_read_timeout 7200s;
+        }
+        location = /v1/models {
+          proxy_pass http://llama-swap:8080;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Request-ID $request_id;
+          proxy_buffering off;
+          proxy_read_timeout 7200s;
+        }
+        location = /v1/embeddings {
+          limit_conn retrieval 8;
+          limit_conn_status 429;
+          proxy_pass http://embedding:80;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Request-ID $request_id;
+          proxy_buffering off;
+          proxy_read_timeout 7200s;
+        }
+        location = /v1/rerank {
+          limit_conn retrieval 8;
+          limit_conn_status 429;
+          proxy_pass http://reranker:80/rerank;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Request-ID $request_id;
+          proxy_buffering off;
+          proxy_read_timeout 7200s;
+        }
+        location / { return 404; }
+      }
+      server {
+        listen 8081;
+        access_log off;
+        location = /healthz { return 200 "ok\n"; }
+        location / { return 404; }
+      }
+    }

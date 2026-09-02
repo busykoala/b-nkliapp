@@ -96,6 +96,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, benchly]
     environment: production
     steps:
+      - uses: actions/checkout@v4
       - name: Resolve published digests
         id: images
         env:
@@ -152,10 +153,8 @@ jobs:
             exit 1
           }
           kubectl get deployment benchly --namespace benchly >/dev/null
-          deployment_repo="$RUNNER_TEMP/server-deployment"
-          git clone --depth 1 https://github.com/busykoala/server.git "$deployment_repo"
-          helm lint "$deployment_repo/deploy/inference"
-          helm lint "$deployment_repo/deploy/benchly"
+          helm lint "$GITHUB_WORKSPACE/deploy/charts/inference"
+          helm lint "$GITHUB_WORKSPACE/deploy/charts/benchly"
           kubectl --namespace benchly create secret docker-registry benchly-ghcr \
             --docker-server=ghcr.io \
             --docker-username="$GITHUB_ACTOR" \
@@ -165,13 +164,13 @@ jobs:
             --patch '{"imagePullSecrets":[{"name":"benchly-ghcr"}]}'
           kubectl --namespace benchly annotate secret benchly-ghcr \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
-          helm upgrade inference "$deployment_repo/deploy/inference" \
+          helm upgrade inference "$GITHUB_WORKSPACE/deploy/charts/inference" \
             --namespace inference --atomic --wait --timeout 130m
           inference_key="$(kubectl --namespace inference get secret inference-api -o jsonpath='{.data.api-key}')"
           test -n "$inference_key"
           kubectl --namespace benchly patch secret benchly-secrets --type merge \
             --patch "$(jq -cn --arg key "$inference_key" '{data:{"inference-api-key":$key}}')"
-          helm upgrade benchly "$deployment_repo/deploy/benchly" \
+          helm upgrade benchly "$GITHUB_WORKSPACE/deploy/charts/benchly" \
             --namespace benchly --atomic --wait --timeout 20m \
             --set-string "images.web=$WEB_IMAGE" \
             --set-string "images.worker=$WORKER_IMAGE"
