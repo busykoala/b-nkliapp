@@ -283,14 +283,21 @@ jobs:
           }
           pilot_suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           pilot_bounds=(7.8085 46.6618 7.8100 46.6629)
-          run_bounded_job benchly-image-discovery "benchly-daerligen-discover-$pilot_suffix" \
-            discover-open-images --database /data/benchly.sqlite --max-cells 1 --requests-per-second 1 \
-            --include-resolved --bounds "${pilot_bounds[@]}"
-          run_bounded_job benchly-scene-analysis "benchly-daerligen-analyze-$pilot_suffix" \
-            analyze-scenes --database /data/benchly.sqlite --limit 10 --max-runtime-hours 0.25 \
-            --requests-per-second 0.25 --bounds "${pilot_bounds[@]}"
-          run_bounded_job benchly-environment-reconcile "benchly-daerligen-reconcile-$pilot_suffix" \
-            reconcile-environment --database /data/benchly.sqlite --limit 100 --bounds "${pilot_bounds[@]}"
+          bootstrap_active="$(kubectl --namespace benchly get job benchly-official-context-bootstrap \
+            -o jsonpath='{.status.active}' 2>/dev/null || true)"
+          if [[ "$bootstrap_active" == "1" ]]; then
+            echo 'Skipped the tiny shoreline pilot while the exact context import owns the SQLite writer lock.' \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            run_bounded_job benchly-image-discovery "benchly-daerligen-discover-$pilot_suffix" \
+              discover-open-images --database /data/benchly.sqlite --max-cells 1 --requests-per-second 1 \
+              --include-resolved --bounds "${pilot_bounds[@]}"
+            run_bounded_job benchly-scene-analysis "benchly-daerligen-analyze-$pilot_suffix" \
+              analyze-scenes --database /data/benchly.sqlite --limit 10 --max-runtime-hours 0.25 \
+              --requests-per-second 0.25 --bounds "${pilot_bounds[@]}"
+            run_bounded_job benchly-environment-reconcile "benchly-daerligen-reconcile-$pilot_suffix" \
+              reconcile-environment --database /data/benchly.sqlite --limit 100 --bounds "${pilot_bounds[@]}"
+          fi
           if ! kubectl --namespace benchly get job benchly-official-context-bootstrap >/dev/null 2>&1; then
             bootstrap_args='["import-official-context","--database","/data/benchly.sqlite"]'
             kubectl --namespace benchly create job --from=cronjob/benchly-official-context \
