@@ -1,0 +1,68 @@
+name: Production data audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/production-audit.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchly-production-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: [self-hosted, linux, x64, benchly]
+    environment: production
+    steps:
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.4
+      - name: Load kubeconfig
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        run: |
+          test -n "$KUBECONFIG_CONTENT"
+          install -m 600 /dev/null "$RUNNER_TEMP/kubeconfig"
+          printf '%s' "$KUBECONFIG_CONTENT" > "$RUNNER_TEMP/kubeconfig"
+      - name: Inspect import and database
+        env:
+          KUBECONFIG: ${{ runner.temp }}/kubeconfig
+        shell: bash
+        run: |
+          set -euo pipefail
+          notice() {
+            title="$1"
+            value="$2"
+            value="${value//'%'/'%25'}"
+            value="${value//$'\r'/'%0D'}"
+            value="${value//$'\n'/'%0A'}"
+            echo "::notice title=$title::$value"
+          }
+
+          import_state="$(kubectl --namespace benchly get job benchly-official-context-bootstrap -o json \
+            | jq -c '{active:(.status.active//0),succeeded:(.status.succeeded//0),failed:(.status.failed//0),conditions:(.status.conditions//[]|map({type,status,reason}))}')"
+          notice "swissTLM import" "$import_state"
+
+          audit_job="benchly-production-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          audit_args='["audit-environment","--database","/data/benchly.sqlite","--require-production"]'
+          kubectl --namespace benchly create job --from=cronjob/benchly-environment-reconcile "$audit_job" \
+            --dry-run=client -o json \
+            | jq --argjson args "$audit_args" '.spec.backoffLimit=0 | .spec.activeDeadlineSeconds=900 | .spec.template.spec.containers[0].args=$args' \
+            | kubectl --namespace benchly apply -f -
+          if ! kubectl --namespace benchly wait --for=condition=complete "job/$audit_job" --timeout=15m; then
+            kubectl --namespace benchly logs "job/$audit_job" --all-containers --tail=200 || true
+            kubectl --namespace benchly describe "job/$audit_job" || true
+            exit 1
+          fi
+          audit_result="$(kubectl --namespace benchly logs "job/$audit_job" --all-containers | jq -c .)"
+          notice "Benchly production audit" "$audit_result"
+          kubectl --namespace benchly delete job "$audit_job" --wait=false
+      - name: Remove temporary kubeconfig
+        if: always()
+        run: rm -f "$RUNNER_TEMP/kubeconfig"
