@@ -63,6 +63,7 @@ test("publishes an anonymous rating and correction immediately", async ({ page }
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   await expect(page.getByText("Sonnenlage")).toBeVisible();
+  await expect(page.getByText("Schatten: Nacht", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/Astronomisch auf/)).toBeVisible();
   await expect(page.getByText(/Aussicht/).first()).toBeVisible();
 });

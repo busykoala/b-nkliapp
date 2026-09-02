@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Accessibility, Armchair, Building2, Clock3, Compass, ExternalLink, EyeOff, Flag, Hammer, Image as ImageIcon, Info, Leaf, MapPin, Mountain, MountainSnow, MoveHorizontal, Route, Star, Sun, Sunrise, Sunset, Telescope, TreePine, Trees, Umbrella, UsersRound, Waves } from "lucide-react";
+import { Accessibility, Armchair, Building2, Clock3, Compass, ExternalLink, EyeOff, Flag, Hammer, Image as ImageIcon, Info, Leaf, MapPin, Moon, Mountain, MountainSnow, MoveHorizontal, Route, Star, Sun, Sunrise, Sunset, Telescope, TreePine, Trees, Umbrella, UsersRound, Waves } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import { CorrectionForm, RatingForm } from "./contribution-forms";
@@ -16,7 +16,10 @@ export function BenchDetailContent({ bench }: { bench: BenchDetail }) {
     <div className="pb-8">
       <div className="mb-4">
         <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide">
-          <span className={`badge gap-1 ${bench.sunnyNow ? "badge-warning" : "badge-ghost"}`}><Sun size={14} />{bench.sunnyNow === null ? "Sonne noch nicht analysiert" : bench.sunnyNow ? (bench.sunConfidence === "niedrig" ? "Wahrscheinlich Sonne" : "Sonne jetzt") : `${bench.sunConfidence === "niedrig" ? "Wahrsch. " : ""}Schatten: ${shadeLabel(bench.shadeCause)}`}</span>
+          <span className={`badge gap-1 ${bench.sunnyNow ? "badge-warning" : "badge-ghost"}`}>
+            {bench.shadeCause === "nacht" ? <Moon size={14} /> : <Sun size={14} />}
+            {sunStatusLabel(bench)}
+          </span>
           <span className="badge badge-primary gap-1"><Mountain size={14} /> Aussicht {bench.viewConfidence === "niedrig" ? "ca. " : ""}{bench.viewScore ?? "–"}/5</span>
           {bench.ratingAverage && <span className="badge badge-secondary gap-1"><Star size={14} /> {bench.ratingAverage} ({bench.ratingCount})</span>}
         </div>
@@ -78,6 +81,12 @@ function InfoCell({ icon, label, value }: { icon: React.ReactNode; label: string
 function Confidence({ value }: { value: BenchDetail["viewConfidence"] }) { return <span className="badge badge-outline text-xs">{value === "niedrig" ? "Vorläufiges Modell" : `Sicherheit: ${value}`}</span>; }
 function distance(value: number | null) { if (value === null) return "Unbekannt"; return value >= 1000 ? `${(value / 1000).toFixed(1)} km` : `${Math.round(value)} m`; }
 function sunDuration(value: number | null) { if (value === null) return "–"; const hours = Math.floor(value / 60); const minutes = value % 60; return `${hours} h ${minutes ? `${minutes} min` : ""} direkt`.trim(); }
+function sunStatusLabel(bench: BenchDetail) {
+  if (bench.shadeCause === "nacht") return "Nacht";
+  if (bench.sunnyNow === null) return "Sonne noch nicht analysiert";
+  if (bench.sunnyNow) return bench.sunConfidence === "niedrig" ? "Wahrscheinlich Sonne" : "Sonne jetzt";
+  return `${bench.sunConfidence === "niedrig" ? "Wahrsch. " : ""}Schatten: ${shadeLabel(bench.shadeCause)}`;
+}
 function shadeLabel(value: BenchDetail["shadeCause"]) { return ({ frei: "frei", nacht: "Nacht", überdacht: "Überdachung", gebäude: "Gebäude", vegetation: "Vegetation", gelände: "Gelände", unbekannt: "unbekannt" })[value]; }
 function percent(value: number | null) { return value === null ? "Unbekannt" : `${Math.round(value)}% der Richtungen`; }
 /* External Commons hosts are intentionally rendered directly so thumbnails are not rehosted or proxied. */
