@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
+import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent, StyleSpecification } from "maplibre-gl";
 import { Info } from "lucide-react";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
@@ -37,22 +37,37 @@ function featureCollection(features: MapFeature[]) {
 
 type UserPosition = { longitude: number; latitude: number; accuracy: number };
 
+const FALLBACK_MAP_STYLE = {
+  version: 8,
+  sources: {
+    swisstopo: {
+      type: "raster",
+      tiles: ["https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swisstlm3d-karte-farbe/default/current/3857/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© swisstopo",
+      maxzoom: 18,
+    },
+  },
+  layers: [
+    { id: "background", type: "background", paint: { "background-color": "#e8dec5" } },
+    { id: "swisstopo", type: "raster", source: "swisstopo", paint: { "raster-opacity": .72, "raster-saturation": -.48, "raster-contrast": -.12 } },
+  ],
+} satisfies StyleSpecification;
+
+async function loadIllustratedMapStyle(): Promise<StyleSpecification> {
+  try {
+    const response = await fetch("https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json", { signal: AbortSignal.timeout(6_000) });
+    if (!response.ok) throw new Error(`swisstopo style ${response.status}`);
+    return JSON.parse(await response.text(), (key, value) => key === "text-font" ? ["Frutiger Neue Regular"] : value) as StyleSpecification;
+  } catch {
+    return FALLBACK_MAP_STYLE;
+  }
+}
+
 function applyMapAtmosphere(map: MapLibreMap) {
   const center = map.getCenter();
   const { phase } = getDaylightState(new Date(), center.lat, center.lng);
   map.getContainer().dataset.phase = phase;
-  const paints = {
-    dawn: { min: .08, max: .84, saturation: -.42, hue: 10 },
-    day: { min: .12, max: .96, saturation: -.48, hue: 8 },
-    dusk: { min: .06, max: .72, saturation: -.38, hue: 18 },
-    night: { min: .02, max: .46, saturation: -.72, hue: 32 },
-  }[phase];
-  if (map.getLayer("swisstopo")) {
-    map.setPaintProperty("swisstopo", "raster-brightness-min", paints.min);
-    map.setPaintProperty("swisstopo", "raster-brightness-max", paints.max);
-    map.setPaintProperty("swisstopo", "raster-saturation", paints.saturation);
-    map.setPaintProperty("swisstopo", "raster-hue-rotate", paints.hue);
-  }
   if (map.getLayer("clusters")) map.setPaintProperty("clusters", "circle-color", phase === "night" ? "#263f45" : "#294c45");
   if (map.getLayer("benches")) {
     map.setPaintProperty("benches", "circle-stroke-color", phase === "night" ? "#f2dca7" : "#fff4d8");
@@ -160,7 +175,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     let disposed = false;
     let moveTimeout: number | undefined;
     let ambientTimer: number | undefined;
-    import("maplibre-gl").then(({ Map }) => {
+    Promise.all([import("maplibre-gl"), loadIllustratedMapStyle()]).then(([{ Map }, mapStyle]) => {
       if (disposed || !containerRef.current) return;
       const map = new Map({
         container: containerRef.current,
@@ -170,28 +185,13 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         maxZoom: 19,
         maxBounds: [[5.45, 45.55], [10.9, 48.05]],
         attributionControl: { compact: true, customAttribution: "Bankdaten © OpenStreetMap-Mitwirkende" },
-        style: {
-          version: 8,
-          sources: {
-            swisstopo: {
-              type: "raster",
-              tiles: ["https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swisstlm3d-karte-farbe/default/current/3857/{z}/{x}/{y}.png"],
-              tileSize: 256,
-              attribution: "© swisstopo",
-              maxzoom: 18,
-            },
-          },
-          layers: [
-            { id: "background", type: "background", paint: { "background-color": "#e8dec5" } },
-            { id: "swisstopo", type: "raster", source: "swisstopo", paint: { "raster-opacity": 0.72, "raster-saturation": -0.48, "raster-contrast": -0.12, "raster-brightness-min": 0.12, "raster-brightness-max": 0.96, "raster-hue-rotate": 8 } },
-          ],
-        },
+        style: mapStyle,
       });
       mapRef.current = map;
       map.on("load", () => {
         map.addSource("benchly", { type: "geojson", data: featureCollection([]) });
         map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#294c45", "circle-opacity": 0.96, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 3, "circle-stroke-color": "#f8eed7", "circle-blur": 0.02 } });
-        map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-size": 12 }, paint: { "text-color": "#fff4d7" } });
+        map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-font": ["Frutiger Neue Regular"], "text-size": 12 }, paint: { "text-color": "#fff4d7" } });
         map.addLayer({ id: "bench-hits", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-radius": 22, "circle-opacity": 0 } });
         map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 8, 18, 12], "circle-stroke-width": 3, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
         map.addSource("user-accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });

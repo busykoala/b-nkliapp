@@ -57,24 +57,24 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
 }
 
 function SunPath({ bench }: { bench: BenchDetail }) {
-  const moonPath = bench.shadeCause === "nacht";
-  const progress = moonPath ? Math.max(0, Math.min(1, (bench.moonAzimuthDegrees - 90) / 180)) : Math.max(0, Math.min(1, bench.daylightProgress));
-  const pointX = 4 + 312 * progress;
-  const pointY = 58 - 180 * progress * (1 - progress);
-  const start = moonPath ? bench.moonrise : bench.sunrise;
-  const end = moonPath ? bench.moonset : bench.sunset;
-  return <section className="daylight-story" aria-label={moonPath ? `Mondaufgang ${start}, Monduntergang ${end}` : `Direkte Sonne heute: ${sunDuration(bench.sunMinutesToday)}`}>
-    <div className="daylight-copy"><span>{moonPath ? "Mondbahn" : "Sonnenbahn"}</span><strong>{sunStory(bench)}</strong></div>
-    <svg className={`sky-arc ${moonPath ? "is-moon" : "is-sun"}`} viewBox="0 0 320 66" aria-hidden="true">
-      <path className="sky-arc-line" d="M4 58Q160-32 316 58" />
-      {!moonPath && bench.sunWindows.map((window) => {
+  const sunProgress = Math.max(0, Math.min(1, bench.daylightProgress));
+  const moonProgress = Math.max(0, Math.min(1, (bench.moonAzimuthDegrees - 45) / 270));
+  const sunPoint = { x: 4 + 312 * sunProgress, y: 58 - 180 * sunProgress * (1 - sunProgress) };
+  const moonPoint = { x: 4 + 312 * moonProgress, y: 58 - 140 * moonProgress * (1 - moonProgress) };
+  return <section className="daylight-story" aria-label={`Sonnenaufgang ${bench.sunrise}, Sonnenuntergang ${bench.sunset}. Mondaufgang ${bench.moonrise}, Monduntergang ${bench.moonset}.`}>
+    <div className="daylight-copy"><span>Himmelslauf</span><strong>{sunStory(bench)}</strong></div>
+    <svg className="sky-arc" viewBox="0 0 320 66" aria-hidden="true">
+      <path className="sky-arc-line sky-arc-sun" d="M4 58Q160-32 316 58" />
+      <path className="sky-arc-line sky-arc-moon" d="M4 58Q160-12 316 58" />
+      {bench.sunWindows.map((window) => {
         const from = clockPercent(window.start, bench.sunrise, bench.sunset);
         const to = clockPercent(window.end, bench.sunrise, bench.sunset);
         return <path key={`${window.start}-${window.end}`} className="sky-arc-light" pathLength="100" strokeDasharray={`${Math.max(1, to - from)} ${100 - Math.max(1, to - from)}`} strokeDashoffset={-from} d="M4 58Q160-32 316 58" />;
       })}
-      {(!moonPath || bench.moonVisible) && <g className="sky-arc-now" transform={`translate(${pointX} ${pointY})`}><circle r="5" />{moonPath && <path d="M1-4a5 5 0 1 0 0 8 4 4 0 1 1 0-8Z" />}</g>}
+      {bench.sunAltitudeDegrees > 0 && <g className="sky-arc-now is-sun" transform={`translate(${sunPoint.x} ${sunPoint.y})`}><circle r="5" /></g>}
+      {bench.moonVisible && <g className="sky-arc-now is-moon" transform={`translate(${moonPoint.x} ${moonPoint.y})`}><circle r="5" /><path d="M1-4a5 5 0 1 0 0 8 4 4 0 1 1 0-8Z" /></g>}
     </svg>
-    <div className="daylight-times"><span>{start}</span><span>{end}</span></div>
+    <div className="sky-orbit-times"><span className="sun-time">☀ {bench.sunrise}–{bench.sunset}</span><span className="moon-time">☾ {bench.moonrise}–{bench.moonset}</span></div>
   </section>;
 }
 

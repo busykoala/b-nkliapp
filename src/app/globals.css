@@ -306,7 +306,12 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .filter-material select { margin-top: .3rem; border: 1px solid rgb(64 73 58 / 12%); background: rgb(255 251 239 / 65%); }
 .clear-filters { display: flex; min-height: 2.75rem; align-items: center; gap: .4rem; margin: .65rem auto 0; padding: 0 .75rem; color: rgb(47 68 60 / 60%); font-size: .75rem; }
 
-.benchly-map::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background: linear-gradient(125deg, rgb(255 247 221 / 12%), transparent 42%, rgb(74 107 88 / 7%)); mix-blend-mode: soft-light; transition: background 1.2s ease; }
+.benchly-map .maplibregl-canvas { filter: saturate(.78) contrast(.9) sepia(.05); transition: filter 1.2s ease; }
+.benchly-map[data-phase="dawn"] .maplibregl-canvas { filter: saturate(.7) contrast(.88) sepia(.12) brightness(.94); }
+.benchly-map[data-phase="dusk"] .maplibregl-canvas { filter: saturate(.66) contrast(.88) sepia(.16) brightness(.84); }
+.benchly-map[data-phase="night"] .maplibregl-canvas { filter: saturate(.52) contrast(.86) sepia(.1) brightness(.58) hue-rotate(8deg); }
+.benchly-map::before { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background-image: radial-gradient(circle, rgb(63 69 55 / 16%) .45px, transparent .7px), radial-gradient(circle, rgb(255 251 231 / 34%) .5px, transparent .8px); background-position: 0 0, 3px 4px; background-size: 5px 5px, 7px 7px; mix-blend-mode: multiply; opacity: .34; }
+.benchly-map::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background: linear-gradient(125deg, rgb(255 247 221 / 16%), transparent 42%, rgb(74 107 88 / 8%)); mix-blend-mode: soft-light; transition: background 1.2s ease; }
 .benchly-map[data-phase="dawn"]::after { background: linear-gradient(120deg, rgb(238 183 116 / 10%), transparent 58%); }
 .benchly-map[data-phase="dusk"]::after { background: linear-gradient(120deg, rgb(118 80 87 / 15%), rgb(221 151 84 / 8%)); }
 .benchly-map[data-phase="night"]::after { background: rgb(12 28 39 / 18%); }
@@ -374,13 +379,15 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .daylight-copy strong { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-weight: 600; }
 .sky-arc { display: block; width: 100%; height: 4.2rem; margin: .55rem 0 -.1rem; overflow: visible; }
 .sky-arc-line, .sky-arc-light { fill: none; stroke-linecap: round; stroke-width: 1.2; }
-.sky-arc-line { stroke: rgb(45 68 59 / 20%); stroke-dasharray: 2 6; }
+.sky-arc-sun { stroke: rgb(190 137 38 / 34%); stroke-dasharray: 2 6; }
+.sky-arc-moon { stroke: rgb(68 89 99 / 30%); stroke-dasharray: 1 6; }
 .sky-arc-light { stroke: #dca63e; stroke-width: 4; }
-.sky-arc.is-moon .sky-arc-line { stroke: rgb(71 87 101 / 36%); stroke-dasharray: 1 5; }
 .sky-arc-now circle { fill: #f2bd4e; stroke: #fff5d9; stroke-width: 2.5; filter: drop-shadow(0 2px 4px rgb(37 57 49 / 22%)); }
 .sky-arc-now path { fill: #f3e3b7; }
-.sky-arc.is-moon .sky-arc-now circle { fill: #344e57; stroke: #f5e7c0; }
-.daylight-times { display: flex; justify-content: space-between; color: rgb(41 66 57 / 48%); font-size: .68rem; }
+.sky-arc-now.is-moon circle { fill: #344e57; stroke: #f5e7c0; }
+.sky-orbit-times { display: flex; justify-content: space-between; color: rgb(41 66 57 / 48%); font-size: .68rem; }
+.sky-orbit-times .sun-time { color: #a77426; }
+.sky-orbit-times .moon-time { color: #536a72; }
 .quiet-details { border-bottom: 1px solid rgb(46 67 58 / 12%); }
 .quiet-details > summary { display: flex; min-height: 3.5rem; align-items: center; justify-content: space-between; cursor: pointer; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.08rem; list-style: none; }
 .quiet-details > summary::-webkit-details-marker { display: none; }
