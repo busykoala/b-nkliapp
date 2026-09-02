@@ -406,4 +406,94 @@ export const migrations = [
       WHERE environment_computed_at IS NULL;
     `,
   },
+  {
+    id: "0007_accounts_bench_metadata_and_badges",
+    sql: `
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        username_key TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        last_login_at TEXT
+      );
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        token_hash TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS user_sessions_user_idx ON user_sessions(user_id, expires_at);
+
+      ALTER TABLE benches ADD COLUMN name TEXT;
+      ALTER TABLE benches ADD COLUMN dedication TEXT;
+      ALTER TABLE benches ADD COLUMN location_name TEXT;
+      ALTER TABLE benches ADD COLUMN location_key TEXT;
+      ALTER TABLE benches ADD COLUMN location_postcode TEXT;
+      ALTER TABLE benches ADD COLUMN location_canton TEXT;
+      ALTER TABLE benches ADD COLUMN created_by_user_id INTEGER REFERENCES users(id);
+      ALTER TABLE benches ADD COLUMN verification_status TEXT NOT NULL DEFAULT 'verified';
+      ALTER TABLE benches ADD COLUMN verified_at TEXT;
+      ALTER TABLE benches ADD COLUMN removed_at TEXT;
+      CREATE INDEX IF NOT EXISTS benches_location_idx ON benches(location_key);
+      CREATE INDEX IF NOT EXISTS benches_verification_idx ON benches(verification_status, active);
+
+      CREATE TABLE IF NOT EXISTS bench_confirmations (
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(bench_row_id, user_id)
+      );
+      CREATE TABLE IF NOT EXISTS bench_removal_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        created_by_user_id INTEGER NOT NULL REFERENCES users(id),
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        resolved_at TEXT
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS bench_one_pending_removal
+        ON bench_removal_requests(bench_row_id) WHERE status='pending';
+      CREATE TABLE IF NOT EXISTS bench_removal_confirmations (
+        request_id INTEGER NOT NULL REFERENCES bench_removal_requests(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(request_id, user_id)
+      );
+      CREATE TABLE IF NOT EXISTS bench_metadata_edits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        field TEXT NOT NULL CHECK(field IN ('name','dedication','location')),
+        old_value TEXT,
+        new_value TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS user_badges (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        badge_key TEXT NOT NULL,
+        awarded_at TEXT NOT NULL,
+        PRIMARY KEY(user_id, badge_key)
+      );
+
+      ALTER TABLE ratings ADD COLUMN user_id INTEGER REFERENCES users(id);
+      ALTER TABLE corrections ADD COLUMN user_id INTEGER REFERENCES users(id);
+      ALTER TABLE reports ADD COLUMN user_id INTEGER REFERENCES users(id);
+      CREATE UNIQUE INDEX IF NOT EXISTS ratings_one_per_user
+        ON ratings(bench_row_id, user_id) WHERE user_id IS NOT NULL;
+    `,
+  },
+  {
+    id: "0008_backfill_osm_names_and_dedications",
+    sql: `
+      UPDATE benches SET
+        name=coalesce(name,nullif(json_extract(raw_tags,'$.name'),'')),
+        dedication=coalesce(dedication,nullif(json_extract(raw_tags,'$.inscription'),''),nullif(json_extract(raw_tags,'$."memorial:text"'),'')),
+        location_name=coalesce(location_name,nullif(json_extract(raw_tags,'$."addr:city"'),''),nullif(json_extract(raw_tags,'$.place'),'')),
+        location_postcode=coalesce(location_postcode,nullif(json_extract(raw_tags,'$."addr:postcode"'),'')),
+        location_canton=coalesce(location_canton,nullif(json_extract(raw_tags,'$."addr:state"'),''))
+      WHERE json_valid(raw_tags);
+      UPDATE benches SET location_key=lower(location_name) WHERE location_name IS NOT NULL AND location_key IS NULL;
+    `,
+  },
 ];

@@ -16,6 +16,16 @@ export const benches = sqliteTable("benches", {
   directionDegrees: real("direction_degrees"),
   operator: text("operator"),
   description: text("description"),
+  name: text("name"),
+  dedication: text("dedication"),
+  locationName: text("location_name"),
+  locationKey: text("location_key"),
+  locationPostcode: text("location_postcode"),
+  locationCanton: text("location_canton"),
+  createdByUserId: integer("created_by_user_id"),
+  verificationStatus: text("verification_status").notNull().default("verified"),
+  verifiedAt: text("verified_at"),
+  removedAt: text("removed_at"),
   rawTags: text("raw_tags").notNull().default("{}"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   sourceUpdatedAt: text("source_updated_at").notNull(),
@@ -80,6 +90,7 @@ export const ratings = sqliteTable("ratings", {
   visible: integer("visible", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
+  userId: integer("user_id"),
 }, (t) => [uniqueIndex("ratings_one_per_contributor").on(t.benchRowId, t.contributorHash)]);
 
 export const corrections = sqliteTable("corrections", {

@@ -4,6 +4,7 @@ import { sqlite } from "@/db/client";
 
 const CONTRIBUTOR_COOKIE = "benchly_contributor";
 const ADMIN_COOKIE = "benchly_admin";
+const USER_COOKIE = "baenkli_session";
 
 function secret(name: string, developmentFallback: string) {
   const configured = process.env[name];
@@ -14,6 +15,70 @@ function secret(name: string, developmentFallback: string) {
 
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function userSessionHash(token: string) {
+  return createHmac("sha256", secret("USER_SESSION_SECRET", "baenkli-local-user-session-secret"))
+    .update(token).digest("hex");
+}
+
+export function normalizeUsername(value: string) {
+  return value.trim().normalize("NFKC").toLocaleLowerCase("de-CH");
+}
+
+export function generateUserPasswordHash(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  return `scrypt$${salt}$${scryptSync(password, salt, 64).toString("hex")}`;
+}
+
+export function verifyUserPassword(password: string, encoded: string) {
+  const [algorithm, salt, expectedHex] = encoded.split("$");
+  if (algorithm !== "scrypt" || !salt || !expectedHex) return false;
+  const actual = scryptSync(password, salt, 64);
+  const expected = Buffer.from(expectedHex, "hex");
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+export type CurrentUser = { id: number; username: string };
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const token = (await cookies()).get(USER_COOKIE)?.value;
+  if (!token) return null;
+  const user = sqlite.prepare(`
+    SELECT u.id,u.username FROM user_sessions s JOIN users u ON u.id=s.user_id
+    WHERE s.token_hash=? AND s.expires_at>?
+  `).get(userSessionHash(token), new Date().toISOString()) as CurrentUser | undefined;
+  return user ?? null;
+}
+
+export async function requireUser() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Bitte melde dich zuerst an.");
+  return user;
+}
+
+export async function createUserSession(userId: number) {
+  const token = randomBytes(32).toString("base64url");
+  const now = new Date();
+  const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  sqlite.prepare("DELETE FROM user_sessions WHERE expires_at<=?").run(now.toISOString());
+  sqlite.prepare("INSERT INTO user_sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)")
+    .run(userSessionHash(token), userId, expires.toISOString(), now.toISOString());
+  (await cookies()).set(USER_COOKIE, token, {
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires,
+  });
+}
+
+export async function destroyUserSession() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(USER_COOKIE)?.value;
+  if (token) sqlite.prepare("DELETE FROM user_sessions WHERE token_hash=?").run(userSessionHash(token));
+  cookieStore.delete(USER_COOKIE);
+}
+
+export function contributorHashForUser(userId: number) {
+  return createHmac("sha256", secret("CONTRIBUTOR_SECRET", "benchly-local-contributor-secret"))
+    .update(`user:${userId}`).digest("hex");
 }
 
 export async function getContributorIdentity() {

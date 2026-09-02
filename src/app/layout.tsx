@@ -5,12 +5,12 @@ import { ServiceWorkerRegistration } from "@/components/service-worker-registrat
 import { InstallPrompt } from "@/components/install-prompt";
 
 export const metadata: Metadata = {
-  applicationName: "Benchly",
-  title: { default: "Benchly – Schweizer Sitzbänke", template: "%s · Benchly" },
+  applicationName: "Bänkli App",
+  title: { default: "Bänkli App – Schweizer Sitzbänke", template: "%s · Bänkli App" },
   description: "Finde Schweizer Sitzbänke mit Sonne, Aussicht und Community-Bewertungen.",
   manifest: "/manifest.webmanifest",
   icons: { icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png" },
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Benchly" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Bänkli App" },
   formatDetection: { telephone: false },
 };
 

@@ -44,6 +44,7 @@ type MapRow = {
   rating_average: number | null;
   view_labels: string | null;
   obstruction_types: string | null;
+  verification_status: "verified" | "unverified";
 };
 
 function parseArray<T>(value: unknown): T[] {
@@ -116,6 +117,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
       SELECT CAST(b.longitude / ? AS INTEGER) grid_x, CAST(b.latitude / ? AS INTEGER) grid_y,
         avg(b.latitude) latitude, avg(b.longitude) longitude, count(*) count,
         min(b.id) id, avg(e.view_score) view_score, min(e.view_labels) view_labels,
+        min(b.verification_status) verification_status,
         avg(ra.rating_average) rating_average
       FROM bench_spatial_index s
       JOIN benches b ON b.row_id = s.row_id
@@ -137,10 +139,11 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
       viewScore: cell.view_score === null ? null : Math.max(1, Math.min(5, Math.round(cell.view_score / 20))),
       sunnyNow: null, rating: cell.rating_average === null ? null : Number(cell.rating_average.toFixed(1)),
       viewType: mapViewType(parseArray<string>(cell.view_labels)),
+      verificationStatus: cell.verification_status,
     });
   }
   const rows = sqlite.prepare(`
-    SELECT b.id, b.latitude, b.longitude, b.covered, e.canopy_percent, e.horizon_profile,
+    SELECT b.id, b.latitude, b.longitude, b.covered, b.verification_status, e.canopy_percent, e.horizon_profile,
       e.obstruction_types, e.view_score, e.view_labels, ra.rating_average
     FROM bench_spatial_index s
     JOIN benches b ON b.row_id = s.row_id
@@ -194,6 +197,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
       sunnyNow: items[0].sunnyNow,
       rating: items[0].row.rating_average === null ? null : Number(items[0].row.rating_average.toFixed(1)),
       viewType: mapViewType(parseArray<string>(items[0].row.view_labels)),
+      verificationStatus: items[0].row.verification_status,
     });
   }
 
@@ -202,13 +206,14 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
       viewScore: row.view_score === null ? null : Math.max(1, Math.min(5, Math.round(row.view_score / 20))),
       sunnyNow, rating: row.rating_average === null ? null : Number(row.rating_average.toFixed(1)),
       viewType: mapViewType(parseArray<string>(row.view_labels)),
+      verificationStatus: row.verification_status,
     }));
 }
 
 type DetailRow = Record<string, string | number | null>;
 
 export async function getBenchDetail(benchId: string): Promise<BenchDetail | null> {
-  if (!/^osm-(node|way)-\d+$/.test(benchId)) return null;
+  if (!/^(osm-(node|way)-\d+|community-[0-9a-f-]{36})$/.test(benchId)) return null;
   const row = sqlite.prepare(`
     SELECT b.*, e.*,
       lm.land_context likely_land_context,lm.land_context_probability likely_land_probability,
@@ -223,6 +228,8 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       (SELECT avg(view_score) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_view,
       (SELECT avg(comfort) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_comfort,
       (SELECT avg(quiet) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_quiet
+      ,(SELECT count(*) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id) confirmation_count
+      ,(SELECT count(*) FROM bench_removal_confirmations rc JOIN bench_removal_requests rr ON rr.id=rc.request_id WHERE rr.bench_row_id=b.row_id AND rr.status='pending') removal_confirmation_count
     FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
     LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id WHERE b.id=? AND b.active=1
   `).get(benchId) as DetailRow | undefined;
@@ -397,7 +404,16 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   ];
   return {
     id: String(row.id), osmType: String(row.osm_type), osmId: Number(row.osm_id),
-    latitude, longitude, title: String(row.description || "Sitzbank"),
+    latitude, longitude, title: String(row.name || row.description || "Sitzbank"),
+    name: row.name === null ? null : String(row.name),
+    dedication: row.dedication === null ? null : String(row.dedication),
+    locationName: row.location_name === null ? null : String(row.location_name),
+    locationPostcode: row.location_postcode === null ? null : String(row.location_postcode),
+    locationCanton: row.location_canton === null ? null : String(row.location_canton),
+    verificationStatus: String(row.verification_status) === "unverified" ? "unverified" : "verified",
+    confirmationCount: Number(row.confirmation_count ?? 0),
+    verificationThreshold: Math.max(2, Math.min(10, Number(process.env.BENCH_VERIFICATION_THRESHOLD ?? 3) || 3)),
+    removalConfirmationCount: Number(row.removal_confirmation_count ?? 0),
     description: row.operator ? `Betreiber: ${row.operator}` : null, properties,
     elevationMeters,
     elevationSource,
@@ -499,16 +515,30 @@ function getContextFeatures(latitude: number, longitude: number): ContextFeature
 
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   const clean = z.string().trim().min(2).max(80).parse(query);
+  const key = clean.normalize("NFKD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("de-CH");
+  const local = sqlite.prepare(`
+    SELECT location_name,location_postcode,location_canton,avg(latitude) latitude,avg(longitude) longitude
+    FROM benches WHERE active=1 AND location_key LIKE ?
+    GROUP BY location_key,location_postcode,location_canton ORDER BY count(*) DESC LIMIT 4
+  `).all(`${key}%`) as Array<{ location_name: string; location_postcode: string | null; location_canton: string | null; latitude: number; longitude: number }>;
+  const localResults = local.map((place) => ({
+    id: `local-${place.latitude}-${place.longitude}`,
+    label: [place.location_postcode, place.location_name, place.location_canton].filter(Boolean).join(" "),
+    latitude: place.latitude, longitude: place.longitude,
+  }));
   const url = new URL("https://api3.geo.admin.ch/rest/services/api/SearchServer");
   url.searchParams.set("searchText", clean);
   url.searchParams.set("type", "locations");
   url.searchParams.set("origins", "zipcode,gg25,district");
   url.searchParams.set("limit", "6");
   url.searchParams.set("sr", "4326");
-  const response = await fetch(url, { next: { revalidate: 86400 } });
-  if (!response.ok) return [];
-  const data = await response.json() as { results?: Array<{ id?: string | number; attrs?: Record<string, string | number> }> };
-  return (data.results ?? []).flatMap((result) => {
+  let data: { results?: Array<{ id?: string | number; attrs?: Record<string, string | number> }> } = {};
+  try {
+    const response = await fetch(url, { next: { revalidate: 86400 } });
+    if (!response.ok) return localResults;
+    data = await response.json();
+  } catch { return localResults; }
+  const remoteResults = (data.results ?? []).flatMap((result) => {
     const attrs = result.attrs ?? {};
     const latitude = Number(attrs.lat ?? attrs.y);
     const longitude = Number(attrs.lon ?? attrs.x);
@@ -516,4 +546,7 @@ export async function searchPlaces(query: string): Promise<PlaceResult[]> {
     const label = String(attrs.label ?? attrs.detail ?? clean).replace(/<[^>]*>/g, "");
     return [{ id: String(result.id ?? `${latitude}-${longitude}`), label, latitude, longitude }];
   });
+  return [...localResults, ...remoteResults]
+    .filter((item, index, all) => all.findIndex((candidate) => candidate.label.toLocaleLowerCase("de-CH") === item.label.toLocaleLowerCase("de-CH")) === index)
+    .slice(0, 8);
 }

@@ -19,6 +19,7 @@ gateway:
 
 web:
   aiLabelsEnabled: false
+  verificationThreshold: 3
   resources:
     requests: {cpu: 250m, memory: 512Mi}
     limits: {cpu: "2", memory: 4Gi}

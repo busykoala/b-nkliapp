@@ -4,10 +4,11 @@ import { useRef, useState } from "react";
 import { ChevronDown, Share2, X } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { BenchDetailContent } from "./bench-detail-content";
+import type { CurrentUser } from "@/lib/security";
 
 type Snap = "peek" | "half" | "full";
 
-export function BenchSheet({ bench, loading, onClose }: { bench: BenchDetail | null; loading: boolean; onClose: () => void }) {
+export function BenchSheet({ bench, loading, onClose, user }: { bench: BenchDetail | null; loading: boolean; onClose: () => void; user: CurrentUser | null }) {
   const [snap, setSnap] = useState<Snap>("half");
   const touchStart = useRef<number | null>(null);
   const translate = snap === "peek" ? "translateY(76%)" : snap === "half" ? "translateY(42%)" : "translateY(0)";
@@ -21,7 +22,7 @@ export function BenchSheet({ bench, loading, onClose }: { bench: BenchDetail | n
   const share = async () => {
     if (!bench) return;
     const url = `${window.location.origin}/bank/${bench.id}`;
-    if (navigator.share) await navigator.share({ title: bench.title, text: "Diese Sitzbank auf Benchly", url });
+    if (navigator.share) await navigator.share({ title: bench.title, text: "Dieses Bänkli in der Bänkli App", url });
     else { await navigator.clipboard.writeText(url); window.alert("Link kopiert."); }
   };
   return (
@@ -36,7 +37,7 @@ export function BenchSheet({ bench, loading, onClose }: { bench: BenchDetail | n
       </div>
       <div className="relative z-10 h-[calc(100%-4rem)] overflow-y-auto px-3.5 safe-bottom sm:px-5">
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">Der Platz wird erkundet</span><span className="sr-only">Bank wird geladen</span></div>}
-        {!loading && bench && <BenchDetailContent bench={bench} />}
+        {!loading && bench && <BenchDetailContent bench={bench} user={user} />}
       </div>
     </aside>
   );

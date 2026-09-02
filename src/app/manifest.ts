@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Benchly – Schweizer Sitzbänke",
-    short_name: "Benchly",
+    name: "Bänkli App – Schweizer Sitzbänke",
+    short_name: "Bänkli App",
     description: "Finde Schweizer Sitzbänke mit Sonne, Aussicht und Community-Bewertungen.",
     start_url: "/",
     scope: "/",

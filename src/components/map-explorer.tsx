@@ -4,10 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import { Armchair, Info, LocateFixed, MountainSnow, SlidersHorizontal, Sparkles, Sun, Waves } from "lucide-react";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
+import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
 import { BenchSheet } from "./bench-sheet";
 import { FilterPanel } from "./filter-panel";
 import { SearchBox } from "./search-box";
+import { AccountControls } from "./account-controls";
+import { AddBenchDialog } from "./add-bench-dialog";
 
 function circlePolygon(longitude: number, latitude: number, radiusMeters: number) {
   const points = 64;
@@ -43,7 +46,7 @@ function showUserPosition(map: MapLibreMap, position: UserPosition) {
   return true;
 }
 
-export function MapExplorer() {
+export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const querySequence = useRef(0);
@@ -58,6 +61,8 @@ export function MapExplorer() {
   const [mapLoading, setMapLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [located, setLocated] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
 
   const loadVisible = useCallback(async (map: MapLibreMap, nextFilters: MapFilters) => {
     const sequence = ++querySequence.current;
@@ -116,7 +121,7 @@ export function MapExplorer() {
         map.addSource("benchly", { type: "geojson", data: featureCollection([]) });
         map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#294c45", "circle-opacity": 0.96, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 3, "circle-stroke-color": "#f8eed7", "circle-blur": 0.02 } });
         map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-size": 12 }, paint: { "text-color": "#fff4d7" } });
-        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 6.5, 18, 10], "circle-stroke-width": 2.5, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
+        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 6.5, 18, 10], "circle-stroke-width": 2.5, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
         map.addSource("user-accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addSource("user-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addLayer({ id: "user-accuracy", type: "fill", source: "user-accuracy", paint: { "fill-color": "#2d79c7", "fill-opacity": 0.12 } });
@@ -175,6 +180,11 @@ export function MapExplorer() {
   };
 
   const choosePlace = (place: PlaceResult) => { setLocated(true); window.dispatchEvent(new Event("benchly:engaged")); mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: 14 }); };
+  const openAdd = () => {
+    const center = mapRef.current?.getCenter();
+    if (center) setAddCoordinates({ latitude: center.lat, longitude: center.lng });
+    setAddOpen(true);
+  };
   const activeFilterCount = Object.values(filters).filter((value) => value !== undefined && value !== false && value !== "").length;
   const visibleBenchCount = features.reduce((sum, feature) => sum + (feature.kind === "cluster" ? feature.count : 1), 0);
 
@@ -185,10 +195,11 @@ export function MapExplorer() {
         <div className="pointer-events-auto flex items-center gap-2">
           <div className="storybook-panel hidden h-12 items-center gap-2 rounded-[1.15rem] px-4 sm:flex">
             <span className="story-icon h-8 w-8"><Armchair size={17} /></span>
-            <span className="font-black tracking-[-0.04em] text-primary">Benchly</span>
+            <span className="font-black tracking-[-0.04em] text-primary">Bänkli App</span>
           </div>
           <SearchBox onSelect={choosePlace} onLocate={locate} />
           <button aria-label="Filter öffnen" className={`btn btn-circle storybook-panel relative min-h-12 min-w-12 border-0 ${activeFilterCount ? "text-accent" : "text-primary"}`} onClick={() => setFilterOpen((open) => !open)}><SlidersHorizontal size={20} />{activeFilterCount > 0 && <span className="badge badge-sm border-0 bg-accent text-accent-content absolute -right-1 -top-1">{activeFilterCount}</span>}</button>
+          <AccountControls user={user} onAdd={openAdd} />
         </div>
         <div className="pointer-events-auto mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <span className="story-pill whitespace-nowrap"><Armchair size={14} /> {new Intl.NumberFormat("de-CH").format(visibleBenchCount)} Plätze</span>
@@ -201,7 +212,8 @@ export function MapExplorer() {
       {mapLoading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center"><div className="storybook-panel grid h-14 w-14 place-items-center rounded-full"><span className="loading loading-ring text-primary" /></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
       {!selectedId && !located && <div className="safe-bottom pointer-events-none absolute inset-x-3 bottom-0 z-20 flex justify-center"><button className="storybook-panel pointer-events-auto flex min-h-[4.5rem] w-full max-w-sm items-center gap-3 rounded-[1.5rem] px-3.5 py-3 text-left" onClick={locate}><span className="story-icon bg-primary text-primary-content"><LocateFixed size={20} /></span><span className="min-w-0 flex-1"><span className="story-eyebrow block">Deine Umgebung</span><span className="block font-bold">Schöne Plätze in meiner Nähe</span></span><span className="text-xl text-secondary">→</span></button></div>}
-      {selectedId && <BenchSheet bench={bench} loading={detailLoading} onClose={() => { setSelectedId(null); setBench(null); }} />}
+      {selectedId && <BenchSheet bench={bench} loading={detailLoading} user={user} onClose={() => { setSelectedId(null); setBench(null); }} />}
+      <AddBenchDialog open={addOpen} coordinates={addCoordinates} onClose={() => setAddOpen(false)} />
       <footer className="pointer-events-none absolute bottom-1 left-1 z-10 hidden text-[10px] opacity-60 md:block">© swisstopo · © OpenStreetMap-Mitwirkende</footer>
     </main>
   );

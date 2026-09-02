@@ -19,6 +19,7 @@ import tempfile
 import time
 import urllib.parse
 import urllib.request
+import unicodedata
 import zipfile
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -53,6 +54,7 @@ KEEP_TAGS = {
     "amenity", "backrest", "armrest", "seats", "material", "direction", "covered",
     "wheelchair", "operator", "description", "image", "wikimedia_commons", "mapillary",
     "weather_protection", "surface", "colour", "access", "start_date",
+    "name", "inscription", "memorial:text", "addr:city", "addr:postcode", "addr:state", "place",
 }
 CONTEXT_TAGS = KEEP_TAGS | {
     "building", "building:levels", "height", "roof:height", "natural", "water", "waterway",
@@ -481,6 +483,8 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
         rows = []
         for bench in pending:
             tags = bench.tags
+            location_name = tags.get("addr:city") or tags.get("place")
+            location_key = ("".join(character for character in unicodedata.normalize("NFKD", location_name or "") if not unicodedata.combining(character))).lower() or None
             rows.append((
                 f"osm-{bench.osm_type}-{bench.osm_id}", bench.osm_type, bench.osm_id,
                 bench.latitude, bench.longitude, parse_bool(tags.get("backrest")),
@@ -489,17 +493,24 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 int(tags["seats"]) if tags.get("seats", "").isdigit() else None,
                 tags.get("material"), parse_direction(tags.get("direction")), tags.get("operator"),
                 tags.get("description"), json.dumps(tags, ensure_ascii=False, separators=(",", ":")),
-                imported_at, imported_at,
+                imported_at, imported_at, tags.get("name"), tags.get("inscription") or tags.get("memorial:text"),
+                location_name, location_key, tags.get("addr:postcode"), tags.get("addr:state"),
             ))
         connection.executemany("""
             INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,backrest,armrest,covered,wheelchair,seats,
-                material,direction_degrees,operator,description,raw_tags,active,source_updated_at,imported_at)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)
+                material,direction_degrees,operator,description,raw_tags,active,source_updated_at,imported_at,
+                name,dedication,location_name,location_key,location_postcode,location_canton)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?)
             ON CONFLICT(osm_type,osm_id) DO UPDATE SET latitude=excluded.latitude,longitude=excluded.longitude,
                 backrest=excluded.backrest,armrest=excluded.armrest,covered=excluded.covered,wheelchair=excluded.wheelchair,
                 seats=excluded.seats,material=excluded.material,direction_degrees=excluded.direction_degrees,
                 operator=excluded.operator,description=excluded.description,raw_tags=excluded.raw_tags,active=1,
-                source_updated_at=excluded.source_updated_at,imported_at=excluded.imported_at
+                source_updated_at=excluded.source_updated_at,imported_at=excluded.imported_at,
+                name=coalesce(excluded.name,benches.name),dedication=coalesce(excluded.dedication,benches.dedication),
+                location_name=coalesce(excluded.location_name,benches.location_name),
+                location_key=coalesce(excluded.location_key,benches.location_key),
+                location_postcode=coalesce(excluded.location_postcode,benches.location_postcode),
+                location_canton=coalesce(excluded.location_canton,benches.location_canton)
         """, rows)
         for bench in pending:
             bench_id = f"osm-{bench.osm_type}-{bench.osm_id}"

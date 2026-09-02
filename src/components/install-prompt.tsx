@@ -55,11 +55,11 @@ export function InstallPrompt() {
   };
 
   return (
-    <aside aria-label="Benchly installieren" className="safe-bottom fixed inset-x-3 bottom-0 z-50 mx-auto max-w-sm">
+    <aside aria-label="Bänkli App installieren" className="safe-bottom fixed inset-x-3 bottom-0 z-50 mx-auto max-w-sm">
       <div className="storybook-panel rounded-[1.5rem] p-2.5">
         <div className="flex items-center gap-2">
           <div className="story-icon bg-primary text-primary-content"><Download size={19} /></div>
-          <div className="min-w-0 flex-1"><div className="font-bold leading-tight">Benchly mitnehmen</div><p className="truncate text-xs opacity-55">Schneller zum nächsten Lieblingsplatz</p></div>
+          <div className="min-w-0 flex-1"><div className="font-bold leading-tight">Bänkli App mitnehmen</div><p className="truncate text-xs opacity-55">Schneller zum nächsten Lieblingsplatz</p></div>
           {!instructions && <button className="btn btn-primary btn-sm min-h-11 rounded-2xl" onClick={install}>{ios ? <Share size={17} /> : <Download size={17} />} Installieren</button>}
           <button aria-label="Installationshinweis schliessen" className="btn btn-circle btn-ghost btn-sm" onClick={close}><X size={17} /></button>
         </div>

@@ -55,6 +55,7 @@ export type BenchMapFeature = {
   sunnyNow: boolean | null;
   rating: number | null;
   viewType: MapFilters["viewType"] | null;
+  verificationStatus: "verified" | "unverified";
 };
 
 export type ClusterMapFeature = {
@@ -70,7 +71,7 @@ export type MapFeature = BenchMapFeature | ClusterMapFeature;
 export type BenchProperty = {
   label: string;
   value: string;
-  source: "OpenStreetMap" | "Benchly";
+  source: "OpenStreetMap" | "Bänkli App";
 };
 
 export type BenchMedia = {
@@ -110,6 +111,15 @@ export type BenchDetail = {
   latitude: number;
   longitude: number;
   title: string;
+  name: string | null;
+  dedication: string | null;
+  locationName: string | null;
+  locationPostcode: string | null;
+  locationCanton: string | null;
+  verificationStatus: "verified" | "unverified";
+  confirmationCount: number;
+  verificationThreshold: number;
+  removalConfirmationCount: number;
   description: string | null;
   properties: BenchProperty[];
   elevationMeters: number | null;

@@ -2,20 +2,22 @@
 
 import { useState, useTransition } from "react";
 import {
-  Accessibility, Armchair, Building2, Camera, Clock3, Compass, ExternalLink,
+  Accessibility, Armchair, Building2, Camera, CheckCircle2, Clock3, Compass, ExternalLink,
   EyeOff, Flag, Hammer, Image as ImageIcon, Info, Leaf, MapPin, Moon, Mountain,
   MountainSnow, MoveHorizontal, Route, Sparkles, Star, Sun, Sunrise, Sunset,
   Telescope, TreePine, Trees, Umbrella, UsersRound, Waves,
 } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
-import { CorrectionForm, RatingForm } from "./contribution-forms";
+import type { CurrentUser } from "@/lib/security";
+import { RatingForm } from "./contribution-forms";
+import { BenchCommunityActions } from "./bench-community-actions";
 
 const correctionLabels: Record<string, string> = {
   properties: "Ausstattung", condition: "Zustand", location: "Position", removed: "Nicht mehr vorhanden",
 };
 
-export function BenchDetailContent({ bench }: { bench: BenchDetail }) {
+export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: CurrentUser | null }) {
   const [tab, setTab] = useState<"details" | "community">("details");
   const [, startTransition] = useTransition();
   const report = (type: "rating" | "correction", id: number) => startTransition(async () => {
@@ -30,6 +32,7 @@ export function BenchDetailContent({ bench }: { bench: BenchDetail }) {
         <div className="story-eyebrow flex items-center gap-1.5"><Sparkles size={13} /> Ein Platz zum Verweilen</div>
         <h2 className="mt-2 max-w-[72%] text-[1.75rem] font-black leading-[1.05] tracking-[-0.045em]">{bench.title}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
+          <span className={`story-pill ${bench.verificationStatus === "verified" ? "text-success" : "text-warning"}`}>{bench.verificationStatus === "verified" ? <CheckCircle2 size={14} /> : <UsersRound size={14} />}{bench.verificationStatus === "verified" ? "Bestätigt" : `${bench.confirmationCount}/${bench.verificationThreshold} bestätigt`}</span>
           <span className={`story-pill ${bench.shadeCause === "nacht" ? "story-pill-night" : bench.sunnyNow ? "story-pill-sun" : ""}`}>
             {bench.shadeCause === "nacht" ? <Moon size={14} /> : <Sun size={14} />}{sunStatusLabel(bench)}
           </span>
@@ -43,6 +46,8 @@ export function BenchDetailContent({ bench }: { bench: BenchDetail }) {
           <MapPin size={15} /> {bench.elevationMeters !== null ? `${Math.round(bench.elevationMeters)} m ü. M.` : "Höhe noch unbekannt"}
           {bench.directionDegrees !== null && <> · Blick nach {compassDirection(bench.directionDegrees)}</>}
         </p>
+        {bench.locationName && <p className="mt-1 text-sm font-semibold text-[#344e44]/75">{[bench.locationPostcode, bench.locationName, bench.locationCanton].filter(Boolean).join(" · ")}</p>}
+        {bench.dedication && <p className="mt-3 max-w-[80%] text-sm italic">„{bench.dedication}“</p>}
       </header>
 
       <div role="tablist" className="tabs story-tabs mb-5 grid grid-cols-2 rounded-full p-1">
@@ -51,7 +56,7 @@ export function BenchDetailContent({ bench }: { bench: BenchDetail }) {
           Stimmen {bench.ratingCount + bench.corrections.length > 0 && `· ${bench.ratingCount + bench.corrections.length}`}
         </button>
       </div>
-      {tab === "details" ? <Details bench={bench} /> : <Community bench={bench} report={report} />}
+      {tab === "details" ? <Details bench={bench} /> : <Community bench={bench} report={report} user={user} />}
     </div>
   );
 }
@@ -66,15 +71,15 @@ function BenchScene({ bench }: { bench: BenchDetail }) {
   </div>;
 }
 
-function Community({ bench, report }: { bench: BenchDetail; report: (type: "rating" | "correction", id: number) => void }) {
+function Community({ bench, report, user }: { bench: BenchDetail; report: (type: "rating" | "correction", id: number) => void; user: CurrentUser | null }) {
   return (
     <div className="space-y-4">
       <div className="px-1"><div className="story-eyebrow">Von Menschen vor Ort</div><h3 className="mt-1 text-xl font-extrabold">Wie fühlt sich dieser Platz an?</h3></div>
       {bench.ratingBreakdown && <section className="story-card p-4"><div className="grid grid-cols-4 gap-2 text-center text-sm">{Object.entries({ Gesamt: bench.ratingBreakdown.overall, Aussicht: bench.ratingBreakdown.view, Komfort: bench.ratingBreakdown.comfort, Ruhe: bench.ratingBreakdown.quiet }).map(([label, value]) => <div key={label}><div className="text-xl font-black text-primary">{value}</div><div className="text-[11px] opacity-55">{label}</div></div>)}</div></section>}
       {bench.recentRatings.map((rating) => <article key={rating.id} className="story-card p-3.5"><div className="flex items-start justify-between"><div><span className="font-extrabold">{rating.overall}/5</span><span className="ml-2 text-xs opacity-50">{new Date(rating.createdAt).toLocaleDateString("de-CH")}</span></div><button aria-label="Bewertung melden" className="btn btn-circle btn-ghost btn-sm" onClick={() => report("rating", rating.id)}><Flag size={15} /></button></div>{rating.note && <p className="mt-2 text-sm leading-relaxed">{rating.note}</p>}</article>)}
-      <RatingForm benchId={bench.id} />
+      {user && <RatingForm benchId={bench.id} />}
       <section><h3 className="mb-2 px-1 font-bold">Hinweise aus der Community</h3>{bench.corrections.length === 0 && <p className="px-1 text-sm opacity-55">Noch keine Hinweise.</p>}{bench.corrections.map((item) => <article key={item.id} className="story-card mb-2 border-secondary/35 bg-secondary/10 p-3.5"><div className="flex items-start justify-between"><div><div className="story-eyebrow">{correctionLabels[item.field] ?? item.field}</div><div className="font-bold">{item.proposedValue}</div></div><button aria-label="Korrektur melden" className="btn btn-circle btn-ghost btn-sm" onClick={() => report("correction", item.id)}><Flag size={15} /></button></div>{item.note && <p className="mt-2 text-sm">{item.note}</p>}</article>)}</section>
-      <CorrectionForm benchId={bench.id} />
+      <BenchCommunityActions bench={bench} signedIn={Boolean(user)} />
     </div>
   );
 }
@@ -119,7 +124,7 @@ function Details({ bench }: { bench: BenchDetail }) {
 
       {(exact.length > 0 || nearby.length > 0) && <section><SectionHeading icon={<ImageIcon />} eyebrow="Ein Blick vorab" title="Bilder aus der Nähe" />{exact.length > 0 && <MediaGrid media={exact} />}{nearby.length > 0 && <><p className="mb-2 mt-4 text-xs opacity-50">Aus der Nähe – nicht zwingend diese Bank.</p><MediaGrid media={nearby} /></>}</section>}
 
-      <details className="story-card px-3 text-xs text-base-content/55"><summary className="min-h-12 cursor-pointer py-3 font-bold"><span className="inline-flex items-center gap-2"><Info size={15} /> Woher wir das wissen</span></summary><div className="pb-4">{bench.likelyEnvironment?.confidence === "low" && <p className="mb-2">Die Bildhinweise sind noch nicht klar genug.</p>}<p>OpenStreetMap · swisstopo · Benchly</p><a className="link mt-2 inline-flex min-h-11 items-center gap-1 font-bold" href={`https://www.openstreetmap.org/${bench.osmType}/${bench.osmId}`} target="_blank" rel="noreferrer">Quelle öffnen <ExternalLink size={13} /></a></div></details>
+      <details className="story-card px-3 text-xs text-base-content/55"><summary className="min-h-12 cursor-pointer py-3 font-bold"><span className="inline-flex items-center gap-2"><Info size={15} /> Woher wir das wissen</span></summary><div className="pb-4">{bench.likelyEnvironment?.confidence === "low" && <p className="mb-2">Die Bildhinweise sind noch nicht klar genug.</p>}<p>OpenStreetMap · swisstopo · Bänkli App</p>{bench.osmType !== "community" && <a className="link mt-2 inline-flex min-h-11 items-center gap-1 font-bold" href={`https://www.openstreetmap.org/${bench.osmType}/${bench.osmId}`} target="_blank" rel="noreferrer">Quelle öffnen <ExternalLink size={13} /></a>}</div></details>
     </div>
   );
 }

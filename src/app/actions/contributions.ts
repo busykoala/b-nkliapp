@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { sqlite } from "@/db/client";
-import { assertContributorAllowed, consumeRateLimit, getContributorIdentity } from "@/lib/security";
+import { refreshUserBadges } from "@/lib/badges";
+import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 
@@ -42,18 +43,21 @@ export async function submitRating(benchId: string, _previous: ActionResult | nu
   const parsed = ratingSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationFailure(parsed.error);
   try {
+    const user = await requireUser();
     const identity = await getContributorIdentity();
-    assertContributorAllowed(identity.contributorHash);
-    consumeRateLimit(identity.contributorHash, "rating-minute", 5, 60);
+    const contributorHash = contributorHashForUser(user.id);
+    assertContributorAllowed(contributorHash);
+    consumeRateLimit(contributorHash, "rating-minute", 5, 60);
     consumeRateLimit(identity.ipHash, "rating-hour", 30, 3600);
     const rowId = benchRowId(benchId);
     const now = new Date().toISOString();
     sqlite.prepare(`
-      INSERT INTO ratings (bench_row_id, contributor_hash, overall, view_score, comfort, quiet, note, visible, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+      INSERT INTO ratings (bench_row_id, contributor_hash, overall, view_score, comfort, quiet, note, visible, created_at, updated_at, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
       ON CONFLICT(bench_row_id, contributor_hash) DO UPDATE SET overall=excluded.overall, view_score=excluded.view_score,
-        comfort=excluded.comfort, quiet=excluded.quiet, note=excluded.note, visible=1, updated_at=excluded.updated_at
-    `).run(rowId, identity.contributorHash, parsed.data.overall, parsed.data.view, parsed.data.comfort, parsed.data.quiet, parsed.data.note || null, now, now);
+        comfort=excluded.comfort, quiet=excluded.quiet, note=excluded.note, visible=1, updated_at=excluded.updated_at,user_id=excluded.user_id
+    `).run(rowId, contributorHash, parsed.data.overall, parsed.data.view, parsed.data.comfort, parsed.data.quiet, parsed.data.note || null, now, now, user.id);
+    refreshUserBadges(user.id);
     revalidatePath("/");
     revalidatePath(`/bank/${benchId}`);
     return { ok: true, message: "Danke – deine Bewertung ist sichtbar." };
@@ -66,15 +70,18 @@ export async function submitCorrection(benchId: string, _previous: ActionResult 
   const parsed = correctionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationFailure(parsed.error);
   try {
+    const user = await requireUser();
     const identity = await getContributorIdentity();
-    assertContributorAllowed(identity.contributorHash);
-    consumeRateLimit(identity.contributorHash, "correction-day", 3, 86400);
+    const contributorHash = contributorHashForUser(user.id);
+    assertContributorAllowed(contributorHash);
+    consumeRateLimit(contributorHash, "correction-day", 3, 86400);
     consumeRateLimit(identity.ipHash, "correction-ip-day", 8, 86400);
     const rowId = benchRowId(benchId);
     sqlite.prepare("DELETE FROM corrections WHERE bench_row_id=? AND contributor_hash=? AND field=?")
-      .run(rowId, identity.contributorHash, parsed.data.field);
-    sqlite.prepare(`INSERT INTO corrections (bench_row_id, contributor_hash, field, proposed_value, note, visible, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)`)
-      .run(rowId, identity.contributorHash, parsed.data.field, correctionValues[parsed.data.field], parsed.data.note || null, new Date().toISOString());
+      .run(rowId, contributorHash, parsed.data.field);
+    sqlite.prepare(`INSERT INTO corrections (bench_row_id, contributor_hash, field, proposed_value, note, visible, created_at, user_id) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`)
+      .run(rowId, contributorHash, parsed.data.field, correctionValues[parsed.data.field], parsed.data.note || null, new Date().toISOString(), user.id);
+    refreshUserBadges(user.id);
     revalidatePath("/");
     revalidatePath(`/bank/${benchId}`);
     return { ok: true, message: "Danke – dein Hinweis wurde veröffentlicht." };
@@ -86,10 +93,13 @@ export async function submitCorrection(benchId: string, _previous: ActionResult 
 export async function reportContribution(targetType: "rating" | "correction", targetId: number): Promise<ActionResult> {
   if (!Number.isInteger(targetId) || targetId < 1) return { ok: false, message: "Ungültiger Beitrag." };
   try {
+    const user = await requireUser();
     const identity = await getContributorIdentity();
-    consumeRateLimit(identity.contributorHash, "report-day", 20, 86400);
-    sqlite.prepare("INSERT OR IGNORE INTO reports (target_type, target_id, contributor_hash, reason, created_at) VALUES (?, ?, ?, 'Unangemessener Inhalt', ?)")
-      .run(targetType, targetId, identity.contributorHash, new Date().toISOString());
+    const contributorHash = contributorHashForUser(user.id);
+    consumeRateLimit(contributorHash, "report-day", 20, 86400);
+    consumeRateLimit(identity.ipHash, "report-ip-day", 60, 86400);
+    sqlite.prepare("INSERT OR IGNORE INTO reports (target_type, target_id, contributor_hash, reason, created_at, user_id) VALUES (?, ?, ?, 'Unangemessener Inhalt', ?, ?)")
+      .run(targetType, targetId, contributorHash, new Date().toISOString(), user.id);
     return { ok: true, message: "Beitrag wurde gemeldet." };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Meldung fehlgeschlagen." };
