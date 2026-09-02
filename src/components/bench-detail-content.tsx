@@ -125,10 +125,10 @@ function Details({ bench }: { bench: BenchDetail }) {
 }
 
 function VisualEvidence({ environment }: { environment: NonNullable<BenchDetail["likelyEnvironment"]> }) {
-  const traits = environment.traits.filter((trait) => trait.probability >= .65);
+  const traits = environment.traits.filter((trait) => trait.probability >= .65 && trait.confidence !== "low");
   if (!traits.length) return null;
   return <section className="visual-evidence-card p-4">
-    <SectionHeading icon={<Camera />} eyebrow="Bilderflüstern" title="Auf Bildern entdeckt" />
+    <SectionHeading icon={<Camera />} eyebrow="Bilderflüstern" title="Wahrscheinlich entdeckt" />
     <span className="story-pill mb-3"><Sparkles size={13} /> Wahrscheinlich · {environment.confidence === "high" ? "hoch" : "mittel"}</span>
     <div className="flex flex-wrap gap-2">{traits.map((trait) => <span className="story-pill" key={trait.kind}>{viewIcon(trait.label)}{trait.label}</span>)}</div>
     <details className="technical-note mt-3 pt-1"><summary className="min-h-11 cursor-pointer py-3 text-xs font-bold text-base-content/55">Quellen</summary><div className="flex flex-wrap gap-2 pb-2">{environment.evidence.map((item) => <a key={`${item.provider}-${item.captureGroup}`} href={item.sourceUrl} target="_blank" rel="noreferrer" className="story-pill">{item.provider} · {item.distanceMeters} m</a>)}</div></details>
