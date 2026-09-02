@@ -124,6 +124,7 @@ jobs:
           KUBECONFIG: ${{ runner.temp }}/kubeconfig
           WEB_IMAGE: ${{ steps.images.outputs.web }}
           WORKER_IMAGE: ${{ steps.images.outputs.worker }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -132,6 +133,15 @@ jobs:
             echo "Benchly is not bootstrapped yet; Ansible will perform the first install." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          kubectl --namespace benchly create secret docker-registry benchly-ghcr \
+            --docker-server=ghcr.io \
+            --docker-username="$GITHUB_ACTOR" \
+            --docker-password="$GHCR_TOKEN" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl --namespace benchly patch serviceaccount default --type=merge \
+            --patch '{"imagePullSecrets":[{"name":"benchly-ghcr"}]}'
+          kubectl --namespace benchly annotate secret benchly-ghcr \
+            "benchly.io/revision=$GITHUB_SHA" --overwrite
           kubectl --namespace benchly set image deployment/benchly "web=$WEB_IMAGE"
           kubectl --namespace benchly set image cronjob/benchly-import-osm "worker=$WORKER_IMAGE"
           kubectl --namespace benchly set image cronjob/benchly-enrich "worker=$WORKER_IMAGE"
