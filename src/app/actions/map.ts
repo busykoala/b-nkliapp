@@ -4,6 +4,7 @@ import { sqlite } from "@/db/client";
 import { displayMaterial, yesNoUnknown } from "@/lib/bench";
 import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
+import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { calculateSunState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { z } from "zod";
@@ -456,27 +457,42 @@ function canopyContextLabel(value: string) {
 }
 
 function getContextFeatures(latitude: number, longitude: number): ContextFeature[] {
+  type ContextRow = ContextFeature & { geometry_wkb: Buffer; source: string; source_version: string | null };
   const latitudeDelta = 500 / 111_320;
   const longitudeDelta = 500 / (111_320 * Math.max(0.2, Math.cos(latitude * Math.PI / 180)));
   const nearby = sqlite.prepare(`
     SELECT f.kind,f.subtype,f.center_latitude,f.center_longitude,f.min_latitude,f.max_latitude,
-      f.min_longitude,f.max_longitude,f.height_meters
+      f.min_longitude,f.max_longitude,f.height_meters,f.geometry_wkb,f.source,f.source_version
     FROM environment_spatial_index s JOIN environment_features f ON f.row_id=s.row_id
     WHERE s.max_longitude>=? AND s.min_longitude<=? AND s.max_latitude>=? AND s.min_latitude<=?
+      AND f.geometry_wkb IS NOT NULL
     LIMIT 20000
-  `).all(longitude - longitudeDelta, longitude + longitudeDelta, latitude - latitudeDelta, latitude + latitudeDelta) as ContextFeature[];
+  `).all(longitude - longitudeDelta, longitude + longitudeDelta, latitude - latitudeDelta, latitude + latitudeDelta) as ContextRow[];
   const farLatitudeDelta = 10_000 / 111_320;
   const farLongitudeDelta = 10_000 / (111_320 * Math.max(0.2, Math.cos(latitude * Math.PI / 180)));
   const waters = sqlite.prepare(`
     SELECT f.kind,f.subtype,f.center_latitude,f.center_longitude,f.min_latitude,f.max_latitude,
-      f.min_longitude,f.max_longitude,f.height_meters
+      f.min_longitude,f.max_longitude,f.height_meters,f.geometry_wkb,f.source,f.source_version
     FROM environment_spatial_index s JOIN environment_features f ON f.row_id=s.row_id
     WHERE f.kind='water' AND s.max_longitude>=? AND s.min_longitude<=?
-      AND s.max_latitude>=? AND s.min_latitude<=? LIMIT 1000
-  `).all(longitude - farLongitudeDelta, longitude + farLongitudeDelta, latitude - farLatitudeDelta, latitude + farLatitudeDelta) as ContextFeature[];
+      AND s.max_latitude>=? AND s.min_latitude<=? AND f.geometry_wkb IS NOT NULL LIMIT 1000
+  `).all(longitude - farLongitudeDelta, longitude + farLongitudeDelta, latitude - farLatitudeDelta, latitude + farLatitudeDelta) as ContextRow[];
+  const officialVersion = (sqlite.prepare(
+    "SELECT version FROM official_context_sources WHERE source='swissTLM3D'",
+  ).get() as { version: string } | undefined)?.version;
+  const authoritativeKinds = new Set(["building", "forest", "water"]);
   const identities = new Map<string, ContextFeature>();
   for (const feature of [...nearby, ...waters]) {
-    identities.set(`${feature.kind}:${feature.center_latitude}:${feature.center_longitude}`, feature);
+    if (officialVersion && authoritativeKinds.has(feature.kind)
+      && (feature.source !== "swissTLM3D" || feature.source_version !== officialVersion)) continue;
+    try {
+      identities.set(`${feature.source}:${feature.kind}:${feature.center_latitude}:${feature.center_longitude}`, {
+        ...feature,
+        exactGeometry: parseWkbGeometry(feature.geometry_wkb),
+      });
+    } catch {
+      // Corrupt or unsupported geometry is ignored rather than approximated from its bounding box.
+    }
   }
   return [...identities.values()];
 }

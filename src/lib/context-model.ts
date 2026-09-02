@@ -1,5 +1,6 @@
 import type { ObstructionType } from "./sun";
-import { HORIZON_DISTANCES_METERS } from "./elevation";
+import { HORIZON_DISTANCES_METERS, wgs84ToLv95 } from "./elevation";
+import { geometryContains, nearestGeometryPoint, type ExactGeometry, type ProjectedPoint } from "./exact-geometry";
 
 export type ContextFeature = {
   kind: "building" | "tree" | "water" | "forest" | "path" | "major_road";
@@ -11,6 +12,7 @@ export type ContextFeature = {
   max_longitude: number;
   height_meters: number | null;
   subtype: string | null;
+  exactGeometry?: ExactGeometry;
   /** Set only by an exact projected-geometry test; bounding-box proximity is insufficient. */
   containsBench?: boolean;
 };
@@ -49,9 +51,38 @@ function distanceMeters(latitudeA: number, longitudeA: number, latitudeB: number
 }
 
 function featureDistance(latitude: number, longitude: number, feature: ContextFeature) {
+  if (feature.exactGeometry) {
+    const origin = wgs84ToLv95(latitude, longitude);
+    return nearestGeometryPoint([origin.easting, origin.northing], feature.exactGeometry)?.distance ?? Infinity;
+  }
   const nearestLatitude = Math.min(Math.max(latitude, feature.min_latitude), feature.max_latitude);
   const nearestLongitude = Math.min(Math.max(longitude, feature.min_longitude), feature.max_longitude);
   return distanceMeters(latitude, longitude, nearestLatitude, nearestLongitude);
+}
+
+function projectedBearing(origin: ProjectedPoint, target: ProjectedPoint) {
+  return (Math.atan2(target[0] - origin[0], target[1] - origin[1]) * 180 / Math.PI + 360) % 360;
+}
+
+function featureBearing(latitude: number, longitude: number, feature: ContextFeature) {
+  if (feature.exactGeometry) {
+    const originLv95 = wgs84ToLv95(latitude, longitude);
+    const origin: ProjectedPoint = [originLv95.easting, originLv95.northing];
+    const nearest = nearestGeometryPoint(origin, feature.exactGeometry)?.nearest;
+    if (nearest && (nearest[0] !== origin[0] || nearest[1] !== origin[1])) return projectedBearing(origin, nearest);
+  }
+  return bearingDegrees(latitude, longitude, feature.center_latitude, feature.center_longitude);
+}
+
+function featureAngularHalfWidth(latitude: number, longitude: number, feature: ContextFeature, centerBearing: number, distance: number) {
+  if (feature.exactGeometry) {
+    const originLv95 = wgs84ToLv95(latitude, longitude);
+    const origin: ProjectedPoint = [originLv95.easting, originLv95.northing];
+    const bearings = feature.exactGeometry.paths.flatMap((path) => path.map((point) => projectedBearing(origin, point)));
+    if (bearings.length) return Math.min(89, Math.max(2.5, ...bearings.map((bearing) => circularDifference(bearing, centerBearing))));
+  }
+  const width = Math.max(4, distanceMeters(feature.min_latitude, feature.min_longitude, feature.max_latitude, feature.max_longitude));
+  return Math.min(60, Math.max(3, Math.atan2(width / 2, distance) * 180 / Math.PI));
 }
 
 function bearingDegrees(latitudeA: number, longitudeA: number, latitudeB: number, longitudeB: number) {
@@ -100,16 +131,12 @@ export function buildContextModel(latitude: number, longitude: number, direction
   for (const feature of [...buildings, ...trees]) {
     const distance = Math.max(2.5, featureDistance(latitude, longitude, feature));
     if (distance > 350) continue;
-    const bearing = bearingDegrees(latitude, longitude, feature.center_latitude, feature.center_longitude);
+    const bearing = featureBearing(latitude, longitude, feature);
     const height = feature.height_meters ?? (feature.kind === "building" ? 8.5 : 12);
     const baseHeight = terrainBaseAt(terrain, bearing, distance);
     const relativeTop = hasTerrain ? baseHeight + height - (terrain.elevationMeters + 1.1) : height - 1.1;
     const angle = Math.max(0, Math.min(89, Math.atan2(Math.max(1, relativeTop), distance) * 180 / Math.PI));
-    const width = Math.max(
-      4,
-      distanceMeters(feature.min_latitude, feature.min_longitude, feature.max_latitude, feature.max_longitude),
-    );
-    const halfAngle = Math.min(60, Math.max(3, Math.atan2(width / 2, distance) * 180 / Math.PI));
+    const halfAngle = featureAngularHalfWidth(latitude, longitude, feature, bearing, distance);
     for (let index = 0; index < 72; index += 1) {
       if (circularDifference(index * 5, bearing) <= halfAngle && angle > horizonProfile[index]) {
         horizonProfile[index] = Number(angle.toFixed(2));
@@ -122,7 +149,10 @@ export function buildContextModel(latitude: number, longitude: number, direction
   const distanceBuildingMeters = nearest(buildings, latitude, longitude);
   const distancePathMeters = nearest(paths, latitude, longitude);
   const distanceRoadMeters = nearest(roads, latitude, longitude);
-  const inForest = forests.some((feature) => feature.containsBench === true);
+  const originLv95 = wgs84ToLv95(latitude, longitude);
+  const origin: ProjectedPoint = [originLv95.easting, originLv95.northing];
+  const inForest = forests.some((feature) => feature.containsBench === true
+    || Boolean(feature.exactGeometry && geometryContains(origin, feature.exactGeometry)));
   if (inForest) {
     for (let index = 0; index < 72; index += 1) {
       if (horizonProfile[index] < 8) {
@@ -147,7 +177,7 @@ export function buildContextModel(latitude: number, longitude: number, direction
   const visibleWater = hasTerrain ? waters.filter((feature) => {
     const distance = featureDistance(latitude, longitude, feature);
     if (distance > 10_000) return false;
-    const bearing = bearingDegrees(latitude, longitude, feature.center_latitude, feature.center_longitude);
+    const bearing = featureBearing(latitude, longitude, feature);
     if (directionDegrees !== null && circularDifference(bearing, directionDegrees) > 55) return false;
     return horizonProfile[Math.round(bearing / 5) % 72] < 12;
   }) : [];

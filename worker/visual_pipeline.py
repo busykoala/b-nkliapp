@@ -75,14 +75,24 @@ def circular_difference(first: float, second: float) -> float:
 def _request_json(url: str, *, data: Optional[bytes] = None, headers: Optional[dict[str, str]] = None, timeout: int = 45) -> object:
     request_headers = {"User-Agent": "Benchly/1.0 (open imagery metadata; contact: bänkliapp.ch)", **(headers or {})}
     request = urllib.request.Request(url, data=data, headers=request_headers)
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as error:
-        retry_after = error.headers.get("Retry-After")
-        if error.code in {429, 503}:
-            raise ProviderDelay(f"{error.code} from {urllib.parse.urlsplit(url).netloc}", int(retry_after) if retry_after and retry_after.isdigit() else 3600) from error
-        raise
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return json.load(response)
+        except urllib.error.HTTPError as error:
+            retry_after = error.headers.get("Retry-After")
+            if error.code in {429, 503}:
+                raise ProviderDelay(
+                    f"{error.code} from {urllib.parse.urlsplit(url).netloc}",
+                    int(retry_after) if retry_after and retry_after.isdigit() else 3600,
+                ) from error
+            if error.code < 500 or attempt == 2:
+                raise
+        except (urllib.error.URLError, TimeoutError):
+            if attempt == 2:
+                raise
+        time.sleep(2 ** attempt)
+    raise RuntimeError("unreachable provider retry state")
 
 
 def _float(value: object) -> Optional[float]:
@@ -408,7 +418,8 @@ def _prediction_from_response(payload: object) -> dict[str, object]:
 
 
 def infer_scene(images: Sequence[tuple[bytes, str]], endpoint: str, api_key: str, model: str = DEFAULT_MODEL) -> dict[str, object]:
-    if not images or sum(len(payload) for payload, _ in images) > MAX_REQUEST_BYTES:
+    encoded_bytes = sum(4 * math.ceil(len(payload) / 3) for payload, _ in images)
+    if not images or encoded_bytes > MAX_REQUEST_BYTES:
         raise ValueError("invalid inference image payload")
     content: list[dict[str, object]] = [{"type": "text", "text": SCENE_PROMPT}]
     for payload, content_type in images:
@@ -452,6 +463,7 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
     """, (limit,)).fetchall()
     stats = {"groups": 0, "images": 0, "failed": 0, "irrelevant": 0}
     minimum_interval = 1 / max(.05, requests_per_second)
+    last_image_request = 0.0
     for group in groups:
         if time.monotonic() >= deadline:
             break
@@ -463,7 +475,11 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
         frames = _diverse_frames(rows)
         started = time.monotonic()
         try:
-            in_memory = [_download_image(row["fetch_url"]) for row in frames]
+            in_memory: list[tuple[bytes, str]] = []
+            for row in frames:
+                time.sleep(max(0, minimum_interval - (time.monotonic() - last_image_request)))
+                last_image_request = time.monotonic()
+                in_memory.append(_download_image(row["fetch_url"]))
             hashes = [hashlib.sha256(payload).hexdigest() for payload, _ in in_memory]
             prediction = None
             for attempt in range(2):
@@ -600,6 +616,12 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000) -> 
 
 def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
     scalar = lambda sql: connection.execute(sql).fetchone()[0]
+    model_versions = {
+        str(row["model_version"] or "unknown"): int(row["count"])
+        for row in connection.execute(
+            "SELECT model_version,count(*) count FROM image_observations WHERE analyzed_at IS NOT NULL GROUP BY model_version"
+        )
+    }
     return {
         "active_benches": scalar("SELECT count(*) FROM benches WHERE active=1"),
         "exact_geometry_features": scalar("SELECT count(*) FROM environment_features WHERE geometry_wkb IS NOT NULL"),
@@ -609,8 +631,11 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
         "irrelevant_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status='irrelevant'"),
         "likely_metadata": scalar("SELECT count(*) FROM bench_likely_metadata"),
         "high_confidence": scalar("SELECT count(*) FROM bench_likely_metadata WHERE confidence='high'"),
+        "model_versions": model_versions,
+        "pending_or_retry_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status IN ('pending','retry')"),
         "forest_conflicts": scalar("""SELECT count(*) FROM bench_likely_metadata lm JOIN bench_enrichments e USING(bench_row_id)
           WHERE lm.land_context='forest' AND e.land_context IN ('open','urban','park')"""),
+        "likely_rows_without_provenance": scalar("SELECT count(*) FROM bench_likely_metadata WHERE evidence_summary IS NULL OR evidence_summary='[]'"),
         "raw_image_columns": 0,
     }
 

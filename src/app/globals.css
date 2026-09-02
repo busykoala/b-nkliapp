@@ -80,6 +80,24 @@ button, a, input, select, textarea { touch-action: manipulation; }
   background: rgb(255 250 237 / 68%);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 75%);
 }
+.insight-card {
+  min-height: 6.35rem;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.insight-card:nth-child(2) { transform: translateY(.2rem) rotate(.35deg); }
+.insight-card:nth-child(3) { transform: rotate(-.35deg); }
+.insight-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(71 119 101 / 10%);
+  color: #176956;
+}
+.insight-card-sun { background: rgb(250 226 167 / 58%); }
+.insight-card-sun .insight-icon { background: rgb(244 186 63 / 22%); color: #895d0e; }
+.insight-card-nature { background: rgb(229 235 210 / 66%); }
 .story-icon {
   display: grid;
   width: 2.7rem;

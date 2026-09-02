@@ -2,11 +2,14 @@ import unittest
 import json
 import sqlite3
 import time
+import urllib.error
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from shapely import to_wkb
+from shapely.affinity import translate
 from shapely.geometry import Polygon
 
 from benchly_worker import (
@@ -33,10 +36,13 @@ from environment_geometry import (
 )
 from visual_pipeline import (
     DiscoveredImage,
+    ProviderDelay,
+    _request_json,
     bearing_degrees,
     circular_difference,
     analyze_scenes,
     discover_open_images,
+    infer_scene,
     reconcile_environment,
     validate_scene_prediction,
 )
@@ -125,7 +131,17 @@ class WorkerUnitTests(unittest.TestCase):
         result = deterministic_environment(46.6622, 7.8092, [forest], [water], [land], "partial")
         self.assertFalse(result["in_forest"])
         self.assertTrue(result["waterfront"])
+        self.assertAlmostEqual(result["water_distance"], 8, delta=.2)
         self.assertEqual(result["land_context"], "open")
+
+    def test_exact_forest_edge_is_separate_from_forest_containment(self):
+        origin = point_lv95(47, 8)
+        # Shift the exact polygon so its boundary is roughly 20 m from the bench.
+        forest = {"geometry_wkb": to_wkb(translate(origin.buffer(10), xoff=30)), "kind": "forest"}
+        result = deterministic_environment(47, 8, [forest], [], [], "none")
+        self.assertFalse(result["in_forest"])
+        self.assertAlmostEqual(result["forest_distance"], 20, delta=.2)
+        self.assertEqual(result["land_context"], "forest_edge")
 
     def test_isolated_surface_peak_is_partial_canopy_not_forest(self):
         class Terrain:
@@ -159,6 +175,23 @@ class WorkerUnitTests(unittest.TestCase):
     def test_scene_schema_rejects_missing_or_out_of_range_values(self):
         with self.assertRaises(ValueError):
             validate_scene_prediction({"relevance_probability": 2})
+
+    def test_provider_retries_server_errors_and_honors_retry_after(self):
+        server_error = urllib.error.HTTPError("https://example.test", 500, "error", {}, None)
+        with patch("visual_pipeline.urllib.request.urlopen", side_effect=[server_error, BytesIO(b'{}')]), \
+             patch("visual_pipeline.time.sleep") as sleep:
+            self.assertEqual(_request_json("https://example.test"), {})
+            sleep.assert_called_once_with(1)
+        delayed = urllib.error.HTTPError("https://example.test", 429, "slow", {"Retry-After": "123"}, None)
+        with patch("visual_pipeline.urllib.request.urlopen", side_effect=delayed):
+            with self.assertRaises(ProviderDelay) as raised:
+                _request_json("https://example.test")
+        self.assertEqual(raised.exception.seconds, 123)
+
+    def test_inference_limit_counts_base64_request_size(self):
+        oversized_after_encoding = [(b"x" * (5 * 1024 * 1024), "image/jpeg")] * 4
+        with self.assertRaisesRegex(ValueError, "payload"):
+            infer_scene(oversized_after_encoding, "https://example.test", "secret")
 
     def test_osm_way_and_relation_context_retain_exact_geometry(self):
         with TemporaryDirectory() as directory:
@@ -248,6 +281,26 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(stats["reconciled"], 1)
         self.assertEqual(row["evidence_group_count"], 2)
         self.assertNotEqual(row["land_context"], "forest")
+
+    def test_lake_railway_frames_fuse_once_and_irrelevant_closeup_is_ignored(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,0)")
+        database.execute("INSERT INTO bench_enrichments VALUES(1,0,'open',1,'partial')")
+        scenic = self.prediction(lake_view_probability=.96, road_rail_probability=.88)
+        for image_id, status in ((1, "analyzed"), (2, "analyzed"), (3, "irrelevant")):
+            database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
+              latitude,longitude,license,analysis_status,relevance_probability,predictions,model_version,analyzed_at,discovered_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
+                image_id, "Panoramax", str(image_id), "daerligen-sequence", "https://example.test/source",
+                "https://example.test/image", 46.6622, 7.8092, "CC-BY-SA", status,
+                .95 if status == "analyzed" else .05, json.dumps(scenic), "benchly-vision", "2026-09-02", "2026-09-02",
+            ))
+            database.execute("INSERT INTO bench_image_evidence VALUES(1,?,?,1,1)", (image_id, 20 + image_id))
+        reconcile_environment(database)
+        row = database.execute("SELECT * FROM bench_likely_metadata").fetchone()
+        self.assertEqual(row["evidence_group_count"], 1)
+        self.assertGreater(row["lake_view_probability"], .9)
+        self.assertGreater(row["road_rail_probability"], .8)
 
     def test_direct_view_geometry_uses_camera_and_bench_headings(self):
         north = bearing_degrees(47, 8, 47.001, 8)

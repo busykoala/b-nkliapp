@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildContextModel, type ContextFeature } from "./context-model";
+import { wgs84ToLv95 } from "./elevation";
 
 const feature = (overrides: Partial<ContextFeature>): ContextFeature => ({
   kind: "building",
@@ -20,6 +21,24 @@ describe("near-field context model", () => {
     expect(model.horizonProfile[0]).toBeGreaterThan(20);
     expect(model.obstructionTypes[0]).toBe("building");
     expect(model.buildingObstructionPercent).toBeGreaterThan(0);
+  });
+
+  it("uses the exact building footprint instead of its broad candidate box", () => {
+    const origin = wgs84ToLv95(47, 8);
+    const exactGeometry = { paths: [[
+      [origin.easting - 2, origin.northing + 20] as [number, number],
+      [origin.easting + 2, origin.northing + 20] as [number, number],
+      [origin.easting + 2, origin.northing + 25] as [number, number],
+      [origin.easting - 2, origin.northing + 25] as [number, number],
+      [origin.easting - 2, origin.northing + 20] as [number, number],
+    ]], polygons: [] };
+    const model = buildContextModel(47, 8, null, [feature({
+      min_longitude: 7.999,
+      max_longitude: 8.001,
+      exactGeometry,
+    })]);
+    expect(model.obstructionTypes[0]).toBe("building");
+    expect(model.obstructionTypes[9]).not.toBe("building");
   });
 
   it("keeps an empty setting open and explicitly preliminary", () => {
