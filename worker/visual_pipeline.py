@@ -701,6 +701,7 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
         JOIN image_observations io ON io.id=bie.image_observation_id
         LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id
         WHERE b.active=1 AND io.analysis_status='analyzed'
+          AND coalesce(io.license,'')<>'' AND io.source_url LIKE 'https://%'
           AND (lm.updated_at IS NULL OR lm.updated_at<io.analyzed_at)
           {bounds_clause}
         ORDER BY b.row_id LIMIT ?
@@ -717,6 +718,7 @@ def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
               bie.distance_meters,bie.evidence_weight,bie.direct_view_eligible
             FROM bench_image_evidence bie JOIN image_observations io ON io.id=bie.image_observation_id
             WHERE bie.bench_row_id=? AND io.analysis_status='analyzed' AND io.relevance_probability>=.55
+              AND coalesce(io.license,'')<>'' AND io.source_url LIKE 'https://%'
             ORDER BY io.provider,io.capture_group_id,bie.distance_meters,io.id
         """, (bench["row_id"],)).fetchall()
         groups: list[tuple[dict[str, object], float]] = []

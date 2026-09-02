@@ -515,6 +515,19 @@ class VisualPipelineTests(unittest.TestCase):
         database.execute("UPDATE bench_likely_metadata SET evidence_summary=?", (json.dumps([{**complete[0], "license": None}]),))
         self.assertEqual(likely_provenance_issues(database), 1)
 
+    def test_unlicensed_existing_analysis_cannot_create_likely_metadata(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,180)")
+        database.execute("INSERT INTO bench_enrichments VALUES(1,0,'open',0,'partial')")
+        database.execute("""INSERT INTO image_observations
+          (id,provider,provider_image_id,capture_group_id,source_url,fetch_url,latitude,longitude,
+           analysis_status,relevance_probability,predictions,model_version,analyzed_at,discovered_at)
+          VALUES(1,'Panoramax','one','group','https://source','https://image',46.6622,7.8092,
+                 'analyzed',.99,?,'benchly-vision','2026-09-02','2026-09-02')""", (json.dumps(self.prediction()),))
+        database.execute("INSERT INTO bench_image_evidence VALUES(1,1,20,1,1)")
+        self.assertEqual(reconcile_environment(database)["reconciled"], 0)
+        self.assertEqual(database.execute("SELECT count(*) FROM bench_likely_metadata").fetchone()[0], 0)
+
     def test_frame_inference_uses_strict_schema_and_requires_every_index(self):
         predictions = [self.prediction(), self.prediction(open_probability=.7)]
         response = {"choices": [{"message": {"content": json.dumps({"frames": [
