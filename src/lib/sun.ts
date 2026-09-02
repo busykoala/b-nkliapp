@@ -6,6 +6,7 @@ export type DayPhase = "dawn" | "day" | "dusk" | "night";
 
 export function getDaylightState(date: Date, latitude: number, longitude: number) {
   const position = SunCalc.getPosition(date, latitude, longitude);
+  const altitude = position.altitude;
   const times = SunCalc.getTimes(date, latitude, longitude);
   const sunrise = times.sunrise?.getTime() ?? date.getTime();
   const sunset = times.sunset?.getTime() ?? date.getTime();
@@ -13,12 +14,28 @@ export function getDaylightState(date: Date, latitude: number, longitude: number
   const progress = sunset > sunrise
     ? Math.max(0, Math.min(1, (date.getTime() - sunrise) / (sunset - sunrise)))
     : .5;
-  const phase: DayPhase = position.altitude <= -6
+  const phase: DayPhase = altitude <= -6
     ? "night"
-    : position.altitude < 8
+    : altitude < 8
       ? date.getTime() < solarNoon ? "dawn" : "dusk"
       : "day";
-  return { phase, progress, altitude: position.altitude, azimuth: position.azimuth };
+  return { phase, progress, altitude, azimuth: position.azimuth };
+}
+
+export function getMoonState(date: Date, latitude: number, longitude: number) {
+  const position = SunCalc.getMoonPosition(date, latitude, longitude);
+  const illumination = SunCalc.getMoonIllumination(date);
+  const times = SunCalc.getMoonTimes(date, latitude, longitude);
+  const formatter = new Intl.DateTimeFormat("de-CH", { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit" });
+  return {
+    altitude: position.altitude,
+    azimuth: position.azimuth,
+    fraction: Math.max(0, Math.min(1, illumination.fraction)),
+    phase: illumination.phase,
+    visible: position.altitude > 0,
+    rise: times.rise ? formatter.format(times.rise) : "–",
+    set: times.set ? formatter.format(times.set) : "–",
+  };
 }
 
 export function interpolateHorizon(profile: number[] | null, azimuthDegrees: number): number {
@@ -42,7 +59,6 @@ export function calculateSunState(input: {
 }) {
   const date = input.date ?? new Date();
   const position = SunCalc.getPosition(date, input.latitude, input.longitude);
-  // SunCalc 2 returns navigation azimuth and apparent altitude in degrees.
   const azimuth = position.azimuth;
   const altitude = position.altitude;
   const horizon = interpolateHorizon(input.horizonProfile ?? null, azimuth);
@@ -52,7 +68,10 @@ export function calculateSunState(input: {
   const obstructionType = index >= 0 ? input.obstructionTypes?.[index] ?? "unknown" : "unknown";
   const hasModeledProfile = Boolean(input.horizonProfile?.length);
   const fallbackCanopyPenalty = hasModeledProfile ? 0 : (input.canopyPercent ?? 0) >= 70 ? 8 : (input.canopyPercent ?? 0) >= 40 ? 3 : 0;
-  const sunny = !input.covered && altitude > 0 && altitude > horizon + fallbackCanopyPenalty;
+  // swissSURFACE3D cells, geocoding and a seated eye all have small spatial uncertainty.
+  // Avoid declaring shade for a sun that merely grazes the calculated horizon.
+  const horizonUncertainty = obstructionType === "terrain" ? 1.2 : obstructionType === "building" || obstructionType === "vegetation" ? .7 : 0;
+  const sunny = !input.covered && altitude > 0 && altitude + horizonUncertainty > horizon + fallbackCanopyPenalty;
   const shadeCause: ShadeCause = sunny ? "frei" : altitude <= 0 ? "nacht" : input.covered ? "überdacht"
     : obstructionType === "building" ? "gebäude" : obstructionType === "vegetation" ? "vegetation"
       : obstructionType === "terrain" ? "gelände" : "unbekannt";

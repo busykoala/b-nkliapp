@@ -6,9 +6,11 @@ import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
 import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { normalizeLocationKey, searchGeoAdminLocations } from "@/lib/place-search";
-import { calculateSunState, getDaylightState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
+import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
+import { getLocalWeather } from "@/lib/weather";
+import { getCurrentUser } from "@/lib/security";
 import { z } from "zod";
 
 function aiLabelsEnabled() {
@@ -356,6 +358,8 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const effectiveSunInput = { ...sunInput, horizonProfile: horizon, obstructionTypes, canopyPercent: contextModel?.canopyPercent ?? sunInput.canopyPercent };
   const sun = calculateSunState(effectiveSunInput);
   const daylight = getDaylightState(new Date(), latitude, longitude);
+  const moon = getMoonState(new Date(), latitude, longitude);
+  const weather = await getLocalWeather(latitude, longitude);
   const localSun = getLocalSunSchedule(effectiveSunInput);
   if (hasTerrainModel && [sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn].some((value) => value === null)) {
     const seasonal = getSeasonalSunMinutes(effectiveSunInput);
@@ -372,6 +376,8 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const recentRatings = sqlite.prepare(`SELECT id, overall, view_score as view, comfort, quiet, note, created_at as createdAt FROM ratings WHERE bench_row_id=? AND visible=1 ORDER BY updated_at DESC LIMIT 5`).all(row.row_id);
   const corrections = sqlite.prepare(`SELECT id, field, proposed_value as proposedValue, note, created_at as createdAt FROM corrections WHERE bench_row_id=? AND visible=1 ORDER BY created_at DESC LIMIT 20`).all(row.row_id);
   const media = sqlite.prepare(`SELECT id, relation, provider, source_url as sourceUrl, thumbnail_url as thumbnailUrl, author, license, distance_meters as distanceMeters, title FROM media WHERE bench_row_id=? ORDER BY relation, distance_meters LIMIT 12`).all(row.row_id);
+  const currentUser = await getCurrentUser();
+  const myRating = currentUser ? sqlite.prepare(`SELECT overall,view_score as view,comfort,quiet,note FROM ratings WHERE bench_row_id=? AND user_id=? LIMIT 1`).get(row.row_id, currentUser.id) : null;
   const ratingCount = Number(row.rating_count ?? 0);
   // A near-field-only model cannot honestly produce the full 1–5 view score:
   // relief is 25% of that model and the distant horizon is still unknown.
@@ -450,6 +456,14 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     sunAzimuthDegrees: daylight.azimuth,
     daylightProgress: daylight.progress,
     dayPhase: daylight.phase,
+    moonAltitudeDegrees: moon.altitude,
+    moonAzimuthDegrees: moon.azimuth,
+    moonIllumination: moon.fraction,
+    moonPhase: moon.phase,
+    moonVisible: moon.visible,
+    moonrise: moon.rise,
+    moonset: moon.set,
+    weather,
     sunMinutesSummer,
     sunMinutesWinter,
     sunMinutesSpring,
@@ -474,6 +488,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     viewLabels, likelyEnvironment,
     ratingAverage: row.rating_average === null ? null : Number(Number(row.rating_average).toFixed(1)), ratingCount,
     ratingBreakdown: ratingCount ? { overall: Number(Number(row.rating_average).toFixed(1)), view: Number(Number(row.rating_view).toFixed(1)), comfort: Number(Number(row.rating_comfort).toFixed(1)), quiet: Number(Number(row.rating_quiet).toFixed(1)) } : null,
+    myRating: myRating as BenchDetail["myRating"],
     recentRatings: recentRatings as BenchDetail["recentRatings"], corrections: corrections as BenchDetail["corrections"], media: media as BenchDetail["media"],
     sourceUpdatedAt: String(row.source_updated_at), pipelineVersion,
   };
@@ -541,18 +556,29 @@ function getContextFeatures(latitude: number, longitude: number): ContextFeature
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   const clean = z.string().trim().min(2).max(80).parse(query);
   const key = normalizeLocationKey(clean);
+  const benches = sqlite.prepare(`
+    SELECT id,coalesce(name,description,'Sitzbank') label,latitude,longitude,location_name,location_canton
+    FROM benches
+    WHERE active=1 AND (lower(coalesce(name,'')) LIKE ? OR lower(coalesce(description,'')) LIKE ?)
+    ORDER BY name IS NOT NULL DESC, verification_status='verified' DESC, source_updated_at DESC LIMIT 6
+  `).all(`%${clean.toLocaleLowerCase("de-CH")}%`, `%${clean.toLocaleLowerCase("de-CH")}%`) as Array<{ id: string; label: string; latitude: number; longitude: number; location_name: string | null; location_canton: string | null }>;
   const local = sqlite.prepare(`
     SELECT location_name,location_postcode,location_canton,avg(latitude) latitude,avg(longitude) longitude
     FROM benches WHERE active=1 AND (location_key LIKE ? OR lower(location_name) LIKE ?)
     GROUP BY location_key,location_postcode,location_canton ORDER BY count(*) DESC LIMIT 4
   `).all(`%${key}%`, `%${clean.toLocaleLowerCase("de-CH")}%`) as Array<{ location_name: string; location_postcode: string | null; location_canton: string | null; latitude: number; longitude: number }>;
-  const localResults = local.map((place) => ({
+  const benchResults: PlaceResult[] = benches.map((bench) => ({
+    id: `bench-${bench.id}`,
+    label: [bench.label, bench.location_name, bench.location_canton].filter(Boolean).join(" · "),
+    latitude: bench.latitude, longitude: bench.longitude, kind: "bench", benchId: bench.id,
+  }));
+  const localResults: PlaceResult[] = local.map((place) => ({
     id: `local-${place.latitude}-${place.longitude}`,
     label: [place.location_postcode, place.location_name, place.location_canton].filter(Boolean).join(" "),
-    latitude: place.latitude, longitude: place.longitude,
+    latitude: place.latitude, longitude: place.longitude, kind: "place" as const,
   }));
-  const remoteResults = await searchGeoAdminLocations(clean);
-  return [...localResults, ...remoteResults]
+  const remoteResults: PlaceResult[] = (await searchGeoAdminLocations(clean)).map((place) => ({ ...place, kind: "place" }));
+  return [...benchResults, ...localResults, ...remoteResults]
     .filter((item, index, all) => all.findIndex((candidate) => candidate.label.toLocaleLowerCase("de-CH") === item.label.toLocaleLowerCase("de-CH")) === index)
     .slice(0, 8);
 }

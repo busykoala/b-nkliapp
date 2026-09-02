@@ -57,14 +57,24 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
 }
 
 function SunPath({ bench }: { bench: BenchDetail }) {
-  return <section className="daylight-story" aria-label={`Direkte Sonne heute: ${sunDuration(bench.sunMinutesToday)}`}>
-    <div className="daylight-copy"><span>Heute</span><strong>{sunStory(bench)}</strong></div>
-    <div className="daylight-track" aria-hidden="true">
-      <span className="daylight-line" />
-      {bench.sunWindows.map((window) => <span key={`${window.start}-${window.end}`} className="daylight-window" style={{ left: `${clockPercent(window.start, bench.sunrise, bench.sunset)}%`, width: `${Math.max(2, clockPercent(window.end, bench.sunrise, bench.sunset) - clockPercent(window.start, bench.sunrise, bench.sunset))}%` }} />)}
-      {bench.dayPhase !== "night" && <span className="daylight-now" style={{ left: `${bench.daylightProgress * 100}%` }} />}
-    </div>
-    <div className="daylight-times"><span>{bench.sunrise}</span><span>{bench.sunset}</span></div>
+  const moonPath = bench.shadeCause === "nacht";
+  const progress = moonPath ? Math.max(0, Math.min(1, (bench.moonAzimuthDegrees - 90) / 180)) : Math.max(0, Math.min(1, bench.daylightProgress));
+  const pointX = 4 + 312 * progress;
+  const pointY = 58 - 180 * progress * (1 - progress);
+  const start = moonPath ? bench.moonrise : bench.sunrise;
+  const end = moonPath ? bench.moonset : bench.sunset;
+  return <section className="daylight-story" aria-label={moonPath ? `Mondaufgang ${start}, Monduntergang ${end}` : `Direkte Sonne heute: ${sunDuration(bench.sunMinutesToday)}`}>
+    <div className="daylight-copy"><span>{moonPath ? "Mondbahn" : "Sonnenbahn"}</span><strong>{sunStory(bench)}</strong></div>
+    <svg className={`sky-arc ${moonPath ? "is-moon" : "is-sun"}`} viewBox="0 0 320 66" aria-hidden="true">
+      <path className="sky-arc-line" d="M4 58Q160-32 316 58" />
+      {!moonPath && bench.sunWindows.map((window) => {
+        const from = clockPercent(window.start, bench.sunrise, bench.sunset);
+        const to = clockPercent(window.end, bench.sunrise, bench.sunset);
+        return <path key={`${window.start}-${window.end}`} className="sky-arc-light" pathLength="100" strokeDasharray={`${Math.max(1, to - from)} ${100 - Math.max(1, to - from)}`} strokeDashoffset={-from} d="M4 58Q160-32 316 58" />;
+      })}
+      {(!moonPath || bench.moonVisible) && <g className="sky-arc-now" transform={`translate(${pointX} ${pointY})`}><circle r="5" />{moonPath && <path d="M1-4a5 5 0 1 0 0 8 4 4 0 1 1 0-8Z" />}</g>}
+    </svg>
+    <div className="daylight-times"><span>{start}</span><span>{end}</span></div>
   </section>;
 }
 
@@ -77,6 +87,8 @@ function QuietDetails({ bench }: { bench: BenchDetail }) {
   if (surroundings) rows.push(["Umgebung", surroundings]);
   if (bench.distanceWaterMeters !== null && !bench.waterfront) rows.push(["Wasser", distance(bench.distanceWaterMeters)]);
   if (bench.distancePathMeters !== null) rows.push(["Nächster Weg", distance(bench.distancePathMeters)]);
+  if (bench.moonrise !== "–" || bench.moonset !== "–") rows.push(["Mond", `auf ${bench.moonrise} · unter ${bench.moonset}`]);
+  if (bench.weather) rows.push(["Wetter", `${Math.round(bench.weather.temperatureC)}° bei ${bench.weather.location}`]);
   return <details className="quiet-details">
     <summary>Mehr über diesen Platz <span aria-hidden>＋</span></summary>
     <dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
@@ -103,7 +115,7 @@ function Community({ bench, report, user }: { bench: BenchDetail; report: (type:
     <header><small>Von Menschen vor Ort</small><h3>Wie war die Pause?</h3></header>
     {bench.ratingBreakdown && <div className="rating-line">{Object.entries({ Gesamt: bench.ratingBreakdown.overall, Aussicht: bench.ratingBreakdown.view, Komfort: bench.ratingBreakdown.comfort, Ruhe: bench.ratingBreakdown.quiet }).map(([label, value]) => <span key={label}><strong>{value}</strong><small>{label}</small></span>)}</div>}
     {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{new Date(rating.createdAt).toLocaleDateString("de-CH")}</time><button aria-label="Bewertung melden" onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
-    {user && <RatingForm benchId={bench.id} />}
+    {user && <RatingForm benchId={bench.id} rating={bench.myRating} />}
     {bench.corrections.length > 0 && <section className="community-notes"><h3>Hinweise</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ?? item.field}</small><button aria-label="Korrektur melden" onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
     <BenchCommunityActions bench={bench} signedIn={Boolean(user)} />
   </div>;
@@ -116,9 +128,29 @@ async function shareBench(bench: BenchDetail) {
 }
 
 function sceneSentence(bench: BenchDetail) {
-  const light = bench.shadeCause === "nacht" ? "Der Platz ruht im Mondlicht" : bench.sunnyNow ? "Hier fällt gerade Sonne auf die Bank" : "Hier ist es gerade schattig";
-  const view = bench.viewLabels.some((item) => item.includes("Berg")) ? "mit Bergen im Blick" : bench.waterfront || bench.viewLabels.some((item) => item.includes("See") || item.includes("Wasser")) ? "nah am Wasser" : bench.inForest ? "zwischen Bäumen" : null;
-  return `${light}${view ? `, ${view}` : ""}.`;
+  const seed = [...bench.id].reduce((sum, letter) => sum + letter.charCodeAt(0), 0);
+  const pick = (phrases: string[], salt: number) => phrases[(seed + salt * 17) % phrases.length];
+  const light = bench.shadeCause === "nacht"
+    ? bench.moonVisible
+      ? pick(["Mondlicht ruht auf der Bank", "Silberlicht fällt auf stilles Holz", "Der Mond hüllt den Platz in Ruhe", "Leiser Mondschein berührt die Bank", "Die Nacht legt Silber auf den Platz"], 1)
+      : pick(["Der Platz ruht unter Sternen", "Stille Nacht liegt über der Bank", "Die Bank träumt in tiefer Nacht", "Unter dunklem Himmel wird es still", "Die Nacht hält diesen Platz ganz leise"], 1)
+    : bench.sunnyNow
+      ? pick(["Sonne wärmt die Bank", "Goldenes Licht lädt zum Bleiben", "Die Sonne küsst stilles Holz", "Helles Licht tanzt über den Platz", "Ein warmer Sonnenfleck wartet hier"], 1)
+      : bench.shadeCause === "gebäude"
+        ? pick(["Kühler Schatten schenkt eine Pause", "Ein Haus hält still die Sonne fern", "Sanfter Schatten liegt auf der Bank", "Hier wird das Licht ganz weich", "Im Schatten wird der Augenblick ruhig"], 1)
+        : bench.shadeCause === "vegetation"
+          ? pick(["Blätter malen Schatten auf die Bank", "Grüner Schatten wiegt sich im Wind", "Licht flüstert durch die Blätter", "Unter Blättern wird die Welt leise", "Tanzende Schatten ruhen auf dem Holz"], 1)
+          : pick(["Stiller Schatten lädt zum Verweilen", "Das Licht wird hier ganz leise", "Ein kühler Augenblick wartet", "Sanfter Schatten umarmt den Platz", "Hier atmet der Tag ein wenig aus"], 1);
+  const view = bench.viewLabels.some((item) => item.includes("Berg"))
+    ? pick(["Berge wachen in der Ferne", "Gipfel ziehen den Blick hinaus", "Die Alpen öffnen den Horizont", "Berglinien schweben am Horizont", "Der Blick wandert zu den Gipfeln"], 2)
+    : bench.waterfront || bench.viewLabels.some((item) => item.includes("See") || item.includes("Wasser"))
+      ? pick(["Das Wasser trägt den Blick davon", "Am Ufer wird die Zeit weit", "Licht wandert über das Wasser", "Der See schenkt dem Blick Ruhe", "Wasser und Himmel werden eins"], 2)
+      : bench.inForest
+        ? pick(["Der Wald flüstert ringsum", "Zwischen Bäumen wohnt die Ruhe", "Das Grün hält die Welt fern", "Blätter rahmen diesen stillen Ort", "Der Wald atmet ganz in der Nähe"], 2)
+        : bench.viewLabels.some((item) => item.includes("Weit"))
+          ? pick(["Der Himmel macht den Blick weit", "Weite liegt vor den Augen", "Der Horizont darf offen bleiben", "Der Blick findet freien Raum", "Hier wird der Himmel ein wenig grösser"], 2)
+          : pick(["Ein stiller Weg zieht vorbei", "Die Welt wird für einen Moment leise", "Hier darf der Augenblick bleiben", "Ein kleiner Ort zum Durchatmen", "Die Zeit geht hier etwas langsamer"], 2);
+  return `${light}. ${view}.`;
 }
 
 function placeLine(bench: BenchDetail) {
@@ -126,7 +158,7 @@ function placeLine(bench: BenchDetail) {
 }
 
 function sunStory(bench: BenchDetail) {
-  if (bench.shadeCause === "nacht") return "Mond über dem Platz";
+  if (bench.shadeCause === "nacht") return bench.moonVisible ? "Mondlicht über dem Platz" : "Der Mond kommt später";
   if (bench.sunnyNow) return `${sunDuration(bench.sunMinutesToday)} Sonne`;
   return bench.sunMinutesToday > 0 ? "Sonne kommt und geht" : "Ein schattiger Platz";
 }

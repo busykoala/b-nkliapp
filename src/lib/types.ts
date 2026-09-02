@@ -141,6 +141,14 @@ export type BenchDetail = {
   sunAzimuthDegrees: number;
   daylightProgress: number;
   dayPhase: "dawn" | "day" | "dusk" | "night";
+  moonAltitudeDegrees: number;
+  moonAzimuthDegrees: number;
+  moonIllumination: number;
+  moonPhase: number;
+  moonVisible: boolean;
+  moonrise: string;
+  moonset: string;
+  weather: { temperatureC: number; precipitationMm10: number | null; sunshineMinutes10: number | null; windKmh: number | null; location: string; observedAt: string; source: "MeteoSchweiz" } | null;
   sunMinutesSummer: number | null;
   sunMinutesWinter: number | null;
   sunMinutesSpring: number | null;
@@ -167,6 +175,7 @@ export type BenchDetail = {
   ratingAverage: number | null;
   ratingCount: number;
   ratingBreakdown: { overall: number; view: number; comfort: number; quiet: number } | null;
+  myRating: { overall: number; view: number; comfort: number; quiet: number; note: string | null } | null;
   recentRatings: CommunityRating[];
   corrections: CommunityCorrection[];
   media: BenchMedia[];
@@ -181,4 +190,6 @@ export type PlaceResult = {
   label: string;
   latitude: number;
   longitude: number;
+  kind: "bench" | "place";
+  benchId?: string;
 };

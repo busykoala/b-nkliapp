@@ -14,7 +14,7 @@ describe("place search", () => {
     const results = await searchGeoAdminLocations("Därligen", fetcher as typeof fetch);
     const requested = new URL(String(fetcher.mock.calls[0][0]));
     expect(requested.searchParams.has("origins")).toBe(false);
-    expect(results).toEqual([{ id: "42", label: "Därligen (BE)", latitude: 46.6518, longitude: 7.8103 }]);
+    expect(results).toEqual([{ id: "42", label: "Därligen (BE)", latitude: 46.6518, longitude: 7.8103, kind: "place" }]);
   });
 
   it("fails softly when the network is unavailable", async () => {

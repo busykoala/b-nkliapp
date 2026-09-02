@@ -126,6 +126,35 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     if (sequence === detailSequence.current) setDetailLoading(false);
   }, []);
 
+  const openAddAt = (latitude: number, longitude: number) => {
+    if (!user) {
+      setMessage("Zum Eintragen bitte zuerst im Menü anmelden.");
+      return;
+    }
+    setAddCoordinates({ latitude, longitude });
+    const source = mapRef.current?.getSource("add-position") as GeoJSONSource | undefined;
+    source?.setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [longitude, latitude] } });
+    setAddOpen(true);
+  };
+
+  const locate = (onFound?: (position: UserPosition) => void) => {
+    if (!navigator.geolocation) { setMessage("Dein Browser unterstützt die Standortsuche nicht."); return; }
+    setMessage("Standort wird gesucht …");
+    navigator.geolocation.getCurrentPosition((position) => {
+      const { longitude, latitude, accuracy } = position.coords;
+      const nextPosition = { longitude, latitude, accuracy };
+      const map = mapRef.current;
+      if (!map || !showUserPosition(map, nextPosition)) pendingPosition.current = nextPosition;
+      if (typeof onFound === "function") onFound(nextPosition);
+      window.localStorage.setItem("benchly_location_enabled", "1");
+      setMessage(`Standort auf etwa ${Math.round(accuracy)} m genau.`);
+      window.setTimeout(() => setMessage(null), 3500);
+    }, () => {
+      window.localStorage.removeItem("benchly_location_enabled");
+      setMessage("Standort nicht verfügbar. Du kannst die Karte weiterhin verwenden.");
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+  };
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     let disposed = false;
@@ -163,11 +192,14 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         map.addSource("benchly", { type: "geojson", data: featureCollection([]) });
         map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#294c45", "circle-opacity": 0.96, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 3, "circle-stroke-color": "#f8eed7", "circle-blur": 0.02 } });
         map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-size": 12 }, paint: { "text-color": "#fff4d7" } });
-        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 6.5, 18, 10], "circle-stroke-width": 2.5, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
+        map.addLayer({ id: "bench-hits", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-radius": 22, "circle-opacity": 0 } });
+        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 8, 18, 12], "circle-stroke-width": 3, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
         map.addSource("user-accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addSource("user-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addSource("add-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addLayer({ id: "user-accuracy", type: "fill", source: "user-accuracy", paint: { "fill-color": "#2d79c7", "fill-opacity": 0.12 } });
         map.addLayer({ id: "user-position", type: "circle", source: "user-position", paint: { "circle-color": "#2878c8", "circle-radius": 7, "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
+        map.addLayer({ id: "add-position", type: "circle", source: "add-position", paint: { "circle-color": "#d58a32", "circle-radius": 10, "circle-stroke-width": 3, "circle-stroke-color": "#fff4d8" } });
         applyMapAtmosphere(map);
         ambientTimer = window.setInterval(() => applyMapAtmosphere(map), 5 * 60 * 1000);
         if (pendingPosition.current && showUserPosition(map, pendingPosition.current)) pendingPosition.current = null;
@@ -181,11 +213,32 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
           }
         };
         map.on("click", "clusters", click);
-        map.on("click", "benches", click);
-        for (const layer of ["clusters", "cluster-count", "benches"]) {
+        map.on("click", "bench-hits", click);
+        for (const layer of ["clusters", "cluster-count", "bench-hits"]) {
           map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
           map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
         }
+        let pressTimer: number | undefined;
+        let pressStart: { x: number; y: number } | null = null;
+        const canvas = map.getCanvas();
+        const cancelPress = () => { window.clearTimeout(pressTimer); pressStart = null; };
+        const beginPress = (event: PointerEvent) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          pressStart = { x: event.offsetX, y: event.offsetY };
+          pressTimer = window.setTimeout(() => {
+            if (!pressStart) return;
+            const point = map.unproject([pressStart.x, pressStart.y]);
+            openAddAt(point.lat, point.lng);
+            cancelPress();
+          }, 550);
+        };
+        const movePress = (event: PointerEvent) => { if (pressStart && Math.hypot(event.offsetX - pressStart.x, event.offsetY - pressStart.y) > 12) cancelPress(); };
+        canvas.addEventListener("pointerdown", beginPress);
+        canvas.addEventListener("pointerup", cancelPress);
+        canvas.addEventListener("pointercancel", cancelPress);
+        canvas.addEventListener("pointermove", movePress);
+        canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+        map.on("remove", () => { cancelPress(); canvas.removeEventListener("pointerdown", beginPress); canvas.removeEventListener("pointerup", cancelPress); canvas.removeEventListener("pointercancel", cancelPress); canvas.removeEventListener("pointermove", movePress); });
         loadVisible(map, filtersRef.current);
       });
       map.on("moveend", () => {
@@ -210,24 +263,27 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     if (map?.isStyleLoaded()) loadVisible(map, filters);
   }, [filters, loadVisible]);
 
-  const locate = () => {
-    if (!navigator.geolocation) { setMessage("Dein Browser unterstützt die Standortsuche nicht."); return; }
-    setMessage("Standort wird gesucht …");
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { longitude, latitude, accuracy } = position.coords;
-      const nextPosition = { longitude, latitude, accuracy };
-      const map = mapRef.current;
-      if (!map || !showUserPosition(map, nextPosition)) pendingPosition.current = nextPosition;
-      setMessage(`Standort auf etwa ${Math.round(accuracy)} m genau.`);
-      window.setTimeout(() => setMessage(null), 3500);
-    }, () => setMessage("Standort nicht verfügbar. Du kannst die Karte weiterhin verwenden."), { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
-  };
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    if (window.localStorage.getItem("benchly_location_enabled") === "1") {
+      const timer = window.setTimeout(() => locate(), 0);
+      return () => window.clearTimeout(timer);
+    }
+    navigator.permissions?.query({ name: "geolocation" }).then((permission) => { if (permission.state === "granted") locate(); }).catch(() => undefined);
+  }, []);
 
-  const choosePlace = (place: PlaceResult) => { mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: 14 }); };
+  const choosePlace = (place: PlaceResult) => {
+    mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: place.kind === "bench" ? 17 : 14 });
+    if (place.kind === "bench" && place.benchId) void selectBench(place.benchId);
+  };
   const openAdd = () => {
     const center = mapRef.current?.getCenter();
-    if (center) setAddCoordinates({ latitude: center.lat, longitude: center.lng });
-    setAddOpen(true);
+    if (center) openAddAt(center.lat, center.lng);
+  };
+  const closeAdd = () => {
+    const source = mapRef.current?.getSource("add-position") as GeoJSONSource | undefined;
+    source?.setData({ type: "FeatureCollection", features: [] });
+    setAddOpen(false);
   };
   const activeFilterCount = Object.values(filters).filter((value) => value !== undefined && value !== false && value !== "").length;
   return (
@@ -243,7 +299,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {mapLoading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center"><div className="storybook-panel grid h-14 w-14 place-items-center rounded-full"><span className="loading loading-ring text-primary" /></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
       {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} user={user} onClose={() => { detailSequence.current += 1; setSelectedId(null); setBench(null); setDetailError(false); }} />}
-      <AddBenchDialog open={addOpen} coordinates={addCoordinates} onClose={() => setAddOpen(false)} />
+      <AddBenchDialog open={addOpen} coordinates={addCoordinates} onUseCurrentLocation={() => locate((position) => openAddAt(position.latitude, position.longitude))} onClose={closeAdd} />
       <footer className="pointer-events-none absolute bottom-1 left-1 z-10 hidden text-[10px] opacity-60 md:block">© swisstopo · © OpenStreetMap-Mitwirkende</footer>
     </main>
   );

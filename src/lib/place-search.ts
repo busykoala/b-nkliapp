@@ -22,7 +22,7 @@ export async function searchGeoAdminLocations(query: string, fetcher: typeof fet
       const longitude = Number(attrs.lon ?? attrs.x);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
       const label = String(attrs.label ?? attrs.detail ?? query).replace(/<[^>]*>/g, "");
-      return [{ id: String(result.id ?? `${latitude}-${longitude}`), label, latitude, longitude }];
+      return [{ id: String(result.id ?? `${latitude}-${longitude}`), label, latitude, longitude, kind: "place" as const }];
     });
   } catch { return []; }
 }

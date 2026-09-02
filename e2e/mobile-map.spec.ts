@@ -99,7 +99,7 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   await expect(page.getByRole("figure")).toBeVisible();
-  await expect(page.getByText("Heute")).toBeVisible();
+  await expect(page.getByText(/Sonnenbahn|Mondbahn/)).toBeVisible();
   await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
   await expect(page.getByText("Mehr über diesen Platz")).toBeVisible();
 });

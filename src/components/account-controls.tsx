@@ -24,8 +24,8 @@ export function AccountDialog({ dialogRef }: { dialogRef: React.RefObject<HTMLDi
   const router = useRouter();
   useEffect(() => { if (state?.ok) { dialogRef.current?.close(); router.refresh(); } }, [state, router, dialogRef]);
   return <dialog ref={dialogRef} className="modal modal-bottom sm:modal-middle">
-    <div className="modal-box storybook-sheet rounded-t-[2rem] sm:rounded-[2rem]">
-      <button aria-label="Schliessen" className="btn btn-circle btn-ghost absolute right-3 top-3" onClick={() => dialogRef.current?.close()}><X size={19} /></button>
+    <div className="modal-box storybook-sheet max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] overflow-y-auto rounded-t-[2rem] pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-[2rem]">
+      <button type="button" aria-label="Schliessen" className="btn btn-circle btn-ghost absolute right-3 top-3" onClick={() => dialogRef.current?.close()}><X size={19} /></button>
       <span className="story-icon mb-3"><Armchair size={21} /></span>
       <div className="story-eyebrow">Mach mit</div>
       <h2 className="mt-1 text-2xl font-black">{mode === "login" ? "Willkommen zurück" : "Dein Bänkli-Konto"}</h2>
@@ -36,7 +36,7 @@ export function AccountDialog({ dialogRef }: { dialogRef: React.RefObject<HTMLDi
         <button className="btn btn-primary min-h-12 w-full rounded-2xl">{mode === "login" ? "Anmelden" : "Konto erstellen"}</button>
       </form>
       {state && <p role="status" className={`mt-3 text-sm ${state.ok ? "text-success" : "text-error"}`}>{state.message}</p>}
-      <button className="btn btn-ghost mt-2 min-h-11 w-full" onClick={() => setMode(mode === "login" ? "register" : "login")}>{mode === "login" ? "Neu hier? Konto erstellen" : "Ich habe schon ein Konto"}</button>
+      <button type="button" className="btn btn-ghost mt-2 min-h-11 w-full" onClick={() => setMode(mode === "login" ? "register" : "login")}>{mode === "login" ? "Neu hier? Konto erstellen" : "Ich habe schon ein Konto"}</button>
     </div>
     <form method="dialog" className="modal-backdrop"><button>schliessen</button></form>
   </dialog>;
