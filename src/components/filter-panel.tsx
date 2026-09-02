@@ -1,6 +1,6 @@
 "use client";
 
-import { Accessibility, Armchair, Check, Eye, Leaf, MountainSnow, RotateCcw, Sun, Trees, Umbrella, Waves } from "lucide-react";
+import { Accessibility, Armchair, Check, Eye, Leaf, Mountain, MountainSnow, RotateCcw, Sun, Trees, Umbrella, Waves } from "lucide-react";
 import type { MapFilters } from "@/lib/types";
 
 type Props = { filters: MapFilters; onChange: (filters: MapFilters) => void; onClose: () => void };
@@ -25,6 +25,7 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
           <div className="filter-choices">
             <FilterToggle active={filters.covered === true} icon={<Umbrella />} label="Überdacht" onClick={() => toggle("covered")} />
             <ViewToggle active={filters.viewType === "mountain"} icon={<MountainSnow />} label="Berge" onClick={() => onChange({ ...filters, viewType: filters.viewType === "mountain" ? undefined : "mountain" })} />
+            <ViewToggle active={filters.viewType === "hill"} icon={<Mountain />} label="Hügel" onClick={() => onChange({ ...filters, viewType: filters.viewType === "hill" ? undefined : "hill" })} />
             <ViewToggle active={filters.viewType === "lake"} icon={<Waves />} label="Wasser" onClick={() => onChange({ ...filters, viewType: filters.viewType === "lake" ? undefined : "lake" })} />
             <ViewToggle active={filters.viewType === "open"} icon={<Eye />} label="Weitsicht" onClick={() => onChange({ ...filters, viewType: filters.viewType === "open" ? undefined : "open" })} />
             <FilterToggle active={filters.environment === "forest"} icon={<Trees />} label="Wald" onClick={() => onChange({ ...filters, environment: filters.environment === "forest" ? undefined : "forest" })} />

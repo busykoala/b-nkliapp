@@ -44,10 +44,11 @@ from environment_geometry import (
     project_wgs84_wkb,
 )
 from visual_pipeline import analyze_scenes, audit_environment, benchmark_models, discover_open_images, reconcile_environment
+from weather_pipeline import refresh_weather
 
 DEFAULT_PBF = "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf"
-PIPELINE_VERSION = "3.0.0"
-PROFILE_PIPELINE_VERSION = "geo-admin-horizon-1.0"
+PIPELINE_VERSION = "4.0.0"
+PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v2"
 PROFILE_DISTANCES_METERS = (10, 25, 50, 75, 100, 150, *range(200, 20_001, 200))
 PROFILE_BEARING_GROUPS = (tuple(range(0, 180, 5)), tuple(range(180, 360, 5)))
 KEEP_TAGS = {
@@ -230,6 +231,123 @@ def discover_swisstlm_asset() -> tuple[str, str]:
     if not candidates:
         raise RuntimeError("No swissTLM3D GeoPackage archive found in the official STAC collection")
     return sorted(candidates, reverse=True)[0]
+
+
+def discover_swissbuildings_assets(bounds: tuple[float, float, float, float]) -> list[dict[str, str]]:
+    endpoint = os.environ.get(
+        "SWISSBUILDINGS_STAC_ITEMS",
+        "https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo.swissbuildings3d_3_0/items",
+    )
+    separator = "&" if "?" in endpoint else "?"
+    bbox = ",".join(f"{value:.6f}" for value in bounds)
+    url: Optional[str] = f"{endpoint}{separator}{urllib.parse.urlencode({'limit': 100, 'bbox': bbox})}"
+    candidates: dict[str, dict[str, str]] = {}
+    pages = 0
+    while url and pages < 10:
+        request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (3D building import)"})
+        with urllib.request.urlopen(request, timeout=60) as response:
+            payload = json.load(response)
+        for item in payload.get("features", []):
+            version = str(item.get("properties", {}).get("datetime") or item.get("id") or now_iso())
+            item_id = str(item.get("id") or hashlib.sha256(version.encode()).hexdigest()[:16])
+            for asset in (item.get("assets") or {}).values():
+                href = str(asset.get("href") or "")
+                filename = Path(urllib.parse.urlparse(href).path).name.lower()
+                if href.startswith("https://") and filename.endswith("_2056_5728.gdb.zip"):
+                    candidates[item_id] = {"id": item_id, "version": version, "url": href}
+        url = next((str(link.get("href")) for link in payload.get("links", []) if link.get("rel") == "next"), None)
+        pages += 1
+    return sorted(candidates.values(), key=lambda item: item["id"])
+
+
+def _geometry_z_values(value: object) -> list[float]:
+    output: list[float] = []
+    if isinstance(value, (list, tuple)):
+        if len(value) >= 3 and all(isinstance(item, (int, float)) for item in value[:3]):
+            output.append(float(value[2]))
+        else:
+            for item in value:
+                output.extend(_geometry_z_values(item))
+    return output
+
+
+def _property_number(properties: dict, *tokens: str) -> Optional[float]:
+    for key, value in properties.items():
+        normalized = unicodedata.normalize("NFKD", str(key)).encode("ascii", "ignore").decode().lower()
+        if all(token in normalized for token in tokens):
+            try:
+                number = float(value)
+                if math.isfinite(number):
+                    return number
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
+def import_swissbuildings_gdb(connection: sqlite3.Connection, geodatabase: Path,
+                              source_version: str, imported_at: str, source_prefix: str = "archive") -> dict[str, int]:
+    layers = [layer for layer in geopackage_layers(geodatabase) if "building_solid" in layer.lower()]
+    if not layers:
+        raise RuntimeError(f"No Building_solid layer found in {geodatabase}")
+    stats = {"building": 0, "skipped": 0}
+    batch: list[tuple] = []
+
+    def flush() -> None:
+        if not batch:
+            return
+        connection.executemany("""
+          INSERT INTO environment_features(source,source_id,kind,subtype,center_latitude,center_longitude,
+            min_latitude,max_latitude,min_longitude,max_longitude,height_meters,raw_tags,imported_at,
+            geometry_wkb,geometry_crs,source_version,source_updated_at,ground_elevation_meters,
+            eaves_elevation_meters,roof_elevation_meters)
+          VALUES('swissBUILDINGS3D',?,'building','solid',?,?,?,?,?,?,?,?,?,?,?,2056,?,?,?,?,?)
+          ON CONFLICT(source,source_id,kind) DO UPDATE SET center_latitude=excluded.center_latitude,
+            center_longitude=excluded.center_longitude,min_latitude=excluded.min_latitude,
+            max_latitude=excluded.max_latitude,min_longitude=excluded.min_longitude,
+            max_longitude=excluded.max_longitude,height_meters=excluded.height_meters,
+            raw_tags=excluded.raw_tags,imported_at=excluded.imported_at,geometry_wkb=excluded.geometry_wkb,
+            source_version=excluded.source_version,source_updated_at=excluded.source_updated_at,
+            ground_elevation_meters=excluded.ground_elevation_meters,
+            eaves_elevation_meters=excluded.eaves_elevation_meters,
+            roof_elevation_meters=excluded.roof_elevation_meters
+        """, batch)
+        connection.commit()
+        batch.clear()
+
+    for layer in layers:
+        for offset, feature in enumerate(iter_layer_features(geodatabase, layer)):
+            geometry_json = feature.get("geometry")
+            properties = feature.get("properties") or {}
+            if not geometry_json:
+                stats["skipped"] += 1
+                continue
+            try:
+                geometry = geometry_wkb_from_geojson(geometry_json)
+                min_lon, min_lat, max_lon, max_lat = feature_bounds_wgs84(geometry)
+            except Exception:
+                stats["skipped"] += 1
+                continue
+            if max_lat < 45.7 or min_lat > 47.9 or max_lon < 5.7 or min_lon > 10.7:
+                continue
+            heights = _geometry_z_values(geometry_json.get("coordinates"))
+            ground = min(heights) if heights else _property_number(properties, "boden", "kote")
+            roof = max(heights) if heights else (_property_number(properties, "dach", "max") or _property_number(properties, "max", "kote"))
+            eaves = _property_number(properties, "dach", "min") or _property_number(properties, "trauf")
+            height = roof - ground if roof is not None and ground is not None else _property_number(properties, "gebaude", "hohe")
+            if height is not None and not 1.5 <= height <= 300:
+                height = None
+            source_id_value = feature.get("id") or properties.get("EGID") or properties.get("egid") or properties.get("UUID") or properties.get("uuid") or offset
+            source_id = f"{source_prefix}:{layer}:{source_id_value}"
+            compact_tags = {str(key): value for key, value in properties.items() if str(key).lower() in {"egid", "uuid", "objektart", "objecttype", "name"}}
+            batch.append((source_id, (min_lat + max_lat) / 2, (min_lon + max_lon) / 2,
+                          min_lat, max_lat, min_lon, max_lon, height,
+                          json.dumps(compact_tags, ensure_ascii=False, separators=(",", ":")), imported_at,
+                          geometry, source_version, imported_at, ground, eaves, roof))
+            stats["building"] += 1
+            if len(batch) >= 1000:
+                flush()
+    flush()
+    return stats
 
 
 def _safe_extract_zip(archive: Path, destination: Path) -> None:
@@ -908,10 +1026,14 @@ def preferred_exact_features(
         feature for feature in features
         if feature["kind"] == kind and feature["geometry_wkb"] is not None
     ]
+    if kind == "building":
+        detailed = [feature for feature in exact if feature["source"] == "swissBUILDINGS3D"]
+        if detailed:
+            return detailed
     official = [feature for feature in exact if feature["source"] == "swissTLM3D"]
     if isinstance(official_context, str):
         official = [feature for feature in official if feature["source_version"] == official_context]
-    non_official = [feature for feature in exact if feature["source"] != "swissTLM3D"]
+    non_official = [feature for feature in exact if feature["source"] not in {"swissTLM3D", "swissBUILDINGS3D"}]
     return official if official_context else non_official
 
 
@@ -951,12 +1073,13 @@ def point_hits_building(latitude: float, longitude: float, buildings: Sequence[s
 
 
 def horizon_profile(latitude: float, longitude: float, origin_height: float, surface: RasterCollection,
-                    terrain: RasterCollection, buildings: Sequence[sqlite3.Row]) -> tuple[list[float], list[float], list[str], list[float], list[float]]:
+                    terrain: RasterCollection, buildings: Sequence[sqlite3.Row]) -> tuple[list[float], list[float], list[str], list[float], list[float], list[float]]:
     profile: list[float] = []
     terrain_profile: list[float] = []
     obstruction_types: list[str] = []
     obstruction_distances: list[float] = []
     relief_samples: list[float] = []
+    far_max_elevations: list[float] = []
     near_distances = list(range(2, 22, 2)) + list(range(25, 101, 5)) + list(range(120, 301, 20))
     far_distances = [300 * (20_000 / 300) ** (index / 48) for index in range(1, 49)]
     for bearing in range(0, 360, 5):
@@ -981,12 +1104,14 @@ def horizon_profile(latitude: float, longitude: float, origin_height: float, sur
                 maximum_type = "building" if raised_surface and point_hits_building(lat, lon, buildings) else "vegetation" if raised_surface else "terrain"
                 maximum_angle = angle
                 maximum_distance = float(sample_distance)
+        far_max_elevation = origin_height - 1.1
         for sample_distance in far_distances:
             lat, lon = destination(latitude, longitude, bearing, sample_distance)
             elevation = terrain.sample(lat, lon)
             if elevation is None:
                 continue
             relief_samples.append(elevation)
+            far_max_elevation = max(far_max_elevation, elevation)
             angle = math.degrees(math.atan2(elevation - origin_height, sample_distance))
             maximum_terrain_angle = max(maximum_terrain_angle, angle)
             if angle > maximum_angle:
@@ -997,11 +1122,25 @@ def horizon_profile(latitude: float, longitude: float, origin_height: float, sur
         terrain_profile.append(round(maximum_terrain_angle, 2))
         obstruction_types.append(maximum_type)
         obstruction_distances.append(round(maximum_distance, 1))
-    return profile, terrain_profile, obstruction_types, obstruction_distances, relief_samples
+        far_max_elevations.append(round(far_max_elevation, 1))
+    return profile, terrain_profile, obstruction_types, obstruction_distances, relief_samples, far_max_elevations
+
+
+def _longest_view_run(values: Sequence[bool], circular: bool) -> int:
+    if not values:
+        return 0
+    source = [*values, *values] if circular else list(values)
+    current = longest = 0
+    for value in source:
+        current = current + 1 if value else 0
+        longest = max(longest, current)
+    return min(len(values), longest)
 
 
 def classify_view(latitude: float, longitude: float, facing: Optional[float], profile: Sequence[float],
-                  terrain_profile: Sequence[float], context: Sequence[sqlite3.Row], relief: float) -> tuple[list[str], float, float, float, float, dict]:
+                  terrain_profile: Sequence[float], context: Sequence[sqlite3.Row], relief: float,
+                  terrain_samples: Sequence[float] = (), origin_elevation: Optional[float] = None,
+                  obstruction_types: Sequence[str] = ()) -> tuple[list[str], float, float, float, float, dict]:
     indices = list(range(72)) if facing is None else [index for index in range(72) if abs((((index * 5 - facing) + 180) % 360) - 180) <= 45]
     selected = [profile[index] for index in indices]
     openness = sum(max(0.0, 1 - max(0.0, angle) / 35) for angle in selected) / max(1, len(selected))
@@ -1029,25 +1168,53 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
     remoteness = min(1.0, 0.35 * min(1, nearest_building / 100) + 0.65 * min(1, nearest_road / 300))
     water_score = 1.0 if visible_water and nearest_water < 1500 else 0.7 if visible_water else 0.2 if nearest_water < 300 else 0.0
     labels: list[str] = []
-    selected_terrain = [terrain_profile[index] for index in indices]
-    building_share = sum(1 for index in indices if profile[index] > terrain_profile[index] + 0.1) / max(1, len(indices))
-    if relief >= 0.35 and max(selected_terrain, default=-5) >= 4:
+    if len(terrain_samples) == 72:
+        far_maximum = list(terrain_samples)
+    elif len(terrain_samples) == 72 * len(PROFILE_DISTANCES_METERS):
+        far_start = next(index for index, distance in enumerate(PROFILE_DISTANCES_METERS) if distance >= 2_000)
+        far_maximum = [
+            max(terrain_samples[index * len(PROFILE_DISTANCES_METERS) + far_start:(index + 1) * len(PROFILE_DISTANCES_METERS)], default=origin_elevation or 0)
+            for index in range(72)
+        ]
+    else:
+        far_maximum = [origin_elevation or 0] * 72
+    if obstruction_types:
+        blocked_share = sum(1 for index in indices if obstruction_types[index] in {"building", "vegetation"}) / max(1, len(indices))
+    else:
+        blocked_share = sum(1 for index in indices if profile[index] > terrain_profile[index] + .5) / max(1, len(indices))
+    terrain_sectors = []
+    for index in indices:
+        maximum = far_maximum[index]
+        visible = profile[index] <= terrain_profile[index] + .5
+        prominent = terrain_profile[index] >= 1.5 and maximum - (origin_elevation or maximum) >= 120
+        terrain_sectors.append({"mountain": visible and prominent and maximum >= 1_500,
+                                "hill": visible and prominent and maximum < 1_500,
+                                "maximum": maximum if visible and prominent else None})
+    minimum_run = 8 if facing is None else 4
+    mountain_run = _longest_view_run([bool(sector["mountain"]) for sector in terrain_sectors], facing is None)
+    hill_run = _longest_view_run([bool(sector["hill"]) for sector in terrain_sectors], facing is None)
+    if blocked_share < .5 and mountain_run >= minimum_run:
         labels.append("Bergblick")
+    elif blocked_share < .5 and hill_run >= minimum_run:
+        labels.append("Hügelblick")
     if visible_water:
         labels.append("Seeblick" if any((feature["subtype"] or "") in {"lake", "reservoir", "water"} for feature in visible_water) else "Wasserblick")
     if openness >= 0.75:
         labels.append("Weitsicht")
     if visible_forests and naturalness >= 0.7:
         labels.append("Waldblick")
-    if openness < 0.4 or sum(selected) / max(1, len(selected)) > 22 or building_share > 0.5:
+    if openness < 0.4 or sum(selected) / max(1, len(selected)) > 22 or blocked_share >= 0.5:
+        labels = [label for label in labels if label not in {"Bergblick", "Hügelblick", "Weitsicht"}]
         labels.append("Eingeschränkte Aussicht")
     if not labels:
         labels.append("Keine besondere Aussicht")
     sectors = []
     for start in range(0, 360, 45):
         values = [profile[index % 72] for index in range(start // 5, start // 5 + 9)]
-        sectors.append({"from": start, "to": start + 45, "mean_horizon": round(sum(values) / len(values), 1), "open": sum(angle < 5 for angle in values) >= 5})
-    return labels, openness, water_score, naturalness, remoteness, {"sectors": sectors, "visible_water_count": len(visible_water)}
+        maximum_elevation = max(far_maximum[start // 5:start // 5 + 9], default=None)
+        sectors.append({"from": start, "to": start + 45, "mean_horizon": round(sum(values) / len(values), 1), "open": sum(angle < 5 for angle in values) >= 5, "maximum_elevation_m": maximum_elevation})
+    visible_maxima = [sector["maximum"] for sector in terrain_sectors if sector["maximum"] is not None]
+    return labels, openness, water_score, naturalness, remoteness, {"sectors": sectors, "visible_water_count": len(visible_water), "visible_terrain_max_m": max(visible_maxima, default=None)}
 
 
 def direct_sun_minutes(latitude: float, longitude: float, profile: Sequence[float], canopy_percent: float, covered: bool, month: int, day: int) -> int:
@@ -1123,13 +1290,14 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
             in_forest = int(bool(environment["in_forest"]))
             # A seated eye is approximately 1.1 m above bare terrain. Using the surface height
             # as origin would incorrectly place the observer on top of a tree canopy or roof.
-            horizon, terrain_horizon, obstruction_types, obstruction_distances, elevations = horizon_profile(
+            horizon, terrain_horizon, obstruction_types, obstruction_distances, elevations, far_max_elevations = horizon_profile(
                 row["latitude"], row["longitude"], elevation + 1.1, surface, terrain, buildings,
             )
             facing = row["direction_degrees"]
             relief = min(1.0, ((max(elevations) - min(elevations)) / 1500.0) if elevations else 0.0)
             labels, openness, water, naturalness, remoteness, view_sectors = classify_view(
                 row["latitude"], row["longitude"], facing, horizon, terrain_horizon, context, relief,
+                far_max_elevations, elevation, obstruction_types,
             )
             components = {"openness": openness, "relief": relief, "water": water, "naturalness": naturalness, "remoteness": remoteness}
             view = score_view(**components)
@@ -1327,6 +1495,144 @@ def run_import_official_context(args) -> None:
         connection.close()
         if temporary_context:
             temporary_context.cleanup()
+
+
+def run_import_swissbuildings(args) -> None:
+    database = Path(args.database).resolve()
+    connection = connect_database(database)
+    temporary_context = tempfile.TemporaryDirectory(prefix="benchly-buildings-") if not args.work_dir else None
+    work_dir = Path(args.work_dir or temporary_context.name)
+    run_id = begin_run(connection, "import-swissbuildings3d")
+    stats: dict[str, object] = {"cells": 0, "assets": 0, "building": 0, "skipped": 0}
+    try:
+        if args.first_sunday_only and datetime.now().day > 7:
+            finish_run(connection, run_id, "skipped", {"reason": "not the first Sunday of the month"})
+            print(json.dumps({"status": "skipped", "reason": "not the first Sunday"}, indent=2))
+            return
+        connection.executescript("""
+          CREATE TABLE IF NOT EXISTS building_import_cells(
+            cell_key TEXT PRIMARY KEY, bounds TEXT NOT NULL, imported_at TEXT NOT NULL, stats TEXT NOT NULL DEFAULT '{}'
+          );
+          CREATE TABLE IF NOT EXISTS building_source_assets(
+            asset_id TEXT PRIMARY KEY, source_version TEXT NOT NULL, asset_url TEXT NOT NULL,
+            imported_at TEXT NOT NULL, stats TEXT NOT NULL DEFAULT '{}'
+          );
+        """)
+        if args.archive:
+            archive = Path(args.archive).resolve()
+            source_version = args.source_version or sha256_file(archive)
+            asset_url = archive.as_uri()
+            extract_dir = work_dir / "archive"
+            _safe_extract_zip(archive, extract_dir)
+            geodatabases = sorted(path for path in extract_dir.rglob("*.gdb") if path.is_dir())
+            if not geodatabases:
+                raise RuntimeError("swissBUILDINGS3D archive contains no FileGDB")
+            generation = now_iso()
+            for geodatabase in geodatabases:
+                imported = import_swissbuildings_gdb(connection, geodatabase, source_version, generation)
+                for key, value in imported.items():
+                    stats[key] = int(stats.get(key, 0)) + value
+            connection.execute("UPDATE bench_enrichments SET pipeline_version=NULL,context_source_version=NULL")
+            checksum = sha256_file(archive)
+        else:
+            existing_cells = {row["cell_key"] for row in connection.execute("SELECT cell_key FROM building_import_cells")}
+            grouped = connection.execute("""
+              SELECT CAST(longitude/? AS INTEGER) cell_x,CAST(latitude/? AS INTEGER) cell_y,count(*) count
+              FROM benches WHERE active=1 GROUP BY cell_x,cell_y ORDER BY count DESC
+            """, (args.cell_degrees, args.cell_degrees)).fetchall()
+            cells: list[tuple[str, tuple[float, float, float, float]]] = []
+            for row in grouped:
+                key = f"{args.cell_degrees:.4f}:{row['cell_x']}:{row['cell_y']}"
+                if key in existing_cells and not args.force:
+                    continue
+                bounds = (row["cell_x"] * args.cell_degrees, row["cell_y"] * args.cell_degrees,
+                          (row["cell_x"] + 1) * args.cell_degrees, (row["cell_y"] + 1) * args.cell_degrees)
+                cells.append((key, bounds))
+                if len(cells) >= args.max_cells:
+                    break
+            if not cells:
+                finish_run(connection, run_id, "skipped", {"reason": "all spatial cells imported"})
+                print(json.dumps({"status": "up-to-date"}, indent=2))
+                return
+            imported_versions: list[str] = []
+            for cell_key, bounds in cells:
+                assets = discover_swissbuildings_assets(expand_bounds(bounds, 150))
+                cell_stats = {"assets": len(assets), "building": 0}
+                for asset in assets:
+                    imported_versions.append(asset["version"])
+                    existing = connection.execute(
+                        "SELECT source_version FROM building_source_assets WHERE asset_id=?", (asset["id"],),
+                    ).fetchone()
+                    if existing and existing["source_version"] == asset["version"] and not args.force:
+                        continue
+                    asset_directory = work_dir / hashlib.sha256(asset["id"].encode()).hexdigest()[:16]
+                    asset_directory.mkdir(parents=True, exist_ok=True)
+                    archive = asset_directory / "buildings.gdb.zip"
+                    download_file(asset["url"], archive)
+                    extract_dir = asset_directory / "extracted"
+                    _safe_extract_zip(archive, extract_dir)
+                    geodatabases = sorted(path for path in extract_dir.rglob("*.gdb") if path.is_dir())
+                    if not geodatabases:
+                        raise RuntimeError(f"swissBUILDINGS3D asset {asset['id']} contains no FileGDB")
+                    asset_stats = {"building": 0, "skipped": 0}
+                    for geodatabase in geodatabases:
+                        imported = import_swissbuildings_gdb(
+                            connection, geodatabase, asset["version"], now_iso(), source_prefix=asset["id"],
+                        )
+                        for key, value in imported.items():
+                            asset_stats[key] += value
+                    connection.execute("""
+                      INSERT INTO building_source_assets(asset_id,source_version,asset_url,imported_at,stats)
+                      VALUES(?,?,?,?,?) ON CONFLICT(asset_id) DO UPDATE SET source_version=excluded.source_version,
+                        asset_url=excluded.asset_url,imported_at=excluded.imported_at,stats=excluded.stats
+                    """, (asset["id"], asset["version"], asset["url"], now_iso(), json.dumps(asset_stats, separators=(",", ":"))))
+                    stats["assets"] = int(stats["assets"]) + 1
+                    stats["building"] = int(stats["building"]) + asset_stats["building"]
+                    stats["skipped"] = int(stats["skipped"]) + asset_stats["skipped"]
+                    cell_stats["building"] += asset_stats["building"]
+                connection.execute("""
+                  INSERT INTO building_import_cells(cell_key,bounds,imported_at,stats) VALUES(?,?,?,?)
+                  ON CONFLICT(cell_key) DO UPDATE SET bounds=excluded.bounds,imported_at=excluded.imported_at,stats=excluded.stats
+                """, (cell_key, json.dumps(bounds), now_iso(), json.dumps(cell_stats, separators=(",", ":"))))
+                connection.execute("""
+                  UPDATE bench_enrichments SET pipeline_version=NULL,context_source_version=NULL
+                  WHERE bench_row_id IN (SELECT row_id FROM benches WHERE longitude BETWEEN ? AND ? AND latitude BETWEEN ? AND ?)
+                """, (bounds[0], bounds[2], bounds[1], bounds[3]))
+                stats["cells"] = int(stats["cells"]) + 1
+                connection.commit()
+            source_version = f"progressive:{max(imported_versions, default=now_iso())}"
+            asset_url = "https://data.geo.admin.ch/ch.swisstopo.swissbuildings3d_3_0/"
+            checksum = "progressive-spatial-import"
+        connection.execute("""
+          INSERT INTO official_context_sources(source,version,asset_url,asset_checksum,imported_at,stats)
+          VALUES('swissBUILDINGS3D',?,?,?,?,?) ON CONFLICT(source) DO UPDATE SET version=excluded.version,
+            asset_url=excluded.asset_url,asset_checksum=excluded.asset_checksum,imported_at=excluded.imported_at,stats=excluded.stats
+        """, (source_version, asset_url, checksum, now_iso(), json.dumps(stats, separators=(",", ":"))))
+        connection.execute("UPDATE pipeline_runs SET source_version=? WHERE id=?", (source_version, run_id))
+        connection.commit()
+        finish_run(connection, run_id, "completed", stats)
+        print(json.dumps(stats, indent=2))
+    except Exception as error:
+        finish_run(connection, run_id, "failed", {"error": str(error), **stats})
+        raise
+    finally:
+        connection.close()
+        if temporary_context:
+            temporary_context.cleanup()
+
+
+def run_refresh_weather(args) -> None:
+    connection = connect_database(Path(args.database).resolve())
+    run_id = begin_run(connection, "refresh-weather", "MeteoSwiss ICON-CH1 + PRECIP")
+    try:
+        stats = refresh_weather(connection, icon=not args.radar_only, radar=not args.icon_only)
+        finish_run(connection, run_id, "completed", stats)
+        print(json.dumps(stats, indent=2))
+    except Exception as error:
+        finish_run(connection, run_id, "failed", {"error": str(error)})
+        raise
+    finally:
+        connection.close()
 
 
 def run_discover_open_images(args) -> None:
@@ -1567,6 +1873,7 @@ def run_enrich_profile_batch(args) -> None:
             relief = min(1.0, (max(elevation_samples) - min(elevation_samples)) / 1500.0) if elevation_samples else 0.0
             labels, openness, water, naturalness, remoteness, view_sectors = classify_view(
                 row["latitude"], row["longitude"], row["direction_degrees"], profile, terrain_profile, context, relief,
+                elevation_samples, elevation, obstruction_types,
             )
             components = {"openness": openness, "relief": relief, "water": water, "naturalness": naturalness, "remoteness": remoteness}
             buildings = [feature for feature in local_context if feature["kind"] == "building"]
@@ -1729,6 +2036,24 @@ def build_parser() -> argparse.ArgumentParser:
     official.add_argument("--force", action="store_true")
     official.add_argument("--first-sunday-only", action="store_true")
     official.set_defaults(function=run_import_official_context, uses_lock=True)
+
+    buildings = subparsers.add_parser("import-swissbuildings3d", help="Import swissBUILDINGS3D Solid footprints and roof heights")
+    buildings.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
+    buildings.add_argument("--archive", help="Use an existing national swissBUILDINGS3D FileGDB ZIP")
+    buildings.add_argument("--source-version", help="Version label for a local archive")
+    buildings.add_argument("--work-dir", help="Keep downloads in this directory; otherwise temporary files are deleted")
+    buildings.add_argument("--force", action="store_true")
+    buildings.add_argument("--first-sunday-only", action="store_true")
+    buildings.add_argument("--cell-degrees", type=float, default=0.05)
+    buildings.add_argument("--max-cells", type=int, default=3)
+    buildings.set_defaults(function=run_import_swissbuildings, uses_lock=True)
+
+    weather = subparsers.add_parser("refresh-weather", help="Refresh compact MeteoSwiss ICON and precipitation rasters")
+    weather.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
+    weather_mode = weather.add_mutually_exclusive_group()
+    weather_mode.add_argument("--radar-only", action="store_true")
+    weather_mode.add_argument("--icon-only", action="store_true")
+    weather.set_defaults(function=run_refresh_weather, uses_lock=True)
 
     enrich = subparsers.add_parser("enrich-batch", help="Enrich one resumable spatial cell with bounded downloads")
     enrich.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))

@@ -57,44 +57,33 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
 }
 
 function SunPath({ bench }: { bench: BenchDetail }) {
-  const sunrise = clockMinutes(bench.sunrise);
-  const sunset = clockMinutes(bench.sunset);
-  const moonrise = clockMinutes(bench.moonrise);
-  const moonset = clockMinutes(bench.moonset);
   const nowX = timelineX(bench.localMinutesNow);
-  const sunY = 58 - Math.max(0, Math.min(48, bench.sunAltitudeDegrees * .78));
-  const moonY = 58 - Math.max(0, Math.min(38, bench.moonAltitudeDegrees * .68));
+  const sunY = trackY(bench.sunAltitudeDegrees);
+  const moonY = trackY(bench.moonAltitudeDegrees);
   return <section className="daylight-story" aria-label={`Sonnenaufgang ${bench.sunrise}, Sonnenuntergang ${bench.sunset}. Mondaufgang ${bench.moonrise}, Monduntergang ${bench.moonset}.`}>
     <div className="daylight-copy"><span>Himmelslauf</span><strong>{sunStory(bench)}</strong></div>
     <svg className="sky-arc" viewBox="0 0 320 72" aria-hidden="true">
       <path className="sky-horizon" d="M4 58H316" />
-      {orbitPaths(sunrise, sunset, 48).map((path, index) => <path key={`sun-${index}`} className="sky-arc-line sky-arc-sun" d={path} />)}
-      {orbitPaths(moonrise, moonset, 35).map((path, index) => <path key={`moon-${index}`} className="sky-arc-line sky-arc-moon" d={path} />)}
+      {trackPaths(bench.skyTrack.sun).map((path, index) => <path key={`sun-${index}`} className="sky-arc-line sky-arc-sun" d={path} />)}
+      {trackPaths(bench.skyTrack.moon).map((path, index) => <path key={`moon-${index}`} className="sky-arc-line sky-arc-moon" d={path} />)}
       {bench.sunWindows.map((window) => {
         const start = clockMinutes(window.start), end = clockMinutes(window.end);
-        const path = start !== null && end !== null && sunrise !== null && sunset !== null ? orbitSectionPath(start, end, sunrise, sunset, 48) : null;
-        return path ? <path key={`${window.start}-${window.end}`} className="sky-arc-light" d={path} /> : null;
+        return start !== null && end !== null ? <path key={`${window.start}-${window.end}`} className="sky-light-window" d={`M${timelineX(start)} 61H${timelineX(end)}`} /> : null;
       })}
       <path className="sky-now-line" d={`M${nowX} 5V61`} />
-      {bench.sunAltitudeDegrees > 0 && <g className="sky-arc-now is-sun" transform={`translate(${nowX} ${sunY})`}><circle r="5" /></g>}
-      {bench.moonVisible && <g className="sky-arc-now is-moon" transform={`translate(${nowX} ${moonY})`}><circle r="5" /><path d="M1-4a5 5 0 1 0 0 8 4 4 0 1 1 0-8Z" /></g>}
+      {bench.sunAltitudeDegrees > 0 && <g className="sky-arc-now is-sun" transform={`translate(${nowX} ${sunY})`}><circle r="4.5" /><path className="sun-rays" d="M0-9v2M0 7v2M-9 0h2M7 0h2M-6-6l1.5 1.5M4.5 4.5 6 6M6-6 4.5-4.5M-4.5 4.5-6 6" /></g>}
+      {bench.moonVisible && <g className="sky-arc-now is-moon" transform={`translate(${nowX} ${moonY})`}><path d="M2-5a6 6 0 1 0 0 10 5 5 0 1 1 0-10Z" /></g>}
       <text className="sky-clock" x="4" y="70">0</text><text className="sky-clock" x="155" y="70">12</text><text className="sky-clock" x="307" y="70">24</text>
     </svg>
-    <div className="sky-orbit-times"><span className="sun-time">☀ {bench.sunrise}–{bench.sunset}</span><span className="moon-time">☾ {bench.moonrise}–{bench.moonset}</span></div>
   </section>;
 }
 
 function QuietDetails({ bench }: { bench: BenchDetail }) {
   const rows: Array<[string, string | null]> = [];
-  for (const property of bench.properties) if (property.value !== "Unbekannt") rows.push([property.label, property.value]);
-  if (bench.directionDegrees !== null) rows.push(["Blickrichtung", compassDirection(bench.directionDegrees)]);
-  if (bench.viewLabels.length) rows.push(["Aussicht", bench.viewLabels.slice(0, 2).map(friendlyViewLabel).join(" · ")]);
   const surroundings = surroundingsLine(bench);
   if (surroundings) rows.push(["Umgebung", surroundings]);
   if (bench.distanceWaterMeters !== null && !bench.waterfront) rows.push(["Wasser", distance(bench.distanceWaterMeters)]);
   if (bench.distancePathMeters !== null) rows.push(["Nächster Weg", distance(bench.distancePathMeters)]);
-  if (bench.moonrise !== "–" || bench.moonset !== "–") rows.push(["Mond", `auf ${bench.moonrise} · unter ${bench.moonset}`]);
-  if (bench.weather) rows.push(["Wetter", `${Math.round(bench.weather.temperatureC)}° bei ${bench.weather.location}`]);
   return <details className="quiet-details">
     <summary>Mehr über diesen Platz <span aria-hidden>＋</span></summary>
     <dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
@@ -147,8 +136,17 @@ function sceneSentence(bench: BenchDetail) {
         : bench.shadeCause === "vegetation"
           ? pick(["Blätter malen Schatten auf die Bank", "Grüner Schatten wiegt sich im Wind", "Licht flüstert durch die Blätter", "Unter Blättern wird die Welt leise", "Tanzende Schatten ruhen auf dem Holz"], 1)
           : pick(["Stiller Schatten lädt zum Verweilen", "Das Licht wird hier ganz leise", "Ein kühler Augenblick wartet", "Sanfter Schatten umarmt den Platz", "Hier atmet der Tag ein wenig aus"], 1);
+  const weather = bench.weather?.precipitationType === "snow"
+    ? pick(["Schnee fällt lautlos", "Flocken machen die Welt weich", "Winterstille sinkt herab"], 3)
+    : bench.weather?.precipitationType === "rain"
+      ? pick(["Regen zeichnet Kreise", "Tropfen erzählen vom Himmel", "Der Regen macht den Ort still"], 3)
+      : bench.weather?.precipitationType === "mixed"
+        ? pick(["Nasser Schnee zieht vorüber", "Regen und Flocken begegnen sich", "Der Himmel wechselt sein Kleid"], 3)
+        : null;
   const view = bench.viewLabels.some((item) => item.includes("Berg"))
     ? pick(["Berge wachen in der Ferne", "Gipfel ziehen den Blick hinaus", "Die Alpen öffnen den Horizont", "Berglinien schweben am Horizont", "Der Blick wandert zu den Gipfeln"], 2)
+    : bench.viewLabels.some((item) => item.includes("Hügel"))
+      ? pick(["Sanfte Hügel tragen den Blick", "Grüne Höhen säumen die Ferne", "Der Horizont schwingt in weichen Linien", "Hügel rollen leise davon", "Weiche Höhen rahmen den Ort"], 2)
     : bench.waterfront || bench.viewLabels.some((item) => item.includes("See") || item.includes("Wasser"))
       ? pick(["Das Wasser trägt den Blick davon", "Am Ufer wird die Zeit weit", "Licht wandert über das Wasser", "Der See schenkt dem Blick Ruhe", "Wasser und Himmel werden eins"], 2)
       : bench.inForest
@@ -156,7 +154,7 @@ function sceneSentence(bench: BenchDetail) {
         : bench.viewLabels.some((item) => item.includes("Weit"))
           ? pick(["Der Himmel macht den Blick weit", "Weite liegt vor den Augen", "Der Horizont darf offen bleiben", "Der Blick findet freien Raum", "Hier wird der Himmel ein wenig grösser"], 2)
           : pick(["Ein stiller Weg zieht vorbei", "Die Welt wird für einen Moment leise", "Hier darf der Augenblick bleiben", "Ein kleiner Ort zum Durchatmen", "Die Zeit geht hier etwas langsamer"], 2);
-  return `${light}. ${view}.`;
+  return `${weather ?? light}. ${view}.`;
 }
 
 function placeLine(bench: BenchDetail) {
@@ -181,35 +179,25 @@ function clockMinutes(clock: string) {
 
 function timelineX(minutes: number) { return 4 + Math.max(0, Math.min(1440, minutes)) / 1440 * 312; }
 
-function orbitSectionPath(start: number, end: number, rise: number, set: number, height: number) {
-  if (end <= start || set <= rise) return null;
-  const points = Array.from({ length: 21 }, (_, index) => {
-    const minute = start + (end - start) * index / 20;
-    const phase = Math.max(0, Math.min(1, (minute - rise) / (set - rise)));
-    return `${index ? "L" : "M"}${timelineX(minute).toFixed(1)} ${(58 - Math.sin(phase * Math.PI) * height).toFixed(1)}`;
-  });
-  return points.join(" ");
-}
+function trackY(altitude: number) { return 58 - Math.max(0, Math.min(52, altitude * .78)); }
 
-function orbitPaths(rise: number | null, set: number | null, height: number) {
-  if (rise === null || set === null) return [];
-  const unwrappedSet = set > rise ? set : set + 1440;
+function trackPaths(points: BenchDetail["skyTrack"]["sun"]) {
   const paths: string[] = [];
-  for (const shift of [-1440, 0]) {
-    const fullStart = rise + shift;
-    const fullEnd = unwrappedSet + shift;
-    const visibleStart = Math.max(0, fullStart);
-    const visibleEnd = Math.min(1440, fullEnd);
-    const path = orbitSectionPath(visibleStart, visibleEnd, fullStart, fullEnd, height);
-    if (path) paths.push(path);
+  let path = "";
+  for (const point of points) {
+    if (point.altitudeDegrees <= 0) {
+      if (path) paths.push(path);
+      path = "";
+      continue;
+    }
+    path += `${path ? "L" : "M"}${timelineX(point.minute).toFixed(1)} ${trackY(point.altitudeDegrees).toFixed(1)} `;
   }
+  if (path) paths.push(path);
   return paths;
 }
 
-function compassDirection(degrees: number) { const labels = ["Norden", "Nordosten", "Osten", "Südosten", "Süden", "Südwesten", "Westen", "Nordwesten"]; return labels[Math.round((((degrees % 360) + 360) % 360) / 45) % labels.length]; }
 function distance(value: number) { if (value < 2) return "direkt daneben"; return value >= 1000 ? `${(value / 1000).toFixed(1)} km` : `${Math.round(value)} m`; }
 function sunDuration(value: number) { const hours = Math.floor(value / 60); const minutes = value % 60; if (!hours) return `${minutes} min`; return `${hours} h${minutes ? ` ${minutes} min` : ""}`; }
-function friendlyViewLabel(label: string) { return ({ "Nahbereich weitgehend offen": "Freier Blick", "Nahbereich teilweise offen": "Etwas geschützt", "Nahbereich stark begrenzt": "Geschützt", "Keine besondere Aussicht": "Alltagsblick", "Eingeschränkte Aussicht": "Geschützt" } as Record<string, string>)[label] ?? label; }
 
 // External Commons hosts are intentionally rendered directly so thumbnails are not rehosted or proxied.
 // eslint-disable-next-line @next/next/no-img-element

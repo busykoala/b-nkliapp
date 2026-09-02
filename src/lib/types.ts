@@ -1,6 +1,12 @@
 export type Confidence = "hoch" | "mittel" | "niedrig";
 export type LandContext = "forest" | "forest_edge" | "park" | "open" | "urban" | "mixed" | "unknown";
 export type CanopyContext = "none" | "partial" | "dense" | "unknown";
+export type PrecipitationType = "none" | "rain" | "snow" | "mixed" | "unknown";
+
+export type SkyTrackPoint = {
+  minute: number;
+  altitudeDegrees: number;
+};
 
 export type LikelyTrait = {
   kind: "land" | "canopy" | "lake" | "mountain" | "open" | "limited" | "buildings" | "roadRail";
@@ -37,7 +43,7 @@ export type MapFilters = {
   environment?: "forest" | "open";
   material?: string;
   minCommunityRating?: number;
-  viewType?: "mountain" | "lake" | "open" | "limited";
+  viewType?: "mountain" | "hill" | "lake" | "open" | "limited";
 };
 
 export type MapQuery = {
@@ -142,6 +148,7 @@ export type BenchDetail = {
   daylightProgress: number;
   localMinutesNow: number;
   dayPhase: "dawn" | "day" | "dusk" | "night";
+  season: "spring" | "summer" | "autumn" | "winter";
   moonAltitudeDegrees: number;
   moonAzimuthDegrees: number;
   moonIllumination: number;
@@ -149,7 +156,27 @@ export type BenchDetail = {
   moonVisible: boolean;
   moonrise: string;
   moonset: string;
-  weather: { temperatureC: number; precipitationMm10: number | null; sunshineMinutes10: number | null; windKmh: number | null; humidityPercent: number | null; globalRadiationWm2: number | null; cloudCover: number; location: string; observedAt: string; source: "MeteoSchweiz" } | null;
+  skyTrack: { sun: SkyTrackPoint[]; moon: SkyTrackPoint[] };
+  weather: {
+    temperatureC: number;
+    precipitationMm10: number | null;
+    precipitationRateMmH: number | null;
+    precipitationType: PrecipitationType;
+    sunshineMinutes10: number | null;
+    windKmh: number | null;
+    humidityPercent: number | null;
+    globalRadiationWm2: number | null;
+    cloudCover: number;
+    cloudLow: number | null;
+    cloudMid: number | null;
+    cloudHigh: number | null;
+    snowCoverPercent: number | null;
+    snowDepthCm: number | null;
+    snowfallLimitMeters: number | null;
+    location: string;
+    observedAt: string;
+    source: "MeteoSchweiz";
+  } | null;
   sunMinutesSummer: number | null;
   sunMinutesWinter: number | null;
   sunMinutesSpring: number | null;

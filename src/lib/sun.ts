@@ -4,6 +4,39 @@ export type ObstructionType = "building" | "vegetation" | "terrain" | "unknown";
 export type ShadeCause = "frei" | "nacht" | "überdacht" | "gebäude" | "vegetation" | "gelände" | "unbekannt";
 export type DayPhase = "dawn" | "day" | "dusk" | "night";
 
+function zurichDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Zurich", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(date);
+}
+
+function zurichClockMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(date);
+  return Number(parts.find((part) => part.type === "hour")?.value ?? 0) * 60
+    + Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+}
+
+export function getSkyTrack(date: Date, latitude: number, longitude: number) {
+  const dateKey = zurichDateKey(date);
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const start = Date.UTC(year, month - 1, day) - 3 * 60 * 60 * 1000;
+  const end = start + 30 * 60 * 60 * 1000;
+  const sun: Array<{ minute: number; altitudeDegrees: number }> = [];
+  const moon: Array<{ minute: number; altitudeDegrees: number }> = [];
+  for (let time = start; time <= end; time += 5 * 60 * 1000) {
+    const moment = new Date(time);
+    if (zurichDateKey(moment) !== dateKey) continue;
+    const minute = zurichClockMinutes(moment);
+    const sunPosition = SunCalc.getPosition(moment, latitude, longitude);
+    const moonPosition = SunCalc.getMoonPosition(moment, latitude, longitude);
+    sun.push({ minute, altitudeDegrees: Number(sunPosition.altitude.toFixed(2)) });
+    moon.push({ minute, altitudeDegrees: Number(moonPosition.altitude.toFixed(2)) });
+  }
+  return { sun, moon };
+}
+
 export function getDaylightState(date: Date, latitude: number, longitude: number) {
   const position = SunCalc.getPosition(date, latitude, longitude);
   const altitude = position.altitude;

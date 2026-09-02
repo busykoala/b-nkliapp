@@ -35,6 +35,8 @@ export type ContextModel = {
   viewComponents: { openness: number; relief: number; water: number; naturalness: number; remoteness: number };
   viewLabels: string[];
   viewExplanation: string[];
+  visibleTerrainMaxMeters: number | null;
+  viewKind: "mountain" | "hill" | "none";
 };
 
 export type TerrainEvidence = {
@@ -115,6 +117,18 @@ function terrainBaseAt(terrain: TerrainEvidence | undefined, bearing: number, di
   return terrain.sampleElevations[bearingIndex * HORIZON_DISTANCES_METERS.length + distanceIndex];
 }
 
+function longestRun(values: boolean[], circular: boolean) {
+  if (!values.length) return 0;
+  const source = circular ? [...values, ...values] : values;
+  let current = 0;
+  let longest = 0;
+  for (const value of source) {
+    current = value ? current + 1 : 0;
+    longest = Math.max(longest, current);
+  }
+  return Math.min(values.length, longest);
+}
+
 export function buildContextModel(latitude: number, longitude: number, directionDegrees: number | null, features: ContextFeature[], terrain?: TerrainEvidence): ContextModel {
   const hasTerrain = terrain?.horizonProfile.length === 72;
   const horizonProfile = hasTerrain ? [...terrain.horizonProfile] : Array<number>(72).fill(0);
@@ -179,7 +193,9 @@ export function buildContextModel(latitude: number, longitude: number, direction
     if (distance > 10_000) return false;
     const bearing = featureBearing(latitude, longitude, feature);
     if (directionDegrees !== null && circularDifference(bearing, directionDegrees) > 55) return false;
-    return horizonProfile[Math.round(bearing / 5) % 72] < 12;
+    const index = Math.round(bearing / 5) % 72;
+    return horizonProfile[index] < 12
+      && (obstructionTypes[index] === "terrain" || horizonProfile[index] <= terrain.horizonProfile[index] + .5);
   }) : [];
   const water = hasTerrain
     ? visibleWater.length > 0 && (distanceWaterMeters ?? Infinity) < 1_500 ? 1 : visibleWater.length > 0 ? 0.7 : 0
@@ -196,15 +212,39 @@ export function buildContextModel(latitude: number, longitude: number, direction
   const viewComponents = { openness, relief, water, naturalness, remoteness };
   const viewScore = Math.round(100 * (0.35 * openness + 0.25 * relief + 0.15 * water + 0.15 * naturalness + 0.1 * remoteness));
   const viewLabels: string[] = [];
+  let visibleTerrainMaxMeters: number | null = null;
+  let viewKind: ContextModel["viewKind"] = "none";
   if (hasTerrain) {
-    const selectedTerrainHorizon = viewIndices.map((index) => terrain.horizonProfile[index]);
     const meanHorizon = selectedHorizon.reduce((sum, angle) => sum + angle, 0) / Math.max(1, selectedHorizon.length);
-    const selectedBuildingShare = viewIndices.filter((index) => obstructionTypes[index] === "building").length / Math.max(1, viewIndices.length);
-    if (relief >= 0.35 && Math.max(...selectedTerrainHorizon) >= 4) viewLabels.push("Bergblick");
+    const selectedBlockedShare = viewIndices.filter((index) => obstructionTypes[index] === "building" || obstructionTypes[index] === "vegetation").length / Math.max(1, viewIndices.length);
+    const farStart = HORIZON_DISTANCES_METERS.findIndex((distance) => distance >= 2_000);
+    const terrainSectors = viewIndices.map((index) => {
+      const elevations = terrain.sampleElevations.slice(index * HORIZON_DISTANCES_METERS.length + farStart, (index + 1) * HORIZON_DISTANCES_METERS.length);
+      const maximum = elevations.length ? Math.max(...elevations) : terrain.elevationMeters;
+      const visible = horizonProfile[index] <= terrain.horizonProfile[index] + .5;
+      const prominent = terrain.horizonProfile[index] >= 1.5 && maximum - terrain.elevationMeters >= 120;
+      if (visible && prominent) visibleTerrainMaxMeters = Math.max(visibleTerrainMaxMeters ?? -Infinity, maximum);
+      return { mountain: visible && prominent && maximum >= 1_500, hill: visible && prominent && maximum < 1_500 };
+    });
+    const minimumRun = directionDegrees === null ? 8 : 4;
+    const mountainRun = longestRun(terrainSectors.map((sector) => sector.mountain), directionDegrees === null);
+    const hillRun = longestRun(terrainSectors.map((sector) => sector.hill), directionDegrees === null);
+    if (selectedBlockedShare < .5 && mountainRun >= minimumRun) {
+      viewKind = "mountain";
+      viewLabels.push("Bergblick");
+    } else if (selectedBlockedShare < .5 && hillRun >= minimumRun) {
+      viewKind = "hill";
+      viewLabels.push("Hügelblick");
+    }
     if (visibleWater.length) viewLabels.push(visibleWater.some((feature) => ["lake", "reservoir", "water"].includes(feature.subtype ?? "")) ? "Seeblick" : "Wasserblick");
     if (openness >= 0.75) viewLabels.push("Weitsicht");
     if (inForest && naturalness >= 0.7) viewLabels.push("Waldblick");
-    if (openness < 0.4 || meanHorizon > 22 || selectedBuildingShare > 0.5) viewLabels.push("Eingeschränkte Aussicht");
+    if (openness < 0.4 || meanHorizon > 22 || selectedBlockedShare >= 0.5) {
+      viewKind = "none";
+      const scenic = new Set(["Bergblick", "Hügelblick", "Weitsicht"]);
+      for (let index = viewLabels.length - 1; index >= 0; index -= 1) if (scenic.has(viewLabels[index])) viewLabels.splice(index, 1);
+      viewLabels.push("Eingeschränkte Aussicht");
+    }
     if (!viewLabels.length) viewLabels.push("Keine besondere Aussicht");
   } else {
     if (distanceWaterMeters !== null && distanceWaterMeters < 1_500) viewLabels.push("Wasser im Umfeld");
@@ -241,5 +281,7 @@ export function buildContextModel(latitude: number, longitude: number, direction
     viewComponents,
     viewLabels,
     viewExplanation,
+    visibleTerrainMaxMeters,
+    viewKind,
   };
 }

@@ -11,6 +11,7 @@ COPY worker/requirements.txt ./requirements.txt
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
 COPY worker/benchly_worker.py ./benchly_worker.py
 COPY worker/environment_geometry.py ./environment_geometry.py
+COPY worker/weather_pipeline.py ./weather_pipeline.py
 COPY worker/visual_pipeline.py ./visual_pipeline.py
 COPY worker/evaluation ./evaluation
 ENTRYPOINT ["python3", "/worker/benchly_worker.py"]

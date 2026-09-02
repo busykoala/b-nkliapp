@@ -6,7 +6,7 @@ import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
 import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { normalizeLocationKey, searchGeoAdminLocations } from "@/lib/place-search";
-import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
+import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSeasonalSunMinutes, getSkyTrack, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { getLocalWeather } from "@/lib/weather";
@@ -39,7 +39,7 @@ const filtersSchema = z.object({
   environment: z.enum(["forest", "open"]).optional(),
   material: z.string().max(40).optional(),
   minCommunityRating: z.number().min(1).max(5).optional(),
-  viewType: z.enum(["mountain", "lake", "open", "limited"]).optional(),
+  viewType: z.enum(["mountain", "hill", "lake", "open", "limited"]).optional(),
 }).optional();
 
 const querySchema = z.object({ bounds: boundsSchema, zoom: z.number().min(5).max(20), filters: filtersSchema });
@@ -80,8 +80,17 @@ function zurichMinutes(date: Date) {
   return hour * 60 + minute;
 }
 
+function zurichSeason(date: Date): BenchDetail["season"] {
+  const month = Number(new Intl.DateTimeFormat("en", { timeZone: "Europe/Zurich", month: "numeric" }).format(date));
+  if (month >= 3 && month <= 5) return "spring";
+  if (month >= 6 && month <= 8) return "summer";
+  if (month >= 9 && month <= 11) return "autumn";
+  return "winter";
+}
+
 function mapViewType(labels: string[]): MapFilters["viewType"] | null {
   if (labels.includes("Bergblick")) return "mountain";
+  if (labels.includes("Hügelblick")) return "hill";
   if (labels.includes("Seeblick") || labels.includes("Wasserblick")) return "lake";
   if (labels.includes("Weitsicht")) return "open";
   if (labels.includes("Eingeschränkte Aussicht") || labels.includes("Keine besondere Aussicht")) return "limited";
@@ -121,8 +130,11 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
       clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.lake_view_probability>=0.85))" : "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ?)");
       parameters.push("%Seeblick%", "%Wasserblick%");
     } else if (filters.viewType === "mountain") {
-      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.mountain_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
+      clauses.push("coalesce(e.view_labels, '') LIKE ?");
       parameters.push("%Bergblick%");
+    } else if (filters.viewType === "hill") {
+      clauses.push("coalesce(e.view_labels, '') LIKE ?");
+      parameters.push("%Hügelblick%");
     } else if (filters.viewType === "open") {
       clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.open_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
       parameters.push("%Weitsicht%");
@@ -279,23 +291,26 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   try { components = row.view_components ? JSON.parse(String(row.view_components)) : {}; } catch { components = {}; }
   let hasTerrainModel = parseArray<number>(row.terrain_horizon_profile).length === 72;
   let contextModel: ReturnType<typeof buildContextModel> | null = null;
-  if (!hasTerrainModel) {
+  const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v2", "4.0.0"].includes(pipelineVersion);
+  if (needsContextRefresh) {
     const contextFeatures = getContextFeatures(latitude, longitude);
     const terrain = process.env.BENCHLY_DISABLE_ELEVATION_FETCH === "true" ? null : await fetchTerrainHorizon(latitude, longitude);
-    contextModel = buildContextModel(latitude, longitude, directionDegrees, contextFeatures, terrain ? {
+    contextModel = terrain || !hasTerrainModel ? buildContextModel(latitude, longitude, directionDegrees, contextFeatures, terrain ? {
       elevationMeters: terrain.elevationMeters,
       horizonProfile: terrain.horizonProfile,
       sampleElevations: terrain.sampleElevations,
-    } : undefined);
-    horizon = contextModel.horizonProfile;
-    obstructionTypes = contextModel.obstructionTypes;
-    components = contextModel.viewComponents;
-    if (terrain) {
+    } : undefined) : null;
+    if (contextModel) {
+      horizon = contextModel.horizonProfile;
+      obstructionTypes = contextModel.obstructionTypes;
+      components = contextModel.viewComponents;
+    }
+    if (terrain && contextModel) {
       const model = contextModel;
       hasTerrainModel = true;
       elevationMeters = terrain.elevationMeters;
       elevationSource = terrain.source;
-      pipelineVersion = "GeoAdmin-Horizont v1";
+      pipelineVersion = "GeoAdmin-Horizont v2";
       // Replace any seasonal values produced by the earlier near-field-only model.
       sunMinutesSummer = null;
       sunMinutesWinter = null;
@@ -311,7 +326,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
         ) VALUES (
           @rowId,@elevation,@elevationSource,@computedAt,@inForest,@canopy,@water,@path,@horizon,@terrainHorizon,@obstructionTypes,
           @buildingPercent,@vegetationPercent,@distanceBuilding,@buildingCount,@viewScore,'mittel',@components,@viewLabels,
-          'OpenStreetMap + GeoAdmin','GeoAdmin-Horizont v1',@computedAt,'mittel'
+          'OpenStreetMap + GeoAdmin','GeoAdmin-Horizont v2',@computedAt,'mittel'
         )
         ON CONFLICT(bench_row_id) DO UPDATE SET
           elevation_meters=excluded.elevation_meters,elevation_source=excluded.elevation_source,
@@ -367,7 +382,8 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const sun = calculateSunState({ ...effectiveSunInput, date: now });
   const daylight = getDaylightState(now, latitude, longitude);
   const moon = getMoonState(now, latitude, longitude);
-  const weather = await getLocalWeather(latitude, longitude, daylight.altitude);
+  const weather = await getLocalWeather(latitude, longitude, daylight.altitude, elevationMeters);
+  const skyTrack = getSkyTrack(now, latitude, longitude);
   const localSun = getLocalSunSchedule(effectiveSunInput);
   if (hasTerrainModel && [sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn].some((value) => value === null)) {
     const seasonal = getSeasonalSunMinutes(effectiveSunInput);
@@ -465,6 +481,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     daylightProgress: daylight.progress,
     localMinutesNow: zurichMinutes(now),
     dayPhase: daylight.phase,
+    season: zurichSeason(now),
     moonAltitudeDegrees: moon.altitude,
     moonAzimuthDegrees: moon.azimuth,
     moonIllumination: moon.fraction,
@@ -472,6 +489,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     moonVisible: moon.visible,
     moonrise: moon.rise,
     moonset: moon.set,
+    skyTrack,
     weather,
     sunMinutesSummer,
     sunMinutesWinter,
@@ -545,10 +563,15 @@ function getContextFeatures(latitude: number, longitude: number): ContextFeature
   const officialVersion = (sqlite.prepare(
     "SELECT version FROM official_context_sources WHERE source='swissTLM3D'",
   ).get() as { version: string } | undefined)?.version;
+  const buildingVersion = (sqlite.prepare(
+    "SELECT version FROM official_context_sources WHERE source='swissBUILDINGS3D'",
+  ).get() as { version: string } | undefined)?.version;
   const authoritativeKinds = new Set(["building", "forest", "water"]);
   const identities = new Map<string, ContextFeature>();
   for (const feature of [...nearby, ...waters]) {
-    if (officialVersion && authoritativeKinds.has(feature.kind)
+    if (feature.kind === "building" && buildingVersion) {
+      if (feature.source !== "swissBUILDINGS3D") continue;
+    } else if (officialVersion && authoritativeKinds.has(feature.kind)
       && (feature.source !== "swissTLM3D" || feature.source_version !== officialVersion)) continue;
     try {
       identities.set(`${feature.source}:${feature.kind}:${feature.center_latitude}:${feature.center_longitude}`, {

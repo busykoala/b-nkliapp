@@ -179,7 +179,25 @@ export const environmentFeatures = sqliteTable("environment_features", {
   geometryCrs: integer("geometry_crs").notNull().default(2056),
   sourceVersion: text("source_version"),
   sourceUpdatedAt: text("source_updated_at"),
+  groundElevationMeters: real("ground_elevation_meters"),
+  eavesElevationMeters: real("eaves_elevation_meters"),
+  roofElevationMeters: real("roof_elevation_meters"),
 }, (t) => [uniqueIndex("environment_source_identity").on(t.source, t.sourceId, t.kind)]);
+
+export const weatherSnapshots = sqliteTable("weather_snapshots", {
+  source: text("source").notNull(),
+  parameter: text("parameter").notNull(),
+  referenceAt: text("reference_at").notNull(),
+  validAt: text("valid_at").notNull(),
+  originEasting: real("origin_easting").notNull(),
+  originNorthing: real("origin_northing").notNull(),
+  resolutionMeters: real("resolution_meters").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  valuesBlob: blob("values_blob", { mode: "buffer" }).notNull(),
+  nodataValue: real("nodata_value"),
+  importedAt: text("imported_at").notNull(),
+}, (t) => [uniqueIndex("weather_snapshot_identity").on(t.source, t.parameter)]);
 
 export const landCoverFeatures = sqliteTable("land_cover_features", {
   rowId: integer("row_id").primaryKey({ autoIncrement: true }),

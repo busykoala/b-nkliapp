@@ -306,15 +306,16 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .filter-material select { margin-top: .3rem; border: 1px solid rgb(64 73 58 / 12%); background: rgb(255 251 239 / 65%); }
 .clear-filters { display: flex; min-height: 2.75rem; align-items: center; gap: .4rem; margin: .65rem auto 0; padding: 0 .75rem; color: rgb(47 68 60 / 60%); font-size: .75rem; }
 
-.benchly-map .maplibregl-canvas { filter: saturate(.86) contrast(.94) sepia(.07); transition: filter 1.2s ease; }
-.benchly-map[data-phase="dawn"] .maplibregl-canvas { filter: saturate(.7) contrast(.88) sepia(.12) brightness(.94); }
-.benchly-map[data-phase="dusk"] .maplibregl-canvas { filter: saturate(.66) contrast(.88) sepia(.16) brightness(.84); }
-.benchly-map[data-phase="night"] .maplibregl-canvas { filter: saturate(.52) contrast(.86) sepia(.1) brightness(.58) hue-rotate(8deg); }
-.benchly-map::before { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035 .11' numOctaves='4' seed='8'/%3E%3CfeColorMatrix values='.45 0 0 0 .32 .35 0 0 0 .27 .22 0 0 0 .17 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(ellipse at 18% 22%, rgb(149 112 62 / 11%), transparent 31%), radial-gradient(ellipse at 78% 66%, rgb(54 105 91 / 10%), transparent 38%); background-size: 180px 180px, 100% 100%, 100% 100%; mix-blend-mode: multiply; opacity: .46; }
+.benchly-map .maplibregl-canvas { filter: saturate(.76) contrast(.9) sepia(.13) brightness(1.03); transition: filter 1.2s ease; }
+.benchly-map[data-phase="dawn"] .maplibregl-canvas { filter: saturate(.7) contrast(.88) sepia(.15) brightness(1); }
+.benchly-map[data-phase="dusk"] .maplibregl-canvas { filter: saturate(.67) contrast(.88) sepia(.18) brightness(.94); }
+.benchly-map[data-phase="night"] .maplibregl-canvas { filter: saturate(.66) contrast(.88) sepia(.17) brightness(1.03) hue-rotate(3deg); }
+.benchly-map::before { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035 .11' numOctaves='4' seed='8'/%3E%3CfeColorMatrix values='.45 0 0 0 .32 .35 0 0 0 .27 .22 0 0 0 .17 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), repeating-linear-gradient(7deg, transparent 0 23px, rgb(100 75 44 / 3%) 24px, transparent 26px), radial-gradient(ellipse at 18% 22%, rgb(149 112 62 / 13%), transparent 31%), radial-gradient(ellipse at 78% 66%, rgb(54 105 91 / 10%), transparent 38%); background-size: 180px 180px, 100% 100%, 100% 100%, 100% 100%; mix-blend-mode: multiply; opacity: .62; }
 .benchly-map::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgb(104 72 42 / 12%) 115%), linear-gradient(125deg, rgb(255 247 221 / 12%), transparent 42%, rgb(74 107 88 / 7%)); mix-blend-mode: soft-light; transition: background 1.2s ease; }
 .benchly-map[data-phase="dawn"]::after { background: linear-gradient(120deg, rgb(238 183 116 / 10%), transparent 58%); }
 .benchly-map[data-phase="dusk"]::after { background: linear-gradient(120deg, rgb(118 80 87 / 15%), rgb(221 151 84 / 8%)); }
-.benchly-map[data-phase="night"]::after { background: rgb(12 28 39 / 18%); }
+.benchly-map[data-phase="night"]::after { background: linear-gradient(145deg, rgb(51 68 71 / 6%), rgb(236 222 187 / 3%)); }
+.benchly-map[data-phase="night"]::before { opacity: .42; }
 
 /* Data-drawn bench story */
 .standalone-bench { background: linear-gradient(180deg, #e5e8dd 0, #f8efd9 30rem); }
@@ -325,7 +326,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .calm-title h2 { max-width: 24rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(2rem, 8vw, 3.1rem); font-weight: 700; line-height: .98; letter-spacing: -.035em; }
 .calm-title > p:last-child { margin-top: .65rem; color: rgb(41 66 57 / 58%); font-size: .8rem; letter-spacing: .02em; }
 .unverified-note { margin-bottom: .55rem; color: #9a6132; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
-.bench-landscape { position: relative; overflow: hidden; aspect-ratio: 16 / 10; border: 1px solid rgb(49 65 53 / 12%); border-radius: 1.8rem; box-shadow: 0 18px 42px rgb(30 54 46 / 13%); }
+.bench-landscape { position: relative; overflow: hidden; aspect-ratio: 4 / 3; border: 1px solid rgb(49 65 53 / 12%); border-radius: 1.8rem; box-shadow: 0 18px 42px rgb(30 54 46 / 13%); }
 .bench-landscape svg { display: block; width: 100%; height: 100%; }
 .bench-landscape .sky-top { stop-color: #a9c9c0; }
 .bench-landscape .sky-bottom { stop-color: #f3dfae; }
@@ -338,10 +339,15 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .scene-stars { fill: #fff1c7; opacity: .75; }
 .scene-cloud-wash { fill: #758789; }
 .scene-clouds { fill: #f3eee0; opacity: var(--cloud-opacity, .62); }
+.scene-cloud { transition: opacity .3s ease; }
+.scene-cloud.cloud-high { opacity: .48; filter: blur(.4px); }
+.scene-cloud.cloud-mid { opacity: .75; }
+.scene-cloud.cloud-low { opacity: .96; }
 .scene-clouds .cloud-ink { fill: none; stroke: #9ba6a0; stroke-width: 3; stroke-linecap: round; opacity: .35; }
 .phase-night .scene-clouds { fill: #91a2a5; opacity: calc(var(--cloud-opacity, .5) * .72); }
 .scene-rain { fill: none; stroke: #567f8c; stroke-width: 3.5; stroke-linecap: round; opacity: .78; }
 .scene-rain .rain-ripple { stroke-width: 2; opacity: .62; }
+.scene-snowfall { fill: #f8f3df; opacity: .86; }
 .scene-wind { fill: none; stroke: #f5edd9; stroke-width: 3; stroke-linecap: round; opacity: .52; }
 .scene-temperature-wash { pointer-events: none; }
 .temperature-cold .scene-temperature-wash { fill: #b9d9e5; opacity: .18; }
@@ -355,6 +361,8 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .phase-night .celestial-glow { fill: #dbe4dd; opacity: .18; }
 .scene-mountains { fill: #61756c; opacity: .72; }
 .scene-snow { fill: #e7e2cf; opacity: .75; }
+.scene-distant-hills { fill: #7b8c70; opacity: .66; }
+.scene-ground-snow, .building-snow, .bench-snow { fill: #f1ecdc; stroke: none; }
 .scene-buildings { fill: #74776c; stroke: #4f5a53; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
 .scene-far-hill { fill: #6f8c73; }
 .scene-near-hill { fill: #3d6d5b; }
@@ -365,8 +373,17 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .scene-path { fill: none; stroke: #dfc99f; stroke-width: 26; stroke-linecap: round; opacity: .85; }
 .tree-trunk { fill: #674d3c; }
 .tree-crown { fill: #315f4e; }
+.tree-evergreen { fill: #315f4e; }
+.tree-branches { fill: none; stroke: #654e3d; stroke-width: 6; stroke-linecap: round; }
+.tree-blossoms { fill: #f2d7c7; opacity: .92; }
+.season-autumn .tree-crown { fill: #9a633d; }
+.season-autumn .seasonal-tree:nth-child(even) .tree-crown { fill: #b78342; }
+.season-spring .tree-crown { fill: #5d8660; }
+.season-summer .tree-crown { fill: #315f4e; }
+.falling-leaves { fill: #b7783f; opacity: .82; }
 .phase-night .tree-crown { fill: #213f3c; }
-.bench-shadow { fill: #1d352f; opacity: .24; transform-origin: 322px 344px; }
+.bench-shadow { fill: #1d352f; opacity: .07; transform-origin: 322px 419px; }
+.bench-shadow.is-sunny { opacity: .27; }
 .phase-night .bench-shadow { opacity: .08; }
 .bench-board { fill: var(--bench-color); stroke: #3d463e; stroke-width: 3; stroke-linejoin: round; }
 .bench-frame { fill: none; stroke: #33473f; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
@@ -381,16 +398,17 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .daylight-copy span { color: rgb(41 66 57 / 52%); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; }
 .daylight-copy strong { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-weight: 600; }
 .sky-arc { display: block; width: 100%; height: 4.65rem; margin: .55rem 0 -.1rem; overflow: visible; }
-.sky-arc-line, .sky-arc-light { fill: none; stroke-linecap: round; stroke-width: 1.2; }
+.sky-arc-line { fill: none; stroke-linecap: round; stroke-width: 1.2; }
 .sky-horizon { fill: none; stroke: rgb(49 73 63 / 12%); stroke-width: 1; }
 .sky-arc-sun { stroke: rgb(190 137 38 / 46%); stroke-dasharray: 2 5; }
 .sky-arc-moon { stroke: rgb(68 89 99 / 43%); stroke-dasharray: 1 5; }
-.sky-arc-light { stroke: #dca63e; stroke-width: 4; }
+.sky-light-window { fill: none; stroke: rgb(220 166 62 / 42%); stroke-width: 4; stroke-linecap: butt; }
 .sky-now-line { fill: none; stroke: rgb(42 66 57 / 16%); stroke-width: 1; stroke-dasharray: 1 4; }
 .sky-clock { fill: rgb(42 66 57 / 38%); font-size: 6px; font-family: ui-sans-serif, system-ui, sans-serif; }
 .sky-arc-now circle { fill: #f2bd4e; stroke: #fff5d9; stroke-width: 2.5; filter: drop-shadow(0 2px 4px rgb(37 57 49 / 22%)); }
-.sky-arc-now path { fill: #f3e3b7; }
-.sky-arc-now.is-moon circle { fill: #344e57; stroke: #f5e7c0; }
+.sky-arc-now path { fill: #344e57; }
+.sky-arc-now .sun-rays { fill: none; stroke: #c98e20; stroke-width: 1.2; stroke-linecap: round; }
+.sky-arc-now.is-moon path { fill: #344e57; filter: drop-shadow(0 2px 3px rgb(37 57 49 / 18%)); }
 .sky-orbit-times { display: flex; justify-content: space-between; color: rgb(41 66 57 / 48%); font-size: .68rem; }
 .sky-orbit-times .sun-time { color: #a77426; }
 .sky-orbit-times .moon-time { color: #536a72; }

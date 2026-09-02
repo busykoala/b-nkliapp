@@ -63,32 +63,33 @@ async function loadIllustratedMapStyle(): Promise<StyleSpecification> {
     for (const layer of style.layers) {
       const source = layer["source-layer"] ?? "";
       const paint = layer.paint ??= {};
-      if (layer.type === "background") paint["background-color"] = "#f0e3bd";
-      if (source === "hillshade") { paint["fill-color"] = layer.id.includes("yellow") ? "#d0b782" : "#8a8576"; paint["fill-opacity"] = layer.id.includes("yellow") ? .035 : .065; }
+      if (layer.type === "background") paint["background-color"] = "#f5e8c5";
+      if (source === "hillshade") { paint["fill-color"] = layer.id.includes("yellow") ? "#c7a66d" : "#766c58"; paint["fill-opacity"] = layer.id.includes("yellow") ? .055 : .1; }
       if (source === "landcover") {
-        if (layer.type === "fill") { paint["fill-color"] = "#a9bc8d"; paint["fill-opacity"] = layer.id.includes("pattern") ? .08 : .25; paint["fill-outline-color"] = "#728265"; }
-        else { paint["line-color"] = "#728265"; paint["line-opacity"] = .4; }
+        if (layer.type === "fill") { paint["fill-color"] = "#aeb98a"; paint["fill-opacity"] = layer.id.includes("pattern") ? .14 : .28; paint["fill-outline-color"] = "#66745b"; }
+        else { paint["line-color"] = "#66745b"; paint["line-opacity"] = .46; paint["line-dasharray"] = [1.2, 1.8]; }
       }
       if (source === "landuse") {
-        if (layer.type === "fill") { paint["fill-color"] = layer.id.includes("parking") ? "#ddc9a2" : "#e2d5b5"; paint["fill-opacity"] = .3; paint["fill-outline-color"] = "#9f8e69"; }
+        if (layer.type === "fill") { paint["fill-color"] = layer.id.includes("parking") ? "#dec99d" : "#eadbb9"; paint["fill-opacity"] = .34; paint["fill-outline-color"] = "#917d58"; }
         else { paint["line-color"] = "#9f8e69"; paint["line-opacity"] = .42; }
       }
       if (source === "water") {
-        if (layer.type === "fill") { paint["fill-color"] = "#78aeb5"; paint["fill-opacity"] = .78; paint["fill-outline-color"] = "#4e7f85"; }
-        else { paint["line-color"] = "#4e7f85"; paint["line-opacity"] = .7; }
+        if (layer.type === "fill") { paint["fill-color"] = "#79a8aa"; paint["fill-opacity"] = .72; paint["fill-outline-color"] = "#356c72"; }
+        else { paint["line-color"] = "#356c72"; paint["line-opacity"] = .74; paint["line-blur"] = .3; }
       }
       if (source === "waterway" && layer.type === "line") { paint["line-color"] = "#4e858c"; paint["line-opacity"] = .78; paint["line-blur"] = .25; }
-      if (source === "contour_line") { paint["line-color"] = layer.id.includes("blue") ? "#668f91" : "#a99068"; paint["line-opacity"] = .32; paint["line-blur"] = .2; }
+      if (source === "contour_line") { paint["line-color"] = layer.id.includes("blue") ? "#60888a" : "#9b7e54"; paint["line-opacity"] = .39; paint["line-blur"] = .3; paint["line-dasharray"] = [1.6, .7]; }
       if (["scree", "hachure"].includes(source)) { paint["fill-color"] = "#aa956f"; paint["fill-opacity"] = .07; }
       if (source === "building" || source === "building_ln") {
-        if (layer.type === "fill") { paint["fill-color"] = "#c9aa7c"; paint["fill-opacity"] = .58; paint["fill-outline-color"] = "#775d45"; }
-        else { paint["line-color"] = "#755a43"; paint["line-opacity"] = .62; paint["line-blur"] = .25; }
+        if (layer.type === "fill") { paint["fill-color"] = "#c7a675"; paint["fill-opacity"] = .5; paint["fill-outline-color"] = "#684c37"; }
+        else { paint["line-color"] = "#684c37"; paint["line-opacity"] = .68; paint["line-blur"] = .35; }
       }
       if (source === "transportation") {
         const casing = layer.id.includes("casing");
         paint["line-color"] = casing ? "#755b48" : layer.id.includes("public_transport") ? "#87708b" : layer.id.includes("path") || layer.id.includes("pedestrian") ? "#a27952" : "#cf9275";
-        paint["line-opacity"] = casing ? .56 : .68;
-        paint["line-blur"] = casing ? .35 : .18;
+        paint["line-opacity"] = casing ? .48 : .62;
+        paint["line-blur"] = casing ? .5 : .28;
+        if (layer.id.includes("path") || layer.id.includes("pedestrian")) paint["line-dasharray"] = [1.4, 1.1];
       }
       if (source === "boundary") { paint["line-color"] = "#995d4d"; paint["line-opacity"] = .52; paint["line-blur"] = .25; }
       if (source === "park" && layer.type === "line") { paint["line-color"] = "#5f8065"; paint["line-opacity"] = .52; }
@@ -97,7 +98,14 @@ async function loadIllustratedMapStyle(): Promise<StyleSpecification> {
         paint["text-halo-color"] = "#efe2bd";
         paint["text-halo-width"] = 1.3;
         paint["text-halo-blur"] = .45;
-        if (["poi", "transportation_name", "spot_elevation"].includes(source)) paint["text-opacity"] = .7;
+        const quietSources = ["poi", "transportation_name", "spot_elevation", "address", "public_transport"];
+        if (quietSources.some((item) => source.includes(item))) (layer.layout ??= {}).visibility = "none";
+        else {
+          paint["text-opacity"] = source.includes("place") || source.includes("water") || source.includes("mountain") ? .62 : .34;
+          (layer.layout ??= {})["text-size"] = source.includes("place")
+            ? ["interpolate", ["linear"], ["zoom"], 6, 11, 13, 15, 18, 18]
+            : ["interpolate", ["linear"], ["zoom"], 6, 9, 13, 12, 18, 15];
+        }
       }
     }
     return style as unknown as StyleSpecification;
@@ -110,7 +118,7 @@ function applyMapAtmosphere(map: MapLibreMap) {
   const center = map.getCenter();
   const { phase } = getDaylightState(new Date(), center.lat, center.lng);
   map.getContainer().dataset.phase = phase;
-  if (map.getLayer("clusters")) map.setPaintProperty("clusters", "circle-color", phase === "night" ? "#263f45" : "#294c45");
+  if (map.getLayer("clusters")) map.setPaintProperty("clusters", "circle-color", phase === "night" ? "#755343" : "#8a5940");
   if (map.getLayer("benches")) {
     map.setPaintProperty("benches", "circle-stroke-color", phase === "night" ? "#f2dca7" : "#fff4d8");
     map.setPaintProperty("benches", "circle-color", phase === "night"
@@ -232,10 +240,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       mapRef.current = map;
       map.on("load", () => {
         map.addSource("benchly", { type: "geojson", data: featureCollection([]) });
-        map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#294c45", "circle-opacity": 0.96, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 3, "circle-stroke-color": "#f8eed7", "circle-blur": 0.02 } });
+        map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#8a5940", "circle-opacity": 0.94, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 4, "circle-stroke-color": "#f4dfb6", "circle-blur": 0.03 } });
         map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-font": ["Frutiger Neue Regular"], "text-size": 12 }, paint: { "text-color": "#fff4d7" } });
         map.addLayer({ id: "bench-hits", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-radius": 22, "circle-opacity": 0 } });
-        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 8, 18, 12], "circle-stroke-width": 3, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
+        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 10, 18, 15], "circle-stroke-width": 4, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
         map.addSource("user-accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addSource("user-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addSource("add-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });

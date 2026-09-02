@@ -496,4 +496,54 @@ export const migrations = [
       UPDATE benches SET location_key=lower(location_name) WHERE location_name IS NOT NULL AND location_key IS NULL;
     `,
   },
+  {
+    id: "0009_weather_buildings_and_view_v2",
+    sql: `
+      ALTER TABLE environment_features ADD COLUMN ground_elevation_meters REAL;
+      ALTER TABLE environment_features ADD COLUMN eaves_elevation_meters REAL;
+      ALTER TABLE environment_features ADD COLUMN roof_elevation_meters REAL;
+
+      CREATE TABLE IF NOT EXISTS weather_snapshots (
+        source TEXT NOT NULL,
+        parameter TEXT NOT NULL,
+        reference_at TEXT NOT NULL,
+        valid_at TEXT NOT NULL,
+        origin_easting REAL NOT NULL,
+        origin_northing REAL NOT NULL,
+        resolution_meters REAL NOT NULL,
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        values_blob BLOB NOT NULL,
+        nodata_value REAL,
+        imported_at TEXT NOT NULL,
+        PRIMARY KEY(source, parameter)
+      );
+      CREATE INDEX IF NOT EXISTS weather_snapshots_valid_idx ON weather_snapshots(valid_at);
+
+      UPDATE bench_enrichments
+      SET view_labels='["Eingeschränkte Aussicht"]', pipeline_version=NULL
+      WHERE coalesce(building_obstruction_percent, 0) + coalesce(vegetation_obstruction_percent, 0) >= 50
+        AND coalesce(view_labels, '') LIKE '%Bergblick%';
+      UPDATE bench_enrichments SET pipeline_version=NULL
+      WHERE pipeline_version IN ('3.0.0', 'geo-admin-horizon-1.0', 'GeoAdmin-Horizont v1');
+    `,
+  },
+  {
+    id: "0010_progressive_building_imports",
+    sql: `
+      CREATE TABLE IF NOT EXISTS building_import_cells (
+        cell_key TEXT PRIMARY KEY,
+        bounds TEXT NOT NULL,
+        imported_at TEXT NOT NULL,
+        stats TEXT NOT NULL DEFAULT '{}'
+      );
+      CREATE TABLE IF NOT EXISTS building_source_assets (
+        asset_id TEXT PRIMARY KEY,
+        source_version TEXT NOT NULL,
+        asset_url TEXT NOT NULL,
+        imported_at TEXT NOT NULL,
+        stats TEXT NOT NULL DEFAULT '{}'
+      );
+    `,
+  },
 ];
