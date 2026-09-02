@@ -229,4 +229,20 @@ export const migrations = [
       WHERE pipeline_version LIKE 'demo-%' AND view_labels IS NULL;
     `,
   },
+  {
+    id: "0004_elevation_provenance",
+    sql: `
+      ALTER TABLE bench_enrichments ADD COLUMN elevation_source TEXT;
+      ALTER TABLE bench_enrichments ADD COLUMN elevation_updated_at TEXT;
+      UPDATE bench_enrichments
+        SET elevation_source = CASE
+              WHEN pipeline_version LIKE 'demo-%' THEN 'Demo'
+              ELSE 'swissALTI3D-Raster'
+            END,
+            elevation_updated_at = computed_at
+        WHERE elevation_meters IS NOT NULL AND elevation_source IS NULL;
+      CREATE INDEX IF NOT EXISTS enrichments_missing_elevation_idx
+        ON bench_enrichments(elevation_meters) WHERE elevation_meters IS NULL;
+    `,
+  },
 ];

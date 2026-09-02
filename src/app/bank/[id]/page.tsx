@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const bench = await getBenchDetail((await params).id);
-  return bench ? { title: bench.title, description: `Sitzbank mit Aussicht ${bench.viewScore ?? "–"}/5 auf Benchly.` } : { title: "Bank nicht gefunden" };
+  return bench ? { title: bench.title, description: bench.viewScore === null ? "Sitzbank mit Sonnen- und Umgebungsanalyse auf Benchly." : `Sitzbank mit Aussicht ${bench.viewScore}/5 auf Benchly.` } : { title: "Bank nicht gefunden" };
 }
 
 export default async function BenchPage({ params }: { params: Promise<{ id: string }> }) {

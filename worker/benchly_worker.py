@@ -27,6 +27,9 @@ from typing import Iterable, Optional, Sequence
 
 DEFAULT_PBF = "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf"
 PIPELINE_VERSION = "2.0.0"
+PROFILE_PIPELINE_VERSION = "geo-admin-horizon-1.0"
+PROFILE_DISTANCES_METERS = (10, 25, 50, 75, 100, 150, *range(200, 20_001, 200))
+PROFILE_BEARING_GROUPS = (tuple(range(0, 180, 5)), tuple(range(180, 360, 5)))
 KEEP_TAGS = {
     "amenity", "backrest", "armrest", "seats", "material", "direction", "covered",
     "wheelchair", "operator", "description", "image", "wikimedia_commons", "mapillary",
@@ -507,6 +510,161 @@ def bearing_degrees(latitude_a: float, longitude_a: float, latitude_b: float, lo
     return math.degrees(math.atan2(east, north)) % 360
 
 
+def wgs84_to_lv95(latitude: float, longitude: float) -> tuple[float, float]:
+    """Official swisstopo approximation used to address LV95 elevation services."""
+    latitude_aux = (latitude * 3600 - 169_028.66) / 10_000
+    longitude_aux = (longitude * 3600 - 26_782.5) / 10_000
+    easting = (
+        2_600_072.37 + 211_455.93 * longitude_aux
+        - 10_938.51 * longitude_aux * latitude_aux
+        - 0.36 * longitude_aux * latitude_aux ** 2
+        - 44.54 * longitude_aux ** 3
+    )
+    northing = (
+        1_200_147.07 + 308_807.95 * latitude_aux
+        + 3_745.25 * longitude_aux ** 2 + 76.63 * latitude_aux ** 2
+        - 194.56 * longitude_aux ** 2 * latitude_aux + 119.79 * latitude_aux ** 3
+    )
+    return easting, northing
+
+
+def terrain_profile_coordinates(latitude: float, longitude: float,
+                                bearings: Sequence[int] = tuple(range(0, 360, 5))) -> list[list[float]]:
+    easting, northing = wgs84_to_lv95(latitude, longitude)
+    coordinates = [[easting, northing]]
+    for bearing in bearings:
+        radians = math.radians(bearing)
+        for distance in PROFILE_DISTANCES_METERS:
+            coordinates.append([
+                easting + math.sin(radians) * distance,
+                northing + math.cos(radians) * distance,
+            ])
+        coordinates.append([easting, northing])
+    return coordinates
+
+
+def profile_height(point: object) -> Optional[float]:
+    if not isinstance(point, dict) or not isinstance(point.get("alts"), dict):
+        return None
+    alts = point["alts"]
+    value = alts.get("COMB", alts.get("DTM2", alts.get("DTM25")))
+    try:
+        height = float(value)
+    except (TypeError, ValueError):
+        return None
+    return height if -100 <= height <= 5_000 else None
+
+
+def terrain_horizon_from_profile(points: Sequence[object], bearing_count: int = 72) -> Optional[tuple[float, list[float], list[float]]]:
+    expected = 1 + bearing_count * (len(PROFILE_DISTANCES_METERS) + 1)
+    if len(points) < expected:
+        return None
+    elevation = profile_height(points[0])
+    if elevation is None:
+        return None
+    profile: list[float] = []
+    samples: list[float] = []
+    cursor = 1
+    for _bearing in range(bearing_count):
+        maximum_angle = -5.0
+        for distance in PROFILE_DISTANCES_METERS:
+            sample = profile_height(points[cursor])
+            cursor += 1
+            samples.append(elevation if sample is None else sample)
+            if sample is None:
+                continue
+            maximum_angle = max(maximum_angle, math.degrees(math.atan2(sample - (elevation + 1.1), distance)))
+        cursor += 1
+        profile.append(round(maximum_angle, 2))
+    return (elevation, profile, samples) if len(profile) == bearing_count and len(samples) >= bearing_count else None
+
+
+def fetch_terrain_horizon(latitude: float, longitude: float, timeout: float = 20) -> Optional[tuple[float, list[float], list[float]]]:
+    elevation: Optional[float] = None
+    complete_profile: list[float] = []
+    complete_samples: list[float] = []
+    for bearings in PROFILE_BEARING_GROUPS:
+        coordinates = terrain_profile_coordinates(latitude, longitude, bearings)
+        parameters = urllib.parse.urlencode({
+            "geom": json.dumps({"type": "LineString", "coordinates": coordinates}, separators=(",", ":")),
+            "sr": "2056",
+            "nb_points": "2",
+            "distinct_points": "True",
+        }).encode()
+        result = None
+        for attempt in range(3):
+            request = urllib.request.Request(
+                "https://api3.geo.admin.ch/rest/services/profile.json",
+                data=parameters,
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "Benchly/1.0 (terrain horizon batch)",
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=timeout) as response:
+                    result = terrain_horizon_from_profile(json.load(response), len(bearings))
+                break
+            except Exception as error:
+                if attempt == 2:
+                    print(f"GeoAdmin terrain profile failed: {error}", file=sys.stderr)
+                    return None
+                time.sleep(2 ** attempt)
+        if result is None:
+            return None
+        group_elevation, group_profile, group_samples = result
+        elevation = group_elevation if elevation is None else elevation
+        complete_profile.extend(group_profile)
+        complete_samples.extend(group_samples)
+    if elevation is None or len(complete_profile) != 72:
+        return None
+    return elevation, complete_profile, complete_samples
+
+
+def circular_difference(first: float, second: float) -> float:
+    return abs(((first - second + 540) % 360) - 180)
+
+
+def merge_near_obstructions(latitude: float, longitude: float, origin_elevation: float,
+                            terrain_profile: Sequence[float], terrain_samples: Sequence[float],
+                            context: Sequence[sqlite3.Row]) -> tuple[list[float], list[str], list[float], float, int]:
+    profile = list(terrain_profile)
+    obstruction_types = ["terrain"] * 72
+    obstruction_distances = [0.0] * 72
+    forests = [feature for feature in context if feature["kind"] == "forest"]
+    for feature in [item for item in context if item["kind"] in {"building", "tree"}]:
+        distance = max(2.5, feature_distance(latitude, longitude, feature))
+        if distance > 350:
+            continue
+        bearing = bearing_degrees(latitude, longitude, feature["center_latitude"], feature["center_longitude"])
+        default_height = 8.5 if feature["kind"] == "building" else 12.0
+        height = feature["height_meters"] if feature["height_meters"] is not None else default_height
+        bearing_index = round(bearing / 5) % 72
+        distance_index = min(range(len(PROFILE_DISTANCES_METERS)), key=lambda index: abs(PROFILE_DISTANCES_METERS[index] - distance))
+        sample_index = bearing_index * len(PROFILE_DISTANCES_METERS) + distance_index
+        base_height = terrain_samples[sample_index] if len(terrain_samples) == 72 * len(PROFILE_DISTANCES_METERS) else origin_elevation
+        relative_top = base_height + height - (origin_elevation + 1.1)
+        angle = max(0.0, min(89.0, math.degrees(math.atan2(max(1.0, relative_top), distance))))
+        width = max(4.0, distance_meters(feature["min_latitude"], feature["min_longitude"], feature["max_latitude"], feature["max_longitude"]))
+        half_angle = min(60.0, max(3.0, math.degrees(math.atan2(width / 2, distance))))
+        for index in range(72):
+            if circular_difference(index * 5, bearing) <= half_angle and angle > profile[index]:
+                profile[index] = round(angle, 2)
+                obstruction_types[index] = "building" if feature["kind"] == "building" else "vegetation"
+                obstruction_distances[index] = round(distance, 1)
+    in_forest = any(feature_distance(latitude, longitude, feature) <= 15 for feature in forests)
+    if in_forest:
+        for index in range(72):
+            if profile[index] < 8:
+                profile[index] = 8
+                obstruction_types[index] = "vegetation"
+                obstruction_distances[index] = 15
+    vegetation_percent = 100 * obstruction_types.count("vegetation") / 72
+    canopy_percent = min(95.0, (55 if in_forest else 0) + vegetation_percent * 0.8)
+    return profile, obstruction_types, obstruction_distances, canopy_percent, int(in_forest)
+
+
 def nearby_context(connection: sqlite3.Connection, latitude: float, longitude: float, radius_meters: float,
                    kinds: Optional[Sequence[str]] = None) -> list[sqlite3.Row]:
     latitude_delta = radius_meters / 111_320
@@ -594,7 +752,7 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
                   terrain_profile: Sequence[float], context: Sequence[sqlite3.Row], relief: float) -> tuple[list[str], float, float, float, float, dict]:
     indices = list(range(72)) if facing is None else [index for index in range(72) if abs((((index * 5 - facing) + 180) % 360) - 180) <= 45]
     selected = [profile[index] for index in indices]
-    openness = sum(1 for angle in selected if angle < 5) / max(1, len(selected))
+    openness = sum(max(0.0, 1 - max(0.0, angle) / 35) for angle in selected) / max(1, len(selected))
     buildings = [feature for feature in context if feature["kind"] == "building"]
     forests = [feature for feature in context if feature["kind"] == "forest"]
     water_features = [feature for feature in context if feature["kind"] == "water"]
@@ -618,7 +776,9 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
     remoteness = min(1.0, 0.35 * min(1, nearest_building / 100) + 0.65 * min(1, nearest_road / 300))
     water_score = 1.0 if visible_water and nearest_water < 1500 else 0.7 if visible_water else 0.2 if nearest_water < 300 else 0.0
     labels: list[str] = []
-    if relief >= 0.55 and openness >= 0.45:
+    selected_terrain = [terrain_profile[index] for index in indices]
+    building_share = sum(1 for index in indices if profile[index] > terrain_profile[index] + 0.1) / max(1, len(indices))
+    if relief >= 0.35 and max(selected_terrain, default=-5) >= 4:
         labels.append("Bergblick")
     if visible_water:
         labels.append("Seeblick" if any((feature["subtype"] or "") in {"lake", "reservoir", "water"} for feature in visible_water) else "Wasserblick")
@@ -626,7 +786,7 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
         labels.append("Weitsicht")
     if forests and naturalness >= 0.7:
         labels.append("Waldblick")
-    if openness < 0.3 or sum(selected) / max(1, len(selected)) > 18:
+    if openness < 0.4 or sum(selected) / max(1, len(selected)) > 22 or building_share > 0.5:
         labels.append("Eingeschränkte Aussicht")
     if not labels:
         labels.append("Keine besondere Aussicht")
@@ -897,6 +1057,113 @@ def run_enrich_batch(args) -> None:
             temporary_context.cleanup()
 
 
+def run_enrich_profile_batch(args) -> None:
+    """Fill complete near + 20 km horizons without downloading large raster neighborhoods."""
+    database = Path(args.database).resolve()
+    connection = connect_database(database)
+    run_id = begin_run(connection, "enrich-profile-batch", "GeoAdmin elevation profile")
+    stats = {"selected": 0, "enriched": 0, "failed": 0}
+    try:
+        rows = connection.execute("""
+            SELECT b.row_id,b.latitude,b.longitude,b.direction_degrees,b.covered
+            FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
+            WHERE b.active=1 AND (e.terrain_horizon_profile IS NULL OR length(e.terrain_horizon_profile)<100)
+            ORDER BY b.row_id LIMIT ?
+        """, (args.limit,)).fetchall()
+        stats["selected"] = len(rows)
+        if not rows:
+            finish_run(connection, run_id, "skipped", {"reason": "all active benches have a horizon"})
+            print(json.dumps(stats, indent=2))
+            return
+        deadline = time.monotonic() + args.max_runtime_minutes * 60
+        minimum_interval = 1 / max(0.1, args.requests_per_second)
+        for row in rows:
+            if time.monotonic() >= deadline:
+                break
+            request_started = time.monotonic()
+            terrain = fetch_terrain_horizon(row["latitude"], row["longitude"])
+            if terrain is None:
+                stats["failed"] += 1
+                time.sleep(max(0, minimum_interval - (time.monotonic() - request_started)))
+                continue
+            elevation, terrain_profile, elevation_samples = terrain
+            local_context = nearby_context(connection, row["latitude"], row["longitude"], 350)
+            distant_context = nearby_context(connection, row["latitude"], row["longitude"], 10_000, ["water", "forest", "major_road"])
+            context = list({feature["row_id"]: feature for feature in [*local_context, *distant_context]}.values())
+            profile, obstruction_types, obstruction_distances, canopy_percent, in_forest = merge_near_obstructions(
+                row["latitude"], row["longitude"], elevation, terrain_profile, elevation_samples, local_context,
+            )
+            relief = min(1.0, (max(elevation_samples) - min(elevation_samples)) / 1500.0) if elevation_samples else 0.0
+            labels, openness, water, naturalness, remoteness, view_sectors = classify_view(
+                row["latitude"], row["longitude"], row["direction_degrees"], profile, terrain_profile, context, relief,
+            )
+            components = {"openness": openness, "relief": relief, "water": water, "naturalness": naturalness, "remoteness": remoteness}
+            buildings = [feature for feature in local_context if feature["kind"] == "building"]
+            paths = [feature for feature in local_context if feature["kind"] == "path"]
+            waters = [feature for feature in context if feature["kind"] == "water"]
+            roads = [feature for feature in context if feature["kind"] == "major_road"]
+            forests = [feature for feature in context if feature["kind"] == "forest"]
+
+            def nearest(features: Sequence[sqlite3.Row]) -> Optional[float]:
+                return min((feature_distance(row["latitude"], row["longitude"], feature) for feature in features), default=None)
+
+            values = {
+                "row_id": row["row_id"], "elevation": elevation, "computed_at": now_iso(),
+                "in_forest": in_forest, "canopy": canopy_percent, "forest": nearest(forests),
+                "water_distance": nearest(waters), "path": nearest(paths), "road": nearest(roads),
+                "horizon": json.dumps(profile), "terrain_horizon": json.dumps(terrain_profile),
+                "obstruction_types": json.dumps(obstruction_types), "obstruction_distances": json.dumps(obstruction_distances),
+                "building_percent": 100 * obstruction_types.count("building") / 72,
+                "vegetation_percent": 100 * obstruction_types.count("vegetation") / 72,
+                "distance_building": nearest(buildings),
+                "building_count": sum(feature_distance(row["latitude"], row["longitude"], feature) <= 100 for feature in buildings),
+                "summer": direct_sun_minutes(row["latitude"], row["longitude"], profile, canopy_percent, bool(row["covered"]), 6, 21),
+                "winter": direct_sun_minutes(row["latitude"], row["longitude"], profile, canopy_percent, bool(row["covered"]), 12, 21),
+                "spring": direct_sun_minutes(row["latitude"], row["longitude"], profile, canopy_percent, bool(row["covered"]), 3, 20),
+                "autumn": direct_sun_minutes(row["latitude"], row["longitude"], profile, canopy_percent, bool(row["covered"]), 9, 22),
+                "view_score": score_view(**components), "components": json.dumps(components),
+                "labels": json.dumps(labels, ensure_ascii=False), "sectors": json.dumps(view_sectors),
+            }
+            with connection:
+                connection.execute("""
+                    INSERT INTO bench_enrichments(bench_row_id,elevation_meters,elevation_source,elevation_updated_at,
+                      in_forest,canopy_percent,distance_forest_meters,distance_water_meters,distance_path_meters,distance_major_road_meters,
+                      horizon_profile,terrain_horizon_profile,obstruction_types,obstruction_distances,
+                      building_obstruction_percent,vegetation_obstruction_percent,distance_building_meters,building_count_100m,
+                      sun_minutes_summer,sun_minutes_winter,sun_minutes_spring,sun_minutes_autumn,sun_confidence,
+                      view_score,view_confidence,view_components,view_labels,view_sectors,context_source_version,pipeline_version,computed_at)
+                    VALUES(:row_id,:elevation,'GeoAdmin-Höhenprofil',:computed_at,:in_forest,:canopy,:forest,:water_distance,:path,:road,
+                      :horizon,:terrain_horizon,:obstruction_types,:obstruction_distances,:building_percent,:vegetation_percent,
+                      :distance_building,:building_count,:summer,:winter,:spring,:autumn,'mittel',:view_score,'mittel',:components,
+                      :labels,:sectors,'OpenStreetMap + GeoAdmin',:pipeline_version,:computed_at)
+                    ON CONFLICT(bench_row_id) DO UPDATE SET elevation_meters=excluded.elevation_meters,
+                      elevation_source=excluded.elevation_source,elevation_updated_at=excluded.elevation_updated_at,
+                      in_forest=excluded.in_forest,canopy_percent=excluded.canopy_percent,distance_forest_meters=excluded.distance_forest_meters,
+                      distance_water_meters=excluded.distance_water_meters,distance_path_meters=excluded.distance_path_meters,
+                      distance_major_road_meters=excluded.distance_major_road_meters,horizon_profile=excluded.horizon_profile,
+                      terrain_horizon_profile=excluded.terrain_horizon_profile,obstruction_types=excluded.obstruction_types,
+                      obstruction_distances=excluded.obstruction_distances,building_obstruction_percent=excluded.building_obstruction_percent,
+                      vegetation_obstruction_percent=excluded.vegetation_obstruction_percent,distance_building_meters=excluded.distance_building_meters,
+                      building_count_100m=excluded.building_count_100m,sun_minutes_summer=excluded.sun_minutes_summer,
+                      sun_minutes_winter=excluded.sun_minutes_winter,sun_minutes_spring=excluded.sun_minutes_spring,
+                      sun_minutes_autumn=excluded.sun_minutes_autumn,sun_confidence=excluded.sun_confidence,view_score=excluded.view_score,
+                      view_confidence=excluded.view_confidence,view_components=excluded.view_components,view_labels=excluded.view_labels,
+                      view_sectors=excluded.view_sectors,context_source_version=excluded.context_source_version,
+                      pipeline_version=excluded.pipeline_version,computed_at=excluded.computed_at
+                """, {**values, "pipeline_version": PROFILE_PIPELINE_VERSION})
+            stats["enriched"] += 1
+            if stats["enriched"] % 25 == 0:
+                print(f"Profile-enriched {stats['enriched']}/{len(rows)} benches", file=sys.stderr)
+            time.sleep(max(0, minimum_interval - (time.monotonic() - request_started)))
+        finish_run(connection, run_id, "completed", stats)
+        print(json.dumps(stats, indent=2))
+    except Exception as error:
+        finish_run(connection, run_id, "failed", {"error": str(error), **stats})
+        raise
+    finally:
+        connection.close()
+
+
 def run_refresh_commons(args) -> None:
     database = Path(args.database).resolve()
     connection = connect_database(database)
@@ -981,6 +1248,13 @@ def build_parser() -> argparse.ArgumentParser:
     enrich.add_argument("--max-runtime-hours", type=float, default=8)
     enrich.add_argument("--recompute", action="store_true")
     enrich.set_defaults(function=run_enrich_batch, uses_lock=True)
+
+    profile = subparsers.add_parser("enrich-profile-batch", help="Compute near and 20 km horizons through GeoAdmin profiles")
+    profile.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
+    profile.add_argument("--limit", type=int, default=1000)
+    profile.add_argument("--requests-per-second", type=float, default=1.0)
+    profile.add_argument("--max-runtime-minutes", type=float, default=45)
+    profile.set_defaults(function=run_enrich_profile_batch, uses_lock=True)
 
     commons = subparsers.add_parser("refresh-commons", help="Refresh a bounded number of nearby Commons results")
     commons.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))

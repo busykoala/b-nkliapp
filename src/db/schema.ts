@@ -28,6 +28,8 @@ export const benches = sqliteTable("benches", {
 export const benchEnrichments = sqliteTable("bench_enrichments", {
   benchRowId: integer("bench_row_id").primaryKey().references(() => benches.rowId, { onDelete: "cascade" }),
   elevationMeters: real("elevation_meters"),
+  elevationSource: text("elevation_source"),
+  elevationUpdatedAt: text("elevation_updated_at"),
   inForest: integer("in_forest", { mode: "boolean" }),
   canopyPercent: real("canopy_percent"),
   distanceForestMeters: real("distance_forest_meters"),

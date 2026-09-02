@@ -25,7 +25,42 @@ describe("near-field context model", () => {
   it("keeps an empty setting open and explicitly preliminary", () => {
     const model = buildContextModel(47, 8, null, []);
     expect(model.horizonProfile.every((angle) => angle === 0)).toBe(true);
-    expect(model.viewLabels).toContain("Freier Nahhorizont");
-    expect(model.viewExplanation.join(" ")).toContain("swisstopo");
+    expect(model.viewLabels).toContain("Nahbereich weitgehend offen");
+    expect(model.nearOpennessPercent).toBe(100);
+    expect(model.viewExplanation.join(" ")).toContain("Gesamtwertung");
+  });
+
+  it("does not present nearby water as a confirmed view", () => {
+    const model = buildContextModel(47, 8, null, [feature({
+      kind: "water",
+      center_latitude: 47.001,
+      min_latitude: 47.0009,
+      max_latitude: 47.0011,
+      subtype: "lake",
+    })]);
+    expect(model.viewLabels).toContain("Wasser im Umfeld");
+    expect(model.viewLabels).not.toContain("Seeblick");
+  });
+
+  it("produces a full view score once the terrain and far horizon are present", () => {
+    const model = buildContextModel(47, 8, 180, [], {
+      elevationMeters: 450,
+      horizonProfile: Array(72).fill(2),
+      sampleElevations: Array(72 * 106).fill(450).map((value, index) => index === 36 * 106 + 80 ? 1_500 : value),
+    });
+    expect(model.viewScore).toBeGreaterThan(50);
+    expect(model.viewComponents.relief).toBeGreaterThan(0.5);
+    expect(model.viewExplanation.join(" ")).toContain("20 km");
+  });
+
+  it("recognizes mountain relief without penalizing an Alpine horizon as blocked", () => {
+    const model = buildContextModel(46.68654, 7.86468, null, [], {
+      elevationMeters: 568,
+      horizonProfile: Array(72).fill(12),
+      sampleElevations: Array(72 * 106).fill(568).map((value, index) => index % 106 > 70 ? 1_800 : value),
+    });
+    expect(model.viewLabels).toContain("Bergblick");
+    expect(model.viewLabels).not.toContain("Eingeschränkte Aussicht");
+    expect(model.viewComponents.openness).toBeGreaterThan(0.6);
   });
 });

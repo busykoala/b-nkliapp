@@ -3,7 +3,8 @@
 import { sqlite } from "@/db/client";
 import { displayMaterial, yesNoUnknown } from "@/lib/bench";
 import { buildContextModel, type ContextFeature } from "@/lib/context-model";
-import { calculateSunState, getLocalSunSchedule, getSunTimes, type ObstructionType } from "@/lib/sun";
+import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
+import { calculateSunState, getLocalSunSchedule, getSeasonalSunMinutes, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { z } from "zod";
 
@@ -206,33 +207,126 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   `).get(benchId) as DetailRow | undefined;
   if (!row) return null;
 
-  let horizon: number[] = [];
-  let obstructionTypes: ObstructionType[] = [];
+  const latitude = Number(row.latitude);
+  const longitude = Number(row.longitude);
+  const directionDegrees = row.direction_degrees === null ? null : Number(row.direction_degrees);
+  let elevationMeters = row.elevation_meters == null ? null : Number(row.elevation_meters);
+  let elevationSource = row.elevation_source == null ? null : String(row.elevation_source);
+  let pipelineVersion = row.pipeline_version ? String(row.pipeline_version) : "OSM-Nahbereich v1";
+  let horizon = parseArray<number>(row.horizon_profile);
+  let obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
+  let sunMinutesSummer = row.sun_minutes_summer == null ? null : Number(row.sun_minutes_summer);
+  let sunMinutesWinter = row.sun_minutes_winter == null ? null : Number(row.sun_minutes_winter);
+  let sunMinutesSpring = row.sun_minutes_spring == null ? null : Number(row.sun_minutes_spring);
+  let sunMinutesAutumn = row.sun_minutes_autumn == null ? null : Number(row.sun_minutes_autumn);
   let components: Record<string, number> = {};
-  horizon = parseArray<number>(row.horizon_profile);
-  obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
   try { components = row.view_components ? JSON.parse(String(row.view_components)) : {}; } catch { components = {}; }
-  const sunInput = { latitude: Number(row.latitude), longitude: Number(row.longitude), horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent) };
-  const hasTerrainModel = horizon.length > 0;
-  const contextModel = hasTerrainModel ? null : buildContextModel(
-    Number(row.latitude),
-    Number(row.longitude),
-    row.direction_degrees === null ? null : Number(row.direction_degrees),
-    getContextFeatures(Number(row.latitude), Number(row.longitude)),
-  );
-  if (contextModel) {
+  let hasTerrainModel = parseArray<number>(row.terrain_horizon_profile).length === 72;
+  let contextModel: ReturnType<typeof buildContextModel> | null = null;
+  if (!hasTerrainModel) {
+    const contextFeatures = getContextFeatures(latitude, longitude);
+    const terrain = process.env.BENCHLY_DISABLE_ELEVATION_FETCH === "true" ? null : await fetchTerrainHorizon(latitude, longitude);
+    contextModel = buildContextModel(latitude, longitude, directionDegrees, contextFeatures, terrain ? {
+      elevationMeters: terrain.elevationMeters,
+      horizonProfile: terrain.horizonProfile,
+      sampleElevations: terrain.sampleElevations,
+    } : undefined);
     horizon = contextModel.horizonProfile;
     obstructionTypes = contextModel.obstructionTypes;
+    components = contextModel.viewComponents;
+    if (terrain) {
+      hasTerrainModel = true;
+      elevationMeters = terrain.elevationMeters;
+      elevationSource = terrain.source;
+      pipelineVersion = "GeoAdmin-Horizont v1";
+      // Replace any seasonal values produced by the earlier near-field-only model.
+      sunMinutesSummer = null;
+      sunMinutesWinter = null;
+      sunMinutesSpring = null;
+      sunMinutesAutumn = null;
+      const computedAt = new Date().toISOString();
+      sqlite.prepare(`
+        INSERT INTO bench_enrichments (
+          bench_row_id,elevation_meters,elevation_source,elevation_updated_at,in_forest,canopy_percent,
+          distance_water_meters,distance_path_meters,horizon_profile,terrain_horizon_profile,obstruction_types,
+          building_obstruction_percent,vegetation_obstruction_percent,distance_building_meters,building_count_100m,
+          view_score,view_confidence,view_components,view_labels,context_source_version,pipeline_version,computed_at,sun_confidence
+        ) VALUES (
+          @rowId,@elevation,@elevationSource,@computedAt,@inForest,@canopy,@water,@path,@horizon,@terrainHorizon,@obstructionTypes,
+          @buildingPercent,@vegetationPercent,@distanceBuilding,@buildingCount,@viewScore,'mittel',@components,@viewLabels,
+          'OpenStreetMap + GeoAdmin','GeoAdmin-Horizont v1',@computedAt,'mittel'
+        )
+        ON CONFLICT(bench_row_id) DO UPDATE SET
+          elevation_meters=excluded.elevation_meters,elevation_source=excluded.elevation_source,
+          elevation_updated_at=excluded.elevation_updated_at,in_forest=excluded.in_forest,canopy_percent=excluded.canopy_percent,
+          distance_water_meters=excluded.distance_water_meters,distance_path_meters=excluded.distance_path_meters,
+          horizon_profile=excluded.horizon_profile,terrain_horizon_profile=excluded.terrain_horizon_profile,
+          obstruction_types=excluded.obstruction_types,building_obstruction_percent=excluded.building_obstruction_percent,
+          vegetation_obstruction_percent=excluded.vegetation_obstruction_percent,distance_building_meters=excluded.distance_building_meters,
+          building_count_100m=excluded.building_count_100m,view_score=excluded.view_score,view_confidence=excluded.view_confidence,
+          view_components=excluded.view_components,view_labels=excluded.view_labels,context_source_version=excluded.context_source_version,
+          pipeline_version=excluded.pipeline_version,computed_at=excluded.computed_at,sun_confidence=excluded.sun_confidence
+      `).run({
+        rowId: row.row_id,
+        elevation: terrain.elevationMeters,
+        elevationSource: terrain.source,
+        computedAt,
+        inForest: contextModel.inForest ? 1 : 0,
+        canopy: contextModel.canopyPercent,
+        water: contextModel.distanceWaterMeters,
+        path: contextModel.distancePathMeters,
+        horizon: JSON.stringify(contextModel.horizonProfile),
+        terrainHorizon: JSON.stringify(terrain.horizonProfile),
+        obstructionTypes: JSON.stringify(contextModel.obstructionTypes),
+        buildingPercent: contextModel.buildingObstructionPercent,
+        vegetationPercent: contextModel.vegetationObstructionPercent,
+        distanceBuilding: contextModel.distanceBuildingMeters,
+        buildingCount: contextModel.buildingCount100m,
+        viewScore: contextModel.viewScore,
+        components: JSON.stringify(contextModel.viewComponents),
+        viewLabels: JSON.stringify(contextModel.viewLabels),
+      });
+    }
   }
+
+  if (elevationMeters === null && process.env.BENCHLY_DISABLE_ELEVATION_FETCH !== "true") {
+    const elevation = await fetchPointElevation(latitude, longitude);
+    if (elevation) {
+      elevationMeters = elevation.meters;
+      elevationSource = elevation.source;
+      sqlite.prepare(`
+        INSERT INTO bench_enrichments (bench_row_id, elevation_meters, elevation_source, elevation_updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(bench_row_id) DO UPDATE SET
+          elevation_meters=excluded.elevation_meters,
+          elevation_source=excluded.elevation_source,
+          elevation_updated_at=excluded.elevation_updated_at
+      `).run(row.row_id, elevationMeters, elevationSource, new Date().toISOString());
+    }
+  }
+  const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent) };
   const effectiveSunInput = { ...sunInput, horizonProfile: horizon, obstructionTypes, canopyPercent: contextModel?.canopyPercent ?? sunInput.canopyPercent };
   const sun = calculateSunState(effectiveSunInput);
   const localSun = getLocalSunSchedule(effectiveSunInput);
-  const times = getSunTimes(new Date(), Number(row.latitude), Number(row.longitude));
+  if (hasTerrainModel && [sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn].some((value) => value === null)) {
+    const seasonal = getSeasonalSunMinutes(effectiveSunInput);
+    sunMinutesSummer = seasonal.summer;
+    sunMinutesWinter = seasonal.winter;
+    sunMinutesSpring = seasonal.spring;
+    sunMinutesAutumn = seasonal.autumn;
+    sqlite.prepare(`
+      UPDATE bench_enrichments SET sun_minutes_summer=?,sun_minutes_winter=?,sun_minutes_spring=?,sun_minutes_autumn=?
+      WHERE bench_row_id=?
+    `).run(sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn, row.row_id);
+  }
+  const times = getSunTimes(new Date(), latitude, longitude);
   const recentRatings = sqlite.prepare(`SELECT id, overall, view_score as view, comfort, quiet, note, created_at as createdAt FROM ratings WHERE bench_row_id=? AND visible=1 ORDER BY updated_at DESC LIMIT 5`).all(row.row_id);
   const corrections = sqlite.prepare(`SELECT id, field, proposed_value as proposedValue, note, created_at as createdAt FROM corrections WHERE bench_row_id=? AND visible=1 ORDER BY created_at DESC LIMIT 20`).all(row.row_id);
   const media = sqlite.prepare(`SELECT id, relation, provider, source_url as sourceUrl, thumbnail_url as thumbnailUrl, author, license, distance_meters as distanceMeters, title FROM media WHERE bench_row_id=? ORDER BY relation, distance_meters LIMIT 12`).all(row.row_id);
   const ratingCount = Number(row.rating_count ?? 0);
-  const rawViewScore = row.view_score === null ? contextModel?.viewScore ?? null : Number(row.view_score);
+  // A near-field-only model cannot honestly produce the full 1–5 view score:
+  // relief is 25% of that model and the distant horizon is still unknown.
+  const rawViewScore = hasTerrainModel ? contextModel?.viewScore ?? (row.view_score === null ? null : Number(row.view_score)) : null;
   const viewScore = rawViewScore === null ? null : Math.max(1, Math.min(5, Math.round(rawViewScore / 20)));
   const explanation: string[] = [];
   const viewLabels = contextModel?.viewLabels ?? parseArray<string>(row.view_labels);
@@ -254,25 +348,27 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   ];
   return {
     id: String(row.id), osmType: String(row.osm_type), osmId: Number(row.osm_id),
-    latitude: Number(row.latitude), longitude: Number(row.longitude), title: String(row.description || "Sitzbank"),
+    latitude, longitude, title: String(row.description || "Sitzbank"),
     description: row.operator ? `Betreiber: ${row.operator}` : null, properties,
-    elevationMeters: row.elevation_meters === null ? null : Number(row.elevation_meters),
-    viewScore, viewConfidence: (contextModel ? "niedrig" : row.view_confidence ?? "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
+    elevationMeters,
+    elevationSource,
+    analysisCoverage: hasTerrainModel ? "terrain" : "near-field",
+    viewScore, viewConfidence: (hasTerrainModel ? contextModel ? "mittel" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
     sunrise: times.sunrise, sunset: times.sunset,
     directSunrise: localSun.directSunrise, directSunset: localSun.directSunset,
     sunMinutesToday: localSun.sunMinutes, sunWindows: localSun.windows,
     shadeCause: sun?.shadeCause ?? "unbekannt",
     sunnyNow: sun?.sunny ?? null,
-    sunConfidence: (contextModel ? "niedrig" : row.sun_confidence ?? "niedrig") as BenchDetail["sunConfidence"],
-    sunMinutesSummer: row.sun_minutes_summer === null ? null : Number(row.sun_minutes_summer),
-    sunMinutesWinter: row.sun_minutes_winter === null ? null : Number(row.sun_minutes_winter),
-    sunMinutesSpring: row.sun_minutes_spring === null ? null : Number(row.sun_minutes_spring),
-    sunMinutesAutumn: row.sun_minutes_autumn === null ? null : Number(row.sun_minutes_autumn),
+    sunConfidence: (hasTerrainModel ? contextModel ? "mittel" : row.sun_confidence ?? "mittel" : "niedrig") as BenchDetail["sunConfidence"],
+    sunMinutesSummer,
+    sunMinutesWinter,
+    sunMinutesSpring,
+    sunMinutesAutumn,
     inForest: contextModel?.inForest ?? (row.in_forest === null ? null : Boolean(row.in_forest)),
     canopyPercent: contextModel?.canopyPercent ?? (row.canopy_percent === null ? null : Number(row.canopy_percent)),
     distanceWaterMeters: contextModel?.distanceWaterMeters ?? (row.distance_water_meters === null ? null : Number(row.distance_water_meters)),
     distancePathMeters: contextModel?.distancePathMeters ?? (row.distance_path_meters === null ? null : Number(row.distance_path_meters)),
-    directionDegrees: row.direction_degrees === null ? null : Number(row.direction_degrees),
+    directionDegrees,
     buildingObstructionPercent: contextModel?.buildingObstructionPercent ?? (row.building_obstruction_percent === null ? null : Number(row.building_obstruction_percent)),
     vegetationObstructionPercent: contextModel?.vegetationObstructionPercent ?? (row.vegetation_obstruction_percent === null ? null : Number(row.vegetation_obstruction_percent)),
     distanceBuildingMeters: contextModel?.distanceBuildingMeters ?? (row.distance_building_meters === null ? null : Number(row.distance_building_meters)),
@@ -281,7 +377,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     ratingAverage: row.rating_average === null ? null : Number(Number(row.rating_average).toFixed(1)), ratingCount,
     ratingBreakdown: ratingCount ? { overall: Number(Number(row.rating_average).toFixed(1)), view: Number(Number(row.rating_view).toFixed(1)), comfort: Number(Number(row.rating_comfort).toFixed(1)), quiet: Number(Number(row.rating_quiet).toFixed(1)) } : null,
     recentRatings: recentRatings as BenchDetail["recentRatings"], corrections: corrections as BenchDetail["corrections"], media: media as BenchDetail["media"],
-    sourceUpdatedAt: String(row.source_updated_at), pipelineVersion: row.pipeline_version ? String(row.pipeline_version) : "OSM-Nahbereich v1",
+    sourceUpdatedAt: String(row.source_updated_at), pipelineVersion,
   };
 }
 

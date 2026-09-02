@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateSunState, getLocalSunSchedule, interpolateHorizon } from "./sun";
+import { calculateSunState, getLocalSunSchedule, getSeasonalSunMinutes, interpolateHorizon } from "./sun";
 
 describe("horizon interpolation", () => {
   it("interpolates across azimuth bins and wraps north", () => {
@@ -36,5 +36,11 @@ describe("sun obstruction", () => {
     const clear = getLocalSunSchedule({ date: new Date("2026-06-21T12:00:00Z"), latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(0) });
     const blocked = getLocalSunSchedule({ date: new Date("2026-06-21T12:00:00Z"), latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(35) });
     expect(blocked.sunMinutes).toBeLessThan(clear.sunMinutes);
+  });
+  it("calculates all four seasonal reference days from the same horizon", () => {
+    const seasonal = getSeasonalSunMinutes({ latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(8) }, 2026);
+    expect(seasonal.summer).toBeGreaterThan(seasonal.spring);
+    expect(seasonal.spring).toBeGreaterThan(seasonal.winter);
+    expect(seasonal.autumn).toBeGreaterThan(seasonal.winter);
   });
 });

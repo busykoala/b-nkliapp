@@ -161,6 +161,9 @@ jobs:
           kubectl --namespace benchly set image cronjob/benchly-import-osm "worker=$WORKER_IMAGE"
           kubectl --namespace benchly set image cronjob/benchly-enrich "worker=$WORKER_IMAGE"
           kubectl --namespace benchly set image cronjob/benchly-commons "worker=$WORKER_IMAGE"
+          if kubectl --namespace benchly get cronjob benchly-horizon >/dev/null 2>&1; then
+            kubectl --namespace benchly set image cronjob/benchly-horizon "worker=$WORKER_IMAGE"
+          fi
           kubectl --namespace benchly annotate deployment/benchly \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
           kubectl --namespace benchly rollout status deployment/benchly --timeout=10m

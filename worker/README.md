@@ -31,6 +31,8 @@ writer lock next to the database, so overlapping CronJobs safely skip instead of
 python3 worker/benchly_worker.py import-osm --database /data/benchly.sqlite
 python3 worker/benchly_worker.py enrich-batch --database /data/benchly.sqlite \
   --limit 1000 --max-runtime-hours 8 --max-download-gib 80
+python3 worker/benchly_worker.py enrich-profile-batch --database /data/benchly.sqlite \
+  --limit 1000 --requests-per-second 1 --max-runtime-minutes 45
 python3 worker/benchly_worker.py refresh-commons --database /data/benchly.sqlite --limit 500
 ```
 
@@ -38,6 +40,12 @@ python3 worker/benchly_worker.py refresh-commons --database /data/benchly.sqlite
 assets (including the required terrain and surface buffers), checkpoints results and removes
 its temporary files. Repeated runs therefore make national coverage progress without a
 single unbounded download.
+
+`enrich-profile-batch` is the lightweight complement to the raster pipeline. One
+official GeoAdmin profile request per bench supplies 72 terrain directions with
+logarithmic samples out to 20 km. Benchly merges those samples with OSM buildings,
+individual trees and forest in the first 350 m, then caches elevation, sun windows
+and the complete view score. The request rate and runtime are deliberately capped.
 
 Enrichment is resumable and skips rows already produced by the current pipeline version. Use `--recompute` only after the terrain/surface inputs change. See `docs/data-pipeline.md` for national counts, the staged update strategy and limitations.
 

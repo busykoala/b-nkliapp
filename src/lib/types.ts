@@ -93,6 +93,8 @@ export type BenchDetail = {
   description: string | null;
   properties: BenchProperty[];
   elevationMeters: number | null;
+  elevationSource: string | null;
+  analysisCoverage: "near-field" | "terrain";
   viewScore: number | null;
   viewConfidence: Confidence;
   viewExplanation: string[];

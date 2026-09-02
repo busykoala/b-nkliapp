@@ -94,3 +94,16 @@ export function getLocalSunSchedule(input: {
     windows,
   };
 }
+
+export function getSeasonalSunMinutes(input: Omit<Parameters<typeof getLocalSunSchedule>[0], "date">, year = new Date().getUTCFullYear()) {
+  const minutes = (month: number, day: number) => getLocalSunSchedule({
+    ...input,
+    date: new Date(Date.UTC(year, month - 1, day, 12)),
+  }).sunMinutes;
+  return {
+    spring: minutes(3, 20),
+    summer: minutes(6, 21),
+    autumn: minutes(9, 22),
+    winter: minutes(12, 21),
+  };
+}

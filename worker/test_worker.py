@@ -11,6 +11,9 @@ from benchly_worker import (
     parse_height,
     score_view,
     spatial_cell_bounds,
+    terrain_horizon_from_profile,
+    terrain_profile_coordinates,
+    wgs84_to_lv95,
 )
 
 
@@ -53,6 +56,19 @@ class WorkerUnitTests(unittest.TestCase):
                 self.assertTrue(first)
                 with exclusive_worker_lock(database) as second:
                     self.assertFalse(second)
+
+    def test_geo_admin_profile_builds_a_complete_horizon(self):
+        easting, northing = wgs84_to_lv95(47.37674, 8.54183)
+        self.assertAlmostEqual(easting, 2_683_314, delta=2)
+        self.assertAlmostEqual(northing, 1_247_908, delta=2)
+        coordinates = terrain_profile_coordinates(47.37674, 8.54183)
+        points = [{"alts": {"COMB": 500 if index == 0 else 510}} for index, _coordinate in enumerate(coordinates)]
+        result = terrain_horizon_from_profile(points)
+        self.assertIsNotNone(result)
+        elevation, profile, samples = result
+        self.assertEqual(elevation, 500)
+        self.assertEqual(len(profile), 72)
+        self.assertEqual(len(samples), 72 * 106)
 
 
 if __name__ == "__main__":
