@@ -2,8 +2,8 @@ nodeName: blizzard
 existingSecret: benchly-secrets
 
 images:
-  web: ghcr.io/busykoala/b-nkliapp@sha256:0d06a9510eec2c4bf4412700f7c59bbc172443d3e57d90c59b92e91bdf7a2094
-  worker: ghcr.io/busykoala/b-nkliapp@sha256:7117f57c3845dbcf3d7e8ebb4e18564d57962cf5f03336a51e4340aca885515a
+  web: ghcr.io/busykoala/b-nkliapp@sha256:faa9146e8753b65ed6c25d7ef7a6dd26f29f3c30a28b9a59cb50d80aced74879
+  worker: ghcr.io/busykoala/b-nkliapp@sha256:8e04314ab4af8f978fe79bdf20283aa1ab3f60068120933db4f52527ec9b9e09
   test: curlimages/curl:8.16.0
 
 storage:
