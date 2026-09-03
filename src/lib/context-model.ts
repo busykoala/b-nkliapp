@@ -222,9 +222,10 @@ export function buildContextModel(latitude: number, longitude: number, direction
       const elevations = terrain.sampleElevations.slice(index * HORIZON_DISTANCES_METERS.length + farStart, (index + 1) * HORIZON_DISTANCES_METERS.length);
       const maximum = elevations.length ? Math.max(...elevations) : terrain.elevationMeters;
       const visible = horizonProfile[index] <= terrain.horizonProfile[index] + .5;
-      const prominent = terrain.horizonProfile[index] >= 1.5 && maximum - terrain.elevationMeters >= 120;
+      const localRelief = maximum - terrain.elevationMeters;
+      const prominent = terrain.horizonProfile[index] >= 1.5 && localRelief >= 120;
       if (visible && prominent) visibleTerrainMaxMeters = Math.max(visibleTerrainMaxMeters ?? -Infinity, maximum);
-      return { mountain: visible && prominent && maximum >= 1_500, hill: visible && prominent && maximum < 1_500 };
+      return { mountain: visible && prominent && localRelief >= 500, hill: visible && prominent && localRelief < 500 };
     });
     const minimumRun = directionDegrees === null ? 8 : 4;
     const mountainRun = longestRun(terrainSectors.map((sector) => sector.mountain), directionDegrees === null);

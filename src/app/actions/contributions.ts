@@ -17,7 +17,7 @@ const ratingSchema = z.object({
 });
 
 const correctionSchema = z.object({
-  field: z.enum(["properties", "condition", "location", "removed"]),
+  field: z.enum(["properties", "condition", "location", "removed", "environment"]),
   note: z.string().trim().max(160).optional(),
   website: z.string().max(0).optional(),
 });
@@ -27,6 +27,7 @@ const correctionValues = {
   condition: "Beschädigt oder schlecht nutzbar",
   location: "Position ist ungenau",
   removed: "Bank fehlt oder wurde entfernt",
+  environment: "Umgebung, Aussicht oder Licht stimmt nicht",
 } as const;
 
 function benchRowId(benchId: string) {

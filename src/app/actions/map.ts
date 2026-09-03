@@ -291,7 +291,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   try { components = row.view_components ? JSON.parse(String(row.view_components)) : {}; } catch { components = {}; }
   let hasTerrainModel = parseArray<number>(row.terrain_horizon_profile).length === 72;
   let contextModel: ReturnType<typeof buildContextModel> | null = null;
-  const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v2", "4.0.0"].includes(pipelineVersion);
+  const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v3", "4.1.0"].includes(pipelineVersion);
   if (needsContextRefresh) {
     const contextFeatures = getContextFeatures(latitude, longitude);
     const terrain = process.env.BENCHLY_DISABLE_ELEVATION_FETCH === "true" ? null : await fetchTerrainHorizon(latitude, longitude);
@@ -310,7 +310,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       hasTerrainModel = true;
       elevationMeters = terrain.elevationMeters;
       elevationSource = terrain.source;
-      pipelineVersion = "GeoAdmin-Horizont v2";
+      pipelineVersion = "GeoAdmin-Horizont v3";
       // Replace any seasonal values produced by the earlier near-field-only model.
       sunMinutesSummer = null;
       sunMinutesWinter = null;
@@ -326,7 +326,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
         ) VALUES (
           @rowId,@elevation,@elevationSource,@computedAt,@inForest,@canopy,@water,@path,@horizon,@terrainHorizon,@obstructionTypes,
           @buildingPercent,@vegetationPercent,@distanceBuilding,@buildingCount,@viewScore,'mittel',@components,@viewLabels,
-          'OpenStreetMap + GeoAdmin','GeoAdmin-Horizont v2',@computedAt,'mittel'
+          'OpenStreetMap + GeoAdmin','GeoAdmin-Horizont v3',@computedAt,'mittel'
         )
         ON CONFLICT(bench_row_id) DO UPDATE SET
           elevation_meters=excluded.elevation_meters,elevation_source=excluded.elevation_source,
@@ -409,7 +409,6 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const viewScore = rawViewScore === null ? null : Math.max(1, Math.min(5, Math.round(rawViewScore / 20)));
   const explanation: string[] = [];
   const viewLabels = contextModel?.viewLabels ?? parseArray<string>(row.view_labels);
-  if (viewLabels.length) explanation.push(...viewLabels);
   if ((components.openness ?? 0) > 0.8) explanation.push("Weiter, wenig verdeckter Horizont");
   if ((components.relief ?? 0) > 0.8) explanation.push("Ausgeprägtes Berg- oder Hügelrelief");
   if ((components.water ?? 0) > 0.75) explanation.push("Freie Sichtachse zu einer Wasserfläche");
@@ -469,7 +468,15 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     elevationMeters,
     elevationSource,
     analysisCoverage: hasTerrainModel ? "terrain" : "near-field",
-    viewScore, viewConfidence: (hasTerrainModel ? contextModel ? "mittel" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
+    viewScore,
+    viewComponents: {
+      openness: components.openness ?? null,
+      relief: components.relief ?? null,
+      water: components.water ?? null,
+      naturalness: components.naturalness ?? null,
+      remoteness: components.remoteness ?? null,
+    },
+    viewConfidence: (hasTerrainModel ? contextModel ? "mittel" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
     sunrise: times.sunrise, sunset: times.sunset,
     directSunrise: localSun.directSunrise, directSunset: localSun.directSunset,
     sunMinutesToday: localSun.sunMinutes, sunWindows: localSun.windows,

@@ -256,7 +256,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         const click = (event: MapLayerMouseEvent) => {
           const item = event.features?.[0]?.properties as MapFeature | undefined;
           if (!item) return;
-          if (item.kind === "cluster") map.easeTo({ center: [item.longitude, item.latitude], zoom: Math.min(map.getZoom() + 2, 16) });
+          if (item.kind === "cluster") {
+            const nextZoom = Math.min(map.getZoom() + 2, map.getMaxZoom());
+            map.easeTo({ center: [item.longitude, item.latitude], zoom: nextZoom, duration: 480 });
+          }
           else {
             map.easeTo({ center: [item.longitude, item.latitude], offset: [0, -100], duration: 450 });
             selectBench(item.id);

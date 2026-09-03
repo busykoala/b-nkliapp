@@ -56,6 +56,7 @@ export function CorrectionForm({ benchId }: { benchId: string }) {
           <option value="location">Position ist ungenau</option>
           <option value="properties">Ausstattung stimmt nicht</option>
           <option value="condition">Beschädigt oder schlecht nutzbar</option>
+          <option value="environment">Umgebung, Aussicht oder Licht stimmt nicht</option>
         </select>
       </label>
       <label className="form-control my-3 block">

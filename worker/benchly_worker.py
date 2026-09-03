@@ -47,8 +47,8 @@ from visual_pipeline import analyze_scenes, audit_environment, benchmark_models,
 from weather_pipeline import refresh_weather
 
 DEFAULT_PBF = "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf"
-PIPELINE_VERSION = "4.0.0"
-PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v2"
+PIPELINE_VERSION = "4.1.0"
+PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v3"
 PROFILE_DISTANCES_METERS = (10, 25, 50, 75, 100, 150, *range(200, 20_001, 200))
 PROFILE_BEARING_GROUPS = (tuple(range(0, 180, 5)), tuple(range(180, 360, 5)))
 KEEP_TAGS = {
@@ -1186,9 +1186,10 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
     for index in indices:
         maximum = far_maximum[index]
         visible = profile[index] <= terrain_profile[index] + .5
-        prominent = terrain_profile[index] >= 1.5 and maximum - (origin_elevation or maximum) >= 120
-        terrain_sectors.append({"mountain": visible and prominent and maximum >= 1_500,
-                                "hill": visible and prominent and maximum < 1_500,
+        local_relief = maximum - (origin_elevation or maximum)
+        prominent = terrain_profile[index] >= 1.5 and local_relief >= 120
+        terrain_sectors.append({"mountain": visible and prominent and local_relief >= 500,
+                                "hill": visible and prominent and local_relief < 500,
                                 "maximum": maximum if visible and prominent else None})
     minimum_run = 8 if facing is None else 4
     mountain_run = _longest_view_run([bool(sector["mountain"]) for sector in terrain_sectors], facing is None)

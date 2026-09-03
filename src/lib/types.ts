@@ -132,6 +132,13 @@ export type BenchDetail = {
   elevationSource: string | null;
   analysisCoverage: "near-field" | "terrain";
   viewScore: number | null;
+  viewComponents: {
+    openness: number | null;
+    relief: number | null;
+    water: number | null;
+    naturalness: number | null;
+    remoteness: number | null;
+  };
   viewConfidence: Confidence;
   viewExplanation: string[];
   sunrise: string;

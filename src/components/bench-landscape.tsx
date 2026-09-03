@@ -46,6 +46,8 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
   const hasMountains = hasView(bench, "berg");
   const hasHills = hasView(bench, "hügel");
   const isUrban = bench.landContext === "urban" || (bench.buildingCount100m ?? 0) >= 5;
+  const hasNearbyBuilding = (bench.distanceBuildingMeters ?? Infinity) < 85;
+  const buildingOnRight = (bench.directionDegrees ?? bench.sunAzimuthDegrees) < 180;
   const treeCount = bench.canopyContext === "dense" || bench.inForest ? 5 : bench.canopyContext === "partial" ? 3 : 1;
   const backrest = knownProperty(bench, "Rückenlehne") === "Ja";
   const armrests = knownProperty(bench, "Armlehnen") === "Ja";
@@ -75,7 +77,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
     "--snow-opacity": `${Math.min(.92, .28 + snowCover / 130)}`,
   } as CSSProperties;
   const aria = [
-    bench.dayPhase === "night" ? "Nacht" : bench.sunnyNow ? "Die Bank liegt in der Sonne" : "Die Bank liegt im Schatten",
+    bench.dayPhase === "night" ? "Nacht" : bench.sunnyNow === null ? "Lichtlage noch offen" : bench.sunnyNow ? "Die Bank liegt in der Sonne" : "Die Bank liegt im Schatten",
     raining && snowing ? "Schneeregen" : raining ? "Regen" : snowing ? "Schneefall" : null,
     cloudCover >= .65 ? "stark bewölkt" : cloudCover >= .25 ? "teilweise bewölkt" : null,
     hasWater ? "am Wasser" : null,
@@ -85,10 +87,11 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
   ].filter(Boolean).join(", ");
 
   return (
-    <figure className={`bench-landscape phase-${bench.dayPhase} season-${bench.season} temperature-${temperatureMood} precipitation-${precipitation}`} style={style} aria-label={aria}>
+    <figure className={`bench-landscape phase-${bench.dayPhase} season-${bench.season} temperature-${temperatureMood} precipitation-${precipitation} shade-${bench.shadeCause} ${bench.sunnyNow === null ? "light-unknown" : bench.sunnyNow ? "light-sunny" : "light-shade"}`} style={style} aria-label={aria}>
       <svg viewBox="0 0 640 480" role="img" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
         <defs>
           <linearGradient id={`sky-${bench.id}`} x1="0" y1="0" x2="0" y2="1"><stop className="sky-top" offset="0" /><stop className="sky-bottom" offset="1" /></linearGradient>
+          <linearGradient id={`beam-${bench.id}`} x1="0" y1="0" x2="0" y2="1"><stop className="sunbeam-top" offset="0" /><stop className="sunbeam-bottom" offset="1" /></linearGradient>
           <filter id={`soft-${bench.id}`}><feGaussianBlur stdDeviation="4" /></filter>
           <pattern id={`snow-${bench.id}`} width="38" height="38" patternUnits="userSpaceOnUse"><circle cx="7" cy="10" r="2" /><circle cx="28" cy="24" r="1.6" /><circle cx="16" cy="35" r="1.2" /></pattern>
         </defs>
@@ -99,6 +102,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
 
         {sunVisible && <g className="scene-celestial scene-celestial-sun" transform={`translate(${sun.x} ${sun.y})`}><circle className="celestial-glow" r="38" filter={`url(#soft-${bench.id})`} /><circle className="scene-sun" r="19" /></g>}
         {moonVisible && <g className="scene-celestial scene-celestial-moon" transform={`translate(${moon.x} ${moon.y})`}><circle className="celestial-glow" r="35" filter={`url(#soft-${bench.id})`} /><circle className="scene-moon" r="20" /><circle className="scene-moon-shadow" cx={moonMaskOffset} r="20" /></g>}
+        {sunVisible && bench.sunnyNow && <path className="scene-sunbeam" fill={`url(#beam-${bench.id})`} d={`M${sun.x - 16} ${sun.y + 12}L226 445H420L${sun.x + 16} ${sun.y + 12}Z`} />}
 
         <g className="scene-clouds">
           {highClouds >= .14 && <Cloud x={40} y={20} scale={.55 + highClouds * .3} kind="high" />}
@@ -111,6 +115,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
         {hasMountains && <g className="scene-mountains"><path d="M0 294 93 196l47 46 69-119 85 133 67-96 113 134Z" /><path d="m122 221 18 21 69-119 22 34-22-14-20 34-18-16-34 67Z" className="scene-snow" /></g>}
         {hasHills && !hasMountains && <path className="scene-distant-hills" d="M0 290c72-73 132-69 195-8 80-92 163-82 247 4 68-56 132-59 198-10v95H0Z" />}
         {isUrban && <g className="scene-buildings"><path d="M32 273h72v91H32zM116 301h55v63h-55zM505 281h88v83h-88z" /><path d="m27 273 42-31 40 31m390 8 50-39 51 39" />{snowCover > 12 && <path className="building-snow" d="m27 273 42-31 40 31-8 1-32-22-33 22Zm472 8 50-39 51 39-9 1-42-29-41 29Z" />}</g>}
+        {!isUrban && hasNearbyBuilding && <g className="scene-near-building" transform={buildingOnRight ? "translate(510 0)" : "translate(35 0)"}><path d="M0 276h94v111H0Z" /><path d="m-9 276 55-43 57 43" /><path className="building-window" d="M19 304h19v25H19Zm43 0h19v25H62Z" /></g>}
         <path className="scene-far-hill" d="M0 301c105-41 177-24 260 17 85 42 188-46 380-20v182H0Z" />
         <path className="scene-near-hill" d="M0 357c109-27 187 27 278 22 104-5 198-64 362-28v129H0Z" />
         {snowCover > 5 && <path className="scene-ground-snow" style={{ opacity: Math.min(.92, snowCover / 100 + .25) }} d="M0 349c109-27 187 27 278 22 104-5 198-64 362-28v137H0Z" />}
@@ -129,6 +134,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
         {snowing && <rect className="scene-snowfall" width="640" height="430" fill={`url(#snow-${bench.id})`} />}
 
         <ellipse className={`bench-shadow ${bench.sunnyNow ? "is-sunny" : ""}`} cx="322" cy="419" rx={shadowLength} ry="13" transform={`skewX(${shadowDirection * 18})`} />
+        {bench.sunnyNow && <ellipse className="scene-sun-pool" cx="320" cy="409" rx="122" ry="48" />}
         {covered && <g className="bench-cover"><path d="M250 324q72-48 144 0v9H250Z" /><path d="M263 329v91m118-91v91" />{snowCover > 12 && <path className="bench-snow" d="M250 324q72-48 144 0-72-36-144 7Z" />}</g>}
         <g className="drawn-bench" transform={`translate(320 385) scale(${benchScale} 1)`}>
           {backrest && <><path className="bench-board" d="M-78-49q78-8 156 0v17q-78-7-156 0Z" /><path className="bench-frame" d="M-66-38v37m132-37v37" />{snowCover > 15 && <path className="bench-snow" d="M-78-49q78-8 156 0v5q-78-5-156 1Z" />}</>}
@@ -137,8 +143,11 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
           <path className="bench-frame" d="M-65 5-75 53M65 5l75 48" />
           {armrests && <path className="bench-frame" d="M-84-25h23v27m145-27H61v27" />}
         </g>
+        {bench.shadeCause === "gebäude" && <path className="scene-cast-shade shade-building-shape" d={buildingOnRight ? "M640 287 640 480H210l194-96Z" : "M0 287v193h430L236 384Z"} />}
+        {bench.shadeCause === "vegetation" && <g className="scene-cast-shade shade-leaf-shape"><ellipse cx="271" cy="390" rx="73" ry="25" transform="rotate(-18 271 390)" /><ellipse cx="356" cy="410" rx="82" ry="27" transform="rotate(12 356 410)" /><ellipse cx="322" cy="365" rx="48" ry="18" /></g>}
+        {bench.shadeCause === "gelände" && <path className="scene-cast-shade shade-terrain-shape" d="M0 345c118-20 202 57 323 38 116-19 188-66 317-40v137H0Z" />}
         {bench.season === "autumn" && <g className="falling-leaves"><path d="m112 247 8-6 5 9-8 7Z" /><path d="m532 280 9-5 4 10-9 5Z" /><path d="m183 315 7-4 4 8-8 4Z" /></g>}
-        {rating !== null && <g className="scene-rating" transform="translate(501 449)">{Array.from({ length: 5 }, (_, index) => <path key={index} className={index < rating ? "is-lit" : undefined} transform={`translate(${index * 24} 0)`} d="M0-8 2-3 8-3 3 1 5 7 0 4-5 7-3 1-8-3-2-3Z" />)}</g>}
+        {rating !== null && <g className="scene-rating" transform="translate(448 449)">{Array.from({ length: 5 }, (_, index) => <path key={index} className={index < rating ? "is-lit" : undefined} transform={`translate(${index * 24} 0)`} d="M0-8 2-3 8-3 3 1 5 7 0 4-5 7-3 1-8-3-2-3Z" />)}</g>}
       </svg>
       {weather && <span className="sr-only">{Math.round(weather.temperatureC)} Grad Celsius, {precipitation === "snow" ? "Schnee" : precipitation === "rain" ? "Regen" : precipitation === "mixed" ? "Schneeregen" : "trocken"}, MeteoSchweiz</span>}
       {bench.dayPhase === "night" && <span className="sr-only">Mond {Math.round(bench.moonIllumination * 100)} Prozent beleuchtet</span>}

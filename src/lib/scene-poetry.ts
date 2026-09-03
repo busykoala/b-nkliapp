@@ -115,8 +115,6 @@ export function scenePoem(bench: BenchDetail): Poem {
   const weather = weatherLine(bench, seed);
   const view = viewLine(bench, seed);
   const seat = benchLine(bench, seed);
-  const second = weather && weather !== light
-    ? `${weather}; ${view.charAt(0).toLocaleLowerCase("de-CH")}${view.slice(1)}`
-    : seat ?? view;
+  const second = weather && weather !== light ? `${weather} — ${view}` : seat ?? view;
   return { first: `${light}.`, second: `${second}.` };
 }

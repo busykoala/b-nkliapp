@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import type { CSSProperties } from "react";
 import { ArrowLeft, ExternalLink, Flag, MessageCircleHeart, Share2 } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
 import { scenePoem } from "@/lib/scene-poetry";
-import { RatingForm } from "./contribution-forms";
+import { CorrectionForm, RatingForm } from "./contribution-forms";
 import { BenchCommunityActions } from "./bench-community-actions";
 import { BenchLandscape } from "./bench-landscape";
 
 const correctionLabels: Record<string, string> = {
-  properties: "Ausstattung", condition: "Zustand", location: "Position", removed: "Nicht mehr vorhanden",
+  properties: "Ausstattung", condition: "Zustand", location: "Position", removed: "Nicht mehr vorhanden", environment: "Umgebung, Aussicht oder Licht",
 };
 
 export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: CurrentUser | null }) {
@@ -49,10 +50,9 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
       </section>
 
       <div className="calm-story-body">
-        <p className="scene-caption"><span>{poem.first}</span><span>{poem.second}</span></p>
+        <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
 
-        <SunPath bench={bench} />
-        <QuietDetails bench={bench} />
+        <QuietDetails bench={bench} signedIn={Boolean(user)} />
         <PhotoStory bench={bench} />
 
         <div className="quiet-actions">
@@ -86,7 +86,7 @@ function SunPath({ bench }: { bench: BenchDetail }) {
   </section>;
 }
 
-function QuietDetails({ bench }: { bench: BenchDetail }) {
+function QuietDetails({ bench, signedIn }: { bench: BenchDetail; signedIn: boolean }) {
   return <details className="quiet-details">
     <summary>Details <span aria-hidden>＋</span></summary>
     <div className="detail-chapters">
@@ -96,7 +96,16 @@ function QuietDetails({ bench }: { bench: BenchDetail }) {
         ["Widmung", bench.dedication],
         ["Beschreibung", bench.description],
       ]} />
-      <DetailChapter title="Aussicht" rows={[
+      <section className="detail-chapter">
+        <h3>Aussicht</h3>
+        <MetricSketch values={[
+          ["Freiraum", bench.viewComponents.openness],
+          ["Relief", bench.viewComponents.relief],
+          ["Wasser", bench.viewComponents.water],
+          ["Natur", bench.viewComponents.naturalness],
+          ["Ruhe", bench.viewComponents.remoteness],
+        ]} />
+        <DetailRows title="Aussicht" rows={[
         ["Eindruck", bench.viewLabels.join(" · ") || "Noch offen"],
         ["Aussichtswert", bench.viewScore === null ? "Noch offen" : `${bench.viewScore} von 5`],
         ["Sicherheit", confidence(bench.viewConfidence)],
@@ -106,9 +115,14 @@ function QuietDetails({ bench }: { bench: BenchDetail }) {
         ["Freie Vegetationssicht", inversePercent(bench.vegetationObstructionPercent)],
         ["Nächstes Gebäude", nullableDistance(bench.distanceBuildingMeters)],
         ["Gebäude in 100 m", bench.buildingCount100m === null ? "Noch offen" : String(bench.buildingCount100m)],
-        ...bench.viewExplanation.map((explanation, index) => [`Modellhinweis ${index + 1}`, explanation] as [string, string]),
-      ]} />
-      <DetailChapter title="Licht & Himmel" rows={[
+        ...bench.viewExplanation.map((explanation, index) => [modelName(explanation, index), explanation] as [string, string]),
+        ]} />
+      </section>
+      <section className="detail-chapter">
+        <h3>Licht & Himmel</h3>
+        <SunPath bench={bench} />
+        <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
+        <DetailRows title="Licht & Himmel" rows={[
         ["Gerade", currentLight(bench)],
         ["Ursache", shadeCause(bench.shadeCause)],
         ["Gebäudeschatten jetzt", shadowNow(bench, "gebäude")],
@@ -134,8 +148,12 @@ function QuietDetails({ bench }: { bench: BenchDetail }) {
         ["Monduntergang", bench.moonset],
         ["Mondhöhe", angle(bench.moonAltitudeDegrees)],
         ["Mondrichtung", direction(bench.moonAzimuthDegrees)],
-      ]} />
-      <DetailChapter title="Umgebung" rows={[
+        ]} />
+      </section>
+      <section className="detail-chapter">
+        <h3>Umgebung</h3>
+        <CanopySketch values={[bench.canopyShare3m, bench.canopyShare10m, bench.canopyShare25m]} />
+        <DetailRows title="Umgebung" rows={[
         ["Position", `${bench.latitude.toFixed(6)}, ${bench.longitude.toFixed(6)}`],
         ["Jahreszeit im Bild", season(bench.season)],
         ["Landschaft", surroundingsLine(bench) ?? "Noch offen"],
@@ -149,8 +167,12 @@ function QuietDetails({ bench }: { bench: BenchDetail }) {
         ["Höchste Vegetation", meters(bench.vegetationMaxHeight)],
         ["Wasser", bench.waterfront ? "Direkt am Wasser" : nullableDistance(bench.distanceWaterMeters)],
         ["Nächster Weg", nullableDistance(bench.distancePathMeters)],
-      ]} />
-      {bench.weather && <DetailChapter title="Wetter" rows={[
+        ]} />
+      </section>
+      {bench.weather && <section className="detail-chapter">
+        <h3>Wetter</h3>
+        <WeatherSketch low={bench.weather.cloudLow} mid={bench.weather.cloudMid} high={bench.weather.cloudHigh} />
+        <DetailRows title="Wetter" rows={[
         ["Temperatur", `${Math.round(bench.weather.temperatureC)} °C bei ${bench.weather.location}`],
         ["Himmel", cloudDescription(bench.weather.cloudCover)],
         ["Tiefe Wolken", percentFraction(bench.weather.cloudLow)],
@@ -164,15 +186,61 @@ function QuietDetails({ bench }: { bench: BenchDetail }) {
         ["Schneehöhe", bench.weather.snowDepthCm === null ? "Kein Messwert" : `${Math.round(bench.weather.snowDepthCm)} cm`],
         ["Schneefallgrenze", bench.weather.snowfallLimitMeters === null ? "Kein Messwert" : `${Math.round(bench.weather.snowfallLimitMeters)} m ü. M.`],
         ["Messzeit", readableDate(bench.weather.observedAt)],
-      ]} />}
+        ]} />
+      </section>}
       {bench.likelyEnvironment?.traits.length ? <DetailChapter title="Hinweise aus Bildern der Umgebung" rows={bench.likelyEnvironment.traits.map((trait) => [trait.label, `${Math.round(trait.probability * 100)}% wahrscheinlich`] as [string, string])} /> : null}
+      <details className="data-report">
+        <summary><Flag size={16} /> Datenfehler melden</summary>
+        {signedIn ? <CorrectionForm benchId={bench.id} /> : <p>Zum Melden bitte kurz über das Menü anmelden.</p>}
+      </details>
       <ModelThanks bench={bench} />
     </div>
   </details>;
 }
 
 function DetailChapter({ title, rows }: { title: string; rows: Array<[string, string | null]> }) {
-  return <section className="detail-chapter"><h3>{title}</h3><dl>{rows.filter(([, value]) => value !== null).map(([label, value]) => <div key={`${title}-${label}`}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></section>;
+  return <section className="detail-chapter"><h3>{title}</h3><DetailRows title={title} rows={rows} /></section>;
+}
+
+function DetailRows({ title, rows }: { title: string; rows: Array<[string, string | null]> }) {
+  return <dl>{rows.filter(([, value]) => value !== null).map(([label, value]) => <div key={`${title}-${label}`}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
+}
+
+function MetricSketch({ values }: { values: Array<[string, number | null]> }) {
+  return <div className="metric-sketch" aria-label="Bestandteile der Aussichtswertung">
+    {values.map(([label, value]) => <div key={label}><span>{label}</span><i><b style={{ width: `${Math.round((value ?? 0) * 100)}%` }} /></i><small>{value === null ? "–" : Math.round(value * 100)}</small></div>)}
+  </div>;
+}
+
+function ObstructionSketch({ building, vegetation }: { building: number | null; vegetation: number | null }) {
+  const buildings = Math.max(0, Math.min(100, building ?? 0));
+  const plants = Math.max(0, Math.min(100 - buildings, vegetation ?? 0));
+  const open = Math.max(0, 100 - buildings - plants);
+  return <div className="horizon-sketch" aria-label={`Horizont: ${Math.round(open)} Prozent frei, ${Math.round(buildings)} Prozent Gebäude, ${Math.round(plants)} Prozent Vegetation`}>
+    <div><i className="is-open" style={{ width: `${open}%` }} /><i className="is-building" style={{ width: `${buildings}%` }} /><i className="is-vegetation" style={{ width: `${plants}%` }} /></div>
+    <p><span>frei {Math.round(open)}%</span><span>Gebäude {Math.round(buildings)}%</span><span>Bäume {Math.round(plants)}%</span></p>
+  </div>;
+}
+
+function CanopySketch({ values }: { values: Array<number | null> }) {
+  return <div className="canopy-sketch" aria-label="Baumdeckung im Nahbereich">
+    {values.map((value, index) => <span key={index} style={{ "--canopy": `${Math.max(10, value ?? 10) / 100}` } as CSSProperties}><i />{["3 m", "10 m", "25 m"][index]}</span>)}
+  </div>;
+}
+
+function WeatherSketch({ low, mid, high }: { low: number | null; mid: number | null; high: number | null }) {
+  return <div className="weather-sketch" aria-label="Wolkenschichten">
+    {[["hoch", high], ["mittel", mid], ["tief", low]].map(([label, raw]) => { const value = typeof raw === "number" ? raw : 0; return <div key={String(label)}><span>{label}</span><i style={{ opacity: .16 + value * .8, transform: `scaleX(${.22 + value * .78})` }} /></div>; })}
+  </div>;
+}
+
+function modelName(explanation: string, index: number) {
+  if (/Horizont|Himmelsoffenheit|verdeckt/i.test(explanation)) return "Horizontblick";
+  if (/Gelände|Relief|Fernsicht/i.test(explanation)) return "Gelände & Fernsicht";
+  if (/Nahbereich|Gebäude|Einzelb/i.test(explanation)) return "Nahraum & Gebäude";
+  if (/Wasser/i.test(explanation)) return "Wasserlinien";
+  if (/natürliche Umgebung/i.test(explanation)) return "Landschaftsbild";
+  return `Umgebungsbild ${index + 1}`;
 }
 
 function ModelThanks({ bench }: { bench: BenchDetail }) {
