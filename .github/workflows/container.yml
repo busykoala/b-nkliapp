@@ -299,7 +299,20 @@ jobs:
             run_bounded_job benchly-environment-reconcile "benchly-daerligen-reconcile-$pilot_suffix" \
               reconcile-environment --database /data/benchly.sqlite --limit 100 --bounds "${pilot_bounds[@]}"
           fi
-          if ! kubectl --namespace benchly get job benchly-official-context-bootstrap >/dev/null 2>&1; then
+          osm_bootstrap=benchly-osm-geometry-v2-bootstrap
+          osm_started=0
+          if [[ "$bootstrap_active" != "1" ]] && ! kubectl --namespace benchly get job "$osm_bootstrap" >/dev/null 2>&1; then
+            osm_args='["import-osm","--database","/data/benchly.sqlite"]'
+            kubectl --namespace benchly create job --from=cronjob/benchly-import-osm "$osm_bootstrap" \
+              --dry-run=client -o json \
+              | jq --argjson args "$osm_args" '.spec.backoffLimit=1 | .spec.template.spec.containers[0].args=$args' \
+              | kubectl --namespace benchly apply -f -
+            osm_started=1
+            echo 'Started the one-time OSM exact-geometry backfill.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          osm_active="$(kubectl --namespace benchly get job "$osm_bootstrap" \
+            -o jsonpath='{.status.active}' 2>/dev/null || true)"
+          if [[ "$osm_started" != "1" && "$osm_active" != "1" ]] && ! kubectl --namespace benchly get job benchly-official-context-bootstrap >/dev/null 2>&1; then
             bootstrap_args='["import-official-context","--database","/data/benchly.sqlite"]'
             kubectl --namespace benchly create job --from=cronjob/benchly-official-context \
               benchly-official-context-bootstrap --dry-run=client -o json \

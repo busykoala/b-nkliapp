@@ -55,6 +55,7 @@ type MapRow = {
   rating_average: number | null;
   view_labels: string | null;
   obstruction_types: string | null;
+  pipeline_version: string | null;
   verification_status: "verified" | "unverified";
 };
 
@@ -95,6 +96,14 @@ function mapViewType(labels: string[]): MapFilters["viewType"] | null {
   if (labels.includes("Weitsicht")) return "open";
   if (labels.includes("Eingeschränkte Aussicht") || labels.includes("Keine besondere Aussicht")) return "limited";
   return null;
+}
+
+function nearOpenness(obstructionTypes: ObstructionType[], directionDegrees: number | null) {
+  if (obstructionTypes.length !== 72) return null;
+  const indices = obstructionTypes.map((_, index) => index).filter((index) => directionDegrees === null
+    || Math.abs((((index * 5 - directionDegrees) + 540) % 360) - 180) <= 45);
+  const blocked = indices.filter((index) => obstructionTypes[index] === "building" || obstructionTypes[index] === "vegetation").length;
+  return indices.length ? 1 - blocked / indices.length : null;
 }
 
 function filterSql(filters: MapFilters | undefined, parameters: Array<string | number>) {
@@ -184,7 +193,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
   }
   const rows = sqlite.prepare(`
     SELECT b.id, b.latitude, b.longitude, b.covered, b.verification_status, e.canopy_percent, e.horizon_profile,
-      e.obstruction_types, e.view_score, e.view_labels, ra.rating_average
+      e.obstruction_types, e.pipeline_version, e.view_score, e.view_labels, ra.rating_average
     FROM bench_spatial_index s
     JOIN benches b ON b.row_id = s.row_id
     LEFT JOIN bench_enrichments e ON e.bench_row_id = b.row_id
@@ -201,7 +210,10 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
   const individual = rows.map((row) => {
     const profile = parseArray<number>(row.horizon_profile);
     const obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
-    const sunnyNow = calculateSunState({
+    // Map markers only make a binary promise after the full worker model has
+    // combined raster surface/terrain with exact context geometry.
+    const hasCurrentProfile = profile.length === 72 && row.pipeline_version === "4.2.0";
+    const sunnyNow = hasCurrentProfile ? calculateSunState({
       date: now,
       latitude: row.latitude,
       longitude: row.longitude,
@@ -209,7 +221,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
       obstructionTypes,
       covered: Boolean(row.covered),
       canopyPercent: row.canopy_percent,
-    }).sunny;
+    }).sunny : null;
     return { row, sunnyNow };
   }).filter((item) => !parsed.filters?.sunnyNow || item.sunnyNow === true);
 
@@ -290,27 +302,72 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   let components: Record<string, number> = {};
   try { components = row.view_components ? JSON.parse(String(row.view_components)) : {}; } catch { components = {}; }
   let hasTerrainModel = parseArray<number>(row.terrain_horizon_profile).length === 72;
+  const officialLandEvidence = Boolean(sqlite.prepare(
+    "SELECT 1 FROM official_context_sources WHERE source='swissTLM3D' LIMIT 1",
+  ).get());
+  const exactOsmEvidence = Boolean(sqlite.prepare(`
+    SELECT 1 FROM pipeline_runs
+    WHERE kind IN ('import-osm','refresh') AND status='completed' AND pipeline_version='4.2.0'
+    LIMIT 1
+  `).get());
+  const exactLandEvidence = officialLandEvidence || exactOsmEvidence;
+  // “Nicht im Wald” is only a fact once a complete polygon source has been
+  // imported. Missing polygons in the legacy seed mean unknown, not false.
+  let inForest = !exactLandEvidence || row.in_forest === null ? null : Boolean(row.in_forest);
+  let landContext = row.land_context === null ? null : String(row.land_context) as BenchDetail["landContext"];
+  let waterfront = !exactLandEvidence || row.waterfront === null ? null : Boolean(row.waterfront);
+  let canopyContext = row.canopy_context === null ? null : String(row.canopy_context) as BenchDetail["canopyContext"];
+  let canopyPercent = row.canopy_percent === null ? null : Number(row.canopy_percent);
+  const canopyShare3m = row.canopy_share_3m === null ? null : Number(row.canopy_share_3m);
+  const canopyShare10m = row.canopy_share_10m === null ? null : Number(row.canopy_share_10m);
+  const canopyShare25m = row.canopy_share_25m === null ? null : Number(row.canopy_share_25m);
+  let vegetationMedianHeight = row.vegetation_median_height === null ? null : Number(row.vegetation_median_height);
+  let vegetationMaxHeight = row.vegetation_max_height === null ? null : Number(row.vegetation_max_height);
+  let distanceForestMeters = !exactLandEvidence || row.distance_forest_meters === null ? null : Number(row.distance_forest_meters);
+  let distanceWaterMeters = !exactLandEvidence || row.distance_water_meters === null ? null : Number(row.distance_water_meters);
+  let distancePathMeters = !exactOsmEvidence || row.distance_path_meters === null ? null : Number(row.distance_path_meters);
   let contextModel: ReturnType<typeof buildContextModel> | null = null;
-  const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v3", "4.1.0"].includes(pipelineVersion);
+  let contextViewRefreshed = false;
+  const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v4", "4.2.0"].includes(pipelineVersion)
+    || row.environment_computed_at === null;
   if (needsContextRefresh) {
     const contextFeatures = getContextFeatures(latitude, longitude);
     const terrain = process.env.BENCHLY_DISABLE_ELEVATION_FETCH === "true" ? null : await fetchTerrainHorizon(latitude, longitude);
-    contextModel = terrain || !hasTerrainModel ? buildContextModel(latitude, longitude, directionDegrees, contextFeatures, terrain ? {
-      elevationMeters: terrain.elevationMeters,
-      horizonProfile: terrain.horizonProfile,
-      sampleElevations: terrain.sampleElevations,
-    } : undefined) : null;
+    const storedTerrain = parseArray<number>(row.terrain_horizon_profile);
+    const terrainEvidence = terrain ? {
+      elevationMeters: terrain.elevationMeters, horizonProfile: terrain.horizonProfile, sampleElevations: terrain.sampleElevations,
+    } : hasTerrainModel && elevationMeters !== null ? {
+      elevationMeters, horizonProfile: storedTerrain, sampleElevations: [],
+    } : undefined;
+    contextModel = terrainEvidence || !hasTerrainModel
+      ? buildContextModel(latitude, longitude, directionDegrees, contextFeatures, terrainEvidence)
+      : null;
     if (contextModel) {
       horizon = contextModel.horizonProfile;
       obstructionTypes = contextModel.obstructionTypes;
-      components = contextModel.viewComponents;
+      if (terrain) {
+        components = contextModel.viewComponents;
+        contextViewRefreshed = true;
+      }
+      if (exactLandEvidence) inForest ??= contextModel.inForest;
+      if ((landContext === null || landContext === "unknown") && contextModel.landContext !== "unknown") landContext = contextModel.landContext;
+      if (exactLandEvidence) waterfront = contextModel.waterfront ?? waterfront;
+      if ((canopyContext === null || canopyContext === "unknown") && contextModel.canopyContext !== "unknown") canopyContext = contextModel.canopyContext;
+      canopyPercent = canopyPercent ?? contextModel.canopyPercent;
+      vegetationMedianHeight = vegetationMedianHeight ?? contextModel.vegetationMedianHeight;
+      vegetationMaxHeight = vegetationMaxHeight ?? contextModel.vegetationMaxHeight;
+      if (exactLandEvidence) {
+        distanceForestMeters = contextModel.distanceForestMeters ?? distanceForestMeters;
+        distanceWaterMeters = contextModel.distanceWaterMeters ?? distanceWaterMeters;
+      }
+      if (exactOsmEvidence) distancePathMeters = contextModel.distancePathMeters ?? distancePathMeters;
     }
-    if (terrain && contextModel) {
+    if (terrainEvidence && contextModel) {
       const model = contextModel;
       hasTerrainModel = true;
-      elevationMeters = terrain.elevationMeters;
-      elevationSource = terrain.source;
-      pipelineVersion = "GeoAdmin-Horizont v3";
+      elevationMeters = terrainEvidence.elevationMeters;
+      elevationSource = terrain?.source ?? elevationSource;
+      pipelineVersion = "GeoAdmin-Horizont v4";
       // Replace any seasonal values produced by the earlier near-field-only model.
       sunMinutesSummer = null;
       sunMinutesWinter = null;
@@ -320,43 +377,52 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       cacheEnrichment(() => sqlite.prepare(`
         INSERT INTO bench_enrichments (
           bench_row_id,elevation_meters,elevation_source,elevation_updated_at,in_forest,canopy_percent,
-          distance_water_meters,distance_path_meters,horizon_profile,terrain_horizon_profile,obstruction_types,
+          distance_forest_meters,distance_water_meters,distance_path_meters,horizon_profile,terrain_horizon_profile,obstruction_types,
           building_obstruction_percent,vegetation_obstruction_percent,distance_building_meters,building_count_100m,
-          view_score,view_confidence,view_components,view_labels,context_source_version,pipeline_version,computed_at,sun_confidence
+          view_score,view_confidence,view_components,view_labels,context_source_version,pipeline_version,computed_at,sun_confidence,
+          land_context,waterfront,canopy_context,canopy_share_3m,canopy_share_10m,canopy_share_25m,
+          vegetation_median_height,vegetation_max_height,environment_computed_at
         ) VALUES (
-          @rowId,@elevation,@elevationSource,@computedAt,@inForest,@canopy,@water,@path,@horizon,@terrainHorizon,@obstructionTypes,
+          @rowId,@elevation,@elevationSource,@computedAt,@inForest,@canopy,@forest,@water,@path,@horizon,@terrainHorizon,@obstructionTypes,
           @buildingPercent,@vegetationPercent,@distanceBuilding,@buildingCount,@viewScore,'mittel',@components,@viewLabels,
-          'OpenStreetMap + GeoAdmin','GeoAdmin-Horizont v3',@computedAt,'mittel'
+          'swisstopo + OpenStreetMap','GeoAdmin-Horizont v4',@computedAt,'mittel',
+          @landContext,@waterfront,@canopyContext,@canopy3,@canopy10,@canopy25,@vegetationMedian,@vegetationMax,@computedAt
         )
         ON CONFLICT(bench_row_id) DO UPDATE SET
           elevation_meters=excluded.elevation_meters,elevation_source=excluded.elevation_source,
           elevation_updated_at=excluded.elevation_updated_at,in_forest=excluded.in_forest,canopy_percent=excluded.canopy_percent,
-          distance_water_meters=excluded.distance_water_meters,distance_path_meters=excluded.distance_path_meters,
+          distance_forest_meters=excluded.distance_forest_meters,distance_water_meters=excluded.distance_water_meters,
+          distance_path_meters=excluded.distance_path_meters,
           horizon_profile=excluded.horizon_profile,terrain_horizon_profile=excluded.terrain_horizon_profile,
           obstruction_types=excluded.obstruction_types,building_obstruction_percent=excluded.building_obstruction_percent,
           vegetation_obstruction_percent=excluded.vegetation_obstruction_percent,distance_building_meters=excluded.distance_building_meters,
           building_count_100m=excluded.building_count_100m,view_score=excluded.view_score,view_confidence=excluded.view_confidence,
           view_components=excluded.view_components,view_labels=excluded.view_labels,context_source_version=excluded.context_source_version,
-          pipeline_version=excluded.pipeline_version,computed_at=excluded.computed_at,sun_confidence=excluded.sun_confidence
+          pipeline_version=excluded.pipeline_version,computed_at=excluded.computed_at,sun_confidence=excluded.sun_confidence,
+          land_context=excluded.land_context,waterfront=excluded.waterfront,canopy_context=excluded.canopy_context,
+          canopy_share_3m=excluded.canopy_share_3m,canopy_share_10m=excluded.canopy_share_10m,
+          canopy_share_25m=excluded.canopy_share_25m,vegetation_median_height=excluded.vegetation_median_height,
+          vegetation_max_height=excluded.vegetation_max_height,environment_computed_at=excluded.environment_computed_at
       `).run({
         rowId: row.row_id,
-        elevation: terrain.elevationMeters,
-        elevationSource: terrain.source,
+        elevation: terrainEvidence.elevationMeters,
+        elevationSource,
         computedAt,
-        inForest: row.in_forest === null ? null : Number(row.in_forest),
-        canopy: row.canopy_percent === null ? null : Number(row.canopy_percent),
-        water: row.distance_water_meters === null ? null : Number(row.distance_water_meters),
-        path: model.distancePathMeters,
+        inForest: inForest === null ? null : Number(inForest), canopy: canopyPercent,
+        forest: distanceForestMeters, water: distanceWaterMeters, path: distancePathMeters,
         horizon: JSON.stringify(model.horizonProfile),
-        terrainHorizon: JSON.stringify(terrain.horizonProfile),
+        terrainHorizon: JSON.stringify(terrainEvidence.horizonProfile),
         obstructionTypes: JSON.stringify(model.obstructionTypes),
         buildingPercent: model.buildingObstructionPercent,
         vegetationPercent: model.vegetationObstructionPercent,
         distanceBuilding: model.distanceBuildingMeters,
         buildingCount: model.buildingCount100m,
-        viewScore: model.viewScore,
-        components: JSON.stringify(model.viewComponents),
-        viewLabels: JSON.stringify(model.viewLabels),
+        viewScore: contextViewRefreshed ? model.viewScore : row.view_score,
+        components: JSON.stringify(components),
+        viewLabels: JSON.stringify(contextViewRefreshed ? model.viewLabels : parseArray<string>(row.view_labels)),
+        landContext, waterfront: waterfront === null ? null : Number(waterfront), canopyContext,
+        canopy3: canopyShare3m, canopy10: canopyShare10m, canopy25: canopyShare25m,
+        vegetationMedian: vegetationMedianHeight, vegetationMax: vegetationMaxHeight,
       }));
     }
   }
@@ -376,7 +442,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       `).run(row.row_id, elevationMeters, elevationSource, new Date().toISOString()));
     }
   }
-  const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent) };
+  const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent };
   const effectiveSunInput = { ...sunInput, horizonProfile: horizon, obstructionTypes, canopyPercent: contextModel?.canopyPercent ?? sunInput.canopyPercent };
   const now = new Date();
   const sun = calculateSunState({ ...effectiveSunInput, date: now });
@@ -405,10 +471,10 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const ratingCount = Number(row.rating_count ?? 0);
   // A near-field-only model cannot honestly produce the full 1–5 view score:
   // relief is 25% of that model and the distant horizon is still unknown.
-  const rawViewScore = hasTerrainModel ? contextModel?.viewScore ?? (row.view_score === null ? null : Number(row.view_score)) : null;
+  const rawViewScore = hasTerrainModel ? contextViewRefreshed ? contextModel?.viewScore ?? null : row.view_score === null ? null : Number(row.view_score) : null;
   const viewScore = rawViewScore === null ? null : Math.max(1, Math.min(5, Math.round(rawViewScore / 20)));
   const explanation: string[] = [];
-  const viewLabels = contextModel?.viewLabels ?? parseArray<string>(row.view_labels);
+  const viewLabels = contextViewRefreshed ? contextModel?.viewLabels ?? [] : parseArray<string>(row.view_labels);
   if ((components.openness ?? 0) > 0.8) explanation.push("Weiter, wenig verdeckter Horizont");
   if ((components.relief ?? 0) > 0.8) explanation.push("Ausgeprägtes Berg- oder Hügelrelief");
   if ((components.water ?? 0) > 0.75) explanation.push("Freie Sichtachse zu einer Wasserfläche");
@@ -476,13 +542,17 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       naturalness: components.naturalness ?? null,
       remoteness: components.remoteness ?? null,
     },
-    viewConfidence: (hasTerrainModel ? contextModel ? "mittel" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
+    nearOpenness: contextModel ? contextModel.nearOpennessPercent / 100 : nearOpenness(obstructionTypes, directionDegrees),
+    viewConfidence: (hasTerrainModel ? contextModel ? exactOsmEvidence ? "mittel" : "niedrig"
+      : pipelineVersion === "GeoAdmin-Horizont v4" && !exactOsmEvidence ? "niedrig" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
     sunrise: times.sunrise, sunset: times.sunset,
     directSunrise: localSun.directSunrise, directSunset: localSun.directSunset,
-    sunMinutesToday: localSun.sunMinutes, sunWindows: localSun.windows,
+    sunMinutesToday: localSun.sunMinutes, shadeMinutesToday: localSun.shadeMinutes,
+    daylightMinutesToday: localSun.daylightMinutes, sunWindows: localSun.windows, shadeWindows: localSun.shadeWindows,
     shadeCause: sun?.shadeCause ?? "unbekannt",
     sunnyNow: sun?.sunny ?? null,
-    sunConfidence: (hasTerrainModel ? contextModel ? "mittel" : row.sun_confidence ?? "mittel" : "niedrig") as BenchDetail["sunConfidence"],
+    sunConfidence: (hasTerrainModel ? contextModel ? exactOsmEvidence ? "mittel" : "niedrig"
+      : pipelineVersion === "GeoAdmin-Horizont v4" && !exactOsmEvidence ? "niedrig" : row.sun_confidence ?? "mittel" : "niedrig") as BenchDetail["sunConfidence"],
     sunAltitudeDegrees: daylight.altitude,
     sunAzimuthDegrees: daylight.azimuth,
     daylightProgress: daylight.progress,
@@ -502,18 +572,9 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     sunMinutesWinter,
     sunMinutesSpring,
     sunMinutesAutumn,
-    inForest: row.in_forest === null ? null : Boolean(row.in_forest),
-    landContext: row.land_context === null ? null : String(row.land_context) as BenchDetail["landContext"],
-    waterfront: row.waterfront === null ? null : Boolean(row.waterfront),
-    canopyContext: row.canopy_context === null ? null : String(row.canopy_context) as BenchDetail["canopyContext"],
-    canopyPercent: row.canopy_percent === null ? null : Number(row.canopy_percent),
-    canopyShare3m: row.canopy_share_3m === null ? null : Number(row.canopy_share_3m),
-    canopyShare10m: row.canopy_share_10m === null ? null : Number(row.canopy_share_10m),
-    canopyShare25m: row.canopy_share_25m === null ? null : Number(row.canopy_share_25m),
-    vegetationMedianHeight: row.vegetation_median_height === null ? null : Number(row.vegetation_median_height),
-    vegetationMaxHeight: row.vegetation_max_height === null ? null : Number(row.vegetation_max_height),
-    distanceWaterMeters: row.distance_water_meters === null ? null : Number(row.distance_water_meters),
-    distancePathMeters: contextModel?.distancePathMeters ?? (row.distance_path_meters === null ? null : Number(row.distance_path_meters)),
+    inForest, landContext, waterfront, canopyContext, canopyPercent,
+    canopyShare3m, canopyShare10m, canopyShare25m, vegetationMedianHeight, vegetationMaxHeight,
+    distanceWaterMeters, distancePathMeters,
     directionDegrees,
     buildingObstructionPercent: contextModel?.buildingObstructionPercent ?? (row.building_obstruction_percent === null ? null : Number(row.building_obstruction_percent)),
     vegetationObstructionPercent: contextModel?.vegetationObstructionPercent ?? (row.vegetation_obstruction_percent === null ? null : Number(row.vegetation_obstruction_percent)),
@@ -547,22 +608,24 @@ function canopyContextLabel(value: string) {
 }
 
 function getContextFeatures(latitude: number, longitude: number): ContextFeature[] {
-  type ContextRow = ContextFeature & { geometry_wkb: Buffer; source: string; source_version: string | null };
+  type ContextRow = ContextFeature & { geometry_wkb: Buffer | null; source: string; source_version: string | null };
   const latitudeDelta = 500 / 111_320;
   const longitudeDelta = 500 / (111_320 * Math.max(0.2, Math.cos(latitude * Math.PI / 180)));
   const nearby = sqlite.prepare(`
     SELECT f.kind,f.subtype,f.center_latitude,f.center_longitude,f.min_latitude,f.max_latitude,
-      f.min_longitude,f.max_longitude,f.height_meters,f.geometry_wkb,f.source,f.source_version
+      f.min_longitude,f.max_longitude,f.height_meters,f.ground_elevation_meters,f.roof_elevation_meters,
+      f.geometry_wkb,f.source,f.source_version
     FROM environment_spatial_index s JOIN environment_features f ON f.row_id=s.row_id
     WHERE s.max_longitude>=? AND s.min_longitude<=? AND s.max_latitude>=? AND s.min_latitude<=?
-      AND f.geometry_wkb IS NOT NULL
+      AND (f.geometry_wkb IS NOT NULL OR f.kind IN ('building','tree'))
     LIMIT 20000
   `).all(longitude - longitudeDelta, longitude + longitudeDelta, latitude - latitudeDelta, latitude + latitudeDelta) as ContextRow[];
   const farLatitudeDelta = 10_000 / 111_320;
   const farLongitudeDelta = 10_000 / (111_320 * Math.max(0.2, Math.cos(latitude * Math.PI / 180)));
   const waters = sqlite.prepare(`
     SELECT f.kind,f.subtype,f.center_latitude,f.center_longitude,f.min_latitude,f.max_latitude,
-      f.min_longitude,f.max_longitude,f.height_meters,f.geometry_wkb,f.source,f.source_version
+      f.min_longitude,f.max_longitude,f.height_meters,f.ground_elevation_meters,f.roof_elevation_meters,
+      f.geometry_wkb,f.source,f.source_version
     FROM environment_spatial_index s JOIN environment_features f ON f.row_id=s.row_id
     WHERE f.kind='water' AND s.max_longitude>=? AND s.min_longitude<=?
       AND s.max_latitude>=? AND s.min_latitude<=? AND f.geometry_wkb IS NOT NULL LIMIT 1000
@@ -573,17 +636,28 @@ function getContextFeatures(latitude: number, longitude: number): ContextFeature
   const buildingVersion = (sqlite.prepare(
     "SELECT version FROM official_context_sources WHERE source='swissBUILDINGS3D'",
   ).get() as { version: string } | undefined)?.version;
-  const authoritativeKinds = new Set(["building", "forest", "water"]);
+  const hasLocalSwissBuildings = nearby.some((feature) => feature.kind === "building" && feature.source === "swissBUILDINGS3D" && feature.geometry_wkb);
+  const hasLocalOfficialForest = nearby.some((feature) => feature.kind === "forest" && feature.source === "swissTLM3D"
+    && feature.source_version === officialVersion && feature.geometry_wkb);
+  const hasLocalOfficialWater = [...nearby, ...waters].some((feature) => feature.kind === "water" && feature.source === "swissTLM3D"
+    && feature.source_version === officialVersion && feature.geometry_wkb);
   const identities = new Map<string, ContextFeature>();
   for (const feature of [...nearby, ...waters]) {
-    if (feature.kind === "building" && buildingVersion) {
-      if (feature.source !== "swissBUILDINGS3D") continue;
-    } else if (officialVersion && authoritativeKinds.has(feature.kind)
+    if (feature.kind === "building" && buildingVersion && hasLocalSwissBuildings) {
+      if (feature.source !== "swissBUILDINGS3D" || !feature.geometry_wkb) continue;
+    } else if (feature.kind === "forest" && hasLocalOfficialForest
+      && (feature.source !== "swissTLM3D" || feature.source_version !== officialVersion)) continue;
+    else if (feature.kind === "water" && hasLocalOfficialWater
       && (feature.source !== "swissTLM3D" || feature.source_version !== officialVersion)) continue;
     try {
-      identities.set(`${feature.source}:${feature.kind}:${feature.center_latitude}:${feature.center_longitude}`, {
+      const widthMeters = Math.abs(feature.max_longitude - feature.min_longitude) * 111_320 * Math.cos(latitude * Math.PI / 180);
+      const heightMeters = Math.abs(feature.max_latitude - feature.min_latitude) * 111_320;
+      if (feature.kind === "building" && (widthMeters > 600 || heightMeters > 600)) continue;
+      const identity = [feature.kind, feature.center_latitude.toFixed(6), feature.center_longitude.toFixed(6),
+        feature.min_latitude.toFixed(6), feature.min_longitude.toFixed(6)].join(":");
+      identities.set(identity, {
         ...feature,
-        exactGeometry: parseWkbGeometry(feature.geometry_wkb),
+        exactGeometry: feature.geometry_wkb ? parseWkbGeometry(feature.geometry_wkb) : undefined,
       });
     } catch {
       // Corrupt or unsupported geometry is ignored rather than approximated from its bounding box.

@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 from environment_geometry import (
+    building_footprint_wkb_from_geojson,
     canopy_neighborhood,
     classify_official_layer,
     deterministic_environment,
@@ -47,8 +48,8 @@ from visual_pipeline import analyze_scenes, audit_environment, benchmark_models,
 from weather_pipeline import refresh_weather
 
 DEFAULT_PBF = "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf"
-PIPELINE_VERSION = "4.1.0"
-PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v3"
+PIPELINE_VERSION = "4.2.0"
+PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v4"
 PROFILE_DISTANCES_METERS = (10, 25, 50, 75, 100, 150, *range(200, 20_001, 200))
 PROFILE_BEARING_GROUPS = (tuple(range(0, 180, 5)), tuple(range(180, 360, 5)))
 KEEP_TAGS = {
@@ -322,7 +323,7 @@ def import_swissbuildings_gdb(connection: sqlite3.Connection, geodatabase: Path,
                 stats["skipped"] += 1
                 continue
             try:
-                geometry = geometry_wkb_from_geojson(geometry_json)
+                geometry = building_footprint_wkb_from_geojson(geometry_json)
                 min_lon, min_lat, max_lon, max_lat = feature_bounds_wgs84(geometry)
             except Exception:
                 stats["skipped"] += 1
@@ -493,7 +494,13 @@ def download_stac_tiles(connection: sqlite3.Connection, collection: str, destina
             for asset in item.get("assets", {}).values():
                 href = asset.get("href", "")
                 media_type = asset.get("type", "")
-                if href.lower().endswith((".tif", ".tiff", ".zip")) or "geotiff" in media_type.lower():
+                filename = Path(urllib.parse.urlparse(href).path).name.lower()
+                is_geotiff = filename.endswith((".tif", ".tiff")) and "geotiff" in media_type.lower()
+                if collection == "ch.swisstopo.swissalti3d":
+                    is_geotiff = is_geotiff and "_2_2056_5728." in filename
+                elif collection == "ch.swisstopo.swisssurface3d-raster":
+                    is_geotiff = is_geotiff and "_0.5_2056_5728." in filename
+                if is_geotiff:
                     candidates.append(href)
             for href in candidates:
                 if not href or href in seen_assets or (max_tiles is not None and downloaded >= max_tiles):
@@ -750,7 +757,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
     flush_context()
     connection.execute("UPDATE benches SET active=0 WHERE imported_at<>? AND id LIKE 'osm-%'", (imported_at,))
     connection.execute("DELETE FROM environment_features WHERE source='OpenStreetMap' AND imported_at<>?", (imported_at,))
-    connection.execute("UPDATE bench_enrichments SET environment_computed_at=NULL")
+    connection.execute("UPDATE bench_enrichments SET environment_computed_at=NULL,pipeline_version=NULL")
     connection.commit()
     return total, context_total
 
@@ -947,7 +954,8 @@ def merge_near_obstructions(latitude: float, longitude: float, origin_elevation:
         distance_index = min(range(len(PROFILE_DISTANCES_METERS)), key=lambda index: abs(PROFILE_DISTANCES_METERS[index] - distance))
         sample_index = bearing_index * len(PROFILE_DISTANCES_METERS) + distance_index
         base_height = terrain_samples[sample_index] if len(terrain_samples) == 72 * len(PROFILE_DISTANCES_METERS) else origin_elevation
-        relative_top = base_height + height - (origin_elevation + 1.1)
+        roof_elevation = feature["roof_elevation_meters"] if "roof_elevation_meters" in feature.keys() else None
+        relative_top = roof_elevation - (origin_elevation + 1.1) if roof_elevation is not None else base_height + height - (origin_elevation + 1.1)
         angle = max(0.0, min(89.0, math.degrees(math.atan2(max(1.0, relative_top), distance))))
         exact_half_angle = feature_angular_half_width(latitude, longitude, feature, bearing)
         width = max(4.0, distance_meters(feature["min_latitude"], feature["min_longitude"], feature["max_latitude"], feature["max_longitude"]))
@@ -1022,6 +1030,20 @@ def preferred_exact_features(
     features: Sequence[sqlite3.Row], kind: str, official_context: bool | str | None,
 ) -> list[sqlite3.Row]:
     """Use complete official geometry when available, otherwise exact OSM geometry."""
+    def deduplicated(rows: Sequence[sqlite3.Row]) -> list[sqlite3.Row]:
+        identities: dict[tuple[object, ...], sqlite3.Row] = {}
+        for row in rows:
+            keys = set(row.keys())
+            identity = (
+                row["kind"], round(float(row["center_latitude"]), 6), round(float(row["center_longitude"]), 6),
+                round(float(row["min_latitude"]), 6), round(float(row["min_longitude"]), 6),
+            ) if {"center_latitude", "center_longitude", "min_latitude", "min_longitude"} <= keys else (
+                row["kind"], row["source"], row["source_version"] if "source_version" in keys else None,
+                row["row_id"] if "row_id" in keys else id(row),
+            )
+            identities[identity] = row
+        return list(identities.values())
+
     exact = [
         feature for feature in features
         if feature["kind"] == kind and feature["geometry_wkb"] is not None
@@ -1029,12 +1051,12 @@ def preferred_exact_features(
     if kind == "building":
         detailed = [feature for feature in exact if feature["source"] == "swissBUILDINGS3D"]
         if detailed:
-            return detailed
+            return deduplicated(detailed)
     official = [feature for feature in exact if feature["source"] == "swissTLM3D"]
     if isinstance(official_context, str):
         official = [feature for feature in official if feature["source_version"] == official_context]
     non_official = [feature for feature in exact if feature["source"] not in {"swissTLM3D", "swissBUILDINGS3D"}]
-    return official if official_context else non_official
+    return deduplicated(official if official_context else non_official)
 
 
 def preferred_environment_context(
@@ -2061,7 +2083,7 @@ def build_parser() -> argparse.ArgumentParser:
     enrich.add_argument("--work-dir", help="Keep downloads in this directory; otherwise temporary files are deleted")
     enrich.add_argument("--cell-degrees", type=float, default=0.05)
     enrich.add_argument("--limit", type=int, default=1000)
-    enrich.add_argument("--max-geodata-tiles", type=int, default=2000)
+    enrich.add_argument("--max-geodata-tiles", type=int, default=3000)
     enrich.add_argument("--max-download-gib", type=float, default=80)
     enrich.add_argument("--max-runtime-hours", type=float, default=8)
     enrich.add_argument("--recompute", action="store_true")

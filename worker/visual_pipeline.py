@@ -839,6 +839,15 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
         "active_benches": scalar("SELECT count(*) FROM benches WHERE active=1"),
         "exact_geometry_features": scalar("SELECT count(*) FROM environment_features WHERE geometry_wkb IS NOT NULL"),
         "deterministic_context": scalar("SELECT count(*) FROM bench_enrichments WHERE land_context IS NOT NULL"),
+        "terrain_horizons": scalar("SELECT count(*) FROM bench_enrichments WHERE json_array_length(terrain_horizon_profile)=72"),
+        "current_sun_models": scalar("""SELECT count(*) FROM bench_enrichments
+          WHERE pipeline_version IN ('4.2.0','GeoAdmin-Horizont v4') AND json_array_length(horizon_profile)=72"""),
+        "canopy_neighborhoods": scalar("""SELECT count(*) FROM bench_enrichments
+          WHERE canopy_share_3m IS NOT NULL AND canopy_share_10m IS NOT NULL AND canopy_share_25m IS NOT NULL"""),
+        "water_distances": scalar("SELECT count(*) FROM bench_enrichments WHERE distance_water_meters IS NOT NULL"),
+        "path_distances": scalar("SELECT count(*) FROM bench_enrichments WHERE distance_path_meters IS NOT NULL"),
+        "building_heights": scalar("""SELECT count(*) FROM environment_features
+          WHERE kind='building' AND source='swissBUILDINGS3D' AND height_meters IS NOT NULL"""),
         "image_observations": scalar("SELECT count(*) FROM image_observations"),
         "analyzed_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status='analyzed'"),
         "irrelevant_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status='irrelevant'"),

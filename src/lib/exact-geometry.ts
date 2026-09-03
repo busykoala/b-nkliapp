@@ -13,12 +13,12 @@ function readUint32(cursor: Cursor, littleEndian: boolean) {
   return value;
 }
 
-function readPoint(cursor: Cursor, littleEndian: boolean): ProjectedPoint {
+function readPoint(cursor: Cursor, littleEndian: boolean, dimensions: number): ProjectedPoint {
   const point: ProjectedPoint = [
     cursor.view.getFloat64(cursor.offset, littleEndian),
     cursor.view.getFloat64(cursor.offset + 8, littleEndian),
   ];
-  cursor.offset += 16;
+  cursor.offset += dimensions * 8;
   return point;
 }
 
@@ -32,18 +32,22 @@ function parseGeometry(cursor: Cursor): ExactGeometry {
   cursor.offset += 1;
   const rawType = readUint32(cursor, littleEndian);
   const unflaggedType = rawType & 0x0fffffff;
+  const dimensions = unflaggedType >= 3000 ? 4
+    : unflaggedType >= 1000 ? 3
+      : (rawType & 0x80000000 ? 1 : 0) + (rawType & 0x40000000 ? 1 : 0) + 2;
   const type = unflaggedType >= 1000 ? unflaggedType % 1000 : unflaggedType;
+  if (rawType & 0x20000000) readUint32(cursor, littleEndian); // EWKB SRID
   const result: ExactGeometry = { paths: [], polygons: [] };
   if (type === 1) {
-    result.paths.push([readPoint(cursor, littleEndian)]);
+    result.paths.push([readPoint(cursor, littleEndian, dimensions)]);
   } else if (type === 2) {
     const count = readUint32(cursor, littleEndian);
-    result.paths.push(Array.from({ length: count }, () => readPoint(cursor, littleEndian)));
+    result.paths.push(Array.from({ length: count }, () => readPoint(cursor, littleEndian, dimensions)));
   } else if (type === 3) {
     const ringCount = readUint32(cursor, littleEndian);
     const rings = Array.from({ length: ringCount }, () => {
       const count = readUint32(cursor, littleEndian);
-      return Array.from({ length: count }, () => readPoint(cursor, littleEndian));
+      return Array.from({ length: count }, () => readPoint(cursor, littleEndian, dimensions));
     });
     result.polygons.push(rings);
     result.paths.push(...rings);
@@ -75,6 +79,13 @@ function pointSegmentDistance(point: ProjectedPoint, start: ProjectedPoint, end:
 }
 
 function ringContains(point: ProjectedPoint, ring: ProjectedPoint[]) {
+  const doubledArea = ring.reduce((sum, [x, y], index) => {
+    const [nextX, nextY] = ring[(index + 1) % ring.length];
+    return sum + x * nextY - nextX * y;
+  }, 0);
+  // Projected vertical faces from 3D solids collapse to lines. They are useful
+  // for distance, but must never claim that a bench lies inside a building.
+  if (Math.abs(doubledArea) < 0.02) return false;
   let inside = false;
   for (let current = 0, previous = ring.length - 1; current < ring.length; previous = current++) {
     const [x, y] = ring[current];

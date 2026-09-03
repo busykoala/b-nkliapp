@@ -89,22 +89,23 @@ function QuietDetails({ bench, signedIn }: { bench: BenchDetail; signedIn: boole
       <section className="detail-chapter">
         <h3>Aussicht</h3>
         <MetricSketch values={[
-          ["Freiraum", bench.viewComponents.openness],
+          ["Freiraum im Nahbereich", bench.nearOpenness],
+          ["Himmelsoffenheit", bench.viewComponents.openness],
           ["Relief", bench.viewComponents.relief],
           ["Wasser", bench.viewComponents.water],
           ["Natur", bench.viewComponents.naturalness],
           ["Ruhe", bench.viewComponents.remoteness],
         ]} />
         <DetailRows title="Aussicht" rows={[
-        ["Eindruck", bench.viewLabels.join(" · ") || "Noch offen"],
-        ["Aussichtswert", bench.viewScore === null ? "Noch offen" : `${bench.viewScore} von 5`],
+        ["Eindruck", bench.viewLabels.join(" · ") || null],
+        ["Aussichtswert", bench.viewScore === null ? null : `${bench.viewScore} von 5`],
         ["Sicherheit", confidence(bench.viewConfidence)],
         ["Analysebereich", bench.analysisCoverage === "terrain" ? "Nahbereich und Gelände bis 20 km" : "Nahbereich; Gelände noch offen"],
-        ["Höhe", bench.elevationMeters === null ? "Noch offen" : `${Math.round(bench.elevationMeters)} m ü. M.`],
+        ["Höhe", bench.elevationMeters === null ? null : `${Math.round(bench.elevationMeters)} m ü. M.`],
         ["Freie Gebäudesicht", inversePercent(bench.buildingObstructionPercent)],
         ["Freie Vegetationssicht", inversePercent(bench.vegetationObstructionPercent)],
         ["Nächstes Gebäude", nullableDistance(bench.distanceBuildingMeters)],
-        ["Gebäude in 100 m", bench.buildingCount100m === null ? "Noch offen" : String(bench.buildingCount100m)],
+        ["Gebäude in 100 m", bench.buildingCount100m === null ? null : String(bench.buildingCount100m)],
         ...bench.viewExplanation.map((explanation, index) => [modelName(explanation, index), explanation] as [string, string]),
         ]} />
       </section>
@@ -121,7 +122,9 @@ function QuietDetails({ bench, signedIn }: { bench: BenchDetail; signedIn: boole
         ["Gebäude am Horizont", percent(bench.buildingObstructionPercent)],
         ["Vegetation am Horizont", percent(bench.vegetationObstructionPercent)],
         ["Direkte Sonne heute", sunDuration(bench.sunMinutesToday)],
+        ["Schatten bei Tageslicht", sunDuration(bench.shadeMinutesToday)],
         ["Sonnenfenster", bench.sunWindows.map((window) => `${window.start}–${window.end}`).join(" · ") || "Keine direkte Sonne"],
+        ["Schattenfenster", bench.shadeWindows.map((window) => `${window.start}–${window.end}`).join(" · ") || "Kein berechneter Schatten"],
         ["Sonnenaufgang", bench.sunrise],
         ["Sonnenuntergang", bench.sunset],
         ["Direkter Sonnenbeginn", bench.directSunrise],
@@ -146,7 +149,7 @@ function QuietDetails({ bench, signedIn }: { bench: BenchDetail; signedIn: boole
         <DetailRows title="Umgebung" rows={[
         ["Position", `${bench.latitude.toFixed(6)}, ${bench.longitude.toFixed(6)}`],
         ["Jahreszeit im Bild", season(bench.season)],
-        ["Landschaft", surroundingsLine(bench) ?? "Noch offen"],
+        ["Landschaft", surroundingsLine(bench)],
         ["Wald", yesNoOpen(bench.inForest)],
         ["Baumdach", canopy(bench.canopyContext)],
         ["Baumdeckung", percent(bench.canopyPercent)],
@@ -197,8 +200,10 @@ function DetailRows({ title, rows }: { title: string; rows: Array<[string, strin
 }
 
 function MetricSketch({ values }: { values: Array<[string, number | null]> }) {
+  const available = values.filter((value): value is [string, number] => value[1] !== null);
+  if (!available.length) return null;
   return <div className="metric-sketch" aria-label="Bestandteile der Aussichtswertung">
-    {values.map(([label, value]) => <div key={label}><span>{label}</span><i><b style={{ width: `${Math.round((value ?? 0) * 100)}%` }} /></i><small>{value === null ? "–" : Math.round(value * 100)}</small></div>)}
+    {available.map(([label, value]) => <div key={label}><span>{label}</span><i><b style={{ width: `${Math.round(value * 100)}%` }} /></i><small>{Math.round(value * 100)}</small></div>)}
   </div>;
 }
 
@@ -213,8 +218,9 @@ function ObstructionSketch({ building, vegetation }: { building: number | null; 
 }
 
 function CanopySketch({ values }: { values: Array<number | null> }) {
+  if (values.every((value) => value === null)) return null;
   return <div className="canopy-sketch" aria-label="Baumdeckung im Nahbereich">
-    {values.map((value, index) => <span key={index} style={{ "--canopy": `${Math.max(10, value ?? 10) / 100}` } as CSSProperties}><i />{["3 m", "10 m", "25 m"][index]}</span>)}
+    {values.map((value, index) => value === null ? null : <span key={index} style={{ "--canopy": `${Math.max(3, value) / 100}` } as CSSProperties}><i />{["3 m", "10 m", "25 m"][index]}</span>)}
   </div>;
 }
 
@@ -314,16 +320,16 @@ function trackPaths(points: BenchDetail["skyTrack"]["sun"]) {
 function distance(value: number) { if (value < 2) return "direkt daneben"; return value >= 1000 ? `${(value / 1000).toFixed(1)} km` : `${Math.round(value)} m`; }
 function sunDuration(value: number) { const hours = Math.floor(value / 60); const minutes = value % 60; if (!hours) return `${minutes} min`; return `${hours} h${minutes ? ` ${minutes} min` : ""}`; }
 function seasonalSun(value: number | null) { return value === null ? "Noch offen" : `${sunDuration(value)} an einem typischen Tag`; }
-function nullableDistance(value: number | null) { return value === null ? "Noch offen" : distance(value); }
-function percent(value: number | null) { return value === null ? "Noch offen" : `${Math.round(value)}%`; }
+function nullableDistance(value: number | null) { return value === null ? null : distance(value); }
+function percent(value: number | null) { return value === null ? null : `${Math.round(value)}%`; }
 function percentFraction(value: number | null) { return value === null ? "Kein Messwert" : `${Math.round(value * 100)}%`; }
-function inversePercent(value: number | null) { return value === null ? "Noch offen" : `${Math.round(100 - value)}%`; }
-function meters(value: number | null) { return value === null ? "Noch offen" : `${Number(value.toFixed(1))} m`; }
+function inversePercent(value: number | null) { return value === null ? null : `${Math.round(100 - value)}%`; }
+function meters(value: number | null) { return value === null ? null : `${Number(value.toFixed(1))} m`; }
 function angle(value: number) { return `${Number(value.toFixed(1))}°`; }
-function yesNoOpen(value: boolean | null) { return value === null ? "Noch offen" : value ? "Ja" : "Nein"; }
+function yesNoOpen(value: boolean | null) { return value === null ? null : value ? "Ja" : "Nein"; }
 function season(value: BenchDetail["season"]) { return ({ spring: "Frühling", summer: "Sommer", autumn: "Herbst", winter: "Winter" } as const)[value]; }
 function confidence(value: BenchDetail["viewConfidence"]) { return ({ hoch: "Hoch", mittel: "Mittel", niedrig: "Noch unsicher" } as const)[value]; }
-function canopy(value: BenchDetail["canopyContext"]) { return ({ none: "Frei", partial: "Teilweise", dense: "Dicht", unknown: "Noch offen" } as const)[value ?? "unknown"]; }
+function canopy(value: BenchDetail["canopyContext"]) { return value === null || value === "unknown" ? null : ({ none: "Frei", partial: "Teilweise", dense: "Dicht" } as const)[value]; }
 function direction(value: number | null) {
   if (value === null) return "Noch offen";
   const names = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"];

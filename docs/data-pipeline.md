@@ -33,7 +33,7 @@ Run `python3 worker/benchly_worker.py inventory` to obtain the current counts an
 
 1. **National base inventory:** the weekly Geofabrik Switzerland PBF is the authoritative bulk input for bench identities and observed tags. Importing the extract is deterministic, upserts OSM identities and deactivates disappeared objects.
 2. **Local geometry context:** the same PBF pass stores spatially indexed building extents, individual trees, forests, water, paths and major roads. This avoids millions of network requests and lets enrichment work entirely against the PVC.
-3. **3D surface and terrain:** swissSURFACE3D supplies roofs and canopy surfaces to 300 m; swissALTI3D supplies bare terrain to 20 km. Only tiles intersecting benches are discovered through the official swisstopo STAC catalog and downloaded to temporary storage.
+3. **3D surface and terrain:** swissSURFACE3D supplies 0.5 m roofs and canopy surfaces to 300 m; the 2 m swissALTI3D raster supplies bare terrain to 20 km. Only the required GeoTIFF resolution is selected from the official swisstopo STAC catalog and downloaded to temporary storage.
 4. **Photos:** exact OSM `image`/`wikimedia_commons` links are retained. Nearby Commons searches are refreshed after 30 days, limited to six results within 300 m, and keep author, license, source coordinates and calculated distance.
 5. **Coverage gaps:** cantonal and municipal open-data inventories can be added as separate sources after their licenses and stable identifiers are verified. They should first be matched to OSM within 3–5 m; unmatched records must stay visibly attributed to their original inventory instead of being disguised as OSM objects.
 
@@ -45,7 +45,7 @@ For every bench, the worker observes from a seated eye height of 1.1 m above ter
 - Logarithmic terrain samples continue to 20 km for mountain horizons.
 - OSM building footprints distinguish a raised swissSURFACE3D sample caused by a building from vegetation.
 - Each direction stores obstruction angle, type and distance. The web app compares the current apparent solar altitude and azimuth against this profile.
-- The first/last direct sun and every direct-sun interval for today are sampled at five-minute resolution. Astronomical sunrise/sunset remain separately labelled.
+- Every direct-sun and daylight-shade interval for today is sampled at five-minute resolution. Astronomical sunrise/sunset remain separately labelled, and sun plus shade always equals the astronomical daylight duration.
 
 Clouds, moving objects and short-term vegetation changes remain outside the model. A full recomputation is required when raster versions change: pass `--recompute`.
 

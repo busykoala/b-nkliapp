@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 from pyproj import Transformer
-from shapely import from_wkb, get_coordinates, to_wkb
+from shapely import force_2d, from_wkb, get_coordinates, get_parts, to_wkb
 from shapely.geometry import LineString, Point, Polygon, shape
-from shapely.ops import nearest_points, transform
+from shapely.ops import nearest_points, transform, unary_union
 
 WGS84_TO_LV95 = Transformer.from_crs(4326, 2056, always_xy=True)
 LV95_TO_WGS84 = Transformer.from_crs(2056, 4326, always_xy=True)
@@ -50,6 +50,23 @@ def geometry_wkb_from_geojson(value: dict, source_crs: int = 4326) -> bytes:
     if not geometry.is_valid:
         geometry = geometry.buffer(0)
     return to_wkb(geometry, hex=False)
+
+
+def building_footprint_wkb_from_geojson(value: dict, source_crs: int = 4326) -> bytes:
+    """Flatten a 3D building solid into one stable 2D shadow footprint."""
+    geometry = shape(value)
+    if source_crs != 2056:
+        transformer = Transformer.from_crs(source_crs, 2056, always_xy=True)
+        geometry = transform(transformer.transform, geometry)
+    flat = force_2d(geometry)
+    # A building solid contains roof, ground and vertical faces. After dropping
+    # Z, the vertical faces have no area; unioning the remaining faces preserves
+    # concave/L-shaped footprints instead of exaggerating them with a convex hull.
+    faces = [part for part in get_parts(flat) if part.geom_type in {"Polygon", "MultiPolygon"} and part.area > 0.05]
+    footprint = unary_union(faces) if faces else flat.convex_hull
+    if not footprint.is_valid:
+        footprint = footprint.buffer(0)
+    return to_wkb(footprint, hex=False, output_dimension=2)
 
 
 def project_wgs84_wkb(value: bytes | str) -> bytes:

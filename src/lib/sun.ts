@@ -139,29 +139,48 @@ export function getLocalSunSchedule(input: {
     timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit",
   });
   if (!times.sunrise || !times.sunset || Number.isNaN(times.sunrise.getTime()) || Number.isNaN(times.sunset.getTime())) {
-    return { directSunrise: "–", directSunset: "–", sunMinutes: 0, windows: [] as Array<{ start: string; end: string }> };
+    return {
+      directSunrise: "–", directSunset: "–", sunMinutes: 0, shadeMinutes: 0, daylightMinutes: 0,
+      windows: [] as Array<{ start: string; end: string }>, shadeWindows: [] as Array<{ start: string; end: string }>,
+    };
   }
   const step = 5 * 60 * 1000;
-  const samples: Array<{ date: Date; sunny: boolean }> = [];
-  for (let value = times.sunrise.getTime(); value <= times.sunset.getTime(); value += step) {
-    const moment = new Date(value);
-    samples.push({ date: moment, sunny: calculateSunState({ ...input, date: moment }).sunny });
+  const samples: Array<{ start: Date; end: Date; sunny: boolean }> = [];
+  for (let value = times.sunrise.getTime(); value < times.sunset.getTime(); value += step) {
+    const end = Math.min(value + step, times.sunset.getTime());
+    const midpoint = new Date((value + end) / 2);
+    samples.push({ start: new Date(value), end: new Date(end), sunny: calculateSunState({ ...input, date: midpoint }).sunny });
   }
-  const windows: Array<{ start: string; end: string }> = [];
-  let start: Date | null = null;
-  for (const sample of samples) {
-    if (sample.sunny && !start) start = sample.date;
-    if (!sample.sunny && start) {
-      windows.push({ start: formatter.format(start), end: formatter.format(new Date(sample.date.getTime() - step)) });
-      start = null;
+  const groupedWindows = (sunny: boolean) => {
+    const windows: Array<{ start: string; end: string }> = [];
+    let start: Date | null = null;
+    let end: Date | null = null;
+    for (const sample of samples) {
+      if (sample.sunny === sunny) {
+        start ??= sample.start;
+        end = sample.end;
+      } else if (start && end) {
+        windows.push({ start: formatter.format(start), end: formatter.format(end) });
+        start = null;
+        end = null;
+      }
     }
-  }
-  if (start) windows.push({ start: formatter.format(start), end: formatter.format(samples.at(-1)?.date ?? start) });
+    if (start && end) windows.push({ start: formatter.format(start), end: formatter.format(end) });
+    return windows;
+  };
+  const windows = groupedWindows(true);
+  const shadeWindows = groupedWindows(false);
+  const minutesFor = (sunny: boolean) => Math.round(samples
+    .filter((sample) => sample.sunny === sunny)
+    .reduce((sum, sample) => sum + sample.end.getTime() - sample.start.getTime(), 0) / 60_000);
   return {
     directSunrise: windows[0]?.start ?? "Keine direkte Sonne",
     directSunset: windows.at(-1)?.end ?? "Keine direkte Sonne",
-    sunMinutes: samples.filter((sample) => sample.sunny).length * 5,
+    sunMinutes: minutesFor(true),
+    shadeMinutes: minutesFor(false),
+    daylightMinutes: Math.round((times.sunset.getTime() - times.sunrise.getTime()) / 60_000),
     windows,
+    shadeWindows,
   };
 }
 

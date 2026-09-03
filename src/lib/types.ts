@@ -139,6 +139,7 @@ export type BenchDetail = {
     naturalness: number | null;
     remoteness: number | null;
   };
+  nearOpenness: number | null;
   viewConfidence: Confidence;
   viewExplanation: string[];
   sunrise: string;
@@ -146,7 +147,10 @@ export type BenchDetail = {
   directSunrise: string;
   directSunset: string;
   sunMinutesToday: number;
+  shadeMinutesToday: number;
+  daylightMinutesToday: number;
   sunWindows: Array<{ start: string; end: string }>;
+  shadeWindows: Array<{ start: string; end: string }>;
   shadeCause: "frei" | "nacht" | "überdacht" | "gebäude" | "vegetation" | "gelände" | "unbekannt";
   sunnyNow: boolean | null;
   sunConfidence: Confidence;

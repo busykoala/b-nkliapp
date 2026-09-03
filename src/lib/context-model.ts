@@ -11,7 +11,11 @@ export type ContextFeature = {
   min_longitude: number;
   max_longitude: number;
   height_meters: number | null;
+  ground_elevation_meters?: number | null;
+  roof_elevation_meters?: number | null;
   subtype: string | null;
+  source?: string;
+  source_version?: string | null;
   exactGeometry?: ExactGeometry;
   /** Set only by an exact projected-geometry test; bounding-box proximity is insufficient. */
   containsBench?: boolean;
@@ -22,14 +26,20 @@ export type ContextModel = {
   obstructionTypes: ObstructionType[];
   buildingObstructionPercent: number;
   vegetationObstructionPercent: number;
-  canopyPercent: number;
+  canopyPercent: number | null;
   inForest: boolean;
+  landContext: "forest" | "forest_edge" | "park" | "open" | "urban" | "mixed" | "unknown";
+  waterfront: boolean | null;
+  canopyContext: "none" | "partial" | "dense" | "unknown";
+  distanceForestMeters: number | null;
   distanceWaterMeters: number | null;
   distancePathMeters: number | null;
   distanceBuildingMeters: number | null;
   buildingCount100m: number;
   buildingCount350m: number;
   treeCount350m: number;
+  vegetationMedianHeight: number | null;
+  vegetationMaxHeight: number | null;
   nearOpennessPercent: number;
   viewScore: number;
   viewComponents: { openness: number; relief: number; water: number; naturalness: number; remoteness: number };
@@ -148,7 +158,9 @@ export function buildContextModel(latitude: number, longitude: number, direction
     const bearing = featureBearing(latitude, longitude, feature);
     const height = feature.height_meters ?? (feature.kind === "building" ? 8.5 : 12);
     const baseHeight = terrainBaseAt(terrain, bearing, distance);
-    const relativeTop = hasTerrain ? baseHeight + height - (terrain.elevationMeters + 1.1) : height - 1.1;
+    const relativeTop = hasTerrain && feature.roof_elevation_meters !== null && feature.roof_elevation_meters !== undefined
+      ? feature.roof_elevation_meters - (terrain.elevationMeters + 1.1)
+      : hasTerrain ? baseHeight + height - (terrain.elevationMeters + 1.1) : height - 1.1;
     const angle = Math.max(0, Math.min(89, Math.atan2(Math.max(1, relativeTop), distance) * 180 / Math.PI));
     const halfAngle = featureAngularHalfWidth(latitude, longitude, feature, bearing, distance);
     for (let index = 0; index < 72; index += 1) {
@@ -160,6 +172,7 @@ export function buildContextModel(latitude: number, longitude: number, direction
   }
 
   const distanceWaterMeters = nearest(waters, latitude, longitude);
+  const distanceForestMeters = nearest(forests, latitude, longitude);
   const distanceBuildingMeters = nearest(buildings, latitude, longitude);
   const distancePathMeters = nearest(paths, latitude, longitude);
   const distanceRoadMeters = nearest(roads, latitude, longitude);
@@ -187,7 +200,22 @@ export function buildContextModel(latitude: number, longitude: number, direction
     / Math.max(1, selectedHorizon.length);
   const vegetationObstructionPercent = obstructionTypes.filter((value) => value === "vegetation").length / 72 * 100;
   const buildingObstructionPercent = obstructionTypes.filter((value) => value === "building").length / 72 * 100;
-  const canopyPercent = Math.min(95, (inForest ? 55 : 0) + vegetationObstructionPercent * 0.8);
+  const nearBlockedShare = viewIndices.filter((index) => obstructionTypes[index] === "building" || obstructionTypes[index] === "vegetation").length
+    / Math.max(1, viewIndices.length);
+  // Horizon obstruction and overhead canopy are different measurements. Only
+  // the raster worker can provide a defensible canopy percentage.
+  const canopyPercent = null;
+  const treeDistances = nearTrees.map((feature) => featureDistance(latitude, longitude, feature));
+  const landContext: ContextModel["landContext"] = inForest ? "forest"
+    : distanceForestMeters !== null && distanceForestMeters <= 25 ? "forest_edge"
+      : buildings.filter((feature) => featureDistance(latitude, longitude, feature) <= 100).length >= 3 ? "urban"
+        : nearBuildings.length === 0 && nearTrees.length === 0 ? "open" : "mixed";
+  const canopyContext: ContextModel["canopyContext"] = inForest ? "dense"
+    : treeDistances.some((distance) => distance <= 5) || treeDistances.filter((distance) => distance <= 12).length >= 2 ? "partial"
+      : landContext === "open" || landContext === "urban" ? "none" : "unknown";
+  const vegetationHeights = nearTrees.flatMap((feature) => feature.height_meters === null ? [] : [feature.height_meters]).sort((a, b) => a - b);
+  const vegetationMedianHeight = vegetationHeights.length ? vegetationHeights[Math.floor(vegetationHeights.length / 2)] : null;
+  const vegetationMaxHeight = vegetationHeights.length ? vegetationHeights.at(-1) ?? null : null;
   const visibleWater = hasTerrain ? waters.filter((feature) => {
     const distance = featureDistance(latitude, longitude, feature);
     if (distance > 10_000) return false;
@@ -207,7 +235,7 @@ export function buildContextModel(latitude: number, longitude: number, direction
     ? Math.max(...selectedElevations) - Math.min(...selectedElevations)
     : 0;
   const relief = Math.min(1, reliefRange / 1_500);
-  const naturalness = Math.min(1, 0.25 + (inForest ? 0.45 : 0) + (distanceWaterMeters !== null && distanceWaterMeters < 500 ? 0.2 : 0));
+  const naturalness = Math.min(1, 0.25 + (inForest ? 0.45 : landContext === "forest_edge" ? 0.25 : 0) + (distanceWaterMeters !== null && distanceWaterMeters < 500 ? 0.2 : 0));
   const remoteness = Math.min(1, 0.4 * Math.min(1, (distanceBuildingMeters ?? 150) / 100) + 0.6 * Math.min(1, (distanceRoadMeters ?? 400) / 300));
   const viewComponents = { openness, relief, water, naturalness, remoteness };
   const viewScore = Math.round(100 * (0.35 * openness + 0.25 * relief + 0.15 * water + 0.15 * naturalness + 0.1 * remoteness));
@@ -271,13 +299,19 @@ export function buildContextModel(latitude: number, longitude: number, direction
     vegetationObstructionPercent,
     canopyPercent,
     inForest,
+    landContext,
+    waterfront: distanceWaterMeters === null ? null : distanceWaterMeters <= 75,
+    canopyContext,
+    distanceForestMeters,
     distanceWaterMeters,
     distancePathMeters,
     distanceBuildingMeters,
     buildingCount100m: buildings.filter((feature) => featureDistance(latitude, longitude, feature) <= 100).length,
     buildingCount350m: nearBuildings.length,
     treeCount350m: nearTrees.length,
-    nearOpennessPercent: Math.round(openness * 100),
+    vegetationMedianHeight,
+    vegetationMaxHeight,
+    nearOpennessPercent: Math.round((1 - nearBlockedShare) * 100),
     viewScore,
     viewComponents,
     viewLabels,

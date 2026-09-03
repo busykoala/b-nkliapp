@@ -36,6 +36,8 @@ describe("sun obstruction", () => {
     const clear = getLocalSunSchedule({ date: new Date("2026-06-21T12:00:00Z"), latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(0) });
     const blocked = getLocalSunSchedule({ date: new Date("2026-06-21T12:00:00Z"), latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(35) });
     expect(blocked.sunMinutes).toBeLessThan(clear.sunMinutes);
+    expect(blocked.sunMinutes + blocked.shadeMinutes).toBe(blocked.daylightMinutes);
+    expect(blocked.shadeWindows.length).toBeGreaterThan(0);
   });
   it("calculates all four seasonal reference days from the same horizon", () => {
     const seasonal = getSeasonalSunMinutes({ latitude: 46.9, longitude: 8.2, horizonProfile: Array(72).fill(8) }, 2026);
