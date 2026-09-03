@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent, StyleSpecification } from "maplibre-gl";
+import type { FilterSpecification, GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent, StyleSpecification } from "maplibre-gl";
 import { Info } from "lucide-react";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
@@ -66,7 +66,11 @@ async function loadIllustratedMapStyle(): Promise<StyleSpecification> {
       if (layer.type === "background") paint["background-color"] = "#f5e8c5";
       if (source === "hillshade") { paint["fill-color"] = layer.id.includes("yellow") ? "#c7a66d" : "#766c58"; paint["fill-opacity"] = layer.id.includes("yellow") ? .055 : .1; }
       if (source === "landcover") {
-        if (layer.type === "fill") { paint["fill-color"] = "#aeb98a"; paint["fill-opacity"] = layer.id.includes("pattern") ? .14 : .28; paint["fill-outline-color"] = "#66745b"; }
+        if (layer.type === "fill") {
+          paint["fill-color"] = ["case", ["any", ["match", ["get", "class"], ["forest", "wood"], true, false], ["match", ["get", "subclass"], ["forest", "loose_forest", "woody_plant", "wood"], true, false]], "#a7b184", "#ded5b5"];
+          paint["fill-opacity"] = layer.id.includes("pattern") ? .14 : .3;
+          paint["fill-outline-color"] = "#66745b";
+        }
         else { paint["line-color"] = "#66745b"; paint["line-opacity"] = .46; paint["line-dasharray"] = [1.2, 1.8]; }
       }
       if (source === "landuse") {
@@ -112,6 +116,57 @@ async function loadIllustratedMapStyle(): Promise<StyleSpecification> {
   } catch {
     return FALLBACK_MAP_STYLE;
   }
+}
+
+function illustratedForestImage(size = 128) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  const tree = (x: number, y: number, scale: number) => {
+    context.save(); context.translate(x, y); context.scale(scale, scale);
+    context.strokeStyle = "rgba(48,76,60,.72)"; context.fillStyle = "rgba(69,104,76,.24)"; context.lineWidth = 3;
+    context.beginPath(); context.moveTo(0, 18); context.lineTo(0, 34); context.stroke();
+    context.beginPath(); context.moveTo(0, -16); context.lineTo(-15, 13); context.lineTo(-7, 13); context.lineTo(-20, 28); context.lineTo(20, 28); context.lineTo(7, 13); context.lineTo(15, 13); context.closePath(); context.fill(); context.stroke();
+    context.restore();
+  };
+  tree(26, 28, .72); tree(91, 49, .9); tree(45, 98, .62); tree(116, 106, .48);
+  return context.getImageData(0, 0, size, size);
+}
+
+function illustratedTreeImage(size = 64) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.strokeStyle = "#355c49"; context.fillStyle = "#75906c"; context.lineWidth = 4; context.lineCap = "round"; context.lineJoin = "round";
+  context.beginPath(); context.moveTo(32, 38); context.lineTo(32, 57); context.stroke();
+  context.beginPath(); context.moveTo(32, 5); context.lineTo(13, 38); context.lineTo(23, 38); context.lineTo(10, 51); context.lineTo(54, 51); context.lineTo(41, 38); context.lineTo(51, 38); context.closePath(); context.fill(); context.stroke();
+  return context.getImageData(0, 0, size, size);
+}
+
+function addIllustratedNatureLayers(map: MapLibreMap) {
+  const style = map.getStyle();
+  const landcover = style.layers.find((layer) => layer.id === "landcover");
+  if (!landcover || !("source" in landcover) || !("source-layer" in landcover)) return;
+  const forestImage = illustratedForestImage();
+  const treeImage = illustratedTreeImage();
+  if (forestImage && !map.hasImage("benchly-forest-stamps")) map.addImage("benchly-forest-stamps", forestImage, { pixelRatio: 2 });
+  if (treeImage && !map.hasImage("benchly-tree-stamp")) map.addImage("benchly-tree-stamp", treeImage, { pixelRatio: 2 });
+  const forestFilter: FilterSpecification = ["any",
+    ["match", ["get", "class"], ["forest", "wood"], true, false],
+    ["match", ["get", "subclass"], ["forest", "loose_forest", "woody_plant", "wood"], true, false],
+  ];
+  if (forestImage && !map.getLayer("benchly-forest-stamps")) map.addLayer({
+    id: "benchly-forest-stamps", type: "fill", source: landcover.source, "source-layer": landcover["source-layer"], minzoom: 7,
+    filter: forestFilter, paint: { "fill-pattern": "benchly-forest-stamps", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 7, .18, 11, .34, 16, .5] },
+  }, map.getLayer("landcover_casing") ? "landcover_casing" : undefined);
+  if (treeImage && !map.getLayer("benchly-tree-points")) map.addLayer({
+    id: "benchly-tree-points", type: "symbol", source: landcover.source, "source-layer": "poi", minzoom: 14,
+    filter: ["any", ["==", ["get", "class"], "tree"], ["==", ["get", "subclass"], "tree"]],
+    layout: { "icon-image": "benchly-tree-stamp", "icon-size": ["interpolate", ["linear"], ["zoom"], 14, .42, 18, .72], "icon-allow-overlap": false },
+    paint: { "icon-opacity": .72 },
+  });
 }
 
 function applyMapAtmosphere(map: MapLibreMap) {
@@ -234,11 +289,12 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         minZoom: 6,
         maxZoom: 19,
         maxBounds: [[5.45, 45.55], [10.9, 48.05]],
-        attributionControl: { compact: true, customAttribution: "Bankdaten © OpenStreetMap-Mitwirkende" },
+        attributionControl: false,
         style: mapStyle,
       });
       mapRef.current = map;
       map.on("load", () => {
+        addIllustratedNatureLayers(map);
         map.addSource("benchly", { type: "geojson", data: featureCollection([]) });
         map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#8a5940", "circle-opacity": 0.94, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 4, "circle-stroke-color": "#f4dfb6", "circle-blur": 0.03 } });
         map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-font": ["Frutiger Neue Regular"], "text-size": 12 }, paint: { "text-color": "#fff4d7" } });
@@ -353,7 +409,6 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
       {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} user={user} onClose={() => { detailSequence.current += 1; setSelectedId(null); setBench(null); setDetailError(false); }} />}
       <AddBenchDialog open={addOpen} coordinates={addCoordinates} onUseCurrentLocation={() => locate((position) => openAddAt(position.latitude, position.longitude))} onClose={closeAdd} />
-      <footer className="pointer-events-none absolute bottom-1 left-1 z-10 hidden text-[10px] opacity-60 md:block">© swisstopo · © OpenStreetMap-Mitwirkende</footer>
     </main>
   );
 }

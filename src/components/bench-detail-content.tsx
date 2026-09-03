@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { CSSProperties } from "react";
-import { ArrowLeft, ExternalLink, Flag, MessageCircleHeart, Share2 } from "lucide-react";
+import { ArrowLeft, Flag, MessageCircleHeart } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
@@ -35,17 +35,11 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
   return (
     <div className="calm-detail pb-8">
       <section className="bench-story-card">
-        <BenchLandscape bench={bench}>
-          <button className="scene-community-action" onClick={() => setCommunity(true)} aria-label="Stimmen aus der Nähe öffnen">
-            <MessageCircleHeart size={19} aria-hidden="true" />
-            <span>{bench.myRating ? "Deine Stimme" : "Stimmen"}</span>
-            {bench.ratingCount > 0 && <small>{bench.ratingCount}</small>}
-          </button>
-        </BenchLandscape>
+        <BenchLandscape bench={bench} />
         <header className="calm-title">
           {bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
           <h2>{bench.title}</h2>
-          <p>{placeLine(bench)}</p>
+          <div className="calm-title-meta"><p>{placeLine(bench)}</p><button className="title-community-action" onClick={() => setCommunity(true)}><MessageCircleHeart size={16} aria-hidden="true" /><span>{bench.myRating ? "Deine Stimme" : "Stimmen"}</span>{bench.ratingCount > 0 && <small>{bench.ratingCount}</small>}</button></div>
         </header>
       </section>
 
@@ -55,10 +49,6 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
         <QuietDetails bench={bench} signedIn={Boolean(user)} />
         <PhotoStory bench={bench} />
 
-        <div className="quiet-actions">
-          <button onClick={() => shareBench(bench)}><Share2 size={16} /> Teilen</button>
-          {bench.osmType !== "community" && <a href={`https://www.openstreetmap.org/${bench.osmType}/${bench.osmId}`} target="_blank" rel="noreferrer">Quelle <ExternalLink size={14} /></a>}
-        </div>
       </div>
     </div>
   );
@@ -280,12 +270,6 @@ function Community({ bench, report, user }: { bench: BenchDetail; report: (type:
     {bench.corrections.length > 0 && <section className="community-notes"><h3>Hinweise</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ?? item.field}</small><button aria-label="Korrektur melden" onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
     <BenchCommunityActions bench={bench} signedIn={Boolean(user)} />
   </div>;
-}
-
-async function shareBench(bench: BenchDetail) {
-  const url = `${window.location.origin}/bank/${bench.id}`;
-  if (navigator.share) await navigator.share({ title: bench.title, text: "Dieses Bänkli", url });
-  else { await navigator.clipboard.writeText(url); window.alert("Link kopiert."); }
 }
 
 function placeLine(bench: BenchDetail) {
