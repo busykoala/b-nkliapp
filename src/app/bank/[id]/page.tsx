@@ -18,5 +18,5 @@ export default async function BenchPage({ params }: { params: Promise<{ id: stri
   const bench = await getBenchDetail((await params).id);
   if (!bench) notFound();
   const user = await getCurrentUser();
-  return <main className="standalone-bench min-h-dvh"><header className="safe-top sticky top-0 z-20 flex min-h-16 items-center justify-between px-3"><Link href={`/?bank=${bench.id}`} aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header><article className="mx-auto max-w-2xl px-3 pb-12 sm:px-6"><BenchDetailContent bench={bench} user={user} /></article></main>;
+  return <main className="standalone-bench min-h-dvh"><header className="safe-top sticky top-0 z-20 flex min-h-16 items-center justify-between px-3"><Link href={`/?bank=${bench.id}`} aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header><article className="standalone-bench-card mx-auto max-w-2xl pb-12"><BenchDetailContent bench={bench} user={user} /></article></main>;
 }

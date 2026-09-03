@@ -36,7 +36,7 @@ function SeasonalTree({ x, y, scale, season, evergreen = false }: { x: number; y
   </g>;
 }
 
-export function BenchLandscape({ bench }: { bench: BenchDetail }) {
+export function BenchLandscape({ bench, children }: { bench: BenchDetail; children?: ReactNode }) {
   const sun = skyPosition(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees);
   const moon = skyPosition(bench.moonAzimuthDegrees, bench.moonAltitudeDegrees);
   const sunVisible = bench.sunAltitudeDegrees > 0;
@@ -142,6 +142,7 @@ export function BenchLandscape({ bench }: { bench: BenchDetail }) {
       </svg>
       {weather && <span className="sr-only">{Math.round(weather.temperatureC)} Grad Celsius, {precipitation === "snow" ? "Schnee" : precipitation === "rain" ? "Regen" : precipitation === "mixed" ? "Schneeregen" : "trocken"}, MeteoSchweiz</span>}
       {bench.dayPhase === "night" && <span className="sr-only">Mond {Math.round(bench.moonIllumination * 100)} Prozent beleuchtet</span>}
+      {children}
     </figure>
   );
 }
