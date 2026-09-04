@@ -309,16 +309,17 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .filter-material select { margin-top: .3rem; border: 1px solid rgb(64 73 58 / 12%); background: rgb(255 251 239 / 65%); }
 .clear-filters { display: flex; min-height: 2.75rem; align-items: center; gap: .4rem; margin: .65rem auto 0; padding: 0 .75rem; color: rgb(47 68 60 / 60%); font-size: .75rem; }
 
-.benchly-map .maplibregl-canvas { filter: saturate(.76) contrast(.9) sepia(.13) brightness(1.03); transition: filter 1.2s ease; }
-.benchly-map[data-phase="dawn"] .maplibregl-canvas { filter: saturate(.7) contrast(.88) sepia(.15) brightness(1); }
-.benchly-map[data-phase="dusk"] .maplibregl-canvas { filter: saturate(.67) contrast(.88) sepia(.18) brightness(.94); }
-.benchly-map[data-phase="night"] .maplibregl-canvas { filter: saturate(.66) contrast(.88) sepia(.17) brightness(1.03) hue-rotate(3deg); }
-.benchly-map::before { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035 .11' numOctaves='4' seed='8'/%3E%3CfeColorMatrix values='.45 0 0 0 .32 .35 0 0 0 .27 .22 0 0 0 .17 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), repeating-linear-gradient(7deg, transparent 0 23px, rgb(100 75 44 / 3%) 24px, transparent 26px), radial-gradient(ellipse at 18% 22%, rgb(149 112 62 / 13%), transparent 31%), radial-gradient(ellipse at 78% 66%, rgb(54 105 91 / 10%), transparent 38%); background-size: 180px 180px, 100% 100%, 100% 100%, 100% 100%; mix-blend-mode: multiply; opacity: .62; }
-.benchly-map::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgb(104 72 42 / 12%) 115%), linear-gradient(125deg, rgb(255 247 221 / 12%), transparent 42%, rgb(74 107 88 / 7%)); mix-blend-mode: soft-light; transition: background 1.2s ease; }
-.benchly-map[data-phase="dawn"]::after { background: linear-gradient(120deg, rgb(238 183 116 / 10%), transparent 58%); }
-.benchly-map[data-phase="dusk"]::after { background: linear-gradient(120deg, rgb(118 80 87 / 15%), rgb(221 151 84 / 8%)); }
-.benchly-map[data-phase="night"]::after { background: linear-gradient(145deg, rgb(51 68 71 / 6%), rgb(236 222 187 / 3%)); }
-.benchly-map[data-phase="night"]::before { opacity: .42; }
+.benchly-map { background: #f3e5c4; }
+.benchly-map .maplibregl-canvas { filter: saturate(.9) contrast(.94) sepia(.08) brightness(1.025); transition: filter 1.2s ease; }
+.benchly-map[data-phase="dawn"] .maplibregl-canvas { filter: saturate(.86) contrast(.93) sepia(.12) brightness(1); }
+.benchly-map[data-phase="dusk"] .maplibregl-canvas { filter: saturate(.84) contrast(.94) sepia(.14) brightness(.96); }
+.benchly-map[data-phase="night"] .maplibregl-canvas { filter: saturate(.86) contrast(.95) sepia(.04) brightness(.92) hue-rotate(3deg); }
+.benchly-map::before { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background-image: url("/map-art/v3/paper.webp"), radial-gradient(ellipse at 18% 22%, rgb(149 112 62 / 8%), transparent 38%), radial-gradient(ellipse at 78% 66%, rgb(54 105 91 / 6%), transparent 46%); background-repeat: repeat, no-repeat, no-repeat; background-size: 256px 256px, 100% 100%, 100% 100%; mix-blend-mode: multiply; opacity: .46; }
+.benchly-map::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background: radial-gradient(ellipse at 50% 45%, transparent 52%, rgb(104 72 42 / 7%) 124%), linear-gradient(var(--map-sun-angle, 125deg), rgb(255 220 151 / 13%), transparent 48%, rgb(69 101 102 / 8%)); mix-blend-mode: soft-light; transition: background 1.8s ease; }
+.benchly-map[data-phase="dawn"]::after { background: linear-gradient(var(--map-sun-angle, 120deg), rgb(239 171 105 / 18%), transparent 62%, rgb(102 126 125 / 6%)); }
+.benchly-map[data-phase="dusk"]::after { background: linear-gradient(var(--map-sun-angle, 120deg), rgb(117 76 91 / 16%), transparent 48%, rgb(228 153 76 / 15%)); }
+.benchly-map[data-phase="night"]::after { background: linear-gradient(var(--map-sun-angle, 145deg), rgb(38 55 70 / 11%), transparent 58%, rgb(115 87 96 / 7%)); }
+.benchly-map[data-phase="night"]::before { opacity: .39; }
 
 /* Data-drawn bench story */
 .standalone-bench { background: linear-gradient(180deg, #e5e8dd 0, #f8efd9 30rem); }

@@ -15,15 +15,60 @@ async function registerUser(page: import("@playwright/test").Page, username: str
 
 test("opens the mobile map and a bench detail", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toBeVisible();
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toBeVisible();
+  await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
   await expect(page.getByLabel("Ort suchen")).toBeVisible();
   await expect(page.getByLabel("Menü öffnen")).toBeVisible();
+});
+
+test("activates the raster fallback when the vector style fails", async ({ page }) => {
+  await page.route("https://vectortiles.geo.admin.ch/styles/**", (route) => route.abort("failed"));
+  await page.goto("/");
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 3_500 });
+  await expect(map).toHaveAttribute("data-map-ready", "true");
+  await expect(page.getByLabel("Ort suchen")).toBeEnabled();
+});
+
+test("stops waiting for a delayed vector style after three seconds", async ({ page }) => {
+  await page.route("https://vectortiles.geo.admin.ch/styles/**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    await route.abort("timedout").catch(() => undefined);
+  });
+  await page.goto("/");
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 3_500 });
+  await expect(map).toHaveAttribute("data-map-ready", "true");
+  await expect(page.getByLabel("Menü öffnen")).toBeEnabled();
+});
+
+test("keeps the mobile controls and map responsive under Fast 4G and CPU throttling", async ({ page, context, browserName }) => {
+  test.skip(browserName !== "chromium", "Chromium DevTools throttling is required");
+  const client = await context.newCDPSession(page);
+  await client.send("Network.enable");
+  await client.send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 20,
+    downloadThroughput: 4 * 1024 * 1024 / 8,
+    uploadThroughput: 3 * 1024 * 1024 / 8,
+  });
+  await client.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+
+  await page.goto("/");
+  await expect(page.getByLabel("Ort suchen")).toBeVisible();
+  await expect(page.getByLabel("Menü öffnen")).toBeVisible();
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("aria-busy", "false", { timeout: 3_500 });
+  await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  await client.detach();
 });
 
 test("centers near the user only after an explicit location action", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ longitude: 8.5417, latitude: 47.3769 });
   await page.goto("/");
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
   await page.getByLabel("Meinen Standort anzeigen").click();
   await expect(page.getByText(/Standort auf etwa/)).toBeVisible();
 });
