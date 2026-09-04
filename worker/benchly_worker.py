@@ -49,8 +49,8 @@ from visual_pipeline import analyze_scenes, audit_environment, benchmark_models,
 from weather_pipeline import refresh_weather
 
 DEFAULT_PBF = "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf"
-PIPELINE_VERSION = "4.3.0"
-PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v5"
+PIPELINE_VERSION = "4.4.0"
+PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v6"
 PROFILE_DISTANCES_METERS = (10, 25, 50, 75, 100, 150, *range(200, 20_001, 200))
 PROFILE_BEARING_GROUPS = (tuple(range(0, 180, 5)), tuple(range(180, 360, 5)))
 KEEP_TAGS = {
@@ -1258,6 +1258,12 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
         feature for feature, rays in water_visibility
         if _longest_view_run(rays, facing is None) >= (1 if feature_distance(latitude, longitude, feature) <= 75 else 2)
     ]
+    if obstruction_types:
+        blocked_share = sum(1 for index in indices if obstruction_types[index] in {"building", "vegetation"}) / max(1, len(indices))
+    else:
+        blocked_share = sum(1 for index in indices if profile[index] > terrain_profile[index] + .5) / max(1, len(indices))
+    if facing is None and blocked_share >= .5:
+        visible_water = [feature for feature in visible_water if feature_distance(latitude, longitude, feature) <= 75]
     visible_forests = [feature for feature in forests if in_view(feature, 2_000)]
     in_forest = any(feature_contains_exact(latitude, longitude, feature) for feature in forests)
     nearest_forest = min((feature_distance(latitude, longitude, feature) for feature in forests), default=math.inf)
@@ -1287,10 +1293,6 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
         ]
     else:
         far_maximum = [origin_elevation or 0] * 72
-    if obstruction_types:
-        blocked_share = sum(1 for index in indices if obstruction_types[index] in {"building", "vegetation"}) / max(1, len(indices))
-    else:
-        blocked_share = sum(1 for index in indices if profile[index] > terrain_profile[index] + .5) / max(1, len(indices))
     terrain_sectors = []
     for index in indices:
         maximum = far_maximum[index]

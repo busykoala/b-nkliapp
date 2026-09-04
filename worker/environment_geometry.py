@@ -143,10 +143,26 @@ def feature_ray_span(
     intersection = geometry.intersection(LineString([origin, end]))
     if intersection.is_empty:
         return None
-    distances = sorted(float(origin.distance(Point(x, y))) for x, y in get_coordinates(intersection))
-    if geometry.covers(origin):
-        distances.insert(0, 0.0)
-    return (distances[0], distances[-1]) if distances else None
+
+    def connected_parts(value):
+        parts = list(get_parts(value))
+        if len(parts) == 1 and parts[0] is value:
+            return [value]
+        result = []
+        for part in parts:
+            nested = list(get_parts(part))
+            result.extend(connected_parts(part) if len(nested) > 1 else [part])
+        return result
+
+    spans = []
+    for part in connected_parts(intersection):
+        distances = sorted(float(origin.distance(Point(x, y))) for x, y in get_coordinates(part))
+        if distances:
+            spans.append((distances[0], distances[-1]))
+    if geometry.covers(origin) and spans:
+        nearest = min(spans, key=lambda value: value[0])
+        spans[spans.index(nearest)] = (0.0, nearest[1])
+    return min(spans, key=lambda value: value[0]) if spans else None
 
 
 def feature_bounds_wgs84(geometry_wkb: bytes) -> tuple[float, float, float, float]:

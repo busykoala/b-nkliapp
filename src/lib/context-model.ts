@@ -284,7 +284,9 @@ export function buildContextModel(latitude: number, longitude: number, direction
     const requiredRun = nearestDistance <= 75 ? 1 : 2;
     return { feature, visible: longestRun(visibleRays, directionDegrees === null) >= requiredRun };
   }) : [];
-  const visibleWater = waterVisibility.filter((item) => item.visible).map((item) => item.feature);
+  const visibleWater = waterVisibility.filter((item) => item.visible)
+    .map((item) => item.feature)
+    .filter((feature) => !(directionDegrees === null && nearBlockedShare >= .5 && featureDistance(latitude, longitude, feature) > 75));
   const water = hasTerrain
     ? visibleWater.length > 0 && (distanceWaterMeters ?? Infinity) < 1_500 ? 1 : visibleWater.length > 0 ? 0.7 : 0
     : distanceWaterMeters === null ? 0 : distanceWaterMeters < 300 ? 0.65 : distanceWaterMeters < 1_500 ? 0.35 : 0.1;
