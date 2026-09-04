@@ -154,13 +154,20 @@ def _refresh_icon_surface_height(connection) -> str:
         with path.open("rb") as handle:
             while message := codes_grib_new_from_file(handle):
                 try:
-                    short_name = str(codes_get(message, "shortName")).upper()
-                    parameter_name = str(codes_get(message, "parameterName")).upper()
+                    try:
+                        short_name = str(codes_get(message, "shortName")).upper()
+                    except Exception:
+                        short_name = ""
+                    try:
+                        parameter_name = str(codes_get(message, "parameterName")).upper()
+                    except Exception:
+                        parameter_name = ""
                     if short_name == "HSURF" or "EARTH'S SURFACE" in parameter_name:
                         values = np.asarray(codes_get_array(message, "values"), dtype=float)
-                        latitudes = np.asarray(codes_get_array(message, "latitudes"), dtype=float)
-                        longitudes = np.asarray(codes_get_array(message, "longitudes"), dtype=float)
-                        break
+                    elif short_name == "CLAT":
+                        latitudes = np.asarray(codes_get_array(message, "values"), dtype=float)
+                    elif short_name == "CLON":
+                        longitudes = np.asarray(codes_get_array(message, "values"), dtype=float)
                 finally:
                     codes_release(message)
         if values is None or latitudes is None or longitudes is None:
