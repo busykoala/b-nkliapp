@@ -592,6 +592,20 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
     except ImportError as error:
         raise RuntimeError("The OSM import requires `pip install -r worker/requirements.txt`.") from error
 
+    # Scheduled workers can briefly start against a database created by the
+    # previous web image. Keep the refresh compatible with that schema while
+    # still preserving direct edits as soon as the migration is present.
+    metadata_edits_available = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='bench_metadata_edits'"
+    ).fetchone()
+    if not metadata_edits_available:
+        connection.execute("""
+          CREATE TEMP TABLE IF NOT EXISTS bench_metadata_edits (
+            bench_row_id INTEGER NOT NULL,
+            field TEXT NOT NULL
+          )
+        """)
+
     # Demo records make a fresh UI useful, but must never survive the first real import.
     connection.execute("DELETE FROM benches WHERE row_id IN (SELECT bench_row_id FROM bench_enrichments WHERE pipeline_version LIKE 'demo-%')")
     connection.commit()
