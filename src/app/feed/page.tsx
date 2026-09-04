@@ -12,7 +12,7 @@ export default async function FeedPage() {
   const [entries, user] = await Promise.all([getActivityFeed(), getCurrentUser()]);
   return <main className="feed-page min-h-dvh safe-bottom">
     <header className="feed-nav safe-top"><Link href="/" aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
-    <section className="feed-intro"><span><Sparkles size={14} /> Was sich bewegt</span><h1>Spuren am Weg</h1><p>Neue Plätze, kleine Pausen und Menschen, die genauer hinschauen.</p></section>
+    <section className="feed-intro"><span><Sparkles size={14} /> Was sich bewegt</span><h1>Bänkli-Feed</h1><p>Neue Plätze, kleine Pausen und Menschen, die genauer hinschauen.</p></section>
     <section className="feed-scroll" aria-label="Neuigkeiten">
       {entries.length ? entries.map((entry) => <FeedCard key={entry.id} entry={entry} />) : <div className="feed-empty"><span>🍂</span><p>Noch weht kein neuer Eintrag herein.</p></div>}
     </section>
@@ -21,11 +21,11 @@ export default async function FeedPage() {
 
 function FeedCard({ entry }: { entry: FeedEntry }) {
   const Icon = feedIcons[entry.kind];
-  return <article className={`feed-entry feed-${entry.kind}`}>
+  return <Link href={`/bank/${entry.benchId}`} className={`feed-entry feed-${entry.kind}`} aria-label={`${entry.benchName} öffnen`}>
     <span className="feed-mark"><Icon size={18} aria-hidden="true" /></span>
     <div><p>{feedSentence(entry)}</p><time dateTime={entry.createdAt}>{relativeTime(entry.createdAt)}</time></div>
-    <Link href={`/bank/${entry.benchId}`} aria-label={`${entry.benchName} öffnen`}><span aria-hidden>→</span></Link>
-  </article>;
+    <span className="feed-arrow" aria-hidden>→</span>
+  </Link>;
 }
 
 function feedSentence(entry: FeedEntry) {

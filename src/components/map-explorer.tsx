@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FilterSpecification, GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent, StyleSpecification } from "maplibre-gl";
 import { Info } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
@@ -193,11 +194,13 @@ function showUserPosition(map: MapLibreMap, position: UserPosition) {
 }
 
 export function MapExplorer({ user }: { user: CurrentUser | null }) {
+  const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const querySequence = useRef(0);
   const detailSequence = useRef(0);
   const pendingPosition = useRef<UserPosition | null>(null);
+  const openedFromUrl = useRef<string | null>(null);
   const filtersRef = useRef<MapFilters>({});
   const [features, setFeatures] = useState<MapFeature[]>([]);
   const [filters, setFilters] = useState<MapFilters>({});
@@ -207,6 +210,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
@@ -226,14 +230,17 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     } finally { if (sequence === querySequence.current) setMapLoading(false); }
   }, []);
 
-  const selectBench = useCallback(async (id: string) => {
+  const selectBench = useCallback(async (id: string, focusOnMap = false) => {
     const sequence = ++detailSequence.current;
     setSelectedId(id); setDetailLoading(true); setDetailError(false); setBench(null);
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
         const detail = await getBenchDetail(id);
         if (!detail) throw new Error("Bench not found");
-        if (sequence === detailSequence.current) setBench(detail);
+        if (sequence === detailSequence.current) {
+          setBench(detail);
+          if (focusOnMap) mapRef.current?.easeTo({ center: [detail.longitude, detail.latitude], zoom: Math.max(mapRef.current.getZoom(), 17), offset: [0, -100], duration: 650 });
+        }
         break;
       } catch {
         if (attempt === 0) {
@@ -245,6 +252,17 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     }
     if (sequence === detailSequence.current) setDetailLoading(false);
   }, []);
+
+  const refreshSelectedBench = useCallback(async () => {
+    if (!selectedId) return;
+    const sequence = ++detailSequence.current;
+    try {
+      const detail = await getBenchDetail(selectedId);
+      if (detail && sequence === detailSequence.current) setBench(detail);
+    } catch {
+      setMessage("Die neue Angabe ist gespeichert. Die Ansicht aktualisiert sich beim nächsten Öffnen.");
+    }
+  }, [selectedId]);
 
   const openAddAt = (latitude: number, longitude: number) => {
     if (!user) {
@@ -349,6 +367,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         canvas.addEventListener("contextmenu", (event) => event.preventDefault());
         map.on("remove", () => { cancelPress(); canvas.removeEventListener("pointerdown", beginPress); canvas.removeEventListener("pointerup", cancelPress); canvas.removeEventListener("pointercancel", cancelPress); canvas.removeEventListener("pointermove", movePress); });
         loadVisible(map, filtersRef.current);
+        setMapReady(true);
       });
       map.on("moveend", () => {
         window.clearTimeout(moveTimeout);
@@ -365,6 +384,13 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     if (!map?.isStyleLoaded()) return;
     (map.getSource("benchly") as GeoJSONSource | undefined)?.setData(featureCollection(features));
   }, [features]);
+
+  useEffect(() => {
+    const requestedBench = searchParams.get("bank");
+    if (!mapReady || !requestedBench || openedFromUrl.current === requestedBench) return;
+    openedFromUrl.current = requestedBench;
+    void selectBench(requestedBench, true);
+  }, [mapReady, searchParams, selectBench]);
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -407,7 +433,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center"><div className="storybook-panel grid h-14 w-14 place-items-center rounded-full"><span className="loading loading-ring text-primary" /></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
-      {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} user={user} onClose={() => { detailSequence.current += 1; setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} user={user} onClose={() => { detailSequence.current += 1; setSelectedId(null); setBench(null); setDetailError(false); }} />}
       <AddBenchDialog open={addOpen} coordinates={addCoordinates} onUseCurrentLocation={() => locate((position) => openAddAt(position.latitude, position.longitude))} onClose={closeAdd} />
     </main>
   );

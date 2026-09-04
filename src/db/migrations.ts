@@ -546,4 +546,28 @@ export const migrations = [
       );
     `,
   },
+  {
+    id: "0011_inline_bench_contributions",
+    sql: `
+      ALTER TABLE bench_metadata_edits RENAME TO bench_metadata_edits_legacy;
+      CREATE TABLE bench_metadata_edits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        field TEXT NOT NULL CHECK(field IN (
+          'name','dedication','location','backrest','armrest','covered','wheelchair','material','seats','direction'
+        )),
+        old_value TEXT,
+        new_value TEXT,
+        created_at TEXT NOT NULL
+      );
+      INSERT INTO bench_metadata_edits(id,bench_row_id,user_id,field,old_value,new_value,created_at)
+        SELECT id,bench_row_id,user_id,field,old_value,new_value,created_at FROM bench_metadata_edits_legacy;
+      DROP TABLE bench_metadata_edits_legacy;
+      CREATE INDEX bench_metadata_edits_bench_field_idx
+        ON bench_metadata_edits(bench_row_id,field,id DESC);
+      CREATE INDEX bench_metadata_edits_user_idx
+        ON bench_metadata_edits(user_id,created_at DESC);
+    `,
+  },
 ];

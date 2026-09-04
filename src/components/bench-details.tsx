@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import {
   Accessibility,
@@ -12,7 +12,6 @@ import {
   Compass,
   Droplets,
   Eye,
-  Flag,
   Footprints,
   Hammer,
   Leaf,
@@ -20,6 +19,8 @@ import {
   Moon,
   MountainSnow,
   MoveHorizontal,
+  Pencil,
+  Plus,
   Snowflake,
   Sun,
   TreePine,
@@ -28,8 +29,8 @@ import {
   Waves,
   Wind,
 } from "lucide-react";
-import type { BenchDetail } from "@/lib/types";
-import { CorrectionForm } from "./contribution-forms";
+import { editBenchField } from "@/app/actions/benches";
+import type { BenchDetail, BenchProperty } from "@/lib/types";
 
 type DetailPanel = "bench" | "light" | "view" | "weather";
 
@@ -40,14 +41,10 @@ const panelLabels: Array<{ id: DetailPanel; label: string; icon: ReactNode }> = 
   { id: "weather", label: "Wetter", icon: <CloudSun size={18} /> },
 ];
 
-export function BenchDetails({ bench, signedIn }: { bench: BenchDetail; signedIn: boolean }) {
+export function BenchDetails({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
   const [panel, setPanel] = useState<DetailPanel>("bench");
   const id = useId();
-  return <details className="quiet-details">
-    <summary>
-      <span><small>Erkundungsbuch</small>Details</span>
-      <ChevronDown className="details-chevron" size={19} aria-hidden="true" />
-    </summary>
+  return <section className="quiet-details" aria-label="Details">
     <div className="detail-chapters">
       <div className="detail-tabs" role="tablist" aria-label="Detailkapitel">
         {panelLabels.map((item) => <button
@@ -61,41 +58,73 @@ export function BenchDetails({ bench, signedIn }: { bench: BenchDetail; signedIn
         >{item.icon}<span>{item.label}</span></button>)}
       </div>
       <div id={`${id}-${panel}-panel`} role="tabpanel" aria-labelledby={`${id}-${panel}-tab`}>
-        {panel === "bench" && <BenchPanel bench={bench} />}
+        {panel === "bench" && <BenchPanel bench={bench} signedIn={signedIn} onBenchChange={onBenchChange} />}
         {panel === "light" && <LightPanel bench={bench} />}
         {panel === "view" && <ViewPanel bench={bench} />}
         {panel === "weather" && <WeatherPanel bench={bench} />}
       </div>
-      <details className="data-report">
-        <summary><Flag size={16} /> Datenfehler melden</summary>
-        {signedIn ? <CorrectionForm benchId={bench.id} /> : <p>Zum Melden bitte kurz über das Menü anmelden.</p>}
-      </details>
     </div>
-  </details>;
+  </section>;
 }
 
 function PanelHeading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
   return <header className="detail-panel-heading"><small>{eyebrow}</small><h3>{title}</h3>{children}</header>;
 }
 
-function BenchPanel({ bench }: { bench: BenchDetail }) {
-  const known = bench.properties.filter((property) => !isMissing(property.value));
-  const missingCount = bench.properties.length - known.length;
+function BenchPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
+  const [propertyOverrides, setPropertyOverrides] = useState<Partial<Record<BenchProperty["key"], Pick<BenchProperty, "value" | "source">>>>({});
+  const [directionOverride, setDirectionOverride] = useState<number | null | undefined>(undefined);
+  const [activeField, setActiveField] = useState<EditableField | null>(null);
+  const properties = bench.properties.map((property) => ({ ...property, ...propertyOverrides[property.key] }));
+  const directionDegrees = directionOverride === undefined ? bench.directionDegrees : directionOverride;
+  const known = properties.filter((property) => !isMissing(property.value));
+  const visible = signedIn ? properties : known;
+  const missingCount = properties.length - known.length;
+  const activeProperty = properties.find((property) => property.key === activeField);
   return <section className="detail-panel detail-panel-bench">
-    <PanelHeading eyebrow="So sitzt es sich hier" title={known.length ? "Was die Bank mitbringt" : "Die Bank wird noch erkundet"} />
-    {known.length > 0 && <div className="bench-fact-grid">
-      {known.map((property) => <article key={property.label}>
+    <PanelHeading eyebrow="So sitzt es sich hier" title={known.length ? "Was die Bank mitbringt" : "Die Bank wird noch erkundet"}>
+      {signedIn && <p className="contribution-invite">Tippe auf eine Angabe, um sie zu ergänzen.</p>}
+    </PanelHeading>
+    {visible.length > 0 && <div className="bench-fact-grid">
+      {visible.map((property) => <button
+        type="button"
+        disabled={!signedIn}
+        aria-expanded={signedIn ? activeField === property.key : undefined}
+        className={`${isMissing(property.value) ? "is-missing" : ""} ${property.source === "Bänkli App" ? "is-community" : ""} ${activeField === property.key ? "is-editing" : ""}`}
+        key={property.label}
+        onClick={() => setActiveField(activeField === property.key ? null : property.key)}
+      >
         <span className="fact-mark"><PropertyIcon label={property.label} /></span>
         <small>{property.label}</small>
-        <strong>{property.value}</strong>
-      </article>)}
+        <strong>{isMissing(property.value) && signedIn ? "Ergänzen" : property.value}</strong>
+        {signedIn && <span className="fact-edit" aria-hidden="true">{isMissing(property.value) ? <Plus size={15} /> : <Pencil size={13} />}</span>}
+      </button>)}
     </div>}
-    {missingCount > 0 && <p className="missing-whisper">{missingCount === 1 ? "Ein Merkmal" : `${missingCount} Merkmale`} wurde{missingCount === 1 ? "" : "n"} noch nicht erfasst.</p>}
+    {!signedIn && missingCount > 0 && <p className="missing-whisper">{missingCount === 1 ? "Ein Merkmal" : `${missingCount} Merkmale`} wurde{missingCount === 1 ? "" : "n"} noch nicht erfasst.</p>}
+    {signedIn && activeProperty && <ChoiceEditor
+      benchId={bench.id}
+      field={activeProperty.key}
+      label={activeProperty.label}
+      currentDisplay={activeProperty.value}
+      onClose={() => setActiveField(null)}
+      onSaved={(display) => setPropertyOverrides((current) => ({ ...current, [activeProperty.key]: { value: display, source: "Bänkli App" } }))}
+      onBenchChange={onBenchChange}
+    />}
     {(bench.dedication || bench.description) && <blockquote className="bench-note">{bench.dedication || bench.description}</blockquote>}
-    <div className="bearing-card">
-      <div className="bearing-dial" aria-hidden="true"><Compass size={36} /><i style={{ transform: `rotate(${bench.directionDegrees ?? 0}deg)` }} /></div>
-      <div><small>Blickrichtung</small><strong>{bench.directionDegrees === null ? "Noch nicht erfasst" : direction(bench.directionDegrees)}</strong><p>{bench.directionDegrees === null ? "Die Landschaft wird deshalb rundum betrachtet." : "Die Aussicht wird in dieser Richtung gewichtet."}</p></div>
+    <div className={`bearing-card ${activeField === "direction" ? "is-editing" : ""}`}>
+      <div className="bearing-dial" aria-hidden="true"><Compass size={36} /><i style={{ transform: `rotate(${directionDegrees ?? 0}deg)` }} /></div>
+      <div><small>Blickrichtung</small><strong>{directionDegrees === null ? signedIn ? "Ergänzen" : "Noch nicht erfasst" : direction(directionDegrees)}</strong><p>{directionDegrees === null ? "Die Landschaft wird deshalb rundum betrachtet." : "Die Aussicht wird in dieser Richtung gewichtet."}</p></div>
+      {signedIn && <button type="button" className="bearing-edit" aria-label="Blickrichtung bearbeiten" aria-expanded={activeField === "direction"} onClick={() => setActiveField(activeField === "direction" ? null : "direction")}>{directionDegrees === null ? <Plus size={16} /> : <Pencil size={14} />}</button>}
     </div>
+    {signedIn && activeField === "direction" && <ChoiceEditor
+      benchId={bench.id}
+      field="direction"
+      label="Blickrichtung"
+      currentDisplay={directionDegrees === null ? null : direction(directionDegrees)}
+      onClose={() => setActiveField(null)}
+      onSaved={(_, value) => setDirectionOverride(Number(value))}
+      onBenchChange={onBenchChange}
+    />}
     <details className="technical-fold">
       <summary>Ort & Herkunft <ChevronDown size={16} /></summary>
       <DetailRows title="Ort & Herkunft" rows={[
@@ -109,11 +138,60 @@ function BenchPanel({ bench }: { bench: BenchDetail }) {
   </section>;
 }
 
+type EditableField = BenchProperty["key"] | "direction";
+type FieldChoice = { value: string; label: string; display?: string };
+
+function choicesFor(field: EditableField): FieldChoice[] {
+  if (["backrest", "armrest", "covered", "wheelchair"].includes(field)) return [
+    { value: "yes", label: "Ja" }, { value: "no", label: "Nein" },
+  ];
+  if (field === "material") return [
+    { value: "wood", label: "Holz" }, { value: "metal", label: "Metall" }, { value: "stone", label: "Stein" },
+    { value: "concrete", label: "Beton" }, { value: "plastic", label: "Kunststoff" }, { value: "mixed", label: "Gemischt" },
+  ];
+  if (field === "seats") return Array.from({ length: 12 }, (_, index) => ({ value: String(index + 1), label: String(index + 1) }));
+  return [
+    ["0", "N", "N · 0°"], ["45", "NO", "NO · 45°"], ["90", "O", "O · 90°"], ["135", "SO", "SO · 135°"],
+    ["180", "S", "S · 180°"], ["225", "SW", "SW · 225°"], ["270", "W", "W · 270°"], ["315", "NW", "NW · 315°"],
+  ].map(([value, label, display]) => ({ value, label, display }));
+}
+
+function ChoiceEditor({ benchId, field, label, currentDisplay, onSaved, onClose, onBenchChange }: {
+  benchId: string;
+  field: EditableField;
+  label: string;
+  currentDisplay: string | null;
+  onSaved: (display: string, value: string) => void;
+  onClose: () => void;
+  onBenchChange?: () => void | Promise<void>;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+  const choose = (choice: FieldChoice) => startTransition(async () => {
+    setMessage(null);
+    const result = await editBenchField(benchId, field, choice.value);
+    setMessage(result.message);
+    if (!result.ok) return;
+    onSaved(choice.display ?? choice.label, choice.value);
+    window.setTimeout(onClose, 420);
+    if (onBenchChange) void onBenchChange();
+  });
+  return <div className="inline-field-editor" aria-label={`${label} bearbeiten`}>
+    <header><span>{label}</span><small>{pending ? "Wird eingetragen …" : message ?? "Was siehst du vor Ort?"}</small></header>
+    <div className={`field-choice-grid is-${field}`}>
+      {choicesFor(field).map((choice) => {
+        const selected = (choice.display ?? choice.label) === currentDisplay;
+        return <button type="button" key={choice.value} disabled={pending} aria-pressed={selected} onClick={() => choose(choice)}>{selected && <span aria-hidden="true">✓</span>}{choice.label}</button>;
+      })}
+    </div>
+  </div>;
+}
+
 function PropertyIcon({ label }: { label: string }) {
   if (label === "Rückenlehne") return <Armchair size={19} />;
   if (label === "Armlehnen") return <MoveHorizontal size={19} />;
   if (label === "Überdacht") return <Umbrella size={19} />;
-  if (label === "Rollstuhlgerecht") return <Accessibility size={19} />;
+  if (label === "Barrierefrei") return <Accessibility size={19} />;
   if (label === "Material") return <Hammer size={19} />;
   return <UsersRound size={19} />;
 }

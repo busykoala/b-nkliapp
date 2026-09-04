@@ -627,15 +627,21 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 name,dedication,location_name,location_key,location_postcode,location_canton)
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?)
             ON CONFLICT(osm_type,osm_id) DO UPDATE SET latitude=excluded.latitude,longitude=excluded.longitude,
-                backrest=excluded.backrest,armrest=excluded.armrest,covered=excluded.covered,wheelchair=excluded.wheelchair,
-                seats=excluded.seats,material=excluded.material,direction_degrees=excluded.direction_degrees,
+                backrest=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='backrest') THEN benches.backrest ELSE excluded.backrest END,
+                armrest=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='armrest') THEN benches.armrest ELSE excluded.armrest END,
+                covered=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='covered') THEN benches.covered ELSE excluded.covered END,
+                wheelchair=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='wheelchair') THEN benches.wheelchair ELSE excluded.wheelchair END,
+                seats=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='seats') THEN benches.seats ELSE excluded.seats END,
+                material=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='material') THEN benches.material ELSE excluded.material END,
+                direction_degrees=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='direction') THEN benches.direction_degrees ELSE excluded.direction_degrees END,
                 operator=excluded.operator,description=excluded.description,raw_tags=excluded.raw_tags,active=1,
                 source_updated_at=excluded.source_updated_at,imported_at=excluded.imported_at,
-                name=coalesce(excluded.name,benches.name),dedication=coalesce(excluded.dedication,benches.dedication),
-                location_name=coalesce(excluded.location_name,benches.location_name),
-                location_key=coalesce(excluded.location_key,benches.location_key),
-                location_postcode=coalesce(excluded.location_postcode,benches.location_postcode),
-                location_canton=coalesce(excluded.location_canton,benches.location_canton)
+                name=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='name') THEN benches.name ELSE coalesce(excluded.name,benches.name) END,
+                dedication=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='dedication') THEN benches.dedication ELSE coalesce(excluded.dedication,benches.dedication) END,
+                location_name=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='location') THEN benches.location_name ELSE coalesce(excluded.location_name,benches.location_name) END,
+                location_key=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='location') THEN benches.location_key ELSE coalesce(excluded.location_key,benches.location_key) END,
+                location_postcode=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='location') THEN benches.location_postcode ELSE coalesce(excluded.location_postcode,benches.location_postcode) END,
+                location_canton=CASE WHEN EXISTS(SELECT 1 FROM bench_metadata_edits e WHERE e.bench_row_id=benches.row_id AND e.field='location') THEN benches.location_canton ELSE coalesce(excluded.location_canton,benches.location_canton) END
         """, rows)
         for bench in pending:
             bench_id = f"osm-{bench.osm_type}-{bench.osm_id}"

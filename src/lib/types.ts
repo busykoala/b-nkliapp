@@ -75,6 +75,7 @@ export type ClusterMapFeature = {
 export type MapFeature = BenchMapFeature | ClusterMapFeature;
 
 export type BenchProperty = {
+  key: "backrest" | "armrest" | "covered" | "wheelchair" | "material" | "seats";
   label: string;
   value: string;
   source: "OpenStreetMap" | "Bänkli App";

@@ -213,7 +213,8 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
     const obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
     // Map markers only make a binary promise after the full worker model has
     // combined raster surface/terrain with exact context geometry.
-    const hasCurrentProfile = profile.length === 72 && row.pipeline_version === "4.2.0";
+    const hasCurrentProfile = profile.length === 72
+      && (row.pipeline_version === "4.2.0" || row.pipeline_version === "GeoAdmin-Horizont v4");
     const sunnyNow = hasCurrentProfile ? calculateSunState({
       date: now,
       latitude: row.latitude,
@@ -522,13 +523,17 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     evidence: likelyEvidence,
   } : null;
 
+  const contributedFields = new Set((sqlite.prepare(
+    "SELECT DISTINCT field FROM bench_metadata_edits WHERE bench_row_id=?",
+  ).all(row.row_id) as Array<{ field: string }>).map((item) => item.field));
+  const propertySource = (field: string) => contributedFields.has(field) || row.osm_type === "community" ? "Bänkli App" as const : "OpenStreetMap" as const;
   const properties = [
-    { label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: "OpenStreetMap" as const },
-    { label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: "OpenStreetMap" as const },
-    { label: "Überdacht", value: yesNoUnknown(row.covered as number | null), source: "OpenStreetMap" as const },
-    { label: "Rollstuhlgerecht", value: yesNoUnknown(row.wheelchair as number | null), source: "OpenStreetMap" as const },
-    { label: "Material", value: displayMaterial(row.material as string | null), source: "OpenStreetMap" as const },
-    { label: "Sitzplätze", value: row.seats ? String(row.seats) : "Unbekannt", source: "OpenStreetMap" as const },
+    { key: "backrest" as const, label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: propertySource("backrest") },
+    { key: "armrest" as const, label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: propertySource("armrest") },
+    { key: "covered" as const, label: "Überdacht", value: yesNoUnknown(row.covered as number | null), source: propertySource("covered") },
+    { key: "wheelchair" as const, label: "Barrierefrei", value: yesNoUnknown(row.wheelchair as number | null), source: propertySource("wheelchair") },
+    { key: "material" as const, label: "Material", value: displayMaterial(row.material as string | null), source: propertySource("material") },
+    { key: "seats" as const, label: "Sitzplätze", value: row.seats ? String(row.seats) : "Unbekannt", source: propertySource("seats") },
   ];
   return {
     id: String(row.id), osmType: String(row.osm_type), osmId: Number(row.osm_id),

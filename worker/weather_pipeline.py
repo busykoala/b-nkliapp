@@ -7,7 +7,7 @@ import math
 import os
 import tempfile
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -25,6 +25,8 @@ ICON_PARAMETERS = {
     "T_2M": "P0DT0H", "SNOWLMT": "P0DT0H", "SNOWC": "P0DT0H", "H_SNOW": "P0DT0H",
     "RAIN_GSP": "P0DT1H", "SNOW_GSP": "P0DT1H",
 }
+ICON_COLLECTION_STAC = "ch.meteoschweiz.ogd-forecasting-icon-ch1"
+ICON_HORIZONTAL_CONSTANTS = "horizontal_constants_icon-ch1-eps.grib2"
 
 
 def _iso(value: object) -> str:
@@ -102,6 +104,72 @@ def _icon_to_target(data) -> np.ndarray:
     return output.reshape(TARGET_HEIGHT, TARGET_WIDTH)
 
 
+def _points_to_target(values: np.ndarray, latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
+    from scipy.spatial import cKDTree
+
+    values = np.asarray(values, dtype=float).reshape(-1)
+    latitudes = np.asarray(latitudes, dtype=float).reshape(-1)
+    longitudes = np.asarray(longitudes, dtype=float).reshape(-1)
+    if np.nanmax(np.abs(latitudes)) <= math.pi + .1:
+        latitudes = np.degrees(latitudes)
+    if np.nanmax(np.abs(longitudes)) <= math.pi * 2 + .1:
+        longitudes = np.degrees(longitudes)
+    transformer = Transformer.from_crs(4326, 2056, always_xy=True)
+    source_easting, source_northing = transformer.transform(longitudes, latitudes)
+    valid = np.isfinite(values) & np.isfinite(source_easting) & np.isfinite(source_northing)
+    tree = cKDTree(np.column_stack((source_easting[valid], source_northing[valid])))
+    target_easting = TARGET_EASTING + np.arange(TARGET_WIDTH) * TARGET_RESOLUTION
+    target_northing = TARGET_NORTHING + np.arange(TARGET_HEIGHT) * TARGET_RESOLUTION
+    east, north = np.meshgrid(target_easting, target_northing)
+    distances, indices = tree.query(np.column_stack((east.reshape(-1), north.reshape(-1))), workers=-1)
+    output = values[valid][indices].astype(float)
+    output[distances > 3_000] = np.nan
+    return output.reshape(TARGET_HEIGHT, TARGET_WIDTH)
+
+
+def _refresh_icon_surface_height(connection) -> str:
+    existing = connection.execute(
+        "SELECT imported_at FROM weather_snapshots WHERE source='ICON-CH1-STATIC' AND parameter='HSURF'"
+    ).fetchone()
+    if existing:
+        try:
+            imported = datetime.fromisoformat(str(existing[0]).replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) - imported < timedelta(days=30):
+                return "current"
+        except ValueError:
+            pass
+
+    from eccodes import codes_get, codes_get_array, codes_grib_new_from_file, codes_release
+    from meteodatalab import ogd_api
+
+    url = ogd_api.get_collection_asset_url(ICON_COLLECTION_STAC, ICON_HORIZONTAL_CONSTANTS)
+    request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (ICON surface height)"})
+    with tempfile.TemporaryDirectory(prefix="benchly-icon-surface-") as directory:
+        path = Path(directory) / ICON_HORIZONTAL_CONSTANTS
+        with urllib.request.urlopen(request, timeout=120) as response, path.open("wb") as output:
+            while chunk := response.read(1024 * 1024):
+                output.write(chunk)
+
+        values = latitudes = longitudes = None
+        with path.open("rb") as handle:
+            while message := codes_grib_new_from_file(handle):
+                try:
+                    short_name = str(codes_get(message, "shortName")).upper()
+                    parameter_name = str(codes_get(message, "parameterName")).upper()
+                    if short_name == "HSURF" or "EARTH'S SURFACE" in parameter_name:
+                        values = np.asarray(codes_get_array(message, "values"), dtype=float)
+                        latitudes = np.asarray(codes_get_array(message, "latitudes"), dtype=float)
+                        longitudes = np.asarray(codes_get_array(message, "longitudes"), dtype=float)
+                        break
+                finally:
+                    codes_release(message)
+        if values is None or latitudes is None or longitudes is None:
+            raise RuntimeError("ICON horizontal constants contain no HSURF field")
+        now = datetime.now(timezone.utc).isoformat()
+        _store(connection, "ICON-CH1-STATIC", "HSURF", _points_to_target(values, latitudes, longitudes), now, now)
+    return "updated"
+
+
 def refresh_icon(connection) -> dict[str, object]:
     # eccodes-cosmo-resources 0.4 can retain its wheel build-time path. Resolve
     # the installed share directory ourselves; these definitions also preserve
@@ -117,6 +185,11 @@ def refresh_icon(connection) -> dict[str, object]:
 
     updated: list[str] = []
     failed: dict[str, str] = {}
+    try:
+        surface_height = _refresh_icon_surface_height(connection)
+    except Exception as error:
+        surface_height = "failed"
+        failed["HSURF"] = str(error)[:300]
     for parameter, horizon in ICON_PARAMETERS.items():
         try:
             request = ogd_api.Request(
@@ -134,7 +207,7 @@ def refresh_icon(connection) -> dict[str, object]:
             updated.append(parameter)
         except Exception as error:  # A partial model publication must not discard the last good fields.
             failed[parameter] = str(error)[:300]
-    return {"updated": updated, "failed": failed}
+    return {"updated": updated, "surface_height": surface_height, "failed": failed}
 
 
 def _attribute(group, name: str, default=None):

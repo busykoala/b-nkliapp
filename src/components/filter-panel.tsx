@@ -8,7 +8,7 @@ type Props = { filters: MapFilters; onChange: (filters: MapFilters) => void; onC
 export function FilterPanel({ filters, onChange, onClose }: Props) {
   const toggle = (key: keyof MapFilters) => onChange({ ...filters, [key]: filters[key] === true ? undefined : true });
   return (
-    <div role="dialog" aria-label="Bänke filtern" className="calm-filter-panel safe-bottom absolute inset-x-3 bottom-3 z-30 max-h-[calc(100dvh-6rem)] overflow-y-auto p-4 md:bottom-auto md:left-4 md:right-auto md:top-20 md:w-[23rem]">
+    <div role="dialog" aria-label="Bänkli filtern" className="calm-filter-panel safe-bottom absolute inset-x-3 bottom-3 z-30 max-h-[calc(100dvh-6rem)] overflow-y-auto p-4 md:bottom-auto md:left-4 md:right-auto md:top-20 md:w-[23rem]">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2>Was passt gerade?</h2>
         <button className="btn btn-circle btn-ghost btn-sm" aria-label="Filter schliessen" onClick={onClose}><Check size={19} /></button>

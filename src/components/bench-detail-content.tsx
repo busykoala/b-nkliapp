@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { ArrowLeft, Flag, MessageCircleHeart } from "lucide-react";
+import { useActionState, useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Check, Flag, MessageCircleHeart, Pencil, X } from "lucide-react";
+import { editBenchMetadata } from "@/app/actions/benches";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
@@ -19,9 +21,21 @@ const correctionLabels: Record<string, string> = {
   environment: "Umgebung, Aussicht oder Licht",
 };
 
-export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: CurrentUser | null }) {
+export function BenchDetailContent({ bench, user, onBenchChange }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void> }) {
   const [community, setCommunity] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
   const [, startTransition] = useTransition();
+  const router = useRouter();
+  const saveStory = useCallback(async (_previous: Awaited<ReturnType<typeof editBenchMetadata>> | null, formData: FormData) => {
+    const result = await editBenchMetadata(bench.id, null, formData);
+    if (result.ok) {
+      setStoryOpen(false);
+      if (onBenchChange) await onBenchChange();
+      else router.refresh();
+    }
+    return result;
+  }, [bench.id, onBenchChange, router]);
+  const [storyState, storyAction, storyPending] = useActionState(saveStory, null);
   const report = (type: "rating" | "correction", id: number) => startTransition(async () => {
     const result = await reportContribution(type, id);
     window.alert(result.message);
@@ -41,7 +55,7 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
       <BenchLandscape bench={bench} />
       <header className="calm-title">
         {bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
-        <h2>{bench.title}</h2>
+        <div className="calm-title-row"><h2>{bench.title}</h2>{user && <button type="button" className="story-edit-button" aria-label="Name und Widmung bearbeiten" aria-expanded={storyOpen} onClick={() => setStoryOpen(!storyOpen)}>{storyOpen ? <X size={17} /> : <Pencil size={15} />}</button>}</div>
         <div className="calm-title-meta">
           <p>{placeLine(bench)}</p>
           <button className="title-community-action" onClick={() => setCommunity(true)}>
@@ -50,12 +64,18 @@ export function BenchDetailContent({ bench, user }: { bench: BenchDetail; user: 
             {bench.ratingCount > 0 && <small>{bench.ratingCount}</small>}
           </button>
         </div>
+        {user && storyOpen && <form action={storyAction} className="inline-story-editor">
+          <label><span>Name</span><input name="name" maxLength={80} defaultValue={bench.name ?? ""} placeholder="Wie heisst dieses Bänkli?" /></label>
+          <label><span>Widmung</span><textarea name="dedication" maxLength={180} defaultValue={bench.dedication ?? ""} placeholder="Was steht auf der Bank?" /></label>
+          <button disabled={storyPending}>{storyPending ? <span className="loading loading-spinner loading-xs" /> : <Check size={16} />} Speichern</button>
+          {storyState && !storyState.ok && <p role="status">{storyState.message}</p>}
+        </form>}
       </header>
     </section>
 
     <div className="calm-story-body">
       <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
-      <BenchDetails bench={bench} signedIn={Boolean(user)} />
+      <BenchDetails bench={bench} signedIn={Boolean(user)} onBenchChange={onBenchChange} />
       <PhotoStory bench={bench} />
     </div>
   </div>;

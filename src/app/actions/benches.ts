@@ -21,10 +21,10 @@ const addSchema = z.object({
 const editSchema = z.object({
   name: z.string().trim().max(80).optional(),
   dedication: z.string().trim().max(180).optional(),
-  locationName: z.string().trim().min(2).max(100),
-  postcode: z.string().trim().max(10).optional(),
-  canton: z.string().trim().max(30).optional(),
 });
+const editableFieldSchema = z.enum(["backrest", "armrest", "covered", "wheelchair", "material", "seats", "direction"]);
+const booleanValueSchema = z.enum(["yes", "no"]);
+const materialValueSchema = z.enum(["wood", "metal", "stone", "concrete", "plastic", "mixed"]);
 
 function rowFor(id: string) {
   const row = sqlite.prepare("SELECT row_id FROM benches WHERE id=? AND active=1").get(id) as { row_id: number } | undefined;
@@ -120,18 +120,65 @@ export async function editBenchMetadata(benchId: string, _previous: ActionResult
   if (!parsed.success) return { ok: false, message: "Bitte Angaben prüfen." };
   try {
     const user = await writeActor("edit-bench", 30, 100); const rowId = rowFor(benchId); const now = new Date().toISOString();
-    const old = sqlite.prepare("SELECT name,dedication,location_name FROM benches WHERE row_id=?").get(rowId) as Record<string, string | null>;
-    const next = { name: parsed.data.name || null, dedication: parsed.data.dedication || null, location: parsed.data.locationName };
+    const old = sqlite.prepare("SELECT name,dedication FROM benches WHERE row_id=?").get(rowId) as Record<string, string | null>;
+    const next = { name: parsed.data.name || null, dedication: parsed.data.dedication || null };
     const transaction = sqlite.transaction(() => {
-      sqlite.prepare("UPDATE benches SET name=?,dedication=?,location_name=?,location_key=?,location_postcode=?,location_canton=?,description=coalesce(?,description) WHERE row_id=?")
-        .run(next.name, next.dedication, next.location, normalizeLocationKey(next.location), parsed.data.postcode || null, parsed.data.canton || null, next.name, rowId);
+      sqlite.prepare("UPDATE benches SET name=?,dedication=? WHERE row_id=?")
+        .run(next.name, next.dedication, rowId);
       const insert = sqlite.prepare("INSERT INTO bench_metadata_edits(bench_row_id,user_id,field,old_value,new_value,created_at) VALUES(?,?,?,?,?,?)");
-      for (const field of ["name", "dedication", "location"] as const) {
-        const oldValue = field === "location" ? old.location_name : old[field];
-        if (oldValue !== next[field]) insert.run(rowId, user.id, field, oldValue, next[field], now);
+      for (const field of ["name", "dedication"] as const) {
+        if (old[field] !== next[field]) insert.run(rowId, user.id, field, old[field], next[field], now);
       }
     });
     transaction(); refreshUserBadges(user.id); refresh(benchId);
     return { ok: true, message: "Angaben aktualisiert." };
   } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Änderung fehlgeschlagen." }; }
+}
+
+export async function editBenchField(benchId: string, fieldInput: unknown, valueInput: unknown): Promise<ActionResult> {
+  const field = editableFieldSchema.safeParse(fieldInput);
+  if (!field.success || typeof valueInput !== "string") return { ok: false, message: "Bitte Angabe prüfen." };
+
+  let value: string | number;
+  let column: "backrest" | "armrest" | "covered" | "wheelchair" | "material" | "seats" | "direction_degrees";
+  if (["backrest", "armrest", "covered", "wheelchair"].includes(field.data)) {
+    const parsed = booleanValueSchema.safeParse(valueInput);
+    if (!parsed.success) return { ok: false, message: "Bitte Ja oder Nein wählen." };
+    value = parsed.data === "yes" ? 1 : 0;
+    column = field.data as typeof column;
+  } else if (field.data === "material") {
+    const parsed = materialValueSchema.safeParse(valueInput);
+    if (!parsed.success) return { ok: false, message: "Bitte Material wählen." };
+    value = parsed.data;
+    column = "material";
+  } else if (field.data === "seats") {
+    const parsed = z.coerce.number().int().min(1).max(20).safeParse(valueInput);
+    if (!parsed.success) return { ok: false, message: "Bitte Sitzplätze zwischen 1 und 20 wählen." };
+    value = parsed.data;
+    column = "seats";
+  } else {
+    const parsed = z.coerce.number().int().min(0).max(359).refine((degrees) => degrees % 45 === 0).safeParse(valueInput);
+    if (!parsed.success) return { ok: false, message: "Bitte Blickrichtung wählen." };
+    value = parsed.data;
+    column = "direction_degrees";
+  }
+
+  try {
+    const user = await writeActor("edit-bench-field", 60, 180);
+    const rowId = rowFor(benchId);
+    const previous = sqlite.prepare(`SELECT ${column} AS value FROM benches WHERE row_id=?`).get(rowId) as { value: string | number | null };
+    if (String(previous.value ?? "") === String(value)) return { ok: true, message: "Ist bereits so eingetragen." };
+    const now = new Date().toISOString();
+    const transaction = sqlite.transaction(() => {
+      sqlite.prepare(`UPDATE benches SET ${column}=? WHERE row_id=?`).run(value, rowId);
+      sqlite.prepare("INSERT INTO bench_metadata_edits(bench_row_id,user_id,field,old_value,new_value,created_at) VALUES(?,?,?,?,?,?)")
+        .run(rowId, user.id, field.data, previous.value === null ? null : String(previous.value), String(value), now);
+    });
+    transaction();
+    refreshUserBadges(user.id);
+    refresh(benchId);
+    return { ok: true, message: "Danke – ist eingetragen." };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Angabe konnte nicht gespeichert werden." };
+  }
 }

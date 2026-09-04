@@ -43,6 +43,13 @@ type SnapshotRow = {
   nodata_value: number | null;
 };
 
+type StationCandidate = {
+  point: ForecastPoint;
+  distance: number;
+  elevationDifference: number | null;
+  exposed: boolean;
+};
+
 let weatherCache: { expiresAt: number; value: Promise<ForecastPoint[]> } | null = null;
 
 function csvRows(input: string) {
@@ -81,38 +88,59 @@ function distanceKilometers(latitude: number, longitude: number, point: Forecast
   return Math.hypot(latitudeDistance, longitudeDistance);
 }
 
+function isExposedStation(point: ForecastPoint) {
+  return /summit|peak|pass|crest|ridge|mountain top/.test(point.exposition);
+}
+
+function stationScore(candidate: StationCandidate) {
+  // A 75 m height mismatch counts roughly like another kilometre. In steep
+  // Alpine terrain this is deliberately much stronger than pure proximity.
+  return candidate.distance
+    + (candidate.elevationDifference ?? 0) / 75
+    + (candidate.exposed ? 10 : 0);
+}
+
 function selectReferenceStation(points: ForecastPoint[], latitude: number, longitude: number, elevationMeters: number | null) {
   const weatherStations = points.some((point) => point.fullWeatherStation)
     ? points.filter((point) => point.fullWeatherStation)
     : points;
-  const candidates = weatherStations.map((point) => ({
+  const candidates: StationCandidate[] = weatherStations.map((point) => ({
     point,
     distance: distanceKilometers(latitude, longitude, point),
     elevationDifference: elevationMeters !== null && point.elevationMeters !== null
       ? Math.abs(elevationMeters - point.elevationMeters)
       : null,
+    exposed: isExposedStation(point),
   }));
   const nearby = candidates.filter((candidate) => candidate.distance <= 80);
   const localCandidates = nearby.length > 0 ? nearby : candidates;
-  const heightCompatible = elevationMeters === null
-    ? localCandidates
-    : localCandidates.filter((candidate) => candidate.elevationDifference === null || candidate.elevationDifference <= 1_000);
-  const pool = heightCompatible.length > 0 ? heightCompatible : localCandidates;
 
-  return pool.reduce<(typeof pool)[number] | null>((best, candidate) => {
-    const score = candidate.distance
-      + (candidate.elevationDifference ?? 0) / 100
-      + (candidate.elevationDifference !== null
-        && candidate.elevationDifference > 500
-        && /summit|peak|pass|crest/.test(candidate.point.exposition) ? 12 : 0);
-    if (!best) return candidate;
-    const bestScore = best.distance
-      + (best.elevationDifference ?? 0) / 100
-      + (best.elevationDifference !== null
-        && best.elevationDifference > 500
-        && /summit|peak|pass|crest/.test(best.point.exposition) ? 12 : 0);
-    return score < bestScore ? candidate : best;
-  }, null)?.point ?? null;
+  // Without a bench elevation, a nearby pass or summit must never stand in
+  // for a valley or hillside. This was the reason a 1'402 m bench inherited
+  // Jungfraujoch weather from 3'571 m.
+  if (elevationMeters === null) {
+    const ordinary = localCandidates.filter((candidate) => !candidate.exposed);
+    const pool = ordinary.length > 0 ? ordinary : localCandidates;
+    return pool.reduce<StationCandidate | null>((best, candidate) => (
+      !best || candidate.distance < best.distance ? candidate : best
+    ), null);
+  }
+
+  // Prefer a genuinely similar altitude. Only widen the band if Switzerland's
+  // sparse high-Alpine station network leaves no usable station nearby.
+  const bands = [250, 500, 800];
+  let pool: StationCandidate[] = [];
+  for (const maximumDifference of bands) {
+    pool = localCandidates.filter((candidate) => candidate.elevationDifference !== null
+      && candidate.elevationDifference <= maximumDifference
+      && (!candidate.exposed || candidate.elevationDifference <= 150));
+    if (pool.length > 0) break;
+  }
+  if (pool.length === 0) return null;
+
+  return pool.reduce<StationCandidate | null>((best, candidate) => (
+    !best || stationScore(candidate) < stationScore(best) ? candidate : best
+  ), null);
 }
 
 function temperatureAtElevation(temperatureC: number, stationElevation: number | null, targetElevation: number | null) {
@@ -177,26 +205,35 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
   const snowCover = snapshotValue("SNOWC", latitude, longitude, 8);
   const snowDepth = snapshotValue("H_SNOW", latitude, longitude, 8);
   const modelTemperature = snapshotValue("T_2M", latitude, longitude, 8);
+  const modelSurfaceElevation = snapshotValue("HSURF", latitude, longitude, 24 * 45);
 
   try {
     if (!weatherCache || weatherCache.expiresAt < Date.now()) weatherCache = { expiresAt: Date.now() + 30 * 60 * 1000, value: loadStations() };
     const points = await weatherCache.value;
-    const referenceStation = selectReferenceStation(points, latitude, longitude, elevationMeters);
-    if (!referenceStation) return null;
-    const station = referenceStation.id.toLocaleLowerCase("en-US");
-    const measurements = await fetchCsv(`https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/${station}/ogd-smn_${station}_t_now.csv`, 600, 5_000);
-    const latest = csvRows(measurements).at(-1);
+    const reference = selectReferenceStation(points, latitude, longitude, elevationMeters);
+    const referenceStation = reference?.point ?? null;
+    const station = referenceStation?.id.toLocaleLowerCase("en-US") ?? null;
+    const measurements = station
+      ? await fetchCsv(`https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/${station}/ogd-smn_${station}_t_now.csv`, 600, 5_000)
+      : null;
+    const latest = measurements ? csvRows(measurements).at(-1) : undefined;
     const measuredTemperature = optionalNumber(latest?.tre200s0);
-    const modelTemperatureC = modelTemperature ? modelTemperature.value - 273.15 : null;
-    const stationTemperatureC = measuredTemperature === null
+    const modelTemperatureC = modelTemperature
+      ? temperatureAtElevation(modelTemperature.value - 273.15, modelSurfaceElevation?.value ?? null, elevationMeters)
+      : null;
+    const stationTemperatureC = measuredTemperature === null || referenceStation === null
       ? null
       : temperatureAtElevation(measuredTemperature, referenceStation.elevationMeters, elevationMeters);
     const temperatureC = modelTemperatureC ?? stationTemperatureC;
-    const precipitationMm10 = optionalNumber(latest?.rre150z0);
+    const stationIsLocal = reference !== null
+      && reference.distance <= 40
+      && (reference.elevationDifference === null || reference.elevationDifference <= 500)
+      && (!reference.exposed || reference.elevationDifference === null || reference.elevationDifference <= 150);
+    const precipitationMm10 = stationIsLocal ? optionalNumber(latest?.rre150z0) : null;
     const precipitationRateMmH = radarRate?.value ?? (precipitationMm10 === null ? null : precipitationMm10 * 6);
-    const sunshineMinutes10 = optionalNumber(latest?.sre000z0);
-    const humidityPercent = optionalNumber(latest?.ure200s0);
-    const globalRadiationWm2 = optionalNumber(latest?.gre000z0);
+    const sunshineMinutes10 = stationIsLocal ? optionalNumber(latest?.sre000z0) : null;
+    const humidityPercent = stationIsLocal ? optionalNumber(latest?.ure200s0) : null;
+    const globalRadiationWm2 = stationIsLocal ? optionalNumber(latest?.gre000z0) : null;
     const cloudCover = fraction(cloudTotal?.value) ?? (precipitationRateMmH !== null && precipitationRateMmH > .03
       ? .96
       : sunAltitudeDegrees > 3 && sunshineMinutes10 !== null
@@ -208,7 +245,7 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
       precipitationRateMmH,
       precipitationType: precipitationKind({ intensity: precipitationRateMmH, rain: modelRain?.value ?? null, snow: modelSnow?.value ?? null, snowfallLimit: snowfallLimit?.value ?? null, elevation: elevationMeters, temperature: temperatureC }),
       sunshineMinutes10,
-      windKmh: optionalNumber(latest?.fu3010z0),
+      windKmh: stationIsLocal ? optionalNumber(latest?.fu3010z0) : null,
       humidityPercent,
       globalRadiationWm2,
       cloudCover,
@@ -219,7 +256,7 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
       snowDepthCm: snowDepth?.value == null ? null : Math.max(0, snowDepth.value * 100),
       snowfallLimitMeters: snowfallLimit?.value ?? null,
       observedAt: modelTemperature?.validAt ?? cloudTotal?.validAt ?? latest?.reference_timestamp ?? "",
-      location: modelTemperature ? "diesem Bänkli" : referenceStation.name,
+      location: "diesem Bänkli",
       source: "MeteoSchweiz",
     } : null;
   } catch {
