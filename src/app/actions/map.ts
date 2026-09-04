@@ -5,6 +5,7 @@ import { displayMaterial, yesNoUnknown } from "@/lib/bench";
 import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
 import { parseWkbGeometry } from "@/lib/exact-geometry";
+import { fetchSwissLandCoverEvidence, SWISSTOPO_LAND_COVER_VERSION } from "@/lib/land-cover";
 import { normalizeLocationKey, searchGeoAdminLocations } from "@/lib/place-search";
 import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSeasonalSunMinutes, getSkyTrack, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
@@ -328,10 +329,12 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   let distancePathMeters = !exactOsmEvidence || row.distance_path_meters === null ? null : Number(row.distance_path_meters);
   let contextModel: ReturnType<typeof buildContextModel> | null = null;
   let contextViewRefreshed = false;
+  const needsLandCoverRefresh = !String(row.context_source_version ?? "").includes(SWISSTOPO_LAND_COVER_VERSION);
   const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v4", "4.2.0"].includes(pipelineVersion)
-    || row.environment_computed_at === null;
+    || row.environment_computed_at === null || needsLandCoverRefresh;
   if (needsContextRefresh) {
     const contextFeatures = getContextFeatures(latitude, longitude);
+    const landCover = needsLandCoverRefresh ? await fetchSwissLandCoverEvidence(latitude, longitude) : null;
     const terrain = process.env.BENCHLY_DISABLE_ELEVATION_FETCH === "true" ? null : await fetchTerrainHorizon(latitude, longitude);
     const storedTerrain = parseArray<number>(row.terrain_horizon_profile);
     const terrainEvidence = terrain ? {
@@ -339,8 +342,8 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     } : hasTerrainModel && elevationMeters !== null ? {
       elevationMeters, horizonProfile: storedTerrain, sampleElevations: [],
     } : undefined;
-    contextModel = terrainEvidence || !hasTerrainModel
-      ? buildContextModel(latitude, longitude, directionDegrees, contextFeatures, terrainEvidence)
+    contextModel = terrainEvidence || !hasTerrainModel || landCover
+      ? buildContextModel(latitude, longitude, directionDegrees, contextFeatures, terrainEvidence, landCover ?? undefined)
       : null;
     if (contextModel) {
       horizon = contextModel.horizonProfile;
@@ -348,11 +351,19 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       if (terrain) {
         components = contextModel.viewComponents;
         contextViewRefreshed = true;
+      } else if (landCover) {
+        components = { ...components, naturalness: contextModel.viewComponents.naturalness };
       }
-      if (exactLandEvidence) inForest ??= contextModel.inForest;
-      if ((landContext === null || landContext === "unknown") && contextModel.landContext !== "unknown") landContext = contextModel.landContext;
+      if (landCover) {
+        inForest = contextModel.inForest;
+        landContext = contextModel.landContext;
+        canopyContext = contextModel.canopyContext;
+      } else {
+        if (exactLandEvidence) inForest ??= contextModel.inForest;
+        if ((landContext === null || landContext === "unknown") && contextModel.landContext !== "unknown") landContext = contextModel.landContext;
+        if ((canopyContext === null || canopyContext === "unknown") && contextModel.canopyContext !== "unknown") canopyContext = contextModel.canopyContext;
+      }
       if (exactLandEvidence) waterfront = contextModel.waterfront ?? waterfront;
-      if ((canopyContext === null || canopyContext === "unknown") && contextModel.canopyContext !== "unknown") canopyContext = contextModel.canopyContext;
       canopyPercent = canopyPercent ?? contextModel.canopyPercent;
       vegetationMedianHeight = vegetationMedianHeight ?? contextModel.vegetationMedianHeight;
       vegetationMaxHeight = vegetationMaxHeight ?? contextModel.vegetationMaxHeight;
@@ -385,7 +396,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
         ) VALUES (
           @rowId,@elevation,@elevationSource,@computedAt,@inForest,@canopy,@forest,@water,@path,@horizon,@terrainHorizon,@obstructionTypes,
           @buildingPercent,@vegetationPercent,@distanceBuilding,@buildingCount,@viewScore,'mittel',@components,@viewLabels,
-          'swisstopo + OpenStreetMap','GeoAdmin-Horizont v4',@computedAt,'mittel',
+          @contextSourceVersion,'GeoAdmin-Horizont v4',@computedAt,'mittel',
           @landContext,@waterfront,@canopyContext,@canopy3,@canopy10,@canopy25,@vegetationMedian,@vegetationMax,@computedAt
         )
         ON CONFLICT(bench_row_id) DO UPDATE SET
@@ -420,6 +431,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
         viewScore: contextViewRefreshed ? model.viewScore : row.view_score,
         components: JSON.stringify(components),
         viewLabels: JSON.stringify(contextViewRefreshed ? model.viewLabels : parseArray<string>(row.view_labels)),
+        contextSourceVersion: [landCover?.sourceVersion, officialLandEvidence ? "swissTLM3D" : "OpenStreetMap"].filter(Boolean).join(" + "),
         landContext, waterfront: waterfront === null ? null : Number(waterfront), canopyContext,
         canopy3: canopyShare3m, canopy10: canopyShare10m, canopy25: canopyShare25m,
         vegetationMedian: vegetationMedianHeight, vegetationMax: vegetationMaxHeight,

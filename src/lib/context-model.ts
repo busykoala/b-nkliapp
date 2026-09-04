@@ -1,6 +1,7 @@
 import type { ObstructionType } from "./sun";
 import { HORIZON_DISTANCES_METERS, wgs84ToLv95 } from "./elevation";
 import { geometryContains, nearestGeometryPoint, type ExactGeometry, type ProjectedPoint } from "./exact-geometry";
+import type { LandCoverEvidence } from "./land-cover";
 
 export type ContextFeature = {
   kind: "building" | "tree" | "water" | "forest" | "path" | "major_road";
@@ -139,7 +140,7 @@ function longestRun(values: boolean[], circular: boolean) {
   return Math.min(values.length, longest);
 }
 
-export function buildContextModel(latitude: number, longitude: number, directionDegrees: number | null, features: ContextFeature[], terrain?: TerrainEvidence): ContextModel {
+export function buildContextModel(latitude: number, longitude: number, directionDegrees: number | null, features: ContextFeature[], terrain?: TerrainEvidence, landCover?: LandCoverEvidence): ContextModel {
   const hasTerrain = terrain?.horizonProfile.length === 72;
   const horizonProfile = hasTerrain ? [...terrain.horizonProfile] : Array<number>(72).fill(0);
   const obstructionTypes = Array<ObstructionType>(72).fill(hasTerrain ? "terrain" : "unknown");
@@ -178,11 +179,17 @@ export function buildContextModel(latitude: number, longitude: number, direction
   const distanceRoadMeters = nearest(roads, latitude, longitude);
   const originLv95 = wgs84ToLv95(latitude, longitude);
   const origin: ProjectedPoint = [originLv95.easting, originLv95.northing];
+  const centerForest = landCover?.centerClass === "forest" || landCover?.centerClass === "wood" || landCover?.centerClass === "loose_forest";
+  const centerPark = landCover?.centerClass === "park" || landCover?.centerClass === "recreation_ground";
+  const forestShare = landCover?.forestShare ?? 0;
   const inForest = forests.some((feature) => feature.containsBench === true
-    || Boolean(feature.exactGeometry && geometryContains(origin, feature.exactGeometry)));
+    || Boolean(feature.exactGeometry && geometryContains(origin, feature.exactGeometry)))
+    || centerForest || forestShare >= .45;
   if (inForest) {
     for (let index = 0; index < 72; index += 1) {
-      if (horizonProfile[index] < 8) {
+      const sector = Math.round(index * 5 / 30) % 12;
+      const forestInDirection = !landCover || forestShare >= .75 || (landCover.forestBySector[sector] ?? 0) >= 1 / 3;
+      if (forestInDirection && horizonProfile[index] < 8) {
         horizonProfile[index] = 8;
         obstructionTypes[index] = "vegetation";
       }
@@ -207,10 +214,11 @@ export function buildContextModel(latitude: number, longitude: number, direction
   const canopyPercent = null;
   const treeDistances = nearTrees.map((feature) => featureDistance(latitude, longitude, feature));
   const landContext: ContextModel["landContext"] = inForest ? "forest"
-    : distanceForestMeters !== null && distanceForestMeters <= 25 ? "forest_edge"
-      : buildings.filter((feature) => featureDistance(latitude, longitude, feature) <= 100).length >= 3 ? "urban"
-        : nearBuildings.length === 0 && nearTrees.length === 0 ? "open" : "mixed";
-  const canopyContext: ContextModel["canopyContext"] = inForest ? "dense"
+    : forestShare >= .15 || distanceForestMeters !== null && distanceForestMeters <= 25 ? "forest_edge"
+      : centerPark ? "park"
+        : buildings.filter((feature) => featureDistance(latitude, longitude, feature) <= 100).length >= 3 ? "urban"
+          : nearBuildings.length === 0 && nearTrees.length === 0 ? "open" : "mixed";
+  const canopyContext: ContextModel["canopyContext"] = inForest ? forestShare >= .7 || !landCover ? "dense" : "partial"
     : treeDistances.some((distance) => distance <= 5) || treeDistances.filter((distance) => distance <= 12).length >= 2 ? "partial"
       : landContext === "open" || landContext === "urban" ? "none" : "unknown";
   const vegetationHeights = nearTrees.flatMap((feature) => feature.height_meters === null ? [] : [feature.height_meters]).sort((a, b) => a - b);
@@ -235,7 +243,16 @@ export function buildContextModel(latitude: number, longitude: number, direction
     ? Math.max(...selectedElevations) - Math.min(...selectedElevations)
     : 0;
   const relief = Math.min(1, reliefRange / 1_500);
-  const naturalness = Math.min(1, 0.25 + (inForest ? 0.45 : landContext === "forest_edge" ? 0.25 : 0) + (distanceWaterMeters !== null && distanceWaterMeters < 500 ? 0.2 : 0));
+  const categoricalNaturalness = inForest ? .9
+    : landContext === "forest_edge" ? .7
+      : landContext === "park" ? .65
+        : landContext === "open" ? .55
+          : landContext === "urban" ? .2 : .35;
+  const sampledNaturalness = landCover
+    ? .42 + .5 * landCover.forestShare + .18 * Math.max(0, landCover.naturalShare - landCover.forestShare)
+    : 0;
+  const naturalness = Math.min(1, Math.max(categoricalNaturalness, sampledNaturalness)
+    + (distanceWaterMeters !== null && distanceWaterMeters < 500 ? .1 : 0));
   const remoteness = Math.min(1, 0.4 * Math.min(1, (distanceBuildingMeters ?? 150) / 100) + 0.6 * Math.min(1, (distanceRoadMeters ?? 400) / 300));
   const viewComponents = { openness, relief, water, naturalness, remoteness };
   const viewScore = Math.round(100 * (0.35 * openness + 0.25 * relief + 0.15 * water + 0.15 * naturalness + 0.1 * remoteness));
@@ -267,7 +284,7 @@ export function buildContextModel(latitude: number, longitude: number, direction
     }
     if (visibleWater.length) viewLabels.push(visibleWater.some((feature) => ["lake", "reservoir", "water"].includes(feature.subtype ?? "")) ? "Seeblick" : "Wasserblick");
     if (openness >= 0.75) viewLabels.push("Weitsicht");
-    if (inForest && naturalness >= 0.7) viewLabels.push("Waldblick");
+    if ((inForest || forestShare >= .35) && naturalness >= 0.7) viewLabels.push("Waldumgebung");
     if (openness < 0.4 || meanHorizon > 22 || selectedBlockedShare >= 0.5) {
       viewKind = "none";
       const scenic = new Set(["Bergblick", "Hügelblick", "Weitsicht"]);

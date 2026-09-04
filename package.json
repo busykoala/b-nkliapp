@@ -15,6 +15,7 @@
     "data:refresh": "python3 worker/benchly_worker.py refresh"
   },
   "dependencies": {
+    "@mapbox/vector-tile": "^2.0.5",
     "@tailwindcss/postcss": "^4.1.14",
     "better-sqlite3": "^12.4.1",
     "daisyui": "^5.1.30",
@@ -22,6 +23,7 @@
     "lucide-react": "^0.544.0",
     "maplibre-gl": "^5.7.3",
     "next": "^16.0.0",
+    "pbf": "^4.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "suncalc": "^2.0.1",

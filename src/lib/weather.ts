@@ -23,7 +23,15 @@ export type LocalWeather = {
   source: "MeteoSchweiz";
 };
 
-type ForecastPoint = { id: string; name: string; latitude: number; longitude: number };
+type ForecastPoint = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  elevationMeters: number | null;
+  exposition: string;
+  fullWeatherStation: boolean;
+};
 type SnapshotRow = {
   valid_at: string;
   origin_easting: number;
@@ -43,6 +51,10 @@ function csvRows(input: string) {
   return rows.map((line) => Object.fromEntries(line.split(";").map((value, index) => [fields[index], value])));
 }
 
+function optionalNumber(value: string | undefined) {
+  return value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
+}
+
 async function fetchCsv(url: string, revalidate: number, timeout: number) {
   const response = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(timeout) });
   if (!response.ok) throw new Error(`MeteoSchweiz antwortet mit ${response.status}`);
@@ -51,8 +63,62 @@ async function fetchCsv(url: string, revalidate: number, timeout: number) {
 
 async function loadStations() {
   const stationCsv = await fetchCsv("https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv", 86_400, 6_000);
-  return csvRows(stationCsv).map((row) => ({ id: row.station_abbr, name: row.station_name, latitude: Number(row.station_coordinates_wgs84_lat), longitude: Number(row.station_coordinates_wgs84_lon) }))
+  return csvRows(stationCsv).map((row) => ({
+    id: row.station_abbr,
+    name: row.station_name,
+    latitude: Number(row.station_coordinates_wgs84_lat),
+    longitude: Number(row.station_coordinates_wgs84_lon),
+    elevationMeters: optionalNumber(row.station_height_masl),
+    exposition: row.station_exposition_en?.toLocaleLowerCase("en-US") ?? "",
+    fullWeatherStation: row.station_type_en?.toLocaleLowerCase("en-US").includes("weather station") ?? false,
+  }))
     .filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
+}
+
+function distanceKilometers(latitude: number, longitude: number, point: ForecastPoint) {
+  const latitudeDistance = (point.latitude - latitude) * 111.32;
+  const longitudeDistance = (point.longitude - longitude) * 111.32 * Math.cos(latitude * Math.PI / 180);
+  return Math.hypot(latitudeDistance, longitudeDistance);
+}
+
+function selectReferenceStation(points: ForecastPoint[], latitude: number, longitude: number, elevationMeters: number | null) {
+  const weatherStations = points.some((point) => point.fullWeatherStation)
+    ? points.filter((point) => point.fullWeatherStation)
+    : points;
+  const candidates = weatherStations.map((point) => ({
+    point,
+    distance: distanceKilometers(latitude, longitude, point),
+    elevationDifference: elevationMeters !== null && point.elevationMeters !== null
+      ? Math.abs(elevationMeters - point.elevationMeters)
+      : null,
+  }));
+  const nearby = candidates.filter((candidate) => candidate.distance <= 80);
+  const localCandidates = nearby.length > 0 ? nearby : candidates;
+  const heightCompatible = elevationMeters === null
+    ? localCandidates
+    : localCandidates.filter((candidate) => candidate.elevationDifference === null || candidate.elevationDifference <= 1_000);
+  const pool = heightCompatible.length > 0 ? heightCompatible : localCandidates;
+
+  return pool.reduce<(typeof pool)[number] | null>((best, candidate) => {
+    const score = candidate.distance
+      + (candidate.elevationDifference ?? 0) / 100
+      + (candidate.elevationDifference !== null
+        && candidate.elevationDifference > 500
+        && /summit|peak|pass|crest/.test(candidate.point.exposition) ? 12 : 0);
+    if (!best) return candidate;
+    const bestScore = best.distance
+      + (best.elevationDifference ?? 0) / 100
+      + (best.elevationDifference !== null
+        && best.elevationDifference > 500
+        && /summit|peak|pass|crest/.test(best.point.exposition) ? 12 : 0);
+    return score < bestScore ? candidate : best;
+  }, null)?.point ?? null;
+}
+
+function temperatureAtElevation(temperatureC: number, stationElevation: number | null, targetElevation: number | null) {
+  if (stationElevation === null || targetElevation === null) return temperatureC;
+  const correction = Math.max(-8, Math.min(8, (stationElevation - targetElevation) * .0065));
+  return temperatureC + correction;
 }
 
 function snapshotValue(parameter: string, latitude: number, longitude: number, maximumAgeHours: number) {
@@ -115,14 +181,17 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
   try {
     if (!weatherCache || weatherCache.expiresAt < Date.now()) weatherCache = { expiresAt: Date.now() + 30 * 60 * 1000, value: loadStations() };
     const points = await weatherCache.value;
-    const nearest = points.reduce<ForecastPoint | null>((best, point) => !best || Math.hypot((point.latitude - latitude) * 111, (point.longitude - longitude) * 75) < Math.hypot((best.latitude - latitude) * 111, (best.longitude - longitude) * 75) ? point : best, null);
-    if (!nearest) return null;
-    const station = nearest.id.toLocaleLowerCase("en-US");
+    const referenceStation = selectReferenceStation(points, latitude, longitude, elevationMeters);
+    if (!referenceStation) return null;
+    const station = referenceStation.id.toLocaleLowerCase("en-US");
     const measurements = await fetchCsv(`https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/${station}/ogd-smn_${station}_t_now.csv`, 600, 5_000);
     const latest = csvRows(measurements).at(-1);
-    const optionalNumber = (value: string | undefined) => value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
     const measuredTemperature = optionalNumber(latest?.tre200s0);
-    const temperatureC = measuredTemperature ?? ((modelTemperature?.value ?? 273.15) - 273.15);
+    const modelTemperatureC = modelTemperature ? modelTemperature.value - 273.15 : null;
+    const stationTemperatureC = measuredTemperature === null
+      ? null
+      : temperatureAtElevation(measuredTemperature, referenceStation.elevationMeters, elevationMeters);
+    const temperatureC = modelTemperatureC ?? stationTemperatureC;
     const precipitationMm10 = optionalNumber(latest?.rre150z0);
     const precipitationRateMmH = radarRate?.value ?? (precipitationMm10 === null ? null : precipitationMm10 * 6);
     const sunshineMinutes10 = optionalNumber(latest?.sre000z0);
@@ -133,7 +202,7 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
       : sunAltitudeDegrees > 3 && sunshineMinutes10 !== null
         ? Math.max(0, Math.min(1, 1 - sunshineMinutes10 / 10))
         : humidityPercent === null ? .2 : Math.max(.08, Math.min(.9, (humidityPercent - 52) / 45)));
-    return Number.isFinite(temperatureC) ? {
+    return temperatureC !== null && Number.isFinite(temperatureC) ? {
       temperatureC,
       precipitationMm10,
       precipitationRateMmH,
@@ -149,8 +218,8 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
       snowCoverPercent: snowCover?.value == null ? null : Math.max(0, Math.min(100, snowCover.value)),
       snowDepthCm: snowDepth?.value == null ? null : Math.max(0, snowDepth.value * 100),
       snowfallLimitMeters: snowfallLimit?.value ?? null,
-      observedAt: cloudTotal?.validAt ?? latest?.reference_timestamp ?? "",
-      location: nearest.name,
+      observedAt: modelTemperature?.validAt ?? cloudTotal?.validAt ?? latest?.reference_timestamp ?? "",
+      location: modelTemperature ? "diesem Bänkli" : referenceStation.name,
       source: "MeteoSchweiz",
     } : null;
   } catch {
@@ -167,7 +236,7 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
       snowCoverPercent: snowCover?.value == null ? null : Math.max(0, Math.min(100, snowCover.value)),
       snowDepthCm: snowDepth?.value == null ? null : Math.max(0, snowDepth.value * 100),
       snowfallLimitMeters: snowfallLimit?.value ?? null,
-      location: "ICON-CH1", observedAt: cloudTotal?.validAt ?? modelTemperature.validAt, source: "MeteoSchweiz",
+      location: "diesem Bänkli", observedAt: cloudTotal?.validAt ?? modelTemperature.validAt, source: "MeteoSchweiz",
     };
   }
 }

@@ -1183,10 +1183,21 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
 
     visible_water = [feature for feature in water_features if in_view(feature, 10_000)]
     visible_forests = [feature for feature in forests if in_view(feature, 2_000)]
+    in_forest = any(feature_contains_exact(latitude, longitude, feature) for feature in forests)
+    nearest_forest = min((feature_distance(latitude, longitude, feature) for feature in forests), default=math.inf)
     nearest_water = min((feature_distance(latitude, longitude, feature) for feature in water_features), default=math.inf)
     nearest_building = min((feature_distance(latitude, longitude, feature) for feature in buildings), default=math.inf)
     nearest_road = min((feature_distance(latitude, longitude, feature) for feature in roads), default=math.inf)
-    naturalness = min(1.0, 0.45 + (0.35 if visible_forests else 0) + (0.2 if visible_water else 0))
+    # Naturalness describes the place around the bench, not merely the objects
+    # visible above its horizon. Exact forest containment therefore carries the
+    # strongest weight, followed by a forest edge and woodland in view.
+    naturalness = min(1.0,
+                      0.9 if in_forest else
+                      0.72 if nearest_forest <= 25 else
+                      0.6 if visible_forests else
+                      0.35)
+    if visible_water:
+        naturalness = min(1.0, naturalness + 0.1)
     remoteness = min(1.0, 0.35 * min(1, nearest_building / 100) + 0.65 * min(1, nearest_road / 300))
     water_score = 1.0 if visible_water and nearest_water < 1500 else 0.7 if visible_water else 0.2 if nearest_water < 300 else 0.0
     labels: list[str] = []
@@ -1224,8 +1235,8 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
         labels.append("Seeblick" if any((feature["subtype"] or "") in {"lake", "reservoir", "water"} for feature in visible_water) else "Wasserblick")
     if openness >= 0.75:
         labels.append("Weitsicht")
-    if visible_forests and naturalness >= 0.7:
-        labels.append("Waldblick")
+    if (in_forest or nearest_forest <= 25 or visible_forests) and naturalness >= 0.7:
+        labels.append("Waldumgebung")
     if openness < 0.4 or sum(selected) / max(1, len(selected)) > 22 or blocked_share >= 0.5:
         labels = [label for label in labels if label not in {"Bergblick", "Hügelblick", "Weitsicht"}]
         labels.append("Eingeschränkte Aussicht")
