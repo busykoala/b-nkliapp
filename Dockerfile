@@ -1,5 +1,8 @@
 FROM node:24-bookworm-slim AS dependencies
 WORKDIR /app
+ENV npm_config_fetch_retries=5 \
+    npm_config_fetch_retry_mintimeout=20000 \
+    npm_config_fetch_retry_maxtimeout=120000
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -7,7 +10,9 @@ FROM node:24-bookworm-slim AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY . .
+COPY package.json package-lock.json next-env.d.ts next.config.ts postcss.config.mjs tsconfig.json ./
+COPY public ./public
+COPY src ./src
 RUN npm run build
 
 FROM node:24-bookworm-slim AS runner
