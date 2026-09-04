@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Check, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
 import { getActivityFeed, type FeedEntry } from "@/app/actions/feed";
 import { AppMenu } from "@/components/app-menu";
+import { TrailAvatar } from "@/components/trail-avatar";
 import { getCurrentUser } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -21,16 +22,19 @@ export default async function FeedPage() {
 
 function FeedCard({ entry }: { entry: FeedEntry }) {
   const Icon = feedIcons[entry.kind];
-  return <Link href={`/bank/${entry.benchId}`} className={`feed-entry feed-${entry.kind}`} aria-label={`${entry.benchName} öffnen`}>
-    <span className="feed-mark"><Icon size={18} aria-hidden="true" /></span>
+  return <article className={`feed-entry feed-${entry.kind}`}>
+    <Link href={`/profil/${encodeURIComponent(entry.username)}`} className="feed-avatar" aria-label={`Wanderbuch von ${entry.username} öffnen`}>
+      <TrailAvatar seed={entry.avatarSeed} username={entry.username} compact />
+      <span className="feed-kind-mark"><Icon size={13} aria-hidden="true" /></span>
+    </Link>
     <div><p>{feedSentence(entry)}</p><time dateTime={entry.createdAt}>{relativeTime(entry.createdAt)}</time></div>
-    <span className="feed-arrow" aria-hidden>→</span>
-  </Link>;
+    <Link href={`/bank/${entry.benchId}`} className="feed-arrow" aria-label={`${entry.benchName} öffnen`}>→</Link>
+  </article>;
 }
 
 function feedSentence(entry: FeedEntry) {
-  const name = <strong>{entry.username}</strong>;
-  const bench = <em>{entry.benchName}</em>;
+  const name = <Link href={`/profil/${encodeURIComponent(entry.username)}`} className="feed-person">{entry.username}</Link>;
+  const bench = <Link href={`/bank/${entry.benchId}`} className="feed-bench">{entry.benchName}</Link>;
   if (entry.kind === "added") return <>{name} hat {bench} auf die Karte gesetzt. Ein neues Plätzli wartet.</>;
   if (entry.kind === "rated") return <>{name} hat bei {bench} kurz innegehalten und eine Stimme dagelassen.</>;
   if (entry.kind === "confirmed") return <>{name} hat nachgeschaut: {bench} steht wirklich da.</>;

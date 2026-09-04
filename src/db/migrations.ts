@@ -570,4 +570,11 @@ export const migrations = [
         ON bench_metadata_edits(user_id,created_at DESC);
     `,
   },
+  {
+    id: "0012_personal_trails_and_avatars",
+    sql: `
+      ALTER TABLE users ADD COLUMN avatar_seed TEXT NOT NULL DEFAULT '';
+      UPDATE users SET avatar_seed=lower(hex(randomblob(8))) WHERE avatar_seed='';
+    `,
+  },
 ];

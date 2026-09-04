@@ -518,7 +518,93 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .community-notes { margin-top: 1.5rem; }
 .community-notes h3 { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.2rem; }
 
-/* Illustrated contribution album */
+/* Personal trail and illustrated contribution album */
+.profile-page { color: #294239; background: radial-gradient(circle at 78% 8%, rgb(225 180 86 / 16%), transparent 21rem), linear-gradient(180deg, #e3e7da, #f8efd9 27rem); }
+.profile-nav { display: flex; min-height: 4.5rem; align-items: center; justify-content: space-between; padding-inline: .85rem; }
+.profile-nav-actions { display: flex; align-items: center; gap: .45rem; }
+.profile-logout { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .35rem; border-radius: 999px; padding: 0 .7rem; color: rgb(41 66 57 / 57%); font-size: .72rem; font-weight: 700; }
+.profile-logout:hover, .profile-logout:focus-visible { background: rgb(255 249 232 / 66%); color: #315e50; outline: none; }
+.app-menu-avatar { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; margin: -.25rem -.15rem -.25rem -.15rem; }
+.app-menu-avatar .trail-avatar { width: 1.8rem; height: 1.8rem; }
+.profile-journal { width: min(100%, 38rem); margin-inline: auto; padding: .5rem 1rem 4rem; }
+.profile-portrait { display: grid; grid-template-columns: minmax(8.6rem, 42%) minmax(0, 1fr); align-items: center; gap: 1.1rem; padding: .6rem .2rem 1.65rem; }
+.profile-avatar-wrap { position: relative; min-width: 0; }
+.trail-avatar { display: block; width: 100%; height: auto; filter: drop-shadow(0 10px 20px rgb(39 61 52 / 14%)); }
+.avatar-paper { fill: #f3e6c5; }
+.avatar-frame { fill: none; stroke: rgb(48 72 62 / 32%); stroke-width: 2; stroke-linejoin: round; }
+.avatar-mountain { fill: #718478; opacity: .72; }
+.avatar-hill-back { fill: #739077; }
+.avatar-hill-front { fill: #3f6d5b; }
+.avatar-trees { fill: #315b4d; stroke: #315b4d; stroke-width: 4; stroke-linejoin: round; }
+.avatar-trail { fill: none; stroke: #e0c17d; stroke-width: 13; stroke-linecap: round; }
+.avatar-stars { fill: #f7e8b9; }
+.avatar-sun { fill: #e5b348; opacity: .9; }
+.avatar-neck, .avatar-face, .avatar-body, .avatar-hair, .avatar-hat, .avatar-scarf { stroke: rgb(43 62 54 / 25%); stroke-width: 1.5; stroke-linejoin: round; }
+.avatar-features { fill: none; stroke: #3e493f; stroke-width: 3; stroke-linecap: round; }
+.avatar-companion { fill: #b96f43; stroke: #344c43; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.avatar-bird { fill: #d4a03e; }
+.avatar-redraw { position: absolute; right: -.15rem; bottom: .1rem; display: inline-flex; min-height: 2.75rem; align-items: center; gap: .35rem; border: 1px solid rgb(52 77 65 / 13%); border-radius: 999px; background: rgb(255 249 230 / 90%); padding: 0 .65rem; color: #356050; box-shadow: 0 6px 18px rgb(42 63 54 / 12%); font-size: .68rem; font-weight: 750; }
+.avatar-redraw:hover, .avatar-redraw:focus-visible { background: #fff9e7; outline: 2px solid rgb(52 103 83 / 22%); outline-offset: 2px; }
+.profile-intro { min-width: 0; }
+.profile-intro > span { display: flex; align-items: center; gap: .3rem; color: rgb(48 91 77 / 58%); font-size: .64rem; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
+.profile-intro h1 { margin-top: .35rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(2rem, 10vw, 3.4rem); font-weight: 700; line-height: .92; letter-spacing: -.045em; overflow-wrap: anywhere; }
+.profile-intro p { margin-top: .65rem; color: #745638; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1rem; }
+.profile-intro small { display: block; margin-top: .28rem; color: rgb(41 66 57 / 45%); font-size: .68rem; }
+.profile-section { margin-top: .85rem; padding: 1.1rem; border: 1px solid rgb(58 73 61 / 10%); border-radius: 1.45rem; background: rgb(255 249 232 / 65%); box-shadow: inset 0 1px rgb(255 255 255 / 72%); }
+.profile-section > header { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; }
+.profile-section > header small, .next-trail-card small { display: block; color: rgb(46 87 73 / 50%); font-size: .61rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.profile-section > header h2 { margin-top: .18rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.35rem; font-weight: 650; line-height: 1.12; }
+.profile-section > header > svg, .profile-section > header > span { color: rgb(49 94 78 / 55%); }
+.trail-progress-card > p { margin: .2rem .25rem 0; color: rgb(41 66 57 / 56%); font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .84rem; }
+.trail-path { margin: .55rem -.25rem -.05rem; }
+.trail-path svg { display: block; width: 100%; height: auto; overflow: visible; }
+.trail-path-paper, .trail-path-ink { fill: none; stroke-linecap: round; stroke-width: 5; }
+.trail-path-paper { stroke: rgb(55 76 66 / 11%); stroke-dasharray: 2 8; }
+.trail-path-ink { stroke: #c69a45; }
+.trail-path g circle { fill: #f4e8c8; stroke: rgb(49 80 67 / 18%); stroke-width: 2; }
+.trail-path g path { fill: none; stroke: transparent; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.trail-path g.is-reached circle { fill: #4d7562; stroke: #f6e8c7; }
+.trail-path g.is-reached path { stroke: #f8edcf; }
+.next-trail-card { display: grid; min-height: 6.7rem; grid-template-columns: 2.8rem minmax(0, 1fr) 2.4rem; align-items: center; gap: .75rem; margin-top: .85rem; border: 1px solid rgb(58 73 61 / 10%); border-radius: 1.45rem; background: linear-gradient(145deg, rgb(217 227 203 / 78%), rgb(239 216 163 / 62%)); padding: .9rem .7rem .9rem .9rem; color: inherit; box-shadow: inset 0 1px rgb(255 255 255 / 68%); }
+.next-trail-card > span { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border-radius: 50% 47% 52% 45%; background: rgb(255 249 230 / 62%); color: #356452; transform: rotate(-3deg); }
+.next-trail-card strong { display: block; margin-top: .16rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1rem; }
+.next-trail-card p { margin-top: .13rem; color: rgb(41 66 57 / 58%); font-size: .7rem; line-height: 1.35; }
+.next-trail-card > b { display: grid; min-width: 2.4rem; min-height: 2.75rem; place-items: center; color: rgb(41 66 57 / 60%); font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.4rem; }
+.next-trail-card:hover, .next-trail-card:focus-visible { border-color: rgb(52 95 78 / 25%); outline: none; transform: translateY(-1px); }
+.collection-section > header > span { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .85rem; }
+.landscape-collection { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: .9rem; }
+.landscape-token { display: grid; min-width: 0; grid-template-columns: 4.4rem minmax(0, 1fr); align-items: center; gap: .45rem; overflow: hidden; border: 1px solid rgb(52 74 64 / 9%); border-radius: 1rem; background: rgb(248 240 217 / 54%); padding: .25rem .45rem .25rem .2rem; color: inherit; }
+.landscape-token.is-found:hover, .landscape-token.is-found:focus-visible { border-color: rgb(52 95 78 / 25%); background: rgb(255 249 232 / 84%); outline: none; }
+.landscape-token.is-locked { opacity: .46; filter: grayscale(.75); }
+.landscape-token > div { min-width: 0; }
+.landscape-token strong, .landscape-token small { display: block; overflow-wrap: anywhere; }
+.landscape-token strong { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .78rem; line-height: 1.1; }
+.landscape-token small { margin-top: .18rem; color: rgb(41 66 57 / 52%); font-size: .57rem; line-height: 1.25; }
+.landscape-stamp { display: block; width: 4.4rem; height: auto; }
+.stamp-sky { fill: #eadcae; }.stamp-mountain { fill: #75877c; }.stamp-hills { fill: #739078; }.stamp-water { fill: #6f9b9d; }.stamp-city { fill: #817c6b; stroke: #566258; stroke-width: 2; }.stamp-trees { fill: #345f4f; }.stamp-sun { fill: #dfa83c; stroke: #b77c28; stroke-width: 1.5; stroke-linecap: round; }.stamp-bench { fill: #a76740; stroke: #344b42; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.season-collection { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; margin-top: .85rem; }
+.season-token { display: grid; min-width: 0; place-items: center; padding: .35rem .15rem .45rem; border-radius: .85rem; background: rgb(225 227 204 / 38%); }
+.season-token.is-locked { opacity: .36; filter: grayscale(1); }
+.season-token svg { display: block; width: 3.8rem; max-width: 100%; height: auto; }
+.season-token small { color: rgb(41 66 57 / 58%); font-size: .58rem; }
+.season-ground { fill: #789175; }.season-trunk { fill: #72533e; }.season-crown { fill: #4f7959; }.season-snow { fill: #efe9d5; }.season-blossom { fill: #f1c9c1; }
+.season-token svg[data-season="summer"] .season-crown { fill: #35664e; }.season-token svg[data-season="autumn"] .season-crown { fill: #ad713d; }.season-token svg[data-season="winter"] .season-crown { fill: #7d887b; }
+.profile-numbers > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; margin-top: .9rem; }
+.profile-numbers span { display: grid; min-width: 0; place-items: center; padding: .55rem .1rem; border-radius: .85rem; background: rgb(221 226 204 / 33%); }
+.profile-numbers svg { width: 1rem; height: 1rem; color: #44715e; }
+.profile-numbers strong { margin-top: .15rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.2rem; }
+.profile-numbers small { color: rgb(41 66 57 / 50%); font-size: .55rem; overflow-wrap: anywhere; }
+.profile-moments > div { display: grid; gap: .15rem; margin-top: .7rem; }
+.profile-moments a { display: grid; min-height: 3.25rem; grid-template-columns: 2.3rem minmax(0, 1fr) auto; align-items: center; gap: .55rem; border-top: 1px solid rgb(47 69 59 / 8%); color: inherit; }
+.profile-moments a > span { display: grid; width: 2.25rem; height: 2.25rem; place-items: center; border-radius: 50%; background: rgb(82 119 94 / 10%); color: #426d5b; }
+.profile-moments p { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .78rem; line-height: 1.3; }
+.profile-moments time { color: rgb(41 66 57 / 42%); font-size: .55rem; }
+.badge-book .badge-album { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin-top: .9rem; }
+.badge-empty { margin: .85rem .15rem .15rem; color: rgb(41 66 57 / 52%); font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .9rem; line-height: 1.45; }
+.more-badges { margin-top: .75rem; border-top: 1px solid rgb(46 67 58 / 9%); }
+.more-badges > summary { display: flex; min-height: 3rem; align-items: center; justify-content: space-between; color: rgb(41 66 57 / 55%); cursor: pointer; font-size: .7rem; font-weight: 700; list-style: none; }
+.more-badges > summary::-webkit-details-marker { display: none; }
+.more-badges > summary span { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.2rem; }
 .badge-card { min-width: 0; overflow: hidden; padding: .55rem; }
 .badge-card.is-locked { opacity: .52; filter: grayscale(.72); }
 .badge-illustration { display: block; width: 100%; aspect-ratio: 180 / 116; border-radius: .95rem; }
@@ -533,7 +619,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .badge-path, .badge-trail { stroke-dasharray: 3 7; }
 .badge-seal { fill: #d9b04f; }
 .badge-copy { padding: .65rem .4rem .45rem; }
-.badge-copy h2 { min-height: 2.35rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .95rem; font-weight: 750; line-height: 1.15; overflow-wrap: anywhere; }
+.badge-copy h2, .badge-copy h3 { min-height: 2.35rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .95rem; font-weight: 750; line-height: 1.15; overflow-wrap: anywhere; }
 .badge-copy p { min-height: 2.2rem; margin-top: .25rem; color: rgb(41 66 57 / 57%); font-size: .68rem; line-height: 1.35; overflow-wrap: anywhere; }
 .badge-progress { height: .32rem; margin-top: .65rem; overflow: hidden; border-radius: 999px; background: rgb(41 66 57 / 9%); }
 .badge-progress i { display: block; height: 100%; border-radius: inherit; background: #d39d3e; }
@@ -547,19 +633,19 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .feed-intro h1 { margin-top: .35rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(2.8rem, 13vw, 4.8rem); font-weight: 700; line-height: .92; letter-spacing: -.045em; }
 .feed-intro p { max-width: 26rem; margin-top: 1rem; color: rgb(41 66 57 / 62%); font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.05rem; line-height: 1.45; }
 .feed-scroll { max-width: 35rem; margin-inline: auto; padding: 0 1rem 3rem; }
-.feed-entry { position: relative; display: grid; grid-template-columns: 2.7rem minmax(0, 1fr) 2.75rem; align-items: center; gap: .75rem; min-height: 7rem; margin-bottom: .75rem; overflow: hidden; border: 1px solid rgb(66 72 56 / 12%); border-radius: 1.35rem; background: rgb(255 249 232 / 72%); padding: 1rem .65rem 1rem .85rem; box-shadow: inset 0 1px rgb(255 255 255 / 72%); }
+.feed-entry { position: relative; display: grid; grid-template-columns: 3rem minmax(0, 1fr) 2.75rem; align-items: center; gap: .75rem; min-height: 7rem; margin-bottom: .75rem; overflow: hidden; border: 1px solid rgb(66 72 56 / 12%); border-radius: 1.35rem; background: rgb(255 249 232 / 72%); padding: 1rem .65rem 1rem .85rem; box-shadow: inset 0 1px rgb(255 255 255 / 72%); }
 .feed-entry::after { position: absolute; right: -1rem; bottom: -1.8rem; width: 7rem; height: 4rem; content: ""; border-radius: 50% 50% 0 0; background: rgb(67 108 87 / 7%); transform: rotate(-7deg); }
-.feed-mark { z-index: 1; display: grid; width: 2.7rem; height: 2.7rem; place-items: center; border-radius: 48% 52% 46% 54%; background: #e6c477; color: #315e50; transform: rotate(-3deg); }
-.feed-confirmed .feed-mark { background: #cbd8b9; transform: rotate(3deg); }
-.feed-rated .feed-mark { background: #efd593; }
-.feed-missing .feed-mark { background: #d6c4aa; }
-.feed-edited .feed-mark { background: #bad2ca; }
+.feed-avatar { position: relative; z-index: 1; display: block; width: 3rem; height: 3rem; }
+.trail-avatar.is-compact { width: 3rem; height: 3rem; filter: none; }
+.feed-kind-mark { position: absolute; right: -.18rem; bottom: -.18rem; display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border: 2px solid #f6ecd2; border-radius: 50%; background: #e6c477; color: #315e50; }
+.feed-confirmed .feed-kind-mark { background: #cbd8b9; }.feed-rated .feed-kind-mark { background: #efd593; }.feed-missing .feed-kind-mark { background: #d6c4aa; }.feed-edited .feed-kind-mark { background: #bad2ca; }
 .feed-entry p { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1rem; line-height: 1.36; overflow-wrap: anywhere; }
-.feed-entry strong { color: #27604f; font-weight: 760; }
-.feed-entry em { color: #704e32; font-style: normal; }
+.feed-person { color: #27604f; font-weight: 760; text-decoration: none; }
+.feed-bench { color: #704e32; font-style: normal; text-decoration: none; }
 .feed-entry time { display: block; margin-top: .45rem; color: rgb(41 66 57 / 42%); font-size: .63rem; }
-.feed-entry { color: inherit; text-decoration: none; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
-.feed-entry:hover, .feed-entry:focus-visible { border-color: rgb(54 92 76 / 28%); background: rgb(255 250 235 / 90%); outline: none; transform: translateY(-1px); }
+.feed-entry { color: inherit; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.feed-entry:hover { border-color: rgb(54 92 76 / 28%); background: rgb(255 250 235 / 90%); transform: translateY(-1px); }
+.feed-avatar:focus-visible, .feed-person:focus-visible, .feed-bench:focus-visible, .feed-arrow:focus-visible { border-radius: .35rem; outline: 2px solid #346d5a; outline-offset: 2px; }
 .feed-entry:active { transform: scale(.99); }
 .feed-arrow { z-index: 1; display: grid; min-width: 2.75rem; min-height: 2.75rem; place-items: center; color: rgb(41 66 57 / 62%); font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.5rem; }
 .feed-empty { padding: 5rem 1rem; color: rgb(41 66 57 / 55%); text-align: center; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; }

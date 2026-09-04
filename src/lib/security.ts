@@ -39,13 +39,14 @@ export function verifyUserPassword(password: string, encoded: string) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-export type CurrentUser = { id: number; username: string };
+export type CurrentUser = { id: number; username: string; avatarSeed: string };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const token = (await cookies()).get(USER_COOKIE)?.value;
   if (!token) return null;
   const user = sqlite.prepare(`
-    SELECT u.id,u.username FROM user_sessions s JOIN users u ON u.id=s.user_id
+    SELECT u.id,u.username,coalesce(nullif(u.avatar_seed,''),u.username) avatarSeed
+    FROM user_sessions s JOIN users u ON u.id=s.user_id
     WHERE s.token_hash=? AND s.expires_at>?
   `).get(userSessionHash(token), new Date().toISOString()) as CurrentUser | undefined;
   return user ?? null;

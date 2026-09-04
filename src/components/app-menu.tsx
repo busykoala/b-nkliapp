@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Footprints, LogIn, Menu, Plus, Share, SlidersHorizontal, UserRound, X } from "lucide-react";
+import { Download, Footprints, LogIn, Menu, Plus, Share, SlidersHorizontal, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { CurrentUser } from "@/lib/security";
 import { AccountDialog } from "./account-controls";
+import { TrailAvatar } from "./trail-avatar";
 
 type InstallEvent = Event & {
   prompt: () => Promise<void>;
@@ -50,7 +51,7 @@ export function AppMenu({ user, onFilter, onAdd, activeFilters = 0 }: { user: Cu
           <Link aria-label="Bänkli-Feed" href="/feed" className={`app-menu-row ${pathname === "/feed" ? "is-current" : ""}`} onClick={close}><Footprints size={19} /> Bänkli-Feed</Link>
           {onFilter && <button className="app-menu-row" onClick={() => { close(); onFilter(); }}><SlidersHorizontal size={19} /> Bänkli auswählen {activeFilters > 0 && <small>{activeFilters}</small>}</button>}
           {onAdd && <button aria-label="Bänkli eintragen" className="app-menu-row" onClick={() => { if (user) { close(); onAdd(); } else openAccount(); }}><Plus size={19} /> Bänkli eintragen</button>}
-          {user ? <Link aria-label="Mein Profil" href="/profil" className="app-menu-row" onClick={close}><UserRound size={19} /> Mein Profil</Link>
+          {user ? <Link aria-label="Mein Profil" href="/profil" className="app-menu-row" onClick={close}><span className="app-menu-avatar"><TrailAvatar seed={user.avatarSeed} username={user.username} compact /></span> Mein Profil</Link>
             : <button aria-label="Anmelden" className="app-menu-row" onClick={openAccount}><LogIn size={19} /> Anmelden</button>}
           {(ios || installEvent) && <button className="app-menu-row" onClick={install}><Download size={19} /> App installieren</button>}
         </nav>

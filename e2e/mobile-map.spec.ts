@@ -56,7 +56,7 @@ test("location denial leaves the map usable", async ({ page, context }) => {
 
 test("keeps browsing public but requires an account for contributions", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: /Stimmen aus der Nähe/ }).click();
+  await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
   await expect(page.getByText("Zum Mitmachen kurz anmelden")).toBeVisible();
   await expect(page.getByRole("button", { name: "Bewertung veröffentlichen" })).toHaveCount(0);
 });
@@ -64,7 +64,7 @@ test("keeps browsing public but requires an account for contributions", async ({
 test("registers and writes a rating plus structured bench metadata", async ({ page, browserName }) => {
   await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: /Stimmen aus der Nähe/ }).click();
+  await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
   await page.getByLabel("Gesamt bewerten").selectOption("5");
   await page.getByLabel("Aussicht bewerten").selectOption("4");
   await page.getByLabel("Komfort bewerten").selectOption("4");
@@ -72,12 +72,11 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await page.getByPlaceholder("Was hat dir hier gefallen?").fill("Playwright-Testbewertung");
   await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
-  await page.getByText("Name, Widmung oder Ort ergänzen").click();
-  await page.getByRole("textbox", { name: "Ort", exact: true }).fill("Interlaken");
-  await page.getByLabel("PLZ").fill("3800");
-  await page.getByLabel("Kanton").fill("BE");
-  await page.getByRole("button", { name: "Speichern" }).click();
-  await expect(page.getByText("Angaben aktualisiert.")).toBeVisible();
+  await page.getByRole("button", { name: "Zum Platz" }).click();
+  await page.getByRole("tab", { name: "Bank" }).click();
+  await page.getByRole("button", { name: /Armlehnen/ }).click();
+  await page.getByRole("button", { name: "Ja", exact: true }).click();
+  await expect(page.getByRole("button", { name: /Armlehnen Ja/ })).toBeVisible();
 });
 
 test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {
@@ -96,9 +95,11 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   await expect(page.getByRole("figure")).toBeVisible();
-  await expect(page.getByText("Himmelslauf")).toBeVisible();
+  await page.getByRole("tab", { name: "Licht" }).click();
+  await expect(page.getByText(/Direkte Sonne|Geschätzte Sonne/).first()).toBeVisible();
+  await page.getByRole("tab", { name: "Aussicht" }).click();
+  await expect(page.getByText("Was den Horizont prägt")).toBeVisible();
   await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
-  await expect(page.getByText("Mehr über diesen Platz")).toBeVisible();
 });
 
 test("opens the password-protected moderation view", async ({ page }) => {

@@ -5,7 +5,7 @@ export const badgeCatalog = [
   { key: "erstes-plaetzli", name: "Bänkli-Entdecker:in", art: "discoverer", hint: "Ein Bänkli eingetragen", metric: "added", target: 1 },
   { key: "baenkli-scout", name: "Bänkli-Pionier:in", art: "pioneer", hint: "3 eigene Bänkli bestätigt", metric: "verifiedAdded", target: 3 },
   { key: "spaehnase", name: "Bänkli-Spürnase", art: "scout", hint: "10 Bänkli eingetragen", metric: "added", target: 10 },
-  { key: "verifizierli", name: "Kontrollsitzer:in", art: "checker", hint: "5 Bänkli bestätigt", metric: "confirmed", target: 5 },
+  { key: "verifizierli", name: "Bänkli-Prüfer:in", art: "checker", hint: "5 Bänkli bestätigt", metric: "confirmed", target: 5 },
   { key: "holzauge", name: "Bänkli-Detektiv:in", art: "detective", hint: "3 fehlende Bänkli bestätigt", metric: "removed", target: 3 },
   { key: "pausenpoet", name: "Pausenpoet:in", art: "poet", hint: "5 Bewertungen geschrieben", metric: "rated", target: 5 },
   { key: "baenkli-buenzli", name: "Bänkli-Kenner:in", art: "expert", hint: "25 hilfreiche Beiträge", metric: "total", target: 25 },
@@ -23,7 +23,7 @@ export function getUserActivity(userId: number, database: Database.Database = sq
       (SELECT count(*) FROM bench_confirmations WHERE user_id=@userId) confirmed,
       (SELECT count(*) FROM bench_removal_confirmations WHERE user_id=@userId) removed,
       (SELECT count(*) FROM ratings WHERE user_id=@userId) rated,
-      (SELECT count(*) FROM bench_metadata_edits WHERE user_id=@userId) edited
+      (SELECT count(DISTINCT bench_row_id) FROM bench_metadata_edits WHERE user_id=@userId) edited
   `).get({ userId }) as Record<string, number>;
   const total = row.added + row.confirmed + row.removed + row.rated + row.edited;
   return { ...row, total } as Record<BadgeMetric, number> & { edited: number };
