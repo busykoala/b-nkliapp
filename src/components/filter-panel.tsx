@@ -13,6 +13,11 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
         <h2>Was passt gerade?</h2>
         <button className="btn btn-circle btn-ghost btn-sm" aria-label="Filter schliessen" onClick={onClose}><Check size={19} /></button>
       </div>
+      <div className="marker-light-key" aria-label="Farben der Bänkli-Punkte">
+        <span><i className="is-sunny" /> Sonne</span>
+        <span><i className="is-shady" /> Schatten</span>
+        <span><i className="is-open" /> noch offen</span>
+      </div>
       <div className="filter-choices">
         <FilterToggle active={filters.sunnyNow === true} icon={<Sun />} label="Sonne" onClick={() => toggle("sunnyNow")} />
         <FilterToggle active={(filters.minViewScore ?? 0) >= 4} icon={<Eye />} label="Weite Sicht" onClick={() => onChange({ ...filters, minViewScore: (filters.minViewScore ?? 0) >= 4 ? undefined : 4 })} />

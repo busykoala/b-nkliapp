@@ -36,6 +36,7 @@ from environment_geometry import (
     feature_contains_exact,
     feature_distance_exact,
     feature_nearest_location,
+    feature_ray_span,
     feature_bounds_wgs84,
     geopackage_layers,
     geometry_wkb_from_coordinates,
@@ -48,8 +49,8 @@ from visual_pipeline import analyze_scenes, audit_environment, benchmark_models,
 from weather_pipeline import refresh_weather
 
 DEFAULT_PBF = "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf"
-PIPELINE_VERSION = "4.2.0"
-PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v4"
+PIPELINE_VERSION = "4.3.0"
+PROFILE_PIPELINE_VERSION = "GeoAdmin-Horizont v5"
 PROFILE_DISTANCES_METERS = (10, 25, 50, 75, 100, 150, *range(200, 20_001, 200))
 PROFILE_BEARING_GROUPS = (tuple(range(0, 180, 5)), tuple(range(180, 360, 5)))
 KEEP_TAGS = {
@@ -1201,7 +1202,62 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
         horizon = profile[int(round(direction / 5)) % 72]
         return horizon < 12
 
-    visible_water = [feature for feature in water_features if in_view(feature, 10_000)]
+    def row_value(feature: sqlite3.Row, key: str, default=None):
+        return feature[key] if key in feature.keys() and feature[key] is not None else default
+
+    def visible_water_rays(feature: sqlite3.Row) -> list[bool]:
+        distance = feature_distance(latitude, longitude, feature)
+        if distance > 10_000:
+            return [False] * 72
+        has_full_terrain = len(terrain_samples) == 72 * len(PROFILE_DISTANCES_METERS) and origin_elevation is not None
+        result = [False] * 72
+        blockers = [item for item in context if item["kind"] in {"building", "tree"}]
+        for index in range(72):
+            bearing = index * 5
+            if facing is not None and abs((((bearing - facing) + 180) % 360) - 180) > 55:
+                continue
+            span = feature_ray_span(latitude, longitude, feature, bearing)
+            entry = span[0] if span else None
+            if entry is None and distance <= 75 and abs((((bearing - feature_bearing(latitude, longitude, feature)) + 180) % 360) - 180) <= 2.5:
+                entry = distance
+            if entry is None or entry > 10_000:
+                continue
+            if not has_full_terrain:
+                result[index] = entry <= 75 and profile[index] < 8
+                continue
+            eye = float(origin_elevation) + 1.1
+            target_distance = max(10, (span[0] + min(span[1], 10_000)) / 2 if span else entry)
+            nearest_sample = min(range(len(PROFILE_DISTANCES_METERS)), key=lambda sample: abs(PROFILE_DISTANCES_METERS[sample] - target_distance))
+            water_elevation = float(terrain_samples[index * len(PROFILE_DISTANCES_METERS) + nearest_sample])
+            target_angle = math.degrees(math.atan2(water_elevation - eye, target_distance))
+            foreground_angle = -90.0
+            for sample_index, sample_distance in enumerate(PROFILE_DISTANCES_METERS):
+                if sample_distance >= entry - 2:
+                    break
+                elevation = float(terrain_samples[index * len(PROFILE_DISTANCES_METERS) + sample_index])
+                foreground_angle = max(foreground_angle, math.degrees(math.atan2(elevation - eye, sample_distance)))
+            for blocker in blockers:
+                blocker_distance = feature_distance(latitude, longitude, blocker)
+                if blocker_distance >= entry or blocker_distance > 350:
+                    continue
+                blocker_bearing = feature_bearing(latitude, longitude, blocker)
+                half_width = feature_angular_half_width(latitude, longitude, blocker, blocker_bearing) or 3.0
+                if abs((((bearing - blocker_bearing) + 180) % 360) - 180) > half_width:
+                    continue
+                height = float(row_value(blocker, "height_meters", 8.5 if blocker["kind"] == "building" else 12.0))
+                roof = row_value(blocker, "roof_elevation_meters")
+                nearest_base_sample = min(range(len(PROFILE_DISTANCES_METERS)), key=lambda sample: abs(PROFILE_DISTANCES_METERS[sample] - blocker_distance))
+                base = float(terrain_samples[(int(round(blocker_bearing / 5)) % 72) * len(PROFILE_DISTANCES_METERS) + nearest_base_sample])
+                top = float(roof) if roof is not None else base + height
+                foreground_angle = max(foreground_angle, math.degrees(math.atan2(top - eye, max(2.5, blocker_distance))))
+            result[index] = target_angle + .6 >= foreground_angle
+        return result
+
+    water_visibility = [(feature, visible_water_rays(feature)) for feature in water_features]
+    visible_water = [
+        feature for feature, rays in water_visibility
+        if _longest_view_run(rays, facing is None) >= (1 if feature_distance(latitude, longitude, feature) <= 75 else 2)
+    ]
     visible_forests = [feature for feature in forests if in_view(feature, 2_000)]
     in_forest = any(feature_contains_exact(latitude, longitude, feature) for feature in forests)
     nearest_forest = min((feature_distance(latitude, longitude, feature) for feature in forests), default=math.inf)
@@ -1252,7 +1308,7 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
     elif blocked_share < .5 and hill_run >= minimum_run:
         labels.append("Hügelblick")
     if visible_water:
-        labels.append("Seeblick" if any((feature["subtype"] or "") in {"lake", "reservoir", "water"} for feature in visible_water) else "Wasserblick")
+        labels.append("Seeblick" if any((feature["subtype"] or "") in {"lake", "reservoir"} for feature in visible_water) else "Wasserblick")
     if openness >= 0.75:
         labels.append("Weitsicht")
     if (in_forest or nearest_forest <= 25 or visible_forests) and naturalness >= 0.7:
@@ -1893,9 +1949,9 @@ def run_enrich_profile_batch(args) -> None:
         rows = connection.execute("""
             SELECT b.row_id,b.latitude,b.longitude,b.direction_degrees,b.covered,e.canopy_context
             FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
-            WHERE b.active=1 AND (e.terrain_horizon_profile IS NULL OR length(e.terrain_horizon_profile)<100)
+            WHERE b.active=1 AND (e.terrain_horizon_profile IS NULL OR length(e.terrain_horizon_profile)<100 OR e.pipeline_version<>?)
             ORDER BY b.row_id LIMIT ?
-        """, (args.limit,)).fetchall()
+        """, (PROFILE_PIPELINE_VERSION, args.limit)).fetchall()
         stats["selected"] = len(rows)
         if not rows:
             finish_run(connection, run_id, "skipped", {"reason": "all active benches have a horizon"})

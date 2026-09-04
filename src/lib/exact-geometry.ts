@@ -119,3 +119,27 @@ export function nearestGeometryPoint(point: ProjectedPoint, geometry: ExactGeome
   }
   return best;
 }
+
+/** Distances at which a ray enters and leaves an exact projected geometry. */
+export function rayGeometrySpan(origin: ProjectedPoint, bearingDegrees: number, geometry: ExactGeometry) {
+  const radians = bearingDegrees * Math.PI / 180;
+  const direction: ProjectedPoint = [Math.sin(radians), Math.cos(radians)];
+  const distances: number[] = [];
+  for (const path of geometry.paths) {
+    for (let index = 1; index < path.length; index += 1) {
+      const start = path[index - 1];
+      const end = path[index];
+      const segment: ProjectedPoint = [end[0] - start[0], end[1] - start[1]];
+      const offset: ProjectedPoint = [start[0] - origin[0], start[1] - origin[1]];
+      const denominator = direction[0] * segment[1] - direction[1] * segment[0];
+      if (Math.abs(denominator) < 1e-9) continue;
+      const rayDistance = (offset[0] * segment[1] - offset[1] * segment[0]) / denominator;
+      const segmentRatio = (offset[0] * direction[1] - offset[1] * direction[0]) / denominator;
+      if (rayDistance >= 0 && segmentRatio >= 0 && segmentRatio <= 1) distances.push(rayDistance);
+    }
+  }
+  const unique = distances.sort((a, b) => a - b).filter((value, index, values) => index === 0 || value - values[index - 1] > .05);
+  if (geometryContains(origin, geometry)) unique.unshift(0);
+  if (!unique.length) return null;
+  return { entry: unique[0], exit: unique[1] ?? unique[0] };
+}

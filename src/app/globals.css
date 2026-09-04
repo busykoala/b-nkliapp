@@ -524,8 +524,15 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .profile-nav-actions { display: flex; align-items: center; gap: .45rem; }
 .profile-logout { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .35rem; border-radius: 999px; padding: 0 .7rem; color: rgb(41 66 57 / 57%); font-size: .72rem; font-weight: 700; }
 .profile-logout:hover, .profile-logout:focus-visible { background: rgb(255 249 232 / 66%); color: #315e50; outline: none; }
-.app-menu-avatar { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; margin: -.25rem -.15rem -.25rem -.15rem; }
-.app-menu-avatar .trail-avatar { width: 1.8rem; height: 1.8rem; }
+.app-menu-avatar { display: grid; width: 1.8rem; height: 1.8rem; flex: 0 0 1.8rem; place-items: center; overflow: hidden; border-radius: 50%; }
+.app-menu-avatar .trail-avatar,
+.app-menu-avatar .trail-avatar.is-compact { display: block; width: 1.8rem; height: 1.8rem; }
+.marker-light-key { display: flex; min-height: 2.5rem; align-items: center; gap: .85rem; margin: -.35rem 0 .85rem; padding: .45rem .15rem .65rem; border-bottom: 1px solid rgb(44 69 59 / 9%); color: rgb(41 66 57 / 58%); font-size: .68rem; }
+.marker-light-key span { display: inline-flex; align-items: center; gap: .32rem; white-space: nowrap; }
+.marker-light-key i { width: .65rem; height: .65rem; border: 2px solid #fff4d8; border-radius: 50%; box-shadow: 0 0 0 1px rgb(66 58 43 / 16%); }
+.marker-light-key .is-sunny { background: #e5aa38; }
+.marker-light-key .is-shady { background: #3e7464; }
+.marker-light-key .is-open { background: #9b927d; }
 .profile-journal { width: min(100%, 38rem); margin-inline: auto; padding: .5rem 1rem 4rem; }
 .profile-portrait { display: grid; grid-template-columns: minmax(8.6rem, 42%) minmax(0, 1fr); align-items: center; gap: 1.1rem; padding: .6rem .2rem 1.65rem; }
 .profile-avatar-wrap { position: relative; min-width: 0; }

@@ -116,9 +116,9 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
         {isUrban && <g className="scene-buildings"><path d="M32 273h72v91H32zM116 301h55v63h-55zM505 281h88v83h-88z" /><path d="m27 273 42-31 40 31m390 8 50-39 51 39" />{snowCover > 12 && <path className="building-snow" d="m27 273 42-31 40 31-8 1-32-22-33 22Zm472 8 50-39 51 39-9 1-42-29-41 29Z" />}</g>}
         {!isUrban && hasNearbyBuilding && <g className="scene-near-building" transform={buildingOnRight ? "translate(510 0)" : "translate(35 0)"}><path d="M0 276h94v111H0Z" /><path d="m-9 276 55-43 57 43" /><path className="building-window" d="M19 304h19v25H19Zm43 0h19v25H62Z" /></g>}
         <path className="scene-far-hill" d="M0 301c105-41 177-24 260 17 85 42 188-46 380-20v182H0Z" />
+        {hasWater && <g className="scene-water"><path d="M0 326c111-14 203 18 320 10 109-7 207-35 320-14v88c-117-16-215 8-326 13-103 5-200-24-314-6Z" /><path d="M32 350c80-8 132 10 211 3m116-1c90-12 151-8 231 2M90 382c75-5 128 7 191 0" /></g>}
         <path className="scene-near-hill" d="M0 357c109-27 187 27 278 22 104-5 198-64 362-28v129H0Z" />
         {snowCover > 5 && <path className="scene-ground-snow" style={{ opacity: Math.min(.92, snowCover / 100 + .25) }} d="M0 349c109-27 187 27 278 22 104-5 198-64 362-28v137H0Z" />}
-        {hasWater && <g className="scene-water"><path d="M0 375c111-14 203 18 320 10 109-7 207-35 320-14v109H0Z" /><path d="M32 402c80-8 132 10 211 3m116-1c90-12 151-8 231 2M90 434c75-5 128 7 191 0" /></g>}
         {(bench.distancePathMeters ?? 9999) < 150 && <path className="scene-path" d="M-20 480c132-95 231-81 332-52 92 26 175 4 352-52" />}
 
         <g className="scene-trees">

@@ -130,6 +130,25 @@ def feature_angular_half_width(
     return min(89.0, max(2.5, max(differences)))
 
 
+def feature_ray_span(
+    latitude: float, longitude: float, feature: sqlite3.Row, bearing: float, maximum_distance: float = 10_000,
+) -> Optional[tuple[float, float]]:
+    """Return exact entry/exit distances where a bearing ray crosses a feature."""
+    geometry = _feature_geometry(feature)
+    if geometry is None:
+        return None
+    origin = point_lv95(latitude, longitude)
+    radians = math.radians(bearing)
+    end = Point(origin.x + math.sin(radians) * maximum_distance, origin.y + math.cos(radians) * maximum_distance)
+    intersection = geometry.intersection(LineString([origin, end]))
+    if intersection.is_empty:
+        return None
+    distances = sorted(float(origin.distance(Point(x, y))) for x, y in get_coordinates(intersection))
+    if geometry.covers(origin):
+        distances.insert(0, 0.0)
+    return (distances[0], distances[-1]) if distances else None
+
+
 def feature_bounds_wgs84(geometry_wkb: bytes) -> tuple[float, float, float, float]:
     geometry = transform(LV95_TO_WGS84.transform, from_wkb(geometry_wkb))
     min_lon, min_lat, max_lon, max_lat = geometry.bounds

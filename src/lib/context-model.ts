@@ -1,6 +1,6 @@
 import type { ObstructionType } from "./sun";
 import { HORIZON_DISTANCES_METERS, wgs84ToLv95 } from "./elevation";
-import { geometryContains, nearestGeometryPoint, type ExactGeometry, type ProjectedPoint } from "./exact-geometry";
+import { geometryContains, nearestGeometryPoint, rayGeometrySpan, type ExactGeometry, type ProjectedPoint } from "./exact-geometry";
 import type { LandCoverEvidence } from "./land-cover";
 
 export type ContextFeature = {
@@ -140,6 +140,27 @@ function longestRun(values: boolean[], circular: boolean) {
   return Math.min(values.length, longest);
 }
 
+function terrainSample(terrain: TerrainEvidence, bearingIndex: number, distance: number) {
+  if (terrain.sampleElevations.length !== 72 * HORIZON_DISTANCES_METERS.length) return null;
+  let nearestIndex = 0;
+  for (let index = 1; index < HORIZON_DISTANCES_METERS.length; index += 1) {
+    if (Math.abs(HORIZON_DISTANCES_METERS[index] - distance) < Math.abs(HORIZON_DISTANCES_METERS[nearestIndex] - distance)) nearestIndex = index;
+  }
+  return terrain.sampleElevations[bearingIndex * HORIZON_DISTANCES_METERS.length + nearestIndex];
+}
+
+function waterGeometryLooksLikeLake(feature: ContextFeature) {
+  if (["lake", "reservoir"].includes(feature.subtype ?? "")) return true;
+  if (!feature.exactGeometry) return false;
+  const points = feature.exactGeometry.paths.flat();
+  if (!points.length) return false;
+  const eastings = points.map((point) => point[0]);
+  const northings = points.map((point) => point[1]);
+  const width = Math.max(...eastings) - Math.min(...eastings);
+  const height = Math.max(...northings) - Math.min(...northings);
+  return Math.max(width, height) >= 250 && Math.min(width, height) >= 80;
+}
+
 export function buildContextModel(latitude: number, longitude: number, directionDegrees: number | null, features: ContextFeature[], terrain?: TerrainEvidence, landCover?: LandCoverEvidence): ContextModel {
   const hasTerrain = terrain?.horizonProfile.length === 72;
   const horizonProfile = hasTerrain ? [...terrain.horizonProfile] : Array<number>(72).fill(0);
@@ -224,15 +245,46 @@ export function buildContextModel(latitude: number, longitude: number, direction
   const vegetationHeights = nearTrees.flatMap((feature) => feature.height_meters === null ? [] : [feature.height_meters]).sort((a, b) => a - b);
   const vegetationMedianHeight = vegetationHeights.length ? vegetationHeights[Math.floor(vegetationHeights.length / 2)] : null;
   const vegetationMaxHeight = vegetationHeights.length ? vegetationHeights.at(-1) ?? null : null;
-  const visibleWater = hasTerrain ? waters.filter((feature) => {
-    const distance = featureDistance(latitude, longitude, feature);
-    if (distance > 10_000) return false;
-    const bearing = featureBearing(latitude, longitude, feature);
-    if (directionDegrees !== null && circularDifference(bearing, directionDegrees) > 55) return false;
-    const index = Math.round(bearing / 5) % 72;
-    return horizonProfile[index] < 12
-      && (obstructionTypes[index] === "terrain" || horizonProfile[index] <= terrain.horizonProfile[index] + .5);
+  const waterVisibility = hasTerrain ? waters.map((feature) => {
+    const nearestDistance = featureDistance(latitude, longitude, feature);
+    if (nearestDistance > 10_000) return { feature, visible: false };
+    const visibleRays = Array<boolean>(72).fill(false);
+    for (let index = 0; index < 72; index += 1) {
+      const bearing = index * 5;
+      if (directionDegrees !== null && circularDifference(bearing, directionDegrees) > 55) continue;
+      const span = feature.exactGeometry ? rayGeometrySpan(origin, bearing, feature.exactGeometry) : null;
+      const entry = span?.entry ?? (nearestDistance <= 75 && circularDifference(bearing, featureBearing(latitude, longitude, feature)) <= 2.5 ? nearestDistance : null);
+      if (entry === null || entry > 10_000) continue;
+      const targetDistance = Math.max(10, span ? (span.entry + Math.min(span.exit, 10_000)) / 2 : entry);
+      const waterElevation = terrainSample(terrain, index, targetDistance);
+      if (waterElevation === null) {
+        visibleRays[index] = entry <= 75 && horizonProfile[index] < 8;
+        continue;
+      }
+      const eyeElevation = terrain.elevationMeters + 1.1;
+      const targetAngle = Math.atan2(waterElevation - eyeElevation, targetDistance) * 180 / Math.PI;
+      let foregroundAngle = -90;
+      for (let sampleIndex = 0; sampleIndex < HORIZON_DISTANCES_METERS.length; sampleIndex += 1) {
+        const distance = HORIZON_DISTANCES_METERS[sampleIndex];
+        if (distance >= entry - 2) break;
+        const elevation = terrain.sampleElevations[index * HORIZON_DISTANCES_METERS.length + sampleIndex];
+        foregroundAngle = Math.max(foregroundAngle, Math.atan2(elevation - eyeElevation, distance) * 180 / Math.PI);
+      }
+      for (const blocker of [...buildings, ...trees]) {
+        const blockerDistance = featureDistance(latitude, longitude, blocker);
+        if (blockerDistance >= entry || blockerDistance > 350) continue;
+        const blockerBearing = featureBearing(latitude, longitude, blocker);
+        if (circularDifference(bearing, blockerBearing) > featureAngularHalfWidth(latitude, longitude, blocker, blockerBearing, Math.max(2.5, blockerDistance))) continue;
+        const base = terrainBaseAt(terrain, blockerBearing, blockerDistance);
+        const top = blocker.roof_elevation_meters ?? base + (blocker.height_meters ?? (blocker.kind === "building" ? 8.5 : 12));
+        foregroundAngle = Math.max(foregroundAngle, Math.atan2(top - eyeElevation, Math.max(2.5, blockerDistance)) * 180 / Math.PI);
+      }
+      visibleRays[index] = targetAngle + .6 >= foregroundAngle;
+    }
+    const requiredRun = nearestDistance <= 75 ? 1 : 2;
+    return { feature, visible: longestRun(visibleRays, directionDegrees === null) >= requiredRun };
   }) : [];
+  const visibleWater = waterVisibility.filter((item) => item.visible).map((item) => item.feature);
   const water = hasTerrain
     ? visibleWater.length > 0 && (distanceWaterMeters ?? Infinity) < 1_500 ? 1 : visibleWater.length > 0 ? 0.7 : 0
     : distanceWaterMeters === null ? 0 : distanceWaterMeters < 300 ? 0.65 : distanceWaterMeters < 1_500 ? 0.35 : 0.1;
@@ -282,7 +334,7 @@ export function buildContextModel(latitude: number, longitude: number, direction
       viewKind = "hill";
       viewLabels.push("Hügelblick");
     }
-    if (visibleWater.length) viewLabels.push(visibleWater.some((feature) => ["lake", "reservoir", "water"].includes(feature.subtype ?? "")) ? "Seeblick" : "Wasserblick");
+    if (visibleWater.length) viewLabels.push(visibleWater.some(waterGeometryLooksLikeLake) ? "Seeblick" : "Wasserblick");
     if (openness >= 0.75) viewLabels.push("Weitsicht");
     if ((inForest || forestShare >= .35) && naturalness >= 0.7) viewLabels.push("Waldumgebung");
     if (openness < 0.4 || meanHorizon > 22 || selectedBlockedShare >= 0.5) {

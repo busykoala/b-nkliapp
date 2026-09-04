@@ -214,7 +214,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
     // Map markers only make a binary promise after the full worker model has
     // combined raster surface/terrain with exact context geometry.
     const hasCurrentProfile = profile.length === 72
-      && (row.pipeline_version === "4.2.0" || row.pipeline_version === "GeoAdmin-Horizont v4");
+      && (["4.2.0", "4.3.0", "GeoAdmin-Horizont v4", "GeoAdmin-Horizont v5"].includes(String(row.pipeline_version)));
     const sunnyNow = hasCurrentProfile ? calculateSunState({
       date: now,
       latitude: row.latitude,
@@ -309,7 +309,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   ).get());
   const exactOsmEvidence = Boolean(sqlite.prepare(`
     SELECT 1 FROM pipeline_runs
-    WHERE kind IN ('import-osm','refresh') AND status='completed' AND pipeline_version='4.2.0'
+    WHERE kind IN ('import-osm','refresh') AND status='completed' AND pipeline_version IN ('4.2.0','4.3.0')
     LIMIT 1
   `).get());
   const exactLandEvidence = officialLandEvidence || exactOsmEvidence;
@@ -331,7 +331,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   let contextModel: ReturnType<typeof buildContextModel> | null = null;
   let contextViewRefreshed = false;
   const needsLandCoverRefresh = !String(row.context_source_version ?? "").includes(SWISSTOPO_LAND_COVER_VERSION);
-  const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v4", "4.2.0"].includes(pipelineVersion)
+  const needsContextRefresh = !hasTerrainModel || !["GeoAdmin-Horizont v5", "4.3.0"].includes(pipelineVersion)
     || row.environment_computed_at === null || needsLandCoverRefresh;
   if (needsContextRefresh) {
     const contextFeatures = getContextFeatures(latitude, longitude);
@@ -379,7 +379,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
       hasTerrainModel = true;
       elevationMeters = terrainEvidence.elevationMeters;
       elevationSource = terrain?.source ?? elevationSource;
-      pipelineVersion = "GeoAdmin-Horizont v4";
+      pipelineVersion = "GeoAdmin-Horizont v5";
       // Replace any seasonal values produced by the earlier near-field-only model.
       sunMinutesSummer = null;
       sunMinutesWinter = null;
@@ -397,7 +397,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
         ) VALUES (
           @rowId,@elevation,@elevationSource,@computedAt,@inForest,@canopy,@forest,@water,@path,@horizon,@terrainHorizon,@obstructionTypes,
           @buildingPercent,@vegetationPercent,@distanceBuilding,@buildingCount,@viewScore,'mittel',@components,@viewLabels,
-          @contextSourceVersion,'GeoAdmin-Horizont v4',@computedAt,'mittel',
+          @contextSourceVersion,'GeoAdmin-Horizont v5',@computedAt,'mittel',
           @landContext,@waterfront,@canopyContext,@canopy3,@canopy10,@canopy25,@vegetationMedian,@vegetationMax,@computedAt
         )
         ON CONFLICT(bench_row_id) DO UPDATE SET
@@ -561,7 +561,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     },
     nearOpenness: contextModel ? contextModel.nearOpennessPercent / 100 : nearOpenness(obstructionTypes, directionDegrees),
     viewConfidence: (hasTerrainModel ? contextModel ? exactOsmEvidence ? "mittel" : "niedrig"
-      : pipelineVersion === "GeoAdmin-Horizont v4" && !exactOsmEvidence ? "niedrig" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
+      : pipelineVersion === "GeoAdmin-Horizont v5" && !exactOsmEvidence ? "niedrig" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
     sunrise: times.sunrise, sunset: times.sunset,
     directSunrise: localSun.directSunrise, directSunset: localSun.directSunset,
     sunMinutesToday: localSun.sunMinutes, shadeMinutesToday: localSun.shadeMinutes,
@@ -569,7 +569,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     shadeCause: sun?.shadeCause ?? "unbekannt",
     sunnyNow: sun?.sunny ?? null,
     sunConfidence: (hasTerrainModel ? contextModel ? exactOsmEvidence ? "mittel" : "niedrig"
-      : pipelineVersion === "GeoAdmin-Horizont v4" && !exactOsmEvidence ? "niedrig" : row.sun_confidence ?? "mittel" : "niedrig") as BenchDetail["sunConfidence"],
+      : pipelineVersion === "GeoAdmin-Horizont v5" && !exactOsmEvidence ? "niedrig" : row.sun_confidence ?? "mittel" : "niedrig") as BenchDetail["sunConfidence"],
     sunAltitudeDegrees: daylight.altitude,
     sunAzimuthDegrees: daylight.azimuth,
     daylightProgress: daylight.progress,

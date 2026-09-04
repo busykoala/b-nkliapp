@@ -841,7 +841,7 @@ def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
         "deterministic_context": scalar("SELECT count(*) FROM bench_enrichments WHERE land_context IS NOT NULL"),
         "terrain_horizons": scalar("SELECT count(*) FROM bench_enrichments WHERE json_array_length(terrain_horizon_profile)=72"),
         "current_sun_models": scalar("""SELECT count(*) FROM bench_enrichments
-          WHERE pipeline_version IN ('4.2.0','GeoAdmin-Horizont v4') AND json_array_length(horizon_profile)=72"""),
+          WHERE pipeline_version IN ('4.2.0','4.3.0','GeoAdmin-Horizont v4','GeoAdmin-Horizont v5') AND json_array_length(horizon_profile)=72"""),
         "canopy_neighborhoods": scalar("""SELECT count(*) FROM bench_enrichments
           WHERE canopy_share_3m IS NOT NULL AND canopy_share_10m IS NOT NULL AND canopy_share_25m IS NOT NULL"""),
         "water_distances": scalar("SELECT count(*) FROM bench_enrichments WHERE distance_water_meters IS NOT NULL"),

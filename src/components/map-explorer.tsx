@@ -36,6 +36,20 @@ function featureCollection(features: MapFeature[]) {
   };
 }
 
+function selectedBenchFeature(bench?: BenchDetail | null) {
+  return {
+    type: "FeatureCollection" as const,
+    features: bench ? [{
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [bench.longitude, bench.latitude] },
+      properties: {
+        sunnyNow: bench.sunnyNow,
+        verificationStatus: bench.verificationStatus,
+      },
+    }] : [],
+  };
+}
+
 type UserPosition = { longitude: number; latitude: number; accuracy: number };
 
 const FALLBACK_MAP_STYLE = {
@@ -177,9 +191,10 @@ function applyMapAtmosphere(map: MapLibreMap) {
   if (map.getLayer("clusters")) map.setPaintProperty("clusters", "circle-color", phase === "night" ? "#755343" : "#8a5940");
   if (map.getLayer("benches")) {
     map.setPaintProperty("benches", "circle-stroke-color", phase === "night" ? "#f2dca7" : "#fff4d8");
-    map.setPaintProperty("benches", "circle-color", phase === "night"
-      ? ["case", ["==", ["get", "verificationStatus"], "unverified"], "#bc765f", "#d1bd88"]
-      : ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"]);
+    map.setPaintProperty("benches", "circle-color", ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", ["==", ["get", "sunnyNow"], false], "#3e7464", "#9b927d"]);
+  }
+  if (map.getLayer("selected-bench-core")) {
+    map.setPaintProperty("selected-bench-core", "circle-color", ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", ["==", ["get", "sunnyNow"], false], "#3e7464", "#9b927d"]);
   }
 }
 
@@ -233,12 +248,14 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const selectBench = useCallback(async (id: string, focusOnMap = false) => {
     const sequence = ++detailSequence.current;
     setSelectedId(id); setDetailLoading(true); setDetailError(false); setBench(null);
+    (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature());
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
         const detail = await getBenchDetail(id);
         if (!detail) throw new Error("Bench not found");
         if (sequence === detailSequence.current) {
           setBench(detail);
+          (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature(detail));
           if (focusOnMap) mapRef.current?.easeTo({ center: [detail.longitude, detail.latitude], zoom: Math.max(mapRef.current.getZoom(), 17), offset: [0, -100], duration: 650 });
         }
         break;
@@ -258,7 +275,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     const sequence = ++detailSequence.current;
     try {
       const detail = await getBenchDetail(selectedId);
-      if (detail && sequence === detailSequence.current) setBench(detail);
+      if (detail && sequence === detailSequence.current) {
+        setBench(detail);
+        (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature(detail));
+      }
     } catch {
       setMessage("Die neue Angabe ist gespeichert. Die Ansicht aktualisiert sich beim nächsten Öffnen.");
     }
@@ -317,7 +337,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#8a5940", "circle-opacity": 0.94, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 4, "circle-stroke-color": "#f4dfb6", "circle-blur": 0.03 } });
         map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-font": ["Frutiger Neue Regular"], "text-size": 12 }, paint: { "text-color": "#fff4d7" } });
         map.addLayer({ id: "bench-hits", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-radius": 22, "circle-opacity": 0 } });
-        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", "#3e7464"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 10, 18, 15], "circle-stroke-width": 4, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
+        map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", ["==", ["get", "sunnyNow"], false], "#3e7464", "#9b927d"], "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 10, 18, 15], "circle-stroke-width": 4, "circle-stroke-color": "#fff4d8", "circle-blur": 0.01 } });
+        map.addSource("selected-bench", { type: "geojson", data: selectedBenchFeature() });
+        map.addLayer({ id: "selected-bench-halo", type: "circle", source: "selected-bench", paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 18, 18, 25], "circle-color": "#fff1c9", "circle-opacity": .62, "circle-stroke-width": 3, "circle-stroke-color": "#654d39", "circle-blur": .08 } });
+        map.addLayer({ id: "selected-bench-core", type: "circle", source: "selected-bench", paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 15], "circle-color": ["case", ["==", ["get", "verificationStatus"], "unverified"], "#d97b54", ["==", ["get", "sunnyNow"], true], "#e5aa38", ["==", ["get", "sunnyNow"], false], "#3e7464", "#9b927d"], "circle-stroke-width": 5, "circle-stroke-color": "#fff4d8" } });
         map.addSource("user-accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addSource("user-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addSource("add-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -433,7 +456,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center"><div className="storybook-panel grid h-14 w-14 place-items-center rounded-full"><span className="loading loading-ring text-primary" /></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
-      {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} user={user} onClose={() => { detailSequence.current += 1; setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
       <AddBenchDialog open={addOpen} coordinates={addCoordinates} onUseCurrentLocation={() => locate((position) => openAddAt(position.latitude, position.longitude))} onClose={closeAdd} />
     </main>
   );
