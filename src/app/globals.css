@@ -347,8 +347,6 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .inline-story-editor > p { color: #a2473e; font-size: .75rem; }
 .calm-title-meta { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .65rem; }
 .calm-title-meta > p { min-width: 0; color: rgb(41 66 57 / 58%); font-size: .8rem; letter-spacing: .02em; overflow-wrap: anywhere; }
-.title-community-action { display: inline-flex; min-width: 2.75rem; min-height: 2.75rem; flex: none; align-items: center; gap: .35rem; padding: 0 .25rem; color: rgb(42 77 64 / 62%); font-size: .7rem; }
-.title-community-action small { min-width: 1rem; color: rgb(42 77 64 / 44%); font-size: .6rem; }
 .unverified-note { margin-bottom: .55rem; color: #9a6132; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
 .bench-landscape { position: relative; overflow: hidden; width: 100%; aspect-ratio: 6 / 5; border: 0; border-radius: 2rem 2rem 0 0; box-shadow: none; }
 .bench-landscape svg { display: block; width: 100%; height: 100%; }
@@ -425,10 +423,16 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-board { fill: var(--bench-color); stroke: #3d463e; stroke-width: 3; stroke-linejoin: round; }
 .bench-frame { fill: none; stroke: #33473f; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
 .bench-cover { fill: #dbcc9c; stroke: #40574e; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-.scene-rating { fill: rgb(246 234 198 / 42%); stroke: rgb(39 74 62 / 32%); stroke-width: 1.2; }
-.scene-rating .is-lit { fill: #f1bf4e; stroke: #fff2c7; }
-.phase-night .scene-rating { fill: rgb(234 223 191 / 18%); stroke: rgb(245 231 189 / 28%); }
-.phase-night .scene-rating .is-lit { fill: #f6df9d; stroke: #fff1c9; }
+.landscape-rating-action { position: absolute; right: .85rem; bottom: .8rem; z-index: 3; display: inline-flex; min-height: 2.75rem; align-items: center; gap: .45rem; border: 1px solid rgb(47 67 58 / 16%); border-radius: 999px; background: rgb(250 241 214 / 78%); padding: 0 .72rem; color: #b47e25; box-shadow: 0 5px 18px rgb(27 48 41 / 12%); backdrop-filter: blur(7px); transition: background .18s ease, box-shadow .18s ease, transform .18s ease; }
+.landscape-rating-action:hover, .landscape-rating-action:focus-visible { background: rgb(255 248 226 / 94%); box-shadow: 0 7px 22px rgb(27 48 41 / 18%); outline: 2px solid rgb(255 243 200 / 72%); outline-offset: 2px; transform: translateY(-1px); }
+.landscape-rating-action.is-empty { color: rgb(52 69 63 / 42%); }
+.landscape-rating-stars { display: flex; gap: .1rem; }
+.landscape-rating-stars svg { width: 1rem; height: 1rem; fill: transparent; stroke-width: 1.65; }
+.landscape-rating-stars svg.is-filled { fill: currentColor; }
+.landscape-rating-action strong { color: #36564b; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .83rem; font-variant-numeric: tabular-nums; }
+.phase-night .landscape-rating-action { border-color: rgb(244 231 195 / 20%); background: rgb(31 49 55 / 58%); color: #f1d994; }
+.phase-night .landscape-rating-action.is-empty { color: rgb(240 231 204 / 48%); }
+.phase-night .landscape-rating-action strong { color: #f5ecd3; }
 .calm-story-body { padding: 0 1.25rem; }
 .scene-caption { display: flex; min-height: 9.5rem; max-width: 30rem; flex-direction: column; justify-content: center; margin: .8rem .1rem 1.2rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(1.3rem, 5.7vw, 1.65rem); line-height: 1.32; letter-spacing: -.018em; overflow-wrap: anywhere; }
 .scene-caption span { display: block; }

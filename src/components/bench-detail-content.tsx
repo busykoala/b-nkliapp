@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useCallback, useState, useTransition } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Flag, MessageCircleHeart, Pencil, X } from "lucide-react";
+import { ArrowLeft, Check, Flag, Pencil, Star, X } from "lucide-react";
 import { editBenchMetadata } from "@/app/actions/benches";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
@@ -24,6 +24,7 @@ const correctionLabels: Record<string, string> = {
 export function BenchDetailContent({ bench, user, onBenchChange }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void> }) {
   const [community, setCommunity] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
+  const detailRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
   const router = useRouter();
   const saveStory = useCallback(async (_previous: Awaited<ReturnType<typeof editBenchMetadata>> | null, formData: FormData) => {
@@ -41,8 +42,12 @@ export function BenchDetailContent({ bench, user, onBenchChange }: { bench: Benc
     window.alert(result.message);
   });
 
+  useEffect(() => {
+    if (community) detailRef.current?.parentElement?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [community]);
+
   if (community) {
-    return <div className="calm-detail community-detail pb-8">
+    return <div ref={detailRef} className="calm-detail community-detail pb-8">
       <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> Zum Platz</button>
       <Community bench={bench} report={report} user={user} />
     </div>;
@@ -50,20 +55,15 @@ export function BenchDetailContent({ bench, user, onBenchChange }: { bench: Benc
 
   const poem = scenePoem(bench);
 
-  return <div className="calm-detail pb-8">
+  return <div ref={detailRef} className="calm-detail pb-8">
     <section className="bench-story-card">
-      <BenchLandscape bench={bench} />
+      <BenchLandscape bench={bench}>
+        <RatingEntry bench={bench} onOpen={() => setCommunity(true)} />
+      </BenchLandscape>
       <header className="calm-title">
         {bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
         <div className="calm-title-row"><h2>{bench.title}</h2>{user && <button type="button" className="story-edit-button" aria-label="Name und Widmung bearbeiten" aria-expanded={storyOpen} onClick={() => setStoryOpen(!storyOpen)}>{storyOpen ? <X size={17} /> : <Pencil size={15} />}</button>}</div>
-        <div className="calm-title-meta">
-          <p>{placeLine(bench)}</p>
-          <button className="title-community-action" onClick={() => setCommunity(true)}>
-            <MessageCircleHeart size={16} aria-hidden="true" />
-            <span>{bench.myRating ? "Deine Stimme" : "Stimmen"}</span>
-            {bench.ratingCount > 0 && <small>{bench.ratingCount}</small>}
-          </button>
-        </div>
+        <div className="calm-title-meta"><p>{placeLine(bench)}</p></div>
         {user && storyOpen && <form action={storyAction} className="inline-story-editor">
           <label><span>Name</span><input name="name" maxLength={80} defaultValue={bench.name ?? ""} placeholder="Wie heisst dieses Bänkli?" /></label>
           <label><span>Widmung</span><textarea name="dedication" maxLength={180} defaultValue={bench.dedication ?? ""} placeholder="Was steht auf der Bank?" /></label>
@@ -79,6 +79,22 @@ export function BenchDetailContent({ bench, user, onBenchChange }: { bench: Benc
       <PhotoStory bench={bench} />
     </div>
   </div>;
+}
+
+function RatingEntry({ bench, onOpen }: { bench: BenchDetail; onOpen: () => void }) {
+  const rounded = bench.ratingAverage === null ? 0 : Math.max(1, Math.min(5, Math.round(bench.ratingAverage)));
+  const label = bench.myRating
+    ? `Deine Bewertung ist ${bench.myRating.overall} von 5. Bewertung bearbeiten`
+    : bench.ratingAverage === null
+      ? "Noch unbewertet. Erste Bewertung abgeben"
+      : `Bewertung ${bench.ratingAverage.toFixed(1)} von 5 bei ${bench.ratingCount} ${bench.ratingCount === 1 ? "Stimme" : "Stimmen"}. Selbst bewerten`;
+
+  return <button type="button" className={`landscape-rating-action${rounded === 0 ? " is-empty" : ""}`} aria-label={label} title={label} onClick={onOpen}>
+    <span className="landscape-rating-stars" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => <Star key={index} className={index < rounded ? "is-filled" : undefined} />)}
+    </span>
+    {bench.ratingAverage !== null && <strong>{bench.ratingAverage.toFixed(1)}</strong>}
+  </button>;
 }
 
 function PhotoStory({ bench }: { bench: BenchDetail }) {
@@ -98,8 +114,8 @@ function Community({ bench, report, user }: { bench: BenchDetail; report: (type:
   return <div className="community-page">
     <header><small>Von Menschen vor Ort</small><h3>Wie war die Pause?</h3></header>
     {bench.ratingBreakdown && <div className="rating-line">{Object.entries({ Gesamt: bench.ratingBreakdown.overall, Aussicht: bench.ratingBreakdown.view, Komfort: bench.ratingBreakdown.comfort, Ruhe: bench.ratingBreakdown.quiet }).map(([label, value]) => <span key={label}><strong>{value}</strong><small>{label}</small></span>)}</div>}
-    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{new Date(rating.createdAt).toLocaleDateString("de-CH")}</time><button aria-label="Bewertung melden" onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
     {user && <RatingForm benchId={bench.id} rating={bench.myRating} />}
+    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{new Date(rating.createdAt).toLocaleDateString("de-CH")}</time><button aria-label="Bewertung melden" onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
     {bench.corrections.length > 0 && <section className="community-notes"><h3>Hinweise</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ?? item.field}</small><button aria-label="Korrektur melden" onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
     <BenchCommunityActions bench={bench} signedIn={Boolean(user)} />
   </div>;

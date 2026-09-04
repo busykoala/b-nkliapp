@@ -69,7 +69,6 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
   const highClouds = weather?.cloudHigh ?? cloudCover * .45;
   const snowCover = Math.max(weather?.snowCoverPercent ?? 0, snowing ? 18 : 0);
   const temperatureMood = weather ? weather.temperatureC <= 5 ? "cold" : weather.temperatureC >= 27 ? "hot" : weather.temperatureC >= 18 ? "warm" : "mild" : "mild";
-  const rating = bench.ratingAverage === null ? null : Math.max(1, Math.min(5, Math.round(bench.ratingAverage)));
   const style = {
     "--shadow-x": `${shadowDirection * shadowLength}px`,
     "--bench-color": benchColor,
@@ -147,7 +146,6 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
         {bench.shadeCause === "vegetation" && <g className="scene-cast-shade shade-leaf-shape"><ellipse cx="271" cy="390" rx="73" ry="25" transform="rotate(-18 271 390)" /><ellipse cx="356" cy="410" rx="82" ry="27" transform="rotate(12 356 410)" /><ellipse cx="322" cy="365" rx="48" ry="18" /></g>}
         {bench.shadeCause === "gelände" && <path className="scene-cast-shade shade-terrain-shape" d="M0 345c118-20 202 57 323 38 116-19 188-66 317-40v137H0Z" />}
         {bench.season === "autumn" && <g className="falling-leaves"><path d="m112 247 8-6 5 9-8 7Z" /><path d="m532 280 9-5 4 10-9 5Z" /><path d="m183 315 7-4 4 8-8 4Z" /></g>}
-        {rating !== null && <g className="scene-rating" transform="translate(448 449)">{Array.from({ length: 5 }, (_, index) => <path key={index} className={index < rating ? "is-lit" : undefined} transform={`translate(${index * 24} 0)`} d="M0-8 2-3 8-3 3 1 5 7 0 4-5 7-3 1-8-3-2-3Z" />)}</g>}
       </svg>
       {weather && <span className="sr-only">{Math.round(weather.temperatureC)} Grad Celsius, {precipitation === "snow" ? "Schnee" : precipitation === "rain" ? "Regen" : precipitation === "mixed" ? "Schneeregen" : "trocken"}, MeteoSchweiz</span>}
       {bench.dayPhase === "night" && <span className="sr-only">Mond {Math.round(bench.moonIllumination * 100)} Prozent beleuchtet</span>}
