@@ -1,4 +1,5 @@
-import { loadWeatherGrid, sampleWeatherGrid } from "./weather-grid";
+import { loadWeatherGrid, sampleWeatherGrid } from "@/integrations/weather/repository";
+import { loadLatestStationMeasurement, loadWeatherStationRows } from "@/integrations/weather/client";
 import type { PrecipitationType } from "./types";
 
 export type LocalWeather = {
@@ -41,25 +42,12 @@ type StationCandidate = {
 
 let weatherCache: { expiresAt: number; value: Promise<ForecastPoint[]> } | null = null;
 
-function csvRows(input: string) {
-  const [header, ...rows] = input.trim().split(/\r?\n/);
-  const fields = header.split(";");
-  return rows.map((line) => Object.fromEntries(line.split(";").map((value, index) => [fields[index], value])));
-}
-
 function optionalNumber(value: string | undefined) {
   return value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
 }
 
-async function fetchCsv(url: string, revalidate: number, timeout: number) {
-  const response = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(timeout) });
-  if (!response.ok) throw new Error(`MeteoSchweiz antwortet mit ${response.status}`);
-  return new TextDecoder("iso-8859-1").decode(await response.arrayBuffer());
-}
-
 async function loadStations() {
-  const stationCsv = await fetchCsv("https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv", 86_400, 6_000);
-  return csvRows(stationCsv).map((row) => ({
+  return (await loadWeatherStationRows()).map((row) => ({
     id: row.station_abbr,
     name: row.station_name,
     latitude: Number(row.station_coordinates_wgs84_lat),
@@ -192,10 +180,7 @@ export async function getLocalWeather(latitude: number, longitude: number, sunAl
     const reference = selectReferenceStation(points, latitude, longitude, elevationMeters);
     const referenceStation = reference?.point ?? null;
     const station = referenceStation?.id.toLocaleLowerCase("en-US") ?? null;
-    const measurements = station
-      ? await fetchCsv(`https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/${station}/ogd-smn_${station}_t_now.csv`, 600, 5_000)
-      : null;
-    const latest = measurements ? csvRows(measurements).at(-1) : undefined;
+    const latest = station ? await loadLatestStationMeasurement(station) : undefined;
     const measuredTemperature = optionalNumber(latest?.tre200s0);
     const modelTemperatureC = modelTemperature
       ? temperatureAtElevation(modelTemperature.value - 273.15, modelSurfaceElevation?.value ?? null, elevationMeters)

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "npm run data:catalog:check && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
@@ -12,7 +12,9 @@
     "test:e2e": "playwright test",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "data:refresh": "python3 worker/benchly_worker.py refresh"
+    "data:refresh": "python3 worker/benchly_worker.py refresh",
+    "data:catalog:generate": "tsx scripts/generate-data-jobs.ts",
+    "data:catalog:check": "tsx scripts/generate-data-jobs.ts --check"
   },
   "dependencies": {
     "@mapbox/vector-tile": "^2.0.5",

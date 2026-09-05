@@ -1,0 +1,2 @@
+"""Open-image evidence persistence."""
+

@@ -11,8 +11,9 @@ RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.l
     && rm -rf /var/lib/apt/lists/*
 COPY worker/requirements.txt ./requirements.txt
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
+COPY config /config
 COPY worker/benchly_worker.py ./benchly_worker.py
-COPY worker/environment_geometry.py ./environment_geometry.py
+COPY worker/benchly ./benchly
 COPY worker/weather_pipeline.py ./weather_pipeline.py
 COPY worker/transit_pipeline.py ./transit_pipeline.py
 COPY worker/landscape_pipeline.py ./landscape_pipeline.py

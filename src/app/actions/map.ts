@@ -3,10 +3,10 @@
 import { sqlite } from "@/db/client";
 import { displayMaterial, yesNoUnknown } from "@/lib/bench";
 import { buildContextModel, type ContextFeature } from "@/lib/context-model";
-import { fetchPointElevation, fetchTerrainHorizon } from "@/lib/elevation";
+import { fetchPointElevation, fetchTerrainHorizon } from "@/integrations/geoadmin/elevation";
 import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { fetchSwissLandCoverEvidence, SWISSTOPO_LAND_COVER_VERSION } from "@/lib/land-cover";
-import { normalizeLocationKey, searchGeoAdminLocations } from "@/lib/place-search";
+import { normalizeLocationKey, searchGeoAdminLocations } from "@/integrations/geoadmin/client";
 import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSeasonalSunMinutes, getSkyTrack, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";

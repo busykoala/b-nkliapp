@@ -32,7 +32,7 @@ from benchly_worker import (
     terrain_profile_coordinates,
     wgs84_to_lv95,
 )
-from environment_geometry import (
+from benchly.context.geometry import (
     canopy_neighborhood,
     deterministic_environment,
     feature_angular_half_width,
@@ -260,8 +260,8 @@ class WorkerUnitTests(unittest.TestCase):
         water = {"id": "water-one", "properties": {}, "geometry": {
             "type": "Polygon", "coordinates": [[[8.01, 47], [8.011, 47], [8.011, 47.001], [8.01, 47.001], [8.01, 47]]],
         }}
-        with patch("benchly_worker.geopackage_layers", side_effect=[["TLM_WALD"], ["TLM_GEWAESSER"]]), \
-             patch("benchly_worker.iter_layer_features", side_effect=[iter([forest]), iter([water])]):
+        with patch("benchly.context.importer.geopackage_layers", side_effect=[["TLM_WALD"], ["TLM_GEWAESSER"]]), \
+             patch("benchly.context.importer.iter_layer_features", side_effect=[iter([forest]), iter([water])]):
             import_swisstlm_geopackage(database, Path("part-one.gpkg"), "v2", "generation-v2", finalize=False)
             import_swisstlm_geopackage(database, Path("part-two.gpkg"), "v2", "generation-v2", finalize=False)
         finalize_swisstlm_import(database, "generation-v2")

@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { assessTransfer, distanceMeters, summarizeJourney, swissWallTime, type JourneyLeg, type JourneyOption, type JourneyPoint, type JourneyQuery, type JourneyResult } from "./journey";
 import { walkPath } from "./walking-provider";
 import { pathSeconds, type WalkPath as Walk } from "./walking";
@@ -93,13 +94,13 @@ function iso(value: string | null | undefined): string {
   return new Date(value).toISOString();
 }
 export async function findStations(query: string, signal: AbortSignal): Promise<JourneyPoint[]> {
-  const url = new URL("https://transport.opendata.ch/v1/locations"); url.searchParams.set("query", query); url.searchParams.set("type", "station");
+  const url = new URL(`${DATA_RUNTIME.transportApiBaseUrl}/locations`); url.searchParams.set("query", query); url.searchParams.set("type", "station");
   const data = z.object({ stations: z.array(z.unknown()) }).parse(await json(url, signal, 86400000));
   return data.stations.flatMap((item) => { const parsed = station.safeParse(item); const p = parsed.success ? point(parsed.data) : null; return p?.stationId ? [p] : []; }).slice(0, 8);
 }
 async function nearby(p: JourneyPoint, signal: AbortSignal): Promise<JourneyPoint[]> {
   if (p.stationId) return [p];
-  const url = new URL("https://transport.opendata.ch/v1/locations"); url.searchParams.set("x", String(p.latitude)); url.searchParams.set("y", String(p.longitude));
+  const url = new URL(`${DATA_RUNTIME.transportApiBaseUrl}/locations`); url.searchParams.set("x", String(p.latitude)); url.searchParams.set("y", String(p.longitude));
   const data = z.object({ stations: z.array(z.unknown()) }).parse(await json(url, signal, 300000));
   const points = data.stations.flatMap((item) => { const parsed = station.safeParse(item); const s = parsed.success ? point(parsed.data) : null; return s?.stationId ? [s] : []; });
   return points.filter((s, i) => points.findIndex((v) => v.stationId === s.stationId) === i && distanceMeters(p, s) < 5400).sort((a, b) => distanceMeters(p, a) - distanceMeters(p, b)).slice(0, 4);
@@ -211,7 +212,7 @@ export async function planJourney(query: JourneyQuery, destination: JourneyPoint
       try {
         const shift = query.arriveBy ? -pathSeconds(b.path!, query.speedKmh) : a.path ? pathSeconds(a.path, query.speedKmh) : 0;
         const wall = swissWallTime(new Date(Date.parse(query.time) + shift * 1000).toISOString());
-        const url = new URL("https://transport.opendata.ch/v1/connections");
+        const url = new URL(`${DATA_RUNTIME.transportApiBaseUrl}/connections`);
         for (const [k, v] of Object.entries({ from: a.point.stationId!, to: b.point.stationId!, date: wall.slice(0, 10), time: wall.slice(11), isArrivalTime: query.arriveBy ? "1" : "0", limit: "6" })) url.searchParams.set(k, v);
         const response = z.object({ connections: z.array(z.unknown()) }).parse(await json(url, signal, 30000));
         // Process in order to get an early useful result within the bounded walking queue.

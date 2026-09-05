@@ -12,11 +12,12 @@ test("opens a separate calm walk planner without requesting location or routing"
   await expect(panel.getByRole("button", { name: "Mein Bänkli entdecken" })).toBeDisabled();
   await expect(panel.getByRole("combobox", { name: "Schwierigkeit" })).not.toBeVisible();
   await panel.getByRole("button", { name: "Einfache Strecke", exact: true }).click();
-  await expect(panel.getByText(/Bei einer einfachen Strecke ist der Rückweg nicht enthalten/)).not.toBeVisible();
-  const notes = panel.locator("summary").filter({ hasText: "Gut zu wissen & Quellen" });
+  await expect(panel.getByText(/Keine Zusage zu Barrierefreiheit/)).not.toBeVisible();
+  const notes = panel.locator("summary").filter({ hasText: "Gut zu wissen" });
   await notes.focus();
   await page.keyboard.press("Enter");
-  await expect(panel.getByText(/Bei einer einfachen Strecke ist der Rückweg nicht enthalten/)).toBeVisible();
+  await expect(panel.getByText(/Keine Zusage zu Barrierefreiheit/)).toBeVisible();
+  await expect(panel.getByRole("link", { name: "Datenquellen & Danksagung" })).toHaveAttribute("href", "/danke");
   await notes.click();
   await panel.locator("summary").filter({ hasText: "Anpassen" }).click();
   await expect(panel.getByRole("combobox", { name: "Schwierigkeit" })).toHaveValue("easy");

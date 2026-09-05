@@ -8,7 +8,7 @@ An always-available illustrated map journal. Routing starts only when requested.
 2. Provision the shared GraphHopper service from `../server/deploy/graphhopper` first. Configure `WALK_ROUTER_URL`; native development defaults to localhost:8989. There is no public routing fallback.
 3. Run `python3 worker/transit_pipeline.py --transit-database ./data/transit.sqlite` once from the repository root (standard library only). The container uses the equivalent established command `benchly_worker.py refresh-transit`. An already downloaded official ZIP can instead be supplied with `--gtfs-zip /path/to/feed.zip`.
 4. Keep `TRANSIT_DATABASE_PATH` pointing at that separate SQLite artifact. No bench/account migration is required. Missing, expired or >14-day-old data produces an uncertain assessment, not a guessed minimum.
-5. The `transit` CronJob refreshes daily at `workers.transitSchedule`, using the shared data volume and an atomic replacement. It never downloads national data during a web request.
+5. The `transit` CronJob uses the schedule in `config/data-catalog.json`, the shared data volume and an atomic replacement. It never downloads national data during a web request.
 
 The authoritative Benchly chart is in this repository at `deploy/charts/benchly`. The server repository manages the shared infrastructure and repository-scoped runner. Application releases build and deploy through `.github/workflows/container.yml`; they do not redeploy the shared inference stack.
 

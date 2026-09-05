@@ -1,7 +1,8 @@
 import { VectorTile } from "@mapbox/vector-tile";
 import Pbf from "pbf";
+import { DATA_RUNTIME } from "@/data/runtime.generated";
 
-export const SWISSTOPO_LAND_COVER_VERSION = "swisstopo Base-Landbedeckung v1.0.0";
+export const SWISSTOPO_LAND_COVER_VERSION = DATA_RUNTIME.landCoverVersion;
 
 export type LandCoverEvidence = {
   centerClass: string | null;
@@ -19,7 +20,7 @@ type CoverClass = { name: string; forest: boolean; natural: boolean };
 
 const ZOOM = 14;
 const TILE_COUNT = 2 ** ZOOM;
-const TILE_URL = "https://vectortiles0.geo.admin.ch/tiles/ch.swisstopo.base.vt/v1.0.0";
+const TILE_URL = DATA_RUNTIME.landCoverTileUrl;
 const tileCache = new Map<string, Promise<VectorTile | null>>();
 const forestClasses = new Set(["forest", "wood", "loose_forest"]);
 const naturalClasses = new Set(["forest", "wood", "loose_forest", "woody_plant", "scrub", "wetland", "swamp", "glacier", "ice", "rock", "park", "recreation_ground"]);

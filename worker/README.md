@@ -1,5 +1,22 @@
 # Benchly data worker
 
+All sources, output artifacts, versions and production refresh frequencies live
+in `config/data-catalog.json`. Python validates it with Pydantic at worker start;
+the same file generates Helm CronJobs and the app's acknowledgements page.
+
+The worker is an application with the same architectural care as the web UI.
+`benchly_worker.py` only parses commands and coordinates bounded jobs. The
+`benchly/` package is sliced by domain: `benches/`, `context/`, `enrichment/`,
+`imagery/`, `landscape/`, `transit/` and `weather/`. Each persistent feature owns
+small SQLModel tables and a repository; reusable geographic, terrain, catalog and
+runtime code stays one level lower. The few root `*_pipeline.py` files are the
+executable provider workflows, not a second domain layer.
+
+Productive writes are typed SQLModel/SQLAlchemy statements. Analytical GIS reads
+remain explicit SQLite queries because they are local, complex and easier to
+audit that way. `benchly/db.py` provides the single transaction boundary for
+both without hiding either model behind a generic framework.
+
 The worker is deliberately separate from the web image. It downloads or reads a Geofabrik Switzerland PBF, imports every `amenity=bench` plus spatial building/tree/water/forest/path context, optionally computes terrain/surface evidence, and optionally stores nearby Wikimedia Commons metadata. Its only durable output is the same SQLite file used by the app.
 
 Forest, water and building decisions use exact LV95 WKB geometry. R*Tree bounds only select

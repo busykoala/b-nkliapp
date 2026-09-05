@@ -18,6 +18,9 @@ from shapely import wkb
 from shapely.geometry import Point
 from shapely.ops import transform
 
+from benchly.db import open_database
+from benchly.landscape.repository import create_schema, upsert_cells, upsert_metadata
+
 TO_SWISS = Transformer.from_crs(4326, 2056, always_xy=True).transform
 TO_WGS = Transformer.from_crs(2056, 4326, always_xy=True).transform
 
@@ -126,10 +129,8 @@ def build_snapshot(args):
     state_path = target.with_suffix(".working.sqlite")
     source = sqlite3.connect(f"file:{Path(args.database).resolve()}?mode=ro", uri=True)
     source.row_factory = sqlite3.Row
-    state = sqlite3.connect(state_path)
-    state.executescript("""CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);
-        CREATE TABLE IF NOT EXISTS cells(x INTEGER,y INTEGER,latitude REAL,longitude REAL,
-          quiet REAL,nature REAL,water REAL,view REAL,canopy REAL,horizon TEXT,updated_at TEXT,PRIMARY KEY(x,y));""")
+    state = open_database(state_path)
+    create_schema(state)
     terrain = surface = None
     try:
         if args.terrain_raster or args.surface_raster:
@@ -152,6 +153,14 @@ def build_snapshot(args):
         now = datetime.now(timezone.utc).isoformat()
         cells = 0
         visited = set()
+        pending_cells: list[dict[str, object]] = []
+
+        def flush_cells() -> None:
+            if not pending_cells:
+                return
+            upsert_cells(state, pending_cells)
+            pending_cells.clear()
+
         for row in paths:
             try:
                 line = metric_geometry(row)
@@ -178,13 +187,30 @@ def build_snapshot(args):
                                 evidence = cell_evidence(source, lat, lon, terrain, surface)
                                 # Preserve source age rather than claiming fresh observations.
                                 updated = row["imported_at"] or now
-                                state.execute("INSERT OR REPLACE INTO cells VALUES (?,?,?,?,?,?,?,?,?,?,?)", (cx, cy, lat, lon, *evidence, updated))
+                                pending_cells.append({
+                                    "x": cx,
+                                    "y": cy,
+                                    "latitude": lat,
+                                    "longitude": lon,
+                                    "quiet": evidence[0],
+                                    "nature": evidence[1],
+                                    "water": evidence[2],
+                                    "view": evidence[3],
+                                    "canopy": evidence[4],
+                                    "horizon": evidence[5],
+                                    "updated_at": updated,
+                                })
+                                if len(pending_cells) >= 500:
+                                    flush_cells()
                                 cells += 1
             except (ValueError, TypeError):
                 continue
-        state.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", (checkpoint_key, str(paths[-1]["row_id"] if paths else 0)))
-        state.execute("INSERT OR REPLACE INTO metadata VALUES ('updated_at',?)", (now,))
-        state.execute("INSERT OR REPLACE INTO metadata VALUES ('version','landscape-v1')")
+        flush_cells()
+        upsert_metadata(state, {
+            checkpoint_key: str(paths[-1]["row_id"] if paths else 0),
+            "updated_at": now,
+            "version": "landscape-v1",
+        })
         state.commit()
         if not state.execute("SELECT count(*) FROM cells").fetchone()[0]:
             raise ValueError("No landscape cells; keeping previous artifact")
@@ -193,7 +219,7 @@ def build_snapshot(args):
         try:
             snapshot = sqlite3.connect(temporary)
             try:
-                state.backup(snapshot)
+                state.backup_to(snapshot)
                 if snapshot.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                     raise ValueError("Invalid landscape snapshot")
             finally:

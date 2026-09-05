@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Footprints, LogIn, Menu, Plus, Share, SlidersHorizontal, X } from "lucide-react";
+import { Download, Footprints, Heart, LogIn, Menu, Plus, Share, SlidersHorizontal, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { CurrentUser } from "@/lib/security";
 import { AccountDialog } from "./account-controls";
@@ -54,8 +54,8 @@ export function AppMenu({ user, onFilter, onAdd, activeFilters = 0 }: { user: Cu
           {user ? <Link aria-label="Mein Profil" href="/profil" className="app-menu-row" onClick={close}><span className="app-menu-avatar"><TrailAvatar seed={user.avatarSeed} username={user.username} compact /></span> Mein Profil</Link>
             : <button aria-label="Anmelden" className="app-menu-row" onClick={openAccount}><LogIn size={19} /> Anmelden</button>}
           {(ios || installEvent) && <button className="app-menu-row" onClick={install}><Download size={19} /> App installieren</button>}
+          <Link aria-label="Danke und Datenquellen" href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Heart size={19} /> Danke &amp; Daten</Link>
         </nav>
-        <p className="map-sources"><a href="https://www.swisstopo.admin.ch/de/nutzungsbedingungen-kostenlose-geodaten-und-geodienste" target="_blank" rel="noreferrer">Karte: swisstopo</a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">Bankdaten: OpenStreetMap</a></p>
         {iosHelp && <p className="ios-help"><Share size={17} /> In Safari „Teilen“ und danach „Zum Home-Bildschirm“ wählen.</p>}
       </div>
       <form method="dialog" className="modal-backdrop"><button>schliessen</button></form>

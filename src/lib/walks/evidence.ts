@@ -5,7 +5,7 @@ import * as SunCalc from "suncalc";
 import { distanceMeters } from "../journey";
 import { pathTimes, routePoint, type WalkPath } from "../walking";
 import type { RouteEvidence, WalkQuery } from "./model";
-import { loadWeatherGrid, sampleWeatherGrid } from "../weather-grid";
+import { loadWeatherGrid, sampleWeatherGrid } from "@/integrations/weather/repository";
 
 type Cell = { quiet: number; nature: number; water: number; view: number | null; canopy: number; horizon: string | null; latitude: number; longitude: number; updated_at: string };
 export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {

@@ -14,19 +14,23 @@ from typing import Optional
 import numpy as np
 from pyproj import Transformer
 
+from benchly.catalog import load_catalog
+from benchly.weather.repository import store_snapshot
+
 TARGET_EASTING = 2_480_000.0
 TARGET_NORTHING = 1_070_000.0
 TARGET_RESOLUTION = 1_000.0
 TARGET_WIDTH = 361
 TARGET_HEIGHT = 241
-ICON_COLLECTION = "ogd-forecasting-icon-ch1"
+_PROVIDERS = load_catalog().providers
+ICON_COLLECTION = _PROVIDERS.meteoIconCollection
 ICON_PARAMETERS = {
     "CLCT": "P0DT0H", "CLCL": "P0DT0H", "CLCM": "P0DT0H", "CLCH": "P0DT0H",
     "T_2M": "P0DT0H", "SNOWLMT": "P0DT0H", "SNOWC": "P0DT0H", "H_SNOW": "P0DT0H",
     "RAIN_GSP": "P0DT1H", "SNOW_GSP": "P0DT1H",
 }
-ICON_COLLECTION_STAC = "ch.meteoschweiz.ogd-forecasting-icon-ch1"
-ICON_HORIZONTAL_CONSTANTS = "horizontal_constants_icon-ch1-eps.grib2"
+ICON_COLLECTION_STAC = _PROVIDERS.meteoIconStacCollection
+ICON_HORIZONTAL_CONSTANTS = _PROVIDERS.meteoIconHorizontalConstants
 
 
 def _iso(value: object) -> str:
@@ -40,32 +44,22 @@ def _iso(value: object) -> str:
     return text if text.endswith("Z") or "+" in text[10:] else f"{text}Z"
 
 
-def _ensure_table(connection) -> None:
-    connection.execute("""
-      CREATE TABLE IF NOT EXISTS weather_snapshots (
-        source TEXT NOT NULL, parameter TEXT NOT NULL, reference_at TEXT NOT NULL, valid_at TEXT NOT NULL,
-        origin_easting REAL NOT NULL, origin_northing REAL NOT NULL, resolution_meters REAL NOT NULL,
-        width INTEGER NOT NULL, height INTEGER NOT NULL, values_blob BLOB NOT NULL, nodata_value REAL,
-        imported_at TEXT NOT NULL, PRIMARY KEY(source, parameter)
-      )
-    """)
-    connection.commit()
-
-
 def _store(connection, source: str, parameter: str, values: np.ndarray, reference_at: str, valid_at: str) -> None:
     normalized = np.asarray(values, dtype="<f4").reshape(TARGET_HEIGHT, TARGET_WIDTH)
-    connection.execute("""
-      INSERT INTO weather_snapshots(source,parameter,reference_at,valid_at,origin_easting,origin_northing,
-        resolution_meters,width,height,values_blob,nodata_value,imported_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(source,parameter) DO UPDATE SET reference_at=excluded.reference_at,valid_at=excluded.valid_at,
-        origin_easting=excluded.origin_easting,origin_northing=excluded.origin_northing,
-        resolution_meters=excluded.resolution_meters,width=excluded.width,height=excluded.height,
-        values_blob=excluded.values_blob,nodata_value=excluded.nodata_value,imported_at=excluded.imported_at
-    """, (source, parameter, reference_at, valid_at, TARGET_EASTING, TARGET_NORTHING,
-          TARGET_RESOLUTION, TARGET_WIDTH, TARGET_HEIGHT, normalized.tobytes(), math.nan,
-          datetime.now(timezone.utc).isoformat()))
-    connection.commit()
+    store_snapshot(connection, {
+        "source": source,
+        "parameter": parameter,
+        "reference_at": reference_at,
+        "valid_at": valid_at,
+        "origin_easting": TARGET_EASTING,
+        "origin_northing": TARGET_NORTHING,
+        "resolution_meters": TARGET_RESOLUTION,
+        "width": TARGET_WIDTH,
+        "height": TARGET_HEIGHT,
+        "values_blob": normalized.tobytes(),
+        "nodata_value": math.nan,
+        "imported_at": datetime.now(timezone.utc).isoformat(),
+    })
 
 
 def _coordinate(data, names: tuple[str, ...]) -> Optional[np.ndarray]:
@@ -225,7 +219,7 @@ def _attribute(group, name: str, default=None):
 
 
 def _latest_radar_asset() -> tuple[str, str]:
-    base = "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-radar-precip/items"
+    base = str(_PROVIDERS.meteoRadarItemsUrl).rstrip("/")
     candidates: list[tuple[str, str]] = []
     today = datetime.now(timezone.utc)
     for delta in (0, -1):
@@ -292,7 +286,6 @@ def refresh_radar(connection) -> dict[str, object]:
 
 
 def refresh_weather(connection, icon: bool = True, radar: bool = True) -> dict[str, object]:
-    _ensure_table(connection)
     result: dict[str, object] = {}
     if radar:
         result["radar"] = refresh_radar(connection)

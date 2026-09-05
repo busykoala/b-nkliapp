@@ -1,0 +1,2 @@
+"""Swiss GTFS index persistence."""
+

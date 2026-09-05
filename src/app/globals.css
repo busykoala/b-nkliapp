@@ -366,8 +366,6 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .app-menu-row { display: flex; width: 100%; min-height: 3.35rem; align-items: center; gap: .8rem; border-top: 1px solid rgb(65 69 54 / 9%); padding: .65rem .65rem; color: #30483f; text-align: left; }
 .app-menu-row.is-current { border-radius: .9rem; background: rgb(74 111 86 / 9%); }
 .app-menu-row small { margin-left: auto; min-width: 1.45rem; border-radius: 999px; background: #e6d6ab; padding: .1rem .35rem; text-align: center; }
-.map-sources { display: flex; flex-wrap: wrap; gap: .25rem .75rem; margin: .25rem .75rem .8rem; padding-top: .6rem; border-top: 1px solid rgb(65 69 54 / 9%); }
-.map-sources a { color: rgb(48 72 63 / 43%); font-size: .6rem; }
 .ios-help { display: flex; gap: .6rem; margin: .5rem .75rem; border-radius: 1rem; background: rgb(224 212 179 / 55%); padding: .75rem; font-size: .78rem; line-height: 1.35; }
 
 .calm-filter-panel { border: 1px solid rgb(70 66 52 / 13%); border-radius: 1.65rem; background: rgb(250 244 226 / 97%); box-shadow: 0 20px 60px rgb(24 42 38 / 22%); backdrop-filter: blur(18px); }
@@ -770,6 +768,41 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .feed-arrow { z-index: 1; display: grid; min-width: 2.75rem; min-height: 2.75rem; place-items: center; color: rgb(41 66 57 / 62%); font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.5rem; }
 .feed-empty { padding: 5rem 1rem; color: rgb(41 66 57 / 55%); text-align: center; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; }
 .feed-empty span { display: block; margin-bottom: .7rem; font-size: 2rem; }
+
+/* Acknowledgements generated from the operational data catalog. */
+.thanks-page { color: #294239; background: radial-gradient(circle at 82% 4%, rgb(224 174 74 / 22%), transparent 20rem), radial-gradient(circle at 8% 38%, rgb(77 128 107 / 12%), transparent 28rem), #f7eed8 url('/map-art/v3/paper.webp') repeat; background-size: auto, auto, 256px; }
+.thanks-nav { display: flex; min-height: 4.5rem; align-items: center; padding-inline: .85rem; }
+.thanks-hero, .thanks-page > section { width: min(68rem, 100%); margin-inline: auto; padding: 2rem 1.1rem; }
+.thanks-hero { padding-block: clamp(2rem, 8vw, 6rem); }
+.thanks-hero > span { display: flex; align-items: center; gap: .4rem; color: rgb(43 91 74 / 65%); font-size: .69rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.thanks-hero h1 { max-width: 12ch; margin-top: .6rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(3.8rem, 12vw, 8rem); font-weight: 680; line-height: .78; letter-spacing: -.065em; }
+.thanks-hero p { max-width: 34rem; margin-top: 1.6rem; color: rgb(41 66 57 / 70%); font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(1.05rem, 2.5vw, 1.35rem); line-height: 1.5; }
+.thanks-page > section { border-top: 1px solid rgb(57 73 60 / 12%); padding-block: 3.2rem; }
+.thanks-section-heading { display: flex; align-items: center; gap: .8rem; }
+.thanks-section-heading > svg { width: 2.6rem; height: 2.6rem; padding: .65rem; border-radius: 48% 52% 46% 54%; background: rgb(64 108 88 / 10%); color: #396b58; }
+.thanks-section-heading small { color: rgb(41 66 57 / 50%); font-size: .67rem; font-weight: 760; letter-spacing: .11em; text-transform: uppercase; }
+.thanks-section-heading h2 { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(1.8rem, 5vw, 2.7rem); font-weight: 650; line-height: 1; }
+.thanks-lead { max-width: 42rem; margin: 1.2rem 0 1.6rem; color: rgb(41 66 57 / 66%); line-height: 1.55; }
+.thanks-people-grid, .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem; margin-top: 1.5rem; }
+.thanks-people-grid article, .source-card { position: relative; min-height: 11rem; overflow: hidden; border: 1px solid rgb(57 73 60 / 11%); border-radius: 1.35rem; background: rgb(255 249 231 / 67%); padding: 1.1rem; box-shadow: inset 0 1px rgb(255 255 255 / 65%); }
+.thanks-people-grid article > span { position: absolute; right: .8rem; top: .55rem; color: rgb(196 137 46 / 45%); font-size: 1.4rem; }
+.thanks-people-grid h3, .source-card h3 { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.35rem; font-weight: 680; }
+.thanks-people-grid p { margin-top: .65rem; color: rgb(41 66 57 / 68%); line-height: 1.48; }
+.source-card { display: flex; min-height: 13rem; flex-direction: column; }
+.source-card > div span { color: rgb(41 66 57 / 43%); font-size: .58rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.source-card p { margin-top: .75rem; color: rgb(41 66 57 / 68%); font-size: .85rem; line-height: 1.45; }
+.source-card small { margin-top: auto; padding-top: 1rem; color: rgb(41 66 57 / 46%); font-size: .65rem; line-height: 1.35; }
+.source-card a { width: fit-content; min-height: 2.75rem; padding-top: .65rem; color: #34705c; font-size: .72rem; font-weight: 720; text-decoration: underline; text-underline-offset: .18rem; }
+.refresh-list { overflow: hidden; border: 1px solid rgb(57 73 60 / 11%); border-radius: 1.35rem; background: rgb(255 249 231 / 55%); }
+.refresh-list details + details { border-top: 1px solid rgb(57 73 60 / 9%); }
+.refresh-list summary { display: flex; min-height: 4.2rem; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem 1rem; cursor: pointer; list-style: none; }
+.refresh-list summary::-webkit-details-marker { display: none; }
+.refresh-list summary span { display: flex; min-width: 0; flex-direction: column; }
+.refresh-list summary strong { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1rem; }
+.refresh-list summary small { margin-top: .15rem; color: rgb(41 66 57 / 48%); font-size: .68rem; }
+.refresh-list code { flex: none; color: rgb(66 73 58 / 47%); font-size: .62rem; }
+.refresh-list details p { padding: 0 1rem 1rem; color: rgb(41 66 57 / 62%); font-size: .78rem; line-height: 1.45; }
+.thanks-version { margin-top: 1.2rem; color: rgb(41 66 57 / 45%); font-size: .68rem; }
 
 /* Calm, data-specific bench detail book */
 .quiet-details { padding-top: .9rem; }

@@ -26,20 +26,5 @@ web:
     limits: {cpu: "2", memory: 4Gi}
 
 workers:
-  landscapeSchedule: "15 * * * *"
-  transitSchedule: "45 5 * * *"
-  timeZone: Europe/Zurich
   temporaryStorage: 120Gi
-  importSchedule: "15 1 * * 0"
-  enrichSchedule: "15 1 * * 1-6"
-  horizonSchedule: "30 10 * * *"
-  commonsSchedule: "0 19 * * *"
-  officialContextSchedule: "0 12 * * 0"
-  buildingsSchedule: "35 2 * * *"
-  weatherIconSchedule: "7,37 * * * *"
-  weatherRadarSchedule: "*/5 * * * *"
-  imageDiscoverySchedule: "0 20 * * *"
-  sceneAnalysisSchedule: "0 21 * * *"
-  reconciliationSchedule: "15 23 * * *"
-  visionBenchmarkSchedule: "0 6 * * 0"
   visionModel: benchly-vision

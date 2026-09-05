@@ -11,6 +11,9 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY package.json package-lock.json next-env.d.ts next.config.ts postcss.config.mjs tsconfig.json ./
+COPY config ./config
+COPY deploy/charts/benchly/data-jobs.generated.json ./deploy/charts/benchly/data-jobs.generated.json
+COPY scripts/generate-data-jobs.ts ./scripts/generate-data-jobs.ts
 COPY public ./public
 COPY src ./src
 RUN npm run build

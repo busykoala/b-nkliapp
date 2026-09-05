@@ -1,7 +1,8 @@
 import type { ExpressionSpecification, FilterSpecification, StyleSpecification } from "maplibre-gl";
+import { DATA_RUNTIME } from "@/data/runtime.generated";
 import type { DayPhase } from "./sun";
 
-export const MAP_STYLE_URL = "https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json";
+export const MAP_STYLE_URL = DATA_RUNTIME.mapStyleUrl;
 export const MAP_STYLE_TIMEOUT_MS = 3_000;
 export const INITIAL_ART_BUDGET_BYTES = 400 * 1024;
 export const FULL_ART_BUDGET_BYTES = 800 * 1024;
@@ -22,7 +23,7 @@ export const FALLBACK_MAP_STYLE = {
   sources: {
     swisstopo: {
       type: "raster",
-      tiles: ["https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swisstlm3d-karte-farbe/default/current/3857/{z}/{x}/{y}.png"],
+      tiles: [DATA_RUNTIME.mapRasterTileUrl],
       tileSize: 256,
       attribution: "© swisstopo",
       maxzoom: 18,

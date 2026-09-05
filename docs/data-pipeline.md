@@ -1,5 +1,17 @@
 # Benchly data pipeline
 
+The operational inventory is [`config/data-catalog.json`](../config/data-catalog.json).
+It lists every external/community source, computed artifact, version, CronJob
+command and human-readable refresh frequency in one place. Helm schedules and
+the public `/danke` page are derived from that catalog, so this document does not
+duplicate schedules that inevitably go stale.
+
+Worker persistence follows the same feature boundaries as the imports. Each
+domain under `worker/benchly/` owns its Pydantic-validated SQLModel tables and a
+small repository. Pipelines compose those repositories; they do not embed schema
+creation or write SQL. Spatial and aggregate reads stay explicit where an ORM
+would make their intent harder to see.
+
 ## Reliable environment evidence
 
 Environment features retain exact geometry in LV95. Candidate selection still uses geographic
@@ -53,4 +65,6 @@ Clouds, moving objects and short-term vegetation changes remain outside the mode
 
 The viewing cone follows OSM `direction` ±45° when known; otherwise all directions are considered at reduced confidence. Water counts as visible only when it is in the viewing cone and the modeled horizon is open. Benchly classifies the result as `Bergblick`, `Seeblick`, `Wasserblick`, `Weitsicht`, `Waldblick`, `Eingeschränkte Aussicht` or `Keine besondere Aussicht`, then applies the versioned weighted score.
 
-For national operation, run stages independently: weekly PBF import, resumable raster enrichment batches, then a monthly Commons refresh prioritized by recently viewed benches. Do not overlap two writers on the same SQLite file.
+For national operation, run stages independently as configured in the catalog.
+Do not overlap two writers on the same SQLite file; all write commands share the
+same filesystem lock.

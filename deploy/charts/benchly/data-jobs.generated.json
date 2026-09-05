@@ -1,0 +1,204 @@
+{
+  "generatedFrom": "config/data-catalog.json@2026-09-05",
+  "timeZone": "Europe/Zurich",
+  "jobs": [
+    {
+      "name": "landscape",
+      "schedule": "15 * * * *",
+      "deadline": 3300,
+      "args": [
+        "refresh-landscape",
+        "--database",
+        "/data/benchly.sqlite",
+        "--landscape-database",
+        "/data/landscape.sqlite",
+        "--limit",
+        "10000"
+      ],
+      "profile": "landscape"
+    },
+    {
+      "name": "transit",
+      "schedule": "45 5 * * *",
+      "deadline": 1800,
+      "args": [
+        "refresh-transit",
+        "--transit-database",
+        "/data/transit.sqlite"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "import-osm",
+      "schedule": "15 1 * * 0",
+      "deadline": 14400,
+      "args": [
+        "import-osm",
+        "--database",
+        "/data/benchly.sqlite"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "enrich",
+      "schedule": "15 1 * * 1-6",
+      "deadline": 29700,
+      "args": [
+        "enrich-batch",
+        "--database",
+        "/data/benchly.sqlite",
+        "--limit",
+        "1000",
+        "--max-runtime-hours",
+        "8",
+        "--max-download-gib",
+        "80"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "horizon",
+      "schedule": "30 10 * * *",
+      "deadline": 3300,
+      "args": [
+        "enrich-profile-batch",
+        "--database",
+        "/data/benchly.sqlite",
+        "--limit",
+        "1000",
+        "--requests-per-second",
+        "1",
+        "--max-runtime-minutes",
+        "45"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "commons",
+      "schedule": "0 19 * * *",
+      "deadline": 7200,
+      "args": [
+        "refresh-commons",
+        "--database",
+        "/data/benchly.sqlite",
+        "--limit",
+        "500"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "official-context",
+      "schedule": "0 12 * * 0",
+      "deadline": 29700,
+      "args": [
+        "import-official-context",
+        "--database",
+        "/data/benchly.sqlite",
+        "--first-sunday-only"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "buildings",
+      "schedule": "35 2 * * *",
+      "deadline": 43200,
+      "args": [
+        "import-swissbuildings3d",
+        "--database",
+        "/data/benchly.sqlite",
+        "--max-cells",
+        "3"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "weather-icon",
+      "schedule": "7,37 * * * *",
+      "deadline": 1500,
+      "args": [
+        "refresh-weather",
+        "--database",
+        "/data/benchly.sqlite",
+        "--icon-only"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "weather-radar",
+      "schedule": "*/5 * * * *",
+      "deadline": 300,
+      "args": [
+        "refresh-weather",
+        "--database",
+        "/data/benchly.sqlite",
+        "--radar-only"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "image-discovery",
+      "schedule": "0 20 * * *",
+      "deadline": 3000,
+      "args": [
+        "discover-open-images",
+        "--database",
+        "/data/benchly.sqlite",
+        "--max-cells",
+        "50",
+        "--requests-per-second",
+        "1"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "scene-analysis",
+      "schedule": "0 21 * * *",
+      "deadline": 7500,
+      "args": [
+        "analyze-scenes",
+        "--database",
+        "/data/benchly.sqlite",
+        "--limit",
+        "300",
+        "--max-runtime-hours",
+        "2",
+        "--requests-per-second",
+        "0.25"
+      ],
+      "profile": "inference"
+    },
+    {
+      "name": "environment-reconcile",
+      "schedule": "15 23 * * *",
+      "deadline": 3600,
+      "args": [
+        "reconcile-environment",
+        "--database",
+        "/data/benchly.sqlite",
+        "--limit",
+        "5000",
+        "--max-total",
+        "1000"
+      ],
+      "profile": "standard"
+    },
+    {
+      "name": "vision-benchmark",
+      "schedule": "0 6 * * 0",
+      "deadline": 7500,
+      "args": [
+        "benchmark-vision",
+        "--database",
+        "/data/benchly.sqlite",
+        "--dataset",
+        "/worker/evaluation/benchly-100.jsonl",
+        "--models",
+        "benchly-vision",
+        "general",
+        "--requests-per-second",
+        "0.25"
+      ],
+      "profile": "inference"
+    }
+  ]
+}

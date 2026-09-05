@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": "2026-09-05",
+  "timeZone": "Europe/Zurich",
+  "runtime": {
+    "pipelineVersion": "4.4.0",
+    "profilePipelineVersion": "GeoAdmin-Horizont v6",
+    "scenePromptVersion": "benchly-scene-1.2",
+    "sceneReconcilerVersion": "benchly-evidence-1.1",
+    "osmPbfUrl": "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf",
+    "geoAdminBaseUrl": "https://api3.geo.admin.ch",
+    "geoAdminDataBaseUrl": "https://data.geo.admin.ch",
+    "transportApiBaseUrl": "https://transport.opendata.ch/v1",
+    "graphHopperDefaultUrl": "http://127.0.0.1:8989",
+    "mapStyleUrl": "https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json",
+    "mapRasterTileUrl": "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swisstlm3d-karte-farbe/default/current/3857/{z}/{x}/{y}.png",
+    "landCoverVersion": "swisstopo Base-Landbedeckung v1.0.0",
+    "landCoverTileUrl": "https://vectortiles0.geo.admin.ch/tiles/ch.swisstopo.base.vt/v1.0.0"
+  },
+  "providers": {
+    "gtfsCatalogueBaseUrl": "https://data.opentransportdata.swiss",
+    "gtfsDownloadHosts": [
+      "data.opentransportdata.swiss",
+      "proxy-server-omd.datopian.com",
+      "83025b28472d6aa2bf5ae59f3724aa78.eu.r2.cloudflarestorage.com"
+    ],
+    "geoAdminHeightUrl": "https://api3.geo.admin.ch/rest/services/height",
+    "geoAdminProfileUrl": "https://api3.geo.admin.ch/rest/services/profile.json",
+    "swissTlmItemsUrl": "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.swisstopo.swisstlm3d/items?limit=100",
+    "swissBuildingsItemsUrl": "https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo.swissbuildings3d_3_0/items",
+    "swisstopoRasterItemsTemplate": "https://data.geo.admin.ch/api/stac/v0.9/collections/{collection}/items",
+    "swissAltiCollection": "ch.swisstopo.swissalti3d",
+    "swissSurfaceCollection": "ch.swisstopo.swisssurface3d-raster",
+    "meteoIconCollection": "ogd-forecasting-icon-ch1",
+    "meteoIconStacCollection": "ch.meteoschweiz.ogd-forecasting-icon-ch1",
+    "meteoIconHorizontalConstants": "horizontal_constants_icon-ch1-eps.grib2",
+    "meteoRadarItemsUrl": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-radar-precip/items",
+    "meteoStationMetadataUrl": "https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv",
+    "meteoStationCurrentTemplate": "https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/{station}/ogd-smn_{station}_t_now.csv",
+    "panoramaxSearchUrl": "https://api.panoramax.xyz/api/search",
+    "panoramaxViewerUrl": "https://panoramax.xyz/",
+    "commonsApiUrl": "https://commons.wikimedia.org/w/api.php",
+    "kartaViewNearbyUrl": "https://api.openstreetcam.org/1.0/list/nearby-photos/",
+    "kartaViewViewerUrl": "https://kartaview.org/",
+    "swissImageWmsUrl": "https://wms.geo.admin.ch/",
+    "swissImageMapUrl": "https://map.geo.admin.ch/",
+    "swissImageLayer": "ch.swisstopo.swissimage",
+    "inferenceDefaultUrl": "http://inference-api.inference.svc.cluster.local:8080"
+  },
+  "sources": [
+    {
+      "id": "openstreetmap",
+      "name": "OpenStreetMap",
+      "kind": "community",
+      "url": "https://www.openstreetmap.org/copyright",
+      "provides": ["Bänkli", "Wege", "Strassen", "Wald", "Gewässer", "Gebäude und offene Tags"],
+      "license": "© OpenStreetMap-Mitwirkende, ODbL",
+      "usedBy": ["map", "bench-inventory", "environment", "walk-routing"]
+    },
+    {
+      "id": "geofabrik",
+      "name": "Geofabrik Schweiz-Extrakt",
+      "kind": "distribution",
+      "url": "https://download.geofabrik.de/europe/switzerland.html",
+      "provides": ["Wöchentlicher Schweizer OSM-PBF"],
+      "license": "OpenStreetMap/ODbL",
+      "usedBy": ["bench-inventory", "environment"]
+    },
+    {
+      "id": "swisstopo-map",
+      "name": "swisstopo",
+      "kind": "official",
+      "url": "https://www.swisstopo.admin.ch/de/nutzungsbedingungen-kostenlose-geodaten-und-geodienste",
+      "provides": ["Vektorkarte", "Relief", "Höhenprofile", "GeoAdmin-Suche"],
+      "license": "Bundesgeodaten gemäss swisstopo-Nutzungsbedingungen",
+      "usedBy": ["map", "search", "scene", "horizon"]
+    },
+    {
+      "id": "swisstlm3d",
+      "name": "swissTLM3D",
+      "kind": "official",
+      "url": "https://www.swisstopo.admin.ch/de/landschaftsmodell-swisstlm3d",
+      "provides": ["Exakte Wald-, Wasser- und Landschaftsgeometrien"],
+      "license": "swisstopo Open Government Data",
+      "usedBy": ["environment", "scene", "walk-evidence"]
+    },
+    {
+      "id": "swissbuildings3d",
+      "name": "swissBUILDINGS3D 3.0",
+      "kind": "official",
+      "url": "https://www.swisstopo.admin.ch/de/landschaftsmodell-swissbuildings3d-3-0",
+      "provides": ["Gebäudegrundrisse und Dachhöhen"],
+      "license": "swisstopo Open Government Data",
+      "usedBy": ["environment", "sun-and-view"]
+    },
+    {
+      "id": "swissalti3d",
+      "name": "swissALTI3D",
+      "kind": "official",
+      "url": "https://www.swisstopo.admin.ch/de/hoehenmodell-swissalti3d",
+      "provides": ["Geländehöhen und Berg-Horizont"],
+      "license": "swisstopo Open Government Data",
+      "usedBy": ["horizon", "sun-and-view", "walk-evidence"]
+    },
+    {
+      "id": "swisssurface3d",
+      "name": "swissSURFACE3D Raster",
+      "kind": "official",
+      "url": "https://www.swisstopo.admin.ch/de/oberflaechenmodell-swisssurface3d-raster",
+      "provides": ["Nahbereichs-Oberfläche für Dächer und Vegetation"],
+      "license": "swisstopo Open Government Data",
+      "usedBy": ["sun-and-view", "walk-evidence"]
+    },
+    {
+      "id": "meteoswiss",
+      "name": "MeteoSchweiz Open Data",
+      "kind": "official",
+      "url": "https://opendatadocs.meteoswiss.ch/",
+      "provides": ["ICON-CH1-Prognose", "Niederschlagsradar", "Messstationen"],
+      "license": "MeteoSchweiz Open Government Data",
+      "usedBy": ["weather", "scene", "walk-light"]
+    },
+    {
+      "id": "transport-api",
+      "name": "Transport API",
+      "kind": "community-service",
+      "url": "https://transport.opendata.ch/docs.html",
+      "provides": ["ÖV-Haltestellen, Verbindungen und Prognosen"],
+      "license": "Daten der Schweizer Transportunternehmen",
+      "usedBy": ["journey"]
+    },
+    {
+      "id": "swiss-gtfs",
+      "name": "ÖV Schweiz GTFS",
+      "kind": "official",
+      "url": "https://opentransportdata.swiss/de/dataset/",
+      "provides": ["Haltestellenhierarchie und Umsteigeregeln"],
+      "license": "Open-Data-Plattform Mobilität Schweiz",
+      "usedBy": ["journey", "transfers"]
+    },
+    {
+      "id": "graphhopper",
+      "name": "GraphHopper",
+      "kind": "open-source-software",
+      "url": "https://www.graphhopper.com/open-source/",
+      "provides": ["Selbst gehostete Fusswegberechnung auf OSM-Daten"],
+      "license": "Apache License 2.0",
+      "usedBy": ["journey", "walk-routing"]
+    },
+    {
+      "id": "wikimedia-commons",
+      "name": "Wikimedia Commons",
+      "kind": "community",
+      "url": "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia",
+      "provides": ["Offene Umgebungsbilder mit Einzelbild-Lizenz"],
+      "license": "Jeweilige Lizenz des Bildes",
+      "usedBy": ["photos", "scene-analysis"]
+    },
+    {
+      "id": "panoramax",
+      "name": "Panoramax",
+      "kind": "community",
+      "url": "https://panoramax.fr/",
+      "provides": ["Offene, georeferenzierte Strassenbilder"],
+      "license": "Jeweilige Lizenz der Sequenz",
+      "usedBy": ["photos", "scene-analysis"]
+    },
+    {
+      "id": "kartaview",
+      "name": "KartaView",
+      "kind": "community",
+      "url": "https://kartaview.org/landing",
+      "provides": ["Georeferenzierte Strassenbilder"],
+      "license": "Jeweilige Lizenz der Aufnahme",
+      "usedBy": ["photos", "scene-analysis"]
+    },
+    {
+      "id": "swissimage",
+      "name": "SWISSIMAGE",
+      "kind": "official",
+      "url": "https://www.swisstopo.admin.ch/de/orthobild-swissimage-10",
+      "provides": ["Orthofotos als ergänzende Umgebungsevidenz"],
+      "license": "swisstopo Open Government Data",
+      "usedBy": ["photos", "scene-analysis"]
+    },
+    {
+      "id": "benchly-community",
+      "name": "Bänkli-Community",
+      "kind": "community",
+      "url": "/feed",
+      "provides": ["Bestätigungen, Korrekturen, Bewertungen und neue Bänkli"],
+      "license": "Beiträge der jeweiligen Mitwirkenden",
+      "usedBy": ["bench-details", "community"]
+    }
+  ],
+  "artifacts": [
+    {"id": "benchly-db", "label": "Bänkli- und Umgebungsindex", "path": "/data/benchly.sqlite", "version": "pipeline-4.4.0"},
+    {"id": "transit-db", "label": "GTFS-Umsteigeindex", "path": "/data/transit.sqlite", "version": "validity-selected"},
+    {"id": "landscape-db", "label": "Landschaftsevidenz für Spaziergänge", "path": "/data/landscape.sqlite", "version": "landscape-1"},
+    {"id": "scene-model", "label": "Temporäre Bildanalyse", "path": "inference/benchly-vision", "version": "benchly-scene-1.2"}
+  ],
+  "jobs": [
+    {"id":"landscape","title":"Landschaftsindex","schedule":"15 * * * *","frequency":"stündlich","deadlineSeconds":3300,"command":"refresh-landscape","args":["--database","/data/benchly.sqlite","--landscape-database","/data/landscape.sqlite","--limit","10000"],"sourceIds":["openstreetmap","swisstlm3d","swissalti3d","swisssurface3d"],"artifactIds":["landscape-db"],"profile":"landscape"},
+    {"id":"transit","title":"ÖV-Umsteigeindex","schedule":"45 5 * * *","frequency":"täglich um 05:45","deadlineSeconds":1800,"command":"refresh-transit","args":["--transit-database","/data/transit.sqlite"],"sourceIds":["swiss-gtfs"],"artifactIds":["transit-db"],"profile":"standard"},
+    {"id":"import-osm","title":"Schweizer Bänkli-Inventar","schedule":"15 1 * * 0","frequency":"sonntags um 01:15","deadlineSeconds":14400,"command":"import-osm","args":["--database","/data/benchly.sqlite"],"sourceIds":["openstreetmap","geofabrik"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"enrich","title":"Gelände- und Oberflächenanreicherung","schedule":"15 1 * * 1-6","frequency":"Montag bis Samstag um 01:15","deadlineSeconds":29700,"command":"enrich-batch","args":["--database","/data/benchly.sqlite","--limit","1000","--max-runtime-hours","8","--max-download-gib","80"],"sourceIds":["swissalti3d","swisssurface3d","swissbuildings3d"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"horizon","title":"Berg-Horizonte","schedule":"30 10 * * *","frequency":"täglich um 10:30","deadlineSeconds":3300,"command":"enrich-profile-batch","args":["--database","/data/benchly.sqlite","--limit","1000","--requests-per-second","1","--max-runtime-minutes","45"],"sourceIds":["swisstopo-map","swissalti3d"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"commons","title":"Commons-Metadaten","schedule":"0 19 * * *","frequency":"täglich um 19:00","deadlineSeconds":7200,"command":"refresh-commons","args":["--database","/data/benchly.sqlite","--limit","500"],"sourceIds":["wikimedia-commons"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"official-context","title":"Offizieller Landschaftskontext","schedule":"0 12 * * 0","frequency":"sonntags um 12:00; Import nur am ersten Sonntag","deadlineSeconds":29700,"command":"import-official-context","args":["--database","/data/benchly.sqlite","--first-sunday-only"],"sourceIds":["swisstlm3d"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"buildings","title":"3D-Gebäude","schedule":"35 2 * * *","frequency":"täglich um 02:35, in räumlichen Batches","deadlineSeconds":43200,"command":"import-swissbuildings3d","args":["--database","/data/benchly.sqlite","--max-cells","3"],"sourceIds":["swissbuildings3d"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"weather-icon","title":"Wetterprognose","schedule":"7,37 * * * *","frequency":"zweimal pro Stunde","deadlineSeconds":1500,"command":"refresh-weather","args":["--database","/data/benchly.sqlite","--icon-only"],"sourceIds":["meteoswiss"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"weather-radar","title":"Niederschlagsradar","schedule":"*/5 * * * *","frequency":"alle fünf Minuten","deadlineSeconds":300,"command":"refresh-weather","args":["--database","/data/benchly.sqlite","--radar-only"],"sourceIds":["meteoswiss"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"image-discovery","title":"Offene Bilder finden","schedule":"0 20 * * *","frequency":"täglich um 20:00","deadlineSeconds":3000,"command":"discover-open-images","args":["--database","/data/benchly.sqlite","--max-cells","50","--requests-per-second","1"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"scene-analysis","title":"Umgebung aus Bildern einordnen","schedule":"0 21 * * *","frequency":"täglich um 21:00","deadlineSeconds":7500,"command":"analyze-scenes","args":["--database","/data/benchly.sqlite","--limit","300","--max-runtime-hours","2","--requests-per-second","0.25"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["benchly-db","scene-model"],"profile":"inference"},
+    {"id":"environment-reconcile","title":"Umgebungsevidenz zusammenführen","schedule":"15 23 * * *","frequency":"täglich um 23:15","deadlineSeconds":3600,"command":"reconcile-environment","args":["--database","/data/benchly.sqlite","--limit","5000","--max-total","1000"],"sourceIds":["openstreetmap","swisstlm3d","swissbuildings3d","panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["benchly-db"],"profile":"standard"},
+    {"id":"vision-benchmark","title":"Bildmodell-Qualitätsprüfung","schedule":"0 6 * * 0","frequency":"sonntags um 06:00","deadlineSeconds":7500,"command":"benchmark-vision","args":["--database","/data/benchly.sqlite","--dataset","/worker/evaluation/benchly-100.jsonl","--models","benchly-vision","general","--requests-per-second","0.25"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["scene-model"],"profile":"inference"}
+  ]
+}

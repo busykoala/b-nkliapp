@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchTerrainHorizon, parsePointHeight, wgs84ToLv95 } from "./elevation";
+import { fetchTerrainHorizon, parsePointHeight } from "@/integrations/geoadmin/elevation";
+import { wgs84ToLv95 } from "./elevation";
 
 afterEach(() => vi.restoreAllMocks());
 

@@ -17,64 +17,40 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
-PROMPT_VERSION = "benchly-scene-1.2"
-RECONCILER_VERSION = "benchly-evidence-1.1"
+from benchly.catalog import load_catalog
+from benchly.geo import bearing_degrees, circular_difference
+from benchly.imagery.discovery import discover_images
+from benchly.imagery.evidence import audit_environment, likely_provenance_issues, reconcile_environment
+from benchly.imagery.prediction import prediction_schema as _prediction_schema, validate_scene_prediction
+from benchly.imagery.providers import (
+    DiscoveredImage,
+    ProviderDelay,
+    optional_float as _float,
+    search_commons as provider_search_commons,
+    search_kartaview as provider_search_kartaview,
+    search_panoramax as provider_search_panoramax,
+    search_swissimage,
+    swissimage_at,
+)
+from benchly.imagery.repository import (
+    mark_analyzed,
+    mark_grouped,
+    mark_retry,
+)
+from benchly.runtime import now_iso
+
+_RUNTIME = load_catalog().runtime
+_PROVIDERS = load_catalog().providers
+PROMPT_VERSION = _RUNTIME.scenePromptVersion
 DEFAULT_MODEL = "benchly-vision"
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_REQUEST_BYTES = 24 * 1024 * 1024
 EVALUATION_CATEGORIES = {
     "true_forest", "forest_edge", "park", "urban", "alpine_open", "waterfront", "irrelevant",
 }
-
-
-@dataclass(frozen=True)
-class DiscoveredImage:
-    provider: str
-    provider_image_id: str
-    capture_group_id: str
-    source_url: str
-    fetch_url: str
-    latitude: float
-    longitude: float
-    heading: Optional[float] = None
-    captured_at: Optional[str] = None
-    author: Optional[str] = None
-    license: Optional[str] = None
-
-
-class ProviderDelay(RuntimeError):
-    def __init__(self, message: str, seconds: int = 3600):
-        super().__init__(message)
-        self.seconds = seconds
-
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def distance_meters(latitude_a: float, longitude_a: float, latitude_b: float, longitude_b: float) -> float:
-    mean_latitude = math.radians((latitude_a + latitude_b) / 2)
-    return math.hypot(
-        (latitude_b - latitude_a) * 111_320,
-        (longitude_b - longitude_a) * 111_320 * math.cos(mean_latitude),
-    )
-
-
-def bearing_degrees(latitude_a: float, longitude_a: float, latitude_b: float, longitude_b: float) -> float:
-    latitude_a_rad, latitude_b_rad = math.radians(latitude_a), math.radians(latitude_b)
-    longitude_delta = math.radians(longitude_b - longitude_a)
-    y = math.sin(longitude_delta) * math.cos(latitude_b_rad)
-    x = math.cos(latitude_a_rad) * math.sin(latitude_b_rad) - math.sin(latitude_a_rad) * math.cos(latitude_b_rad) * math.cos(longitude_delta)
-    return (math.degrees(math.atan2(y, x)) + 360) % 360
-
-
-def circular_difference(first: float, second: float) -> float:
-    return abs(((first - second + 540) % 360) - 180)
 
 
 def _request_json(url: str, *, data: Optional[bytes] = None, headers: Optional[dict[str, str]] = None, timeout: int = 45) -> object:
@@ -100,128 +76,16 @@ def _request_json(url: str, *, data: Optional[bytes] = None, headers: Optional[d
     raise RuntimeError("unreachable provider retry state")
 
 
-def _float(value: object) -> Optional[float]:
-    try:
-        result = float(value)
-        return result if math.isfinite(result) else None
-    except (TypeError, ValueError):
-        return None
-
-
 def search_panoramax(bounds: tuple[float, float, float, float]) -> list[DiscoveredImage]:
-    endpoint = os.environ.get("PANORAMAX_API", "https://api.panoramax.xyz/api/search")
-    url = endpoint + "?" + urllib.parse.urlencode({"bbox": ",".join(map(str, bounds)), "limit": "100"})
-    payload = _request_json(url)
-    features = payload.get("features", []) if isinstance(payload, dict) else []
-    results: list[DiscoveredImage] = []
-    for feature in features:
-        properties = feature.get("properties", {})
-        coordinates = feature.get("geometry", {}).get("coordinates", [])
-        image_id = str(properties.get("id") or feature.get("id") or "")
-        if not image_id or len(coordinates) < 2:
-            continue
-        assets = properties.get("assets") or feature.get("assets") or {}
-        fetch_url = next((asset.get("href") for key in ("sd", "thumb", "hd", "original") if isinstance((asset := assets.get(key)), dict) and asset.get("href")), None)
-        if not fetch_url:
-            fetch_url = f"{endpoint.rsplit('/api/', 1)[0]}/api/pictures/{urllib.parse.quote(image_id)}/sd.jpg"
-        sequence = properties.get("sequence") or properties.get("sequence_id") or feature.get("collection") or image_id
-        results.append(DiscoveredImage(
-            provider="Panoramax", provider_image_id=image_id,
-            capture_group_id=f"panoramax:{sequence}",
-            source_url=str(properties.get("view_url") or f"https://panoramax.xyz/#focus=pic&pic={urllib.parse.quote(image_id)}"),
-            fetch_url=str(fetch_url), latitude=float(coordinates[1]), longitude=float(coordinates[0]),
-            heading=_float(properties.get("heading") or properties.get("compass_angle") or properties.get("view:azimuth")),
-            captured_at=properties.get("datetime"), author=properties.get("author") or properties.get("geovisio:producer"),
-            license=properties.get("license") or "CC-BY-SA-4.0",
-        ))
-    return results
+    return provider_search_panoramax(bounds, _request_json)
 
 
 def search_commons(bounds: tuple[float, float, float, float]) -> list[DiscoveredImage]:
-    west, south, east, north = bounds
-    latitude, longitude = (south + north) / 2, (west + east) / 2
-    radius = min(10_000, max(300, int(distance_meters(south, west, north, east) / 2)))
-    parameters = {
-        "action": "query", "format": "json", "generator": "geosearch", "ggsnamespace": "6",
-        "ggscoord": f"{latitude}|{longitude}", "ggsradius": str(radius), "ggslimit": "100",
-        "prop": "coordinates|imageinfo", "iiprop": "url|extmetadata", "iiurlwidth": "1280",
-    }
-    payload = _request_json("https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(parameters))
-    pages = payload.get("query", {}).get("pages", {}).values() if isinstance(payload, dict) else []
-    results: list[DiscoveredImage] = []
-    for page in pages:
-        coordinates = (page.get("coordinates") or [{}])[0]
-        info = (page.get("imageinfo") or [{}])[0]
-        latitude_value, longitude_value = _float(coordinates.get("lat")), _float(coordinates.get("lon"))
-        image_id = str(page.get("pageid") or "")
-        fetch_url = info.get("thumburl") or info.get("url")
-        if latitude_value is None or longitude_value is None or not image_id or not fetch_url:
-            continue
-        metadata = info.get("extmetadata") or {}
-        metadata_value = lambda key: (metadata.get(key) or {}).get("value")
-        captured_at = metadata_value("DateTimeOriginal") or metadata_value("DateTime")
-        group_day = str(captured_at or "unknown")[:10]
-        group_location = f"{round(latitude_value, 4)}:{round(longitude_value, 4)}"
-        results.append(DiscoveredImage(
-            provider="Wikimedia Commons", provider_image_id=image_id,
-            capture_group_id=f"commons:{group_location}:{group_day}",
-            source_url=str(info.get("descriptionurl") or f"https://commons.wikimedia.org/?curid={image_id}"),
-            fetch_url=str(fetch_url), latitude=latitude_value, longitude=longitude_value,
-            captured_at=str(captured_at) if captured_at else None,
-            author=metadata_value("Artist"), license=metadata_value("LicenseShortName"),
-        ))
-    return results
+    return provider_search_commons(bounds, _request_json)
 
 
 def search_kartaview(bounds: tuple[float, float, float, float]) -> list[DiscoveredImage]:
-    west, south, east, north = bounds
-    latitude, longitude = (south + north) / 2, (west + east) / 2
-    radius = min(1000, max(300, int(distance_meters(south, west, north, east) / 2)))
-    endpoint = os.environ.get("KARTAVIEW_API", "https://api.openstreetcam.org/1.0/list/nearby-photos/")
-    form = urllib.parse.urlencode({"lat": latitude, "lng": longitude, "radius": radius}).encode()
-    payload = _request_json(endpoint, data=form, headers={"Content-Type": "application/x-www-form-urlencoded"})
-    data = payload.get("currentPageItems", []) if isinstance(payload, dict) else []
-    results: list[DiscoveredImage] = []
-    for photo in data if isinstance(data, list) else []:
-        image_id = str(photo.get("id") or "")
-        latitude, longitude = _float(photo.get("lat")), _float(photo.get("lng") or photo.get("lon"))
-        # KartaView's historical `proc` path is frequently gone while `lth` remains available.
-        image_path = str(photo.get("lth_name") or photo.get("th_name") or photo.get("name") or "").lstrip("/")
-        storage, _, remainder = image_path.partition("/")
-        fetch_url = f"https://{storage}.openstreetcam.org/{remainder}" if storage and remainder else None
-        if not image_id or latitude is None or longitude is None or not fetch_url:
-            continue
-        sequence = photo.get("sequence_id") or image_id
-        results.append(DiscoveredImage(
-            provider="KartaView", provider_image_id=image_id, capture_group_id=f"kartaview:{sequence}",
-            source_url=f"https://kartaview.org/details/{sequence}/{photo.get('sequence_index', 0)}/track-info",
-            fetch_url=str(fetch_url), latitude=latitude, longitude=longitude,
-            heading=_float(photo.get("heading") or photo.get("headers")), captured_at=photo.get("shot_date") or photo.get("date_added"),
-            author=photo.get("username"), license="CC-BY-SA-4.0",
-        ))
-    return results
-
-
-def swissimage_at(latitude: float, longitude: float) -> DiscoveredImage:
-    crop = .0018
-    parameters = {
-        "SERVICE": "WMS", "REQUEST": "GetMap", "VERSION": "1.3.0",
-        "LAYERS": "ch.swisstopo.swissimage", "CRS": "EPSG:4326",
-        "BBOX": f"{latitude - crop},{longitude - crop},{latitude + crop},{longitude + crop}",
-        "WIDTH": "1280", "HEIGHT": "1280", "FORMAT": "image/jpeg", "STYLES": "",
-    }
-    cell = f"{round(latitude, 4)}:{round(longitude, 4)}"
-    return DiscoveredImage(
-        provider="SWISSIMAGE", provider_image_id=f"swissimage:{cell}", capture_group_id=f"swissimage:{cell}",
-        source_url=f"https://map.geo.admin.ch/#/map?lang=de&center={longitude},{latitude}&z=10&bgLayer=ch.swisstopo.swissimage",
-        fetch_url="https://wms.geo.admin.ch/?" + urllib.parse.urlencode(parameters), latitude=latitude, longitude=longitude,
-        license="swisstopo OGD",
-    )
-
-
-def search_swissimage(bounds: tuple[float, float, float, float]) -> list[DiscoveredImage]:
-    west, south, east, north = bounds
-    return [swissimage_at((south + north) / 2, (west + east) / 2)]
+    return provider_search_kartaview(bounds, _request_json)
 
 
 PROVIDERS = {
@@ -232,160 +96,20 @@ PROVIDERS = {
 }
 
 
-def _candidate_cells(connection: sqlite3.Connection, cell_degrees: float, limit: int,
-                     bounds: Optional[tuple[float, float, float, float]] = None,
-                     include_resolved: bool = False) -> list[sqlite3.Row]:
-    bounds_clause = ""
-    parameters: list[object] = [cell_degrees, cell_degrees]
-    if bounds:
-        bounds_clause = "AND b.longitude BETWEEN ? AND ? AND b.latitude BETWEEN ? AND ?"
-        parameters.extend((bounds[0], bounds[2], bounds[1], bounds[3]))
-    parameters.append(limit * 20)
-    ambiguity_clause = "" if include_resolved else """AND lm.bench_row_id IS NULL AND (
-          e.land_context IS NULL OR e.land_context IN ('unknown','mixed','forest_edge')
-          OR e.canopy_context IS NULL
-        )"""
-    return connection.execute(f"""
-        SELECT CAST(latitude / ? AS INTEGER) lat_cell,CAST(longitude / ? AS INTEGER) lon_cell,
-          min(latitude) min_latitude,max(latitude) max_latitude,min(longitude) min_longitude,max(longitude) max_longitude
-        FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
-        LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id
-        WHERE b.active=1 {ambiguity_clause}
-        {bounds_clause}
-        GROUP BY lat_cell,lon_cell
-        ORDER BY ((lat_cell * 1103515245 + lon_cell * 12345) & 2147483647)
-        LIMIT ?
-    """, parameters).fetchall()
-
-
 def discover_open_images(connection: sqlite3.Connection, max_cells: int = 500, cell_degrees: float = 0.02,
                          requests_per_second: float = 1.0,
                          bounds: Optional[tuple[float, float, float, float]] = None,
                          include_resolved: bool = False) -> dict[str, int]:
-    stats = {"cells": 0, "requests": 0, "images": 0, "links": 0, "failed": 0}
-    cells_today = connection.execute("""
-      SELECT count(DISTINCT cell_id) FROM image_discovery_cells
-      WHERE discovered_at IS NOT NULL AND date(discovered_at)=date('now')
-    """).fetchone()[0]
-    max_cells = max(0, min(max_cells, 500 - int(cells_today)))
-    if max_cells == 0:
-        return stats
-    minimum_interval = 1 / max(0.1, requests_per_second)
-    failures: dict[str, int] = {provider: 0 for provider in PROVIDERS}
-    for cell in _candidate_cells(connection, cell_degrees, max_cells, bounds, include_resolved):
-        if stats["cells"] >= max_cells:
-            break
-        cell_id = f"{cell['lat_cell']}:{cell['lon_cell']}:{cell_degrees}"
-        bounds = (
-            cell["lon_cell"] * cell_degrees, cell["lat_cell"] * cell_degrees,
-            (cell["lon_cell"] + 1) * cell_degrees, (cell["lat_cell"] + 1) * cell_degrees,
-        )
-        expanded = (bounds[0] - .004, bounds[1] - .003, bounds[2] + .004, bounds[3] + .003)
-        ground_images = 0
-        processed_cell = False
-        for provider, search in PROVIDERS.items():
-            if failures[provider] >= 3:
-                continue
-            if provider == "SWISSIMAGE" and ground_images:
-                continue
-            previous = connection.execute(
-                "SELECT status,discovered_at,retry_after FROM image_discovery_cells WHERE provider=? AND cell_id=?", (provider, cell_id),
-            ).fetchone()
-            if previous and previous["status"] == "completed" and previous["discovered_at"] and previous["discovered_at"] >= (datetime.now(timezone.utc) - timedelta(days=30)).isoformat():
-                continue
-            if previous and previous["status"] == "delayed" and previous["retry_after"] and previous["retry_after"] > now_iso():
-                continue
-            started = time.monotonic()
-            processed_cell = True
-            stats["requests"] += 1
-            retry_after = None
-            error_text = None
-            try:
-                if provider == "SWISSIMAGE":
-                    ambiguous = connection.execute("""
-                      SELECT b.latitude,b.longitude FROM benches b
-                      WHERE b.active=1 AND b.latitude BETWEEN ? AND ? AND b.longitude BETWEEN ? AND ?
-                        AND NOT EXISTS(
-                          SELECT 1 FROM bench_image_evidence bie JOIN image_observations io ON io.id=bie.image_observation_id
-                          WHERE bie.bench_row_id=b.row_id AND io.provider<>'SWISSIMAGE'
-                        )
-                      ORDER BY b.row_id LIMIT 4
-                    """, (bounds[1], bounds[3], bounds[0], bounds[2])).fetchall()
-                    images = [swissimage_at(row["latitude"], row["longitude"]) for row in ambiguous]
-                else:
-                    images = search(expanded)
-                images = [
-                    image for image in images
-                    if image.license and image.source_url.startswith("https://") and image.fetch_url.startswith("https://")
-                ]
-                failures[provider] = 0
-                for image in images:
-                    cursor = connection.execute("""
-                        INSERT INTO image_observations(provider,provider_image_id,capture_group_id,source_url,fetch_url,
-                          latitude,longitude,heading,captured_at,author,license,discovered_at)
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-                        ON CONFLICT(provider,provider_image_id) DO UPDATE SET capture_group_id=excluded.capture_group_id,
-                          source_url=excluded.source_url,fetch_url=excluded.fetch_url,latitude=excluded.latitude,
-                          longitude=excluded.longitude,heading=excluded.heading,captured_at=excluded.captured_at,
-                          author=excluded.author,license=excluded.license,discovered_at=excluded.discovered_at
-                        RETURNING id
-                    """, (image.provider, image.provider_image_id, image.capture_group_id, image.source_url,
-                          image.fetch_url, image.latitude, image.longitude, image.heading, image.captured_at,
-                          image.author, image.license, now_iso()))
-                    observation_id = cursor.fetchone()[0]
-                    latitude_delta = 300 / 111_320
-                    longitude_delta = 300 / (111_320 * max(.2, math.cos(math.radians(image.latitude))))
-                    benches = connection.execute("""
-                        SELECT row_id,latitude,longitude,direction_degrees FROM benches
-                        WHERE active=1 AND latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?
-                    """, (image.latitude - latitude_delta, image.latitude + latitude_delta,
-                          image.longitude - longitude_delta, image.longitude + longitude_delta)).fetchall()
-                    for bench in benches:
-                        distance = distance_meters(image.latitude, image.longitude, bench["latitude"], bench["longitude"])
-                        if distance > 300:
-                            continue
-                        camera_to_bench = bearing_degrees(image.latitude, image.longitude, bench["latitude"], bench["longitude"])
-                        bench_to_camera = bearing_degrees(bench["latitude"], bench["longitude"], image.latitude, image.longitude)
-                        direct = int(
-                            distance <= 150
-                            and image.heading is not None
-                            and bench["direction_degrees"] is not None
-                            and circular_difference(float(image.heading), camera_to_bench) <= 60
-                            and circular_difference(float(bench["direction_degrees"]), bench_to_camera) <= 60
-                        )
-                        connection.execute("""
-                            INSERT INTO bench_image_evidence(bench_row_id,image_observation_id,distance_meters,direct_view_eligible,evidence_weight)
-                            VALUES(?,?,?,?,?) ON CONFLICT DO UPDATE SET distance_meters=excluded.distance_meters,
-                              direct_view_eligible=excluded.direct_view_eligible,evidence_weight=excluded.evidence_weight
-                        """, (bench["row_id"], observation_id, distance, direct, max(.15, 1 - distance / 350)))
-                        stats["links"] += 1
-                status = "completed"
-                stats["images"] += len(images)
-                if provider != "SWISSIMAGE":
-                    ground_images += len(images)
-            except ProviderDelay as error:
-                images = []
-                status, error_text = "delayed", str(error)
-                retry_after = (datetime.now(timezone.utc) + timedelta(seconds=error.seconds)).isoformat()
-                failures[provider] += 1
-                stats["failed"] += 1
-            except Exception as error:
-                images = []
-                status, error_text = "failed", str(error)[:500]
-                failures[provider] += 1
-                stats["failed"] += 1
-            connection.execute("""
-                INSERT INTO image_discovery_cells(provider,cell_id,min_latitude,max_latitude,min_longitude,max_longitude,
-                  status,image_count,attempts,last_error,discovered_at,retry_after)
-                VALUES(?,?,?,?,?,?,?,?,1,?,?,?)
-                ON CONFLICT(provider,cell_id) DO UPDATE SET status=excluded.status,image_count=excluded.image_count,
-                  attempts=image_discovery_cells.attempts+1,last_error=excluded.last_error,
-                  discovered_at=excluded.discovered_at,retry_after=excluded.retry_after
-            """, (provider, cell_id, bounds[1], bounds[3], bounds[0], bounds[2], status, len(images), error_text, now_iso(), retry_after))
-            connection.commit()
-            time.sleep(max(0, minimum_interval - (time.monotonic() - started)))
-        stats["cells"] += int(processed_cell)
-    return stats
+    return discover_images(
+        connection,
+        PROVIDERS,
+        swissimage_at,
+        max_cells=max_cells,
+        cell_degrees=cell_degrees,
+        requests_per_second=requests_per_second,
+        bounds=bounds,
+        include_resolved=include_resolved,
+    )
 
 
 def _download_image(url: str) -> tuple[bytes, str]:
@@ -422,47 +146,8 @@ trees and understory; parks, waterfronts, streets, gardens, orchards, rows of tr
 are not forest. Mark view traits only when actually visible. Return one strict prediction per index."""
 
 
-PROBABILITY_KEYS = (
-    "relevance_probability", "forest_probability", "park_probability", "open_probability", "urban_probability",
-    "canopy_probability", "water_probability", "lake_view_probability", "mountain_view_probability",
-    "open_view_probability", "limited_view_probability", "buildings_probability", "road_rail_probability",
-    "bench_visible_probability",
-)
-
-
-def _prediction_schema() -> dict[str, object]:
-    return {
-        "type": "object", "additionalProperties": False,
-        "properties": {
-            **{key: {"type": "number", "minimum": 0, "maximum": 1} for key in PROBABILITY_KEYS},
-            "rejection_reason": {"type": "string", "enum": ["none", "blurred", "indoor", "close_object", "historical", "unrelated"]},
-            "canopy_context": {"type": "string", "enum": ["none", "partial", "dense", "unknown"]},
-        },
-        "required": [*PROBABILITY_KEYS, "rejection_reason", "canopy_context"],
-    }
-
-
 def _response_schema(name: str, schema: dict[str, object]) -> dict[str, object]:
     return {"type": "json_schema", "json_schema": {"name": name, "strict": True, "schema": schema}}
-
-
-def validate_scene_prediction(value: object) -> dict[str, object]:
-    if not isinstance(value, dict):
-        raise ValueError("prediction is not an object")
-    result: dict[str, object] = {}
-    for key in PROBABILITY_KEYS:
-        probability = _float(value.get(key))
-        if probability is None or not 0 <= probability <= 1:
-            raise ValueError(f"invalid probability: {key}")
-        result[key] = probability
-    rejection = value.get("rejection_reason")
-    canopy = value.get("canopy_context")
-    if rejection not in {"none", "blurred", "indoor", "close_object", "historical", "unrelated"}:
-        raise ValueError("invalid rejection_reason")
-    if canopy not in {"none", "partial", "dense", "unknown"}:
-        raise ValueError("invalid canopy_context")
-    result["rejection_reason"], result["canopy_context"] = rejection, canopy
-    return result
 
 
 def _content_from_response(payload: object) -> object:
@@ -570,7 +255,7 @@ def _diverse_frames(rows: Sequence[sqlite3.Row], maximum: int = 4) -> list[sqlit
 
 def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, requests_per_second: float = .25,
                    bounds: Optional[tuple[float, float, float, float]] = None) -> dict[str, int]:
-    endpoint = os.environ.get("INFERENCE_BASE_URL", "http://inference-api.inference.svc.cluster.local:8080")
+    endpoint = os.environ.get("INFERENCE_BASE_URL", str(_PROVIDERS.inferenceDefaultUrl))
     api_key = os.environ.get("INFERENCE_API_KEY", "")
     model = os.environ.get("BENCHLY_VISION_MODEL", DEFAULT_MODEL)
     if not api_key:
@@ -635,17 +320,23 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
             for index, (row, prediction) in enumerate(zip(frames, predictions)):
                 relevant = prediction["relevance_probability"] >= .55 and prediction["rejection_reason"] == "none"
                 status = "analyzed" if relevant else "irrelevant"
-                connection.execute("""
-                    UPDATE image_observations SET analysis_status=?,relevance_probability=?,predictions=?,
-                      image_sha256=?,model_version=?,prompt_version=?,analyzed_at=?,attempts=attempts+1,last_error=NULL
-                    WHERE id=?
-                """, (status, prediction["relevance_probability"], json.dumps(prediction, separators=(",", ":")),
-                      hashes[index], model, PROMPT_VERSION, now_iso(), row["id"]))
+                mark_analyzed(connection, row["id"], {
+                    "analysis_status": status,
+                    "relevance_probability": prediction["relevance_probability"],
+                    "predictions": json.dumps(prediction, separators=(",", ":")),
+                    "image_sha256": hashes[index],
+                    "model_version": model,
+                    "prompt_version": PROMPT_VERSION,
+                    "analyzed_at": now_iso(),
+                })
             # Frames not selected are redundant members of the same capture group.
             selected_ids = {row["id"] for row in frames}
-            connection.executemany(
-                "UPDATE image_observations SET analysis_status='grouped',model_version=?,prompt_version=?,analyzed_at=? WHERE id=?",
-                [(model, PROMPT_VERSION, now_iso(), row["id"]) for row in rows if row["id"] not in selected_ids],
+            mark_grouped(
+                connection,
+                [row["id"] for row in rows if row["id"] not in selected_ids],
+                model,
+                PROMPT_VERSION,
+                now_iso(),
             )
             stats["groups"] += 1
             stats["images"] += len(frames)
@@ -655,239 +346,13 @@ def analyze_scenes(connection: sqlite3.Connection, limit: int, deadline: float, 
             )
             stats["irrelevant"] += len(frames) - relevant_count
         except Exception as error:
-            connection.executemany(
-                "UPDATE image_observations SET analysis_status='retry',attempts=attempts+1,last_error=? WHERE id=?",
-                [(str(error)[:500], row["id"]) for row in frames],
-            )
+            mark_retry(connection, [row["id"] for row in frames], str(error))
             stats["failed"] += 1
         finally:
             # No image object escapes this iteration; CPython releases the byte buffers here.
             connection.commit()
             time.sleep(max(0, minimum_interval - (time.monotonic() - started)))
     return stats
-
-
-def _weighted_probability(groups: Sequence[tuple[dict[str, object], float]], key: str) -> Optional[float]:
-    values = [(float(prediction[key]), weight) for prediction, weight in groups if key in prediction]
-    return sum(value * weight for value, weight in values) / sum(weight for _, weight in values) if values else None
-
-
-def _fuse_frame_predictions(items: Sequence[tuple[dict[str, object], float]]) -> dict[str, object]:
-    if not items:
-        raise ValueError("cannot fuse an empty evidence group")
-    fused: dict[str, object] = {
-        key: _weighted_probability(items, key) for key in PROBABILITY_KEYS
-    }
-    canopy_scores = {
-        context: sum(
-            float(prediction["canopy_probability"]) * weight
-            for prediction, weight in items if prediction["canopy_context"] == context
-        )
-        for context in ("none", "partial", "dense", "unknown")
-    }
-    fused["canopy_context"] = max(canopy_scores, key=canopy_scores.get)
-    fused["rejection_reason"] = "none"
-    return validate_scene_prediction(fused)
-
-
-def reconcile_environment(connection: sqlite3.Connection, limit: int = 5000,
-                          bounds: Optional[tuple[float, float, float, float]] = None,
-                          max_total: Optional[int] = None) -> dict[str, int]:
-    bounds_clause = ""
-    parameters: list[object] = []
-    if bounds:
-        bounds_clause = "AND b.longitude BETWEEN ? AND ? AND b.latitude BETWEEN ? AND ?"
-        parameters.extend((bounds[0], bounds[2], bounds[1], bounds[3]))
-    parameters.append(limit)
-    bench_rows = connection.execute(f"""
-        SELECT DISTINCT b.row_id,e.in_forest,e.land_context,e.waterfront,e.canopy_context,
-          CASE WHEN lm.bench_row_id IS NULL THEN 0 ELSE 1 END likely_exists
-        FROM benches b JOIN bench_image_evidence bie ON bie.bench_row_id=b.row_id
-        LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
-        JOIN image_observations io ON io.id=bie.image_observation_id
-        LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id
-        WHERE b.active=1 AND io.analysis_status='analyzed'
-          AND coalesce(io.license,'')<>'' AND io.source_url LIKE 'https://%'
-          AND (lm.updated_at IS NULL OR lm.updated_at<io.analyzed_at)
-          {bounds_clause}
-        ORDER BY b.row_id LIMIT ?
-    """, parameters).fetchall()
-    stats = {"reconciled": 0, "conflicts": 0}
-    existing_total = int(connection.execute("SELECT count(*) FROM bench_likely_metadata").fetchone()[0])
-    newly_created = 0
-    for bench in bench_rows:
-        if max_total is not None and max_total > 0 and not bench["likely_exists"] and existing_total + newly_created >= max_total:
-            continue
-        rows = connection.execute("""
-            SELECT io.id,io.provider,io.capture_group_id,io.predictions,io.model_version,
-              io.source_url,io.license,io.captured_at,io.relevance_probability,
-              bie.distance_meters,bie.evidence_weight,bie.direct_view_eligible
-            FROM bench_image_evidence bie JOIN image_observations io ON io.id=bie.image_observation_id
-            WHERE bie.bench_row_id=? AND io.analysis_status='analyzed' AND io.relevance_probability>=.55
-              AND coalesce(io.license,'')<>'' AND io.source_url LIKE 'https://%'
-            ORDER BY io.provider,io.capture_group_id,bie.distance_meters,io.id
-        """, (bench["row_id"],)).fetchall()
-        groups: list[tuple[dict[str, object], float]] = []
-        view_groups: list[tuple[dict[str, object], float]] = []
-        grouped_rows: dict[tuple[str, str], list[tuple[sqlite3.Row, dict[str, object], float]]] = {}
-        for row in rows:
-            try:
-                prediction = validate_scene_prediction(json.loads(row["predictions"]))
-                weight = max(.001, float(row["evidence_weight"]) * float(prediction["relevance_probability"]))
-                grouped_rows.setdefault((str(row["provider"]), str(row["capture_group_id"])), []).append((row, prediction, weight))
-            except (ValueError, TypeError, json.JSONDecodeError):
-                continue
-        summary = []
-        models: set[str] = set()
-        for (provider, capture_group), items in grouped_rows.items():
-            fused = _fuse_frame_predictions([(prediction, weight) for _row, prediction, weight in items])
-            group_weight = max(float(row["evidence_weight"]) for row, _prediction, _weight in items)
-            groups.append((fused, group_weight))
-            direct_items = [(prediction, weight) for row, prediction, weight in items if row["direct_view_eligible"]]
-            if direct_items:
-                view_groups.append((_fuse_frame_predictions(direct_items), group_weight))
-            representative = min((row for row, _prediction, _weight in items), key=lambda row: float(row["distance_meters"]))
-            summary.append({
-                "provider": provider, "captureGroup": capture_group,
-                "distanceMeters": round(float(representative["distance_meters"])),
-                "sourceUrl": representative["source_url"], "license": representative["license"],
-                "capturedAt": max((row["captured_at"] for row, _prediction, _weight in items if row["captured_at"]), default=None),
-                "directView": bool(direct_items), "relevantFrames": len(items),
-            })
-            models.update(str(row["model_version"]) for row, _prediction, _weight in items if row["model_version"])
-        if not groups:
-            continue
-        probabilities = {key: _weighted_probability(groups, key) for key in (
-            "forest_probability", "park_probability", "open_probability", "urban_probability",
-            "buildings_probability", "road_rail_probability",
-        )}
-        probabilities.update({key: _weighted_probability(view_groups, key) for key in (
-            "lake_view_probability", "mountain_view_probability", "open_view_probability", "limited_view_probability",
-        )})
-        land_candidates = {key.removesuffix("_probability"): value for key, value in probabilities.items() if key in {"forest_probability", "park_probability", "open_probability", "urban_probability"} and value is not None}
-        land_context, land_probability = max(land_candidates.items(), key=lambda item: item[1])
-        canopy_votes = [(str(prediction["canopy_context"]), float(prediction["canopy_probability"]), weight) for prediction, weight in groups]
-        canopy_context = max(("none", "partial", "dense", "unknown"), key=lambda value: sum(prob * weight for name, prob, weight in canopy_votes if name == value))
-        canopy_probability = _weighted_probability(groups, "canopy_probability")
-        contradictory_exact = bool(bench["waterfront"]) or bench["land_context"] in {"forest_edge", "open", "urban", "park"}
-        conflicted = False
-        if land_context == "forest" and not bench["in_forest"]:
-            forest_allowed = land_probability >= .9 and bench["canopy_context"] == "dense" and len(groups) >= 2 and not contradictory_exact
-            if not forest_allowed:
-                conflicted = True
-                stats["conflicts"] += 1
-                alternatives = {key: value for key, value in land_candidates.items() if key != "forest"}
-                land_context, land_probability = max(alternatives.items(), key=lambda item: item[1]) if alternatives else (None, None)
-        strongest = max((value for value in probabilities.values() if value is not None), default=0)
-        confidence = "low" if conflicted else "high" if len(groups) >= 2 and strongest >= .85 else "medium" if strongest >= .65 else "low"
-        connection.execute("""
-            INSERT INTO bench_likely_metadata(bench_row_id,land_context,land_context_probability,canopy_context,
-              canopy_probability,lake_view_probability,mountain_view_probability,open_view_probability,
-              limited_view_probability,buildings_probability,road_rail_probability,confidence,evidence_group_count,
-              evidence_summary,model_version,reconciler_version,updated_at)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            ON CONFLICT(bench_row_id) DO UPDATE SET land_context=excluded.land_context,
-              land_context_probability=excluded.land_context_probability,canopy_context=excluded.canopy_context,
-              canopy_probability=excluded.canopy_probability,lake_view_probability=excluded.lake_view_probability,
-              mountain_view_probability=excluded.mountain_view_probability,open_view_probability=excluded.open_view_probability,
-              limited_view_probability=excluded.limited_view_probability,buildings_probability=excluded.buildings_probability,
-              road_rail_probability=excluded.road_rail_probability,confidence=excluded.confidence,
-              evidence_group_count=excluded.evidence_group_count,evidence_summary=excluded.evidence_summary,
-              model_version=excluded.model_version,reconciler_version=excluded.reconciler_version,updated_at=excluded.updated_at
-        """, (bench["row_id"], land_context, land_probability, canopy_context, canopy_probability,
-              probabilities["lake_view_probability"], probabilities["mountain_view_probability"],
-              probabilities["open_view_probability"], probabilities["limited_view_probability"],
-              probabilities["buildings_probability"], probabilities["road_rail_probability"], confidence,
-              len(groups), json.dumps(summary, separators=(",", ":")), ",".join(sorted(models)), RECONCILER_VERSION, now_iso()))
-        newly_created += int(not bench["likely_exists"])
-        stats["reconciled"] += 1
-        if stats["reconciled"] % 100 == 0:
-            connection.commit()
-    connection.commit()
-    return stats
-
-
-def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
-    scalar = lambda sql: connection.execute(sql).fetchone()[0]
-    model_versions = {
-        str(row["model_version"] or "unknown"): int(row["count"])
-        for row in connection.execute(
-            "SELECT model_version,count(*) count FROM image_observations WHERE analyzed_at IS NOT NULL GROUP BY model_version"
-        )
-    }
-    database_path = str(connection.execute("PRAGMA database_list").fetchone()[2] or "")
-    image_suffixes = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".heic"}
-    image_files_on_data_volume = 0
-    if database_path and database_path != ":memory:":
-        image_files_on_data_volume = sum(
-            path.is_file() and path.suffix.lower() in image_suffixes
-            for path in Path(database_path).resolve().parent.rglob("*")
-        )
-    daerligen = connection.execute("""
-      SELECT count(*) benches,
-        coalesce(sum(CASE WHEN e.in_forest=1 THEN 1 ELSE 0 END),0) forest_false_positives,
-        coalesce(sum(CASE WHEN e.waterfront=1 THEN 1 ELSE 0 END),0) waterfront_confirmed,
-        coalesce(sum(CASE WHEN e.environment_computed_at IS NOT NULL THEN 1 ELSE 0 END),0) classified
-      FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
-      WHERE b.active=1 AND b.latitude BETWEEN 46.6618 AND 46.6629
-        AND b.longitude BETWEEN 7.8085 AND 7.8100
-    """).fetchone()
-    likely_total = scalar("SELECT count(*) FROM bench_likely_metadata")
-    provenance_issues = likely_provenance_issues(connection)
-    return {
-        "sqlite_quick_check": scalar("PRAGMA quick_check"),
-        "active_benches": scalar("SELECT count(*) FROM benches WHERE active=1"),
-        "exact_geometry_features": scalar("SELECT count(*) FROM environment_features WHERE geometry_wkb IS NOT NULL"),
-        "deterministic_context": scalar("SELECT count(*) FROM bench_enrichments WHERE land_context IS NOT NULL"),
-        "terrain_horizons": scalar("SELECT count(*) FROM bench_enrichments WHERE json_array_length(terrain_horizon_profile)=72"),
-        "current_sun_models": scalar("""SELECT count(*) FROM bench_enrichments
-          WHERE pipeline_version IN ('4.2.0','4.3.0','4.4.0','GeoAdmin-Horizont v4','GeoAdmin-Horizont v5','GeoAdmin-Horizont v6') AND json_array_length(horizon_profile)=72"""),
-        "canopy_neighborhoods": scalar("""SELECT count(*) FROM bench_enrichments
-          WHERE canopy_share_3m IS NOT NULL AND canopy_share_10m IS NOT NULL AND canopy_share_25m IS NOT NULL"""),
-        "water_distances": scalar("SELECT count(*) FROM bench_enrichments WHERE distance_water_meters IS NOT NULL"),
-        "path_distances": scalar("SELECT count(*) FROM bench_enrichments WHERE distance_path_meters IS NOT NULL"),
-        "building_heights": scalar("""SELECT count(*) FROM environment_features
-          WHERE kind='building' AND source='swissBUILDINGS3D' AND height_meters IS NOT NULL"""),
-        "image_observations": scalar("SELECT count(*) FROM image_observations"),
-        "analyzed_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status='analyzed'"),
-        "irrelevant_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status='irrelevant'"),
-        "likely_metadata": likely_total,
-        "pilot_remaining": max(0, 1000 - int(likely_total)),
-        "high_confidence": scalar("SELECT count(*) FROM bench_likely_metadata WHERE confidence='high'"),
-        "model_versions": model_versions,
-        "pending_or_retry_images": scalar("SELECT count(*) FROM image_observations WHERE analysis_status IN ('pending','retry')"),
-        "forest_conflicts": scalar("""SELECT count(*) FROM bench_likely_metadata lm JOIN bench_enrichments e USING(bench_row_id)
-          WHERE lm.land_context='forest' AND e.land_context IN ('forest_edge','open','urban','park')"""),
-        "likely_rows_without_provenance": provenance_issues,
-        "raw_image_columns": scalar("""SELECT count(*) FROM pragma_table_info('image_observations')
-          WHERE lower(name) LIKE '%blob%' OR lower(name) LIKE '%thumbnail%' OR lower(name) IN ('image','bytes','payload')"""),
-        "image_files_on_data_volume": int(image_files_on_data_volume),
-        "daerligen": dict(daerligen),
-    }
-
-
-def likely_provenance_issues(connection: sqlite3.Connection) -> int:
-    issues = 0
-    for row in connection.execute("""
-      SELECT evidence_summary,model_version,reconciler_version,updated_at FROM bench_likely_metadata
-    """):
-        try:
-            evidence = json.loads(row["evidence_summary"] or "[]")
-        except (TypeError, json.JSONDecodeError):
-            evidence = None
-        valid = (
-            isinstance(evidence, list) and bool(evidence)
-            and bool(row["model_version"]) and bool(row["reconciler_version"]) and bool(row["updated_at"])
-        )
-        if valid:
-            valid = all(
-                isinstance(item, dict)
-                and all(item.get(key) for key in ("provider", "captureGroup", "sourceUrl", "license"))
-                and str(item["sourceUrl"]).startswith("https://")
-                for item in evidence
-            )
-        issues += int(not valid)
-    return issues
 
 
 def _binary_f1(expected: Sequence[bool], predicted: Sequence[bool]) -> float:
@@ -947,7 +412,7 @@ def benchmark_models(dataset_path, models: Sequence[str], allow_small: bool = Fa
     records = validate_evaluation_dataset(
         [json.loads(line) for line in dataset_path.read_text().splitlines() if line.strip()], allow_small,
     )
-    endpoint = os.environ.get("INFERENCE_BASE_URL", "http://inference-api.inference.svc.cluster.local:8080")
+    endpoint = os.environ.get("INFERENCE_BASE_URL", str(_PROVIDERS.inferenceDefaultUrl))
     api_key = os.environ.get("INFERENCE_API_KEY", "")
     if not api_key:
         raise RuntimeError("INFERENCE_API_KEY is required")

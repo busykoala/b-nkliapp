@@ -308,3 +308,4 @@ def iter_layer_features(path: Path, layer: str) -> Iterable[dict]:
     stderr = process.stderr.read() if process.stderr else ""
     if process.wait() != 0:
         raise RuntimeError(f"ogr2ogr failed for {layer}: {stderr[-1000:]}")
+

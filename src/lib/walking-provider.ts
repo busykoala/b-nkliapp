@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { distanceMeters, type JourneyPoint } from "./journey";
 import { routePoint, type WalkPath } from "./walking";
 
@@ -19,7 +20,7 @@ export type WalkRequest = { points: JourneyPoint[]; difficulty?: "easy" | "t2"; 
 
 export async function routeWalk(request: WalkRequest, signal: AbortSignal, personal = true): Promise<WalkPath[]> {
   // This address is server configuration, never client input. No public-service fallback.
-  const base = new URL(process.env.WALK_ROUTER_URL ?? "http://127.0.0.1:8989");
+  const base = new URL(process.env.WALK_ROUTER_URL ?? DATA_RUNTIME.graphHopperDefaultUrl);
   if (!["http:", "https:"].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error("Invalid router configuration");
   const body = {
     profile: request.difficulty === "t2" ? "walk_t2" : "walk", points: request.points.map((p) => [p.longitude, p.latitude]),

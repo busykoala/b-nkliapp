@@ -1,0 +1,2 @@
+"""MeteoSwiss snapshot persistence."""
+

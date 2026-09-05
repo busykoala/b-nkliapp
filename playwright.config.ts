@@ -9,7 +9,7 @@ const baseURL = production ? "https://localhost:3100" : "http://localhost:3100";
 export default defineConfig({
   testDir: "./e2e",
   webServer: {
-    command: production ? "node scripts/serve-production-tests.mjs" : "npm run dev -- --port 3100",
+    command: production ? "tsx scripts/serve-production-tests.ts" : "npm run dev -- --port 3100",
     url: baseURL,
     ignoreHTTPSErrors: production,
     reuseExistingServer: false,
@@ -24,7 +24,7 @@ export default defineConfig({
       BENCH_VERIFICATION_THRESHOLD: "3",
       BENCHLY_DISABLE_ELEVATION_FETCH: "true",
       BENCHLY_JOURNEY_TEST_FIXTURES: "true",
-      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=${join(process.cwd(), "scripts/journey-test-providers.mjs")}`,
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=tsx --import=${join(process.cwd(), "scripts/journey-test-providers.ts")}`,
     },
   },
   use: { baseURL, ignoreHTTPSErrors: production, trace: "on-first-retry" },

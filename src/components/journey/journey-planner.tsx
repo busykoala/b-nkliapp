@@ -57,7 +57,7 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
         <button className="journey-location" disabled={pending} onClick={() => submit(timeMode === "arrival" ? -30 : 30)}>{timeMode === "arrival" ? "30 Minuten früher suchen" : "30 Minuten später suchen"}</button>
         <small>Abgefragt um {journeyClock(result.fetchedAt)} · {result.feedUpdatedAt ? `Transferdaten: ${new Date(result.feedUpdatedAt).toLocaleDateString("de-CH")}` : "Offizielle Transferdaten noch nicht verfügbar"}</small>
       </section>}
-      <footer className="journey-sources"><details><summary>Gut zu wissen & Quellen</summary><p>ÖV-Linien sind schematisch. Fusswege und Gehzeiten sind Schätzungen, keine Zusage zu Barrierefreiheit oder Bergsicherheit.</p><a href="https://transport.opendata.ch" target="_blank" rel="noreferrer">Fahrplan: transport.opendata.ch</a><a href="https://opentransportdata.swiss" target="_blank" rel="noreferrer">Transferdaten: opentransportdata.swiss</a><span>Fusswege: eigener GraphHopper-Router</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap-Mitwirkende</a><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer">Kartenfehler melden</a></details></footer>
+      <footer className="journey-sources"><details><summary>Gut zu wissen</summary><p>ÖV-Linien sind schematisch. Fusswege und Gehzeiten sind Schätzungen, keine Zusage zu Barrierefreiheit oder Bergsicherheit.</p><a href="/danke">Datenquellen &amp; Danksagung</a><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer">Kartenfehler melden</a></details></footer>
     </div>
   </aside>;
 }
