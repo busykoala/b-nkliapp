@@ -1,4 +1,4 @@
-import { statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { StyleSpecification } from "maplibre-gl";
 import { createExpression } from "@maplibre/maplibre-gl-style-spec";
@@ -162,5 +162,16 @@ describe("watercolor map style", () => {
     expect(initialBytes).toBeLessThanOrEqual(INITIAL_ART_BUDGET_BYTES);
     expect(fullBytes).toBeLessThanOrEqual(FULL_ART_BUDGET_BYTES);
     expect(DECORATIVE_MAP_ART.some((asset) => asset.name === "benchly-airport-airplane")).toBe(true);
+  });
+
+  it("ships only registered map artwork and the shared paper texture", () => {
+    const directory = join(process.cwd(), "public/map-art");
+    const files = readdirSync(directory, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => join(entry.parentPath, entry.name));
+    const used = ["/map-art/v3/paper.webp", ...CORE_MAP_ART.map((asset) => asset.url),
+      ...DECORATIVE_MAP_ART.map((asset) => asset.url), ...TRANSIT_MAP_ART.map((asset) => asset.url)]
+      .map((url) => join(process.cwd(), "public", url));
+    expect(files.sort()).toEqual([...new Set(used)].sort());
   });
 });

@@ -23,15 +23,6 @@ const accentColors: Record<Exclude<AvatarAppearance["accent"], "none">, string> 
   gold: "#d6a044", coral: "#c36f51", sage: "#7ca49a", cream: "#dfc77f",
 };
 
-function hashSeed(value: string) {
-  let hash = 2166136261;
-  for (const character of value) {
-    hash ^= character.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 function AvatarBackground({ kind }: { kind: AvatarAppearance["background"] }) {
   const environments = {
     mountain: "/ui-art/v2/bench-scene-alpine-winter.webp",
@@ -60,17 +51,16 @@ function AvatarHat({ kind, color }: { kind: AvatarAppearance["hat"]; color: stri
 
 export function TrailAvatar({ seed, username, progress = 0, compact = false, appearance: selectedAppearance }: TrailAvatarProps) {
   const instance = useId().replaceAll(":", "");
-  const hash = hashSeed(`${seed}:${username}`);
   const appearance = selectedAppearance ?? appearanceFromSeed(seed);
   const skin = skinColors[appearance.skin];
   const hair = hairColors[appearance.hair];
   const coat = coatColors[appearance.coat];
   const accent = appearance.accent === "none" ? "#d8c99f" : accentColors[appearance.accent];
   const level = progress >= 40 ? 4 : progress >= 5 ? 2 : 0;
-  const gradientId = `avatar-sky-${hash}-${instance}`;
+  const gradientId = `avatar-sky-${instance}`;
   const pigmentId = `avatar-pigment-${instance}`;
-  const coatId = `avatar-coat-${hash}-${instance}`;
-  const clipId = `avatar-clip-${hash}-${instance}`;
+  const coatId = `avatar-coat-${instance}`;
+  const clipId = `avatar-clip-${instance}`;
   const description = `${avatarOptionLabels.hairStyle[appearance.hairStyle]}, ${avatarOptionLabels.coat[appearance.coat]}, Hintergrund ${avatarOptionLabels.background[appearance.background]}`;
 
   return <svg className={`trail-avatar${compact ? " is-compact" : ""}`} viewBox="0 0 240 240" role="img" aria-label={`Aquarell-Profilbild von ${username}: ${description}`}>

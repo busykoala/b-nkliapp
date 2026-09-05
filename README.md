@@ -36,6 +36,8 @@ Put the resulting `scrypt$...` value in `ADMIN_PASSWORD_HASH`. Without it, the d
 
 The illustrated journey planner is always available via **Weg hierher** in a bench's map details. See [journey setup and rollout](docs/journey-planner.md) for the daily GTFS worker, provider limits and privacy notes.
 
+See [code boundaries and artwork lifecycle](docs/code-structure.md) for the implementation conventions.
+
 All app reads and writes use Server Actions. There are no custom route handlers or `/api` endpoints. The browser talks directly to the public swisstopo WMTS only for map tiles.
 
 ## One-file deployment

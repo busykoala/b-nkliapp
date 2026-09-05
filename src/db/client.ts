@@ -1,7 +1,6 @@
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrations } from "./migrations";
 import { sampleBenches } from "./seed-data";
 
@@ -84,4 +83,3 @@ function createDatabase() {
 
 export const sqlite = globalForDatabase.benchlySqlite ?? createDatabase();
 if (process.env.NODE_ENV !== "production") globalForDatabase.benchlySqlite = sqlite;
-export const db = drizzle({ client: sqlite });
