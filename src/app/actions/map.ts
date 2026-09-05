@@ -707,7 +707,7 @@ export async function searchPlaces(query: string): Promise<PlaceResult[]> {
     label: [place.location_postcode, place.location_name, place.location_canton].filter(Boolean).join(" "),
     latitude: place.latitude, longitude: place.longitude, kind: "place" as const,
   }));
-  const remoteResults: PlaceResult[] = (await searchGeoAdminLocations(clean)).map((place) => ({ ...place, kind: "place" }));
+  const remoteResults = await searchGeoAdminLocations(clean);
   return [...benchResults, ...localResults, ...remoteResults]
     .filter((item, index, all) => all.findIndex((candidate) => candidate.label.toLocaleLowerCase("de-CH") === item.label.toLocaleLowerCase("de-CH")) === index)
     .slice(0, 8);

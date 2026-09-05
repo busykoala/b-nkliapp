@@ -23,6 +23,8 @@ export default defineConfig({
       ADMIN_SESSION_SECRET: "playwright-admin-secret-with-more-than-32-characters",
       BENCH_VERIFICATION_THRESHOLD: "3",
       BENCHLY_DISABLE_ELEVATION_FETCH: "true",
+      BENCHLY_JOURNEY_TEST_FIXTURES: "true",
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=${join(process.cwd(), "scripts/journey-test-providers.mjs")}`,
     },
   },
   use: { baseURL, ignoreHTTPSErrors: production, trace: "on-first-retry" },

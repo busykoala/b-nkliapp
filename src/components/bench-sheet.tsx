@@ -8,7 +8,7 @@ import type { CurrentUser } from "@/lib/security";
 
 type Snap = "peek" | "half" | "full";
 
-export function BenchSheet({ bench, loading, error, onRetry, onClose, onBenchChange, user }: { bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; user: CurrentUser | null }) {
+export function BenchSheet({ bench, loading, error, onRetry, onClose, onBenchChange, onJourney, user }: { bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; user: CurrentUser | null }) {
   const [snap, setSnap] = useState<Snap>("half");
   const touchStart = useRef<number | null>(null);
   const translate = snap === "peek" ? "translateY(76%)" : snap === "half" ? "translateY(42%)" : "translateY(0)";
@@ -29,7 +29,7 @@ export function BenchSheet({ bench, loading, error, onRetry, onClose, onBenchCha
       </div>
       <div className="relative z-10 h-full overflow-y-auto safe-bottom">
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">Der Platz wird erkundet</span><span className="sr-only">Bank wird geladen</span></div>}
-        {!loading && bench && <BenchDetailContent key={bench.id} bench={bench} user={user} onBenchChange={onBenchChange} />}
+        {!loading && bench && <BenchDetailContent key={bench.id} bench={bench} user={user} onBenchChange={onBenchChange} onJourney={onJourney} />}
         {!loading && error && <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
           <span className="text-5xl" aria-hidden="true">🍃</span>
           <p className="max-w-64 text-lg font-semibold text-primary">Dieser Platz versteckt sich gerade.</p>

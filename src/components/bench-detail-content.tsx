@@ -21,7 +21,7 @@ const correctionLabels: Record<string, string> = {
   environment: "Umgebung, Aussicht oder Licht",
 };
 
-export function BenchDetailContent({ bench, user, onBenchChange }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void> }) {
+export function BenchDetailContent({ bench, user, onBenchChange, onJourney }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void }) {
   const [community, setCommunity] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
@@ -64,6 +64,7 @@ export function BenchDetailContent({ bench, user, onBenchChange }: { bench: Benc
         {bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
         <div className="calm-title-row"><h2>{bench.title}</h2>{user && <button type="button" className="story-edit-button" aria-label="Name und Widmung bearbeiten" aria-expanded={storyOpen} onClick={() => setStoryOpen(!storyOpen)}>{storyOpen ? <X size={17} /> : <Pencil size={15} />}</button>}</div>
         <div className="calm-title-meta"><p>{placeLine(bench)}</p></div>
+        {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span> Weg hierher</button>}
         {user && storyOpen && <form action={storyAction} className="inline-story-editor">
           <label><span>Name</span><input name="name" maxLength={80} defaultValue={bench.name ?? ""} placeholder="Wie heisst dieses Bänkli?" /></label>
           <label><span>Widmung</span><textarea name="dedication" maxLength={180} defaultValue={bench.dedication ?? ""} placeholder="Was steht auf der Bank?" /></label>

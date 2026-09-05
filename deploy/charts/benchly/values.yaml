@@ -25,6 +25,7 @@ web:
     limits: {cpu: "2", memory: 4Gi}
 
 workers:
+  transitSchedule: "45 5 * * *"
   timeZone: Europe/Zurich
   temporaryStorage: 120Gi
   importSchedule: "15 1 * * 0"

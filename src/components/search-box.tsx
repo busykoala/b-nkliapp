@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Armchair, LocateFixed, MapPin, Search, X } from "lucide-react";
+import { Armchair, House, LocateFixed, MapPin, Search, X } from "lucide-react";
 import { searchPlaces } from "@/app/actions/map";
 import type { PlaceResult } from "@/lib/types";
 
@@ -33,7 +33,7 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
         {(pending || results.length > 0) && query.length >= 2 && (
           <ul className="menu storybook-panel absolute left-0 right-0 top-14 rounded-[1.25rem] p-2">
             {pending && results.length === 0 && <li className="px-3 py-2 text-sm opacity-60">Suche …</li>}
-            {results.map((place) => <li key={place.id}><button className="min-h-11 gap-2" onClick={() => { onSelect(place); selectedQuery.current = place.label; setQuery(place.label); setResults([]); }}>{place.kind === "bench" ? <Armchair size={17} className="text-primary" /> : <MapPin size={17} className="text-primary/65" />}<span>{place.label}</span></button></li>)}
+            {results.map((place) => <li key={place.id}><button className="min-h-11 gap-2" onClick={() => { onSelect(place); selectedQuery.current = place.label; setQuery(place.label); setResults([]); }}>{place.kind === "bench" ? <Armchair size={17} className="text-primary" /> : place.kind === "address" ? <House size={17} /> : <MapPin size={17} className="text-primary/65" />}<span>{place.label}</span></button></li>)}
           </ul>
         )}
       </div>

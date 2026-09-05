@@ -20,4 +20,9 @@ describe("place search", () => {
   it("fails softly when the network is unavailable", async () => {
     expect(await searchGeoAdminLocations("Mürren", vi.fn(async () => { throw new Error("offline"); }) as typeof fetch)).toEqual([]);
   });
+
+  it("preserves address types for journey-origin results", async () => {
+    const results = await searchGeoAdminLocations("Seestrasse 1", async () => Response.json({ results: [{ id: 1, attrs: { label: "Seestrasse 1", lat: 46.68, lon: 7.69, origin: "address" } }] }));
+    expect(results[0].kind).toBe("address");
+  });
 });

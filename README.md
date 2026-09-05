@@ -32,7 +32,9 @@ Copy `.env.example` and replace every secret before production. Generate an admi
 npx tsx scripts/hash-password.ts 'a-long-admin-password'
 ```
 
-Put the resulting `scrypt$...` value in `ADMIN_PASSWORD_HASH`. Without it, the development-only password is `benchly-admin`; production refuses that fallback. Location stays in the browser. Anonymous contribution and daily IP identifiers are HMAC hashes, and raw IP addresses are not stored.
+Put the resulting `scrypt$...` value in `ADMIN_PASSWORD_HASH`. Without it, the development-only password is `benchly-admin`; production refuses that fallback. Recentring the map uses location in the browser. Explicitly requesting a route in the journey planner sends its coordinates to the server and external routing providers. Personal-origin routes remain in bounded server memory for at most five minutes; no journey history is stored. Providers have their own request-retention policies. Anonymous contribution and daily IP identifiers are HMAC hashes, and raw IP addresses are not stored.
+
+The illustrated journey planner is always available via **Weg hierher** in a bench's map details. See [journey setup and rollout](docs/journey-planner.md) for the daily GTFS worker, provider limits and privacy notes.
 
 All app reads and writes use Server Actions. There are no custom route handlers or `/api` endpoints. The browser talks directly to the public swisstopo WMTS only for map tiles.
 
@@ -44,7 +46,7 @@ The runtime has one durable artifact: `/data/benchly.sqlite`. Run exactly one we
 docker compose up --build web
 ```
 
-`deploy/kubernetes.yaml` contains a local one-replica example. The production Helm chart and Ansible release live in the `busykoala/server` repository. Put HTTPS in front of the service; browsers require a secure context for geolocation and service workers. Back up with SQLite's online backup command rather than copying only the main file while WAL is active:
+`deploy/kubernetes.yaml` contains a local one-replica example. The production Helm chart lives in `deploy/charts/benchly` and is released by this repository's GitHub Actions workflow; `busykoala/server` manages the shared infrastructure and runner. Put HTTPS in front of the service; browsers require a secure context for geolocation and service workers. Back up with SQLite's online backup command rather than copying only the main file while WAL is active:
 
 ```bash
 sqlite3 /data/benchly.sqlite ".backup '/backup/benchly-$(date +%F).sqlite'"

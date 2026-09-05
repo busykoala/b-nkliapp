@@ -230,6 +230,7 @@ export type PlaceResult = {
   label: string;
   latitude: number;
   longitude: number;
-  kind: "bench" | "place";
+  kind: "bench" | "place" | "address" | "station";
+  stationId?: string;
   benchId?: string;
 };

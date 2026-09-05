@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import { Info } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
@@ -36,6 +37,10 @@ import {
   transitIconExpression,
   transitIconScaleExpression,
 } from "@/lib/watercolor-map";
+
+const JourneyPlanner = dynamic(() => import("./journey-planner").then((m) => m.JourneyPlanner), {
+  ssr: false, loading: () => <aside className="journey-panel storybook-panel" role="status">Dein Reisejournal wird geöffnet …</aside>,
+});
 
 function circlePolygon(longitude: number, latitude: number, radiusMeters: number) {
   const points = 64;
@@ -423,6 +428,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bench, setBench] = useState<BenchDetail | null>(null);
+  const [journeyOpen, setJourneyOpen] = useState(false);
+  const getJourneyMap = useCallback(() => mapRef.current, []);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
@@ -448,6 +455,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   }, []);
 
   const selectBench = useCallback(async (id: string, focusOnMap = false) => {
+    setJourneyOpen(false);
     const sequence = ++detailSequence.current;
     setSelectedId(id); setDetailLoading(true); setDetailError(false); setBench(null);
     (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature());
@@ -729,7 +737,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>Karte wird gemalt …</span></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
-      {selectedId && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
+      {selectedId && !journeyOpen && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
       <AddBenchDialog open={addOpen} coordinates={addCoordinates} onUseCurrentLocation={() => locate((position) => openAddAt(position.latitude, position.longitude))} onClose={closeAdd} />
     </main>
   );

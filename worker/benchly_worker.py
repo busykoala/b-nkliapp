@@ -2133,6 +2133,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Import and enrich Swiss benches into Benchly's SQLite database.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    from transit_pipeline import refresh as refresh_transit
+    transit = subparsers.add_parser("refresh-transit", help="Refresh a separate Swiss GTFS stop/transfer index")
+    transit.add_argument("--transit-database", default=os.environ.get("TRANSIT_DATABASE_PATH", "./data/transit.sqlite"))
+    transit.add_argument("--gtfs-zip", help="Import a previously downloaded official GTFS archive")
+    transit.set_defaults(function=refresh_transit, uses_lock=False)
+
     osm_import = subparsers.add_parser("import-osm", help="Download and import the current national OSM extract")
     osm_import.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
     osm_import.add_argument("--pbf", help="Use an existing Switzerland .osm.pbf instead of downloading")

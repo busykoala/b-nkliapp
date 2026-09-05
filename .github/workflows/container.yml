@@ -149,10 +149,9 @@ jobs:
             failed_line="${1:-unknown}"
             failed_command="${2:-unknown}"
             echo "::error title=Benchly deployment failed::Line $failed_line: $failed_command"
-            echo '::group::Inference deployment diagnostics'
-            helm status inference --namespace inference || true
-            kubectl --namespace inference get pods,jobs -o wide || true
-            kubectl --namespace inference logs job/inference-model-sync --tail=200 || true
+            echo '::group::Benchly deployment diagnostics'
+            helm status benchly --namespace benchly || true
+            kubectl --namespace benchly get pods,jobs -o wide || true
             echo '::endgroup::'
             {
               echo '### Deployment failure'
@@ -160,9 +159,8 @@ jobs:
               echo "Command at line \`$failed_line\`: \`$failed_command\`"
               echo
               echo '```text'
-              helm status inference --namespace inference 2>&1 || true
-              kubectl --namespace inference get pods,jobs -o wide 2>&1 || true
-              kubectl --namespace inference logs job/inference-model-sync --tail=80 2>&1 || true
+              helm status benchly --namespace benchly 2>&1 || true
+              kubectl --namespace benchly get pods,jobs -o wide 2>&1 || true
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
           }
@@ -202,7 +200,6 @@ jobs:
             exit 1
           }
           kubectl get deployment benchly --namespace benchly >/dev/null
-          helm lint "$GITHUB_WORKSPACE/deploy/charts/inference"
           helm lint "$GITHUB_WORKSPACE/deploy/charts/benchly"
           kubectl --namespace benchly create secret docker-registry benchly-ghcr \
             --docker-server=ghcr.io \
@@ -213,10 +210,8 @@ jobs:
             --patch '{"imagePullSecrets":[{"name":"benchly-ghcr"}]}'
           kubectl --namespace benchly annotate secret benchly-ghcr \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
-          recover_pending_release inference inference
-          helm upgrade inference "$GITHUB_WORKSPACE/deploy/charts/inference" \
-            --namespace inference --wait --timeout 130m "${helm_safety_flags[@]}"
-          helm test inference --namespace inference --logs --timeout 10m
+          # The shared inference stack is deployed by the server repository.
+          # An application release must not reapply this repository's older mirror.
           inference_key="$(kubectl --namespace inference get secret inference-api -o jsonpath='{.data.api-key}')"
           test -n "$inference_key"
           kubectl --namespace benchly patch secret benchly-secrets --type merge \
