@@ -5,6 +5,7 @@ services:
       - "3000:3000"
     environment:
       DATABASE_PATH: /data/benchly.sqlite
+      WALK_ROUTER_URL: ${WALK_ROUTER_URL:-http://host.docker.internal:8989}
       CONTRIBUTOR_SECRET: ${CONTRIBUTOR_SECRET:-change-this-local-contributor-secret}
       RATE_LIMIT_SECRET: ${RATE_LIMIT_SECRET:-change-this-local-rate-secret}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}

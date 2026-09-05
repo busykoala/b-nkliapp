@@ -16,6 +16,8 @@ test("opens a lazy illustrated planner and returns to the selected bench", async
   const journal = await openPlanner(page);
   await expect(journal.getByRole("heading", { name: "Dein Weg zum Bänkli" })).toBeVisible();
   await expect(journal.getByRole("button", { name: "Meinen Weg finden" })).toBeDisabled();
+  await expect(journal.getByRole("button", { name: /Gemütlich/ })).not.toBeVisible();
+  await journal.locator("summary").filter({ hasText: "Anpassen" }).click();
   await journal.getByRole("button", { name: /Gemütlich/ }).click();
   await expect(journal.getByText(/500 m in etwa 10 min/)).toBeVisible();
   await journal.getByRole("button", { name: "+6 min", exact: true }).click();
@@ -43,12 +45,13 @@ test("uses location only on request and keeps origins out of storage and URLs", 
   await context.setGeolocation({ latitude: 47.3769, longitude: 8.5417 });
   const journal = await openPlanner(page);
   await journal.getByRole("button", { name: "Mein Standort", exact: true }).click();
-  await expect(journal.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" })).toHaveValue("Mein Standort");
+  await expect(journal.locator(".journey-start-summary")).toContainText("Mein Standort");
   await journal.getByRole("button", { name: "Nur zu Fuss", exact: true }).click();
   await expect(journal.getByRole("button", { name: "Meinen Weg finden" })).toBeEnabled();
   expect(page.url()).not.toContain("47.3769");
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("47.3769");
   // No route is submitted here: browser tests never load the public walking service.
+  await journal.getByRole("button", { name: "Ändern", exact: true }).click();
   await journal.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).focus();
   // Safari's native full keyboard navigation uses Option-Tab for buttons.
   await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");

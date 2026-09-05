@@ -15,6 +15,7 @@ COPY worker/benchly_worker.py ./benchly_worker.py
 COPY worker/environment_geometry.py ./environment_geometry.py
 COPY worker/weather_pipeline.py ./weather_pipeline.py
 COPY worker/transit_pipeline.py ./transit_pipeline.py
+COPY worker/landscape_pipeline.py ./landscape_pipeline.py
 COPY worker/visual_pipeline.py ./visual_pipeline.py
 COPY worker/evaluation ./evaluation
 ENTRYPOINT ["python3", "/worker/benchly_worker.py"]

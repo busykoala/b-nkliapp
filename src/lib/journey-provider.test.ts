@@ -5,9 +5,9 @@ vi.mock("./journey-gtfs", () => ({ lookupTransfer: () => null, transitFeedDate: 
 const origin = { kind: "station" as const, label: "Bern", latitude: 46.949, longitude: 7.439, stationId: "8507000" };
 const destination: JourneyPoint = { label: "Spiez Hafenbank", latitude: 46.68844, longitude: 7.68949 };
 const query: JourneyQuery = { benchId: "osm-node-1", origin, mode: "walk", time: "2026-09-05T08:00:00Z", arriveBy: false, speedKmh: 4.2, bufferMinutes: 3 };
-beforeEach(() => { vi.resetModules(); Reflect.deleteProperty(globalThis, "journeyNetwork"); });
+beforeEach(() => { vi.resetModules(); Reflect.deleteProperty(globalThis, "journeyNetwork"); Reflect.deleteProperty(globalThis, "benchlyWalking"); });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); });
-function walkingResponse(gap = 0) { return { code: "Ok", waypoints: [{ distance: 0 }, { distance: gap }], routes: [{ distance: 700, geometry: { coordinates: [[7.439, 46.949], [7.68949, 46.68844]] } }] }; }
+function walkingResponse(points: number[][] = [[7.439,46.949],[7.68949,46.68844]], distance = 700, gap = 0) { const snapped = points.map((p) => [...p]); if (gap) snapped[snapped.length-1][1] += gap / 111195; return { paths: [{ distance, time: distance / (5 / 3.6) * 1000, ascend: 0, points: { coordinates: snapped }, snapped_waypoints: { coordinates: snapped } }] }; }
 
 describe("journey providers", () => {
   it.each([
@@ -20,7 +20,7 @@ describe("journey providers", () => {
     const spiez = { id: "8507483", name: "Spiez", coordinate: { x: 46.68644, y: 7.67957 } };
     const bus = { id: "8507484", name: "Spiez Bus", coordinate: { x: 46.685, y: 7.680 } };
     const harbour = { id: "8507154", name: "Spiez Schiffstation", coordinate: { x: 46.688478, y: 7.689893 } };
-    vi.stubGlobal("fetch", vi.fn(async (input: URL) => {
+    vi.stubGlobal("fetch", vi.fn(async (input: URL, init?: RequestInit) => {
       const url = new URL(input);
       if (url.pathname.endsWith("locations")) return Response.json({ stations: [harbour] });
       if (url.pathname.endsWith("connections")) return Response.json({ connections: [{ sections: [
@@ -28,7 +28,7 @@ describe("journey providers", () => {
         { departure: { station: spiez, departure: "2026-09-05T08:35:00Z" }, arrival: { station: bus, arrival: "2026-09-05T08:41:00Z" }, walk: { duration: 0 } },
         { departure: { station: bus, departure: "2026-09-05T08:45:00Z", platform: "A", prognosis: { platform: "B" } }, arrival: { station: harbour, arrival: "2026-09-05T08:50:00Z" }, journey: { category: "BUS", number: "1" } },
       ] }] });
-      const walk = walkingResponse(); walk.routes[0].distance = url.pathname.includes("7.67957,") ? 420 : 40;
+      const points = JSON.parse(String(init?.body)).points; const walk = walkingResponse(points, points[0][0] === 7.67957 ? 420 : 40);
       return Response.json(walk);
     }));
     const { planJourney } = await import("./journey-provider");
@@ -43,14 +43,14 @@ describe("journey providers", () => {
     const bern = { id: "8507000", name: "Bern", coordinate: { x: 46.949, y: 7.439 } };
     const spiez = { id: "8507483", name: "Spiez", coordinate: { x: 46.68644, y: 7.67957 } };
     const harbour = { id: "8507154", name: "Spiez Schiffstation", coordinate: { x: 46.688478, y: 7.689893 } };
-    vi.stubGlobal("fetch", vi.fn(async (input: URL) => {
+    vi.stubGlobal("fetch", vi.fn(async (input: URL, init?: RequestInit) => {
       const url = new URL(input);
       if (url.pathname.endsWith("locations")) return Response.json({ stations: [harbour] });
       if (url.pathname.endsWith("connections")) return Response.json({ connections: [{ sections: [
         { departure: { station: bern, departure: "2026-09-05T08:05:00Z" }, arrival: { station: spiez, arrival: "2026-09-05T08:35:00Z" }, journey: { category: "RE", number: "8", passList: [] } },
         { departure: { station: spiez, departure: "2026-09-05T08:35:00Z" }, arrival: { station: harbour, arrival: "2026-09-05T08:50:00Z" }, walk: { duration: 0 }, journey: null },
       ] }] });
-      const walk = walkingResponse(); walk.routes[0].distance = url.pathname.includes("7.67957,") ? 850 : 40;
+      const points = JSON.parse(String(init?.body)).points; const walk = walkingResponse(points, points[0][0] === 7.67957 ? 850 : 40);
       return Response.json(walk);
     }));
     const { planJourney } = await import("./journey-provider");
@@ -68,10 +68,10 @@ describe("journey providers", () => {
     const result = await planJourney({ ...query, arriveBy: true }, destination);
     expect(result.options[0]).toMatchObject({ arrival: new Date(query.time).toISOString(), walkingSeconds: 600, complete: true });
     expect(Date.parse(result.options[0].departure)).toBe(Date.parse(query.time) - 600000);
-    expect(String(fetcher.mock.calls[0]?.[0])).toContain("routing.openstreetmap.de/routed-foot/");
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain("127.0.0.1:8989/route");
   });
   it("marks snapped endpoint gaps instead of claiming to reach an unmapped bench", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => Response.json(walkingResponse(80))));
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json(walkingResponse(undefined, 700, 80))));
     const { planJourney } = await import("./journey-provider");
     const result = await planJourney(query, destination);
     expect(result.options[0].complete).toBe(false);

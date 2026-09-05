@@ -23,9 +23,10 @@ if (process.env.BENCHLY_JOURNEY_TEST_FIXTURES === "true") {
       }
       return Response.json({ connections: [] });
     }
-    if (url.hostname === "routing.openstreetmap.de") {
-      const coordinates = url.pathname.split("/").at(-1).split(";").map((p) => p.split(",").map(Number));
-      return Response.json({ code: "Ok", waypoints: [{ distance: 0 }, { distance: 0 }], routes: [{ distance: 140, geometry: { coordinates } }] });
+    if (url.hostname === "127.0.0.1" && url.port === "8989") {
+      const { points, algorithm } = JSON.parse(init.body);
+      const coordinates = algorithm === "round_trip" ? [points[0], [points[0][0]+.005,points[0][1]], [points[0][0]+.005,points[0][1]+.005], [points[0][0],points[0][1]+.005], points[0]] : points;
+      return Response.json({ paths: [{ distance: 140, time: 100800, ascend: 0, points: { coordinates }, snapped_waypoints: { coordinates: points } }] });
     }
     if (url.hostname === "api3.geo.admin.ch" && url.searchParams.get("origins") === "address") {
       return Response.json({ results: [{ id: "journey-test-address", attrs: { origin: "address", label: "Bahnhofplatz 1, Zürich", lat: 47.378, lon: 8.538 } }] });

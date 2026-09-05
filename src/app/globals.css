@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+.journey-start-card { padding:1rem; margin-bottom:1rem; border-radius:1.1rem 1.5rem 1.2rem .9rem; background:linear-gradient(120deg,#bdd0a74d,#e5cd9430); box-shadow:inset 0 0 18px #c5bd8230; }
+.journey-start-card h3,.journey-recommendation h3 { font-family:Georgia,serif; font-size:1.2rem; color:var(--color-primary); margin-bottom:.45rem; }
+.journey-start-summary { display:flex; align-items:center; gap:.6rem; }.journey-start-summary strong { flex:1; }.journey-start-summary button { text-decoration:underline; padding:0 .5rem; }
+.journey-panel summary { min-height:44px; padding:.65rem 0; cursor:pointer; }.journey-panel details { margin:.4rem 0; }.journey-panel details p { font-size:.85rem; line-height:1.6; margin:.4rem 0; }
+.journey-adjust { border-block:1px solid #7b896622; }.journey-adjust summary { font-weight:500; }
+.journey-recommendation { padding:1rem 0; }.journey-recommendation p { margin:.35rem 0; font-size:.9rem; }.journey-leg-details { margin-left:.5rem!important; font-size:.8rem; }
+.walk-options { margin:1rem 0; }.walk-options>div { display:flex; gap:.4rem; }.walk-options button { flex:1; padding:.5rem; border-radius:1rem; border:1px solid #7b896633; font-size:.82rem; }.walk-options svg { display:inline-block; vertical-align:middle; }
+.walk-discover { font-style:italic; font-size:.85rem; color:var(--color-primary); text-align:left; text-decoration:underline; }.walk-pause { font-family:Georgia,serif; }
+.walk-instructions { list-style:decimal; padding-left:1.2rem; font-size:.85rem; }.walk-instructions li { padding:.4rem 0; }
+.walk-entry { position:absolute; bottom:calc(2rem + env(safe-area-inset-bottom)); left:1rem; z-index:20; display:flex; align-items:center; gap:.5rem; min-height:48px; padding:.7rem 1rem; border-radius:1.4rem 1rem 1.3rem 1rem; color:var(--color-primary); background:var(--color-base-100); box-shadow:0 3px 15px #263e3422; }
+
 /* Journey journal: crisp information on softly washed paper, no animated routes. */
 .journey-entry { display:flex; align-items:center; gap:.6rem; padding:.5rem 1.2rem; margin-top:1rem; min-height:44px; border:1px solid #7c8b6b55; border-radius:40% 35% 42% 30% / 18% 25% 20% 30%; background:#bcc39b35; color:#294c40; font-size:1rem; }
 .journey-entry span { font-size:1.8rem; }

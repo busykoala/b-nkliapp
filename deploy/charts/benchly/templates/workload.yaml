@@ -30,6 +30,8 @@ spec:
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: TRANSIT_DATABASE_PATH, value: "/data/transit.sqlite"}
+            - {name: LANDSCAPE_DATABASE_PATH, value: "/data/landscape.sqlite"}
+            - {name: WALK_ROUTER_URL, value: {{ .Values.web.walkingRouterUrl | quote }}}
             - {name: DATABASE_PATH, value: /data/benchly.sqlite}
             - {name: BENCHLY_SEED_DEMO, value: "false"}
             - {name: BENCHLY_AI_LABELS_ENABLED, value: {{ .Values.web.aiLabelsEnabled | quote }}}

@@ -32,9 +32,9 @@ Copy `.env.example` and replace every secret before production. Generate an admi
 npx tsx scripts/hash-password.ts 'a-long-admin-password'
 ```
 
-Put the resulting `scrypt$...` value in `ADMIN_PASSWORD_HASH`. Without it, the development-only password is `benchly-admin`; production refuses that fallback. Recentring the map uses location in the browser. Explicitly requesting a route in the journey planner sends its coordinates to the server and external routing providers. Personal-origin routes remain in bounded server memory for at most five minutes; no journey history is stored. Providers have their own request-retention policies. Anonymous contribution and daily IP identifiers are HMAC hashes, and raw IP addresses are not stored.
+Put the resulting `scrypt$...` value in `ADMIN_PASSWORD_HASH`. Without it, the development-only password is `benchly-admin`; production refuses that fallback. Recentring the map uses location in the browser. Explicitly requesting a route sends coordinates to our server. Footrouting is self-hosted; address and nearby-station searches use GeoAdmin and transport.opendata.ch. Personal-endpoint routes remain in bounded server memory for at most five minutes; no journey history is stored. Providers have their own request-retention policies. Anonymous contribution and daily IP identifiers are HMAC hashes, and raw IP addresses are not stored.
 
-The illustrated journey planner is always available via **Weg hierher** in a bench's map details. See [journey setup and rollout](docs/journey-planner.md) for the daily GTFS worker, provider limits and privacy notes.
+The illustrated journey planner is always available via **Weg hierher** in a bench's map details. **Spaziergang entdecken** offers Bänkli-centred walks; see [setup, infrastructure ownership and release checks](docs/walks.md). GraphHopper and inference deployments live exclusively in the sibling server repository. See [journey setup and rollout](docs/journey-planner.md) for the daily GTFS worker, provider limits and privacy notes.
 
 See [code boundaries and artwork lifecycle](docs/code-structure.md) for the implementation conventions.
 

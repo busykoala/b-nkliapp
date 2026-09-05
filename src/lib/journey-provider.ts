@@ -1,6 +1,8 @@
 import "server-only";
 import { z } from "zod";
-import { assessTransfer, distanceMeters, summarizeJourney, swissWallTime, walkingSeconds, type JourneyLeg, type JourneyOption, type JourneyPoint, type JourneyQuery, type JourneyResult } from "./journey";
+import { assessTransfer, distanceMeters, summarizeJourney, swissWallTime, type JourneyLeg, type JourneyOption, type JourneyPoint, type JourneyQuery, type JourneyResult } from "./journey";
+import { walkPath } from "./walking-provider";
+import { pathSeconds, type WalkPath as Walk } from "./walking";
 import { lookupTransfer, transitFeedDate } from "./journey-gtfs";
 import { consumeRateLimit } from "./security";
 
@@ -12,10 +14,9 @@ const section = z.object({ departure: checkpoint, arrival: checkpoint, walk: z.u
 const connectionSchema = z.object({ sections: z.array(section).min(1).max(40) });
 type Checkpoint = z.infer<typeof checkpoint>;
 type Connection = z.infer<typeof connectionSchema>;
-type Walk = { geometry: [number, number][]; distance: number; warnings: string[] };
 type CacheEntry = { expiry: number; value: unknown; bytes: number; timer: ReturnType<typeof setTimeout> };
-const globals = globalThis as typeof globalThis & { journeyNetwork?: { cache: Map<string, CacheEntry>; cacheBytes: number; nextWalk: number; lastWalk: number; active: number; cooldowns: Map<string, number> } };
-const network = globals.journeyNetwork ??= { cache: new Map(), cacheBytes: 0, nextWalk: 0, lastWalk: 0, active: 0, cooldowns: new Map() };
+const globals = globalThis as typeof globalThis & { journeyNetwork?: { cache: Map<string, CacheEntry>; cacheBytes: number; active: number; cooldowns: Map<string, number> } };
+const network = globals.journeyNetwork ??= { cache: new Map(), cacheBytes: 0, active: 0, cooldowns: new Map() };
 function evict(key: string) {
   const entry = network.cache.get(key);
   if (!entry) return;
@@ -30,27 +31,18 @@ function pause(ms: number, signal: AbortSignal) {
     signal.addEventListener("abort", abort, { once: true });
   });
 }
-async function json(url: URL, signal: AbortSignal, ttl: number, pedestrian = false): Promise<unknown> {
-  if (!["transport.opendata.ch", "routing.openstreetmap.de"].includes(url.hostname)) throw new Error("Invalid provider");
+async function json(url: URL, signal: AbortSignal, ttl: number): Promise<unknown> {
+  if (url.hostname !== "transport.opendata.ch") throw new Error("Invalid provider");
   const key = url.toString();
   const cached = network.cache.get(key);
   if (cached && cached.expiry > Date.now()) return cached.value;
   if ((network.cooldowns.get(url.hostname) ?? 0) > Date.now()) throw new Error("Provider cooling down");
-  if (pedestrian) {
-    const slot = Math.max(Date.now(), network.nextWalk);
-    if (slot - Date.now() > 10000) throw new Error("Routing busy");
-    network.nextWalk = slot + 1050;
-    await pause(Math.max(0, slot - Date.now()), signal);
-  }
-  // Recheck actual start times after waiting for concurrency: reserved slots alone
-  // could bunch together when a slow upstream request releases several waiters.
-  while (network.active >= 3 || (pedestrian && Date.now() - network.lastWalk < 1050)) await pause(50, signal);
+  while (network.active >= 3) await pause(50, signal);
   signal.throwIfAborted();
   const nowCached = network.cache.get(key);
   if (nowCached && nowCached.expiry > Date.now()) return nowCached.value;
   if ((network.cooldowns.get(url.hostname) ?? 0) > Date.now()) throw new Error("Provider cooling down");
   if (url.pathname.endsWith("/connections")) consumeRateLimit("journey-provider", "timetable", 900, 86400);
-  if (pedestrian) network.lastWalk = Date.now();
   network.active += 1;
   const started = Date.now();
   let status = "network-error";
@@ -85,7 +77,7 @@ async function json(url: URL, signal: AbortSignal, ttl: number, pedestrian = fal
   } finally {
     network.active -= 1;
     // Provider timing only: no URLs, origins, station pairs, or user identifiers.
-    console.info("journey-provider", { provider: pedestrian ? "foot" : "timetable", status, elapsedMs: Date.now() - started });
+    console.info("journey-provider", { provider: "timetable", status, elapsedMs: Date.now() - started });
   }
 }
 function point(value: z.infer<typeof station>): JourneyPoint | null {
@@ -112,15 +104,8 @@ async function nearby(p: JourneyPoint, signal: AbortSignal): Promise<JourneyPoin
   const points = data.stations.flatMap((item) => { const parsed = station.safeParse(item); const s = parsed.success ? point(parsed.data) : null; return s?.stationId ? [s] : []; });
   return points.filter((s, i) => points.findIndex((v) => v.stationId === s.stationId) === i && distanceMeters(p, s) < 5400).sort((a, b) => distanceMeters(p, a) - distanceMeters(p, b)).slice(0, 4);
 }
-export async function walkPath(a: JourneyPoint, b: JourneyPoint, signal: AbortSignal, personal: boolean): Promise<Walk> {
-  const url = new URL(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${a.longitude},${a.latitude};${b.longitude},${b.latitude}`);
-  url.searchParams.set("overview", "full"); url.searchParams.set("geometries", "geojson"); url.searchParams.set("steps", "false"); url.searchParams.set("alternatives", "false");
-  const result = z.object({ code: z.literal("Ok"), waypoints: z.array(z.object({ distance: z.number().nonnegative() })).length(2), routes: z.array(z.object({ distance: z.number().nonnegative(), geometry: z.object({ coordinates: z.array(z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)])).min(2).max(100000) }) })).min(1) }).parse(await json(url, signal, personal ? 300000 : 7 * 86400000, true));
-  const warnings = result.waypoints.flatMap((p, i) => p.distance > 15 ? [`${i === 0 ? "Start" : "Ziel"}: ${Math.round(p.distance)} m bis zum kartierten Weg. Zugang vor Ort prüfen.`] : []);
-  return { geometry: result.routes[0].geometry.coordinates, distance: result.routes[0].distance, warnings };
-}
 function walkLeg(id: string, a: JourneyPoint, b: JourneyPoint, path: Walk, time: number, speed: number, arriveBy = false): JourneyLeg {
-  const durationSeconds = walkingSeconds(path.distance, speed);
+  const durationSeconds = pathSeconds(path, speed);
   const start = arriveBy ? time - durationSeconds * 1000 : time;
   return { id, mode: "walk", from: a, to: b, departure: new Date(start).toISOString(), arrival: new Date(start + durationSeconds * 1000).toISOString(), predicted: false, distanceMeters: path.distance, durationSeconds, geometry: path.geometry, geometryQuality: "routed", warnings: path.warnings };
 }
@@ -203,7 +188,7 @@ export async function planJourney(query: JourneyQuery, destination: JourneyPoint
     ...(!options.length ? { message: "Keine passende Verbindung gefunden. Bitte später/früher suchen oder den Start ändern." } : partial ? { message: "Einige Wege fehlen noch. Unsichere Abschnitte sind gekennzeichnet." } : {}) });
   try {
     if (query.mode === "walk") {
-      const path = await walkPath(query.origin, destination, signal, query.origin.kind !== "station");
+      const path = await walkPath(query.origin, destination, signal, query.origin.kind !== "station" || Boolean(query.destination));
       options.push(summarizeJourney("walk", [walkLeg("walk-direct", query.origin, destination, path, Date.parse(query.time), query.speedKmh, query.arriveBy)]));
       partial = !options[0].complete;
       return result();
@@ -214,8 +199,8 @@ export async function planJourney(query: JourneyQuery, destination: JourneyPoint
       for (const p of stops) {
         if (!end && query.origin.kind === "station" && p.stationId === endpoint.stationId) { found.push({ point: p, path: null }); break; }
         try {
-          const path = await walkPath(end ? p : endpoint, end ? endpoint : p, signal, !end && query.origin.kind !== "station");
-          if (walkingSeconds(path.distance, query.speedKmh) <= 3600) found.push({ point: p, path });
+          const path = await walkPath(end ? p : endpoint, end ? endpoint : p, signal, end ? Boolean(query.destination) : query.origin.kind !== "station");
+          if (pathSeconds(path, query.speedKmh) <= 3600) found.push({ point: p, path });
         } catch { partial = true; }
         if (found.length === 2 || signal.aborted) break;
       }
@@ -224,7 +209,7 @@ export async function planJourney(query: JourneyQuery, destination: JourneyPoint
     const [origins, destinations] = await Promise.all([reachable(starts, query.origin, false), reachable(ends, destination, true)]);
     await Promise.allSettled(origins.flatMap((a) => destinations.map(async (b) => {
       try {
-        const shift = query.arriveBy ? -walkingSeconds(b.path!.distance, query.speedKmh) : a.path ? walkingSeconds(a.path.distance, query.speedKmh) : 0;
+        const shift = query.arriveBy ? -pathSeconds(b.path!, query.speedKmh) : a.path ? pathSeconds(a.path, query.speedKmh) : 0;
         const wall = swissWallTime(new Date(Date.parse(query.time) + shift * 1000).toISOString());
         const url = new URL("https://transport.opendata.ch/v1/connections");
         for (const [k, v] of Object.entries({ from: a.point.stationId!, to: b.point.stationId!, date: wall.slice(0, 10), time: wall.slice(11), isArrivalTime: query.arriveBy ? "1" : "0", limit: "6" })) url.searchParams.set(k, v);

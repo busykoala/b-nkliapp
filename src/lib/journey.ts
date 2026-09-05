@@ -1,8 +1,9 @@
 /** Serializable journey model and pure calculations. No provider or database imports. */
 export type JourneyPoint = { label: string; latitude: number; longitude: number; stationId?: string; platform?: string };
 export type JourneyOrigin = JourneyPoint & { kind: "location" | "address" | "station" };
+export type ReturnJourney = { origin: JourneyOrigin; destination: JourneyPoint; time: string };
 export type JourneyQuery = {
-  benchId: string; origin: JourneyOrigin; mode: "transit" | "walk";
+  benchId?: string; destination?: JourneyPoint; origin: JourneyOrigin; mode: "transit" | "walk";
   time: string; arriveBy: boolean; speedKmh: 3 | 4.2 | 5.4; bufferMinutes: 0 | 3 | 6 | 10;
 };
 export type TransferTone = "plenty" | "fits" | "tight" | "insufficient" | "unknown";

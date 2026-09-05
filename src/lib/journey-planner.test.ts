@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assessTransfer, summarizeJourney, type JourneyLeg } from "@/lib/journey";
-import { journeyBounds, parsePreferences, tightestTransfer } from "./planner-model";
+import { journeyBounds, parsePreferences, tightestTransfer } from "./journey-planner";
 
 const from = { label: "Spiez", longitude: 7.68, latitude: 46.68 };
 const to = { label: "Hafen", longitude: 7.69, latitude: 46.69 };

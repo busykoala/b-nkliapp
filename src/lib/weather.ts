@@ -1,5 +1,4 @@
-import { sqlite } from "@/db/client";
-import { wgs84ToLv95 } from "./elevation";
+import { loadWeatherGrid, sampleWeatherGrid } from "./weather-grid";
 import type { PrecipitationType } from "./types";
 
 export type LocalWeather = {
@@ -31,16 +30,6 @@ type ForecastPoint = {
   elevationMeters: number | null;
   exposition: string;
   fullWeatherStation: boolean;
-};
-type SnapshotRow = {
-  valid_at: string;
-  origin_easting: number;
-  origin_northing: number;
-  resolution_meters: number;
-  width: number;
-  height: number;
-  values_blob: Buffer;
-  nodata_value: number | null;
 };
 
 type StationCandidate = {
@@ -150,20 +139,10 @@ function temperatureAtElevation(temperatureC: number, stationElevation: number |
 }
 
 function snapshotValue(parameter: string, latitude: number, longitude: number, maximumAgeHours: number) {
-  const row = sqlite.prepare(`
-    SELECT valid_at,origin_easting,origin_northing,resolution_meters,width,height,values_blob,nodata_value
-    FROM weather_snapshots WHERE parameter=? ORDER BY valid_at DESC LIMIT 1
-  `).get(parameter) as SnapshotRow | undefined;
+  const row = loadWeatherGrid(parameter);
   if (!row || Date.now() - new Date(row.valid_at).getTime() > maximumAgeHours * 3_600_000) return null;
-  const point = wgs84ToLv95(latitude, longitude);
-  const column = Math.round((point.easting - row.origin_easting) / row.resolution_meters);
-  const line = Math.round((point.northing - row.origin_northing) / row.resolution_meters);
-  if (column < 0 || line < 0 || column >= row.width || line >= row.height) return null;
-  const offset = (line * row.width + column) * 4;
-  if (offset + 4 > row.values_blob.length) return null;
-  const value = row.values_blob.readFloatLE(offset);
-  if (!Number.isFinite(value) || (row.nodata_value !== null && Math.abs(value - row.nodata_value) < 1e-5)) return null;
-  return { value, validAt: row.valid_at };
+  const value = sampleWeatherGrid(row, latitude, longitude);
+  return value === null ? null : { value, validAt: row.valid_at };
 }
 
 function fraction(value: number | null | undefined) {

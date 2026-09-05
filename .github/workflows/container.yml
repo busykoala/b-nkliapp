@@ -200,6 +200,8 @@ jobs:
             exit 1
           }
           kubectl get deployment benchly --namespace benchly >/dev/null
+          # Foot journeys must not be switched before their internal router is ready.
+          kubectl --namespace routing rollout status deployment/graphhopper --timeout=2m
           helm lint "$GITHUB_WORKSPACE/deploy/charts/benchly"
           kubectl --namespace benchly create secret docker-registry benchly-ghcr \
             --docker-server=ghcr.io \
@@ -300,7 +302,7 @@ jobs:
             osm_args='["import-osm","--database","/data/benchly.sqlite"]'
             kubectl --namespace benchly create job --from=cronjob/benchly-import-osm "$osm_bootstrap" \
               --dry-run=client -o json \
-              | jq --argjson args "$osm_args" '.spec.backoffLimit=1 | .spec.template.spec.containers[0].args=$args' \
+              | jq --argjson args "$osm_args" 'del(.spec.ttlSecondsAfterFinished) | .spec.backoffLimit=1 | .spec.template.spec.containers[0].args=$args' \
               | kubectl --namespace benchly apply -f -
             osm_started=1
             echo 'Started the one-time OSM exact-geometry backfill.' >> "$GITHUB_STEP_SUMMARY"
@@ -311,7 +313,7 @@ jobs:
             bootstrap_args='["import-official-context","--database","/data/benchly.sqlite"]'
             kubectl --namespace benchly create job --from=cronjob/benchly-official-context \
               benchly-official-context-bootstrap --dry-run=client -o json \
-              | jq --argjson args "$bootstrap_args" '.spec.backoffLimit=1 | .spec.template.spec.containers[0].args=$args' \
+              | jq --argjson args "$bootstrap_args" 'del(.spec.ttlSecondsAfterFinished) | .spec.backoffLimit=1 | .spec.template.spec.containers[0].args=$args' \
               | kubectl --namespace benchly apply -f -
             echo 'Started the one-time exact swissTLM context import.' >> "$GITHUB_STEP_SUMMARY"
           fi

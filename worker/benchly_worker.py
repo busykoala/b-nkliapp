@@ -61,7 +61,7 @@ KEEP_TAGS = {
 }
 CONTEXT_TAGS = KEEP_TAGS | {
     "building", "building:levels", "height", "roof:height", "natural", "water", "waterway",
-    "landuse", "leisure", "highway", "name", "leaf_type", "leaf_cycle",
+    "landuse", "leisure", "highway", "name", "leaf_type", "leaf_cycle", "maxspeed", "foot", "sac_scale",
 }
 MAJOR_ROADS = {"motorway", "trunk", "primary", "secondary", "tertiary"}
 PATHS = {"footway", "path", "pedestrian", "track", "steps", "bridleway", "cycleway"}
@@ -2138,6 +2138,16 @@ def build_parser() -> argparse.ArgumentParser:
     transit.add_argument("--transit-database", default=os.environ.get("TRANSIT_DATABASE_PATH", "./data/transit.sqlite"))
     transit.add_argument("--gtfs-zip", help="Import a previously downloaded official GTFS archive")
     transit.set_defaults(function=refresh_transit, uses_lock=False)
+
+    from landscape_pipeline import refresh as refresh_landscape
+    landscape = subparsers.add_parser("refresh-landscape", help="Build a resumable offline walking landscape index")
+    landscape.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))
+    landscape.add_argument("--landscape-database", default=os.environ.get("LANDSCAPE_DATABASE_PATH", "./data/landscape.sqlite"))
+    landscape.add_argument("--limit", type=int, default=2000)
+    landscape.add_argument("--bounds", type=float, nargs=4, metavar=("WEST", "SOUTH", "EAST", "NORTH"), help="Optional regional coverage pilot")
+    landscape.add_argument("--terrain-raster", help="Optional local LV95 DTM GeoTIFF")
+    landscape.add_argument("--surface-raster", help="Optional local LV95 DSM GeoTIFF")
+    landscape.set_defaults(function=refresh_landscape, uses_lock=False)
 
     osm_import = subparsers.add_parser("import-osm", help="Download and import the current national OSM extract")
     osm_import.add_argument("--database", default=os.environ.get("DATABASE_PATH", "./data/benchly.sqlite"))

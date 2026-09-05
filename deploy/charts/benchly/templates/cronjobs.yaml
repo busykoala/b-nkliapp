@@ -1,5 +1,6 @@
 {{- $root := . -}}
 {{- range $job := list
+  (dict "name" "landscape" "schedule" .Values.workers.landscapeSchedule "deadline" 3300 "args" (list "refresh-landscape" "--database" "/data/benchly.sqlite" "--landscape-database" "/data/landscape.sqlite" "--limit" "10000"))
   (dict "name" "transit" "schedule" .Values.workers.transitSchedule "deadline" 1800 "args" (list "refresh-transit" "--transit-database" "/data/transit.sqlite"))
   (dict "name" "import-osm" "schedule" .Values.workers.importSchedule "deadline" 14400 "args" (list "import-osm" "--database" "/data/benchly.sqlite"))
   (dict "name" "enrich" "schedule" .Values.workers.enrichSchedule "deadline" 29700 "args" (list "enrich-batch" "--database" "/data/benchly.sqlite" "--limit" "1000" "--max-runtime-hours" "8" "--max-download-gib" "80"))
@@ -23,9 +24,10 @@ spec:
   timeZone: {{ $root.Values.workers.timeZone | quote }}
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: 86400
       backoffLimit: 1
       activeDeadlineSeconds: {{ $job.deadline }}
       template:
@@ -61,8 +63,13 @@ spec:
                 readOnlyRootFilesystem: true
                 capabilities: {drop: [ALL]}
               resources:
+{{- if eq $job.name "landscape" }}
+                requests: {cpu: "500m", memory: 512Mi}
+                limits: {cpu: "2", memory: 4Gi}
+{{- else }}
                 requests: {cpu: "1", memory: 2Gi, ephemeral-storage: 2Gi}
                 limits: {cpu: "8", memory: 24Gi, ephemeral-storage: {{ $root.Values.workers.temporaryStorage }}}
+{{- end }}
               volumeMounts:
                 - {name: data, mountPath: /data}
                 - {name: temporary, mountPath: /tmp}

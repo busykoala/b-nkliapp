@@ -1,4 +1,4 @@
-import { journeyMinutes, type JourneyLeg, type JourneyOption, type JourneyQuery } from "@/lib/journey";
+import { journeyMinutes, type JourneyLeg, type JourneyOption, type JourneyQuery } from "./journey";
 
 export const PREFERENCES_KEY = "benchly-journey-preferences";
 export type JourneyPreferences = {
