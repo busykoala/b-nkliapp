@@ -13,13 +13,22 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.getByLabel("Menü schliessen").click();
 }
 
-test("opens the mobile map and a bench detail", async ({ page }) => {
+test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   await page.goto("/");
   const map = page.getByLabel("Karte der Schweizer Sitzbänke");
   await expect(map).toBeVisible();
   await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
   await expect(page.getByLabel("Ort suchen")).toBeVisible();
   await expect(page.getByLabel("Menü öffnen")).toBeVisible();
+  await page.goto("/bank/osm-node-101");
+  const painting = page.locator(".bench-landscape");
+  await expect(painting).toBeVisible();
+  const environment = await painting.locator(".painting-environment").getAttribute("href");
+  expect(environment).toMatch(/^\/ui-art\/v[12]\//);
+  const artwork = await page.request.get(environment!);
+  expect(artwork.ok()).toBeTruthy();
+  expect(artwork.headers()["cache-control"]).toContain("immutable");
+  await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
 });
 
 test("activates the raster fallback when the vector style fails", async ({ page }) => {
@@ -135,6 +144,22 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
   await page.waitForTimeout(900);
   await page.getByLabel("Ort suchen").fill("Das Testbänkli");
   await expect(page.getByRole("button", { name: /Das Testbänkli/ })).toBeVisible();
+});
+
+test("lets a user compose and persist a watercolor avatar", async ({ page, browserName }) => {
+  await registerUser(page, `ava-${browserName}-${Date.now().toString().slice(-5)}`);
+  await page.goto("/profil");
+  await page.locator("summary").filter({ hasText: "Avatar gestalten" }).click();
+  await page.getByRole("radio", { name: "Locken", exact: true }).check();
+  await page.getByRole("radio", { name: "Wald", exact: true }).check();
+  await page.getByRole("radio", { name: "Fuchs", exact: true }).check();
+  await page.getByRole("button", { name: "Avatar speichern" }).click();
+  await expect(page.getByText("Dein Aquarell-Avatar ist gespeichert.")).toBeVisible();
+  await page.reload();
+  await page.locator("summary").filter({ hasText: "Avatar gestalten" }).click();
+  await expect(page.getByRole("radio", { name: "Locken", exact: true })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Wald", exact: true })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Fuchs", exact: true })).toBeChecked();
 });
 
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {

@@ -2,11 +2,12 @@ import Link from "next/link";
 import { ArrowLeft, Armchair, Check, Footprints, LogOut, Map, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
 import { logout } from "@/app/actions/account";
 import type { CurrentUser } from "@/lib/security";
-import type { LandscapeKey, ProfileMoment, SeasonKey, TrailProfile } from "@/lib/profile";
+import type { ProfileMoment, TrailProfile } from "@/lib/profile";
 import { AppMenu } from "@/components/app-menu";
-import { AvatarRedrawButton } from "@/components/avatar-redraw-button";
+import { AvatarCustomizer } from "@/components/avatar-customizer";
 import { BadgeIllustration, type BadgeArt } from "@/components/badge-illustration";
 import { TrailAvatar } from "@/components/trail-avatar";
+import { LandscapeStamp, SeasonStamp } from "@/components/profile-stamps";
 
 type Badge = { key: string; name: string; art: string; hint: string; target: number; progress: number; earned: boolean };
 
@@ -28,7 +29,6 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
       <section className="profile-portrait">
         <div className="profile-avatar-wrap">
           <TrailAvatar seed={profile.avatarSeed} username={profile.username} progress={profile.uniquePlaces} />
-          {own && <AvatarRedrawButton />}
         </div>
         <div className="profile-intro">
           <span><Sparkles size={13} /> {own ? "Dein Wanderbuch" : "Unterwegs mit"}</span>
@@ -37,6 +37,7 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
           <small>Seit {new Intl.DateTimeFormat("de-CH", { month: "long", year: "numeric" }).format(new Date(profile.joinedAt))} unterwegs</small>
         </div>
       </section>
+      {own && <AvatarCustomizer seed={profile.avatarSeed} username={profile.username} progress={profile.uniquePlaces} />}
 
       <section className="profile-section trail-progress-card">
         <header><div><small>Deine Spur</small><h2>{profile.uniquePlaces === 1 ? "Ein besonderer Platz" : `${profile.uniquePlaces} besondere Plätze`}</h2></div><Footprints size={22} /></header>
@@ -102,23 +103,6 @@ function trailPosition(places: number) {
 
 function BadgeGrid({ badges }: { badges: Badge[] }) {
   return <div className="badge-album">{badges.map((badge) => <article key={badge.key} className={`story-card badge-card ${badge.earned ? "is-earned" : "is-locked"}`}><BadgeIllustration kind={badge.art as BadgeArt} label={badge.name} earned={badge.earned} /><div className="badge-copy"><h3>{badge.name}</h3><p>{badge.hint}</p><div className="badge-progress" aria-label={`${badge.progress} von ${badge.target}`}><i style={{ width: `${badge.progress / badge.target * 100}%` }} /></div><small>{badge.progress}/{badge.target}</small></div></article>)}</div>;
-}
-
-function LandscapeStamp({ kind, found }: { kind: LandscapeKey; found: boolean }) {
-  return <svg className="landscape-stamp" viewBox="0 0 112 76" aria-hidden="true" data-kind={kind} data-found={found}>
-    <path className="stamp-sky" d="M4 8q24-7 49 0 27-8 55 2v62H4Z" />
-    {(kind === "mountain" || kind === "hill") && <path className={kind === "mountain" ? "stamp-mountain" : "stamp-hills"} d={kind === "mountain" ? "M0 61 28 25l16 20 20-33 39 49Z" : "M0 57q28-31 57 0 27-26 59 1v18H0Z"} />}
-    {kind === "water" && <><path className="stamp-hills" d="M0 49q28-23 58 0 26-20 58 1v26H0Z" /><path className="stamp-water" d="M0 54q35-8 65 1 28 8 51-1v22H0Z" /></>}
-    {kind === "city" && <g className="stamp-city"><path d="M10 31h25v34H10zm32 12h21v22H42zm30-19h29v41H72z" /><path d="m8 31 14-11 15 11m33-7 16-13 17 13" /></g>}
-    {(kind === "forest" || kind === "open") && <path className="stamp-hills" d="M0 53q34-25 67 2 24-19 49-7v28H0Z" />}
-    {kind === "forest" && <g className="stamp-trees"><path d="M22 24 8 58h28Zm30-12L34 60h38Zm38 17L78 61h25Z" /></g>}
-    {kind === "open" && <g className="stamp-sun"><circle cx="84" cy="23" r="9" /><path d="M84 8V2m0 42v-6m15-15h7M63 23h7m24-11 5-5M69 38l5-5" /></g>}
-    <g className="stamp-bench"><path d="M42 50h38v7H42Zm-4 10h46v7H38Z" /><path d="M44 57v15m34-15v15" /></g>
-  </svg>;
-}
-
-function SeasonStamp({ season, name, found }: { season: SeasonKey; name: string; found: boolean }) {
-  return <div className={`season-token ${found ? "is-found" : "is-locked"}`}><svg viewBox="0 0 64 58" aria-hidden="true" data-season={season}><path className="season-ground" d="M2 49q30-13 60 0v8H2Z" /><path className="season-trunk" d="M29 20h6v32h-6Z" /><path className="season-crown" d="M32 4q14 0 16 14 10 6 4 16-8 10-20 2-13 8-21-2-5-10 5-16Q18 4 32 4Z" />{season === "winter" && <path className="season-snow" d="M12 21q8-8 17-3 10-7 22 3-10-17-19-17-10 0-20 17Z" />}{season === "spring" && <g className="season-blossom"><circle cx="21" cy="17" r="2" /><circle cx="39" cy="12" r="2" /><circle cx="44" cy="27" r="2" /></g>}</svg><small>{name}</small></div>;
 }
 
 function ProfileNumber({ value, label, icon }: { value: number; label: string; icon: React.ReactNode }) {

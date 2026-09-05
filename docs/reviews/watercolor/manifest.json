@@ -1,0 +1,32 @@
+{
+  "cases": [
+    "01-meadow-spring-dawn",
+    "02-meadow-summer-sun",
+    "03-meadow-autumn-rain",
+    "04-meadow-winter-moon",
+    "05-lake-spring-dawn",
+    "06-lake-summer-sun",
+    "07-lake-autumn-rain",
+    "08-lake-winter-moon",
+    "09-forest-spring-dawn",
+    "10-forest-summer-sun",
+    "11-forest-autumn-rain",
+    "12-forest-winter-moon",
+    "13-village-spring-dawn",
+    "14-village-summer-sun",
+    "15-village-autumn-rain",
+    "16-village-winter-moon",
+    "17-city-spring-dawn",
+    "18-city-summer-sun",
+    "19-city-autumn-rain",
+    "20-city-winter-moon",
+    "22-forest-daylight-shade",
+    "23-alpine-snow-daylight",
+    "24-city-low-moon",
+    "25-village-sheltered",
+    "26-unknown-weather"
+  ],
+  "browser": "chromium",
+  "productionCSS": true,
+  "assetErrors": []
+}

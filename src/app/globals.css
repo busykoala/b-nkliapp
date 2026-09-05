@@ -349,81 +349,40 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .calm-title-meta { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .65rem; }
 .calm-title-meta > p { min-width: 0; color: rgb(41 66 57 / 58%); font-size: .8rem; letter-spacing: .02em; overflow-wrap: anywhere; }
 .unverified-note { margin-bottom: .55rem; color: #9a6132; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
-.bench-landscape { position: relative; overflow: hidden; width: 100%; aspect-ratio: 6 / 5; border: 0; border-radius: 2rem 2rem 0 0; box-shadow: none; }
-.bench-landscape svg { display: block; width: 100%; height: 100%; }
-.bench-landscape .sky-top { stop-color: #a9c9c0; }
-.bench-landscape .sky-bottom { stop-color: #f3dfae; }
-.bench-landscape.phase-dawn .sky-top { stop-color: #899eaa; }
-.bench-landscape.phase-dawn .sky-bottom { stop-color: #efba85; }
-.bench-landscape.phase-dusk .sky-top { stop-color: #6f778c; }
-.bench-landscape.phase-dusk .sky-bottom { stop-color: #dda16f; }
-.bench-landscape.phase-night .sky-top { stop-color: #1e303e; }
-.bench-landscape.phase-night .sky-bottom { stop-color: #52616b; }
-.scene-stars { fill: #fff1c7; opacity: .75; }
-.scene-cloud-wash { fill: #758789; }
-.scene-clouds { fill: #f3eee0; opacity: var(--cloud-opacity, .62); }
-.scene-cloud { transition: opacity .3s ease; }
-.scene-cloud.cloud-high { opacity: .48; filter: blur(.4px); }
-.scene-cloud.cloud-mid { opacity: .75; }
-.scene-cloud.cloud-low { opacity: .96; }
-.scene-clouds .cloud-ink { fill: none; stroke: #9ba6a0; stroke-width: 3; stroke-linecap: round; opacity: .35; }
-.phase-night .scene-clouds { fill: #91a2a5; opacity: calc(var(--cloud-opacity, .5) * .72); }
-.scene-rain { fill: none; stroke: #567f8c; stroke-width: 3.5; stroke-linecap: round; opacity: .78; }
-.scene-rain .rain-ripple { stroke-width: 2; opacity: .62; }
-.scene-snowfall { fill: #f8f3df; opacity: .86; }
-.scene-wind { fill: none; stroke: #f5edd9; stroke-width: 3; stroke-linecap: round; opacity: .52; }
-.scene-temperature-wash { pointer-events: none; }
-.temperature-cold .scene-temperature-wash { fill: #b9d9e5; opacity: .18; }
-.temperature-mild .scene-temperature-wash { fill: #f5e8c7; opacity: .035; }
-.temperature-warm .scene-temperature-wash { fill: #f4c776; opacity: .1; }
-.temperature-hot .scene-temperature-wash { fill: #ed9e58; opacity: .17; }
-.scene-sun { fill: #f3c45c; }
-.sunbeam-top { stop-color: #fff7ca; stop-opacity: .5; }
-.sunbeam-bottom { stop-color: #efc35b; stop-opacity: .04; }
-.scene-sunbeam { opacity: .68; mix-blend-mode: screen; }
-.scene-moon { fill: #f5e5bb; }
-.scene-moon-shadow { fill: #1e303e; }
-.celestial-glow { fill: #f7d778; opacity: .27; }
-.phase-night .celestial-glow { fill: #dbe4dd; opacity: .18; }
-.scene-mountains { fill: #61756c; opacity: .72; }
-.scene-snow { fill: #e7e2cf; opacity: .75; }
-.scene-distant-hills { fill: #7b8c70; opacity: .66; }
-.scene-ground-snow, .building-snow, .bench-snow { fill: #f1ecdc; stroke: none; }
-.scene-buildings { fill: #74776c; stroke: #4f5a53; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
-.scene-near-building { fill: #77776b; stroke: #4f5a53; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; opacity: .62; }
-.building-window { fill: #e8d7a6; stroke: none; opacity: .72; }
-.scene-far-hill { fill: #6f8c73; }
-.scene-near-hill { fill: #3d6d5b; }
-.phase-night .scene-far-hill { fill: #405a55; }
-.phase-night .scene-near-hill { fill: #294742; }
-.scene-water { fill: #709ca0; opacity: .9; stroke: #d4dfcf; stroke-width: 2; stroke-linecap: round; }
-.phase-night .scene-water { fill: #496d78; }
-.scene-path { fill: none; stroke: #dfc99f; stroke-width: 26; stroke-linecap: round; opacity: .85; }
-.tree-trunk { fill: #674d3c; }
-.tree-crown { fill: #315f4e; }
-.tree-evergreen { fill: #315f4e; }
-.tree-branches { fill: none; stroke: #654e3d; stroke-width: 6; stroke-linecap: round; }
-.tree-blossoms { fill: #f2d7c7; opacity: .92; }
-.season-autumn .tree-crown { fill: #9a633d; }
-.season-autumn .seasonal-tree:nth-child(even) .tree-crown { fill: #b78342; }
-.season-spring .tree-crown { fill: #5d8660; }
-.season-summer .tree-crown { fill: #315f4e; }
-.falling-leaves { fill: #b7783f; opacity: .82; }
-.phase-night .tree-crown { fill: #213f3c; }
-.bench-shadow { fill: #1d352f; opacity: .07; transform-origin: 322px 419px; }
-.bench-shadow.is-sunny { opacity: .27; }
-.scene-sun-pool { fill: #f8d777; opacity: .22; filter: blur(4px); }
-.scene-cast-shade { fill: #173d38; pointer-events: none; mix-blend-mode: multiply; }
-.shade-building-shape { opacity: .31; }
-.shade-leaf-shape { opacity: .2; }
-.shade-terrain-shape { opacity: .27; }
-.light-sunny .bench-board { filter: drop-shadow(0 1px 0 rgb(255 235 171 / 55%)); }
-.light-shade:not(.phase-night) .drawn-bench { filter: saturate(.76) brightness(.8); }
-.light-shade:not(.phase-night) .scene-sun { opacity: .78; }
-.phase-night .bench-shadow { opacity: .08; }
-.bench-board { fill: var(--bench-color); stroke: #3d463e; stroke-width: 3; stroke-linejoin: round; }
-.bench-frame { fill: none; stroke: #33473f; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-.bench-cover { fill: #dbcc9c; stroke: #40574e; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.bench-landscape { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 6 / 5; border: 0; border-radius: 2rem 2rem 0 0; background: #f7f1e5; box-shadow: none; }
+.bench-landscape::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background: url("/map-art/v3/paper.webp") repeat; background-size: 256px; mix-blend-mode: multiply; opacity: .13; }
+.bench-landscape svg { position: relative; z-index: 0; display: block; width: 100%; height: 100%; }
+.bench-landscape > :not(svg) { z-index: 2; }
+.painting-paper { fill: #f7f1e5; }
+.painting-environment { opacity: .96; filter: saturate(.96) contrast(.96); }
+.painting-atmosphere { fill: #f2d69b; opacity: .04; mix-blend-mode: multiply; }
+/* Pigment softness is applied by the component's small native SVG filter.
+   Keep the foreground opaque: scenery must not show through the seat or legs. */
+.painting-bench { opacity: 1; }
+.painting-contact-shadow { fill: #526556; opacity: .15; }
+.painting-foot-shadow { fill: #4c5444; opacity: .29; }
+.painting-sky-light { opacity: .64; mix-blend-mode: multiply; }
+.painting-clouds { mix-blend-mode: multiply; filter: saturate(.65); }
+.painting-season { opacity: .1; mix-blend-mode: multiply; }
+.painting-snow-ground { mix-blend-mode: screen; }
+.bench-landscape svg.painting-shelter { width: 420px; height: 280px; opacity: .96; filter: saturate(.7) contrast(.83); }
+.painted-scene.phase-night svg.painting-shelter { filter: saturate(.45) brightness(.7); }
+.painting-rain { fill: none; stroke: #5c8291; stroke-width: 1.1; stroke-linecap: round; opacity: .3; }
+.painting-snowfall { fill: #fffbed; opacity: .72; }
+.painted-scene.phase-dawn .painting-atmosphere { fill: #e5b587; opacity: .13; }
+.painted-scene.phase-dusk .painting-atmosphere { fill: #d2a290; opacity: .16; }
+.painted-scene.phase-dusk .painting-environment { filter: saturate(.8) brightness(.91); }
+.painted-scene.season-autumn .painting-environment { filter: sepia(.19) saturate(.9); }
+.painted-scene.season-winter .painting-environment { filter: saturate(.35) brightness(1.06); }
+.painted-scene.is-raining .painting-atmosphere { fill: #82949d; opacity: .2; }
+.painted-scene.light-shade:not(.phase-night) .painting-atmosphere { fill: #91a59b; opacity: .12; }
+.painted-scene.phase-night .painting-paper { fill: #8c9eaa; }
+.painted-scene.phase-night .painting-environment { opacity: .94; filter: saturate(.6) brightness(.82); mix-blend-mode: multiply; }
+.painted-scene.phase-night .painting-atmosphere { fill: #2c465f; opacity: .2; mix-blend-mode: multiply; }
+.painted-scene.phase-night .painting-sky-light { mix-blend-mode: screen; opacity: .8; }
+.painted-scene.phase-night .painting-season { opacity: .04; }
+.painted-scene.phase-night .painting-snow-ground { opacity: .12; }
+.painted-scene.phase-night::after { opacity: .09; mix-blend-mode: soft-light; }
 .landscape-rating-action { position: absolute; right: .85rem; bottom: .8rem; z-index: 3; display: inline-flex; min-height: 2.75rem; align-items: center; gap: .45rem; border: 1px solid rgb(47 67 58 / 16%); border-radius: 999px; background: rgb(250 241 214 / 78%); padding: 0 .72rem; color: #b47e25; box-shadow: 0 5px 18px rgb(27 48 41 / 12%); backdrop-filter: blur(7px); transition: background .18s ease, box-shadow .18s ease, transform .18s ease; }
 .landscape-rating-action:hover, .landscape-rating-action:focus-visible { background: rgb(255 248 226 / 94%); box-shadow: 0 7px 22px rgb(27 48 41 / 18%); outline: 2px solid rgb(255 243 200 / 72%); outline-offset: 2px; transform: translateY(-1px); }
 .landscape-rating-action.is-empty { color: rgb(52 69 63 / 42%); }
@@ -537,22 +496,83 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .profile-journal { width: min(100%, 38rem); margin-inline: auto; padding: .5rem 1rem 4rem; }
 .profile-portrait { display: grid; grid-template-columns: minmax(8.6rem, 42%) minmax(0, 1fr); align-items: center; gap: 1.1rem; padding: .6rem .2rem 1.65rem; }
 .profile-avatar-wrap { position: relative; min-width: 0; }
-.trail-avatar { display: block; width: 100%; height: auto; filter: drop-shadow(0 10px 20px rgb(39 61 52 / 14%)); }
-.avatar-paper { fill: #f3e6c5; }
-.avatar-frame { fill: none; stroke: rgb(48 72 62 / 32%); stroke-width: 2; stroke-linejoin: round; }
-.avatar-mountain { fill: #718478; opacity: .72; }
-.avatar-hill-back { fill: #739077; }
-.avatar-hill-front { fill: #3f6d5b; }
-.avatar-trees { fill: #315b4d; stroke: #315b4d; stroke-width: 4; stroke-linejoin: round; }
-.avatar-trail { fill: none; stroke: #e0c17d; stroke-width: 13; stroke-linecap: round; }
+.trail-avatar { display: block; width: 100%; height: auto; filter: drop-shadow(0 10px 20px rgb(39 61 52 / 12%)); }
+.avatar-paper { fill: #f5e8c8; }
+.avatar-watercolor-asset { opacity: .28; mix-blend-mode: multiply; }
+.avatar-painted-background { opacity: .86; filter: saturate(.8); }
+.avatar-person { opacity: .94; }
+.avatar-cheek { fill: none; stroke: #ca7966; stroke-width: 6; stroke-linecap: round; opacity: .2; }
+.avatar-frame, .avatar-frame-wash { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.avatar-frame { stroke: rgb(48 72 62 / 28%); stroke-width: 1.6; stroke-dasharray: 46 2 27 1.5; }
+.avatar-frame-wash { stroke: rgb(178 124 73 / 15%); stroke-width: 7; }
+.avatar-sky-washes { fill: rgb(255 244 206 / 14%); mix-blend-mode: screen; }
+.avatar-sky-washes path { fill: rgb(102 139 124 / 9%); }
+.avatar-mountain { opacity: .72; }
+.avatar-mountain-bleed { fill: rgb(83 108 97 / 14%); stroke: rgb(76 98 88 / 10%); stroke-width: 8; stroke-linejoin: round; }
+.avatar-mountain-light { fill: rgb(246 233 201 / 44%); stroke: rgb(255 248 222 / 13%); stroke-width: 5; stroke-linejoin: round; }
+.avatar-hill-wash { fill: rgb(55 101 79 / 15%); stroke: rgb(63 105 85 / 13%); stroke-width: 8; }
+.avatar-hill-back { opacity: .86; }
+.avatar-hill-front { fill: #3f6d5b; opacity: .91; }
+.avatar-land-pigment { fill: rgb(211 158 74 / 9%); mix-blend-mode: multiply; }
+.avatar-land-pigment path { fill: rgb(41 102 78 / 8%); }
+.avatar-trees { fill: rgb(42 91 72 / 83%); stroke: rgb(42 79 66 / 74%); stroke-width: 3.2; stroke-linejoin: round; }
+.avatar-tree-wash { fill: rgb(67 114 87 / 18%); stroke: rgb(67 114 87 / 12%); stroke-width: 8; }
+.avatar-tree-ink { fill: none; stroke: rgb(39 72 61 / 45%); stroke-width: 1.5; stroke-linecap: round; }
+.avatar-background-trees { fill: rgb(43 87 70 / 71%); stroke: rgb(39 76 64 / 22%); stroke-width: 1.7; stroke-linejoin: round; }
+.avatar-city { fill: rgb(125 112 91 / 62%); stroke: rgb(66 84 74 / 40%); stroke-width: 1.4; stroke-linejoin: round; }
+.avatar-city-wash { fill: rgb(143 109 78 / 14%); stroke: rgb(143 109 78 / 9%); stroke-width: 8; }
+.avatar-city-window { fill: rgb(239 209 143 / 66%); stroke: none; }
+.avatar-lake { fill: rgb(92 151 156 / 72%); }
+.avatar-lake-wash { fill: rgb(91 151 156 / 16%); stroke: rgb(91 151 156 / 11%); stroke-width: 9; }
+.avatar-lake-line { fill: none; stroke: rgb(232 231 195 / 54%); stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 37 2 16 1; }
+.avatar-meadow { fill: rgb(65 112 83 / 67%); }
+.avatar-meadow circle { fill: rgb(220 164 67 / 76%); }
+.avatar-trail-wash { fill: none; stroke: rgb(246 223 163 / 22%); stroke-width: 20; stroke-linecap: round; }
+.avatar-trail { fill: none; stroke: rgb(224 193 125 / 82%); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 35 1.6 19 1.1; }
 .avatar-stars { fill: #f7e8b9; }
-.avatar-sun { fill: #e5b348; opacity: .9; }
-.avatar-neck, .avatar-face, .avatar-body, .avatar-hair, .avatar-hat, .avatar-scarf { stroke: rgb(43 62 54 / 25%); stroke-width: 1.5; stroke-linejoin: round; }
-.avatar-features { fill: none; stroke: #3e493f; stroke-width: 3; stroke-linecap: round; }
-.avatar-companion { fill: #b96f43; stroke: #344c43; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.avatar-sun { fill: rgb(225 166 54 / 45%); }
+.avatar-sun circle:last-child { fill: rgb(230 177 66 / 68%); }
+.avatar-body-wash { opacity: .19; stroke: currentcolor; stroke-width: 8; }
+.avatar-face-wash { opacity: .18; }
+.avatar-neck, .avatar-face, .avatar-body, .avatar-hair, .avatar-hat, .avatar-scarf { stroke: rgb(43 62 54 / 22%); stroke-width: 1.35; stroke-linejoin: round; }
+.avatar-face, .avatar-body, .avatar-hair, .avatar-hat, .avatar-scarf { stroke-dasharray: 28 1.2 14 .8; }
+.avatar-features { fill: none; stroke: rgb(48 63 55 / 85%); stroke-width: 2.6; stroke-linecap: round; }
+.avatar-curls circle { stroke: rgb(43 62 54 / 17%); stroke-width: 1; }
+.avatar-companion { fill: #b96f43; stroke: rgb(52 76 67 / 78%); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .avatar-bird { fill: #d4a03e; }
-.avatar-redraw { position: absolute; right: -.15rem; bottom: .1rem; display: inline-flex; min-height: 2.75rem; align-items: center; gap: .35rem; border: 1px solid rgb(52 77 65 / 13%); border-radius: 999px; background: rgb(255 249 230 / 90%); padding: 0 .65rem; color: #356050; box-shadow: 0 6px 18px rgb(42 63 54 / 12%); font-size: .68rem; font-weight: 750; }
-.avatar-redraw:hover, .avatar-redraw:focus-visible { background: #fff9e7; outline: 2px solid rgb(52 103 83 / 22%); outline-offset: 2px; }
+.avatar-customizer { margin: -.8rem 0 .85rem; border: 1px solid rgb(52 77 65 / 11%); border-radius: 1.35rem; background: rgb(255 249 232 / 58%); overflow: hidden; }
+.avatar-customizer > summary { display: flex; min-height: 3rem; align-items: center; gap: .45rem; padding: 0 .85rem; color: #356050; cursor: pointer; font-size: .72rem; font-weight: 750; list-style: none; }
+.avatar-customizer > summary::-webkit-details-marker { display: none; }
+.avatar-customizer > summary span { margin-left: auto; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.25rem; transition: transform .18s ease; }
+.avatar-customizer[open] > summary span { transform: rotate(45deg); }
+.avatar-customizer > form { padding: .35rem .85rem 1rem; border-top: 1px solid rgb(52 77 65 / 8%); }
+.avatar-customizer-preview { display: grid; grid-template-columns: 7rem minmax(0, 1fr); align-items: center; gap: .85rem; padding: .65rem 0 .75rem; }
+.avatar-customizer-preview .trail-avatar { width: 7rem; }
+.avatar-customizer-preview small, .avatar-customizer-preview strong { display: block; }
+.avatar-customizer-preview small { color: rgb(41 66 57 / 47%); font-size: .61rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.avatar-customizer-preview strong { margin-top: .15rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1rem; }
+.avatar-customizer-preview p { margin-top: .25rem; color: rgb(41 66 57 / 52%); font-size: .68rem; line-height: 1.35; }
+.avatar-surprise { display: inline-flex; min-height: 2.55rem; align-items: center; gap: .35rem; border-radius: 999px; background: rgb(66 107 88 / 8%); padding: 0 .7rem; color: #356050; font-size: .68rem; font-weight: 700; }
+.avatar-surprise:hover, .avatar-surprise:focus-visible { background: rgb(66 107 88 / 14%); outline: 2px solid rgb(52 103 83 / 18%); outline-offset: 2px; }
+.avatar-option-groups { display: grid; gap: .85rem; margin-top: .9rem; }
+.avatar-option-groups fieldset { min-width: 0; }
+.avatar-option-groups legend { margin-left: .1rem; color: rgb(41 66 57 / 56%); font-size: .65rem; font-weight: 750; }
+.avatar-option-groups fieldset > div { display: flex; gap: .35rem; overflow-x: auto; padding: .35rem .1rem .2rem; scrollbar-width: thin; }
+.avatar-option-groups label { position: relative; display: grid; min-width: 4rem; min-height: 3.1rem; flex: 1 0 4rem; place-items: center; align-content: center; gap: .18rem; border: 1px solid rgb(52 77 65 / 9%); border-radius: .85rem; background: rgb(250 244 226 / 55%); color: rgb(41 66 57 / 62%); cursor: pointer; font-size: .6rem; }
+.avatar-option-groups label.is-selected { border-color: rgb(48 100 80 / 30%); background: rgb(216 228 207 / 72%); color: #285849; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 62%); }
+.avatar-option-groups input { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.avatar-option-groups label:has(input:focus-visible) { outline: 2px solid #346d5a; outline-offset: 2px; }
+.avatar-option-groups label i { display: block; width: 1.15rem; height: 1.15rem; border: 1px solid rgb(42 70 59 / 12%); border-radius: 53% 47% 44% 56%; background: rgb(66 107 88 / 15%); transform: rotate(-4deg); }
+.avatar-option-groups label[data-avatar-key="skin"] i, .avatar-option-groups label[data-avatar-key="hair"] i, .avatar-option-groups label[data-avatar-key="coat"] i, .avatar-option-groups label[data-avatar-key="accent"] i { background: var(--avatar-swatch, rgb(66 107 88 / 15%)); }
+.avatar-option-groups label[data-avatar-value="porcelain"] { --avatar-swatch: #efd0aa; }.avatar-option-groups label[data-avatar-value="sunlit"] { --avatar-swatch: #e8bf91; }.avatar-option-groups label[data-avatar-value="warm"] { --avatar-swatch: #d79a6d; }.avatar-option-groups label[data-avatar-value="brown"] { --avatar-swatch: #ad7153; }.avatar-option-groups label[data-avatar-value="deep"] { --avatar-swatch: #7c4c3c; }
+.avatar-option-groups label[data-avatar-value="charcoal"] { --avatar-swatch: #34352f; }.avatar-option-groups label[data-avatar-value="chestnut"] { --avatar-swatch: #654535; }.avatar-option-groups label[data-avatar-value="copper"] { --avatar-swatch: #a6653e; }.avatar-option-groups label[data-avatar-value="blond"] { --avatar-swatch: #d2ad6e; }.avatar-option-groups label[data-avatar-value="silver"] { --avatar-swatch: #aaa99e; }
+.avatar-option-groups label[data-avatar-value="pine"] { --avatar-swatch: #356554; }.avatar-option-groups label[data-avatar-value="lake"] { --avatar-swatch: #486c76; }.avatar-option-groups label[data-avatar-value="rust"] { --avatar-swatch: #925c43; }.avatar-option-groups label[data-avatar-value="moss"] { --avatar-swatch: #6d7650; }.avatar-option-groups label[data-avatar-value="plum"] { --avatar-swatch: #67556f; }
+.avatar-option-groups label[data-avatar-value="gold"] { --avatar-swatch: #d6a044; }.avatar-option-groups label[data-avatar-value="coral"] { --avatar-swatch: #c36f51; }.avatar-option-groups label[data-avatar-value="sage"] { --avatar-swatch: #7ca49a; }.avatar-option-groups label[data-avatar-value="cream"] { --avatar-swatch: #dfc77f; }
+.avatar-customizer-actions { display: flex; min-height: 3.4rem; align-items: center; gap: .65rem; margin-top: 1rem; }
+.avatar-save { display: inline-flex; min-height: 2.85rem; flex: none; align-items: center; gap: .4rem; border-radius: .9rem; background: #326b58; padding: 0 .85rem; color: #fff8e7; font-size: .72rem; font-weight: 750; }
+.avatar-save:disabled { opacity: .6; }
+.avatar-customizer-actions p { color: #9a4e43; font-size: .67rem; line-height: 1.3; }
+.avatar-customizer-actions p.is-success { color: #356451; }
 .profile-intro { min-width: 0; }
 .profile-intro > span { display: flex; align-items: center; gap: .3rem; color: rgb(48 91 77 / 58%); font-size: .64rem; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
 .profile-intro h1 { margin-top: .35rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(2rem, 10vw, 3.4rem); font-weight: 700; line-height: .92; letter-spacing: -.045em; overflow-wrap: anywhere; }
@@ -589,13 +609,13 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .landscape-token strong { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .78rem; line-height: 1.1; }
 .landscape-token small { margin-top: .18rem; color: rgb(41 66 57 / 52%); font-size: .57rem; line-height: 1.25; }
 .landscape-stamp { display: block; width: 4.4rem; height: auto; }
-.stamp-sky { fill: #eadcae; }.stamp-mountain { fill: #75877c; }.stamp-hills { fill: #739078; }.stamp-water { fill: #6f9b9d; }.stamp-city { fill: #817c6b; stroke: #566258; stroke-width: 2; }.stamp-trees { fill: #345f4f; }.stamp-sun { fill: #dfa83c; stroke: #b77c28; stroke-width: 1.5; stroke-linecap: round; }.stamp-bench { fill: #a76740; stroke: #344b42; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.stamp-paper { fill: #f3e4be; }.stamp-sky { fill: rgb(234 220 174 / 76%); }.stamp-sky-wash { fill: rgb(255 246 213 / 16%); }.stamp-land-bleed { fill: rgb(75 116 91 / 13%); stroke: rgb(75 116 91 / 10%); stroke-width: 6; stroke-linejoin: round; }.stamp-mountain { fill: rgb(117 135 124 / 75%); }.stamp-hills { fill: rgb(104 140 111 / 82%); }.stamp-water-wash { fill: rgb(85 148 153 / 18%); stroke: rgb(85 148 153 / 10%); stroke-width: 7; }.stamp-water { fill: rgb(98 151 155 / 80%); }.stamp-city-wash { fill: rgb(133 113 85 / 15%); stroke: rgb(133 113 85 / 10%); stroke-width: 5; }.stamp-city { fill: rgb(129 124 107 / 76%); stroke: rgb(86 98 88 / 64%); stroke-width: 1.35; stroke-dasharray: 22 1.5 9 .8; }.stamp-trees { fill: rgb(52 95 79 / 84%); }.stamp-tree-wash { fill: rgb(52 95 79 / 15%); stroke: rgb(52 95 79 / 10%); stroke-width: 7; }.stamp-tree-ink { fill: none; stroke: rgb(43 75 64 / 48%); stroke-width: 1.2; stroke-linecap: round; }.stamp-sun { fill: rgb(223 168 60 / 74%); stroke: rgb(183 124 40 / 50%); stroke-width: 1.2; stroke-linecap: round; }.stamp-bench-wash { fill: rgb(167 103 64 / 17%); stroke: rgb(167 103 64 / 10%); stroke-width: 5; }.stamp-bench { fill: rgb(167 103 64 / 86%); stroke: rgb(52 75 66 / 72%); stroke-width: 1.5; stroke-dasharray: 21 1.2 9 .6; stroke-linecap: round; stroke-linejoin: round; }
 .season-collection { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; margin-top: .85rem; }
 .season-token { display: grid; min-width: 0; place-items: center; padding: .35rem .15rem .45rem; border-radius: .85rem; background: rgb(225 227 204 / 38%); }
 .season-token.is-locked { opacity: .36; filter: grayscale(1); }
 .season-token svg { display: block; width: 3.8rem; max-width: 100%; height: auto; }
 .season-token small { color: rgb(41 66 57 / 58%); font-size: .58rem; }
-.season-ground { fill: #789175; }.season-trunk { fill: #72533e; }.season-crown { fill: #4f7959; }.season-snow { fill: #efe9d5; }.season-blossom { fill: #f1c9c1; }
+.season-paper-wash { fill: rgb(241 225 186 / 26%); }.season-ground-wash { fill: rgb(86 128 91 / 14%); stroke: rgb(86 128 91 / 9%); stroke-width: 6; }.season-ground { fill: rgb(120 145 117 / 79%); }.season-trunk-wash { fill: rgb(114 83 62 / 14%); stroke: rgb(114 83 62 / 9%); stroke-width: 5; }.season-trunk { fill: rgb(114 83 62 / 83%); }.season-crown-wash { fill: rgb(79 121 89 / 15%); stroke: rgb(79 121 89 / 10%); stroke-width: 7; }.season-crown { fill: rgb(79 121 89 / 83%); stroke: rgb(50 91 69 / 40%); stroke-width: 1.1; stroke-dasharray: 17 1.3 8 .6; }.season-snow-wash { fill: rgb(239 233 213 / 24%); stroke: rgb(239 233 213 / 12%); stroke-width: 5; }.season-snow { fill: rgb(239 233 213 / 85%); }.season-blossom { fill: rgb(241 201 193 / 86%); }
 .season-token svg[data-season="summer"] .season-crown { fill: #35664e; }.season-token svg[data-season="autumn"] .season-crown { fill: #ad713d; }.season-token svg[data-season="winter"] .season-crown { fill: #7d887b; }
 .profile-numbers > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; margin-top: .9rem; }
 .profile-numbers span { display: grid; min-width: 0; place-items: center; padding: .55rem .1rem; border-radius: .85rem; background: rgb(221 226 204 / 33%); }
@@ -615,17 +635,36 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .more-badges > summary span { font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.2rem; }
 .badge-card { min-width: 0; overflow: hidden; padding: .55rem; }
 .badge-card.is-locked { opacity: .52; filter: grayscale(.72); }
-.badge-illustration { display: block; width: 100%; aspect-ratio: 180 / 116; border-radius: .95rem; }
-.badge-sky { fill: #efe1b9; }
-.badge-sun { fill: #e6b94d; }
+.badge-illustration { display: block; width: 100%; aspect-ratio: 180 / 116; overflow: visible; }
+.badge-paper { fill: #f4e6c4; }
+.badge-watercolor-asset { opacity: .31; mix-blend-mode: multiply; }
+.badge-painted-environment { opacity: .94; }
+.badge-painted-bench { opacity: .9; filter: saturate(.78) contrast(.86); mix-blend-mode: multiply; }
+.badge-emblem { opacity: .88; }
+.badge-emblem path, .badge-emblem circle { stroke-width: 1.7; }
+.painted-stamp { border-radius: .55rem; filter: saturate(.85); }
+.stamp-painted-bench { opacity: .85; mix-blend-mode: multiply; }
+.badge-sky { opacity: .88; }
+.badge-sky-washes { fill: rgb(255 247 219 / 18%); mix-blend-mode: screen; }
+.badge-sky-washes path { fill: rgb(92 132 111 / 8%); }
+.badge-sun { fill: rgb(225 169 59 / 48%); }
+.badge-sun circle:last-child { fill: rgb(229 173 53 / 72%); }
 .badge-moon-cut { fill: #efe1b9; }
-.badge-mountain-far { fill: #789080; opacity: .8; }
-.badge-hill { fill: #416c5b; }
-.badge-bench { fill: #aa6840; stroke: #304d42; stroke-width: 2.4; stroke-linejoin: round; }
-.badge-frame, .badge-flag, .badge-path, .badge-glass, .badge-quill, .badge-check, .badge-trail, .badge-rays { fill: none; stroke: #304d42; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.badge-mountain-bleed { fill: rgb(89 111 101 / 13%); stroke: rgb(89 111 101 / 11%); stroke-width: 6; stroke-linejoin: round; }
+.badge-mountain-far { opacity: .75; }
+.badge-mountain-light { fill: rgb(248 237 207 / 48%); stroke: rgb(255 250 229 / 12%); stroke-width: 3; stroke-linejoin: round; }
+.badge-hill-wash { fill: rgb(48 100 77 / 13%); stroke: rgb(48 100 77 / 10%); stroke-width: 7; }
+.badge-hill { opacity: .86; }
+.badge-pigment { fill: rgb(210 151 66 / 8%); mix-blend-mode: multiply; }
+.badge-pigment ellipse { fill: rgb(35 91 70 / 9%); }
+.badge-bench-wash { fill: rgb(173 103 56 / 16%); stroke: rgb(173 103 56 / 10%); stroke-width: 5; stroke-linejoin: round; }
+.badge-bench { fill: rgb(170 104 64 / 88%); stroke: rgb(48 77 66 / 72%); stroke-width: 1.8; stroke-linejoin: round; }
+.badge-bench-highlight { fill: none; stroke: rgb(248 218 158 / 45%); stroke-width: 1.5; stroke-linecap: round; }
+.badge-frame, .badge-flag, .badge-path, .badge-glass, .badge-quill, .badge-check, .badge-trail, .badge-rays { fill: none; stroke: rgb(48 77 66 / 80%); stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
 .badge-flag path:last-child, .badge-sprout, .badge-seal, .badge-stars { fill: #d49a38; stroke: #304d42; stroke-width: 1.5; }
 .badge-path, .badge-trail { stroke-dasharray: 3 7; }
 .badge-seal { fill: #d9b04f; }
+.badge-ink-frame { fill: none; stroke: rgb(55 77 66 / 20%); stroke-width: 1.2; stroke-linecap: round; stroke-dasharray: 42 2 24 1; }
 .badge-copy { padding: .65rem .4rem .45rem; }
 .badge-copy h2, .badge-copy h3 { min-height: 2.35rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: .95rem; font-weight: 750; line-height: 1.15; overflow-wrap: anywhere; }
 .badge-copy p { min-height: 2.2rem; margin-top: .25rem; color: rgb(41 66 57 / 57%); font-size: .68rem; line-height: 1.35; overflow-wrap: anywhere; }

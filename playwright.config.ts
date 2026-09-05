@@ -3,12 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDatabase = join(tmpdir(), `benchly-e2e-${process.pid}.sqlite`);
+const production = process.env.PLAYWRIGHT_PRODUCTION === "1";
+const baseURL = production ? "https://localhost:3100" : "http://localhost:3100";
 
 export default defineConfig({
   testDir: "./e2e",
   webServer: {
-    command: "npm run dev -- --port 3100",
-    port: 3100,
+    command: production ? "node scripts/serve-production-tests.mjs" : "npm run dev -- --port 3100",
+    url: baseURL,
+    ignoreHTTPSErrors: production,
     reuseExistingServer: false,
     env: {
       ...process.env,
@@ -22,7 +25,7 @@ export default defineConfig({
       BENCHLY_DISABLE_ELEVATION_FETCH: "true",
     },
   },
-  use: { baseURL: "http://localhost:3100", trace: "on-first-retry" },
+  use: { baseURL, ignoreHTTPSErrors: production, trace: "on-first-retry" },
   projects: [
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
     { name: "mobile-safari", use: { ...devices["iPhone 14"], browserName: "webkit" } },
