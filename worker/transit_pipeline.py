@@ -14,6 +14,27 @@ import urllib.request
 import urllib.error
 import zipfile
 
+GTFS_DOWNLOAD_HOSTS = frozenset({
+    "data.opentransportdata.swiss",
+    # The official catalogue redirects ZIPs through Datopian to this R2 account.
+    "proxy-server-omd.datopian.com",
+    "83025b28472d6aa2bf5ae59f3724aa78.eu.r2.cloudflarestorage.com",
+})
+
+
+def validate_download_url(url, redirect=False):
+    parsed = urllib.parse.urlparse(url)
+    hosts = GTFS_DOWNLOAD_HOSTS if redirect else {"data.opentransportdata.swiss"}
+    if parsed.scheme != "https" or parsed.hostname not in hosts or parsed.username or parsed.password or parsed.port not in (None, 443):
+        raise ValueError("Unexpected GTFS download host or protocol")
+
+
+class GTFSRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Check each hop BEFORE contacting it, including signed object-store URLs.
+        validate_download_url(newurl, redirect=True)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
 
 class Links(HTMLParser):
     def __init__(self):
@@ -46,12 +67,10 @@ def public_catalogue(folder):
 
 
 def download(url, target, limit=300_000_000):
-    if urllib.parse.urlparse(url).hostname != "data.opentransportdata.swiss":
-        raise ValueError("Unexpected GTFS download host")
+    validate_download_url(url)
     request = urllib.request.Request(url, headers={"User-Agent": "Benchly-transit/1.0"})
-    with urllib.request.urlopen(request, timeout=60) as response, open(target, "wb") as output:
-        if urllib.parse.urlparse(response.url).hostname != "data.opentransportdata.swiss":
-            raise ValueError("Unexpected GTFS redirect")
+    with urllib.request.build_opener(GTFSRedirectHandler).open(request, timeout=60) as response, open(target, "wb") as output:
+        validate_download_url(response.url, redirect=True)
         size = 0
         while chunk := response.read(1024 * 1024):
             size += len(chunk)

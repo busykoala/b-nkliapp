@@ -4,10 +4,22 @@ import sqlite3
 import tempfile
 import unittest
 import zipfile
-from transit_pipeline import import_archive
+from transit_pipeline import import_archive, validate_download_url, GTFSRedirectHandler
+import urllib.request
 
 
 class TransitImportTest(unittest.TestCase):
+    def test_official_download_redirects_are_explicitly_allowed(self):
+        validate_download_url("https://data.opentransportdata.swiss/dataset/feed.zip")
+        validate_download_url("https://proxy-server-omd.datopian.com/dx-omd-prod/feed.zip", redirect=True)
+        validate_download_url("https://83025b28472d6aa2bf5ae59f3724aa78.eu.r2.cloudflarestorage.com/feed.zip", redirect=True)
+
+    def test_unexpected_redirect_is_rejected_before_contact(self):
+        request = urllib.request.Request("https://data.opentransportdata.swiss/feed.zip")
+        for target in ("http://data.opentransportdata.swiss/feed.zip", "https://127.0.0.1/feed", "https://proxy-server-omd.datopian.com.attacker.invalid/feed", "https://other-account.eu.r2.cloudflarestorage.com/feed", "https://data.opentransportdata.swiss:8443/feed"):
+            with self.subTest(target=target), self.assertRaises(ValueError):
+                GTFSRedirectHandler().redirect_request(request, None, 302, "Found", {}, target)
+
     def fixture(self, folder, start="20260101", end="20261231"):
         path = Path(folder) / "feed.zip"
         with zipfile.ZipFile(path, "w") as archive:
