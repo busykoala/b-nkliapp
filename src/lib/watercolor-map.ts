@@ -91,6 +91,7 @@ export const TRANSIT_MAP_ART: MapArtImage[] = [
   { name: "benchly-transit-metro", url: `${ART_ROOT}/transit-metro.png`, pixelRatio: 2 },
   { name: "benchly-transit-funicular", url: `${ART_ROOT}/transit-funicular.png`, pixelRatio: 2 },
   { name: "benchly-transit-cable-car", url: `${ART_ROOT}/transit-cable-car.png`, pixelRatio: 2 },
+  { name: "benchly-transit-ferry", url: `${ART_ROOT}/transit-ferry.png`, pixelRatio: 2 },
   { name: "benchly-wash-transit", url: `${ART_ROOT}/wash-transit.png`, pixelRatio: 2 },
 ];
 
@@ -119,9 +120,12 @@ export const PAINTERLY_ROAD_FILTER: FilterSpecification = ["all",
 ];
 
 export const MAJOR_TRANSIT_FILTER: FilterSpecification = ["==", ["get", "subclass"], "railway_station"];
+// swisstopo's POI classes for passenger-boat landings, not generic marinas.
+const FERRY_SUBCLASSES = ["ferry", "car_ferry", "ferry_terminal"];
 export const LOCAL_TRANSIT_FILTER: FilterSpecification = ["match", ["get", "subclass"], [
   "halt", "bus_stop", "tram_stop", "subway_entrance", "subway_stop", "funicular", "funicular_stop",
   "aerialway", "aerialway_station", "cable_car_station", "chair_lift_station", "gondola_station",
+  ...FERRY_SUBCLASSES,
 ], true, false];
 
 function availableIcon(name: string, available?: ReadonlySet<string>) {
@@ -138,6 +142,7 @@ export function benchWashIconExpression(available?: ReadonlySet<string>): Expres
 }
 
 export function transitIconForSubclass(subclass: string) {
+  if (FERRY_SUBCLASSES.includes(subclass)) return "benchly-transit-ferry";
   if (["railway_station", "halt"].includes(subclass)) return "benchly-transit-rail";
   if (subclass === "bus_stop") return "benchly-transit-bus";
   if (subclass === "tram_stop") return "benchly-transit-tram";
@@ -149,6 +154,7 @@ export function transitIconForSubclass(subclass: string) {
 
 export function transitIconExpression(available?: ReadonlySet<string>): ExpressionSpecification {
   return ["match", ["get", "subclass"],
+    FERRY_SUBCLASSES, availableIcon("benchly-transit-ferry", available),
     ["railway_station", "halt"], availableIcon("benchly-transit-rail", available),
     "bus_stop", availableIcon("benchly-transit-bus", available),
     "tram_stop", availableIcon("benchly-transit-tram", available),
@@ -160,6 +166,7 @@ export function transitIconExpression(available?: ReadonlySet<string>): Expressi
 }
 
 export function transitIconScaleForSubclass(subclass: string) {
+  if (FERRY_SUBCLASSES.includes(subclass)) return 1.4;
   if (subclass === "bus_stop") return 1.22;
   if (["funicular", "funicular_stop"].includes(subclass)) return 1.5;
   if (["aerialway", "aerialway_station", "cable_car_station", "chair_lift_station", "gondola_station"].includes(subclass)) return 1.45;
@@ -168,6 +175,7 @@ export function transitIconScaleForSubclass(subclass: string) {
 
 export function transitIconScaleExpression(): ExpressionSpecification {
   return ["match", ["get", "subclass"],
+    FERRY_SUBCLASSES, 1.4,
     "bus_stop", 1.22,
     ["funicular", "funicular_stop"], 1.5,
     ["aerialway", "aerialway_station", "cable_car_station", "chair_lift_station", "gondola_station"], 1.45,

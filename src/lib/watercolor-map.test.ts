@@ -1,6 +1,7 @@
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import type { StyleSpecification } from "maplibre-gl";
+import { createExpression } from "@maplibre/maplibre-gl-style-spec";
 import { describe, expect, it, vi } from "vitest";
 import {
   BUILDING_PATTERN_ART,
@@ -11,6 +12,7 @@ import {
   FALLBACK_MAP_STYLE,
   FULL_ART_BUDGET_BYTES,
   INITIAL_ART_BUDGET_BYTES,
+  LOCAL_TRANSIT_FILTER,
   loadWatercolorMapStyle,
   mapDayPalette,
   mapSunLighting,
@@ -20,6 +22,7 @@ import {
   transitIconExpression,
   transitIconForSubclass,
   transitIconScaleForSubclass,
+  transitIconScaleExpression,
   watercolorLayerRank,
   WATERCOLOR_LAYER_ORDER,
 } from "./watercolor-map";
@@ -49,6 +52,12 @@ function layer(style: StyleSpecification, id: string) {
 
 function assetBytes(url: string) {
   return statSync(join(process.cwd(), "public", url.replace(/^\//, ""))).size;
+}
+
+function evaluateTransit(expression: unknown, properties: Record<string, string | number>) {
+  const compiled = createExpression(expression);
+  if (compiled.result === "error") throw new Error(JSON.stringify(compiled.value));
+  return compiled.value.evaluate({ zoom: 16 }, { type: "Point", properties });
 }
 
 describe("watercolor map style", () => {
@@ -112,9 +121,29 @@ describe("watercolor map style", () => {
     expect(benchExpression).not.toContain("benchly-wash-shade");
     expect(transitExpression).toContain("benchly-transit-bus");
     expect(transitExpression).not.toContain("benchly-transit-rail");
+    expect(evaluateTransit(transitExpression, { subclass: "ferry_terminal" })).toBe("");
+    expect(evaluateTransit(transitExpression, { subclass: "bus_stop" })).toBe("benchly-transit-bus");
     expect(buildingExpression).toContain("benchly-building-roof-ochre");
     expect(buildingExpression).not.toContain("benchly-building-roof-terracotta");
     expect(BUILDING_PATTERN_ART).toHaveLength(4);
+  });
+
+  it("includes Spiez Schiffstation and the other boat-stop classes without treating marinas as transit", () => {
+    // Actual POI from swisstopo base.vt/v1.0.0/14/8541/5783.pbf,
+    // checked 2026-09-05: 46.68847823652703, 7.6898932456970215.
+    const spiez = { class: "ferry_terminal", subclass: "ferry_terminal", "name:latin": "Spiez Schiffstation", station_id: 8507154 };
+    const available = new Set(TRANSIT_MAP_ART.map((asset) => asset.name));
+    for (const subclass of [spiez.subclass, "ferry", "car_ferry"]) {
+      const properties = { ...spiez, subclass };
+      expect(evaluateTransit(LOCAL_TRANSIT_FILTER, properties)).toBe(true);
+      expect(transitIconForSubclass(subclass)).toBe("benchly-transit-ferry");
+      expect(evaluateTransit(transitIconExpression(available), properties)).toBe("benchly-transit-ferry");
+      expect(evaluateTransit(transitIconScaleExpression(), properties)).toBe(transitIconScaleForSubclass(subclass));
+    }
+    for (const subclass of ["marina", "harbour", "cafe"]) {
+      expect(evaluateTransit(LOCAL_TRANSIT_FILTER, { subclass })).toBe(false);
+      expect(evaluateTransit(transitIconExpression(available), { subclass })).toBe("");
+    }
   });
 
   it("falls back quickly when the remote style never answers", async () => {
