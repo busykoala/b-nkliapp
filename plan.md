@@ -52,7 +52,7 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 - [x] Container-Test als Target des produktiven Worker-Dockerfiles definieren; keine Dockerdateien unter `worker/tests`.
 - [x] Bildanalyse in konkrete Module für Inference-Client, Analyse-Orchestrierung und Qualitätsprüfung zerlegen; die vollständige Worker-Suite besteht.
 - [x] Verbliebene grosse Python-Module auf konkrete, nicht-generische Trennmöglichkeiten prüfen; STAC/Download, Vektorimport und Geländeprofil-Client sind getrennt, rein rechnerische Module bleiben bewusst zusammenhängend.
-- [ ] Worker-Testtarget im Container ausführen; lokal ist Docker Desktops gesamter Container-Egress defekt, deshalb ist derselbe Build als verpflichtendes CI-Gate ergänzt.
+- [x] Worker-Testtarget im produktiven Dockerfile als verpflichtendes CI-Gate ausführen; GitHub Actions hat Build und Tests erfolgreich abgeschlossen.
 
 ## 4. Datenbankentscheidung
 
@@ -97,10 +97,10 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 
 ## 7. Abschluss
 
-- [x] Aktueller Stand: 131 TypeScript- und 63 Python-Tests bestehen; TypeScript-Check ist grün.
-- [x] Gesamte Unit- und Worker-Suite sowie vollständige Produktions-Mobile-E2E-Suite ausführen (131 + 63 + 51 bestanden, 3 plattformspezifisch übersprungen).
+- [x] Aktueller Stand: 131 TypeScript- und 64 Python-Tests bestehen; TypeScript-Check ist grün.
+- [x] Gesamte Unit- und Worker-Suite sowie vollständige Produktions-Mobile-E2E-Suite ausführen (131 + 64 + 51 bestanden, 3 plattformspezifisch übersprungen).
 - [x] Lint ohne Warnungen und Produktions-Build erfolgreich ausführen.
 - [x] Generierte Katalogdateien lokal auf Synchronität prüfen; CI-Regel ist vorhanden.
-- [ ] Änderungen prüfen, committen und pushen.
-- [ ] App und Worker releasen/deployen; Infrastrukturänderungen ausschliesslich aus `../server` deployen.
+- [x] Änderungen prüfen, committen und pushen.
+- [x] App und Worker über immutable Digests releasen/deployen; Infrastruktur blieb ausschliesslich in `../server`.
 - [ ] Produktionszustand, CronJobs, Datenalter und Kernabläufe nach dem Deployment verifizieren.

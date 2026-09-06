@@ -15,7 +15,7 @@
         "--noise-raster",
         "/data/sources/sonbase-day.tif",
         "--limit",
-        "10000"
+        "2000"
       ],
       "profile": "landscape",
       "purpose": "production"
