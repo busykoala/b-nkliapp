@@ -97,10 +97,10 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 
 ## 7. Abschluss
 
-- [x] Aktueller Stand: 131 TypeScript- und 64 Python-Tests bestehen; TypeScript-Check ist grün.
-- [x] Gesamte Unit- und Worker-Suite sowie vollständige Produktions-Mobile-E2E-Suite ausführen (131 + 64 + 51 bestanden, 3 plattformspezifisch übersprungen).
+- [x] Aktueller Stand: 131 TypeScript- und 65 Python-Tests bestehen; TypeScript-Check ist grün.
+- [x] Gesamte Unit- und Worker-Suite sowie vollständige Produktions-Mobile-E2E-Suite ausführen (131 + 65 + 51 bestanden, 3 plattformspezifisch übersprungen).
 - [x] Lint ohne Warnungen und Produktions-Build erfolgreich ausführen.
 - [x] Generierte Katalogdateien lokal auf Synchronität prüfen; CI-Regel ist vorhanden.
 - [x] Änderungen prüfen, committen und pushen.
 - [x] App und Worker über immutable Digests releasen/deployen; Infrastruktur blieb ausschliesslich in `../server`.
-- [ ] Produktionszustand, CronJobs, Datenalter und Kernabläufe nach dem Deployment verifizieren.
+- [x] Produktion mit mobiler Sichtprüfung, Helm-/Datenaudit, realem Reconcile-Pilot, 21 kataloggenerierten CronJobs, GraphHopper, öffentlichen Datenständen und fehlerfreiem Cluster verifizieren.
