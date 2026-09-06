@@ -27,6 +27,31 @@ class LandscapeTests(unittest.TestCase):
         self.assertAlmostEqual(evidence[0], .2)
         self.assertEqual(evidence[6], 64.0)
 
+    def test_masked_sonbase_value_is_ignored_before_conversion(self):
+        class EmptyResult:
+            def fetchall(self):
+                return []
+
+        class EmptyDatabase:
+            def execute(self, *_args):
+                return EmptyResult()
+
+        class MaskedValue:
+            mask = True
+
+            def __float__(self):
+                raise AssertionError("masked NoData must not be converted")
+
+        class NoiseRaster:
+            nodata = -9999.0
+
+            def sample(self, positions, masked=False):
+                return iter([[MaskedValue()] for _ in positions])
+
+        evidence = cell_evidence(EmptyDatabase(), 46.68844, 7.68949, noise=NoiseRaster())
+        self.assertEqual(evidence[0], 1.0)
+        self.assertIsNone(evidence[6])
+
     def test_missing_terrain_is_unknown_not_flat_sky(self):
         self.assertIsNone(horizon_at(Point(2600000, 1200000), None))
 

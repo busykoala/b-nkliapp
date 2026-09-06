@@ -117,12 +117,13 @@ def cell_evidence(connection, latitude, longitude, terrain=None, surface=None, n
     if noise is not None:
         try:
             sample = next(noise.sample([(point.x, point.y)], masked=True))[0]
-            value = float(sample)
-            if not getattr(sample, "mask", False) and math.isfinite(value) and value != noise.nodata and 0 <= value <= 100:
-                road_noise_db = value
-                # sonBASE is measured/modelled evidence in dB. This bounded mapping
-                # is only an internal ranking scale; the source value is retained.
-                quiet = min(quiet, max(0.0, min(1.0, (70.0 - value) / 30.0)))
+            if not getattr(sample, "mask", False):
+                value = float(sample)
+                if math.isfinite(value) and value != noise.nodata and 0 <= value <= 100:
+                    road_noise_db = value
+                    # sonBASE is measured/modelled evidence in dB. This bounded mapping
+                    # is only an internal ranking scale; the source value is retained.
+                    quiet = min(quiet, max(0.0, min(1.0, (70.0 - value) / 30.0)))
         except (ValueError, IndexError, TypeError):
             pass
     horizon = horizon_at(point, terrain, surface)
