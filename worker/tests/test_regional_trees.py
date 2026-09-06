@@ -43,7 +43,12 @@ def test_basel_tree_import_has_explicit_scope_and_provenance(tmp_path: Path):
             {
                 "type": "Feature",
                 "geometry": {"type": "Point", "coordinates": [7.59, 47.56]},
-                "properties": {"gml_id": "BA_Baeume.1", "ba_baumnr": "BS-1", "baumart_deutsch": "Linde"},
+                "properties": {
+                    "gml_id": "BA_Baeume.1",
+                    "ba_baumnr": "BS-1",
+                    "baumart_deutsch": "Linde",
+                    "ba_standjahr": 1067,
+                },
             },
             {
                 "type": "Feature",
@@ -58,3 +63,4 @@ def test_basel_tree_import_has_explicit_scope_and_provenance(tmp_path: Path):
         row = database.execute("SELECT source,source_id,raw_tags FROM environment_features").fetchone()
         assert (row["source"], row["source_id"]) == (BASEL_SOURCE, "BS-1")
         assert json.loads(row["raw_tags"])["name"] == "Linde"
+        assert json.loads(row["raw_tags"])["stand_age_years"] is None

@@ -9,7 +9,7 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from shapely.geometry import Point
 
 from benchly.catalog import load_catalog
@@ -121,7 +121,17 @@ class BaselTreeProperties(BaseModel):
     baumart_lateinisch: str | None = None
     baumart_deutsch: str | None = None
     ba_gruppe: str | None = None
-    ba_standjahr: int | None = Field(default=None, ge=0, le=500)
+    ba_standjahr: int | None = None
+
+    @field_validator("ba_standjahr", mode="before")
+    @classmethod
+    def plausible_stand_age(cls, value: object) -> int | None:
+        """Keep the tree when this optional source value contains an implausible outlier."""
+        try:
+            years = int(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+        return years if years is not None and 0 <= years <= 500 else None
 
 
 class BaselTreeFeature(BaseModel):
