@@ -294,19 +294,19 @@ export function addCoreArtLayers(map: MapLibreMap) {
   if (available.has("benchly-wash-cluster") && !map.getLayer("benchly-cluster-art")) map.addLayer({
     id: "benchly-cluster-art", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"],
     layout: { "icon-image": "benchly-wash-cluster", "icon-size": ["interpolate", ["linear"], ["get", "count"], 2, .4, 50, .56, 500, .78], "icon-allow-overlap": true },
-    paint: { "icon-opacity": .96 },
+    paint: { "icon-opacity": .82 },
   }, "cluster-count");
   const hasBenchWash = ["benchly-wash-sunny", "benchly-wash-shade", "benchly-wash-neutral", "benchly-wash-unverified"]
     .some((name) => available.has(name));
   if (hasBenchWash && !map.getLayer("benchly-bench-washes")) map.addLayer({
     id: "benchly-bench-washes", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "bench"],
     layout: { "icon-image": benchWashIconExpression(available), "icon-size": ["interpolate", ["linear"], ["zoom"], 7, .36, 13, .46, 18, .62], "icon-offset": [0, 4], "icon-allow-overlap": true, "icon-ignore-placement": true },
-    paint: { "icon-opacity": .82 },
+    paint: { "icon-opacity": .68 },
   });
   if (available.has("benchly-bench") && !map.getLayer("benchly-benches-art")) map.addLayer({
     id: "benchly-benches-art", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "bench"],
     layout: { "icon-image": "benchly-bench", "icon-size": ["interpolate", ["linear"], ["zoom"], 7, .3, 13, .4, 18, .58], "icon-offset": [0, -2], "icon-allow-overlap": true, "icon-ignore-placement": true },
-    paint: { "icon-opacity": .94 },
+    paint: { "icon-opacity": .9 },
   });
   if (available.has("benchly-wash-selected") && !map.getLayer("benchly-selected-wash")) map.addLayer({
     id: "benchly-selected-wash", type: "symbol", source: "selected-bench",
@@ -317,12 +317,23 @@ export function addCoreArtLayers(map: MapLibreMap) {
     id: "benchly-selected-bench", type: "symbol", source: "selected-bench",
     layout: { "icon-image": "benchly-bench", "icon-size": ["interpolate", ["linear"], ["zoom"], 7, .34, 13, .46, 18, .64], "icon-offset": [0, -2], "icon-allow-overlap": true },
   });
-  if (available.has("benchly-wash-cluster")) map.setPaintProperty("clusters", "circle-opacity", .025);
+  if (available.has("benchly-wash-cluster")) {
+    map.setPaintProperty("clusters", "circle-opacity", 0);
+    map.setPaintProperty("clusters", "circle-stroke-opacity", 0);
+    map.setPaintProperty("cluster-count", "text-color", "#344f43");
+    map.setPaintProperty("cluster-count", "text-halo-color", "#f8eed7");
+    map.setPaintProperty("cluster-count", "text-halo-width", .7);
+  }
   if (available.has("benchly-bench")) {
     map.setPaintProperty("benches", "circle-opacity", 0);
+    map.setPaintProperty("benches", "circle-stroke-opacity", 0);
     map.setPaintProperty("selected-bench-core", "circle-opacity", 0);
+    map.setPaintProperty("selected-bench-core", "circle-stroke-opacity", 0);
   }
-  if (available.has("benchly-wash-selected")) map.setPaintProperty("selected-bench-halo", "circle-opacity", 0);
+  if (available.has("benchly-wash-selected")) {
+    map.setPaintProperty("selected-bench-halo", "circle-opacity", 0);
+    map.setPaintProperty("selected-bench-halo", "circle-stroke-opacity", 0);
+  }
 }
 
 export function addCoreMapLayers(map: MapLibreMap, initialFeatures: MapFeature[] = []) {

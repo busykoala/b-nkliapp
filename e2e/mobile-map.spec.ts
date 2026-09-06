@@ -31,6 +31,20 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
 });
 
+test("renders calm watercolor markers from overview to close range", async ({ page }, testInfo) => {
+  await page.goto("/");
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  await map.screenshot({ path: testInfo.outputPath("watercolor-markers-overview.png") });
+  const search = page.getByRole("combobox", { name: "Ort suchen" });
+  await search.fill("Lindenhof");
+  await page.getByRole("option").first().click();
+  await expect(page.getByRole("complementary", { name: "Bankdetails" })).toBeVisible();
+  await page.getByLabel("Bank schliessen").click();
+  await expect(map).toHaveAttribute("aria-busy", "false");
+  await map.screenshot({ path: testInfo.outputPath("watercolor-marker-close.png") });
+});
+
 test("keeps map search and filters clear with keyboard input", async ({ page }, testInfo) => {
   await page.goto("/");
   const search = page.getByRole("combobox", { name: "Ort suchen" });

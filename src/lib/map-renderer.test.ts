@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
-import { addCoreMapLayers, featureCollection, loadMapArt, selectedBenchFeature } from "./map-renderer";
+import { addCoreArtLayers, addCoreMapLayers, featureCollection, loadMapArt, selectedBenchFeature } from "./map-renderer";
 import type { BenchDetail, MapFeature } from "./types";
 
 describe("map rendering", () => {
@@ -29,6 +29,22 @@ describe("map rendering", () => {
     const layer = (id: string) => layers.find((item) => item.id === id);
     expect(layer("bench-hits").paint["circle-radius"]).toBe(22);
     expect(layer("benches").paint["circle-color"]).toEqual(layer("selected-bench-core").paint["circle-color"]);
+  });
+
+  it("removes hard fallback rings after watercolor markers load", () => {
+    const layers = new Set(["clusters", "cluster-count", "benches", "selected-bench-core", "selected-bench-halo"]);
+    const setPaintProperty = vi.fn();
+    const map = {
+      hasImage: () => true,
+      getLayer: (id: string) => layers.has(id) ? { id } : undefined,
+      addLayer: vi.fn((layer: { id: string }) => layers.add(layer.id)),
+      setPaintProperty,
+    } as unknown as MapLibreMap;
+    addCoreArtLayers(map);
+    for (const layer of ["clusters", "benches", "selected-bench-core", "selected-bench-halo"]) {
+      expect(setPaintProperty).toHaveBeenCalledWith(layer, "circle-stroke-opacity", 0);
+    }
+    expect(setPaintProperty).toHaveBeenCalledWith("cluster-count", "text-color", "#344f43");
   });
 
   it("reuses registered GPU images and isolates individual loading failures", async () => {
