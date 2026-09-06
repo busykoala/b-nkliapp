@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import sqlite3
 from typing import Optional, Sequence
 
@@ -12,6 +13,7 @@ from benchly.context.geometry import (
     feature_nearest_location,
     point_hits_exact_building,
 )
+
 
 def nearby_context(connection: sqlite3.Connection, latitude: float, longitude: float, radius_meters: float,
                    kinds: Optional[Sequence[str]] = None) -> list[sqlite3.Row]:

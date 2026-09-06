@@ -15,7 +15,7 @@ from shapely.geometry import Polygon
 
 from benchly.benches.domain import context_kind, parse_bool, parse_direction, parse_height, score_view
 from benchly.benches.importer import import_osm
-from benchly.context.evidence import preferred_environment_context, preferred_exact_features
+from benchly.context.evidence import nearby_context, preferred_environment_context, preferred_exact_features
 from benchly.context.importer import finalize_swisstlm_import, import_swisstlm_geopackage
 from benchly.context.geometry import (
     canopy_neighborhood,
@@ -77,6 +77,21 @@ class WorkerUnitTests(unittest.TestCase):
         self.assertLess(expanded[1], bounds[1])
         self.assertGreater(expanded[2], bounds[2])
         self.assertGreater(expanded[3], bounds[3])
+
+    def test_nearby_context_builds_longitude_bounds(self):
+        database = sqlite3.connect(":memory:")
+        database.row_factory = sqlite3.Row
+        database.executescript("""
+          CREATE TABLE environment_features(row_id INTEGER PRIMARY KEY, kind TEXT);
+          CREATE VIRTUAL TABLE environment_spatial_index USING rtree(
+            row_id, min_longitude, max_longitude, min_latitude, max_latitude
+          );
+          INSERT INTO environment_features(row_id, kind) VALUES (1, 'water');
+          INSERT INTO environment_spatial_index VALUES (1, 7.68, 7.70, 46.68, 46.70);
+        """)
+        result = nearby_context(database, 46.68844, 7.68949, 100, ["water"])
+        self.assertEqual([row["kind"] for row in result], ["water"])
+        database.close()
 
     def test_worker_lock_rejects_a_second_writer(self):
         with TemporaryDirectory() as directory:
