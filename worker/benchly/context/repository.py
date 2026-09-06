@@ -29,7 +29,11 @@ def _upsert(database, model, rows: Sequence[dict[str, object]], keys: list, fiel
 
 
 def upsert_environment_features(database, rows: Sequence[dict[str, object]]) -> None:
-    rows = [EnvironmentFeature.model_validate(row).model_dump(exclude_unset=True, exclude={"row_id"}) for row in rows]
+    rows = [
+        {field: getattr(validated, field) for field in row if field != "row_id"}
+        for row in rows
+        for validated in [EnvironmentFeature.model_validate(row)]
+    ]
     fields = tuple(key for key in rows[0] if key not in {"source", "source_id", "kind"}) if rows else ()
     _upsert(
         database,
@@ -41,7 +45,11 @@ def upsert_environment_features(database, rows: Sequence[dict[str, object]]) -> 
 
 
 def upsert_land_cover(database, rows: Sequence[dict[str, object]]) -> None:
-    rows = [LandCoverFeature.model_validate(row).model_dump(exclude_unset=True, exclude={"row_id"}) for row in rows]
+    rows = [
+        {field: getattr(validated, field) for field in row if field != "row_id"}
+        for row in rows
+        for validated in [LandCoverFeature.model_validate(row)]
+    ]
     fields = tuple(key for key in rows[0] if key not in {"source", "source_id", "cover_class"}) if rows else ()
     _upsert(
         database,
@@ -74,6 +82,16 @@ def discard_old_osm_context(database, imported_at: str) -> None:
         database,
         delete(EnvironmentFeature).where(
             EnvironmentFeature.source == "OpenStreetMap",
+            EnvironmentFeature.imported_at != imported_at,
+        ),
+    )
+
+
+def discard_old_source_generation(database, source: str, imported_at: str) -> None:
+    write(
+        database,
+        delete(EnvironmentFeature).where(
+            EnvironmentFeature.source == source,
             EnvironmentFeature.imported_at != imported_at,
         ),
     )

@@ -26,9 +26,8 @@ classified as canopy; it never proves that a bench is inside a forest.
 Run a small local pilot after starting the app once (which creates the schema):
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r worker/requirements.txt
-.venv/bin/python worker/benchly_worker.py refresh \
+uv sync
+uv run python worker/benchly_worker.py refresh \
   --pbf /path/to/switzerland-latest.osm.pbf \
   --terrain-dir /path/to/swissALTI3D-tifs \
   --surface-dir /path/to/swissSURFACE3D-tifs \
@@ -49,17 +48,17 @@ Production automation should run the bounded stages separately. They share a non
 writer lock next to the database, so overlapping CronJobs safely skip instead of competing:
 
 ```bash
-python3 worker/benchly_worker.py import-osm --database /data/benchly.sqlite
-python3 worker/benchly_worker.py enrich-batch --database /data/benchly.sqlite \
+uv run python worker/benchly_worker.py import-osm --database /data/benchly.sqlite
+uv run python worker/benchly_worker.py enrich-batch --database /data/benchly.sqlite \
   --limit 1000 --max-runtime-hours 8 --max-download-gib 80
-python3 worker/benchly_worker.py enrich-profile-batch --database /data/benchly.sqlite \
+uv run python worker/benchly_worker.py enrich-profile-batch --database /data/benchly.sqlite \
   --limit 1000 --requests-per-second 1 --max-runtime-minutes 45
-python3 worker/benchly_worker.py refresh-commons --database /data/benchly.sqlite --limit 500
-python3 worker/benchly_worker.py import-official-context --database /data/benchly.sqlite
-python3 worker/benchly_worker.py discover-open-images --database /data/benchly.sqlite --max-cells 500
-python3 worker/benchly_worker.py analyze-scenes --database /data/benchly.sqlite --limit 300
-python3 worker/benchly_worker.py reconcile-environment --database /data/benchly.sqlite --limit 5000
-python3 worker/benchly_worker.py audit-environment --database /data/benchly.sqlite
+uv run python worker/benchly_worker.py refresh-commons --database /data/benchly.sqlite --limit 500
+uv run python worker/benchly_worker.py import-official-context --database /data/benchly.sqlite
+uv run python worker/benchly_worker.py discover-open-images --database /data/benchly.sqlite --max-cells 500
+uv run python worker/benchly_worker.py analyze-scenes --database /data/benchly.sqlite --limit 300
+uv run python worker/benchly_worker.py reconcile-environment --database /data/benchly.sqlite --limit 5000
+uv run python worker/benchly_worker.py audit-environment --database /data/benchly.sqlite
 ```
 
 `enrich-batch` chooses the next stale geographic cell, requests only intersecting STAC
@@ -95,7 +94,7 @@ set. Every location has an `id`, Swiss coordinates, one of `true_forest`, `fores
 category are required.
 
 ```bash
-python3 worker/benchly_worker.py benchmark-vision --dataset evaluation.jsonl \
+uv run python worker/benchly_worker.py benchmark-vision --dataset evaluation.jsonl \
   --models benchly-vision general
 ```
 

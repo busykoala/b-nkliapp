@@ -1,0 +1,33 @@
+[project]
+name = "benchly-worker"
+version = "0.1.0"
+description = "Data imports and enrichment for Benchly"
+requires-python = ">=3.12"
+dependencies = [
+  "astral==3.2",
+  "h5py==3.14.0",
+  "meteodata-lab==0.8.0",
+  "numpy==2.3.4",
+  "osmium==4.1.1",
+  "pydantic>=2.12,<3",
+  "pyproj==3.7.2",
+  "rasterio==1.4.3",
+  "scipy==1.16.1",
+  "shapely==2.1.2",
+  "sqlmodel==0.0.42",
+]
+
+[dependency-groups]
+test = [
+  "pytest>=8.4,<10",
+  "pytest-cov>=7,<8",
+]
+
+[tool.uv]
+package = false
+default-groups = ["test"]
+
+[tool.pytest.ini_options]
+testpaths = ["worker/tests"]
+pythonpath = ["worker"]
+addopts = "--strict-markers --strict-config"

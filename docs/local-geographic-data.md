@@ -21,8 +21,8 @@ Stream the read-only export to a new local archive (replace `APP_POD`):
 ```sh
 kubectl --kubeconfig ../server/kubeconfig -n benchly exec -i APP_POD -- node \
   < scripts/export-geographic-data.cjs > /tmp/benchly-geography.jsonl.gz
-python3 scripts/import-geographic-data.py /tmp/benchly-geography.jsonl.gz
-python3 scripts/import-geographic-data.py /tmp/benchly-geography.jsonl.gz \
+PYTHONPATH=worker uv run python worker/benchly_worker.py import-geography /tmp/benchly-geography.jsonl.gz
+PYTHONPATH=worker uv run python worker/benchly_worker.py import-geography /tmp/benchly-geography.jsonl.gz \
   --apply --backup data/benchly-before-geography.sqlite
 ```
 
@@ -45,5 +45,5 @@ metadata edits matched the backup. No production data was changed.
 Safety checks:
 
 ```sh
-python3 -m unittest discover -s scripts -p test_geographic_import.py -v
+uv run pytest worker/tests/test_geographic_transfer.py
 ```

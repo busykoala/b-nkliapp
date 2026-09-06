@@ -10,6 +10,7 @@ test("opens catalog-driven thanks, sources and refreshes", async ({ page }) => {
     await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
   }
   await expect(page.getByText("stündlich", { exact: true })).toBeVisible();
-  await expect(page.locator(".refresh-list details")).toHaveCount(14);
+  await expect(page.locator(".refresh-list details")).toHaveCount(21);
+  await page.locator(".refresh-list details").first().locator("summary").click();
+  await expect(page.getByText(/Noch kein erfolgreicher Lauf gemeldet|Stand/).first()).toBeVisible();
 });
-

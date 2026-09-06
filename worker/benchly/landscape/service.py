@@ -68,7 +68,7 @@ def horizon_at(point, terrain, surface=None):
         return None
 
 
-def cell_evidence(connection, latitude, longitude, terrain=None, surface=None):
+def cell_evidence(connection, latitude, longitude, terrain=None, surface=None, noise=None):
     point = Point(*TO_SWISS(longitude, latitude))
     rows = connection.execute("""SELECT f.* FROM environment_spatial_index s
         CROSS JOIN environment_features f ON f.row_id=s.row_id
@@ -91,9 +91,13 @@ def cell_evidence(connection, latitude, longitude, terrain=None, surface=None):
             quiet = min(quiet, min(1, distance / influence))
         elif row["kind"] == "forest" and distance <= 5:
             nature, canopy = 1.0, .85
-        elif row["kind"] == "tree" and distance <= 10:
-            canopy = max(canopy, .65)
-            nature = max(nature, .5)
+        elif row["kind"] == "tree":
+            tags = json.loads(row["raw_tags"] or "{}")
+            crown = tags.get("crown_diameter_m")
+            crown_radius = float(crown) / 2 if isinstance(crown, (int, float)) and 0 < crown <= 80 else 4
+            if distance <= max(10, crown_radius + 3):
+                canopy = max(canopy, min(.9, .55 + crown_radius / 40))
+                nature = max(nature, .5)
         elif row["kind"] == "water":
             water = max(water, max(0, 1 - distance / 75))
     # Reuse exact official land cover as well as OSM trees/forest. A park is not
@@ -109,9 +113,21 @@ def cell_evidence(connection, latitude, longitude, terrain=None, surface=None):
                     nature = max(nature, .8)
             except (ValueError, TypeError):
                 continue
+    road_noise_db = None
+    if noise is not None:
+        try:
+            sample = next(noise.sample([(point.x, point.y)], masked=True))[0]
+            value = float(sample)
+            if not getattr(sample, "mask", False) and math.isfinite(value) and value != noise.nodata and 0 <= value <= 100:
+                road_noise_db = value
+                # sonBASE is measured/modelled evidence in dB. This bounded mapping
+                # is only an internal ranking scale; the source value is retained.
+                quiet = min(quiet, max(0.0, min(1.0, (70.0 - value) / 30.0)))
+        except (ValueError, IndexError, TypeError):
+            pass
     horizon = horizon_at(point, terrain, surface)
     view = sum(max(0, 1 - value / 45) for value in horizon) / 72 if horizon else None
-    return (quiet, nature, water, view, canopy, json.dumps(horizon) if horizon else None)
+    return (quiet, nature, water, view, canopy, json.dumps(horizon) if horizon else None, road_noise_db)
 
 
 def refresh(args):
@@ -131,7 +147,7 @@ def build_snapshot(args):
     source.row_factory = sqlite3.Row
     state = open_database(state_path)
     create_schema(state)
-    terrain = surface = None
+    terrain = surface = noise = None
     try:
         if args.terrain_raster or args.surface_raster:
             import rasterio
@@ -139,6 +155,12 @@ def build_snapshot(args):
             surface = rasterio.open(args.surface_raster) if args.surface_raster else None
             if any(dataset and dataset.crs.to_epsg() != 2056 for dataset in (terrain, surface)):
                 raise ValueError("Landscape rasters must use EPSG:2056")
+        noise_path = Path(args.noise_raster) if getattr(args, "noise_raster", None) else None
+        if noise_path and noise_path.exists():
+            import rasterio
+            noise = rasterio.open(noise_path)
+            if noise.crs is None or noise.crs.to_epsg() != 2056 or noise.count != 1:
+                raise ValueError("Noise raster must be a one-band EPSG:2056 GeoTIFF")
         bounds = getattr(args, "bounds", None)
         if bounds and not (5.7 <= bounds[0] < bounds[2] <= 10.7 and 45.7 <= bounds[1] < bounds[3] <= 47.9):
             raise ValueError("Invalid Swiss pilot bounds")
@@ -184,7 +206,7 @@ def build_snapshot(args):
                                 if state.execute("SELECT 1 FROM cells WHERE x=? AND y=? AND updated_at>=?", (cx, cy, now[:10])).fetchone():
                                     continue
                                 lat, lon = cy / 4000, cx / 4000
-                                evidence = cell_evidence(source, lat, lon, terrain, surface)
+                                evidence = cell_evidence(source, lat, lon, terrain, surface, noise)
                                 # Preserve source age rather than claiming fresh observations.
                                 updated = row["imported_at"] or now
                                 pending_cells.append({
@@ -193,6 +215,7 @@ def build_snapshot(args):
                                     "latitude": lat,
                                     "longitude": lon,
                                     "quiet": evidence[0],
+                                    "road_noise_db": evidence[6],
                                     "nature": evidence[1],
                                     "water": evidence[2],
                                     "view": evidence[3],
@@ -237,3 +260,5 @@ def build_snapshot(args):
             terrain.close()
         if surface:
             surface.close()
+        if noise:
+            noise.close()

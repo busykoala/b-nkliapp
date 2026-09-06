@@ -577,4 +577,62 @@ export const migrations = [
       UPDATE users SET avatar_seed=lower(hex(randomblob(8))) WHERE avatar_seed='';
     `,
   },
+  {
+    id: "0013_community_environment_observations",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bench_light_observations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        choice TEXT NOT NULL CHECK(choice IN ('sun','shade','mixed')),
+        observed_at TEXT NOT NULL,
+        season TEXT NOT NULL CHECK(season IN ('spring','summer','autumn','winter')),
+        day_phase TEXT NOT NULL CHECK(day_phase IN ('morning','day','evening')),
+        cloud_cover REAL CHECK(cloud_cover IS NULL OR cloud_cover BETWEEN 0 AND 1),
+        created_at TEXT NOT NULL,
+        retracted_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS light_observations_bench_context_idx
+        ON bench_light_observations(bench_row_id,season,day_phase,observed_at DESC)
+        WHERE retracted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS light_observations_user_idx
+        ON bench_light_observations(user_id,observed_at DESC);
+
+      CREATE TABLE IF NOT EXISTS bench_view_observations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL CHECK(kind IN ('agreement','correction')),
+        openness TEXT CHECK(openness IN ('wide','partial','enclosed')),
+        sky TEXT CHECK(sky IN ('open','partial','closed')),
+        relief TEXT CHECK(relief IN ('flat','gentle','strong')),
+        water TEXT CHECK(water IN ('clear','some','none')),
+        horizon TEXT CHECK(horizon IN ('open','trees','buildings','mixed')),
+        naturalness TEXT CHECK(naturalness IN ('natural','mixed','built')),
+        disturbance TEXT CHECK(disturbance IN ('quiet','some','strong')),
+        season TEXT NOT NULL CHECK(season IN ('spring','summer','autumn','winter')),
+        observed_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        retracted_at TEXT,
+        CHECK(kind='agreement' OR (
+          openness IS NOT NULL AND sky IS NOT NULL AND relief IS NOT NULL AND water IS NOT NULL
+          AND horizon IS NOT NULL AND naturalness IS NOT NULL AND disturbance IS NOT NULL
+        ))
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS view_observations_one_active_per_user
+        ON bench_view_observations(bench_row_id,user_id) WHERE retracted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS view_observations_bench_idx
+        ON bench_view_observations(bench_row_id,observed_at DESC) WHERE retracted_at IS NULL;
+
+      CREATE TABLE IF NOT EXISTS bench_environment_estimates (
+        bench_row_id INTEGER PRIMARY KEY REFERENCES benches(row_id) ON DELETE CASCADE,
+        components TEXT NOT NULL,
+        horizon TEXT NOT NULL,
+        community_contributors INTEGER NOT NULL,
+        confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+        model_version TEXT NOT NULL,
+        computed_at TEXT NOT NULL
+      );
+    `,
+  },
 ];

@@ -7,15 +7,15 @@ import { pathTimes, routePoint, type WalkPath } from "../walking";
 import type { RouteEvidence, WalkQuery } from "./model";
 import { loadWeatherGrid, sampleWeatherGrid } from "@/integrations/weather/repository";
 
-type Cell = { quiet: number; nature: number; water: number; view: number | null; canopy: number; horizon: string | null; latitude: number; longitude: number; updated_at: string };
+type Cell = { quiet: number; road_noise_db?: number | null; nature: number; water: number; view: number | null; canopy: number; horizon: string | null; latitude: number; longitude: number; updated_at: string };
 export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
-  const result: RouteEvidence = { quiet: null, nature: null, water: null, view: null, light: null, lightCoverage: 0, coverage: 0, updatedAt: null, reasons: [], warnings: [] };
+  const result: RouteEvidence = { quiet: null, nature: null, water: null, view: null, light: null, lightCoverage: 0, coverage: 0, updatedAt: null, sources: [], reasons: [], warnings: [] };
   let db: Database.Database | undefined;
   try {
     db = new Database(process.env.LANDSCAPE_DATABASE_PATH ?? join(dirname(process.env.DATABASE_PATH ?? "data/benchly.sqlite"), "landscape.sqlite"), { readonly: true, fileMustExist: true });
     const lookup = db.prepare("SELECT * FROM cells WHERE x=? AND y=?");
     const clouds = loadWeatherGrid("CLCT");
-    let total = 0, known = 0, quiet = 0, nature = 0, water = 0, view = 0, viewKnown = 0, lit = 0, lightKnown = 0;
+    let total = 0, known = 0, quiet = 0, nature = 0, water = 0, view = 0, viewKnown = 0, lit = 0, lightKnown = 0, noiseKnown = 0;
     const times = pathTimes(path, query.speed);
     let elapsed = 0;
     for (let i = 1; i < path.geometry.length; i++) {
@@ -29,6 +29,7 @@ export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
         if (!c || !Number.isFinite(Date.parse(c.updated_at)) || Date.now() - Date.parse(c.updated_at) > 30 * 86400000) continue;
         result.updatedAt = !result.updatedAt || c.updated_at < result.updatedAt ? c.updated_at : result.updatedAt;
         known += weight; quiet += c.quiet * weight; nature += c.nature * weight; water += c.water * weight;
+        if (c.road_noise_db !== null && c.road_noise_db !== undefined) noiseKnown += weight;
         if (c.view !== null) { view += c.view * weight; viewKnown += weight; }
         if (c.horizon) {
           const horizon: unknown = JSON.parse(c.horizon);
@@ -53,6 +54,7 @@ export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
     if (result.coverage >= .8) { result.quiet = quiet / known; result.nature = nature / known; result.water = water / known; }
     if (viewKnown / Math.max(1, total) >= .8) result.view = view / viewKnown;
     if (query.light !== "any" && result.lightCoverage >= .8) result.light = lit / Math.max(total, 1);
+    result.sources = ["OpenStreetMap", "swissTLM3D", ...(noiseKnown / Math.max(1, total) >= .8 ? ["BAFU sonBASE"] : [])];
     if ((result.water ?? 0) >= .55) result.reasons.push("Viel Weg in Wassernähe");
     if ((result.quiet ?? 0) >= .75) result.reasons.push("Wenig Hauptstrasse im Umfeld");
     if ((result.nature ?? 0) >= .55) result.reasons.push("Viel natürliche Umgebung");

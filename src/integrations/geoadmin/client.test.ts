@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { normalizeLocationKey, searchGeoAdminLocations } from "./client";
+import { findNearestSwissName, normalizeLocationKey, searchGeoAdminLocations } from "./client";
 
 describe("GeoAdmin client", () => {
   it("normalizes Swiss place names for local lookup", () => {
@@ -22,5 +22,15 @@ describe("GeoAdmin client", () => {
     const results = await searchGeoAdminLocations("Seestrasse 1", async () => Response.json({ results: [{ id: 1, attrs: { label: "Seestrasse 1", lat: 46.68, lon: 7.69, origin: "address" } }] }));
     expect(results[0].kind).toBe("address");
   });
-});
 
+  it("uses only an explicit swissNAMES3D gazetteer result for a nearby description", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ results: [
+      { id: 1, attrs: { label: "Spiez Bahnhof", layerBodId: "ch.bav.haltestellen-oev" } },
+      { id: 2, attrs: { label: "<b>Spiezberg</b>", layerBodId: "ch.swisstopo.swissnames3d" } },
+    ] }));
+    expect(await findNearestSwissName(46.688, 7.689, fetcher)).toBe("Spiezberg");
+    const requested = new URL(String(fetcher.mock.calls[0][0]));
+    expect(requested.searchParams.get("origins")).toBe("gazetteer");
+    expect(requested.searchParams.get("bbox")).toBeTruthy();
+  });
+});

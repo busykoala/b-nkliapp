@@ -16,6 +16,7 @@ from pyproj import Transformer
 
 from benchly.catalog import load_catalog
 from benchly.weather.repository import store_snapshot
+from benchly.weather.models import RadarItem
 
 TARGET_EASTING = 2_480_000.0
 TARGET_NORTHING = 1_070_000.0
@@ -227,12 +228,12 @@ def _latest_radar_asset() -> tuple[str, str]:
         item_id = datetime.fromtimestamp(timestamp, timezone.utc).strftime("%Y%m%d-ch")
         try:
             with urllib.request.urlopen(f"{base}/{item_id}", timeout=30) as response:
-                item = json.load(response)
+                item = RadarItem.model_validate(json.load(response))
         except Exception:
             continue
-        for name, asset in (item.get("assets") or {}).items():
-            if name.lower().startswith("rzc") and str(asset.get("href", "")).endswith(".h5"):
-                candidates.append((name, str(asset["href"])))
+        for name, asset in item.assets.items():
+            if name.lower().startswith("rzc") and str(asset.href).endswith(".h5"):
+                candidates.append((name, str(asset.href)))
     if not candidates:
         raise RuntimeError("No current MeteoSwiss PRECIP asset found")
     return max(candidates)

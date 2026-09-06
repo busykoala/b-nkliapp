@@ -111,6 +111,44 @@ export type CommunityCorrection = {
   createdAt: string;
 };
 
+export type LightObservationChoice = "sun" | "shade" | "mixed";
+export type ViewObservationChoice = {
+  openness: "wide" | "partial" | "enclosed";
+  sky: "open" | "partial" | "closed";
+  relief: "flat" | "gentle" | "strong";
+  water: "clear" | "some" | "none";
+  horizon: "open" | "trees" | "buildings" | "mixed";
+  naturalness: "natural" | "mixed" | "built";
+  disturbance: "quiet" | "some" | "strong";
+};
+
+export type BenchObservationSummary = {
+  light: {
+    mine: { choice: LightObservationChoice; observedAt: string } | null;
+    publicTrend: {
+      choice: LightObservationChoice;
+      contributors: number;
+      shares: Record<LightObservationChoice, number>;
+    } | null;
+  };
+  view: {
+    mine: { kind: "agreement" | "correction"; observedAt: string } | null;
+    publicEstimate: {
+      contributors: number;
+      components: {
+        openness: number | null;
+        sky: number | null;
+        relief: number | null;
+        water: number | null;
+        naturalness: number | null;
+        remoteness: number | null;
+      };
+      horizon: { open: number; trees: number; buildings: number };
+      confidence: number;
+    } | null;
+  };
+};
+
 export type BenchDetail = {
   id: string;
   osmType: string;
@@ -218,6 +256,7 @@ export type BenchDetail = {
   myRating: { overall: number; view: number; comfort: number; quiet: number; note: string | null } | null;
   recentRatings: CommunityRating[];
   corrections: CommunityCorrection[];
+  observations: BenchObservationSummary;
   media: BenchMedia[];
   sourceUpdatedAt: string;
   pipelineVersion: string | null;

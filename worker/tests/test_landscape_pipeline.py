@@ -4,10 +4,29 @@ import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 from shapely.geometry import Point, LineString
-from landscape_pipeline import horizon_at, refresh
+from benchly.landscape.service import cell_evidence, horizon_at, refresh
 
 
 class LandscapeTests(unittest.TestCase):
+    def test_sonbase_value_tightens_quiet_score_and_is_retained(self):
+        class EmptyResult:
+            def fetchall(self):
+                return []
+
+        class EmptyDatabase:
+            def execute(self, *_args):
+                return EmptyResult()
+
+        class NoiseRaster:
+            nodata = -9999.0
+
+            def sample(self, positions, masked=False):
+                return iter([[64.0] for _ in positions])
+
+        evidence = cell_evidence(EmptyDatabase(), 46.68844, 7.68949, noise=NoiseRaster())
+        self.assertAlmostEqual(evidence[0], .2)
+        self.assertEqual(evidence[6], 64.0)
+
     def test_missing_terrain_is_unknown_not_flat_sky(self):
         self.assertIsNone(horizon_at(Point(2600000, 1200000), None))
 
@@ -38,7 +57,7 @@ class LandscapeTests(unittest.TestCase):
             c.execute("INSERT INTO environment_features VALUES(1,'path',?,4326,'2026-09-05T12:00:00Z',7.68,7.6802,46.68,46.6802)", (line.wkb,))
             c.commit()
             c.close()
-            args = SimpleNamespace(database=str(source_path), landscape_database=str(target), limit=2, bounds=None, terrain_raster=None, surface_raster=None)
+            args = SimpleNamespace(database=str(source_path), landscape_database=str(target), limit=2, bounds=None, terrain_raster=None, surface_raster=None, noise_raster=None)
             refresh(args)
             db = sqlite3.connect(target)
             self.assertGreater(db.execute("SELECT count(*) FROM cells").fetchone()[0], 0)

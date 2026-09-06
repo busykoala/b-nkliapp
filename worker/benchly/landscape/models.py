@@ -24,6 +24,7 @@ class LandscapeCell(SQLModel, table=True):
     latitude: float
     longitude: float
     quiet: float
+    road_noise_db: Optional[float] = None
     nature: float
     water: float
     view: Optional[float] = None

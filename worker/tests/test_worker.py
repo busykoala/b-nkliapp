@@ -13,25 +13,10 @@ from shapely import to_wkb
 from shapely.affinity import translate
 from shapely.geometry import Polygon
 
-from benchly_worker import (
-    context_kind,
-    exclusive_worker_lock,
-    expand_bounds,
-    finalize_swisstlm_import,
-    import_swisstlm_geopackage,
-    parse_bool,
-    parse_direction,
-    parse_height,
-    preferred_exact_features,
-    preferred_environment_context,
-    import_osm,
-    run_benchmark_vision,
-    score_view,
-    spatial_cell_bounds,
-    terrain_horizon_from_profile,
-    terrain_profile_coordinates,
-    wgs84_to_lv95,
-)
+from benchly.benches.domain import context_kind, parse_bool, parse_direction, parse_height, score_view
+from benchly.benches.importer import import_osm
+from benchly.context.evidence import preferred_environment_context, preferred_exact_features
+from benchly.context.importer import finalize_swisstlm_import, import_swisstlm_geopackage
 from benchly.context.geometry import (
     canopy_neighborhood,
     deterministic_environment,
@@ -40,22 +25,24 @@ from benchly.context.geometry import (
     feature_distance_exact,
     point_lv95,
 )
-from visual_pipeline import (
-    DiscoveredImage,
-    ProviderDelay,
-    _request_json,
-    bearing_degrees,
-    circular_difference,
+from benchly.enrichment.service import expand_bounds, spatial_cell_bounds
+from benchly.geo import bearing_degrees, circular_difference
+from benchly.imagery.client import _request_json, infer_scene, infer_scene_frames
+from benchly.imagery.evaluation import benchmark_models, validate_evaluation_dataset
+from benchly.imagery.evidence import likely_provenance_issues, reconcile_environment
+from benchly.imagery.jobs import benchmark_vision_job
+from benchly.imagery.prediction import validate_scene_prediction
+from benchly.imagery.providers import DiscoveredImage, ProviderDelay
+from benchly.runtime import exclusive_worker_lock
+from benchly.terrain import (
+    terrain_horizon_from_profile,
+    terrain_profile_coordinates,
+    wgs84_to_lv95,
+)
+from benchly.imagery.service import (
     analyze_scenes,
-    benchmark_models,
     discover_open_images,
-    infer_scene,
-    infer_scene_frames,
-    likely_provenance_issues,
-    reconcile_environment,
     search_panoramax,
-    validate_evaluation_dataset,
-    validate_scene_prediction,
 )
 
 
@@ -112,8 +99,8 @@ class WorkerUnitTests(unittest.TestCase):
             result = {"models": {"benchly-vision": {"accepted": True}}, "recommended": "benchly-vision"}
             args = SimpleNamespace(database=str(database_path), dataset="fixture.jsonl", models=["benchly-vision"],
                                    allow_small=True, requests_per_second=.25, report_only=False)
-            with patch("benchly_worker.benchmark_models", return_value=result):
-                run_benchmark_vision(args)
+            with patch("benchly.imagery.jobs.benchmark_models", return_value=result):
+                benchmark_vision_job(args)
             stored = sqlite3.connect(database_path).execute(
                 "SELECT kind,status,stats FROM pipeline_runs ORDER BY id DESC LIMIT 1",
             ).fetchone()
@@ -281,12 +268,12 @@ class WorkerUnitTests(unittest.TestCase):
 
     def test_provider_retries_server_errors_and_honors_retry_after(self):
         server_error = urllib.error.HTTPError("https://example.test", 500, "error", {}, None)
-        with patch("visual_pipeline.urllib.request.urlopen", side_effect=[server_error, BytesIO(b'{}')]), \
-             patch("visual_pipeline.time.sleep") as sleep:
+        with patch("benchly.imagery.client.urllib.request.urlopen", side_effect=[server_error, BytesIO(b'{}')]), \
+             patch("benchly.imagery.client.time.sleep") as sleep:
             self.assertEqual(_request_json("https://example.test"), {})
             sleep.assert_called_once_with(1)
         delayed = urllib.error.HTTPError("https://example.test", 429, "slow", {"Retry-After": "123"}, None)
-        with patch("visual_pipeline.urllib.request.urlopen", side_effect=delayed):
+        with patch("benchly.imagery.client.urllib.request.urlopen", side_effect=delayed):
             with self.assertRaises(ProviderDelay) as raised:
                 _request_json("https://example.test")
         self.assertEqual(raised.exception.seconds, 123)
@@ -298,7 +285,7 @@ class WorkerUnitTests(unittest.TestCase):
             "properties": {"view:azimuth": 123, "geovisio:producer": "Contributor", "license": "CC-BY-SA-4.0"},
             "assets": {"sd": {"href": "https://example.test/image.jpg"}},
         }]}
-        with patch("visual_pipeline._request_json", return_value=payload):
+        with patch("benchly.imagery.service._request_json", return_value=payload):
             image = search_panoramax((7.8, 46.66, 7.82, 46.67))[0]
         self.assertEqual(image.capture_group_id, "panoramax:sequence-one")
         self.assertEqual(image.heading, 123)
@@ -467,8 +454,8 @@ class VisualPipelineTests(unittest.TestCase):
             database.execute("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
               latitude,longitude,license,analysis_status,discovered_at) VALUES(1,'Panoramax','one','group','https://source','https://image',47,8,'CC-BY-SA','pending','2026-09-02')""")
             with TemporaryDirectory() as directory, patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
-                 patch("visual_pipeline._download_image", return_value=(b"image-bytes", "image/jpeg")), \
-                 patch("visual_pipeline.infer_scene_frames", side_effect=RuntimeError("model failed") if failure else None, return_value=[self.prediction()]):
+                 patch("benchly.imagery.service.download_image", return_value=(b"image-bytes", "image/jpeg")), \
+                 patch("benchly.imagery.service.infer_scene_frames", side_effect=RuntimeError("model failed") if failure else None, return_value=[self.prediction()]):
                 before = list(Path(directory).iterdir())
                 analyze_scenes(database, 1, time.monotonic() + 2, requests_per_second=1000)
                 self.assertEqual(list(Path(directory).iterdir()), before)
@@ -488,8 +475,8 @@ class VisualPipelineTests(unittest.TestCase):
             database.execute("INSERT INTO bench_image_evidence VALUES(?,?,20,1,1)", (bench_id, image_id))
 
         with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
-             patch("visual_pipeline._download_image", return_value=(b"image-bytes", "image/jpeg")), \
-             patch("visual_pipeline.infer_scene_frames", return_value=[self.prediction()]):
+             patch("benchly.imagery.service.download_image", return_value=(b"image-bytes", "image/jpeg")), \
+             patch("benchly.imagery.service.infer_scene_frames", return_value=[self.prediction()]):
             stats = analyze_scenes(database, 2, time.monotonic() + 2, requests_per_second=1000,
                                    bounds=(7.8085, 46.6618, 7.8100, 46.6629))
 
@@ -514,8 +501,8 @@ class VisualPipelineTests(unittest.TestCase):
             lake_view_probability=.01, mountain_view_probability=.01, open_view_probability=.01,
         )
         with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
-             patch("visual_pipeline._download_image", return_value=(b"image-bytes", "image/jpeg")), \
-             patch("visual_pipeline.infer_scene_frames", return_value=[self.prediction(), self.prediction(), closeup]):
+             patch("benchly.imagery.service.download_image", return_value=(b"image-bytes", "image/jpeg")), \
+             patch("benchly.imagery.service.infer_scene_frames", return_value=[self.prediction(), self.prediction(), closeup]):
             stats = analyze_scenes(database, 1, time.monotonic() + 2, requests_per_second=1000)
         statuses = [row[0] for row in database.execute("SELECT analysis_status FROM image_observations ORDER BY id")]
         self.assertEqual(statuses, ["analyzed", "analyzed", "irrelevant"])
@@ -563,7 +550,7 @@ class VisualPipelineTests(unittest.TestCase):
             captured.update(json.loads(kwargs["data"]))
             return response
 
-        with patch("visual_pipeline._request_json", side_effect=request):
+        with patch("benchly.imagery.client._request_json", side_effect=request):
             actual = infer_scene_frames([(b"one", "image/jpeg"), (b"two", "image/jpeg")], "https://inference", "secret")
         self.assertEqual(actual, predictions)
         self.assertEqual(captured["response_format"]["type"], "json_schema")
@@ -608,9 +595,9 @@ class VisualPipelineTests(unittest.TestCase):
             dataset = Path(directory) / "evaluation.jsonl"
             dataset.write_text(json.dumps(record) + "\n")
             with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
-                 patch("visual_pipeline._download_image", return_value=(b"image", "image/jpeg")), \
-                 patch("visual_pipeline.time.sleep"), \
-                 patch("visual_pipeline.infer_scene", return_value=rejected):
+                 patch("benchly.imagery.evaluation.download_image", return_value=(b"image", "image/jpeg")), \
+                 patch("benchly.imagery.evaluation.time.sleep"), \
+                 patch("benchly.imagery.evaluation.infer_scene", return_value=rejected):
                 result = benchmark_models(dataset, ["benchly-vision"], allow_small=True, requests_per_second=1000)
         metrics = result["models"]["benchly-vision"]
         self.assertEqual(metrics["macro_f1"], 1)
@@ -637,9 +624,9 @@ class VisualPipelineTests(unittest.TestCase):
             dataset = Path(directory) / "evaluation.jsonl"
             dataset.write_text("\n".join(json.dumps(record) for record in records))
             with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
-                 patch("visual_pipeline._download_image", return_value=(b"image", "image/jpeg")), \
-                 patch("visual_pipeline.time.sleep"), \
-                 patch("visual_pipeline.infer_scene", side_effect=predictions):
+                 patch("benchly.imagery.evaluation.download_image", return_value=(b"image", "image/jpeg")), \
+                 patch("benchly.imagery.evaluation.time.sleep"), \
+                 patch("benchly.imagery.evaluation.infer_scene", side_effect=predictions):
                 result = benchmark_models(dataset, ["benchly-vision"], allow_small=True, requests_per_second=1000)
         metrics = result["models"]["benchly-vision"]
         self.assertEqual(metrics["high_confidence_forest_predictions"], 2)
@@ -654,7 +641,7 @@ class VisualPipelineTests(unittest.TestCase):
             calls.append(1)
             return [DiscoveredImage("Fake", "image-1", "group-1", "https://source", "https://image", 47, 8, 180, license="CC0")]
 
-        with patch("visual_pipeline.PROVIDERS", {"Fake": search}):
+        with patch("benchly.imagery.service.PROVIDERS", {"Fake": search}):
             first = discover_open_images(database, max_cells=1, requests_per_second=1000)
             second = discover_open_images(database, max_cells=1, requests_per_second=1000)
         self.assertEqual(len(calls), 1)
@@ -668,8 +655,8 @@ class VisualPipelineTests(unittest.TestCase):
         unlicensed = DiscoveredImage(
             "Fake", "image-1", "group-1", "https://source", "https://image", 47, 8,
         )
-        with patch("visual_pipeline.PROVIDERS", {"Fake": lambda _bounds: [unlicensed]}), \
-             patch("visual_pipeline.time.sleep"):
+        with patch("benchly.imagery.service.PROVIDERS", {"Fake": lambda _bounds: [unlicensed]}), \
+             patch("benchly.imagery.service.time.sleep"):
             stats = discover_open_images(database, max_cells=1, requests_per_second=1000)
         self.assertEqual(stats["images"], 0)
         self.assertEqual(database.execute("SELECT count(*) FROM image_observations").fetchone()[0], 0)
@@ -680,7 +667,7 @@ class VisualPipelineTests(unittest.TestCase):
         database.execute("INSERT INTO bench_enrichments(bench_row_id,land_context,canopy_context) VALUES(1,'open','none')")
         database.execute("INSERT INTO bench_likely_metadata(bench_row_id,land_context) VALUES(1,'open')")
 
-        with patch("visual_pipeline.PROVIDERS", {"Fake": lambda _bounds: []}):
+        with patch("benchly.imagery.service.PROVIDERS", {"Fake": lambda _bounds: []}):
             regular = discover_open_images(database, max_cells=1, requests_per_second=1000,
                                            bounds=(7.8085, 46.6618, 7.8100, 46.6629))
             targeted = discover_open_images(database, max_cells=1, requests_per_second=1000,
@@ -697,7 +684,7 @@ class VisualPipelineTests(unittest.TestCase):
           min_longitude,max_longitude,status,image_count,attempts,discovered_at)
           VALUES('Panoramax',?,47,47.01,8,8.01,'completed',0,1,datetime('now'))""",
           [(f"cell-{index}",) for index in range(500)])
-        with patch("visual_pipeline.PROVIDERS", {"Fake": lambda _bounds: self.fail("daily discovery cap was exceeded")}):
+        with patch("benchly.imagery.service.PROVIDERS", {"Fake": lambda _bounds: self.fail("daily discovery cap was exceeded")}):
             self.assertEqual(discover_open_images(database, max_cells=500, requests_per_second=1000)["cells"], 0)
 
         database.executemany("""INSERT INTO image_observations(id,provider,provider_image_id,capture_group_id,source_url,fetch_url,
@@ -708,7 +695,7 @@ class VisualPipelineTests(unittest.TestCase):
           latitude,longitude,analysis_status,discovered_at)
           VALUES(999,'Panoramax','pending','pending-group','https://source','https://image',47,8,'pending',datetime('now'))""")
         with patch.dict("os.environ", {"INFERENCE_API_KEY": "secret"}), \
-             patch("visual_pipeline._download_image", side_effect=AssertionError("daily analysis cap was exceeded")):
+             patch("benchly.imagery.service.download_image", side_effect=AssertionError("daily analysis cap was exceeded")):
             self.assertEqual(analyze_scenes(database, 300, time.monotonic() + 2, requests_per_second=1000)["groups"], 0)
 
 

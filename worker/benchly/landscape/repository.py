@@ -10,6 +10,9 @@ from benchly.landscape.models import LandscapeCell, LandscapeMetadata
 
 def create_schema(database: Database) -> None:
     database.create_tables((LandscapeMetadata, LandscapeCell))
+    columns = {row[1] for row in database.execute("PRAGMA table_info(cells)")}
+    if "road_noise_db" not in columns:
+        database.execute("ALTER TABLE cells ADD COLUMN road_noise_db REAL")
 
 
 def upsert_cells(database: Database, values: Sequence[dict[str, object]]) -> None:

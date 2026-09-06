@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import {
   Accessibility,
@@ -30,6 +30,7 @@ import {
   Wind,
 } from "lucide-react";
 import { editBenchField } from "@/app/actions/benches";
+import { LightObservationPrompt, ViewObservationPrompt } from "@/features/bench-observations/bench-observation-prompts";
 import type { BenchDetail, BenchProperty } from "@/lib/types";
 
 type DetailPanel = "bench" | "light" | "view" | "weather";
@@ -43,7 +44,12 @@ const panelLabels: Array<{ id: DetailPanel; label: string; icon: ReactNode }> = 
 
 export function BenchDetails({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
   const [panel, setPanel] = useState<DetailPanel>("bench");
+  const panelRef = useRef<HTMLDivElement>(null);
   const id = useId();
+  const showPanel = (nextPanel: DetailPanel) => {
+    setPanel(nextPanel);
+    requestAnimationFrame(() => panelRef.current?.scrollIntoView({ block: "start" }));
+  };
   return <section className="quiet-details" aria-label="Details">
     <div className="detail-chapters">
       <div className="detail-tabs" role="tablist" aria-label="Detailkapitel">
@@ -54,13 +60,13 @@ export function BenchDetails({ bench, signedIn, onBenchChange }: { bench: BenchD
           role="tab"
           aria-selected={panel === item.id}
           aria-controls={`${id}-${item.id}-panel`}
-          onClick={() => setPanel(item.id)}
+          onClick={() => showPanel(item.id)}
         >{item.icon}<span>{item.label}</span></button>)}
       </div>
-      <div id={`${id}-${panel}-panel`} role="tabpanel" aria-labelledby={`${id}-${panel}-tab`}>
+      <div ref={panelRef} className="detail-panel-frame" id={`${id}-${panel}-panel`} role="tabpanel" aria-labelledby={`${id}-${panel}-tab`}>
         {panel === "bench" && <BenchPanel bench={bench} signedIn={signedIn} onBenchChange={onBenchChange} />}
-        {panel === "light" && <LightPanel bench={bench} />}
-        {panel === "view" && <ViewPanel bench={bench} />}
+        {panel === "light" && <LightPanel bench={bench} signedIn={signedIn} onBenchChange={onBenchChange} />}
+        {panel === "view" && <ViewPanel bench={bench} signedIn={signedIn} onBenchChange={onBenchChange} />}
         {panel === "weather" && <WeatherPanel bench={bench} />}
       </div>
     </div>
@@ -196,7 +202,7 @@ function PropertyIcon({ label }: { label: string }) {
   return <UsersRound size={19} />;
 }
 
-function LightPanel({ bench }: { bench: BenchDetail }) {
+function LightPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
   const sunPercent = bench.daylightMinutesToday > 0 ? Math.round(bench.sunMinutesToday / bench.daylightMinutesToday * 100) : 0;
   const sunLabel = bench.sunConfidence === "niedrig" ? "Geschätzte Sonne" : "Direkte Sonne";
   return <section className="detail-panel detail-panel-light">
@@ -215,6 +221,8 @@ function LightPanel({ bench }: { bench: BenchDetail }) {
     </div>
     <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
     <p className="confidence-line">{lightConfidenceLine(bench.sunConfidence)}</p>
+    {signedIn && bench.dayPhase !== "night" && <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onBenchChange} />}
+    {signedIn && bench.dayPhase === "night" && <p className="observation-night-note"><Moon size={15} aria-hidden="true" />Den Lichteindruck kannst du hier bei Tageslicht bestätigen.</p>}
     <details className="technical-fold">
       <summary>Himmelswerte <ChevronDown size={16} /></summary>
       <SeasonalLight bench={bench} />
@@ -256,7 +264,8 @@ function SunPath({ bench }: { bench: BenchDetail }) {
 }
 
 function IntervalStory({ icon, label, windows, empty }: { icon: ReactNode; label: string; windows: BenchDetail["sunWindows"]; empty: string }) {
-  return <div><span aria-hidden="true">{icon}</span><p><small>{label}</small><strong>{windows.length ? windows.map((window) => `${window.start}–${window.end}`).join(" · ") : empty}</strong></p></div>;
+  const visible = windows.filter((window) => window.start !== window.end);
+  return <div><span aria-hidden="true">{icon}</span><p><small>{label}</small><strong>{visible.length ? visible.map((window) => `${window.start}–${window.end}`).join(" · ") : empty}</strong></p></div>;
 }
 
 function SeasonalLight({ bench }: { bench: BenchDetail }) {
@@ -274,7 +283,7 @@ function SeasonalLight({ bench }: { bench: BenchDetail }) {
   </div>;
 }
 
-function ViewPanel({ bench }: { bench: BenchDetail }) {
+function ViewPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
   const hasDistances = [bench.distanceBuildingMeters, bench.distanceWaterMeters, bench.distancePathMeters].some((value) => value !== null);
   const surroundings = surroundingsLine(bench);
   return <section className="detail-panel detail-panel-view">
@@ -283,6 +292,11 @@ function ViewPanel({ bench }: { bench: BenchDetail }) {
       <ViewScoreIllustration bench={bench} />
       <div><small>Eindruck</small><p>{bench.viewLabels.join(" · ") || "Die Aussicht wird noch erkundet."}</p><span>{confidence(bench.viewConfidence)}e Sicherheit</span></div>
     </div>
+    {signedIn && <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} onChanged={onBenchChange} />}
+    {bench.observations.view.publicEstimate && <p className="community-evidence">
+      <UsersRound size={15} aria-hidden="true" />
+      {bench.observations.view.publicEstimate.contributors} Eindrücke von Menschen vor Ort · {communityConfidence(bench.observations.view.publicEstimate.confidence)}
+    </p>}
     <MetricSketch values={[
       ["Freie Blickrichtungen", bench.nearOpenness],
       ["Himmelsoffenheit", bench.viewComponents.openness],
@@ -444,6 +458,7 @@ function CommunityQuiet({ bench }: { bench: BenchDetail }) {
 }
 
 function ModelThanks({ bench }: { bench: BenchDetail }) {
+  const communityEvidence = bench.observations.view.publicEstimate || bench.observations.light.publicTrend;
   return <details className="source-book">
     <summary>Quellen & Modell <ChevronDown size={16} /></summary>
     <p>Diese Landschaft entsteht aus folgenden Daten:</p>
@@ -452,11 +467,17 @@ function ModelThanks({ bench }: { bench: BenchDetail }) {
       <a href="https://www.swisstopo.admin.ch/de/geodaten-kostenlos-online" target="_blank" rel="noreferrer">swisstopo Gelände & Gebäude</a>
       {bench.weather && <a href="https://www.meteoschweiz.admin.ch/service-und-publikationen/service/open-data.html" target="_blank" rel="noreferrer">MeteoSchweiz</a>}
       {bench.media.length > 0 && <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a>}
-      {bench.ratingCount > 0 && <span>Menschen vor Ort</span>}
+      {(bench.ratingCount > 0 || communityEvidence) && <span>Menschen vor Ort</span>}
     </div>
     <small>{bench.pipelineVersion ?? "Umgebungsmodell"} · Quelldaten {readableDate(bench.sourceUpdatedAt)}</small>
     {bench.likelyEnvironment?.evidence.length ? <details className="source-whisper"><summary>Verwendete Umgebungsbilder</summary><div>{bench.likelyEnvironment.evidence.map((item) => <a key={`${item.provider}-${item.captureGroup}`} href={item.sourceUrl} target="_blank" rel="noreferrer">{item.provider} · {item.distanceMeters} m</a>)}</div></details> : null}
   </details>;
+}
+
+function communityConfidence(value: number) {
+  if (value >= .7) return "gut gestützt";
+  if (value >= .5) return "vorsichtig gestützt";
+  return "erste Tendenz";
 }
 
 function DetailRows({ title, rows }: { title: string; rows: Array<[string, string | null]> }) {

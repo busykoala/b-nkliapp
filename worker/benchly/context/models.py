@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from pydantic import ConfigDict
-from sqlalchemy import Column, LargeBinary, UniqueConstraint
+from sqlalchemy import Column, LargeBinary, String, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -43,7 +43,7 @@ class LandCoverFeature(SQLModel, table=True):
     row_id: Optional[int] = Field(default=None, primary_key=True)
     source: str
     source_id: str
-    cover_class: str = Field(sa_column=Column("class"))
+    cover_class: str = Field(sa_column=Column("class", String, nullable=False))
     geometry_wkb: bytes = Field(sa_column=Column(LargeBinary))
     geometry_crs: int = 2056
     min_latitude: float

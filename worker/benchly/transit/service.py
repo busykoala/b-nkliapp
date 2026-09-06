@@ -22,6 +22,7 @@ from benchly.transit.repository import (
     insert_transfers,
     validate_index,
 )
+from benchly.transit.models import CataloguePackage, CatalogueResponse
 
 _PROVIDERS = load_catalog().providers
 GTFS_CATALOGUE_BASE_URL = str(_PROVIDERS.gtfsCatalogueBaseUrl).rstrip("/")
@@ -70,7 +71,7 @@ def public_catalogue(folder):
         parser.feed(page.read_text())
         urls = {urllib.parse.urljoin(base, href) for href in parser.links if urllib.parse.urlparse(href).path.lower().endswith(".zip")}
         packages.append({"name": name, "metadata_modified": name, "resources": [{"url": url, "created": Path(urllib.parse.urlparse(url).path).name} for url in urls]})
-    return packages
+    return [CataloguePackage.model_validate(package) for package in packages]
 
 
 def download(url, target, limit=300_000_000):
@@ -170,31 +171,23 @@ def refresh(args):
         query = urllib.parse.urlencode({"q": "name:timetable-* AND name:*gtfs2020*", "rows": "12"})
         try:
             download(f"{GTFS_CATALOGUE_BASE_URL}/api/3/action/package_search?{query}", catalogue, 4_000_000)
-            packages = json.loads(catalogue.read_text())["result"]["results"]
+            packages = CatalogueResponse.model_validate_json(catalogue.read_text()).result.results
         except urllib.error.HTTPError as error:
             if error.code not in (403, 404):
                 raise
             packages = public_catalogue(folder)
-        candidates = sorted(packages, key=lambda p: p.get("metadata_modified", ""), reverse=True)
+        candidates = sorted(packages, key=lambda package: package.metadata_modified, reverse=True)
         for package in candidates:
-            for resource in sorted(package.get("resources", []), key=lambda r: r.get("last_modified") or r.get("created") or "", reverse=True)[:2]:
-                url = resource.get("url", "")
+            for resource in sorted(package.resources, key=lambda item: item.last_modified or item.created, reverse=True)[:2]:
+                url = str(resource.url)
                 if not urllib.parse.urlparse(url).path.endswith(".zip"):
                     continue
                 archive = Path(folder) / "feed.zip"
                 download(url, archive)
                 try:
                     import_archive(archive, destination)
-                    print(json.dumps({"event": "transit-refreshed", "dataset": package["name"]}))
+                    print(json.dumps({"event": "transit-refreshed", "dataset": package.name}))
                     return
                 except ValueError:
                     continue  # Skip a future/expired feed without replacing the valid index.
         raise ValueError("No valid Swiss GTFS feed found; previous index retained")
-
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Refresh Benchly's separate Swiss transit index (Python standard library only)")
-    parser.add_argument("--transit-database", default="data/transit.sqlite")
-    parser.add_argument("--gtfs-zip", default=None, help="Import an already downloaded official feed")
-    refresh(parser.parse_args())

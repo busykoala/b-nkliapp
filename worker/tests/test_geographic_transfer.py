@@ -7,6 +7,10 @@ import sys
 import tempfile
 import unittest
 
+from benchly.benches.models import BenchEnrichment
+from benchly.context.models import EnvironmentFeature, LandCoverFeature, OfficialContextSource
+from benchly.db import open_database
+
 
 class GeographicImportTests(unittest.TestCase):
     def setUp(self):
@@ -22,14 +26,14 @@ class GeographicImportTests(unittest.TestCase):
               INSERT INTO benches VALUES(42,'osm-node-123'),(43,'osm-node-456');
               CREATE TABLE users(id INTEGER PRIMARY KEY,name TEXT);
               INSERT INTO users VALUES(1,'Local user');
-              CREATE TABLE bench_enrichments(bench_row_id INTEGER PRIMARY KEY,waterfront INTEGER,
-                computed_at TEXT,environment_computed_at TEXT,context_source_version TEXT);
-              INSERT INTO bench_enrichments VALUES(43,0,'2026-09-05','2026-09-05','local');
-              CREATE TABLE environment_features(source TEXT,source_id TEXT,kind TEXT,geometry_wkb BLOB,
-                UNIQUE(source,source_id,kind));
-              CREATE TABLE land_cover_features(source TEXT,source_id TEXT,class TEXT,UNIQUE(source,source_id,class));
-              CREATE TABLE official_context_sources(source TEXT PRIMARY KEY,version TEXT);
             """)
+        database = open_database(self.database)
+        database.create_tables([BenchEnrichment, EnvironmentFeature, LandCoverFeature, OfficialContextSource])
+        database.execute(
+            "INSERT INTO bench_enrichments(bench_row_id,waterfront,computed_at,environment_computed_at,context_source_version,sun_confidence,view_confidence) VALUES(43,0,'2026-09-05','2026-09-05','local','niedrig','niedrig')"
+        )
+        database.commit()
+        database.close()
 
     def export(self, complete=True, bad_column=False):
         rows = [
@@ -48,7 +52,8 @@ class GeographicImportTests(unittest.TestCase):
                 output.write(json.dumps(record) + "\n")
 
     def run_import(self, apply=True):
-        return subprocess.run([sys.executable, str(Path(__file__).with_name("import-geographic-data.py")),
+        worker = Path(__file__).resolve().parents[1] / "benchly_worker.py"
+        return subprocess.run([sys.executable, str(worker), "import-geography",
             str(self.archive), "--database", str(self.database),
             *(["--apply", "--backup", str(self.backup)] if apply else [])], capture_output=True, text=True)
 
@@ -77,7 +82,3 @@ class GeographicImportTests(unittest.TestCase):
         self.export()
         self.assertEqual(self.run_import(apply=False).returncode, 0)
         self.assertFalse(self.backup.exists())
-
-
-if __name__ == "__main__":
-    unittest.main()

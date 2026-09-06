@@ -42,5 +42,8 @@ export const DATA_PROVIDERS = {
   "swissImageWmsUrl": "https://wms.geo.admin.ch/",
   "swissImageMapUrl": "https://map.geo.admin.ch/",
   "swissImageLayer": "ch.swisstopo.swissimage",
+  "sonbaseDayCogUrl": "https://data.geo.admin.ch/ch.bafu.laerm-strassenlaerm_tag/laerm-strassenlaerm_tag/laerm-strassenlaerm_tag_2056.tif",
+  "zurichTreeWfsUrl": "https://www.ogd.stadt-zuerich.ch/wfs/geoportal/Baumkataster",
+  "baselTreeGeoJsonUrl": "https://data.bs.ch/api/explore/v2.1/catalog/datasets/100052/exports/geojson?lang=de&timezone=Europe%2FZurich",
   "inferenceDefaultUrl": "http://inference-api.inference.svc.cluster.local:8080"
 } as const;

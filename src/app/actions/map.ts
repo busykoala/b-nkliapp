@@ -6,12 +6,15 @@ import { buildContextModel, type ContextFeature } from "@/lib/context-model";
 import { fetchPointElevation, fetchTerrainHorizon } from "@/integrations/geoadmin/elevation";
 import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { fetchSwissLandCoverEvidence, SWISSTOPO_LAND_COVER_VERSION } from "@/lib/land-cover";
-import { normalizeLocationKey, searchGeoAdminLocations } from "@/integrations/geoadmin/client";
+import { findNearestSwissName, normalizeLocationKey, searchGeoAdminLocations } from "@/integrations/geoadmin/client";
 import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSeasonalSunMinutes, getSkyTrack, getSunTimes, type ObstructionType } from "@/lib/sun";
 import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { getLocalWeather } from "@/lib/weather";
 import { getCurrentUser } from "@/lib/security";
+import { readBenchObservationSummary } from "@/features/bench-observations/repository";
+import { directionalOpenness, scoreViewComponents } from "@/features/bench-observations/model";
+import { benchObservationNow } from "@/features/bench-observations/context";
 import { z } from "zod";
 
 function aiLabelsEnabled() {
@@ -97,14 +100,6 @@ function mapViewType(labels: string[]): MapFilters["viewType"] | null {
   if (labels.includes("Weitsicht")) return "open";
   if (labels.includes("Eingeschränkte Aussicht") || labels.includes("Keine besondere Aussicht")) return "limited";
   return null;
-}
-
-function nearOpenness(obstructionTypes: ObstructionType[], directionDegrees: number | null) {
-  if (obstructionTypes.length !== 72) return null;
-  const indices = obstructionTypes.map((_, index) => index).filter((index) => directionDegrees === null
-    || Math.abs((((index * 5 - directionDegrees) + 540) % 360) - 180) <= 45);
-  const blocked = indices.filter((index) => obstructionTypes[index] === "building" || obstructionTypes[index] === "vegetation").length;
-  return indices.length ? 1 - blocked / indices.length : null;
 }
 
 function filterSql(filters: MapFilters | undefined, parameters: Array<string | number>) {
@@ -207,7 +202,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
     LIMIT 10000
   `).all(...parameters) as MapRow[];
 
-  const now = new Date();
+  const now = benchObservationNow();
   const individual = rows.map((row) => {
     const profile = parseArray<number>(row.horizon_profile);
     const obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
@@ -457,11 +452,17 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   }
   const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent };
   const effectiveSunInput = { ...sunInput, horizonProfile: horizon, obstructionTypes, canopyPercent: contextModel?.canopyPercent ?? sunInput.canopyPercent };
-  const now = new Date();
+  const now = benchObservationNow();
   const sun = calculateSunState({ ...effectiveSunInput, date: now });
   const daylight = getDaylightState(now, latitude, longitude);
   const moon = getMoonState(now, latitude, longitude);
-  const weather = await getLocalWeather(latitude, longitude, daylight.altitude, elevationMeters);
+  const [weather, currentUser, nearbySwissName] = await Promise.all([
+    getLocalWeather(latitude, longitude, daylight.altitude, elevationMeters),
+    getCurrentUser(),
+    row.location_name === null && process.env.BENCHLY_SEED_DEMO !== "true"
+      ? findNearestSwissName(latitude, longitude)
+      : Promise.resolve(null),
+  ]);
   const skyTrack = getSkyTrack(now, latitude, longitude);
   const localSun = getLocalSunSchedule(effectiveSunInput);
   if (hasTerrainModel && [sunMinutesSummer, sunMinutesWinter, sunMinutesSpring, sunMinutesAutumn].some((value) => value === null)) {
@@ -479,12 +480,34 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const recentRatings = sqlite.prepare(`SELECT id, overall, view_score as view, comfort, quiet, note, created_at as createdAt FROM ratings WHERE bench_row_id=? AND visible=1 ORDER BY updated_at DESC LIMIT 5`).all(row.row_id);
   const corrections = sqlite.prepare(`SELECT id, field, proposed_value as proposedValue, note, created_at as createdAt FROM corrections WHERE bench_row_id=? AND visible=1 ORDER BY created_at DESC LIMIT 20`).all(row.row_id);
   const media = sqlite.prepare(`SELECT id, relation, provider, source_url as sourceUrl, thumbnail_url as thumbnailUrl, author, license, distance_meters as distanceMeters, title FROM media WHERE bench_row_id=? ORDER BY relation, distance_meters LIMIT 12`).all(row.row_id);
-  const currentUser = await getCurrentUser();
   const myRating = currentUser ? sqlite.prepare(`SELECT overall,view_score as view,comfort,quiet,note FROM ratings WHERE bench_row_id=? AND user_id=? LIMIT 1`).get(row.row_id, currentUser.id) : null;
+  const observationSeason = zurichSeason(now);
+  const observationMinutes = zurichMinutes(now);
+  const observationDayPhase = observationMinutes < 600 ? "morning" : observationMinutes < 1020 ? "day" : "evening";
+  const observations = readBenchObservationSummary(sqlite, Number(row.row_id), currentUser?.id ?? null, observationSeason, observationDayPhase);
+  const communityComponents = observations.view.publicEstimate?.components;
+  const displayedComponents = {
+    openness: communityComponents?.sky ?? components.openness ?? null,
+    relief: communityComponents?.relief ?? components.relief ?? null,
+    water: communityComponents?.water ?? components.water ?? null,
+    naturalness: communityComponents?.naturalness ?? components.naturalness ?? null,
+    remoteness: communityComponents?.remoteness ?? components.remoteness ?? null,
+  };
+  const objectiveNearOpenness = contextModel
+    ? contextModel.nearOpennessPercent / 100
+    : directionalOpenness(obstructionTypes, directionDegrees);
+  const displayedNearOpenness = communityComponents?.openness ?? objectiveNearOpenness;
   const ratingCount = Number(row.rating_count ?? 0);
   // A near-field-only model cannot honestly produce the full 1–5 view score:
   // relief is 25% of that model and the distant horizon is still unknown.
-  const rawViewScore = hasTerrainModel ? contextViewRefreshed ? contextModel?.viewScore ?? null : row.view_score === null ? null : Number(row.view_score) : null;
+  const communityViewScore = observations.view.publicEstimate ? scoreViewComponents({
+    sky: displayedComponents.openness,
+    relief: displayedComponents.relief,
+    water: displayedComponents.water,
+    naturalness: displayedComponents.naturalness,
+    remoteness: displayedComponents.remoteness,
+  }) : null;
+  const rawViewScore = communityViewScore ?? (hasTerrainModel ? contextViewRefreshed ? contextModel?.viewScore ?? null : row.view_score === null ? null : Number(row.view_score) : null);
   const viewScore = rawViewScore === null ? null : Math.max(1, Math.min(5, Math.round(rawViewScore / 20)));
   const explanation: string[] = [];
   const viewLabels = contextViewRefreshed ? contextModel?.viewLabels ?? [] : parseArray<string>(row.view_labels);
@@ -493,6 +516,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   if ((components.water ?? 0) > 0.75) explanation.push("Freie Sichtachse zu einer Wasserfläche");
   if ((components.naturalness ?? 0) > 0.8) explanation.push("Überwiegend natürliche Umgebung");
   if (contextModel) explanation.push(...contextModel.viewExplanation);
+  if (observations.view.publicEstimate) explanation.push(`Community-Eindrücke von ${observations.view.publicEstimate.contributors} Personen sind vorsichtig eingeflossen.`);
   if (explanation.length === 0) explanation.push("Aus Gelände, Landbedeckung und Umgebung berechnet");
 
   const likelyConfidence = String(row.likely_confidence ?? "low") as "high" | "medium" | "low";
@@ -540,7 +564,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     latitude, longitude, title: String(row.name || row.description || "Sitzbank"),
     name: row.name === null ? null : String(row.name),
     dedication: row.dedication === null ? null : String(row.dedication),
-    locationName: row.location_name === null ? null : String(row.location_name),
+    locationName: row.location_name === null ? nearbySwissName : String(row.location_name),
     locationPostcode: row.location_postcode === null ? null : String(row.location_postcode),
     locationCanton: row.location_canton === null ? null : String(row.location_canton),
     verificationStatus: String(row.verification_status) === "unverified" ? "unverified" : "verified",
@@ -552,14 +576,8 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     elevationSource,
     analysisCoverage: hasTerrainModel ? "terrain" : "near-field",
     viewScore,
-    viewComponents: {
-      openness: components.openness ?? null,
-      relief: components.relief ?? null,
-      water: components.water ?? null,
-      naturalness: components.naturalness ?? null,
-      remoteness: components.remoteness ?? null,
-    },
-    nearOpenness: contextModel ? contextModel.nearOpennessPercent / 100 : nearOpenness(obstructionTypes, directionDegrees),
+    viewComponents: displayedComponents,
+    nearOpenness: displayedNearOpenness,
     viewConfidence: (hasTerrainModel ? contextModel ? exactOsmEvidence ? "mittel" : "niedrig"
       : pipelineVersion === "GeoAdmin-Horizont v6" && !exactOsmEvidence ? "niedrig" : row.view_confidence ?? "mittel" : "niedrig") as BenchDetail["viewConfidence"], viewExplanation: explanation,
     sunrise: times.sunrise, sunset: times.sunset,
@@ -601,7 +619,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     ratingAverage: row.rating_average === null ? null : Number(Number(row.rating_average).toFixed(1)), ratingCount,
     ratingBreakdown: ratingCount ? { overall: Number(Number(row.rating_average).toFixed(1)), view: Number(Number(row.rating_view).toFixed(1)), comfort: Number(Number(row.rating_comfort).toFixed(1)), quiet: Number(Number(row.rating_quiet).toFixed(1)) } : null,
     myRating: myRating as BenchDetail["myRating"],
-    recentRatings: recentRatings as BenchDetail["recentRatings"], corrections: corrections as BenchDetail["corrections"], media: media as BenchDetail["media"],
+    recentRatings: recentRatings as BenchDetail["recentRatings"], corrections: corrections as BenchDetail["corrections"], observations, media: media as BenchDetail["media"],
     sourceUpdatedAt: String(row.source_updated_at), pipelineVersion,
   };
 }

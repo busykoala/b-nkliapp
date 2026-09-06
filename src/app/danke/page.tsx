@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Database, Heart, RefreshCw, Sparkles } from "lucide-react";
 import { dataCatalog, sourcesFor } from "@/data/catalog";
+import { freshnessLabel, getDataFreshness } from "@/data/freshness";
 
 export const metadata: Metadata = {
   title: "Danke, Daten & andere tragende Dinge",
   description: "Menschen, offene Daten und Software hinter der Bänkli App.",
 };
 
-export default function AcknowledgementsPage() {
+export default async function AcknowledgementsPage() {
+  const freshness = await getDataFreshness();
   return <main className="thanks-page min-h-dvh safe-bottom">
     <nav className="thanks-nav safe-top"><Link href="/" aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link></nav>
     <header className="thanks-hero">
@@ -32,9 +34,10 @@ export default function AcknowledgementsPage() {
       <p className="thanks-lead">Diese Liste kommt direkt aus dem Datenkatalog der App. Ändert sich eine Quelle, ändert sich auch diese Seite – ganz ohne archäologische Expedition durch den Code.</p>
       <div className="source-grid">
         {dataCatalog.sources.map((source) => <article className="source-card" key={source.id}>
-          <div><span>{source.kind}</span><h3>{source.name}</h3></div>
+          <div><span>{source.kind}{source.lifecycle === "experimental" ? " · in Prüfung" : source.lifecycle === "research-only" ? " · nur Forschung" : ""}</span><h3>{source.name}</h3></div>
           <p>{source.provides.join(" · ")}</p>
           <small>{source.license}</small>
+          {freshness.sourceChecks[source.id] && <small>{freshnessLabel(freshness.sourceChecks[source.id])} geprüft</small>}
           {source.url.startsWith("/")
             ? <Link href={source.url}>Mehr dazu</Link>
             : <a href={source.url} target="_blank" rel="noreferrer">Zur Quelle ↗</a>}
@@ -49,6 +52,7 @@ export default function AcknowledgementsPage() {
         {dataCatalog.jobs.map((job) => <details key={job.id}>
           <summary><span><strong>{job.title}</strong><small>{job.frequency}</small></span><code>{job.schedule}</code></summary>
           <p>Kommt von {sourcesFor(job).map(({ name }) => name).join(", ")}.</p>
+          <p>{freshnessLabel(freshness.jobSuccesses[job.id])}.</p>
         </details>)}
       </div>
       <p className="thanks-version">Katalog {dataCatalog.catalogVersion} · Schema {dataCatalog.schemaVersion}. Ernsthaft gepflegt für ein Projekt über Pausen.</p>
@@ -59,4 +63,3 @@ export default function AcknowledgementsPage() {
 function ThankYou({ name, text }: { name: string; text: string }) {
   return <article><span aria-hidden="true">✦</span><h3>{name}</h3><p>{text}</p></article>;
 }
-

@@ -3,6 +3,7 @@ import type { PlaceResult } from "@/lib/types";
 
 export type SwissLocation = { name: string; postcode: string | null; canton: string | null };
 type IdentifyResult = { layerBodId?: string; attributes?: Record<string, string | number | boolean | null> };
+type SearchResult = { id?: string | number; attrs?: Record<string, string | number> };
 
 export function normalizeLocationKey(value: string) {
   return value.normalize("NFKD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("de-CH").trim();
@@ -19,7 +20,7 @@ export async function searchGeoAdminLocations(query: string, fetcher: typeof fet
   try {
     const response = await fetcher(url, { next: { revalidate: 86_400 } });
     if (!response.ok) return [];
-    const data = await response.json() as { results?: Array<{ id?: string | number; attrs?: Record<string, string | number> }> };
+    const data = await response.json() as { results?: SearchResult[] };
     return (data.results ?? []).flatMap((result) => {
       const attrs = result.attrs ?? {};
       const latitude = Number(attrs.lat ?? attrs.y);
@@ -30,6 +31,25 @@ export async function searchGeoAdminLocations(query: string, fetcher: typeof fet
       return [{ id: String(result.id ?? `${latitude}-${longitude}`), label, latitude, longitude, kind }];
     });
   } catch { return []; }
+}
+
+export async function findNearestSwissName(latitude: number, longitude: number, fetcher: typeof fetch = fetch): Promise<string | null> {
+  const delta = .004;
+  const url = new URL(`${DATA_RUNTIME.geoAdminBaseUrl}/rest/services/api/SearchServer`);
+  url.searchParams.set("type", "locations");
+  url.searchParams.set("origins", "gazetteer");
+  url.searchParams.set("bbox", `${longitude - delta},${latitude - delta},${longitude + delta},${latitude + delta}`);
+  url.searchParams.set("sortbbox", "true");
+  url.searchParams.set("limit", "12");
+  url.searchParams.set("sr", "4326");
+  try {
+    const response = await fetcher(url, { next: { revalidate: 2_592_000 }, signal: AbortSignal.timeout(4_000) });
+    if (!response.ok) return null;
+    const data = await response.json() as { results?: SearchResult[] };
+    const result = (data.results ?? []).find(({ attrs }) => attrs?.layerBodId === "ch.swisstopo.swissnames3d");
+    const label = String(result?.attrs?.label ?? "").replace(/<[^>]*>/g, "").trim();
+    return label || null;
+  } catch { return null; }
 }
 
 export async function reverseGeocodeSwiss(latitude: number, longitude: number): Promise<SwissLocation | null> {
@@ -52,4 +72,3 @@ export async function reverseGeocodeSwiss(latitude: number, longitude: number): 
     return { name, postcode: postcode?.plz == null ? null : String(postcode.plz), canton: municipality?.kanton == null ? null : String(municipality.kanton) };
   } catch { return null; }
 }
-

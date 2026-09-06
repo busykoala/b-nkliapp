@@ -1,6 +1,7 @@
 {
   "name": "benchly",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +13,9 @@
     "test:e2e": "playwright test",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "data:refresh": "python3 worker/benchly_worker.py refresh",
+    "data:refresh": "uv run python worker/benchly_worker.py refresh",
+    "test:worker": "uv run pytest",
+    "test:worker:container": "docker build --target test -f worker/Dockerfile .",
     "data:catalog:generate": "tsx scripts/generate-data-jobs.ts",
     "data:catalog:check": "tsx scripts/generate-data-jobs.ts --check"
   },

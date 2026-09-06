@@ -14,6 +14,8 @@ from shapely import force_2d, from_wkb, get_coordinates, get_parts, to_wkb
 from shapely.geometry import LineString, Point, Polygon, shape
 from shapely.ops import nearest_points, transform, unary_union
 
+from benchly.context.contracts import VectorFeature
+
 WGS84_TO_LV95 = Transformer.from_crs(4326, 2056, always_xy=True)
 LV95_TO_WGS84 = Transformer.from_crs(2056, 4326, always_xy=True)
 
@@ -296,7 +298,7 @@ def geopackage_layers(path: Path) -> list[str]:
     return layers
 
 
-def iter_layer_features(path: Path, layer: str) -> Iterable[dict]:
+def iter_layer_features(path: Path, layer: str) -> Iterable[dict[str, object]]:
     process = subprocess.Popen(
         ["ogr2ogr", "-f", "GeoJSONSeq", "/vsistdout/", str(path), layer, "-t_srs", "EPSG:4326"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
@@ -304,8 +306,7 @@ def iter_layer_features(path: Path, layer: str) -> Iterable[dict]:
     assert process.stdout is not None
     for line in process.stdout:
         if line.strip():
-            yield json.loads(line)
+            yield VectorFeature.model_validate_json(line).model_dump()
     stderr = process.stderr.read() if process.stderr else ""
     if process.wait() != 0:
         raise RuntimeError(f"ogr2ogr failed for {layer}: {stderr[-1000:]}")
-

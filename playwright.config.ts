@@ -8,6 +8,7 @@ const baseURL = production ? "https://localhost:3100" : "http://localhost:3100";
 
 export default defineConfig({
   testDir: "./e2e",
+  workers: process.env.CI ? 2 : 4,
   webServer: {
     command: production ? "tsx scripts/serve-production-tests.ts" : "npm run dev -- --port 3100",
     url: baseURL,
@@ -24,6 +25,7 @@ export default defineConfig({
       BENCH_VERIFICATION_THRESHOLD: "3",
       BENCHLY_DISABLE_ELEVATION_FETCH: "true",
       BENCHLY_JOURNEY_TEST_FIXTURES: "true",
+      BENCHLY_E2E_NOW: "2026-09-05T12:00:00+02:00",
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=tsx --import=${join(process.cwd(), "scripts/journey-test-providers.ts")}`,
     },
   },

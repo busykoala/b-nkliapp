@@ -4,4 +4,18 @@ benchly-100.jsonl contains 100 manually reviewed Swiss locations across all seve
 
 Run the validator and model benchmark with:
 
-    python worker/benchly_worker.py benchmark-vision --dataset worker/evaluation/benchly-100.jsonl --models benchly-vision general
+    uv run python worker/benchly_worker.py benchmark-vision --dataset worker/evaluation/benchly-100.jsonl --models benchly-vision general
+
+Build the worker's test target to run the tests in the same Linux/GDAL base as production:
+
+    npm run test:worker:container
+
+The reviewed scene fixture remains because it guards the production vision
+pipeline. Temporary model weights, database indexes and experiment reports are
+not part of the repository.
+
+The reproducible conclusions from the original benchmark and the later
+26-canton SWISSIMAGE countercheck are recorded in
+`docs/environment-model-evaluation.md`. The nationwide sample, downloaded image
+bytes and one-off training code were deleted after the decision; they are not a
+second production pipeline.

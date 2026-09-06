@@ -3,7 +3,7 @@ import type { WalkPath } from "../walking";
 
 export type WalkQuery = { origin: JourneyOrigin; minutes: 30 | 50 | 120; shape: "loop" | "one-way"; light: "any" | "sun" | "shade"; speed: 3 | 4.2 | 5.4; difficulty: "easy" | "t2"; time: string };
 export type WalkBench = JourneyPoint & { id: string; name: string | null; waterfront: boolean; quality: number | null };
-export type RouteEvidence = { quiet: number | null; nature: number | null; view: number | null; water: number | null; light: number | null; lightCoverage: number; coverage: number; updatedAt: string | null; reasons: string[]; warnings: string[] };
+export type RouteEvidence = { quiet: number | null; nature: number | null; view: number | null; water: number | null; light: number | null; lightCoverage: number; coverage: number; updatedAt: string | null; sources: string[]; reasons: string[]; warnings: string[] };
 export type WalkSuggestion = { id: string; path: WalkPath; bench: WalkBench; extraBenches: WalkBench[]; durationSeconds: number; score: number; evidence: RouteEvidence; withinBudget: boolean; repeated: boolean; benchIndex: number };
 export type WalkResult = { suggestions: WalkSuggestion[]; query: WalkQuery; fetchedAt: string; partial: boolean; message?: string };
 

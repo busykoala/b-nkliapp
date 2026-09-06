@@ -109,7 +109,13 @@ def add_media(database, rows: Sequence[dict[str, object]]) -> None:
 
 
 def upsert_enrichment(database, values: dict[str, object], update_fields: Iterable[str] | None = None) -> None:
-    values = BenchEnrichment.model_validate(values).model_dump(exclude_unset=True)
+    supplied_fields = tuple(values)
+    validated = BenchEnrichment.model_validate(values)
+    values = {field: getattr(validated, field) for field in supplied_fields}
+    available = {row[1] for row in database.execute("PRAGMA table_info(bench_enrichments)")}
+    for field in ("sun_confidence", "view_confidence"):
+        if field in available and field not in values:
+            values[field] = getattr(validated, field)
     statement = insert(BenchEnrichment).values(values)
     excluded = statement.excluded
     fields = tuple(update_fields or (key for key in values if key != "bench_row_id"))
@@ -146,4 +152,16 @@ def update_enrichment(database, bench_row_id: int, **values: object) -> None:
         update(BenchEnrichment)
         .where(BenchEnrichment.bench_row_id == bench_row_id)
         .values(**values),
+    )
+
+
+def invalidate_environment_for_benches(database, bench_row_ids: Iterable[int]) -> None:
+    ids = tuple(bench_row_ids)
+    if not ids:
+        return
+    write(
+        database,
+        update(BenchEnrichment)
+        .where(BenchEnrichment.bench_row_id.in_(ids))
+        .values(environment_computed_at=None),
     )

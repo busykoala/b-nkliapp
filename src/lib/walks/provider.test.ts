@@ -4,7 +4,7 @@ import type { WalkPath } from "../walking";
 const mocks = vi.hoisted(() => ({ route: vi.fn(), rows: vi.fn() }));
 vi.mock("@/db/client", () => ({ sqlite: { prepare: () => ({ all: mocks.rows }) } }));
 vi.mock("../walking-provider", () => ({ routeWalk: mocks.route }));
-vi.mock("./evidence", () => ({ evaluateRoute: () => ({ quiet: 1, nature: .8, view: null, water: null, light: null, coverage: 1, lightCoverage: 0, reasons: ["Wenig Hauptstrasse"], warnings: [], updatedAt: null }) }));
+vi.mock("./evidence", () => ({ evaluateRoute: () => ({ quiet: 1, nature: .8, view: null, water: null, light: null, coverage: 1, lightCoverage: 0, sources: ["OpenStreetMap"], reasons: ["Wenig Hauptstrasse"], warnings: [], updatedAt: null }) }));
 import { discoverWalks } from "./provider";
 const query: WalkQuery = { origin: { label: "Start", kind: "location", latitude: 46.68, longitude: 7.68 }, minutes: 30, shape: "one-way", light: "any", speed: 4.2, difficulty: "easy", time: new Date().toISOString() };
 beforeEach(() => { mocks.route.mockReset(); mocks.rows.mockReturnValue([{ id: "bench", name: "Hafenbänkli", latitude: 46.685, longitude: 7.685, waterfront: 1, view_score: 80, view_confidence: "mittel" }]); });

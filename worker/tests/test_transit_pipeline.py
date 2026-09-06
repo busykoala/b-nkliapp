@@ -4,7 +4,7 @@ import sqlite3
 import tempfile
 import unittest
 import zipfile
-from transit_pipeline import import_archive, validate_download_url, GTFSRedirectHandler
+from benchly.transit.service import GTFSRedirectHandler, import_archive, validate_download_url
 import urllib.request
 
 

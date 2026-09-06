@@ -94,9 +94,9 @@ class BenchEnrichment(SQLModel, table=True):
     horizon_profile: Optional[str] = None
     sun_minutes_summer: Optional[int] = None
     sun_minutes_winter: Optional[int] = None
-    sun_confidence: str = "niedrig"
+    sun_confidence: str = Field(default="niedrig", sa_column_kwargs={"server_default": "niedrig"})
     view_score: Optional[float] = None
-    view_confidence: str = "niedrig"
+    view_confidence: str = Field(default="niedrig", sa_column_kwargs={"server_default": "niedrig"})
     view_components: Optional[str] = None
     pipeline_version: Optional[str] = None
     computed_at: Optional[str] = None

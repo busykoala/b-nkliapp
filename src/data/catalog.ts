@@ -9,6 +9,9 @@ const sourceSchema = z.object({
   provides: z.array(z.string().min(1)).min(1),
   license: z.string().min(1),
   usedBy: z.array(z.string().min(1)).min(1),
+  access: z.enum(["open-data", "open-source", "community-owned", "evaluation-only"]),
+  lifecycle: z.enum(["active", "experimental", "research-only"]).default("active"),
+  checkUrl: z.url().optional(),
 });
 
 const artifactSchema = z.object({
@@ -29,6 +32,7 @@ const jobSchema = z.object({
   sourceIds: z.array(z.string()).min(1),
   artifactIds: z.array(z.string()).min(1),
   profile: z.enum(["standard", "landscape", "inference"]),
+  purpose: z.enum(["production", "monitoring", "quality"]),
 });
 
 const catalogSchema = z.object({
@@ -74,6 +78,9 @@ const catalogSchema = z.object({
     swissImageWmsUrl: z.url(),
     swissImageMapUrl: z.url(),
     swissImageLayer: z.string().min(1),
+    sonbaseDayCogUrl: z.url(),
+    zurichTreeWfsUrl: z.url(),
+    baselTreeGeoJsonUrl: z.url(),
     inferenceDefaultUrl: z.url(),
   }),
   sources: z.array(sourceSchema).min(1),
@@ -92,6 +99,14 @@ const catalogSchema = z.object({
   for (const job of catalog.jobs) {
     for (const id of job.sourceIds) if (!sources.has(id)) context.addIssue({ code: "custom", message: `Job ${job.id} referenziert unbekannte Quelle ${id}` });
     for (const id of job.artifactIds) if (!artifacts.has(id)) context.addIssue({ code: "custom", message: `Job ${job.id} referenziert unbekanntes Artefakt ${id}` });
+    if (job.purpose === "production") for (const id of job.sourceIds) {
+      if (catalog.sources.find((source) => source.id === id)?.access === "evaluation-only") {
+        context.addIssue({ code: "custom", message: `Produktionsjob ${job.id} nutzt reine Evaluationsquelle ${id}` });
+      }
+    }
+  }
+  for (const source of catalog.sources) if (source.lifecycle === "active" && source.access === "evaluation-only") {
+    context.addIssue({ code: "custom", message: `Aktive Quelle ${source.id} darf nicht evaluation-only sein` });
   }
 });
 

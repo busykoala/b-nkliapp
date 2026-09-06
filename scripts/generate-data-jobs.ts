@@ -12,6 +12,7 @@ const helmGenerated = `${JSON.stringify({
     deadline: job.deadlineSeconds,
     args: [job.command, ...job.args],
     profile: job.profile,
+    purpose: job.purpose,
   })),
 }, null, 2)}\n`;
 const runtimeTarget = resolve("src/data/runtime.generated.ts");

@@ -58,4 +58,19 @@ describe("SQLite migrations and R*Tree", () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it("keeps observations separate from objective enrichment", () => {
+    const database = new Database(":memory:");
+    database.pragma("foreign_keys=ON");
+    for (const migration of migrations) database.exec(migration.sql);
+    const bench = database.prepare("INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at) VALUES(?,?,?,?,?,?,?)")
+      .run("osm-node-13", "node", 13, 47, 8, "2026-01-01", "2026-01-01");
+    const user = database.prepare("INSERT INTO users(username,username_key,password_hash,created_at,avatar_seed) VALUES(?,?,?,?,?)")
+      .run("Bänkli-Fan", "bänkli-fan", "test", "2026-01-01", "seed");
+    database.prepare("INSERT INTO bench_light_observations(bench_row_id,user_id,choice,observed_at,season,day_phase,created_at) VALUES(?,?,?,?,?,?,?)")
+      .run(bench.lastInsertRowid, user.lastInsertRowid, "sun", "2026-09-05T12:00:00Z", "autumn", "day", "2026-09-05T12:00:00Z");
+    expect((database.prepare("SELECT count(*) count FROM bench_light_observations").get() as { count: number }).count).toBe(1);
+    expect((database.prepare("SELECT count(*) count FROM bench_enrichments").get() as { count: number }).count).toBe(0);
+    database.close();
+  });
 });

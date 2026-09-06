@@ -31,6 +31,7 @@ spec:
           env:
             - {name: TRANSIT_DATABASE_PATH, value: "/data/transit.sqlite"}
             - {name: LANDSCAPE_DATABASE_PATH, value: "/data/landscape.sqlite"}
+            - {name: SOURCE_STATUS_DATABASE_PATH, value: "/data/source-status.sqlite"}
             - {name: WALK_ROUTER_URL, value: {{ .Values.web.walkingRouterUrl | quote }}}
             - {name: DATABASE_PATH, value: /data/benchly.sqlite}
             - {name: BENCHLY_SEED_DEMO, value: "false"}

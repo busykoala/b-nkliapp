@@ -14,3 +14,4 @@ public/sw.js.map
 __pycache__/
 *.pyc
 data/.benchly-worker.lock
+worker/evaluation/.cache/

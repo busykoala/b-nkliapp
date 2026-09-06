@@ -54,6 +54,9 @@ class ProviderConfig(StrictModel):
     swissImageWmsUrl: HttpUrl
     swissImageMapUrl: HttpUrl
     swissImageLayer: str
+    sonbaseDayCogUrl: HttpUrl
+    zurichTreeWfsUrl: HttpUrl
+    baselTreeGeoJsonUrl: HttpUrl
     inferenceDefaultUrl: HttpUrl
 
     @model_validator(mode="after")
@@ -73,6 +76,9 @@ class DataSource(StrictModel):
     provides: list[str] = Field(min_length=1)
     license: str
     usedBy: list[str] = Field(min_length=1)
+    access: str = Field(pattern=r"^(open-data|open-source|community-owned|evaluation-only)$")
+    lifecycle: str = Field(default="active", pattern=r"^(active|experimental|research-only)$")
+    checkUrl: HttpUrl | None = None
 
 
 class Artifact(StrictModel):
@@ -93,6 +99,7 @@ class DataJob(StrictModel):
     sourceIds: list[str] = Field(min_length=1)
     artifactIds: list[str] = Field(min_length=1)
     profile: str = Field(pattern=r"^(standard|landscape|inference)$")
+    purpose: str = Field(pattern=r"^(production|monitoring|quality)$")
 
 
 class DataCatalog(StrictModel):
@@ -113,6 +120,7 @@ class DataCatalog(StrictModel):
         if len(source_ids) != len(set(source_ids)) or len(artifact_ids) != len(set(artifact_ids)) or len(job_ids) != len(set(job_ids)):
             raise ValueError("Catalog IDs must be unique")
         known_sources = set(source_ids)
+        sources_by_id = {source.id: source for source in self.sources}
         known_artifacts = set(artifact_ids)
         for job in self.jobs:
             unknown_sources = set(job.sourceIds) - known_sources
@@ -121,6 +129,13 @@ class DataCatalog(StrictModel):
                 raise ValueError(f"Job {job.id} has unknown references: {unknown_sources | unknown_artifacts}")
             if len(job.schedule.split()) != 5:
                 raise ValueError(f"Job {job.id} has an invalid five-field cron expression")
+            if job.purpose == "production":
+                blocked = [source_id for source_id in job.sourceIds if sources_by_id[source_id].access == "evaluation-only"]
+                if blocked:
+                    raise ValueError(f"Production job {job.id} uses evaluation-only sources: {', '.join(blocked)}")
+        for source in self.sources:
+            if source.lifecycle == "active" and source.access == "evaluation-only":
+                raise ValueError(f"Active source {source.id} cannot be evaluation-only")
         return self
 
 

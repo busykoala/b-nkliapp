@@ -12,10 +12,49 @@
         "/data/benchly.sqlite",
         "--landscape-database",
         "/data/landscape.sqlite",
+        "--noise-raster",
+        "/data/sources/sonbase-day.tif",
         "--limit",
         "10000"
       ],
-      "profile": "landscape"
+      "profile": "landscape",
+      "purpose": "production"
+    },
+    {
+      "name": "sonbase",
+      "schedule": "40 4 * * 1",
+      "deadline": 3600,
+      "args": [
+        "refresh-sonbase",
+        "--target",
+        "/data/sources/sonbase-day.tif"
+      ],
+      "profile": "landscape",
+      "purpose": "production"
+    },
+    {
+      "name": "zurich-trees",
+      "schedule": "10 3 2 * *",
+      "deadline": 1800,
+      "args": [
+        "import-zurich-trees",
+        "--database",
+        "/data/benchly.sqlite"
+      ],
+      "profile": "standard",
+      "purpose": "production"
+    },
+    {
+      "name": "basel-trees",
+      "schedule": "30 3 2 * *",
+      "deadline": 1800,
+      "args": [
+        "import-basel-trees",
+        "--database",
+        "/data/benchly.sqlite"
+      ],
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "transit",
@@ -26,7 +65,8 @@
         "--transit-database",
         "/data/transit.sqlite"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "import-osm",
@@ -37,7 +77,8 @@
         "--database",
         "/data/benchly.sqlite"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "enrich",
@@ -54,7 +95,8 @@
         "--max-download-gib",
         "80"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "horizon",
@@ -71,7 +113,8 @@
         "--max-runtime-minutes",
         "45"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "commons",
@@ -84,7 +127,8 @@
         "--limit",
         "500"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "official-context",
@@ -96,7 +140,8 @@
         "/data/benchly.sqlite",
         "--first-sunday-only"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "buildings",
@@ -109,7 +154,8 @@
         "--max-cells",
         "3"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "weather-icon",
@@ -121,7 +167,8 @@
         "/data/benchly.sqlite",
         "--icon-only"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "weather-radar",
@@ -133,7 +180,8 @@
         "/data/benchly.sqlite",
         "--radar-only"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "image-discovery",
@@ -148,7 +196,8 @@
         "--requests-per-second",
         "1"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "scene-analysis",
@@ -165,7 +214,8 @@
         "--requests-per-second",
         "0.25"
       ],
-      "profile": "inference"
+      "profile": "inference",
+      "purpose": "production"
     },
     {
       "name": "environment-reconcile",
@@ -180,7 +230,8 @@
         "--max-total",
         "1000"
       ],
-      "profile": "standard"
+      "profile": "standard",
+      "purpose": "production"
     },
     {
       "name": "vision-benchmark",
@@ -198,7 +249,69 @@
         "--requests-per-second",
         "0.25"
       ],
-      "profile": "inference"
+      "profile": "inference",
+      "purpose": "quality"
+    },
+    {
+      "name": "source-check-weekly",
+      "schedule": "20 4 * * 1",
+      "deadline": 300,
+      "args": [
+        "check-source-versions",
+        "--database",
+        "/data/source-status.sqlite",
+        "--sources",
+        "sonbase"
+      ],
+      "profile": "standard",
+      "purpose": "monitoring"
+    },
+    {
+      "name": "source-check-monthly",
+      "schedule": "35 4 1 * *",
+      "deadline": 600,
+      "args": [
+        "check-source-versions",
+        "--database",
+        "/data/source-status.sqlite",
+        "--sources",
+        "swissnames3d",
+        "statpop",
+        "astra-traffic",
+        "wanderland"
+      ],
+      "profile": "standard",
+      "purpose": "monitoring"
+    },
+    {
+      "name": "source-check-quarterly",
+      "schedule": "50 4 1 1,4,7,10 *",
+      "deadline": 600,
+      "args": [
+        "check-source-versions",
+        "--database",
+        "/data/source-status.sqlite",
+        "--sources",
+        "swisssurface3d",
+        "isos",
+        "ivs"
+      ],
+      "profile": "standard",
+      "purpose": "monitoring"
+    },
+    {
+      "name": "source-check-yearly",
+      "schedule": "5 5 15 2 *",
+      "deadline": 300,
+      "args": [
+        "check-source-versions",
+        "--database",
+        "/data/source-status.sqlite",
+        "--sources",
+        "foen-air"
+      ],
+      "profile": "standard",
+      "purpose": "monitoring"
     }
   ]
 }

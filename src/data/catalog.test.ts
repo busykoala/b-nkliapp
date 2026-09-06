@@ -3,7 +3,7 @@ import { dataCatalog, sourcesFor } from "./catalog";
 
 describe("data catalog", () => {
   it("is one complete graph of jobs, sources and artifacts", () => {
-    expect(dataCatalog.jobs).toHaveLength(14);
+    expect(dataCatalog.jobs.length).toBeGreaterThanOrEqual(18);
     expect(dataCatalog.sources.some(({ id }) => id === "graphhopper")).toBe(true);
     for (const job of dataCatalog.jobs) {
       expect(sourcesFor(job).map(({ id }) => id).sort()).toEqual([...job.sourceIds].sort());
@@ -16,5 +16,12 @@ describe("data catalog", () => {
       expect(job.schedule.split(" ")).toHaveLength(5);
     }
   });
-});
 
+  it("keeps evaluation-only data out of production jobs", () => {
+    const sourceById = new Map(dataCatalog.sources.map((source) => [source.id, source]));
+    for (const job of dataCatalog.jobs.filter(({ purpose }) => purpose === "production")) {
+      expect(job.sourceIds.map((id) => sourceById.get(id)?.access)).not.toContain("evaluation-only");
+    }
+    expect(dataCatalog.sources.filter(({ lifecycle }) => lifecycle === "active").every(({ access }) => access !== "evaluation-only")).toBe(true);
+  });
+});

@@ -17,7 +17,7 @@ describe("Bänkli-centred outing copy", () => {
     expect(individualBenchName("  Rosmaries Bänkli  ")).toBe("  Rosmaries Bänkli  ");
   });
   it("does not reward missing evidence", () => {
-    const evidence: RouteEvidence = { quiet: null, nature: null, water: null, view: null, light: null, coverage: 0, lightCoverage: 0, updatedAt: null, reasons: [], warnings: [] };
+    const evidence: RouteEvidence = { quiet: null, nature: null, water: null, view: null, light: null, coverage: 0, lightCoverage: 0, updatedAt: null, sources: [], reasons: [], warnings: [] };
     expect(landscapeScore(evidence, { ...bench, quality: null }, "any")).toBe(0);
     expect(landscapeScore({ ...evidence, quiet: 1, nature: 1, water: 1, view: 1, light: 1 }, { ...bench, quality: 1 }, "sun")).toBeCloseTo(1);
   });

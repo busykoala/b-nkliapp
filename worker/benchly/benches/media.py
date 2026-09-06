@@ -10,6 +10,9 @@ import urllib.parse
 import urllib.request
 from typing import Optional
 
+from pydantic import ValidationError
+
+from benchly.benches.media_contracts import CommonsPage, CommonsResponse
 from benchly.benches.repository import add_media, remove_nearby_media
 from benchly.catalog import load_catalog
 from benchly.geo import distance_meters
@@ -39,26 +42,33 @@ def commons_metadata(connection: sqlite3.Connection, limit: int) -> int:
         request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (nearby-photo metadata)"})
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
-                pages = json.load(response).get("query", {}).get("pages", {})
-            for page in pages.values():
-                info = (page.get("imageinfo") or [{}])[0]
-                metadata = info.get("extmetadata", {})
-                coordinates = (page.get("coordinates") or [{}])[0]
-                photo_latitude, photo_longitude = coordinates.get("lat"), coordinates.get("lon")
+                pages = CommonsResponse.model_validate(json.load(response)).query.pages
+            for raw_page in pages.values():
+                try:
+                    page = CommonsPage.model_validate(raw_page)
+                except ValidationError:
+                    continue
+                info = page.imageinfo[0] if page.imageinfo else None
+                if info is None or (info.thumburl is None and info.url is None):
+                    continue
+                metadata = info.extmetadata
+                coordinates = page.coordinates[0] if page.coordinates else None
+                photo_latitude = coordinates.lat if coordinates else None
+                photo_longitude = coordinates.lon if coordinates else None
                 photo_distance = distance_meters(bench["latitude"], bench["longitude"], photo_latitude, photo_longitude) if photo_latitude is not None and photo_longitude is not None else None
                 add_media(connection, [{
                     "bench_row_id": bench["row_id"],
                     "relation": "nearby",
                     "provider": "Wikimedia Commons",
-                    "external_id": str(page.get("pageid")),
-                    "source_url": info.get("descriptionurl", "https://commons.wikimedia.org"),
-                    "thumbnail_url": info.get("thumburl") or info.get("url"),
-                    "author": strip_html(metadata.get("Artist", {}).get("value")),
-                    "license": metadata.get("LicenseShortName", {}).get("value"),
+                    "external_id": str(page.pageid),
+                    "source_url": str(info.descriptionurl or "https://commons.wikimedia.org"),
+                    "thumbnail_url": str(info.thumburl or info.url),
+                    "author": strip_html(metadata.get("Artist").value if metadata.get("Artist") else None),
+                    "license": metadata.get("LicenseShortName").value if metadata.get("LicenseShortName") else None,
                     "latitude": photo_latitude,
                     "longitude": photo_longitude,
                     "distance_meters": photo_distance,
-                    "title": page.get("title", "").removeprefix("File:"),
+                    "title": page.title.removeprefix("File:"),
                     "fetched_at": now_iso(),
                 }])
                 inserted += 1

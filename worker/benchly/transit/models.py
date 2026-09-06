@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field as PydanticField, HttpUrl
 from sqlalchemy import Index
 from sqlmodel import Field, SQLModel
 
@@ -44,3 +44,31 @@ class TransitTransfer(SQLModel, table=True):
     to_route: str
     from_trip: str
     to_trip: str
+
+
+class CatalogueResource(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    url: HttpUrl
+    created: str = ""
+    last_modified: str | None = None
+
+
+class CataloguePackage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    metadata_modified: str = ""
+    resources: list[CatalogueResource] = PydanticField(default_factory=list)
+
+
+class CatalogueResult(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    results: list[CataloguePackage] = PydanticField(default_factory=list)
+
+
+class CatalogueResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    result: CatalogueResult
