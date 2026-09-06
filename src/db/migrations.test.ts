@@ -3,13 +3,17 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { migrations } from "./migrations";
+import { executeMigration, migrations } from "./migrations";
+
+function applyMigrations(database: Database.Database, selected = migrations) {
+  for (const migration of selected) executeMigration(database, migration);
+}
 
 describe("SQLite migrations and R*Tree", () => {
   it("keeps the spatial index synchronized", () => {
     const database = new Database(":memory:");
     database.pragma("foreign_keys=ON");
-    for (const migration of migrations) database.exec(migration.sql);
+    applyMigrations(database);
     const values = ["osm-node-999", "node", 999, 47.1, 8.1, "2026-01-01", "2026-01-01"];
     database.prepare("INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at) VALUES(?,?,?,?,?,?,?)").run(...values);
     expect((database.prepare("SELECT count(*) count FROM bench_spatial_index WHERE min_longitude<=8.1 AND max_longitude>=8.1").get() as { count: number }).count).toBe(1);
@@ -22,7 +26,7 @@ describe("SQLite migrations and R*Tree", () => {
 
   it("stores visual evidence metadata without any image blob column", () => {
     const database = new Database(":memory:");
-    for (const migration of migrations) database.exec(migration.sql);
+    applyMigrations(database);
     const columns = database.prepare("PRAGMA table_info(image_observations)").all() as Array<{ name: string }>;
     expect(columns.map((column) => column.name)).toContain("image_sha256");
     expect(columns.map((column) => column.name)).not.toContain("image_blob");
@@ -37,7 +41,7 @@ describe("SQLite migrations and R*Tree", () => {
     const database = new Database(":memory:");
     try {
       database.pragma("foreign_keys=ON");
-      for (const migration of migrations) database.exec(migration.sql);
+      applyMigrations(database);
       const bench = database.prepare("INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at) VALUES(?,?,?,?,?,?,?)")
         .run("osm-node-1", "node", 1, 47, 8, "2026-01-01", "2026-01-01");
       database.prepare("INSERT INTO ratings(bench_row_id,contributor_hash,overall,view_score,comfort,quiet,visible,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)")
@@ -62,7 +66,7 @@ describe("SQLite migrations and R*Tree", () => {
   it("keeps observations separate from objective enrichment", () => {
     const database = new Database(":memory:");
     database.pragma("foreign_keys=ON");
-    for (const migration of migrations) database.exec(migration.sql);
+    applyMigrations(database);
     const bench = database.prepare("INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at) VALUES(?,?,?,?,?,?,?)")
       .run("osm-node-13", "node", 13, 47, 8, "2026-01-01", "2026-01-01");
     const user = database.prepare("INSERT INTO users(username,username_key,password_hash,created_at,avatar_seed) VALUES(?,?,?,?,?)")
@@ -78,7 +82,7 @@ describe("SQLite migrations and R*Tree", () => {
     const database = new Database(":memory:");
     const amenityMigration = migrations.at(-1);
     expect(amenityMigration?.id).toBe("0014_environment_amenities");
-    for (const migration of migrations.slice(0, -1)) database.exec(migration.sql);
+    applyMigrations(database, migrations.slice(0, -1));
     database.prepare(`INSERT INTO environment_features(
       source,source_id,kind,subtype,center_latitude,center_longitude,min_latitude,max_latitude,
       min_longitude,max_longitude,raw_tags,imported_at
@@ -86,7 +90,7 @@ describe("SQLite migrations and R*Tree", () => {
       "OpenStreetMap", "node-1", "tree", "tree", 47, 8, 47, 47, 8, 8, "{}", "2026-09-06",
     );
 
-    database.exec(amenityMigration!.sql);
+    executeMigration(database, amenityMigration!);
     database.prepare(`INSERT INTO environment_features(
       source,source_id,kind,subtype,center_latitude,center_longitude,min_latitude,max_latitude,
       min_longitude,max_longitude,raw_tags,imported_at

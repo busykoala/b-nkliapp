@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { migrations } from "@/db/migrations";
+import { executeMigration, migrations } from "@/db/migrations";
 import { getUserBadges, refreshUserBadges } from "./badges";
 import { recordBenchConfirmation, recordRemovalConfirmation, resolveVerificationThreshold } from "./bench-verification";
 
@@ -11,7 +11,7 @@ describe("community verification", () => {
   beforeEach(() => {
     database = new Database(":memory:");
     database.pragma("foreign_keys=ON");
-    for (const migration of migrations) database.exec(migration.sql);
+    for (const migration of migrations) executeMigration(database, migration);
     const insertUser = database.prepare("INSERT INTO users(username,username_key,password_hash,created_at) VALUES(?,?,?,?)");
     for (let id = 1; id <= 4; id += 1) insertUser.run(`User${id}`, `user${id}`, "hash", "2026-01-01");
     benchRowId = Number(database.prepare(`

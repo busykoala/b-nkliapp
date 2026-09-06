@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { migrations } from "./migrations";
+import { executeMigration, migrations } from "./migrations";
 import { sampleBenches } from "./seed-data";
 
 const globalForDatabase = globalThis as unknown as { benchlySqlite?: Database.Database };
@@ -16,7 +16,7 @@ function migrate(sqlite: Database.Database) {
       // A Next.js build can import this module in several worker processes. The
       // write lock and second check make applying a fresh database race-free.
       if (!applied.get(migration.id)) {
-        sqlite.exec(migration.sql);
+        executeMigration(sqlite, migration);
         mark.run(migration.id, new Date().toISOString());
       }
       sqlite.exec("COMMIT");

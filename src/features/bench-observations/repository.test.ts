@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { migrations } from "@/db/migrations";
+import { executeMigration, migrations } from "@/db/migrations";
 import { readBenchObservationSummary } from "./repository";
 
 describe("bench observation repository", () => {
@@ -11,7 +11,7 @@ describe("bench observation repository", () => {
   beforeEach(() => {
     database = new Database(":memory:");
     database.pragma("foreign_keys=ON");
-    for (const migration of migrations) database.exec(migration.sql);
+    for (const migration of migrations) executeMigration(database, migration);
     benchRowId = Number(database.prepare(
       "INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at) VALUES(?,?,?,?,?,?,?)",
     ).run("osm-node-13", "node", 13, 47, 8, "2026-09-05", "2026-09-05").lastInsertRowid);
