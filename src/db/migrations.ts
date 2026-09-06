@@ -635,4 +635,78 @@ export const migrations = [
       );
     `,
   },
+  {
+    id: "0014_environment_amenities",
+    sql: `
+      DROP TRIGGER IF EXISTS environment_spatial_insert;
+      DROP TRIGGER IF EXISTS environment_spatial_update;
+      DROP TRIGGER IF EXISTS environment_spatial_delete;
+      DROP INDEX IF EXISTS environment_kind_idx;
+      DROP INDEX IF EXISTS environment_imported_idx;
+
+      ALTER TABLE environment_features RENAME TO environment_features_legacy;
+      CREATE TABLE environment_features (
+        row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK(kind IN (
+          'building','tree','water','forest','path','major_road','fireplace','waste_basket'
+        )),
+        subtype TEXT,
+        center_latitude REAL NOT NULL,
+        center_longitude REAL NOT NULL,
+        min_latitude REAL NOT NULL,
+        max_latitude REAL NOT NULL,
+        min_longitude REAL NOT NULL,
+        max_longitude REAL NOT NULL,
+        height_meters REAL,
+        raw_tags TEXT NOT NULL DEFAULT '{}',
+        imported_at TEXT NOT NULL,
+        geometry_wkb BLOB,
+        geometry_crs INTEGER NOT NULL DEFAULT 2056,
+        source_version TEXT,
+        source_updated_at TEXT,
+        ground_elevation_meters REAL,
+        eaves_elevation_meters REAL,
+        roof_elevation_meters REAL,
+        UNIQUE(source, source_id, kind)
+      );
+      INSERT INTO environment_features (
+        row_id, source, source_id, kind, subtype, center_latitude, center_longitude,
+        min_latitude, max_latitude, min_longitude, max_longitude, height_meters,
+        raw_tags, imported_at, geometry_wkb, geometry_crs, source_version,
+        source_updated_at, ground_elevation_meters, eaves_elevation_meters,
+        roof_elevation_meters
+      ) SELECT
+        row_id, source, source_id, kind, subtype, center_latitude, center_longitude,
+        min_latitude, max_latitude, min_longitude, max_longitude, height_meters,
+        raw_tags, imported_at, geometry_wkb, geometry_crs, source_version,
+        source_updated_at, ground_elevation_meters, eaves_elevation_meters,
+        roof_elevation_meters
+      FROM environment_features_legacy;
+      DROP TABLE environment_features_legacy;
+
+      CREATE INDEX environment_kind_idx ON environment_features(kind);
+      CREATE INDEX environment_imported_idx ON environment_features(source, imported_at);
+      DELETE FROM environment_spatial_index;
+      INSERT INTO environment_spatial_index
+        SELECT row_id, min_longitude, max_longitude, min_latitude, max_latitude
+        FROM environment_features;
+      CREATE TRIGGER environment_spatial_insert AFTER INSERT ON environment_features BEGIN
+        INSERT OR REPLACE INTO environment_spatial_index VALUES (
+          new.row_id, new.min_longitude, new.max_longitude, new.min_latitude, new.max_latitude
+        );
+      END;
+      CREATE TRIGGER environment_spatial_update
+        AFTER UPDATE OF min_longitude, max_longitude, min_latitude, max_latitude ON environment_features BEGIN
+        UPDATE environment_spatial_index SET
+          min_longitude=new.min_longitude, max_longitude=new.max_longitude,
+          min_latitude=new.min_latitude, max_latitude=new.max_latitude
+        WHERE row_id=new.row_id;
+      END;
+      CREATE TRIGGER environment_spatial_delete AFTER DELETE ON environment_features BEGIN
+        DELETE FROM environment_spatial_index WHERE row_id=old.row_id;
+      END;
+    `,
+  },
 ];

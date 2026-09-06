@@ -73,4 +73,36 @@ describe("SQLite migrations and R*Tree", () => {
     expect((database.prepare("SELECT count(*) count FROM bench_enrichments").get() as { count: number }).count).toBe(0);
     database.close();
   });
+
+  it("upgrades existing environment data before accepting nearby amenities", () => {
+    const database = new Database(":memory:");
+    const amenityMigration = migrations.at(-1);
+    expect(amenityMigration?.id).toBe("0014_environment_amenities");
+    for (const migration of migrations.slice(0, -1)) database.exec(migration.sql);
+    database.prepare(`INSERT INTO environment_features(
+      source,source_id,kind,subtype,center_latitude,center_longitude,min_latitude,max_latitude,
+      min_longitude,max_longitude,raw_tags,imported_at
+    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+      "OpenStreetMap", "node-1", "tree", "tree", 47, 8, 47, 47, 8, 8, "{}", "2026-09-06",
+    );
+
+    database.exec(amenityMigration!.sql);
+    database.prepare(`INSERT INTO environment_features(
+      source,source_id,kind,subtype,center_latitude,center_longitude,min_latitude,max_latitude,
+      min_longitude,max_longitude,raw_tags,imported_at
+    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+      "OpenStreetMap", "node-2", "fireplace", "firepit", 47.1, 8.1, 47.1, 47.1, 8.1, 8.1, "{}", "2026-09-06",
+    );
+    database.prepare(`INSERT INTO environment_features(
+      source,source_id,kind,subtype,center_latitude,center_longitude,min_latitude,max_latitude,
+      min_longitude,max_longitude,raw_tags,imported_at
+    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+      "OpenStreetMap", "node-3", "waste_basket", "waste_basket", 47.2, 8.2, 47.2, 47.2, 8.2, 8.2, "{}", "2026-09-06",
+    );
+
+    expect(database.prepare("SELECT kind FROM environment_features ORDER BY row_id").all())
+      .toEqual([{ kind: "tree" }, { kind: "fireplace" }, { kind: "waste_basket" }]);
+    expect((database.prepare("SELECT count(*) count FROM environment_spatial_index").get() as { count: number }).count).toBe(3);
+    database.close();
+  });
 });
