@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, Footprints, MapPin, RefreshCw, X } from "lucide-react";
+import { ChevronDown, Footprints, MapPin, RefreshCw, X } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { JourneyOrigin, JourneyPoint } from "@/lib/journey";
 import { StartPicker } from "../routing/start-picker";
@@ -24,7 +24,7 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
   useEffect(() => { title.current?.focus(); }, []);
   useEffect(() => { if (result) resultSection.current?.scrollIntoView({ block: "start", behavior: "instant" }); }, [result]);
   return <aside className={`journey-panel storybook-panel ${expanded ? "is-expanded" : ""}`} aria-label="Dein Weg zum Bänkli">
-    <div className="journey-chrome"><button aria-label="Reiseplan schliessen" onClick={onClose}><ArrowLeft size={18} /></button><button aria-label="Reiseplan vergrössern oder verkleinern" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}><span className="journey-handle" /></button><button aria-label="Zurück zur Bank" onClick={onClose}><X size={18} /></button></div>
+    <div className="journey-chrome"><button className="journey-resize" aria-label="Reiseplan vergrössern oder verkleinern" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}><span className="journey-handle" /></button><button aria-label="Reiseplan schliessen" onClick={onClose}><X size={18} /></button></div>
     <div className="journey-scroll">
       <header><span className="story-eyebrow">Ein kleiner Ausflug</span><h2 tabIndex={-1} ref={title}>{initial ? "Dein Rückweg" : "Dein Weg zum Bänkli"}</h2><p className="journey-destination"><MapPin size={15} /> {bench.title}</p></header>
       <section className="journey-controls" aria-label="Reise planen">
@@ -35,7 +35,6 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
         <fieldset className="journey-pace"><legend>Dein Schritttempo</legend><div>{PACE_OPTIONS.map((p, i) => <button key={p.speed} aria-pressed={speed === p.speed} onClick={() => updateSettings({ speed: p.speed })}><span className={`pace-drawing pace-${i}`}><Footprints size={24 + i * 3} /></span><strong>{p.label}</strong><small>{p.speed} km/h</small></button>)}</div><small>500 m in etwa {Math.ceil(500 / (speed / 3.6) / 60)} min · Steigung und Untergrund können bremsen.</small></fieldset>
         {mode === "transit" && <fieldset className="journey-buffer"><legend>Luft beim Umsteigen</legend><div>{([0, 3, 6, 10] as const).map((value) => <button key={value} aria-pressed={buffer === value} onClick={() => updateSettings({ buffer: value })}><span>+{value}</span><small>min</small></button>)}</div></fieldset>}
         </details>
-        <p className="journey-privacy">Beim Suchen und Planen gehen Eingaben und Koordinaten an GeoAdmin und transport.opendata.ch. Fussrouting läuft auf unserem Server. Persönliche Routen bleiben hier höchstens fünf Minuten im Arbeitsspeicher, ohne Verlauf. Für die Anbieter gelten deren eigene Datenschutzregeln.</p>
         <button className="journey-submit" disabled={pending || !origin} onClick={() => submit()}><RefreshCw size={17} />{pending ? "Dein Weg wird gesucht …" : result ? "Verbindungen aktualisieren" : "Meinen Weg finden"}</button>
         {pending && <p role="status">Die Karte bleibt frei beweglich. Wege können bis zu 15 Sekunden benötigen.</p>}
         {dirty && result && <p role="status">Einstellungen geändert – bitte Verbindungen aktualisieren. Der gezeigte Plan gilt noch für die vorherige Auswahl.</p>}
@@ -57,7 +56,7 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
         <button className="journey-location" disabled={pending} onClick={() => submit(timeMode === "arrival" ? -30 : 30)}>{timeMode === "arrival" ? "30 Minuten früher suchen" : "30 Minuten später suchen"}</button>
         <small>Abgefragt um {journeyClock(result.fetchedAt)} · {result.feedUpdatedAt ? `Transferdaten: ${new Date(result.feedUpdatedAt).toLocaleDateString("de-CH")}` : "Offizielle Transferdaten noch nicht verfügbar"}</small>
       </section>}
-      <footer className="journey-sources"><details><summary>Gut zu wissen</summary><p>ÖV-Linien sind schematisch. Fusswege und Gehzeiten sind Schätzungen, keine Zusage zu Barrierefreiheit oder Bergsicherheit.</p><a href="/danke">Datenquellen &amp; Danksagung</a><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer">Kartenfehler melden</a></details></footer>
+      <footer className="journey-sources"><details><summary>Gut zu wissen</summary><p>ÖV-Linien sind schematisch. Fusswege und Gehzeiten sind Schätzungen, keine Zusage zu Barrierefreiheit oder Bergsicherheit.</p><p>Beim Suchen werden Eingaben und Koordinaten an die benötigten Karten- und Fahrplandienste übermittelt. Fussrouting läuft auf unserem Server; persönliche Routen bleiben höchstens fünf Minuten im Arbeitsspeicher, ohne Verlauf.</p><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer">Kartenfehler melden</a></details></footer>
     </div>
   </aside>;
 }

@@ -24,4 +24,12 @@ describe("data catalog", () => {
     }
     expect(dataCatalog.sources.filter(({ lifecycle }) => lifecycle === "active").every(({ access }) => access !== "evaluation-only")).toBe(true);
   });
+
+  it("documents the active vision model and resolved research decisions", () => {
+    const visionModel = dataCatalog.sources.find(({ id }) => id === "qwen3-vl-benchly");
+    expect(visionModel).toMatchObject({ lifecycle: "active", access: "open-source" });
+    expect(visionModel?.statusNote).toContain("benchly-vision");
+    expect(dataCatalog.sources.filter(({ lifecycle }) => lifecycle === "experimental")).toEqual([]);
+    expect(dataCatalog.sources.filter(({ lifecycle }) => lifecycle === "research-only").every(({ statusNote }) => Boolean(statusNote))).toBe(true);
+  });
 });

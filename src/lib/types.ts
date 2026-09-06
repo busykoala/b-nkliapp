@@ -40,6 +40,8 @@ export type MapFilters = {
   armrest?: boolean;
   covered?: boolean;
   wheelchair?: boolean;
+  nearFireplace?: boolean;
+  nearWasteBasket?: boolean;
   environment?: "forest" | "open";
   material?: string;
   minCommunityRating?: number;

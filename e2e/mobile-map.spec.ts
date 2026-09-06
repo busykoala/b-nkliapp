@@ -31,6 +31,73 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
 });
 
+test("keeps map search and filters clear with keyboard input", async ({ page }, testInfo) => {
+  await page.goto("/");
+  const search = page.getByRole("combobox", { name: "Ort suchen" });
+  await search.fill("Lindenhof");
+  await expect(search).toHaveAttribute("aria-expanded", "true");
+  const firstResult = page.getByRole("option").first();
+  await expect(firstResult).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("map-search-results.png"), fullPage: false });
+  await search.press("ArrowDown");
+  await expect(firstResult).toHaveAttribute("aria-selected", "true");
+  await search.press("Escape");
+  await expect(search).toHaveValue("");
+  await expect(search).toHaveAttribute("aria-expanded", "false");
+
+  await page.getByLabel("Menü öffnen").click();
+  await page.getByRole("button", { name: "Bänkli auswählen" }).click();
+  const filters = page.getByRole("dialog", { name: "Was passt gerade?" });
+  await expect(filters).toBeVisible();
+  await expect(filters.getByLabel("Filter schliessen")).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(filters.getByRole("button", { name: "Karte ansehen" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(filters.getByLabel("Filter schliessen")).toBeFocused();
+  const sun = filters.getByRole("button", { name: "Sonne", exact: true });
+  const shade = filters.getByRole("button", { name: "Schatten", exact: true });
+  await shade.click();
+  await expect(filters.getByText("1 Filter aktiv")).toBeVisible();
+  await expect(shade).toHaveAttribute("aria-pressed", "true");
+  await sun.click();
+  await expect(sun).toHaveAttribute("aria-pressed", "true");
+  await expect(shade).toHaveAttribute("aria-pressed", "false");
+  await expect(filters.getByText("1 Filter aktiv")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("map-filters.png"), fullPage: false });
+  await filters.getByText("Weitere Wünsche", { exact: true }).click();
+  const fireplace = filters.getByRole("button", { name: "Feuerstelle nah" });
+  await expect(fireplace).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Abfalleimer nah" })).toBeVisible();
+  await fireplace.click();
+  await expect(filters.getByText("2 Filter aktiv")).toBeVisible();
+  await expect(page.getByText("Bänke konnten nicht geladen werden.")).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("map-filters-more.png"), fullPage: false });
+  await page.keyboard.press("Escape");
+  await expect(filters).toHaveCount(0);
+  await expect(page.getByLabel("Menü öffnen")).toBeFocused();
+});
+
+test("keeps core pages contained from tablet to large desktop", async ({ page }, testInfo) => {
+  for (const viewport of [{ width: 768, height: 1024 }, { width: 1280, height: 800 }, { width: 1600, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/bank/osm-node-101");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+    await expect(page.locator(".standalone-bench-card")).toBeVisible();
+  }
+  await page.screenshot({ path: testInfo.outputPath("bench-desktop.png"), fullPage: false });
+
+  await page.goto("/");
+  await page.getByLabel("Menü öffnen").click();
+  await page.getByRole("button", { name: "Bänkli auswählen" }).click();
+  const panel = page.getByRole("dialog", { name: "Was passt gerade?" });
+  const box = await panel.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(1600);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+});
+
 test("activates the raster fallback when the vector style fails", async ({ page }) => {
   await page.route("https://vectortiles.geo.admin.ch/styles/**", (route) => route.abort("failed"));
   await page.goto("/");
@@ -168,6 +235,7 @@ test("shows useful sun and view information before terrain enrichment", async ({
   await page.getByRole("tab", { name: "Licht" }).click();
   await expect(page.getByText(/Direkte Sonne|Geschätzte Sonne/).first()).toBeVisible();
   await page.getByRole("tab", { name: "Aussicht" }).click();
+  await page.getByText("Aussicht im Detail").click();
   await expect(page.getByText("Was den Horizont prägt")).toBeVisible();
   await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
 });

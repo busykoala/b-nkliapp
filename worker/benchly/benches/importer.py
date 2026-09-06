@@ -159,7 +159,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 "source": "OpenStreetMap",
                 "source_id": f"{item.osm_type}-{item.osm_id}",
                 "kind": item.kind,
-                "subtype": tags.get("building") or tags.get("natural") or tags.get("water") or tags.get("highway") or tags.get("landuse"),
+                "subtype": tags.get("building") or tags.get("natural") or tags.get("water") or tags.get("highway") or tags.get("landuse") or tags.get("amenity") or tags.get("leisure"),
                 "center_latitude": item.center_latitude,
                 "center_longitude": item.center_longitude,
                 "min_latitude": item.min_latitude,
@@ -212,7 +212,8 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
         def node(self, node) -> None:
             if node.tags.get("amenity") == "bench" and node.location.valid():
                 self._append("node", node.id, node.location.lat, node.location.lon, node.tags)
-            if node.location.valid() and node.tags.get("natural") == "tree":
+            clean_tags = {tag.k: tag.v for tag in node.tags if tag.k in CONTEXT_TAGS}
+            if node.location.valid() and context_kind(clean_tags) in {"tree", "fireplace", "waste_basket"}:
                 self._append_context("node", node.id, [(node.location.lat, node.location.lon)], node.tags)
 
         def way(self, way) -> None:

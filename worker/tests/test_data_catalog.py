@@ -10,6 +10,14 @@ class DataCatalogTest(unittest.TestCase):
         self.assertIn("graphhopper", {source.id for source in catalog.sources})
         self.assertIn("sonbase", {source.id for source in catalog.sources})
         self.assertTrue(all(source.lifecycle in {"active", "experimental", "research-only"} for source in catalog.sources))
+
+    def test_active_vision_model_and_research_decisions_are_explicit(self):
+        catalog = load_catalog()
+        vision_model = next(source for source in catalog.sources if source.id == "qwen3-vl-benchly")
+        self.assertEqual(vision_model.lifecycle, "active")
+        self.assertIn("benchly-vision", vision_model.statusNote or "")
+        self.assertFalse(any(source.lifecycle == "experimental" for source in catalog.sources))
+        self.assertTrue(all(source.statusNote for source in catalog.sources if source.lifecycle == "research-only"))
         self.assertTrue(all(source.access != "evaluation-only" for source in catalog.sources if source.lifecycle == "active"))
         source_by_id = {source.id: source for source in catalog.sources}
         self.assertTrue(all(

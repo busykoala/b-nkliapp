@@ -64,6 +64,10 @@ def parse_height(tags: dict[str, str]) -> Optional[float]:
 
 
 def context_kind(tags: dict[str, str]) -> Optional[str]:
+    if tags.get("amenity") == "waste_basket":
+        return "waste_basket"
+    if tags.get("amenity") in {"bbq", "firepit"} or tags.get("leisure") == "firepit":
+        return "fireplace"
     if tags.get("building") not in {None, "no"}:
         return "building"
     if tags.get("natural") == "tree":
@@ -82,4 +86,3 @@ def context_kind(tags: dict[str, str]) -> Optional[str]:
 def score_view(openness: float, relief: float, water: float, naturalness: float, remoteness: float) -> int:
     values = [max(0.0, min(1.0, item)) for item in (openness, relief, water, naturalness, remoteness)]
     return round(100 * (0.35 * values[0] + 0.25 * values[1] + 0.15 * values[2] + 0.15 * values[3] + 0.10 * values[4]))
-

@@ -44,17 +44,17 @@ export function AppMenu({ user, onFilter, onAdd, activeFilters = 0 }: { user: Cu
     <button aria-label="Menü öffnen" className="calm-menu-button" onClick={() => dialog.current?.showModal()}>
       <Menu size={20} />{activeFilters > 0 && <span className="menu-dot" />}
     </button>
-    <dialog ref={dialog} className="app-menu-dialog">
+    <dialog ref={dialog} className="app-menu-dialog" aria-labelledby="app-menu-title">
       <div className="app-menu-sheet">
-        <header><span>Bänkli App</span><button aria-label="Menü schliessen" onClick={close}><X size={19} /></button></header>
-        <nav>
+        <header><h2 id="app-menu-title">Bänkli App</h2><button aria-label="Menü schliessen" onClick={close}><X size={19} /></button></header>
+        <nav aria-label="Hauptnavigation">
           <Link aria-label="Bänkli-Feed" href="/feed" className={`app-menu-row ${pathname === "/feed" ? "is-current" : ""}`} onClick={close}><Footprints size={19} /> Bänkli-Feed</Link>
-          {onFilter && <button className="app-menu-row" onClick={() => { close(); onFilter(); }}><SlidersHorizontal size={19} /> Bänkli auswählen {activeFilters > 0 && <small>{activeFilters}</small>}</button>}
-          {onAdd && <button aria-label="Bänkli eintragen" className="app-menu-row" onClick={() => { if (user) { close(); onAdd(); } else openAccount(); }}><Plus size={19} /> Bänkli eintragen</button>}
+          {onFilter && <button className="app-menu-row" onClick={() => { close(); window.setTimeout(onFilter, 0); }}><SlidersHorizontal size={19} /> Bänkli auswählen {activeFilters > 0 && <small>{activeFilters}</small>}</button>}
+          {onAdd && <button aria-label="Bänkli eintragen" className="app-menu-row" onClick={() => { if (user) { close(); window.setTimeout(onAdd, 0); } else openAccount(); }}><Plus size={19} /> Bänkli eintragen</button>}
           {user ? <Link aria-label="Mein Profil" href="/profil" className="app-menu-row" onClick={close}><span className="app-menu-avatar"><TrailAvatar seed={user.avatarSeed} username={user.username} compact /></span> Mein Profil</Link>
             : <button aria-label="Anmelden" className="app-menu-row" onClick={openAccount}><LogIn size={19} /> Anmelden</button>}
           {(ios || installEvent) && <button className="app-menu-row" onClick={install}><Download size={19} /> App installieren</button>}
-          <Link aria-label="Danke und Datenquellen" href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Heart size={19} /> Danke &amp; Daten</Link>
+          <Link aria-label="Danke und Daten" href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Heart size={19} /> Danke &amp; Daten</Link>
         </nav>
         {iosHelp && <p className="ios-help"><Share size={17} /> In Safari „Teilen“ und danach „Zum Home-Bildschirm“ wählen.</p>}
       </div>

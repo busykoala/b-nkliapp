@@ -9,6 +9,7 @@ import dynamic from "next/dynamic";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
+import { activeMapFilterCount } from "@/lib/map-filters";
 import { BenchSheet } from "./bench-sheet";
 import { FilterPanel } from "./filter-panel";
 import { SearchBox } from "./search-box";
@@ -149,7 +150,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       await response.blob();
     }));
 
-    import("maplibre-gl").then(({ Map }) => {
+    import("maplibre-gl").then(({ AttributionControl, Map }) => {
       if (disposed || !containerRef.current) return;
       const map = new Map({
         container: containerRef.current,
@@ -161,6 +162,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         attributionControl: false,
         style: MINIMAL_MAP_STYLE,
       });
+      map.addControl(new AttributionControl({
+        compact: true,
+        customAttribution: '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>',
+      }), "bottom-right");
       mapRef.current = map;
 
       map.getContainer().dataset.basemap = "loading";
@@ -335,7 +340,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     source?.setData({ type: "FeatureCollection", features: [] });
     setAddOpen(false);
   };
-  const activeFilterCount = Object.values(filters).filter((value) => value !== undefined && value !== false && value !== "").length;
+  const activeFilterCount = activeMapFilterCount(filters);
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-base-200">
       <div ref={containerRef} className="benchly-map absolute inset-0" aria-label="Karte der Schweizer Sitzbänke" aria-busy={mapLoading} />

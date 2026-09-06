@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026-09-05",
+  "catalogVersion": "2026-09-06",
   "timeZone": "Europe/Zurich",
   "runtime": {
     "pipelineVersion": "4.4.0",
@@ -253,9 +253,10 @@
       "checkUrl": "https://www.bfs.admin.ch/bfs/de/home/statistiken/bevoelkerung/erhebungen/statpop.html",
       "provides": ["Bevölkerungsraster als Urbanitätskontext, nicht als Schönheitswert"],
       "license": "Bundesamt für Statistik; Nutzung gemäss BFS-Open-Data-Bedingungen",
-      "usedBy": ["environment-evidence"],
+      "usedBy": ["source-monitoring", "research"],
       "access": "open-data",
-      "lifecycle": "experimental"
+      "lifecycle": "research-only",
+      "statusNote": "Geprüft, aber nicht produktiv genutzt: Bevölkerungsdichte ist kein belastbarer Qualitätswert für ein Bänkli."
     },
     {
       "id": "astra-traffic",
@@ -265,9 +266,10 @@
       "checkUrl": "https://www.astra.admin.ch/de/monats-und-jahresergebnisse",
       "provides": ["Zählstellen und Verkehrsbelastung als Störungs-Evidenz"],
       "license": "Bundesamt für Strassen Open Government Data",
-      "usedBy": ["environment-evidence", "walk-evidence"],
+      "usedBy": ["source-monitoring", "research"],
       "access": "open-data",
-      "lifecycle": "experimental"
+      "lifecycle": "research-only",
+      "statusNote": "Geprüft, aber nicht separat gewertet: Die produktiv verwendeten sonBASE-Daten berücksichtigen den Strassenverkehr bereits."
     },
     {
       "id": "foen-air",
@@ -277,9 +279,10 @@
       "checkUrl": "https://www.bafu.admin.ch/de/luft-geodaten",
       "provides": ["Jährliche Luftbelastung als eigenständige Umweltinformation"],
       "license": "Bundesamt für Umwelt Open Government Data",
-      "usedBy": ["environment-evidence"],
+      "usedBy": ["source-monitoring", "research"],
       "access": "open-data",
-      "lifecycle": "experimental"
+      "lifecycle": "research-only",
+      "statusNote": "Geprüft, aber nicht mit Natürlichkeit vermischt: Luftbelastung wäre eine eigene Umweltinformation, kein Bänkli-Qualitätswert."
     },
     {
       "id": "wanderland",
@@ -289,9 +292,10 @@
       "checkUrl": "https://www.astra.admin.ch/de/geodaten-langsamverkehr-und-historische-verkehrswege",
       "provides": ["Publizierte Wanderweg- und Langsamverkehrsevidenz"],
       "license": "Bundesgeodaten gemäss den Nutzungsbedingungen der publizierten Ebene",
-      "usedBy": ["walk-evidence"],
+      "usedBy": ["source-monitoring", "research"],
       "access": "open-data",
-      "lifecycle": "experimental"
+      "lifecycle": "research-only",
+      "statusNote": "Geprüft, derzeit nicht zusätzlich importiert: Die benötigten Wegmerkmale kommen bereits aus dem Fussrouting und OpenStreetMap."
     },
     {
       "id": "isos",
@@ -301,9 +305,10 @@
       "checkUrl": "https://www.bak.admin.ch/de/isos-geoportal",
       "provides": ["Schützenswerte Ortsbilder als Kulturlandschaftsevidenz"],
       "license": "Bundesamt für Kultur; Nutzung gemäss Bundesgeoportal",
-      "usedBy": ["walk-evidence"],
+      "usedBy": ["source-monitoring", "research"],
       "access": "open-data",
-      "lifecycle": "experimental"
+      "lifecycle": "research-only",
+      "statusNote": "Geprüft, derzeit nicht als Schönheitsbeweis genutzt: Ein Inventareintrag sagt wenig über den konkreten Weg zum Bänkli aus."
     },
     {
       "id": "ivs",
@@ -313,9 +318,21 @@
       "checkUrl": "https://www.astra.admin.ch/de/geodaten-langsamverkehr-und-historische-verkehrswege",
       "provides": ["Historische Wege als Kultur- und Wegeevidenz"],
       "license": "Bundesamt für Strassen; Nutzung gemäss Bundesgeoportal",
-      "usedBy": ["walk-evidence"],
+      "usedBy": ["source-monitoring", "research"],
       "access": "open-data",
-      "lifecycle": "experimental"
+      "lifecycle": "research-only",
+      "statusNote": "Geprüft, derzeit nicht produktiv gewertet: Historische Bedeutung ist nicht automatisch ein schöner oder gut begehbarer Weg."
+    },
+    {
+      "id": "qwen3-vl-benchly",
+      "name": "Qwen3-VL 8B · Bänkli Vision",
+      "kind": "Inference-Modell",
+      "url": "https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct-GGUF/tree/f982a07559d4a2f6c8744d840bf6fccab30eea96",
+      "provides": ["Lokale Einordnung offener Umgebungsbilder als ergänzende, qualitätsgeprüfte Evidenz"],
+      "license": "Apache-2.0; Q4_K_M-GGUF und Vision-Projektor lokal betrieben",
+      "usedBy": ["scene-analysis", "vision-quality"],
+      "access": "open-source",
+      "statusNote": "Läuft unter dem Alias benchly-vision auf der eigenen Inference-Infrastruktur; Geometrie und Community-Hinweise bleiben getrennte Evidenz."
     },
     {
       "id": "benchly-community",
@@ -351,9 +368,9 @@
     {"id":"weather-icon","title":"Wetterprognose","schedule":"7,37 * * * *","frequency":"zweimal pro Stunde","deadlineSeconds":1500,"command":"refresh-weather","args":["--database","/data/benchly.sqlite","--icon-only"],"sourceIds":["meteoswiss"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"weather-radar","title":"Niederschlagsradar","schedule":"*/5 * * * *","frequency":"alle fünf Minuten","deadlineSeconds":300,"command":"refresh-weather","args":["--database","/data/benchly.sqlite","--radar-only"],"sourceIds":["meteoswiss"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"image-discovery","title":"Offene Bilder finden","schedule":"0 20 * * *","frequency":"täglich um 20:00","deadlineSeconds":3000,"command":"discover-open-images","args":["--database","/data/benchly.sqlite","--max-cells","50","--requests-per-second","1"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
-    {"id":"scene-analysis","title":"Umgebung aus Bildern einordnen","schedule":"0 21 * * *","frequency":"täglich um 21:00","deadlineSeconds":7500,"command":"analyze-scenes","args":["--database","/data/benchly.sqlite","--limit","300","--max-runtime-hours","2","--requests-per-second","0.25"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["benchly-db","scene-model"],"profile":"inference","purpose":"production"},
+    {"id":"scene-analysis","title":"Umgebung aus Bildern einordnen","schedule":"0 21 * * *","frequency":"täglich um 21:00","deadlineSeconds":7500,"command":"analyze-scenes","args":["--database","/data/benchly.sqlite","--limit","300","--max-runtime-hours","2","--requests-per-second","0.25"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage","qwen3-vl-benchly"],"artifactIds":["benchly-db","scene-model"],"profile":"inference","purpose":"production"},
     {"id":"environment-reconcile","title":"Umgebungsevidenz zusammenführen","schedule":"15 23 * * *","frequency":"täglich um 23:15","deadlineSeconds":3600,"command":"reconcile-environment","args":["--database","/data/benchly.sqlite","--limit","5000","--max-total","1000"],"sourceIds":["openstreetmap","swisstlm3d","swissbuildings3d","panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
-    {"id":"vision-benchmark","title":"Bildmodell-Qualitätsprüfung","schedule":"0 6 * * 0","frequency":"sonntags um 06:00","deadlineSeconds":7500,"command":"benchmark-vision","args":["--database","/data/benchly.sqlite","--dataset","/worker/evaluation/benchly-100.jsonl","--models","benchly-vision","general","--requests-per-second","0.25"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage"],"artifactIds":["scene-model"],"profile":"inference","purpose":"quality"},
+    {"id":"vision-benchmark","title":"Bildmodell-Qualitätsprüfung","schedule":"0 6 * * 0","frequency":"sonntags um 06:00","deadlineSeconds":7500,"command":"benchmark-vision","args":["--database","/data/benchly.sqlite","--dataset","/worker/evaluation/benchly-100.jsonl","--models","benchly-vision","general","--requests-per-second","0.25"],"sourceIds":["panoramax","wikimedia-commons","kartaview","swissimage","qwen3-vl-benchly"],"artifactIds":["scene-model"],"profile":"inference","purpose":"quality"},
     {"id":"source-check-weekly","title":"Lärmdaten-Versionen prüfen","schedule":"20 4 * * 1","frequency":"montags um 04:20","deadlineSeconds":300,"command":"check-source-versions","args":["--database","/data/source-status.sqlite","--sources","sonbase"],"sourceIds":["sonbase"],"artifactIds":["source-status"],"profile":"standard","purpose":"monitoring"},
     {"id":"source-check-monthly","title":"Namen, Bevölkerung, Verkehr und Wanderwege prüfen","schedule":"35 4 1 * *","frequency":"monatlich am 1. um 04:35","deadlineSeconds":600,"command":"check-source-versions","args":["--database","/data/source-status.sqlite","--sources","swissnames3d","statpop","astra-traffic","wanderland"],"sourceIds":["swissnames3d","statpop","astra-traffic","wanderland"],"artifactIds":["source-status"],"profile":"standard","purpose":"monitoring"},
     {"id":"source-check-quarterly","title":"Oberfläche und Kulturlandschaft prüfen","schedule":"50 4 1 1,4,7,10 *","frequency":"quartalsweise am 1. um 04:50","deadlineSeconds":600,"command":"check-source-versions","args":["--database","/data/source-status.sqlite","--sources","swisssurface3d","isos","ivs"],"sourceIds":["swisssurface3d","isos","ivs"],"artifactIds":["source-status"],"profile":"standard","purpose":"monitoring"},

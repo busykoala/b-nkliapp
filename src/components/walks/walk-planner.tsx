@@ -15,7 +15,7 @@ export function WalkPlanner({ getMap, onClose, onReturn }: { getMap: () => MapLi
   useEffect(() => { title.current?.focus(); }, []);
   const copy = p.chosen && p.result ? walkCopy([p.chosen.bench], p.result.query.shape, p.chosen.extraBenches.length) : null;
   return <aside className={`journey-panel storybook-panel ${expanded ? "is-expanded" : ""}`} aria-label="Spaziergang entdecken">
-    <div className="journey-chrome"><button aria-label="Spaziergang schliessen" onClick={onClose}><X size={18} /></button><button aria-label="Spaziergang vergrössern oder verkleinern" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}><span className="journey-handle" /></button></div>
+    <div className="journey-chrome"><button className="journey-resize" aria-label="Spaziergang vergrössern oder verkleinern" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}><span className="journey-handle" /></button><button aria-label="Spaziergang schliessen" onClick={onClose}><X size={18} /></button></div>
     <div className="journey-scroll"><header><span className="story-eyebrow">Zeit für ein Bänkli</span><h2 ref={title} tabIndex={-1}>Spaziergang entdecken</h2><p>Ein schöner Weg. Ein Bänkli zum Innehalten.</p></header>
       <section className="journey-controls" aria-label="Spaziergang planen">
         <StartPicker origin={p.origin} onChange={p.chooseOrigin} getMap={getMap} />
@@ -26,7 +26,6 @@ export function WalkPlanner({ getMap, onClose, onReturn }: { getMap: () => MapLi
           <fieldset className="walk-options"><legend>Dein Schritttempo</legend><div>{PACE_OPTIONS.map((v) => <button key={v.speed} aria-pressed={s.speed === v.speed} onClick={() => p.change({ speed: v.speed })}>{v.label}<small>{v.speed} km/h</small></button>)}</div></fieldset>
           <div className="journey-time"><label>Schwierigkeit<select value={s.difficulty} onChange={(e) => p.change({ difficulty: e.target.value as "easy" | "t2" })}><option value="easy">Leichte Wege</option><option value="t2">Bergwege bis T2</option></select></label><label>Startzeit (Schweiz; leer = jetzt)<input type="datetime-local" value={s.time} onChange={(e) => p.change({ time: e.target.value })} /></label></div>
         </details>
-        <p className="journey-privacy">Standort nur auf Wunsch. Adress-/Stationssuche nutzt GeoAdmin und transport.opendata.ch; Fussrouting läuft auf unserem Server. Persönliche Routen bleiben höchstens fünf Minuten im Arbeitsspeicher, ohne Verlauf.</p>
         <button className="journey-submit" disabled={!p.origin || p.pending} onClick={p.submit}><Footprints size={20} />{p.pending ? "Dein Ausflug entsteht …" : p.result ? "Spaziergänge aktualisieren" : "Mein Bänkli entdecken"}</button>
         {p.pending && <p role="status">Die Karte bleibt beweglich. Die Suche dauert höchstens 15 Sekunden.</p>}
         {p.dirty && p.result && <p role="status">Auswahl geändert — der gezeigte Weg gilt noch für die vorherigen Einstellungen.</p>}
@@ -43,7 +42,7 @@ export function WalkPlanner({ getMap, onClose, onReturn }: { getMap: () => MapLi
         <details><summary>Warum dieser Vorschlag?</summary><p>Wir vergleichen Ruhe, Natur, Aussicht, Wassernähe und das Bänkli entlang des tatsächlichen Wegs. Das ist eine datengestützte Einschätzung, keine Schönheitsgarantie.</p>{p.chosen.evidence.warnings.map((warning) => <p key={warning}>{warning}</p>)}<p>{p.chosen.evidence.updatedAt ? `Landschaftsdaten vom ${new Date(p.chosen.evidence.updatedAt).toLocaleDateString("de-CH")}.` : "Landschaftsdaten fehlen noch."} Bestätigte zusätzliche Bänkli haben einen kurzen geprüften Fusszugang; nicht geprüfte werden nicht gezählt.</p></details>
         {p.result.query.shape === "one-way" && <button className="journey-submit" onClick={() => { const journey = p.returnJourney(); if (journey) onReturn(journey); }}>Rückweg planen</button>}
       </section>}
-      <footer className="journey-sources"><details><summary>Gut zu wissen</summary><p>Gehzeiten und Licht sind Schätzungen. Keine Zusage zu Barrierefreiheit, aktuellen Sperren, Schnee oder Bergsicherheit.</p><a href="/danke">Datenquellen &amp; Danksagung</a></details></footer>
+      <footer className="journey-sources"><details><summary>Gut zu wissen</summary><p>Gehzeiten und Licht sind Schätzungen. Keine Zusage zu Barrierefreiheit, aktuellen Sperren, Schnee oder Bergsicherheit.</p><p>Standort nur auf Wunsch. Für die Suche werden Eingaben und Koordinaten an den benötigten Kartendienst übermittelt; Fussrouting läuft auf unserem Server. Persönliche Routen bleiben höchstens fünf Minuten im Arbeitsspeicher, ohne Verlauf.</p></details></footer>
     </div>
   </aside>;
 }

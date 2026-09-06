@@ -9,6 +9,14 @@ export function normalizeLocationKey(value: string) {
   return value.normalize("NFKD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("de-CH").trim();
 }
 
+function readableLabel(value: unknown, fallback = "") {
+  return String(value ?? fallback)
+    .replace(/<i>[^<]*<\/i>\s*/gi, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function searchGeoAdminLocations(query: string, fetcher: typeof fetch = fetch): Promise<PlaceResult[]> {
   const url = new URL(`${DATA_RUNTIME.geoAdminBaseUrl}/rest/services/api/SearchServer`);
   url.searchParams.set("searchText", query);
@@ -26,7 +34,7 @@ export async function searchGeoAdminLocations(query: string, fetcher: typeof fet
       const latitude = Number(attrs.lat ?? attrs.y);
       const longitude = Number(attrs.lon ?? attrs.x);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
-      const label = String(attrs.label ?? attrs.detail ?? query).replace(/<[^>]*>/g, "");
+      const label = readableLabel(attrs.label ?? attrs.detail, query);
       const kind: PlaceResult["kind"] = attrs.origin === "address" ? "address" : "place";
       return [{ id: String(result.id ?? `${latitude}-${longitude}`), label, latitude, longitude, kind }];
     });
@@ -47,7 +55,7 @@ export async function findNearestSwissName(latitude: number, longitude: number, 
     if (!response.ok) return null;
     const data = await response.json() as { results?: SearchResult[] };
     const result = (data.results ?? []).find(({ attrs }) => attrs?.layerBodId === "ch.swisstopo.swissnames3d");
-    const label = String(result?.attrs?.label ?? "").replace(/<[^>]*>/g, "").trim();
+    const label = readableLabel(result?.attrs?.label);
     return label || null;
   } catch { return null; }
 }

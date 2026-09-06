@@ -78,6 +78,7 @@ class DataSource(StrictModel):
     usedBy: list[str] = Field(min_length=1)
     access: str = Field(pattern=r"^(open-data|open-source|community-owned|evaluation-only)$")
     lifecycle: str = Field(default="active", pattern=r"^(active|experimental|research-only)$")
+    statusNote: str | None = None
     checkUrl: HttpUrl | None = None
 
 

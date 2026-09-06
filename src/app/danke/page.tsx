@@ -36,6 +36,7 @@ export default async function AcknowledgementsPage() {
         {dataCatalog.sources.map((source) => <article className="source-card" key={source.id}>
           <div><span>{source.kind}{source.lifecycle === "experimental" ? " · in Prüfung" : source.lifecycle === "research-only" ? " · nur Forschung" : ""}</span><h3>{source.name}</h3></div>
           <p>{source.provides.join(" · ")}</p>
+          {source.statusNote && <p className="source-status-note">{source.statusNote}</p>}
           <small>{source.license}</small>
           {freshness.sourceChecks[source.id] && <small>{freshnessLabel(freshness.sourceChecks[source.id])} geprüft</small>}
           {source.url.startsWith("/")

@@ -11,6 +11,7 @@ const sourceSchema = z.object({
   usedBy: z.array(z.string().min(1)).min(1),
   access: z.enum(["open-data", "open-source", "community-owned", "evaluation-only"]),
   lifecycle: z.enum(["active", "experimental", "research-only"]).default("active"),
+  statusNote: z.string().min(1).optional(),
   checkUrl: z.url().optional(),
 });
 

@@ -17,7 +17,6 @@ test("opens a separate calm walk planner without requesting location or routing"
   await notes.focus();
   await page.keyboard.press("Enter");
   await expect(panel.getByText(/Keine Zusage zu Barrierefreiheit/)).toBeVisible();
-  await expect(panel.getByRole("link", { name: "Datenquellen & Danksagung" })).toHaveAttribute("href", "/danke");
   await notes.click();
   await panel.locator("summary").filter({ hasText: "Anpassen" }).click();
   await expect(panel.getByRole("combobox", { name: "Schwierigkeit" })).toHaveValue("easy");

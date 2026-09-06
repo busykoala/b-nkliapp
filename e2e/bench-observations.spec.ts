@@ -95,6 +95,12 @@ test("keeps observation controls calm, semantic and touchable with reduced motio
   const viewTab = page.getByRole("tab", { name: "Aussicht" });
   await viewTab.click();
   await expect(viewTab).toHaveAttribute("aria-selected", "true");
+  await viewTab.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: "Wetter" })).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("Home");
+  await expect(page.getByRole("tab", { name: "Bank" })).toHaveAttribute("aria-selected", "true");
+  await viewTab.click();
   const prompt = page.getByLabel("Aussicht vor Ort einordnen");
   await prompt.getByRole("button", { name: "Anders erlebt" }).click();
   await expect(prompt.getByText("Schritt 1 von 4").locator("..")).toBeFocused();
@@ -142,11 +148,8 @@ test("blends three real community impressions into the bench detail", async ({ b
   await page.goto(`/bank/${targetBench}`);
   await page.getByRole("tab", { name: "Aussicht" }).click();
   await expect(page.getByText("3 Eindrücke von Menschen vor Ort · vorsichtig gestützt")).toBeVisible();
+  await page.getByText("Aussicht im Detail").click();
   await expect(page.getByText("Himmelsoffenheit").locator("..").getByText("93")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("community-estimate.png"), fullPage: false });
-  await page.getByRole("tab", { name: "Wetter" }).click();
-  await page.getByText("Quellen & Modell").click();
-  await expect(page.getByText("Menschen vor Ort")).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("community-sources.png"), fullPage: false });
   await context.close();
 });

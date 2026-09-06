@@ -50,17 +50,26 @@ export function BenchDetails({ bench, signedIn, onBenchChange }: { bench: BenchD
     setPanel(nextPanel);
     requestAnimationFrame(() => panelRef.current?.scrollIntoView({ block: "start" }));
   };
+  const moveTab = (event: React.KeyboardEvent<HTMLButtonElement>, current: number) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? panelLabels.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + panelLabels.length) % panelLabels.length;
+    showPanel(panelLabels[next].id);
+    event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+  };
   return <section className="quiet-details" aria-label="Details">
     <div className="detail-chapters">
       <div className="detail-tabs" role="tablist" aria-label="Detailkapitel">
-        {panelLabels.map((item) => <button
+        {panelLabels.map((item, index) => <button
           key={item.id}
           id={`${id}-${item.id}-tab`}
           type="button"
           role="tab"
           aria-selected={panel === item.id}
           aria-controls={`${id}-${item.id}-panel`}
+          tabIndex={panel === item.id ? 0 : -1}
           onClick={() => showPanel(item.id)}
+          onKeyDown={(event) => moveTab(event, index)}
         >{item.icon}<span>{item.label}</span></button>)}
       </div>
       <div ref={panelRef} className="detail-panel-frame" id={`${id}-${panel}-panel`} role="tabpanel" aria-labelledby={`${id}-${panel}-tab`}>
@@ -132,13 +141,11 @@ function BenchPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; si
       onBenchChange={onBenchChange}
     />}
     <details className="technical-fold">
-      <summary>Ort & Herkunft <ChevronDown size={16} /></summary>
-      <DetailRows title="Ort & Herkunft" rows={[
+      <summary>Ort & Lage <ChevronDown size={16} /></summary>
+      <DetailRows title="Ort & Lage" rows={[
         ["Höhe", bench.elevationMeters === null ? null : `${Math.round(bench.elevationMeters)} m ü. M.`],
         ["Ort", [bench.locationPostcode, bench.locationName, bench.locationCanton].filter(Boolean).join(" ") || null],
         ["Koordinaten", `${bench.latitude.toFixed(6)}, ${bench.longitude.toFixed(6)}`],
-        ["Datenquelle", bench.osmType === "community" ? "Bänkli App" : "OpenStreetMap"],
-        ["Stand", readableDate(bench.sourceUpdatedAt)],
       ]} />
     </details>
   </section>;
@@ -209,22 +216,22 @@ function LightPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; si
     <PanelHeading eyebrow="Licht heute" title={currentLight(bench)}>
       <p>{lightSentence(bench)}</p>
     </PanelHeading>
-    <SunPath bench={bench} />
+    {signedIn && bench.dayPhase !== "night" && <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onBenchChange} />}
+    {signedIn && bench.dayPhase === "night" && <p className="observation-night-note"><Moon size={15} aria-hidden="true" />Den Lichteindruck kannst du hier bei Tageslicht bestätigen.</p>}
     <div className="light-balance" aria-label={`${sunDuration(bench.sunMinutesToday)} direkte Sonne und ${sunDuration(bench.shadeMinutesToday)} Schatten bei Tageslicht`}>
       <div><span className="is-sun"><Sun size={18} /></span><small>{sunLabel}</small><strong>{sunDuration(bench.sunMinutesToday)}</strong></div>
       <div><span className="is-shade"><CloudSun size={18} /></span><small>Schatten</small><strong>{sunDuration(bench.shadeMinutesToday)}</strong></div>
       <i><b style={{ width: `${sunPercent}%` }} /></i>
     </div>
-    <div className="light-windows">
-      <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? "Geschätzte Sonnenfenster" : "Sonnenfenster"} windows={bench.sunWindows} empty="Heute keine direkte Sonne berechnet" />
-      <IntervalStory icon={<CloudSun size={17} />} label="Schattenfenster" windows={bench.shadeWindows} empty="Heute kein Schattenfenster berechnet" />
-    </div>
-    <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
     <p className="confidence-line">{lightConfidenceLine(bench.sunConfidence)}</p>
-    {signedIn && bench.dayPhase !== "night" && <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onBenchChange} />}
-    {signedIn && bench.dayPhase === "night" && <p className="observation-night-note"><Moon size={15} aria-hidden="true" />Den Lichteindruck kannst du hier bei Tageslicht bestätigen.</p>}
     <details className="technical-fold">
-      <summary>Himmelswerte <ChevronDown size={16} /></summary>
+      <summary><span><strong>Tagesverlauf</strong><small>Sonnenfenster, Schatten und Jahreszeiten</small></span><ChevronDown size={16} /></summary>
+      <SunPath bench={bench} />
+      <div className="light-windows">
+        <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? "Geschätzte Sonnenfenster" : "Sonnenfenster"} windows={bench.sunWindows} empty="Heute keine direkte Sonne berechnet" />
+        <IntervalStory icon={<CloudSun size={17} />} label="Schattenfenster" windows={bench.shadeWindows} empty="Heute kein Schattenfenster berechnet" />
+      </div>
+      <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
       <SeasonalLight bench={bench} />
       <DetailRows title="Himmelswerte" rows={[
         ["Sonnenaufgang", bench.sunrise],
@@ -297,29 +304,29 @@ function ViewPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; sig
       <UsersRound size={15} aria-hidden="true" />
       {bench.observations.view.publicEstimate.contributors} Eindrücke von Menschen vor Ort · {communityConfidence(bench.observations.view.publicEstimate.confidence)}
     </p>}
-    <MetricSketch values={[
-      ["Freie Blickrichtungen", bench.nearOpenness],
-      ["Himmelsoffenheit", bench.viewComponents.openness],
-      ["Geländerelief", bench.viewComponents.relief],
-      ["Wasser im Blick", bench.viewComponents.water],
-      ["Natürliche Umgebung", bench.viewComponents.naturalness],
-      ["Abstand zu Störungen", bench.viewComponents.remoteness],
-    ]} />
-    <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
-    {hasDistances && <div className="distance-ribbon">
-      <DistanceFact icon={<Building2 size={19} />} label="Gebäude" value={bench.distanceBuildingMeters} />
-      <DistanceFact icon={<Waves size={19} />} label="Wasser" value={bench.waterfront ? 0 : bench.distanceWaterMeters} />
-      <DistanceFact icon={<Footprints size={19} />} label="Weg" value={bench.distancePathMeters} />
-    </div>}
-    <CanopySketch values={[bench.canopyShare3m, bench.canopyShare10m, bench.canopyShare25m]} />
-    {(surroundings || bench.inForest !== null || bench.canopyContext && bench.canopyContext !== "unknown") && <div className="landscape-facts">
-      {surroundings && <span><Leaf size={17} />{surroundings}</span>}
-      {bench.inForest !== null && <span><TreePine size={17} />{bench.inForest ? "Im Wald" : "Ausserhalb des Waldes"}</span>}
-      {bench.canopyContext && bench.canopyContext !== "unknown" && <span><TreePine size={17} />{canopy(bench.canopyContext)}</span>}
-    </div>}
-    {bench.viewExplanation.length > 0 && <ul className="view-notes">{bench.viewExplanation.slice(0, 4).map((item) => <li key={item}>{item}</li>)}</ul>}
-    <details className="technical-fold">
-      <summary>Messwerte <ChevronDown size={16} /></summary>
+    <details className="technical-fold view-evidence-fold">
+      <summary><span><strong>Aussicht im Detail</strong><small>Messwerte, Horizont und Umgebung</small></span><ChevronDown size={16} /></summary>
+      <MetricSketch values={[
+        ["Freie Blickrichtungen", bench.nearOpenness],
+        ["Himmelsoffenheit", bench.viewComponents.openness],
+        ["Geländerelief", bench.viewComponents.relief],
+        ["Wasser im Blick", bench.viewComponents.water],
+        ["Natürliche Umgebung", bench.viewComponents.naturalness],
+        ["Abstand zu Störungen", bench.viewComponents.remoteness],
+      ]} />
+      <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
+      {hasDistances && <div className="distance-ribbon">
+        <DistanceFact icon={<Building2 size={19} />} label="Gebäude" value={bench.distanceBuildingMeters} />
+        <DistanceFact icon={<Waves size={19} />} label="Wasser" value={bench.waterfront ? 0 : bench.distanceWaterMeters} />
+        <DistanceFact icon={<Footprints size={19} />} label="Weg" value={bench.distancePathMeters} />
+      </div>}
+      <CanopySketch values={[bench.canopyShare3m, bench.canopyShare10m, bench.canopyShare25m]} />
+      {(surroundings || bench.inForest !== null || bench.canopyContext && bench.canopyContext !== "unknown") && <div className="landscape-facts">
+        {surroundings && <span><Leaf size={17} />{surroundings}</span>}
+        {bench.inForest !== null && <span><TreePine size={17} />{bench.inForest ? "Im Wald" : "Ausserhalb des Waldes"}</span>}
+        {bench.canopyContext && bench.canopyContext !== "unknown" && <span><TreePine size={17} />{canopy(bench.canopyContext)}</span>}
+      </div>}
+      {bench.viewExplanation.length > 0 && <ul className="view-notes">{bench.viewExplanation.slice(0, 4).map((item) => <li key={item}>{item}</li>)}</ul>}
       <DetailRows title="Aussicht" rows={[
         ["Analysebereich", bench.analysisCoverage === "terrain" ? "Nahbereich und Gelände bis 20 km" : "Nahbereich"],
         ["Gebäude am Horizont", percent(bench.buildingObstructionPercent)],
@@ -424,10 +431,9 @@ function WeatherPanel({ bench }: { bench: BenchDetail }) {
         <WeatherMeasure icon={<Droplets size={18} />} label="Feuchte" value={weather.humidityPercent === null ? null : `${Math.round(weather.humidityPercent)}%`} />
         <WeatherMeasure icon={<Snowflake size={18} />} label="Schnee" value={weather.snowDepthCm === null ? null : `${Math.round(weather.snowDepthCm)} cm`} />
       </div>
-      <p className="weather-time">MeteoSchweiz · {readableDate(weather.observedAt)}</p>
+      <p className="weather-time">Stand {readableDate(weather.observedAt)}</p>
     </> : <p className="calm-empty">Sobald Wetterdaten verfügbar sind, erscheinen Temperatur, Wolken und Niederschlag hier.</p>}
     <CommunityQuiet bench={bench} />
-    <ModelThanks bench={bench} />
   </section>;
 }
 
@@ -455,23 +461,6 @@ function CommunityQuiet({ bench }: { bench: BenchDetail }) {
     <MessageCircleHeart size={21} />
     <div><small>Ruhe laut Menschen vor Ort</small><strong>{quiet.toFixed(1)} von 5</strong><i><b style={{ width: `${quiet / 5 * 100}%` }} /></i><p>Subjektive Bewertung, getrennt von Verkehrsdaten.</p></div>
   </div>;
-}
-
-function ModelThanks({ bench }: { bench: BenchDetail }) {
-  const communityEvidence = bench.observations.view.publicEstimate || bench.observations.light.publicTrend;
-  return <details className="source-book">
-    <summary>Quellen & Modell <ChevronDown size={16} /></summary>
-    <p>Diese Landschaft entsteht aus folgenden Daten:</p>
-    <div>
-      {bench.osmType !== "community" && <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>}
-      <a href="https://www.swisstopo.admin.ch/de/geodaten-kostenlos-online" target="_blank" rel="noreferrer">swisstopo Gelände & Gebäude</a>
-      {bench.weather && <a href="https://www.meteoschweiz.admin.ch/service-und-publikationen/service/open-data.html" target="_blank" rel="noreferrer">MeteoSchweiz</a>}
-      {bench.media.length > 0 && <a href="https://commons.wikimedia.org/" target="_blank" rel="noreferrer">Wikimedia Commons</a>}
-      {(bench.ratingCount > 0 || communityEvidence) && <span>Menschen vor Ort</span>}
-    </div>
-    <small>{bench.pipelineVersion ?? "Umgebungsmodell"} · Quelldaten {readableDate(bench.sourceUpdatedAt)}</small>
-    {bench.likelyEnvironment?.evidence.length ? <details className="source-whisper"><summary>Verwendete Umgebungsbilder</summary><div>{bench.likelyEnvironment.evidence.map((item) => <a key={`${item.provider}-${item.captureGroup}`} href={item.sourceUrl} target="_blank" rel="noreferrer">{item.provider} · {item.distanceMeters} m</a>)}</div></details> : null}
-  </details>;
 }
 
 function communityConfidence(value: number) {

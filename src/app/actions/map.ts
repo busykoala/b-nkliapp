@@ -15,6 +15,7 @@ import { getCurrentUser } from "@/lib/security";
 import { readBenchObservationSummary } from "@/features/bench-observations/repository";
 import { directionalOpenness, scoreViewComponents } from "@/features/bench-observations/model";
 import { benchObservationNow } from "@/features/bench-observations/context";
+import { matchesLightFilter } from "@/lib/map-filters";
 import { z } from "zod";
 
 function aiLabelsEnabled() {
@@ -40,6 +41,8 @@ const filtersSchema = z.object({
   armrest: z.boolean().optional(),
   covered: z.boolean().optional(),
   wheelchair: z.boolean().optional(),
+  nearFireplace: z.boolean().optional(),
+  nearWasteBasket: z.boolean().optional(),
   environment: z.enum(["forest", "open"]).optional(),
   material: z.string().max(40).optional(),
   minCommunityRating: z.number().min(1).max(5).optional(),
@@ -102,6 +105,23 @@ function mapViewType(labels: string[]): MapFilters["viewType"] | null {
   return null;
 }
 
+function nearbyFeatureClause(kind: "fireplace" | "waste_basket", radiusMeters: number, alias: string) {
+  const latitudeDelta = radiusMeters / 111_320;
+  const longitudeDelta = radiusMeters / 75_000;
+  const radiusSquared = radiusMeters * radiusMeters;
+  return `EXISTS (
+    SELECT 1 FROM environment_spatial_index ${alias}_s
+    JOIN environment_features ${alias} ON ${alias}.row_id=${alias}_s.row_id
+    WHERE ${alias}.kind='${kind}'
+      AND ${alias}_s.max_longitude >= b.longitude-${longitudeDelta}
+      AND ${alias}_s.min_longitude <= b.longitude+${longitudeDelta}
+      AND ${alias}_s.max_latitude >= b.latitude-${latitudeDelta}
+      AND ${alias}_s.min_latitude <= b.latitude+${latitudeDelta}
+      AND ((${alias}.center_latitude-b.latitude)*111320.0)*((${alias}.center_latitude-b.latitude)*111320.0)
+        + ((${alias}.center_longitude-b.longitude)*75000.0)*((${alias}.center_longitude-b.longitude)*75000.0) <= ${radiusSquared}
+  )`;
+}
+
 function filterSql(filters: MapFilters | undefined, parameters: Array<string | number>) {
   const clauses = ["b.active = 1"];
   const useAiLabels = aiLabelsEnabled();
@@ -130,6 +150,8 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
     clauses.push("coalesce(ra.rating_average, 0) >= ?");
     parameters.push(filters.minCommunityRating);
   }
+  if (filters?.nearFireplace) clauses.push(nearbyFeatureClause("fireplace", 200, "fireplace"));
+  if (filters?.nearWasteBasket) clauses.push(nearbyFeatureClause("waste_basket", 60, "waste"));
   if (filters?.viewType) {
     if (filters.viewType === "lake") {
       clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.lake_view_probability>=0.85))" : "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ?)");
@@ -156,7 +178,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
   const { west, south, east, north } = parsed.bounds;
   const parameters: Array<string | number> = [west, east, south, north];
   const where = filterSql(parsed.filters, parameters);
-  if (parsed.zoom < 18 && !parsed.filters?.sunnyNow) {
+  if (parsed.zoom < 18 && parsed.filters?.sunnyNow === undefined) {
     const cellSize = 360 / (2 ** parsed.zoom * 2.5);
     const grouped = sqlite.prepare(`
       SELECT CAST(b.longitude / ? AS INTEGER) grid_x, CAST(b.latitude / ? AS INTEGER) grid_y,
@@ -210,7 +232,7 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
     // combined raster surface/terrain with exact context geometry.
     const hasCurrentProfile = profile.length === 72
       && (["4.2.0", "4.3.0", "4.4.0", "GeoAdmin-Horizont v4", "GeoAdmin-Horizont v5", "GeoAdmin-Horizont v6"].includes(String(row.pipeline_version)));
-    const sunnyNow = hasCurrentProfile ? calculateSunState({
+    const light = hasCurrentProfile ? calculateSunState({
       date: now,
       latitude: row.latitude,
       longitude: row.longitude,
@@ -218,9 +240,10 @@ export async function getMapFeatures(input: MapQuery): Promise<MapFeature[]> {
       obstructionTypes,
       covered: Boolean(row.covered),
       canopyPercent: row.canopy_percent,
-    }).sunny : null;
+    }) : null;
+    const sunnyNow = light?.shadeCause === "nacht" ? null : light?.sunny ?? null;
     return { row, sunnyNow };
-  }).filter((item) => !parsed.filters?.sunnyNow || item.sunnyNow === true);
+  }).filter((item) => matchesLightFilter(item.sunnyNow, parsed.filters?.sunnyNow));
 
   if (parsed.zoom < 18) {
     const cellSize = 360 / (2 ** parsed.zoom * 2.5);
