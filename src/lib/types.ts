@@ -33,19 +33,17 @@ export type Bounds = {
   north: number;
 };
 
+export type BenchViewType = "mountain" | "hill" | "lake" | "open" | "limited";
+
 export type MapFilters = {
   sunnyNow?: boolean;
-  minViewScore?: number;
   backrest?: boolean;
   armrest?: boolean;
   covered?: boolean;
   wheelchair?: boolean;
-  nearFireplace?: boolean;
-  nearWasteBasket?: boolean;
-  environment?: "forest" | "open";
   material?: string;
+  minSeats?: number;
   minCommunityRating?: number;
-  viewType?: "mountain" | "hill" | "lake" | "open" | "limited";
 };
 
 export type MapQuery = {
@@ -62,7 +60,7 @@ export type BenchMapFeature = {
   viewScore: number | null;
   sunnyNow: boolean | null;
   rating: number | null;
-  viewType: MapFilters["viewType"] | null;
+  viewType: BenchViewType | null;
   verificationStatus: "verified" | "unverified";
 };
 

@@ -66,9 +66,6 @@ class WorkerUnitTests(unittest.TestCase):
         self.assertEqual(context_kind({"building": "yes"}), "building")
         self.assertEqual(context_kind({"natural": "water"}), "water")
         self.assertEqual(context_kind({"highway": "footway"}), "path")
-        self.assertEqual(context_kind({"leisure": "firepit"}), "fireplace")
-        self.assertEqual(context_kind({"amenity": "bbq"}), "fireplace")
-        self.assertEqual(context_kind({"amenity": "waste_basket"}), "waste_basket")
         self.assertAlmostEqual(parse_height({"building:levels": "3"}), 9.3)
 
     def test_spatial_batch_bounds_are_stable_and_expand(self):

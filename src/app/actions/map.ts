@@ -8,7 +8,7 @@ import { parseWkbGeometry } from "@/lib/exact-geometry";
 import { fetchSwissLandCoverEvidence, SWISSTOPO_LAND_COVER_VERSION } from "@/lib/land-cover";
 import { findNearestSwissName, normalizeLocationKey, searchGeoAdminLocations } from "@/integrations/geoadmin/client";
 import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSeasonalSunMinutes, getSkyTrack, getSunTimes, type ObstructionType } from "@/lib/sun";
-import type { BenchDetail, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
+import type { BenchDetail, BenchViewType, LikelyEnvironment, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { getLocalWeather } from "@/lib/weather";
 import { getCurrentUser } from "@/lib/security";
@@ -36,17 +36,13 @@ const boundsSchema = z.object({
 
 const filtersSchema = z.object({
   sunnyNow: z.boolean().optional(),
-  minViewScore: z.number().min(1).max(5).optional(),
   backrest: z.boolean().optional(),
   armrest: z.boolean().optional(),
   covered: z.boolean().optional(),
   wheelchair: z.boolean().optional(),
-  nearFireplace: z.boolean().optional(),
-  nearWasteBasket: z.boolean().optional(),
-  environment: z.enum(["forest", "open"]).optional(),
   material: z.string().max(40).optional(),
+  minSeats: z.number().int().min(1).max(12).optional(),
   minCommunityRating: z.number().min(1).max(5).optional(),
-  viewType: z.enum(["mountain", "hill", "lake", "open", "limited"]).optional(),
 }).optional();
 
 const querySchema = z.object({ bounds: boundsSchema, zoom: z.number().min(5).max(20), filters: filtersSchema });
@@ -96,7 +92,7 @@ function zurichSeason(date: Date): BenchDetail["season"] {
   return "winter";
 }
 
-function mapViewType(labels: string[]): MapFilters["viewType"] | null {
+function mapViewType(labels: string[]): BenchViewType | null {
   if (labels.includes("Bergblick")) return "mountain";
   if (labels.includes("Hügelblick")) return "hill";
   if (labels.includes("Seeblick") || labels.includes("Wasserblick")) return "lake";
@@ -105,70 +101,25 @@ function mapViewType(labels: string[]): MapFilters["viewType"] | null {
   return null;
 }
 
-function nearbyFeatureClause(kind: "fireplace" | "waste_basket", radiusMeters: number, alias: string) {
-  const latitudeDelta = radiusMeters / 111_320;
-  const longitudeDelta = radiusMeters / 75_000;
-  const radiusSquared = radiusMeters * radiusMeters;
-  return `EXISTS (
-    SELECT 1 FROM environment_spatial_index ${alias}_s
-    JOIN environment_features ${alias} ON ${alias}.row_id=${alias}_s.row_id
-    WHERE ${alias}.kind='${kind}'
-      AND ${alias}_s.max_longitude >= b.longitude-${longitudeDelta}
-      AND ${alias}_s.min_longitude <= b.longitude+${longitudeDelta}
-      AND ${alias}_s.max_latitude >= b.latitude-${latitudeDelta}
-      AND ${alias}_s.min_latitude <= b.latitude+${latitudeDelta}
-      AND ((${alias}.center_latitude-b.latitude)*111320.0)*((${alias}.center_latitude-b.latitude)*111320.0)
-        + ((${alias}.center_longitude-b.longitude)*75000.0)*((${alias}.center_longitude-b.longitude)*75000.0) <= ${radiusSquared}
-  )`;
-}
-
 function filterSql(filters: MapFilters | undefined, parameters: Array<string | number>) {
   const clauses = ["b.active = 1"];
-  const useAiLabels = aiLabelsEnabled();
-  if (filters?.minViewScore) {
-    clauses.push("e.view_score >= ?");
-    parameters.push(filters.minViewScore * 20);
-  }
   for (const field of ["backrest", "armrest", "covered", "wheelchair"] as const) {
     if (filters?.[field] !== undefined) {
       clauses.push(`b.${field} = ?`);
       parameters.push(filters[field] ? 1 : 0);
     }
   }
-  if (filters?.environment) {
-    if (filters.environment === "forest") {
-      clauses.push(useAiLabels ? "(e.in_forest = 1 OR (lm.confidence='high' AND lm.land_context='forest' AND lm.land_context_probability>=0.9))" : "e.in_forest = 1");
-    } else {
-      clauses.push(useAiLabels ? "(e.land_context = 'open' OR (lm.confidence='high' AND lm.land_context='open' AND lm.land_context_probability>=0.85))" : "e.land_context = 'open'");
-    }
-  }
   if (filters?.material) {
     clauses.push("lower(b.material) = lower(?)");
     parameters.push(filters.material);
   }
+  if (filters?.minSeats) {
+    clauses.push("b.seats >= ?");
+    parameters.push(filters.minSeats);
+  }
   if (filters?.minCommunityRating) {
     clauses.push("coalesce(ra.rating_average, 0) >= ?");
     parameters.push(filters.minCommunityRating);
-  }
-  if (filters?.nearFireplace) clauses.push(nearbyFeatureClause("fireplace", 200, "fireplace"));
-  if (filters?.nearWasteBasket) clauses.push(nearbyFeatureClause("waste_basket", 60, "waste"));
-  if (filters?.viewType) {
-    if (filters.viewType === "lake") {
-      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.lake_view_probability>=0.85))" : "(coalesce(e.view_labels, '') LIKE ? OR coalesce(e.view_labels, '') LIKE ?)");
-      parameters.push("%Seeblick%", "%Wasserblick%");
-    } else if (filters.viewType === "mountain") {
-      clauses.push("coalesce(e.view_labels, '') LIKE ?");
-      parameters.push("%Bergblick%");
-    } else if (filters.viewType === "hill") {
-      clauses.push("coalesce(e.view_labels, '') LIKE ?");
-      parameters.push("%Hügelblick%");
-    } else if (filters.viewType === "open") {
-      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.open_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
-      parameters.push("%Weitsicht%");
-    } else {
-      clauses.push(useAiLabels ? "(coalesce(e.view_labels, '') LIKE ? OR (lm.confidence='high' AND lm.limited_view_probability>=0.85))" : "coalesce(e.view_labels, '') LIKE ?");
-      parameters.push("%Eingeschränkte Aussicht%");
-    }
   }
   return clauses.join(" AND ");
 }

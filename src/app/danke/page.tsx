@@ -11,6 +11,9 @@ export const metadata: Metadata = {
 
 export default async function AcknowledgementsPage() {
   const freshness = await getDataFreshness();
+  const acknowledgedSources = dataCatalog.sources.filter(({ lifecycle }) => lifecycle !== "research-only");
+  const recurringJobs = dataCatalog.jobs.filter(({ purpose }) => purpose !== "monitoring");
+  const acknowledgedIds = new Set(acknowledgedSources.map(({ id }) => id));
   return <main className="thanks-page min-h-dvh safe-bottom">
     <nav className="thanks-nav safe-top"><Link href="/" aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link></nav>
     <header className="thanks-hero">
@@ -33,8 +36,8 @@ export default async function AcknowledgementsPage() {
       <div className="thanks-section-heading"><Database aria-hidden="true" /><div><small>Was die Maschine weiss</small><h2 id="sources-heading">Daten & Werkzeuge</h2></div></div>
       <p className="thanks-lead">Diese Liste kommt direkt aus dem Datenkatalog der App. Ändert sich eine Quelle, ändert sich auch diese Seite – ganz ohne archäologische Expedition durch den Code.</p>
       <div className="source-grid">
-        {dataCatalog.sources.map((source) => <article className="source-card" key={source.id}>
-          <div><span>{source.kind}{source.lifecycle === "experimental" ? " · in Prüfung" : source.lifecycle === "research-only" ? " · nur Forschung" : ""}</span><h3>{source.name}</h3></div>
+        {acknowledgedSources.map((source) => <article className="source-card" key={source.id}>
+          <div><span>{source.kind}{source.lifecycle === "experimental" ? " · in Prüfung" : ""}</span><h3>{source.name}</h3></div>
           <p>{source.provides.join(" · ")}</p>
           {source.statusNote && <p className="source-status-note">{source.statusNote}</p>}
           <small>{source.license}</small>
@@ -50,9 +53,9 @@ export default async function AcknowledgementsPage() {
       <div className="thanks-section-heading"><RefreshCw aria-hidden="true" /><div><small>Wann welches Rädchen dreht</small><h2 id="refresh-heading">Datenküche</h2></div></div>
       <p className="thanks-lead">Zeitzone {dataCatalog.timeZone}. Die Zeiten sind keine Dekoration: Dieselbe Konfiguration erzeugt die CronJobs im Cluster.</p>
       <div className="refresh-list">
-        {dataCatalog.jobs.map((job) => <details key={job.id}>
+        {recurringJobs.map((job) => <details key={job.id}>
           <summary><span><strong>{job.title}</strong><small>{job.frequency}</small></span><code>{job.schedule}</code></summary>
-          <p>Kommt von {sourcesFor(job).map(({ name }) => name).join(", ")}.</p>
+          <p>Kommt von {sourcesFor(job).filter(({ id }) => acknowledgedIds.has(id)).map(({ name }) => name).join(", ")}.</p>
           <p>{freshnessLabel(freshness.jobSuccesses[job.id])}.</p>
         </details>)}
       </div>

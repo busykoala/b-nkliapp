@@ -64,10 +64,6 @@ def parse_height(tags: dict[str, str]) -> Optional[float]:
 
 
 def context_kind(tags: dict[str, str]) -> Optional[str]:
-    if tags.get("amenity") == "waste_basket":
-        return "waste_basket"
-    if tags.get("amenity") in {"bbq", "firepit"} or tags.get("leisure") == "firepit":
-        return "fireplace"
     if tags.get("building") not in {None, "no"}:
         return "building"
     if tags.get("natural") == "tree":

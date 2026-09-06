@@ -39,3 +39,28 @@ it("keeps an origin snap gap visible without inventing access to the planned ben
   mocks.route.mockResolvedValue([{ ...path, warnings: ["Ziel: 24 m bis zum kartierten Weg. Zugang vor Ort prüfen."] }]);
   expect((await discoverWalks(query)).suggestions).toEqual([]);
 });
+
+it("keeps several genuinely different Bänkli outings", async () => {
+  const benches = [
+    { id: "north", name: "Nordbänkli", latitude: 46.691, longitude: 7.68, waterfront: 0, view_score: 70, view_confidence: "mittel" },
+    { id: "east", name: "Ostbänkli", latitude: 46.68, longitude: 7.695, waterfront: 0, view_score: 75, view_confidence: "mittel" },
+    { id: "west", name: "Westbänkli", latitude: 46.68, longitude: 7.665, waterfront: 0, view_score: 80, view_confidence: "mittel" },
+  ];
+  mocks.rows.mockReturnValue(benches);
+  mocks.route.mockImplementation(async (request: { points: { latitude: number; longitude: number }[] }) => {
+    const end = request.points.at(-1)!;
+    return [{
+      geometry: [[query.origin.longitude, query.origin.latitude], [end.longitude, end.latitude]],
+      distance: 1_200,
+      referenceSeconds: 900,
+      ascent: 15,
+      warnings: [],
+      instructions: [],
+      details: {},
+    } satisfies WalkPath];
+  });
+
+  const result = await discoverWalks(query);
+  expect(result.suggestions).toHaveLength(3);
+  expect(new Set(result.suggestions.map(({ bench }) => bench.id))).toEqual(new Set(["north", "east", "west"]));
+});

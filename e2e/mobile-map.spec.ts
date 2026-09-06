@@ -61,7 +61,7 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
 
   await page.getByLabel("Menü öffnen").click();
   await page.getByRole("button", { name: "Bänkli auswählen" }).click();
-  const filters = page.getByRole("dialog", { name: "Was passt gerade?" });
+  const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
   await expect(filters).toBeVisible();
   await expect(filters.getByLabel("Filter schliessen")).toBeFocused();
   await page.keyboard.press("Shift+Tab");
@@ -78,11 +78,10 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await expect(shade).toHaveAttribute("aria-pressed", "false");
   await expect(filters.getByText("1 Filter aktiv")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("map-filters.png"), fullPage: false });
-  await filters.getByText("Weitere Wünsche", { exact: true }).click();
-  const fireplace = filters.getByRole("button", { name: "Feuerstelle nah" });
-  await expect(fireplace).toBeVisible();
-  await expect(filters.getByRole("button", { name: "Abfalleimer nah" })).toBeVisible();
-  await fireplace.click();
+  const backrest = filters.getByRole("button", { name: "Rückenlehne" });
+  await expect(backrest).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Barrierefrei" })).toBeVisible();
+  await backrest.click();
   await expect(filters.getByText("2 Filter aktiv")).toBeVisible();
   await expect(page.getByText("Bänke konnten nicht geladen werden.")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("map-filters-more.png"), fullPage: false });
@@ -104,7 +103,7 @@ test("keeps core pages contained from tablet to large desktop", async ({ page },
   await page.goto("/");
   await page.getByLabel("Menü öffnen").click();
   await page.getByRole("button", { name: "Bänkli auswählen" }).click();
-  const panel = page.getByRole("dialog", { name: "Was passt gerade?" });
+  const panel = page.getByRole("dialog", { name: "Was brauchst du?" });
   const box = await panel.boundingBox();
   expect(box).not.toBeNull();
   expect(box!.x).toBeGreaterThanOrEqual(0);

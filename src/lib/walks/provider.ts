@@ -35,7 +35,9 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
     const evidence = evaluateRoute(path, query), durationSeconds = pathSeconds(path, query.speed);
     const cells = routeCells(path), repeated = cells.size * 25 / Math.max(1, path.distance) < .6;
     const suggestion: WalkSuggestion = { id: `walk-${result.suggestions.length}`, path, bench, extraBenches: [], durationSeconds, score: landscapeScore(evidence, bench, query.light) - (repeated ? .12 : 0), evidence, withinBudget: Math.abs(durationSeconds - query.minutes * 60) <= query.minutes * 12, repeated, benchIndex: nearestRoutePoint(path, bench).index };
-    if (result.suggestions.some((s) => routeOverlap(routeCells(s.path), cells) > .8)) return;
+    // Routes from the same doorstep naturally share their first and last
+    // metres. Only collapse near-duplicates, not genuinely different outings.
+    if (result.suggestions.some((s) => routeOverlap(routeCells(s.path), cells) > .92)) return;
     result.suggestions.push(suggestion);
   };
   try {

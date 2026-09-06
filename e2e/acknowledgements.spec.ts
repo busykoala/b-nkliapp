@@ -10,10 +10,11 @@ test("opens catalog-driven thanks, sources and refreshes", async ({ page }, test
     await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
   }
   await expect(page.getByText("in Prüfung", { exact: false })).toHaveCount(0);
-  await expect(page.getByText(/Geprüft, aber nicht produktiv genutzt/)).toBeVisible();
+  await expect(page.getByText("nur Forschung", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("STATPOP", { exact: false })).toHaveCount(0);
   await page.locator(".source-card").filter({ hasText: "Qwen3-VL 8B · Bänkli Vision" }).screenshot({ path: testInfo.outputPath("inference-model-source.png") });
   await expect(page.getByText(/^stündlich/)).toBeVisible();
-  await expect(page.locator(".refresh-list details")).toHaveCount(21);
+  await expect(page.locator(".refresh-list details")).toHaveCount(17);
   await page.locator(".refresh-list details").first().locator("summary").click();
   await expect(page.getByText(/Noch kein erfolgreicher Lauf gemeldet|Stand/).first()).toBeVisible();
 });
