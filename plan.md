@@ -19,7 +19,7 @@
 - [x] Danksagungsseite von Forschungsquellen und technischen Quellen-Kategorien befreien; nur tatsächlich genutzte Quellen und Werkzeuge zeigen.
 - [x] Bänkli- und Cluster-Marker als zusammengehörige, ruhige Aquarell-Signete gestalten und auf der echten Karte prüfen.
 - [x] Mobile und Desktop-Screenshots, Tastatur, Fokus, Touchziele, leere/Fehler-/Erfolgszustände sowie Reduced Motion prüfen.
-- [ ] Tests, Typprüfung, Lint und Produktions-Build ausführen; Diff prüfen, committen, direkt auf `main` pushen, deployen und Produktion verifizieren.
+- [x] Tests, Typprüfung, Lint und Produktions-Build ausführen; Diff prüfen, committen, direkt auf `main` pushen, deployen und Produktion verifizieren.
 
 Diese Liste ist der überprüfbare Umsetzungsstand. Ein Punkt wird erst mit `[x]`
 markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
