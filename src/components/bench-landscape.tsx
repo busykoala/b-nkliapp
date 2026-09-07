@@ -68,6 +68,13 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
         </mask>
         <linearGradient id={`${id}-snow`} x2="0" y2="1"><stop offset=".6" stopColor="black" /><stop offset="1" stopColor="white" /></linearGradient>
         <mask id={`${id}-snow-mask`}><rect width="640" height="480" fill={`url(#${id}-snow)`} /></mask>
+        <linearGradient id={`${id}-water`} x2="0" y2="1">
+          <stop offset=".34" stopColor="black" />
+          <stop offset=".46" stopColor="white" />
+          <stop offset=".66" stopColor="white" />
+          <stop offset=".76" stopColor="black" />
+        </linearGradient>
+        <mask id={`${id}-water-mask`}><rect width="640" height="480" fill={`url(#${id}-water)`} /></mask>
         <radialGradient id={`${id}-light`}><stop stopColor={night ? "#a8bfd0" : "#fff0b6"} stopOpacity=".32" /><stop offset="1" stopColor="#fff0b6" stopOpacity="0" /></radialGradient>
         <filter id={`${id}-ground`} x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="5" /></filter>
         <filter id={`${id}-contact`} x="-50%" y="-150%" width="200%" height="400%"><feGaussianBlur stdDeviation="1.2" /></filter>
@@ -90,7 +97,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
       </g>}
       {scene.reliefArt && <image className="painting-environment painting-relief" href={scene.reliefArt} width="640" height="480" preserveAspectRatio="none" />}
       <image className="painting-environment painting-place" href={scene.placeArt} width="640" height="480" preserveAspectRatio="none" />
-      {scene.waterArt && <image className="painting-environment painting-water" href={scene.waterArt} width="640" height="480" preserveAspectRatio="none" />}
+      {scene.waterArt && <image className="painting-environment painting-water" mask={scene.water === "lake" ? `url(#${id}-water-mask)` : undefined} href={scene.waterArt} width="640" height="480" preserveAspectRatio="none" />}
       {scene.place !== "open" && <image className="painting-environment painting-ground" href={scene.groundArt} width="640" height="480" preserveAspectRatio="none" />}
       {cloudCover > .25 && <image className="painting-clouds" href="/ui-art/v1/weather-cloud-v1.webp" x="40" y="-20" width="560" height="160" opacity={Math.min(.4, cloudCover * .42)} />}
       {(bench.season === "autumn" || bench.season === "spring") && <image className="painting-season" href={seasonOverlayArt(bench.season)} x="0" y="200" width="640" height="280" preserveAspectRatio="none" />}

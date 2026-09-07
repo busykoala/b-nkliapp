@@ -472,11 +472,11 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .painting-relief { opacity: .72; }
 .painting-place { opacity: .78; }
 .painting-ground { opacity: .8; }
-.painting-water { opacity: .7; mix-blend-mode: multiply; }
+.painting-water { opacity: .68; filter: saturate(.9) brightness(.94) contrast(.94); }
+.water-river .painting-water { opacity: .68; }
 .scene-city .painting-place { opacity: .68; }
 .scene-forest .painting-place { opacity: .71; }
-.water-lake .painting-ground { opacity: .69; }
-.water-river .painting-ground { opacity: .72; }
+.water-lake .painting-ground, .water-river .painting-ground { opacity: .52; }
 .painting-atmosphere { fill: #f2d69b; opacity: .04; mix-blend-mode: multiply; }
 /* Pigment softness is applied by the component's small native SVG filter.
    Keep the foreground opaque: scenery must not show through the seat or legs. */

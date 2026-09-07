@@ -14,11 +14,11 @@ import { LandscapeStamp, SeasonStamp } from "../src/components/profile-stamps";
 import type { BenchDetail } from "../src/lib/types";
 
 const settings = [
-  { name: "meadow", landContext: "open", buildingCount100m: 0, waterfront: false, viewLabels: ["Hügel"] },
-  { name: "lake", landContext: "open", buildingCount100m: 0, waterfront: true, viewLabels: ["See", "Berge"] },
-  { name: "forest", landContext: "forest", buildingCount100m: 0, waterfront: false, viewLabels: [] },
-  { name: "village", landContext: "urban", buildingCount100m: 8, waterfront: false, viewLabels: ["Berge"] },
-  { name: "city", landContext: "urban", buildingCount100m: 40, waterfront: false, viewLabels: [] },
+  { name: "meadow", landContext: "open", buildingCount100m: 0, waterfront: false, viewLabels: ["Hügelblick"], waterView: 0 },
+  { name: "lake", landContext: "open", buildingCount100m: 0, waterfront: true, viewLabels: ["Seeblick", "Bergblick"], waterView: 100 },
+  { name: "forest", landContext: "forest", buildingCount100m: 0, waterfront: false, viewLabels: [], waterView: 0 },
+  { name: "village", landContext: "urban", buildingCount100m: 8, waterfront: false, viewLabels: ["Bergblick"], waterView: 0 },
+  { name: "city", landContext: "urban", buildingCount100m: 40, waterfront: false, viewLabels: [], waterView: 0 },
 ] as const;
 const moods = [
   { name: "spring-dawn", season: "spring", dayPhase: "dawn", sunnyNow: true, sunAltitudeDegrees: 6, sunAzimuthDegrees: 85, moonVisible: false, shadeCause: "frei", temperatureC: 12, cloudCover: .12, precipitationType: "none", snowCoverPercent: 0, windKmh: 3 },
@@ -75,6 +75,7 @@ async function main() {
       ...setting, ...mood, id: name, inForest: setting.name === "forest", moonAltitudeDegrees: 22,
       moonAzimuthDegrees: 120, moonIllumination: .7, moonPhase: .3, directionDegrees: 110,
       distancePathMeters: 8, distanceBuildingMeters: setting.name === "city" ? 12 : 150,
+      viewComponents: { free: 55, buildings: setting.name === "city" ? 45 : 8, vegetation: setting.name === "forest" ? 80 : 22, terrain: 40, water: setting.waterView },
       properties: [
         { label: "Material", value: material }, { label: "Rückenlehne", value: m === 2 ? "Nein" : "Ja" },
         { label: "Armlehnen", value: s % 2 === 0 ? "Ja" : "Nein" }, { label: "Sitzplätze", value: "3" },
@@ -90,14 +91,20 @@ async function main() {
   await capture("24-city-low-moon", { ...fixtures[19], moonAltitudeDegrees: 3, moonIllumination: .2, moonPhase: .1, weather: { ...fixtures[19].weather!, precipitationType: "none" } });
   await capture("25-village-sheltered", { ...fixtures[13], sunnyNow: false, shadeCause: "überdacht", properties: fixtures[13].properties.map((p) => p.label === "Überdacht" ? { ...p, value: "Ja" } : p) });
   await capture("26-unknown-weather", { ...fixtures[0], weather: null, sunnyNow: null, landContext: null, buildingCount100m: null, properties: [] });
-  // Harbour regression: water evidence must win over the dense building count,
-  // even before a view label has been computed for the bench.
-  const harbour = { ...fixtures[17], waterfront: true, viewLabels: [], properties: fixtures[17].properties.map((p) => p.label === "Material" ? { ...p, value: "Holz" } : p) };
+  // Harbour regression: visible-water evidence composes with dense buildings;
+  // waterfront proximity alone is deliberately not enough.
+  const harbour = { ...fixtures[17], waterfront: true, viewLabels: ["Seeblick"], viewComponents: { ...fixtures[17].viewComponents, water: 100 }, properties: fixtures[17].properties.map((p) => p.label === "Material" ? { ...p, value: "Holz" } : p) };
   await capture("27-spiez-harbour-daylight", harbour);
   await capture("28-spiez-harbour-shade", { ...harbour, sunnyNow: false });
-  await capture("29-wooded-lake-shore", { ...fixtures[9], waterfront: true, viewLabels: ["Seeblick"] });
+  await capture("29-wooded-lake-shore", { ...fixtures[9], waterfront: true, viewLabels: ["Seeblick"], viewComponents: { ...fixtures[9].viewComponents, water: 100 } });
   await capture("30-water-buildings-67-percent", { ...harbour, landContext: null, buildingCount100m: null, buildingObstructionPercent: 67, vegetationObstructionPercent: 6 });
   await capture("31-harbour-winter", { ...fixtures[19], waterfront: true, buildingObstructionPercent: 67, moonAltitudeDegrees: 3 });
+  await capture("32-city-lake", { ...fixtures[17], viewLabels: ["Seeblick"], viewComponents: { ...fixtures[17].viewComponents, water: 100 } });
+  await capture("33-village-lake-mountains", { ...fixtures[13], viewLabels: ["Seeblick", "Bergblick"], viewComponents: { ...fixtures[13].viewComponents, water: 100 } });
+  await capture("34-open-lake-mountains", { ...fixtures[1], viewLabels: ["Seeblick", "Bergblick"], viewComponents: { ...fixtures[1].viewComponents, water: 100 } });
+  await capture("35-city-river", { ...fixtures[17], viewLabels: ["Wasserblick"], viewComponents: { ...fixtures[17].viewComponents, water: 100 } });
+  await capture("36-village-river", { ...fixtures[13], viewLabels: ["Wasserblick"], viewComponents: { ...fixtures[13].viewComponents, water: 100 } });
+  await capture("37-forest-river", { ...fixtures[9], viewLabels: ["Wasserblick"], viewComponents: { ...fixtures[9].viewComponents, water: 100 } });
   const badges: BadgeArt[] = ["discoverer", "pioneer", "scout", "checker", "detective", "poet", "expert", "guru", "legend"];
   const identities = renderToStaticMarkup(<><section className="portraits">{Array.from({ length: 10 }, (_, i) => <TrailAvatar key={i} seed={`review-${i}`} username={`Wanderer ${i}`} appearance={{ ...randomAppearance(`review-${i}`), background: avatarOptionValues.background[i % 5], skin: avatarOptionValues.skin[i % 5], hairStyle: avatarOptionValues.hairStyle[i % 5], hat: avatarOptionValues.hat[i % 4], companion: avatarOptionValues.companion[i % 4] }} progress={i * 9} />)}</section><section className="badges">{badges.map((kind) => <div key={kind}><BadgeIllustration kind={kind} label={kind} earned /><p>{kind}</p></div>)}</section><section className="stamps">{(["mountain", "hill", "water", "city", "forest", "open"] as const).map((kind) => <LandscapeStamp key={kind} kind={kind} found />)}{(["spring", "summer", "autumn", "winter"] as const).map((season) => <SeasonStamp key={season} season={season} name={season} found />)}</section></>);
   await page.setViewportSize({ width: 1000, height: 920 });

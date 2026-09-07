@@ -2,6 +2,7 @@ import type { BenchDetail, LandContext, PrecipitationType } from "./types";
 
 const UI_ART_ROOT = "/ui-art/v1";
 const SCENE_ART_ROOT = "/ui-art/v4";
+const WATER_ART_ROOT = "/ui-art/v5";
 
 type BenchMaterial = "wood" | "metal" | "stone";
 type BenchShape = "back-arm" | "back" | "backless";
@@ -63,7 +64,7 @@ export function benchSceneLayers(input: {
     placeArt: `${SCENE_ART_ROOT}/place-${place}.webp`,
     groundArt: `${SCENE_ART_ROOT}/place-open.webp`,
     reliefArt: relief === "none" ? null : `${SCENE_ART_ROOT}/relief-${relief}.webp`,
-    waterArt: water === "none" ? null : `${SCENE_ART_ROOT}/water-${water}.webp`,
+    waterArt: water === "none" ? null : `${WATER_ART_ROOT}/water-${water}.webp`,
   };
 }
 

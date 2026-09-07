@@ -54,6 +54,7 @@ export type MapArtImage = {
 
 const ART_ROOT = "/map-art/v3";
 const MARKER_ART_ROOT = "/map-art/v4";
+const CLUSTER_ART_ROOT = "/map-art/v5";
 
 export const CORE_MAP_ART: MapArtImage[] = [
   { name: "benchly-bench", url: `${MARKER_ART_ROOT}/bench-marker.webp`, pixelRatio: 2 },
@@ -61,7 +62,7 @@ export const CORE_MAP_ART: MapArtImage[] = [
   { name: "benchly-wash-shade", url: `${ART_ROOT}/wash-shade.png`, pixelRatio: 2 },
   { name: "benchly-wash-neutral", url: `${ART_ROOT}/wash-neutral.png`, pixelRatio: 2 },
   { name: "benchly-wash-unverified", url: `${ART_ROOT}/wash-unverified.png`, pixelRatio: 2 },
-  { name: "benchly-wash-cluster", url: `${MARKER_ART_ROOT}/cluster-marker.webp`, pixelRatio: 2 },
+  { name: "benchly-wash-cluster", url: `${CLUSTER_ART_ROOT}/cluster-marker.webp`, pixelRatio: 2 },
   { name: "benchly-wash-selected", url: `${ART_ROOT}/wash-selected.png`, pixelRatio: 2 },
 ];
 

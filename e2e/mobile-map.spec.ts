@@ -26,11 +26,12 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   const environments = await painting.locator(".painting-environment").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
   expect(environments.length).toBeGreaterThanOrEqual(2);
   for (const environment of environments) {
-    expect(environment).toMatch(/^\/ui-art\/v4\//);
+    expect(environment).toMatch(/^\/ui-art\/v[45]\//);
     const artwork = await page.request.get(environment!);
     expect(artwork.ok()).toBeTruthy();
     expect(artwork.headers()["cache-control"]).toContain("immutable");
   }
+  await expect(painting.locator('.painting-water[href^="/ui-art/v5/"]')).toHaveCount(1);
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
 });
 
