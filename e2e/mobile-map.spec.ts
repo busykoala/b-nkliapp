@@ -23,11 +23,14 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   await page.goto("/bank/osm-node-101");
   const painting = page.locator(".bench-landscape");
   await expect(painting).toBeVisible();
-  const environment = await painting.locator(".painting-environment").getAttribute("href");
-  expect(environment).toMatch(/^\/ui-art\/v[12]\//);
-  const artwork = await page.request.get(environment!);
-  expect(artwork.ok()).toBeTruthy();
-  expect(artwork.headers()["cache-control"]).toContain("immutable");
+  const environments = await painting.locator(".painting-environment").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
+  expect(environments.length).toBeGreaterThanOrEqual(2);
+  for (const environment of environments) {
+    expect(environment).toMatch(/^\/ui-art\/v4\//);
+    const artwork = await page.request.get(environment!);
+    expect(artwork.ok()).toBeTruthy();
+    expect(artwork.headers()["cache-control"]).toContain("immutable");
+  }
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
 });
 
@@ -38,7 +41,7 @@ test("renders calm watercolor markers from overview to close range", async ({ pa
   await map.screenshot({ path: testInfo.outputPath("watercolor-markers-overview.png") });
   const search = page.getByRole("combobox", { name: "Ort suchen" });
   await search.fill("Lindenhof");
-  await page.getByRole("option").first().click();
+  await page.locator(".map-search-results").getByRole("option").first().click();
   await expect(page.getByRole("complementary", { name: "Bankdetails" })).toBeVisible();
   await page.getByLabel("Bank schliessen").click();
   await expect(map).toHaveAttribute("aria-busy", "false");
@@ -80,7 +83,10 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await page.screenshot({ path: testInfo.outputPath("map-filters.png"), fullPage: false });
   const backrest = filters.getByRole("button", { name: "Rückenlehne" });
   await expect(backrest).toBeVisible();
-  await expect(filters.getByRole("button", { name: "Barrierefrei" })).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Feuerstelle" })).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Abfalleimer" })).toBeVisible();
+  await filters.getByText("Mehr Wünsche", { exact: true }).click();
+  await expect(filters.getByRole("button", { name: "Stufenlos" })).toBeVisible();
   await backrest.click();
   await expect(filters.getByText("2 Filter aktiv")).toBeVisible();
   await expect(page.getByText("Bänke konnten nicht geladen werden.")).toHaveCount(0);
@@ -199,6 +205,9 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
+  await page.getByRole("button", { name: "Einen Eindruck beitragen" }).click();
+  const contribution = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  await contribution.locator("summary").filter({ hasText: "Wie war deine Pause?" }).click();
   await page.getByLabel("Gesamt bewerten").selectOption("5");
   await page.getByLabel("Aussicht bewerten").selectOption("4");
   await page.getByLabel("Komfort bewerten").selectOption("4");
@@ -206,11 +215,10 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await page.getByPlaceholder("Was hat dir hier gefallen?").fill("Playwright-Testbewertung");
   await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
-  await page.getByRole("button", { name: "Zum Platz" }).click();
-  await page.getByRole("tab", { name: "Bank" }).click();
-  await page.getByRole("button", { name: /Armlehnen/ }).click();
-  await page.getByRole("button", { name: "Ja", exact: true }).click();
-  await expect(page.getByRole("button", { name: /Armlehnen Ja/ })).toBeVisible();
+  await contribution.locator("summary").filter({ hasText: "Bänkli beschreiben" }).click();
+  await contribution.getByRole("button", { name: /Armlehnen/ }).click();
+  await contribution.getByRole("button", { name: "Ja", exact: true }).click();
+  await expect(contribution.getByRole("button", { name: /Armlehnen Ja/ })).toBeVisible();
 });
 
 test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {

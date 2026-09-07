@@ -40,6 +40,8 @@ const filtersSchema = z.object({
   armrest: z.boolean().optional(),
   covered: z.boolean().optional(),
   wheelchair: z.boolean().optional(),
+  fireplaceNearby: z.boolean().optional(),
+  wasteBasketNearby: z.boolean().optional(),
   material: z.string().max(40).optional(),
   minSeats: z.number().int().min(1).max(12).optional(),
   minCommunityRating: z.number().min(1).max(5).optional(),
@@ -107,6 +109,12 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
     if (filters?.[field] !== undefined) {
       clauses.push(`b.${field} = ?`);
       parameters.push(filters[field] ? 1 : 0);
+    }
+  }
+  for (const [filter, column] of [["fireplaceNearby", "fireplace_nearby"], ["wasteBasketNearby", "waste_basket_nearby"]] as const) {
+    if (filters?.[filter] !== undefined) {
+      clauses.push(`b.${column} = ?`);
+      parameters.push(filters[filter] ? 1 : 0);
     }
   }
   if (filters?.material) {
@@ -454,6 +462,25 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const recentRatings = sqlite.prepare(`SELECT id, overall, view_score as view, comfort, quiet, note, created_at as createdAt FROM ratings WHERE bench_row_id=? AND visible=1 ORDER BY updated_at DESC LIMIT 5`).all(row.row_id);
   const corrections = sqlite.prepare(`SELECT id, field, proposed_value as proposedValue, note, created_at as createdAt FROM corrections WHERE bench_row_id=? AND visible=1 ORDER BY created_at DESC LIMIT 20`).all(row.row_id);
   const media = sqlite.prepare(`SELECT id, relation, provider, source_url as sourceUrl, thumbnail_url as thumbnailUrl, author, license, distance_meters as distanceMeters, title FROM media WHERE bench_row_id=? ORDER BY relation, distance_meters LIMIT 12`).all(row.row_id);
+  const moments = sqlite.prepare(`
+    SELECT m.id,m.kind,m.body,m.photo_url AS photoUrl,m.created_at AS createdAt,
+      u.username,u.avatar_seed AS avatarSeed,m.user_id
+    FROM bench_moments m JOIN users u ON u.id=m.user_id
+    WHERE m.bench_row_id=? AND m.visible=1 ORDER BY m.created_at DESC LIMIT 12
+  `).all(row.row_id).map((item) => {
+    const moment = item as Record<string, unknown>;
+    return { ...moment, mine: currentUser?.id === Number(moment.user_id) };
+  }) as BenchDetail["moments"];
+  const careCounts = Object.fromEntries((sqlite.prepare(`
+    SELECT kind,count(DISTINCT user_id) AS count FROM bench_care_actions
+    WHERE bench_row_id=? AND created_at>=datetime('now','-90 days') GROUP BY kind
+  `).all(row.row_id) as Array<{ kind: string; count: number }>).map((item) => [item.kind, Number(item.count)]));
+  const myCare = currentUser ? (sqlite.prepare(`
+    SELECT DISTINCT kind FROM bench_care_actions
+    WHERE bench_row_id=? AND user_id=? AND created_at>=datetime('now','start of day')
+  `).all(row.row_id, currentUser.id) as Array<{ kind: BenchDetail["care"]["mine"][number] }>).map((item) => item.kind) : [];
+  const followingBench = Boolean(currentUser && sqlite.prepare("SELECT 1 FROM bench_follows WHERE bench_row_id=? AND user_id=?").get(row.row_id, currentUser.id));
+  const followingPlace = Boolean(currentUser && row.location_key && sqlite.prepare("SELECT 1 FROM place_follows WHERE location_key=? AND user_id=?").get(row.location_key, currentUser.id));
   const myRating = currentUser ? sqlite.prepare(`SELECT overall,view_score as view,comfort,quiet,note FROM ratings WHERE bench_row_id=? AND user_id=? LIMIT 1`).get(row.row_id, currentUser.id) : null;
   const observationSeason = zurichSeason(now);
   const observationMinutes = zurichMinutes(now);
@@ -524,14 +551,19 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
   const contributedFields = new Set((sqlite.prepare(
     "SELECT DISTINCT field FROM bench_metadata_edits WHERE bench_row_id=?",
   ).all(row.row_id) as Array<{ field: string }>).map((item) => item.field));
+  const myContributedFields = new Set(currentUser ? (sqlite.prepare(
+    "SELECT DISTINCT field FROM bench_metadata_edits WHERE bench_row_id=? AND user_id=?",
+  ).all(row.row_id, currentUser.id) as Array<{ field: string }>).map((item) => item.field) : []);
   const propertySource = (field: string) => contributedFields.has(field) || row.osm_type === "community" ? "Bänkli App" as const : "OpenStreetMap" as const;
   const properties = [
-    { key: "backrest" as const, label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: propertySource("backrest") },
-    { key: "armrest" as const, label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: propertySource("armrest") },
-    { key: "covered" as const, label: "Überdacht", value: yesNoUnknown(row.covered as number | null), source: propertySource("covered") },
-    { key: "wheelchair" as const, label: "Barrierefrei", value: yesNoUnknown(row.wheelchair as number | null), source: propertySource("wheelchair") },
-    { key: "material" as const, label: "Material", value: displayMaterial(row.material as string | null), source: propertySource("material") },
-    { key: "seats" as const, label: "Sitzplätze", value: row.seats ? String(row.seats) : "Unbekannt", source: propertySource("seats") },
+    { key: "backrest" as const, label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: propertySource("backrest"), contributedByMe: myContributedFields.has("backrest") },
+    { key: "armrest" as const, label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: propertySource("armrest"), contributedByMe: myContributedFields.has("armrest") },
+    { key: "covered" as const, label: "Überdacht", value: yesNoUnknown(row.covered as number | null), source: propertySource("covered"), contributedByMe: myContributedFields.has("covered") },
+    { key: "wheelchair" as const, label: "Barrierefrei", value: yesNoUnknown(row.wheelchair as number | null), source: propertySource("wheelchair"), contributedByMe: myContributedFields.has("wheelchair") },
+    { key: "fireplaceNearby" as const, label: "Feuerstelle nahebei", value: yesNoUnknown(row.fireplace_nearby as number | null), source: propertySource("fireplaceNearby"), contributedByMe: myContributedFields.has("fireplaceNearby") },
+    { key: "wasteBasketNearby" as const, label: "Abfalleimer nahebei", value: yesNoUnknown(row.waste_basket_nearby as number | null), source: propertySource("wasteBasketNearby"), contributedByMe: myContributedFields.has("wasteBasketNearby") },
+    { key: "material" as const, label: "Material", value: displayMaterial(row.material as string | null), source: propertySource("material"), contributedByMe: myContributedFields.has("material") },
+    { key: "seats" as const, label: "Sitzplätze", value: row.seats ? String(row.seats) : "Unbekannt", source: propertySource("seats"), contributedByMe: myContributedFields.has("seats") },
   ];
   return {
     id: String(row.id), osmType: String(row.osm_type), osmId: Number(row.osm_id),
@@ -545,7 +577,7 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     confirmationCount: Number(row.confirmation_count ?? 0),
     verificationThreshold: Math.max(2, Math.min(10, Number(process.env.BENCH_VERIFICATION_THRESHOLD ?? 3) || 3)),
     removalConfirmationCount: Number(row.removal_confirmation_count ?? 0),
-    description: row.operator ? `Betreiber: ${row.operator}` : null, properties,
+    description: null, operatorName: row.operator ? String(row.operator) : null, properties,
     elevationMeters,
     elevationSource,
     analysisCoverage: hasTerrainModel ? "terrain" : "near-field",
@@ -594,6 +626,8 @@ export async function getBenchDetail(benchId: string): Promise<BenchDetail | nul
     ratingBreakdown: ratingCount ? { overall: Number(Number(row.rating_average).toFixed(1)), view: Number(Number(row.rating_view).toFixed(1)), comfort: Number(Number(row.rating_comfort).toFixed(1)), quiet: Number(Number(row.rating_quiet).toFixed(1)) } : null,
     myRating: myRating as BenchDetail["myRating"],
     recentRatings: recentRatings as BenchDetail["recentRatings"], corrections: corrections as BenchDetail["corrections"], observations, media: media as BenchDetail["media"],
+    moments, care: { counts: careCounts, mine: myCare }, followingBench, followingPlace,
+    directionContributedByMe: myContributedFields.has("direction"),
     sourceUpdatedAt: String(row.source_updated_at), pipelineVersion,
   };
 }

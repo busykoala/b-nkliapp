@@ -104,6 +104,15 @@ def feature_contains_exact(latitude: float, longitude: float, feature: sqlite3.R
     return bool(geometry is not None and geometry.covers(point_lv95(latitude, longitude)))
 
 
+def feature_is_large_water(feature: sqlite3.Row) -> bool:
+    """Reserve the lake promise for broad, exact water surfaces."""
+    geometry = _feature_geometry(feature)
+    if geometry is None or geometry.area < 20_000:
+        return False
+    min_x, min_y, max_x, max_y = geometry.bounds
+    return max(max_x - min_x, max_y - min_y) >= 250 and min(max_x - min_x, max_y - min_y) >= 80
+
+
 def feature_nearest_location(latitude: float, longitude: float, feature: sqlite3.Row) -> Optional[tuple[float, float]]:
     geometry = _feature_geometry(feature)
     if geometry is None:

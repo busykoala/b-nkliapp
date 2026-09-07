@@ -8,6 +8,7 @@ KEEP_TAGS = {
     "amenity", "backrest", "armrest", "seats", "material", "direction", "covered",
     "wheelchair", "operator", "description", "image", "wikimedia_commons", "mapillary",
     "weather_protection", "surface", "colour", "access", "start_date",
+    "bin", "fireplace",
     "name", "inscription", "memorial:text", "addr:city", "addr:postcode", "addr:state", "place",
 }
 CONTEXT_TAGS = KEEP_TAGS | {
@@ -76,6 +77,10 @@ def context_kind(tags: dict[str, str]) -> Optional[str]:
         return "major_road"
     if tags.get("highway") in PATHS:
         return "path"
+    if tags.get("amenity") == "fireplace":
+        return "fireplace"
+    if tags.get("amenity") == "waste_basket":
+        return "waste_basket"
     return None
 
 

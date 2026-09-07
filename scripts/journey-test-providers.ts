@@ -26,11 +26,22 @@ if (process.env.BENCHLY_JOURNEY_TEST_FIXTURES === "true") {
       return Response.json({ connections: [] });
     }
     if (url.hostname === "127.0.0.1" && url.port === "8989") {
-      const body = JSON.parse(String(init?.body)) as { points: number[][]; algorithm?: string };
-      const coordinates = body.algorithm === "round_trip"
-        ? [body.points[0], [body.points[0][0] + .005, body.points[0][1]], [body.points[0][0] + .005, body.points[0][1] + .005], [body.points[0][0], body.points[0][1] + .005], body.points[0]]
+      const body = JSON.parse(String(init?.body)) as { points: number[][]; algorithm?: string; custom_model?: object; "round_trip.seed"?: number };
+      const roundTrip = body.algorithm === "round_trip";
+      const seed = Number(body["round_trip.seed"] ?? 0);
+      const direction = seed % 3;
+      const origin = body.points[0];
+      const bench = [8.54183, 47.37674];
+      const loopCorners = direction === 0
+        ? [[origin[0] + .004, origin[1] + .003], bench, [origin[0] - .003, origin[1] - .003]]
+        : direction === 1
+          ? [[origin[0] - .004, origin[1] + .002], bench, [origin[0] + .004, origin[1] - .004]]
+          : [[origin[0] + .001, origin[1] - .005], bench, [origin[0] - .005, origin[1] + .001]];
+      const coordinates = roundTrip
+        ? [origin, ...loopCorners, origin]
         : body.points;
-      return Response.json({ paths: [{ distance: 140, time: 100800, ascend: 0, points: { coordinates }, snapped_waypoints: { coordinates: body.points } }] });
+      const longWalk = roundTrip || Boolean(body.custom_model && body.points.length > 2);
+      return Response.json({ paths: [{ distance: longWalk ? 3_350 : 140, time: longWalk ? 2_520_000 : 100_800, ascend: longWalk ? 35 : 0, points: { coordinates }, snapped_waypoints: { coordinates: roundTrip ? [origin, origin] : body.points } }] });
     }
     if (url.hostname === "api3.geo.admin.ch" && url.searchParams.get("origins") === "address") {
       return Response.json({ results: [{ id: "journey-test-address", attrs: { origin: "address", label: "Bahnhofplatz 1, Zürich", lat: 47.378, lon: 8.538 } }] });
@@ -38,4 +49,3 @@ if (process.env.BENCHLY_JOURNEY_TEST_FIXTURES === "true") {
     return originalFetch(input, init);
   };
 }
-

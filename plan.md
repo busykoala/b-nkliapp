@@ -1,5 +1,26 @@
 # Bänkli-Wissen verbessern
 
+## Aktives Ziel: jeder Platz erzählt etwas
+
+- [x] Kombinationsgraph für Ort, Aussicht, Relief, Gewässer, Licht, Himmelskörper, Saison und Wetter dokumentieren und als reine, getestete Szenenlogik abbilden.
+- [x] Seesicht nur bei belegter Sicht auf eine genügend grosse Wasserfläche zeigen; Bach, Fluss und blosses Ufer-Nahsein nicht als See darstellen.
+- [x] Generische Aquarell-Ebenen für Ort, Relief und Gewässer erstellen, kombinieren und in Stadt, Dorf, Wald, Hügelland, Bergen, See und Fluss visuell prüfen.
+- [x] Sonnen-/Mondstand samt Mondphase, Banklicht, Wolken, Regen, Schnee und Wind innerhalb der neuen Tiefenstaffelung prüfen.
+- [x] Im Lichtkapitel den Tagesverlauf zur Hauptinformation machen; Sonnenstunden und Saisondetails nachordnen.
+- [x] Beim Erfassen eines neuen Bänklis die nützlichen, später editierbaren Merkmale direkt anbieten.
+- [x] Einen einzigen, gut sichtbaren Beitragsort schaffen; vorhandene eigene Beiträge und bereits bekannte Merkmale kenntlich machen.
+- [x] Bänkli-Momente für Erinnerung, Empfehlung, Gedicht, Ortswissen und öffentlich verlinktes Bild implementieren.
+- [x] Pflegeaktionen „gereinigt“, „in gutem Zustand“, „Reparatur nötig“ und „heute besonders schön“ implementieren.
+- [x] Lokales Folgen ohne Personen-Follower umsetzen: Lieblingsbänkli und Orte; nahe Momente statt generischem Endlos-Feed.
+- [x] Teilen nach Instagram/Share-Sheet sowie ein unaufdringliches gemeinsames Monatsthema integrieren.
+- [x] Gemeinden/Vereine über vorhandene Betreiberangaben sichtbar machen und Pflegehinweise anschlussfähig darstellen.
+- [x] Bis zu drei wirklich unterschiedliche Spaziergänge anbieten; wenn kein Rundweg ein Bänkli trifft, ehrliche Hin-und-zurück-Alternativen zeigen.
+- [x] Filter auf nützliche, von Menschen pflegbare Bänkli-Merkmale ausrichten; Feuerstelle und Abfalleimer erfassbar und filterbar machen.
+- [x] Danksagungsseite von Forschungsquellen und technischen Quellen-Kategorien befreien; nur tatsächlich genutzte Quellen und Werkzeuge zeigen.
+- [x] Bänkli- und Cluster-Marker als zusammengehörige, ruhige Aquarell-Signete gestalten und auf der echten Karte prüfen.
+- [x] Mobile und Desktop-Screenshots, Tastatur, Fokus, Touchziele, leere/Fehler-/Erfolgszustände sowie Reduced Motion prüfen.
+- [ ] Tests, Typprüfung, Lint und Produktions-Build ausführen; Diff prüfen, committen, direkt auf `main` pushen, deployen und Produktion verifizieren.
+
 Diese Liste ist der überprüfbare Umsetzungsstand. Ein Punkt wird erst mit `[x]`
 markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 
@@ -11,11 +32,11 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 
 ## 1. Ruhige Community-Aktionen
 
-- [x] Lichtfrage für eingeloggte Personen direkt im Lichtabschnitt im mobilen Chromium abnehmen und per Screenshot prüfen.
+- [x] Lichtfrage für eingeloggte Personen im zentralen Beitragsdialog im mobilen Chromium abnehmen und per Screenshot prüfen.
 - [x] Sonne, Schatten und Wechselhaft samt Speichern und Rückgängig im mobilen Browser prüfen.
 - [x] Lichtfrage nachts ausblenden und stattdessen den ruhigen Tageslicht-Hinweis im mobilen Browser prüfen.
 - [x] Wiederholte Lichtmeldungen derselben Person im Trend auf die neueste vergleichbare Meldung reduzieren und mit Repository-Test belegen.
-- [x] Aussicht mit „Passt ungefähr“ oder „Anders erlebt“ im mobilen Browser und per Screenshot abnehmen.
+- [x] Aussicht im zentralen Beitragsdialog mit „Passt ungefähr“ oder „Anders erlebt“ im mobilen Browser und per Screenshot abnehmen.
 - [x] Vier kurze Korrekturschritte samt Fokusführung und Zurück-Navigation im E2E-Ablauf prüfen.
 - [x] Eigene Aussicht unmittelbar anzeigen; öffentliche Lichttrends erst ab drei Personen integrieren und per Browser-/Repository-Test prüfen.
 - [x] Community-Evidenz getrennt von Bänkli-Stammdaten speichern.
@@ -97,8 +118,8 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 
 ## 7. Abschluss
 
-- [x] Aktueller Stand: 131 TypeScript- und 65 Python-Tests bestehen; TypeScript-Check ist grün.
-- [x] Gesamte Unit- und Worker-Suite sowie vollständige Produktions-Mobile-E2E-Suite ausführen (131 + 65 + 51 bestanden, 3 plattformspezifisch übersprungen).
+- [x] Aktueller Stand: 138 TypeScript- und 68 Python-Tests bestehen; TypeScript-Check ist grün.
+- [x] Gesamte Unit- und Worker-Suite sowie vollständige Produktions-Mobile-E2E-Suite ausführen (138 + 68 + 63 bestanden, 3 plattformspezifisch übersprungen).
 - [x] Lint ohne Warnungen und Produktions-Build erfolgreich ausführen.
 - [x] Generierte Katalogdateien lokal auf Synchronität prüfen; CI-Regel ist vorhanden.
 - [x] Änderungen prüfen, committen und pushen.

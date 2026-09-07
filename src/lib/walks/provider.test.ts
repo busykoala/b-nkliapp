@@ -64,3 +64,29 @@ it("keeps several genuinely different Bänkli outings", async () => {
   expect(result.suggestions).toHaveLength(3);
   expect(new Set(result.suggestions.map(({ bench }) => bench.id))).toEqual(new Set(["north", "east", "west"]));
 });
+
+it("offers several honest out-and-back choices when generated loops miss every bench", async () => {
+  const loopQuery = { ...query, shape: "loop" as const };
+  const benches = [
+    { id: "north", name: "Nordbänkli", latitude: 46.69, longitude: 7.68, waterfront: 0, view_score: 70, view_confidence: "mittel" },
+    { id: "east", name: "Ostbänkli", latitude: 46.68, longitude: 7.693, waterfront: 0, view_score: 75, view_confidence: "mittel" },
+    { id: "west", name: "Westbänkli", latitude: 46.68, longitude: 7.667, waterfront: 0, view_score: 80, view_confidence: "mittel" },
+  ];
+  mocks.rows.mockReturnValue(benches);
+  mocks.route.mockImplementation(async (request: { points: { latitude: number; longitude: number }[]; roundTrip?: object }) => {
+    if (request.roundTrip) return [{
+      geometry: [[7.68, 46.68], [7.72, 46.72], [7.68, 46.68]], distance: 2_000,
+      referenceSeconds: 1_500, ascent: 20, warnings: [], instructions: [], details: {},
+    } satisfies WalkPath];
+    const bench = request.points[1];
+    return [{
+      geometry: [[7.68, 46.68], [bench.longitude, bench.latitude], [7.68, 46.68]], distance: 2_000,
+      referenceSeconds: 1_500, ascent: 20, warnings: [], instructions: [], details: {},
+    } satisfies WalkPath];
+  });
+
+  const result = await discoverWalks(loopQuery);
+  expect(result.suggestions).toHaveLength(3);
+  expect(result.suggestions.every(({ repeated }) => repeated)).toBe(true);
+  expect(mocks.route.mock.calls.length).toBeLessThanOrEqual(21);
+});

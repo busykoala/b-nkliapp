@@ -1,21 +1,28 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
 import type { BenchDetail } from "@/lib/types";
-import { benchSceneArt, benchSpriteArt, seasonOverlayArt } from "@/lib/bench-scene-art";
+import { benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "@/lib/bench-scene-art";
 import { benchPlacement } from "@/lib/bench-placement";
 
 function knownProperty(bench: BenchDetail, label: string) {
   return bench.properties.find((item) => item.label === label)?.value ?? "Unbekannt";
 }
 
-/** The environment supplies perspective and grounding; only light, weather,
- * season and the actual bench construction are layered onto the painting. */
+/** Independent evidence layers form one generic scene; no single background
+ * is allowed to turn proximity into a claimed view. */
 export function BenchLandscape({ bench, children }: { bench: BenchDetail; children?: ReactNode }) {
   const instance = useId().replaceAll(":", "");
   const id = `scene-${instance}`;
-  const hasWater = Boolean(bench.waterfront) || bench.viewLabels.some((label) => /see|wasser/i.test(label));
   const snowCover = bench.weather?.snowCoverPercent ?? (bench.weather?.precipitationType === "snow" ? 18 : 0);
-  const scene = benchSceneArt({ landContext: bench.landContext, buildingCount100m: bench.buildingCount100m, buildingObstructionPercent: bench.buildingObstructionPercent, hasWater, snowCoverPercent: snowCover, elevationMeters: bench.elevationMeters });
-  const sceneKind = scene.match(/scene-(\w+)[.-]/)?.[1] ?? "country";
+  const scene = benchSceneLayers({
+    landContext: bench.landContext,
+    buildingCount100m: bench.buildingCount100m,
+    buildingObstructionPercent: bench.buildingObstructionPercent,
+    viewLabels: bench.viewLabels,
+    waterView: bench.viewComponents.water,
+    snowCoverPercent: snowCover,
+    precipitationType: bench.weather?.precipitationType,
+  });
+  const sceneKind = scene.place;
   const backrest = knownProperty(bench, "Rückenlehne") !== "Nein";
   const armrests = knownProperty(bench, "Armlehnen") === "Ja";
   const covered = knownProperty(bench, "Überdacht") === "Ja";
@@ -27,6 +34,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
   const precipitation = weather?.precipitationType ?? "none";
   const raining = precipitation === "rain" || precipitation === "mixed";
   const snowing = precipitation === "snow" || precipitation === "mixed";
+  const windy = (weather?.windKmh ?? 0) >= 25;
   const night = bench.dayPhase === "night";
   // Native SVG filters also work on external SVG <image> content in WebKit;
   // CSS filter chains on the enclosing group can leave the raw sprite visible.
@@ -45,19 +53,18 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
   const skyY = Math.max(36, Math.min(128, 135 - altitude * 1.3));
   const aria = [night ? "Nacht" : bench.sunnyNow === null ? "Lichtlage noch offen" : bench.sunnyNow ? "Die Bank liegt in der Sonne" : "Die Bank liegt im Schatten",
     raining && snowing ? "Schneeregen" : raining ? "Regen" : snowing ? "Schneefall" : null,
-    hasWater ? "am Wasser" : null, bench.inForest ? "im Wald" : null,
+    scene.water === "lake" ? "mit Seeblick" : scene.water === "river" ? "mit Flussblick" : null,
+    scene.relief === "mountains" ? "mit Bergblick" : scene.relief === "hills" ? "mit Hügelblick" : null,
+    bench.inForest ? "im Wald" : null,
     backrest ? "mit Rückenlehne" : "ohne Rückenlehne"].filter(Boolean).join(", ");
   const style = { "--scene-sun-x": `${skyX / 6.4}%` } as CSSProperties;
 
-  return <figure className={`bench-landscape painted-scene scene-${sceneKind} phase-${bench.dayPhase} season-${bench.season} ${bench.sunnyNow ? "light-sunny" : "light-shade"} ${raining ? "is-raining" : ""} ${snowCover > 15 ? "has-snow" : ""}`} style={style} aria-label={aria}>
+  return <figure className={`bench-landscape painted-scene scene-${sceneKind} relief-${scene.relief} water-${scene.water} phase-${bench.dayPhase} season-${bench.season} ${bench.sunnyNow ? "light-sunny" : "light-shade"} ${raining ? "is-raining" : ""} ${windy ? "is-windy" : ""} ${scene.snowy ? "has-snow" : ""}`} style={style} aria-label={aria}>
     <svg viewBox="0 0 640 480" role="img" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
       <defs>
         <linearGradient id={`${id}-sky`} x2="0" y2="1"><stop offset="0" stopColor="white" /><stop offset=".62" stopColor="white" /><stop offset="1" stopColor="black" /></linearGradient>
         <mask id={`${id}-sky-mask`}>
-          {sceneKind === "harbour" ? <>
-            <rect width="640" height="40" fill={`url(#${id}-sky)`} />
-            <rect x="150" width="340" height="150" fill={`url(#${id}-sky)`} />
-          </> : <rect width="640" height={sceneKind === "forest" || sceneKind === "city" ? 70 : 140} fill={`url(#${id}-sky)`} />}
+          <rect width="640" height={sceneKind === "forest" || sceneKind === "city" ? 112 : 155} fill={`url(#${id}-sky)`} />
         </mask>
         <linearGradient id={`${id}-snow`} x2="0" y2="1"><stop offset=".6" stopColor="black" /><stop offset="1" stopColor="white" /></linearGradient>
         <mask id={`${id}-snow-mask`}><rect width="640" height="480" fill={`url(#${id}-snow)`} /></mask>
@@ -76,11 +83,15 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
         <clipPath id={`${id}-moon-phase`}><path transform={`translate(${skyX} ${skyY}) scale(${bench.moonPhase <= .5 ? 1 : -1} 1)`} d={`M0 -${moonRadius}A${moonRadius} ${moonRadius} 0 0 1 0 ${moonRadius}A${terminatorRadius} ${moonRadius} 0 0 ${illumination >= .5 ? 1 : 0} 0 -${moonRadius}Z`} /></clipPath>
       </defs>
       <rect className="painting-paper" width="640" height="480" />
-      <image className="painting-environment" href={scene} width="640" height="480" preserveAspectRatio="xMidYMid slice" />
+      <path className="painting-sky-wash" d="M0 0H640V205Q535 184 424 203T207 195 0 216Z" />
       {(sunVisible || moonVisible) && <g mask={`url(#${id}-sky-mask)`} className="painting-sky-light">
         <ellipse cx={skyX} cy={skyY} rx="90" ry="70" fill={`url(#${id}-light)`} />
         <image clipPath={sunVisible ? undefined : `url(#${id}-moon-phase)`} href={`/ui-art/v1/celestial-${sunVisible ? "sun" : "moon"}-v1.webp`} x={skyX - 25} y={skyY - 25} width="50" height="50" />
       </g>}
+      {scene.reliefArt && <image className="painting-environment painting-relief" href={scene.reliefArt} width="640" height="480" preserveAspectRatio="none" />}
+      <image className="painting-environment painting-place" href={scene.placeArt} width="640" height="480" preserveAspectRatio="none" />
+      {scene.waterArt && <image className="painting-environment painting-water" href={scene.waterArt} width="640" height="480" preserveAspectRatio="none" />}
+      {scene.place !== "open" && <image className="painting-environment painting-ground" href={scene.groundArt} width="640" height="480" preserveAspectRatio="none" />}
       {cloudCover > .25 && <image className="painting-clouds" href="/ui-art/v1/weather-cloud-v1.webp" x="40" y="-20" width="560" height="160" opacity={Math.min(.4, cloudCover * .42)} />}
       {(bench.season === "autumn" || bench.season === "spring") && <image className="painting-season" href={seasonOverlayArt(bench.season)} x="0" y="200" width="640" height="280" preserveAspectRatio="none" />}
       {snowCover > 5 && snowCover < 25 && <image className="painting-snow-ground" mask={`url(#${id}-snow-mask)`} href={seasonOverlayArt("winter")} width="640" height="480" opacity={Math.min(.3, snowCover / 120)} preserveAspectRatio="none" />}
@@ -104,6 +115,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
       </g>
       {raining && <g className="painting-rain">{Array.from({ length: 26 }, (_, i) => <path key={i} d={`M${28 + (i * 79) % 590} ${70 + (i * 43) % 340}l-4 ${9 + i % 7}`} />)}</g>}
       {snowing && <g className="painting-snowfall">{Array.from({ length: 32 }, (_, i) => <circle key={i} cx={20 + (i * 113) % 600} cy={20 + (i * 73) % 420} r={.7 + (i % 3) * .45} />)}</g>}
+      {windy && <g className="painting-wind" aria-hidden="true"><path d="M68 252q68-24 139 3t144-2" /><path d="M383 166q74-19 151 8" /><path d="M437 316q49-17 101 0" /></g>}
     </svg>
     {weather && <span className="sr-only">{Math.round(weather.temperatureC)} Grad Celsius, {raining ? "Regen" : snowing ? "Schnee" : "trocken"}, MeteoSchweiz</span>}
     {night && <span className="sr-only">Mond {Math.round(bench.moonIllumination * 100)} Prozent beleuchtet</span>}

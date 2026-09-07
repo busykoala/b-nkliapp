@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildContextModel, type ContextFeature } from "./context-model";
+import { buildContextModel, type ContextFeature, waterGeometryLooksLikeLake } from "./context-model";
 import { wgs84ToLv95 } from "./elevation";
 
 const feature = (overrides: Partial<ContextFeature>): ContextFeature => ({
@@ -59,6 +59,22 @@ describe("near-field context model", () => {
     })]);
     expect(model.viewLabels).toContain("Wasser im Umfeld");
     expect(model.viewLabels).not.toContain("Seeblick");
+  });
+
+  it("requires actual surface area before calling a long water geometry a lake", () => {
+    const thinRiver = feature({
+      kind: "water",
+      subtype: "water",
+      exactGeometry: { paths: [[[0, 0], [1_000, 0], [1_000, 12], [0, 12], [0, 0]]], polygons: [[[[0, 0], [1_000, 0], [1_000, 12], [0, 12], [0, 0]]]] },
+    });
+    const lake = feature({
+      kind: "water",
+      subtype: "water",
+      exactGeometry: { paths: [[[0, 0], [300, 0], [300, 100], [0, 100], [0, 0]]], polygons: [[[[0, 0], [300, 0], [300, 100], [0, 100], [0, 0]]]] },
+    });
+    expect(waterGeometryLooksLikeLake(thinRiver)).toBe(false);
+    expect(waterGeometryLooksLikeLake(lake)).toBe(true);
+    expect(waterGeometryLooksLikeLake(feature({ kind: "water", subtype: "lake" }))).toBe(false);
   });
 
   it("does not turn a forest bounding-box overlap into forest containment", () => {

@@ -10,7 +10,7 @@ from typing import Optional, Sequence
 
 from benchly.context.evidence import feature_bearing, feature_distance, point_hits_building
 from benchly.geo import destination, distance_meters
-from benchly.context.geometry import feature_angular_half_width, feature_contains_exact, feature_ray_span
+from benchly.context.geometry import feature_angular_half_width, feature_contains_exact, feature_is_large_water, feature_ray_span
 from benchly.enrichment.terrain_profile import (
     PROFILE_DISTANCES_METERS,
     fetch_terrain_horizon,
@@ -296,7 +296,7 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
     elif blocked_share < .5 and hill_run >= minimum_run:
         labels.append("Hügelblick")
     if visible_water:
-        labels.append("Seeblick" if any((feature["subtype"] or "") in {"lake", "reservoir"} for feature in visible_water) else "Wasserblick")
+        labels.append("Seeblick" if any(feature_is_large_water(feature) for feature in visible_water) else "Wasserblick")
     if openness >= 0.75:
         labels.append("Weitsicht")
     if (in_forest or nearest_forest <= 25 or visible_forests) and naturalness >= 0.7:

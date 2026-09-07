@@ -1,17 +1,17 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Flag, Pencil, Star, X } from "lucide-react";
-import { editBenchMetadata } from "@/app/actions/benches";
+import { ArrowLeft, Flag, MessageCircleHeart, Star } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
 import { scenePoem } from "@/lib/scene-poetry";
-import { RatingForm } from "./contribution-forms";
-import { BenchCommunityActions } from "./bench-community-actions";
+import { BenchContributionHub } from "./bench-contribution-hub";
 import { BenchDetails } from "./bench-details";
 import { BenchLandscape } from "./bench-landscape";
+import { BenchPlaceCommunity } from "./bench-place-community";
 
 const correctionLabels: Record<string, string> = {
   properties: "Ausstattung",
@@ -22,21 +22,12 @@ const correctionLabels: Record<string, string> = {
 };
 
 export function BenchDetailContent({ bench, user, onBenchChange, onJourney }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void }) {
+  const router = useRouter();
   const [community, setCommunity] = useState(false);
-  const [storyOpen, setStoryOpen] = useState(false);
+  const [contributeOpen, setContributeOpen] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
-  const router = useRouter();
-  const saveStory = useCallback(async (_previous: Awaited<ReturnType<typeof editBenchMetadata>> | null, formData: FormData) => {
-    const result = await editBenchMetadata(bench.id, null, formData);
-    if (result.ok) {
-      setStoryOpen(false);
-      if (onBenchChange) await onBenchChange();
-      else router.refresh();
-    }
-    return result;
-  }, [bench.id, onBenchChange, router]);
-  const [storyState, storyAction, storyPending] = useActionState(saveStory, null);
+  const refreshBench = onBenchChange ?? (() => router.refresh());
   const report = (type: "rating" | "correction", id: number) => startTransition(async () => {
     const result = await reportContribution(type, id);
     window.alert(result.message);
@@ -49,7 +40,8 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney }: { 
   if (community) {
     return <div ref={detailRef} className="calm-detail community-detail pb-8">
       <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> Zum Platz</button>
-      <Community bench={bench} report={report} user={user} />
+      <Community bench={bench} report={report} user={user} onContribute={() => setContributeOpen(true)} />
+      {user && <BenchContributionHub bench={bench} open={contributeOpen} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
     </div>;
   }
 
@@ -62,23 +54,23 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney }: { 
       </BenchLandscape>
       <header className="calm-title">
         {bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
-        <div className="calm-title-row"><h2>{bench.title}</h2>{user && <button type="button" className="story-edit-button" aria-label="Name und Widmung bearbeiten" aria-expanded={storyOpen} onClick={() => setStoryOpen(!storyOpen)}>{storyOpen ? <X size={17} /> : <Pencil size={15} />}</button>}</div>
+        <div className="calm-title-row"><h2>{bench.title}</h2></div>
         <div className="calm-title-meta"><p>{placeLine(bench)}</p></div>
-        {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span> Weg hierher</button>}
-        {user && storyOpen && <form action={storyAction} className="inline-story-editor">
-          <label><span>Name</span><input name="name" maxLength={80} defaultValue={bench.name ?? ""} placeholder="Wie heisst dieses Bänkli?" /></label>
-          <label><span>Widmung</span><textarea name="dedication" maxLength={180} defaultValue={bench.dedication ?? ""} placeholder="Was steht auf der Bank?" /></label>
-          <button disabled={storyPending}>{storyPending ? <span className="loading loading-spinner loading-xs" /> : <Check size={16} />} Speichern</button>
-          {storyState && !storyState.ok && <p role="status">{storyState.message}</p>}
-        </form>}
+        <div className="bench-primary-actions">
+          {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span> Weg hierher</button>}
+          {user ? <button className="contribution-entry" onClick={() => setContributeOpen(true)}><MessageCircleHeart size={17} /> Beitragen</button>
+            : <Link className="contribution-entry" href="/konto"><MessageCircleHeart size={17} /> Mitmachen</Link>}
+        </div>
       </header>
     </section>
 
     <div className="calm-story-body">
       <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
-      <BenchDetails bench={bench} signedIn={Boolean(user)} onBenchChange={onBenchChange} />
+      <BenchDetails bench={bench} />
+      <BenchPlaceCommunity bench={bench} signedIn={Boolean(user)} onChanged={refreshBench} />
       <PhotoStory bench={bench} />
     </div>
+    {user && <BenchContributionHub bench={bench} open={contributeOpen} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
   </div>;
 }
 
@@ -111,14 +103,15 @@ function PhotoStory({ bench }: { bench: BenchDetail }) {
   </section>;
 }
 
-function Community({ bench, report, user }: { bench: BenchDetail; report: (type: "rating" | "correction", id: number) => void; user: CurrentUser | null }) {
+function Community({ bench, report, user, onContribute }: { bench: BenchDetail; report: (type: "rating" | "correction", id: number) => void; user: CurrentUser | null; onContribute: () => void }) {
   return <div className="community-page">
     <header><small>Von Menschen vor Ort</small><h3>Wie war die Pause?</h3></header>
     {bench.ratingBreakdown && <div className="rating-line">{Object.entries({ Gesamt: bench.ratingBreakdown.overall, Aussicht: bench.ratingBreakdown.view, Komfort: bench.ratingBreakdown.comfort, Ruhe: bench.ratingBreakdown.quiet }).map(([label, value]) => <span key={label}><strong>{value}</strong><small>{label}</small></span>)}</div>}
-    {user && <RatingForm benchId={bench.id} rating={bench.myRating} />}
+    {user
+      ? <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {bench.myRating ? "Meinen Beitrag bearbeiten" : "Einen Eindruck beitragen"}</button>
+      : <Link className="community-contribute-entry" href="/konto"><MessageCircleHeart size={17} /> Zum Mitmachen kurz anmelden</Link>}
     {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{new Date(rating.createdAt).toLocaleDateString("de-CH")}</time><button aria-label="Bewertung melden" onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
     {bench.corrections.length > 0 && <section className="community-notes"><h3>Hinweise</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ?? item.field}</small><button aria-label="Korrektur melden" onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
-    <BenchCommunityActions bench={bench} signedIn={Boolean(user)} />
   </div>;
 }
 

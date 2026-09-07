@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, useTransition } from "react";
+import { useId, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import {
   Accessibility,
@@ -12,6 +12,7 @@ import {
   Compass,
   Droplets,
   Eye,
+  Flame,
   Footprints,
   Hammer,
   Leaf,
@@ -19,19 +20,16 @@ import {
   Moon,
   MountainSnow,
   MoveHorizontal,
-  Pencil,
-  Plus,
   Snowflake,
   Sun,
   TreePine,
+  Trash2,
   Umbrella,
   UsersRound,
   Waves,
   Wind,
 } from "lucide-react";
-import { editBenchField } from "@/app/actions/benches";
-import { LightObservationPrompt, ViewObservationPrompt } from "@/features/bench-observations/bench-observation-prompts";
-import type { BenchDetail, BenchProperty } from "@/lib/types";
+import type { BenchDetail } from "@/lib/types";
 
 type DetailPanel = "bench" | "light" | "view" | "weather";
 
@@ -42,7 +40,7 @@ const panelLabels: Array<{ id: DetailPanel; label: string; icon: ReactNode }> = 
   { id: "weather", label: "Wetter", icon: <CloudSun size={18} /> },
 ];
 
-export function BenchDetails({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
+export function BenchDetails({ bench }: { bench: BenchDetail }) {
   const [panel, setPanel] = useState<DetailPanel>("bench");
   const panelRef = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -73,9 +71,9 @@ export function BenchDetails({ bench, signedIn, onBenchChange }: { bench: BenchD
         >{item.icon}<span>{item.label}</span></button>)}
       </div>
       <div ref={panelRef} className="detail-panel-frame" id={`${id}-${panel}-panel`} role="tabpanel" aria-labelledby={`${id}-${panel}-tab`}>
-        {panel === "bench" && <BenchPanel bench={bench} signedIn={signedIn} onBenchChange={onBenchChange} />}
-        {panel === "light" && <LightPanel bench={bench} signedIn={signedIn} onBenchChange={onBenchChange} />}
-        {panel === "view" && <ViewPanel bench={bench} signedIn={signedIn} onBenchChange={onBenchChange} />}
+        {panel === "bench" && <BenchPanel bench={bench} />}
+        {panel === "light" && <LightPanel bench={bench} />}
+        {panel === "view" && <ViewPanel bench={bench} />}
         {panel === "weather" && <WeatherPanel bench={bench} />}
       </div>
     </div>
@@ -86,60 +84,24 @@ function PanelHeading({ eyebrow, title, children }: { eyebrow: string; title: st
   return <header className="detail-panel-heading"><small>{eyebrow}</small><h3>{title}</h3>{children}</header>;
 }
 
-function BenchPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
-  const [propertyOverrides, setPropertyOverrides] = useState<Partial<Record<BenchProperty["key"], Pick<BenchProperty, "value" | "source">>>>({});
-  const [directionOverride, setDirectionOverride] = useState<number | null | undefined>(undefined);
-  const [activeField, setActiveField] = useState<EditableField | null>(null);
-  const properties = bench.properties.map((property) => ({ ...property, ...propertyOverrides[property.key] }));
-  const directionDegrees = directionOverride === undefined ? bench.directionDegrees : directionOverride;
-  const known = properties.filter((property) => !isMissing(property.value));
-  const visible = signedIn ? properties : known;
-  const missingCount = properties.length - known.length;
-  const activeProperty = properties.find((property) => property.key === activeField);
+function BenchPanel({ bench }: { bench: BenchDetail }) {
+  const known = bench.properties.filter((property) => !isMissing(property.value));
+  const missingCount = bench.properties.length - known.length;
   return <section className="detail-panel detail-panel-bench">
-    <PanelHeading eyebrow="So sitzt es sich hier" title={known.length ? "Was die Bank mitbringt" : "Die Bank wird noch erkundet"}>
-      {signedIn && <p className="contribution-invite">Tippe auf eine Angabe, um sie zu ergänzen.</p>}
-    </PanelHeading>
-    {visible.length > 0 && <div className="bench-fact-grid">
-      {visible.map((property) => <button
-        type="button"
-        disabled={!signedIn}
-        aria-expanded={signedIn ? activeField === property.key : undefined}
-        className={`${isMissing(property.value) ? "is-missing" : ""} ${property.source === "Bänkli App" ? "is-community" : ""} ${activeField === property.key ? "is-editing" : ""}`}
-        key={property.label}
-        onClick={() => setActiveField(activeField === property.key ? null : property.key)}
-      >
+    <PanelHeading eyebrow="So sitzt es sich hier" title={known.length ? "Was die Bank mitbringt" : "Die Bank wird noch erkundet"} />
+    {known.length > 0 && <div className="bench-fact-grid">
+      {known.map((property) => <div className={property.source === "Bänkli App" ? "is-community" : ""} key={property.label}>
         <span className="fact-mark"><PropertyIcon label={property.label} /></span>
         <small>{property.label}</small>
-        <strong>{isMissing(property.value) && signedIn ? "Ergänzen" : property.value}</strong>
-        {signedIn && <span className="fact-edit" aria-hidden="true">{isMissing(property.value) ? <Plus size={15} /> : <Pencil size={13} />}</span>}
-      </button>)}
+        <strong>{property.value}</strong>
+      </div>)}
     </div>}
-    {!signedIn && missingCount > 0 && <p className="missing-whisper">{missingCount === 1 ? "Ein Merkmal" : `${missingCount} Merkmale`} wurde{missingCount === 1 ? "" : "n"} noch nicht erfasst.</p>}
-    {signedIn && activeProperty && <ChoiceEditor
-      benchId={bench.id}
-      field={activeProperty.key}
-      label={activeProperty.label}
-      currentDisplay={activeProperty.value}
-      onClose={() => setActiveField(null)}
-      onSaved={(display) => setPropertyOverrides((current) => ({ ...current, [activeProperty.key]: { value: display, source: "Bänkli App" } }))}
-      onBenchChange={onBenchChange}
-    />}
+    {missingCount > 0 && <p className="missing-whisper">{missingCount === 1 ? "Ein Merkmal" : `${missingCount} Merkmale`} wurde{missingCount === 1 ? "" : "n"} noch nicht erfasst.</p>}
     {(bench.dedication || bench.description) && <blockquote className="bench-note">{bench.dedication || bench.description}</blockquote>}
-    <div className={`bearing-card ${activeField === "direction" ? "is-editing" : ""}`}>
-      <div className="bearing-dial" aria-hidden="true"><Compass size={36} /><i style={{ transform: `rotate(${directionDegrees ?? 0}deg)` }} /></div>
-      <div><small>Blickrichtung</small><strong>{directionDegrees === null ? signedIn ? "Ergänzen" : "Noch nicht erfasst" : direction(directionDegrees)}</strong><p>{directionDegrees === null ? "Die Landschaft wird deshalb rundum betrachtet." : "Die Aussicht wird in dieser Richtung gewichtet."}</p></div>
-      {signedIn && <button type="button" className="bearing-edit" aria-label="Blickrichtung bearbeiten" aria-expanded={activeField === "direction"} onClick={() => setActiveField(activeField === "direction" ? null : "direction")}>{directionDegrees === null ? <Plus size={16} /> : <Pencil size={14} />}</button>}
+    <div className="bearing-card">
+      <div className="bearing-dial" aria-hidden="true"><Compass size={36} /><i style={{ transform: `rotate(${bench.directionDegrees ?? 0}deg)` }} /></div>
+      <div><small>Blickrichtung</small><strong>{bench.directionDegrees === null ? "Noch nicht erfasst" : direction(bench.directionDegrees)}</strong><p>{bench.directionDegrees === null ? "Die Landschaft wird deshalb rundum betrachtet." : "Die Aussicht wird in dieser Richtung gewichtet."}</p></div>
     </div>
-    {signedIn && activeField === "direction" && <ChoiceEditor
-      benchId={bench.id}
-      field="direction"
-      label="Blickrichtung"
-      currentDisplay={directionDegrees === null ? null : direction(directionDegrees)}
-      onClose={() => setActiveField(null)}
-      onSaved={(_, value) => setDirectionOverride(Number(value))}
-      onBenchChange={onBenchChange}
-    />}
     <details className="technical-fold">
       <summary>Ort & Lage <ChevronDown size={16} /></summary>
       <DetailRows title="Ort & Lage" rows={[
@@ -151,85 +113,36 @@ function BenchPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; si
   </section>;
 }
 
-type EditableField = BenchProperty["key"] | "direction";
-type FieldChoice = { value: string; label: string; display?: string };
-
-function choicesFor(field: EditableField): FieldChoice[] {
-  if (["backrest", "armrest", "covered", "wheelchair"].includes(field)) return [
-    { value: "yes", label: "Ja" }, { value: "no", label: "Nein" },
-  ];
-  if (field === "material") return [
-    { value: "wood", label: "Holz" }, { value: "metal", label: "Metall" }, { value: "stone", label: "Stein" },
-    { value: "concrete", label: "Beton" }, { value: "plastic", label: "Kunststoff" }, { value: "mixed", label: "Gemischt" },
-  ];
-  if (field === "seats") return Array.from({ length: 12 }, (_, index) => ({ value: String(index + 1), label: String(index + 1) }));
-  return [
-    ["0", "N", "N · 0°"], ["45", "NO", "NO · 45°"], ["90", "O", "O · 90°"], ["135", "SO", "SO · 135°"],
-    ["180", "S", "S · 180°"], ["225", "SW", "SW · 225°"], ["270", "W", "W · 270°"], ["315", "NW", "NW · 315°"],
-  ].map(([value, label, display]) => ({ value, label, display }));
-}
-
-function ChoiceEditor({ benchId, field, label, currentDisplay, onSaved, onClose, onBenchChange }: {
-  benchId: string;
-  field: EditableField;
-  label: string;
-  currentDisplay: string | null;
-  onSaved: (display: string, value: string) => void;
-  onClose: () => void;
-  onBenchChange?: () => void | Promise<void>;
-}) {
-  const [pending, startTransition] = useTransition();
-  const [message, setMessage] = useState<string | null>(null);
-  const choose = (choice: FieldChoice) => startTransition(async () => {
-    setMessage(null);
-    const result = await editBenchField(benchId, field, choice.value);
-    setMessage(result.message);
-    if (!result.ok) return;
-    onSaved(choice.display ?? choice.label, choice.value);
-    window.setTimeout(onClose, 420);
-    if (onBenchChange) void onBenchChange();
-  });
-  return <div className="inline-field-editor" aria-label={`${label} bearbeiten`}>
-    <header><span>{label}</span><small>{pending ? "Wird eingetragen …" : message ?? "Was siehst du vor Ort?"}</small></header>
-    <div className={`field-choice-grid is-${field}`}>
-      {choicesFor(field).map((choice) => {
-        const selected = (choice.display ?? choice.label) === currentDisplay;
-        return <button type="button" key={choice.value} disabled={pending} aria-pressed={selected} onClick={() => choose(choice)}>{selected && <span aria-hidden="true">✓</span>}{choice.label}</button>;
-      })}
-    </div>
-  </div>;
-}
-
 function PropertyIcon({ label }: { label: string }) {
   if (label === "Rückenlehne") return <Armchair size={19} />;
   if (label === "Armlehnen") return <MoveHorizontal size={19} />;
   if (label === "Überdacht") return <Umbrella size={19} />;
   if (label === "Barrierefrei") return <Accessibility size={19} />;
+  if (label === "Feuerstelle nahebei") return <Flame size={19} />;
+  if (label === "Abfalleimer nahebei") return <Trash2 size={19} />;
   if (label === "Material") return <Hammer size={19} />;
   return <UsersRound size={19} />;
 }
 
-function LightPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
+function LightPanel({ bench }: { bench: BenchDetail }) {
   const sunPercent = bench.daylightMinutesToday > 0 ? Math.round(bench.sunMinutesToday / bench.daylightMinutesToday * 100) : 0;
   const sunLabel = bench.sunConfidence === "niedrig" ? "Geschätzte Sonne" : "Direkte Sonne";
   return <section className="detail-panel detail-panel-light">
     <PanelHeading eyebrow="Licht heute" title={currentLight(bench)}>
       <p>{lightSentence(bench)}</p>
     </PanelHeading>
-    {signedIn && bench.dayPhase !== "night" && <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onBenchChange} />}
-    {signedIn && bench.dayPhase === "night" && <p className="observation-night-note"><Moon size={15} aria-hidden="true" />Den Lichteindruck kannst du hier bei Tageslicht bestätigen.</p>}
-    <div className="light-balance" aria-label={`${sunDuration(bench.sunMinutesToday)} direkte Sonne und ${sunDuration(bench.shadeMinutesToday)} Schatten bei Tageslicht`}>
-      <div><span className="is-sun"><Sun size={18} /></span><small>{sunLabel}</small><strong>{sunDuration(bench.sunMinutesToday)}</strong></div>
-      <div><span className="is-shade"><CloudSun size={18} /></span><small>Schatten</small><strong>{sunDuration(bench.shadeMinutesToday)}</strong></div>
-      <i><b style={{ width: `${sunPercent}%` }} /></i>
+    <SunPath bench={bench} />
+    <div className="light-windows is-primary">
+      <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? "Geschätzte Sonnenfenster" : "Sonnenfenster"} windows={bench.sunWindows} empty="Heute keine direkte Sonne berechnet" />
+      <IntervalStory icon={<CloudSun size={17} />} label="Schattenfenster" windows={bench.shadeWindows} empty="Heute kein Schattenfenster berechnet" />
     </div>
     <p className="confidence-line">{lightConfidenceLine(bench.sunConfidence)}</p>
     <details className="technical-fold">
-      <summary><span><strong>Tagesverlauf</strong><small>Sonnenfenster, Schatten und Jahreszeiten</small></span><ChevronDown size={16} /></summary>
-      <SunPath bench={bench} />
-      <div className="light-windows">
-        <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? "Geschätzte Sonnenfenster" : "Sonnenfenster"} windows={bench.sunWindows} empty="Heute keine direkte Sonne berechnet" />
-        <IntervalStory icon={<CloudSun size={17} />} label="Schattenfenster" windows={bench.shadeWindows} empty="Heute kein Schattenfenster berechnet" />
+      <summary><span><strong>Dauer & Jahreszeiten</strong><small>Summen, Hindernisse und Himmelswerte</small></span><ChevronDown size={16} /></summary>
+      <div className="light-balance" aria-label={`${sunDuration(bench.sunMinutesToday)} direkte Sonne und ${sunDuration(bench.shadeMinutesToday)} Schatten bei Tageslicht`}>
+        <div><span className="is-sun"><Sun size={18} /></span><small>{sunLabel}</small><strong>{sunDuration(bench.sunMinutesToday)}</strong></div>
+        <div><span className="is-shade"><CloudSun size={18} /></span><small>Schatten</small><strong>{sunDuration(bench.shadeMinutesToday)}</strong></div>
+        <i><b style={{ width: `${sunPercent}%` }} /></i>
       </div>
       <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
       <SeasonalLight bench={bench} />
@@ -290,7 +203,7 @@ function SeasonalLight({ bench }: { bench: BenchDetail }) {
   </div>;
 }
 
-function ViewPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; signedIn: boolean; onBenchChange?: () => void | Promise<void> }) {
+function ViewPanel({ bench }: { bench: BenchDetail }) {
   const hasDistances = [bench.distanceBuildingMeters, bench.distanceWaterMeters, bench.distancePathMeters].some((value) => value !== null);
   const surroundings = surroundingsLine(bench);
   return <section className="detail-panel detail-panel-view">
@@ -299,7 +212,6 @@ function ViewPanel({ bench, signedIn, onBenchChange }: { bench: BenchDetail; sig
       <ViewScoreIllustration bench={bench} />
       <div><small>Eindruck</small><p>{bench.viewLabels.join(" · ") || "Die Aussicht wird noch erkundet."}</p><span>{confidence(bench.viewConfidence)}e Sicherheit</span></div>
     </div>
-    {signedIn && <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} onChanged={onBenchChange} />}
     {bench.observations.view.publicEstimate && <p className="community-evidence">
       <UsersRound size={15} aria-hidden="true" />
       {bench.observations.view.publicEstimate.contributors} Eindrücke von Menschen vor Ort · {communityConfidence(bench.observations.view.publicEstimate.confidence)}

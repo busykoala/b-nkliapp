@@ -37,7 +37,7 @@ export default async function AcknowledgementsPage() {
       <p className="thanks-lead">Diese Liste kommt direkt aus dem Datenkatalog der App. Ändert sich eine Quelle, ändert sich auch diese Seite – ganz ohne archäologische Expedition durch den Code.</p>
       <div className="source-grid">
         {acknowledgedSources.map((source) => <article className="source-card" key={source.id}>
-          <div><span>{source.kind}{source.lifecycle === "experimental" ? " · in Prüfung" : ""}</span><h3>{source.name}</h3></div>
+          <div><h3>{source.name}</h3></div>
           <p>{source.provides.join(" · ")}</p>
           {source.statusNote && <p className="source-status-note">{source.statusNote}</p>}
           <small>{source.license}</small>

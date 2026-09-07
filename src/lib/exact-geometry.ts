@@ -103,6 +103,20 @@ export function geometryContains(point: ProjectedPoint, geometry: ExactGeometry)
     && !rings.slice(1).some((hole) => ringContains(point, hole)));
 }
 
+function ringArea(ring: ProjectedPoint[]) {
+  return Math.abs(ring.reduce((sum, [x, y], index) => {
+    const [nextX, nextY] = ring[(index + 1) % ring.length];
+    return sum + x * nextY - nextX * y;
+  }, 0)) / 2;
+}
+
+/** Area in square metres for projected polygon geometry. Lines and points are zero. */
+export function geometryArea(geometry: ExactGeometry) {
+  return geometry.polygons.reduce((total, rings) => total + (rings.length
+    ? Math.max(0, ringArea(rings[0]) - rings.slice(1).reduce((sum, hole) => sum + ringArea(hole), 0))
+    : 0), 0);
+}
+
 export function nearestGeometryPoint(point: ProjectedPoint, geometry: ExactGeometry) {
   if (geometryContains(point, geometry)) return { nearest: point, distance: 0 };
   let best: { nearest: ProjectedPoint; distance: number } | null = null;

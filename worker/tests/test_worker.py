@@ -23,6 +23,7 @@ from benchly.context.geometry import (
     feature_angular_half_width,
     feature_contains_exact,
     feature_distance_exact,
+    feature_is_large_water,
     point_lv95,
 )
 from benchly.enrichment.service import expand_bounds, spatial_cell_bounds
@@ -66,7 +67,16 @@ class WorkerUnitTests(unittest.TestCase):
         self.assertEqual(context_kind({"building": "yes"}), "building")
         self.assertEqual(context_kind({"natural": "water"}), "water")
         self.assertEqual(context_kind({"highway": "footway"}), "path")
+        self.assertEqual(context_kind({"amenity": "fireplace"}), "fireplace")
+        self.assertEqual(context_kind({"amenity": "waste_basket"}), "waste_basket")
         self.assertAlmostEqual(parse_height({"building:levels": "3"}), 9.3)
+
+    def test_lake_label_requires_a_broad_exact_water_surface(self):
+        broad = {"geometry_wkb": to_wkb(Polygon([(0, 0), (300, 0), (300, 100), (0, 100)]))}
+        thin = {"geometry_wkb": to_wkb(Polygon([(0, 0), (1000, 0), (1000, 12), (0, 12)]))}
+        self.assertTrue(feature_is_large_water(broad))
+        self.assertFalse(feature_is_large_water(thin))
+        self.assertFalse(feature_is_large_water({"geometry_wkb": None}))
 
     def test_spatial_batch_bounds_are_stable_and_expand(self):
         bounds = spatial_cell_bounds(46.68654, 7.86468)

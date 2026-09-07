@@ -17,6 +17,7 @@ from benchly.benches.repository import (
     deactivate_stale_osm_benches,
     invalidate_enrichment,
     remove_demo_benches,
+    refresh_nearby_amenities,
     replace_exact_imported_media,
     upsert_osm_benches,
 )
@@ -159,7 +160,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 "source": "OpenStreetMap",
                 "source_id": f"{item.osm_type}-{item.osm_id}",
                 "kind": item.kind,
-                "subtype": tags.get("building") or tags.get("natural") or tags.get("water") or tags.get("highway") or tags.get("landuse"),
+                "subtype": tags.get("building") or tags.get("natural") or tags.get("water") or tags.get("highway") or tags.get("landuse") or tags.get("amenity"),
                 "center_latitude": item.center_latitude,
                 "center_longitude": item.center_longitude,
                 "min_latitude": item.min_latitude,
@@ -212,7 +213,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
         def node(self, node) -> None:
             if node.tags.get("amenity") == "bench" and node.location.valid():
                 self._append("node", node.id, node.location.lat, node.location.lon, node.tags)
-            if node.location.valid() and node.tags.get("natural") == "tree":
+            if node.location.valid() and (node.tags.get("natural") == "tree" or node.tags.get("amenity") in {"fireplace", "waste_basket"}):
                 self._append_context("node", node.id, [(node.location.lat, node.location.lon)], node.tags)
 
         def way(self, way) -> None:
@@ -238,6 +239,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
     BenchHandler().apply_file(str(pbf_path), locations=True)
     flush()
     flush_context()
+    refresh_nearby_amenities(connection)
     deactivate_stale_osm_benches(connection, imported_at)
     discard_old_osm_context(connection, imported_at)
     invalidate_enrichment(connection, environment=True)

@@ -665,4 +665,78 @@ export const migrations: Migration[] = [
       PRAGMA writable_schema=RESET;
     `,
   },
+  {
+    id: "0015_bench_places_and_moments",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bench_moments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL CHECK(kind IN ('memory','recommendation','poem','local_fact','photo')),
+        body TEXT NOT NULL CHECK(length(body) BETWEEN 1 AND 500),
+        photo_url TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        visible INTEGER NOT NULL DEFAULT 1
+      );
+      CREATE INDEX IF NOT EXISTS bench_moments_bench_idx ON bench_moments(bench_row_id,created_at DESC);
+      CREATE INDEX IF NOT EXISTS bench_moments_user_idx ON bench_moments(user_id,created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS bench_care_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL CHECK(kind IN ('cleaned','good','repair','beautiful')),
+        created_at TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS bench_care_one_daily
+        ON bench_care_actions(bench_row_id,user_id,kind,date(created_at));
+      CREATE INDEX IF NOT EXISTS bench_care_bench_idx ON bench_care_actions(bench_row_id,created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS bench_follows (
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(bench_row_id,user_id)
+      );
+      CREATE TABLE IF NOT EXISTS place_follows (
+        location_key TEXT NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        label TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(location_key,user_id)
+      );
+    `,
+  },
+  {
+    id: "0016_editable_nearby_amenities",
+    sql: `
+      ALTER TABLE benches ADD COLUMN fireplace_nearby INTEGER CHECK(fireplace_nearby IN (0,1));
+      ALTER TABLE benches ADD COLUMN waste_basket_nearby INTEGER CHECK(waste_basket_nearby IN (0,1));
+
+      ALTER TABLE bench_metadata_edits RENAME TO bench_metadata_edits_legacy;
+      CREATE TABLE bench_metadata_edits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        field TEXT NOT NULL CHECK(field IN (
+          'name','dedication','location','backrest','armrest','covered','wheelchair',
+          'fireplaceNearby','wasteBasketNearby','material','seats','direction'
+        )),
+        old_value TEXT,
+        new_value TEXT,
+        created_at TEXT NOT NULL
+      );
+      INSERT INTO bench_metadata_edits(id,bench_row_id,user_id,field,old_value,new_value,created_at)
+        SELECT id,bench_row_id,user_id,field,old_value,new_value,created_at FROM bench_metadata_edits_legacy;
+      DROP TABLE bench_metadata_edits_legacy;
+      CREATE INDEX bench_metadata_edits_bench_field_idx
+        ON bench_metadata_edits(bench_row_id,field,id DESC);
+      CREATE INDEX bench_metadata_edits_user_idx
+        ON bench_metadata_edits(user_id,created_at DESC);
+      CREATE INDEX benches_stay_amenities_idx ON benches(fireplace_nearby,waste_basket_nearby);
+      CREATE INDEX IF NOT EXISTS environment_amenity_lookup_idx
+        ON environment_features(kind,center_latitude,center_longitude);
+    `,
+  },
 ];

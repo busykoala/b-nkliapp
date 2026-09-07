@@ -39,6 +39,21 @@ test("denied walk location leaves address fallback and preserves privacy", async
   expect(page.url()).not.toContain("46.949");
 });
 
+test("offers several distinct Bänkli outings instead of one fixed route", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
+  await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
+  await panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" }).click();
+  await panel.getByRole("button", { name: "Mein Bänkli entdecken", exact: true }).click();
+  const choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
+  await expect(choices).toBeVisible({ timeout: 18_000 });
+  await expect(choices.getByRole("button")).toHaveCount(3);
+  await choices.getByRole("button").nth(1).click();
+  await expect(choices.getByRole("button").nth(1)).toHaveAttribute("aria-pressed", "true");
+  await choices.screenshot({ path: testInfo.outputPath("walk-options.png") });
+});
+
 test("shows a Bänkli-centred route and opens a private return journey", async ({ page }, info) => {
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");

@@ -52,7 +52,7 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
           </details>
           {leg.platformChanges?.map((change) => <p className="journey-warning" key={change}>{change}</p>)}
           {leg.warnings.map((warning) => <p className="journey-warning" key={warning}>{warning}</p>)}
-        </li>)}<li className="journey-arrival"><img src="/map-art/v3/bench-marker-v2.png" alt="" width="44" height="44" /><strong>{initial ? "Wieder am Ausgangspunkt." : "Ankommen. Platz nehmen."}</strong></li></ol>}
+        </li>)}<li className="journey-arrival"><img src="/map-art/v4/bench-marker.webp" alt="" width="44" height="44" /><strong>{initial ? "Wieder am Ausgangspunkt." : "Ankommen. Platz nehmen."}</strong></li></ol>}
         <button className="journey-location" disabled={pending} onClick={() => submit(timeMode === "arrival" ? -30 : 30)}>{timeMode === "arrival" ? "30 Minuten früher suchen" : "30 Minuten später suchen"}</button>
         <small>Abgefragt um {journeyClock(result.fetchedAt)} · {result.feedUpdatedAt ? `Transferdaten: ${new Date(result.feedUpdatedAt).toLocaleDateString("de-CH")}` : "Offizielle Transferdaten noch nicht verfügbar"}</small>
       </section>}

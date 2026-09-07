@@ -16,6 +16,17 @@ function nearbyBenches(query: WalkQuery): WalkBench[] {
   return rows.filter((b) => distanceMeters({ ...b, label: "" }, query.origin) <= radius).map((b) => ({ id: b.id, label: b.name ?? "Bänkli", name: b.name, latitude: b.latitude, longitude: b.longitude, waterfront: b.waterfront === 1, quality: b.view_confidence && b.view_confidence !== "niedrig" && b.view_score !== null ? Math.max(0, Math.min(1, b.view_score / 100)) : null }));
 }
 
+function bearingDegrees(origin: WalkQuery["origin"], bench: WalkBench) {
+  const y = Math.sin((bench.longitude - origin.longitude) * Math.PI / 180) * Math.cos(bench.latitude * Math.PI / 180);
+  const x = Math.cos(origin.latitude * Math.PI / 180) * Math.sin(bench.latitude * Math.PI / 180)
+    - Math.sin(origin.latitude * Math.PI / 180) * Math.cos(bench.latitude * Math.PI / 180) * Math.cos((bench.longitude - origin.longitude) * Math.PI / 180);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function angleDifference(a: number, b: number) {
+  return Math.abs(((a - b + 540) % 360) - 180);
+}
+
 export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
   const signal = AbortSignal.timeout(15000);
   const result: WalkResult = { query, suggestions: [], fetchedAt: new Date().toISOString(), partial: false };
@@ -72,6 +83,25 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
           add((await route({ points }))[0], candidate.bench);
         } catch { result.partial = true; }
       }));
+      // A generated loop can miss all mapped benches, especially in sparse
+      // areas. Keep the promise of a choice by adding honest out-and-back
+      // alternatives to distinct benches; the UI labels these as such.
+      if (result.suggestions.length < 3) {
+        const used = new Set(result.suggestions.map(({ bench }) => bench.id));
+        const chosenBearings = result.suggestions.map(({ bench }) => bearingDegrees(query.origin, bench));
+        const fallback = benches
+          .filter((bench) => !used.has(bench.id) && distanceMeters(query.origin, bench) > 100)
+          .map((bench) => ({ bench, bearing: bearingDegrees(query.origin, bench), distance: distanceMeters(query.origin, bench) }))
+          .sort((a, b) => Math.abs(a.distance * 2 - targetMeters) - Math.abs(b.distance * 2 - targetMeters));
+        for (const candidate of fallback) {
+          if (result.suggestions.length >= 3 || calls >= 21) break;
+          if (chosenBearings.some((bearing) => angleDifference(bearing, candidate.bearing) < 35)) continue;
+          try {
+            add((await route({ points: [query.origin, candidate.bench, query.origin] }))[0], candidate.bench);
+            if (result.suggestions.some(({ bench }) => bench.id === candidate.bench.id)) chosenBearings.push(candidate.bearing);
+          } catch { result.partial = true; }
+        }
+      }
     }
     result.suggestions.sort((a, b) => Number(b.withinBudget) - Number(a.withinBudget) || (a.withinBudget ? b.score - a.score : Math.abs(a.durationSeconds - query.minutes * 60) - Math.abs(b.durationSeconds - query.minutes * 60)));
     result.suggestions = result.suggestions.slice(0, 3);

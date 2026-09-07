@@ -1,6 +1,6 @@
 import type { ObstructionType } from "./sun";
 import { HORIZON_DISTANCES_METERS, wgs84ToLv95 } from "./elevation";
-import { geometryContains, nearestGeometryPoint, rayGeometrySpan, type ExactGeometry, type ProjectedPoint } from "./exact-geometry";
+import { geometryArea, geometryContains, nearestGeometryPoint, rayGeometrySpan, type ExactGeometry, type ProjectedPoint } from "./exact-geometry";
 import type { LandCoverEvidence } from "./land-cover";
 
 export type ContextFeature = {
@@ -149,8 +149,7 @@ function terrainSample(terrain: TerrainEvidence, bearingIndex: number, distance:
   return terrain.sampleElevations[bearingIndex * HORIZON_DISTANCES_METERS.length + nearestIndex];
 }
 
-function waterGeometryLooksLikeLake(feature: ContextFeature) {
-  if (["lake", "reservoir"].includes(feature.subtype ?? "")) return true;
+export function waterGeometryLooksLikeLake(feature: ContextFeature) {
   if (!feature.exactGeometry) return false;
   const points = feature.exactGeometry.paths.flat();
   if (!points.length) return false;
@@ -158,7 +157,11 @@ function waterGeometryLooksLikeLake(feature: ContextFeature) {
   const northings = points.map((point) => point[1]);
   const width = Math.max(...eastings) - Math.min(...eastings);
   const height = Math.max(...northings) - Math.min(...northings);
-  return Math.max(width, height) >= 250 && Math.min(width, height) >= 80;
+  // Bounding boxes alone turn long river polygons into lakes. Require a
+  // substantial actual surface and width before making the stronger promise.
+  return geometryArea(feature.exactGeometry) >= 20_000
+    && Math.max(width, height) >= 250
+    && Math.min(width, height) >= 80;
 }
 
 export function buildContextModel(latitude: number, longitude: number, directionDegrees: number | null, features: ContextFeature[], terrain?: TerrainEvidence, landCover?: LandCoverEvidence): ContextModel {

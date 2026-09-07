@@ -1,21 +1,28 @@
 import Link from "next/link";
-import { ArrowLeft, Check, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, Check, HeartHandshake, MapPinPlus, MessageCircleHeart, Pencil, Search, Sparkles, Star } from "lucide-react";
 import { getActivityFeed, type FeedEntry } from "@/app/actions/feed";
 import { AppMenu } from "@/components/app-menu";
 import { TrailAvatar } from "@/components/trail-avatar";
 import { getCurrentUser } from "@/lib/security";
+import { communityTheme } from "@/lib/community-theme";
 
 export const dynamic = "force-dynamic";
 
-const feedIcons = { added: MapPinPlus, rated: Star, confirmed: Check, missing: Search, edited: Pencil } as const;
+const feedIcons = { added: MapPinPlus, rated: Star, confirmed: Check, missing: Search, edited: Pencil, moment: MessageCircleHeart, care: HeartHandshake } as const;
 
 export default async function FeedPage() {
-  const [entries, user] = await Promise.all([getActivityFeed(), getCurrentUser()]);
+  const [feed, user] = await Promise.all([getActivityFeed(), getCurrentUser()]);
+  const theme = communityTheme();
   return <main className="feed-page min-h-dvh safe-bottom">
     <header className="feed-nav safe-top"><Link href="/" aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
-    <section className="feed-intro"><span><Sparkles size={14} /> Was sich bewegt</span><h1>Bänkli-Feed</h1><p>Neue Plätze, kleine Pausen und Menschen, die genauer hinschauen.</p></section>
+    <section className="feed-intro"><span><Sparkles size={14} /> {feed.personalized ? "Aus deinen Lieblingsorten" : "Was sich an Bänkli bewegt"}</span><h1>Bänkli-Momente</h1><p>{feed.personalized ? "Geschichten und kleine Pflegezeichen von Plätzen, denen du folgst." : "Keine endlose Timeline – nur ein paar neue Geschichten, Pausen und Menschen, die genauer hinschauen."}</p>
+      <div className="feed-rituals">
+        {feed.weeklyBench && <Link href={`/bank/${feed.weeklyBench.id}`}><small>Bänkli dieser Woche</small><strong>{feed.weeklyBench.name}</strong>{feed.weeklyBench.place && feed.weeklyBench.place !== feed.weeklyBench.name && <span>{feed.weeklyBench.place}</span>}</Link>}
+        <aside><small>Gemeinsames Thema</small><strong>{theme.title}</strong><span>{theme.prompt}</span></aside>
+      </div>
+    </section>
     <section className="feed-scroll" aria-label="Neuigkeiten">
-      {entries.length ? entries.map((entry) => <FeedCard key={entry.id} entry={entry} />) : <div className="feed-empty"><span>🍂</span><p>Noch weht kein neuer Eintrag herein.</p></div>}
+      {feed.entries.length ? feed.entries.map((entry) => <FeedCard key={entry.id} entry={entry} />) : <div className="feed-empty"><span>🍂</span><p>Noch weht kein neuer Eintrag herein.</p></div>}
     </section>
   </main>;
 }
@@ -35,11 +42,17 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
 function feedSentence(entry: FeedEntry) {
   const name = <Link href={`/profil/${encodeURIComponent(entry.username)}`} className="feed-person">{entry.username}</Link>;
   const bench = <Link href={`/bank/${entry.benchId}`} className="feed-bench">{entry.benchName}</Link>;
+  if (entry.kind === "moment") return <>{name} hat bei {bench} einen Moment hinterlassen.{entry.detail && <q>{entry.detail}</q>}</>;
+  if (entry.kind === "care") return <>{name} hat bei {bench} {careSentence(entry.detail)}.</>;
   if (entry.kind === "added") return <>{name} hat {bench} auf die Karte gesetzt. Ein neues Plätzli wartet.</>;
   if (entry.kind === "rated") return <>{name} hat bei {bench} kurz innegehalten und eine Stimme dagelassen.</>;
   if (entry.kind === "confirmed") return <>{name} hat nachgeschaut: {bench} steht wirklich da.</>;
   if (entry.kind === "missing") return <>{name} vermisst {bench}. Vielleicht ist das Bänkli weitergezogen.</>;
   return <>{name} hat {bench} ein kleines Detail geschenkt.</>;
+}
+
+function careSentence(kind: string | null) {
+  return ({ cleaned: "kurz aufgeräumt", good: "nach dem Rechten gesehen", repair: "Reparaturbedarf bemerkt", beautiful: "einen besonders schönen Augenblick entdeckt" } as Record<string, string>)[kind ?? ""] ?? "nachgeschaut";
 }
 
 function relativeTime(value: string) {

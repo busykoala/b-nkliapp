@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
-import { Accessibility, Armchair, CloudSun, Hand, RotateCcw, Star, Sun, Umbrella, X } from "lucide-react";
+import { Accessibility, Armchair, CloudSun, Flame, Hand, RotateCcw, Star, Sun, Trash2, Umbrella, X } from "lucide-react";
 import { activeMapFilterCount } from "@/lib/map-filters";
 import type { MapFilters } from "@/lib/types";
 
@@ -15,7 +15,9 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   const activeCount = activeMapFilterCount(filters);
   useEffect(() => {
-    const focusFrame = window.requestAnimationFrame(() => closeRef.current?.focus());
+    // A closing native menu dialog restores focus to its trigger after the
+    // filter has mounted. Focus once that browser restoration has settled.
+    const focusTimer = window.setTimeout(() => closeRef.current?.focus(), 60);
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onCloseRef.current();
@@ -36,7 +38,7 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
     };
     window.addEventListener("keydown", handleKey);
     return () => {
-      window.cancelAnimationFrame(focusFrame);
+      window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKey);
       window.setTimeout(() => document.querySelector<HTMLButtonElement>('[aria-label="Menü öffnen"]')?.focus(), 0);
     };
@@ -50,33 +52,40 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
         <button ref={closeRef} autoFocus className="btn btn-circle btn-ghost btn-sm" aria-label="Filter schliessen" onClick={onClose}><X size={19} /></button>
       </div>
       <p className="filter-intro">Nur Angaben, die Menschen vor Ort ergänzen oder korrigieren können.</p>
-      <FilterGroup label="Ausstattung am Bänkli">
+      <FilterGroup label="Für deine Pause">
         <FilterToggle active={filters.backrest === true} icon={<Armchair />} label="Rückenlehne" onClick={() => toggle("backrest")} />
-        <FilterToggle active={filters.armrest === true} icon={<Hand />} label="Armlehnen" onClick={() => toggle("armrest")} />
         <FilterToggle active={filters.covered === true} icon={<Umbrella />} label="Überdacht" onClick={() => toggle("covered")} />
-        <FilterToggle active={filters.wheelchair === true} icon={<Accessibility />} label="Barrierefrei" onClick={() => toggle("wheelchair")} />
+        <FilterToggle active={filters.fireplaceNearby === true} icon={<Flame />} label="Feuerstelle" onClick={() => toggle("fireplaceNearby")} />
+        <FilterToggle active={filters.wasteBasketNearby === true} icon={<Trash2 />} label="Abfalleimer" onClick={() => toggle("wasteBasketNearby")} />
       </FilterGroup>
       <FilterGroup label="Licht jetzt">
         <FilterToggle active={filters.sunnyNow === true} icon={<Sun />} label="Sonne" onClick={() => setLight(true)} />
         <FilterToggle active={filters.sunnyNow === false} icon={<CloudSun />} label="Schatten" onClick={() => setLight(false)} />
       </FilterGroup>
-      <div className="filter-select-grid">
-        <label className="filter-material">
-          <span>Material</span>
-          <select className="select min-h-11 w-full" value={filters.material ?? ""} onChange={(event) => onChange({ ...filters, material: event.target.value || undefined })}>
-            <option value="">Ganz egal</option><option value="wood">Holz</option><option value="metal">Metall</option><option value="stone">Stein</option><option value="concrete">Beton</option><option value="plastic">Kunststoff</option><option value="mixed">Gemischt</option>
-          </select>
-        </label>
-        <label className="filter-material">
-          <span>Sitzplätze</span>
-          <select className="select min-h-11 w-full" value={filters.minSeats ?? ""} onChange={(event) => onChange({ ...filters, minSeats: event.target.value ? Number(event.target.value) : undefined })}>
-            <option value="">Ganz egal</option><option value="2">Mindestens 2</option><option value="3">Mindestens 3</option><option value="4">Mindestens 4</option><option value="6">Mindestens 6</option>
-          </select>
-        </label>
-      </div>
-      <FilterGroup label="Von Menschen bewertet">
-        <FilterToggle active={(filters.minCommunityRating ?? 0) >= 4} icon={<Star />} label="Ab 4 Sternen" onClick={() => onChange({ ...filters, minCommunityRating: (filters.minCommunityRating ?? 0) >= 4 ? undefined : 4 })} />
-      </FilterGroup>
+      <details className="filter-more">
+        <summary>Mehr Wünsche</summary>
+        <FilterGroup label="Zugang & Komfort">
+          <FilterToggle active={filters.armrest === true} icon={<Hand />} label="Armlehnen" onClick={() => toggle("armrest")} />
+          <FilterToggle active={filters.wheelchair === true} icon={<Accessibility />} label="Stufenlos" onClick={() => toggle("wheelchair")} />
+        </FilterGroup>
+        <div className="filter-select-grid">
+          <label className="filter-material">
+            <span>Material</span>
+            <select className="select min-h-11 w-full" value={filters.material ?? ""} onChange={(event) => onChange({ ...filters, material: event.target.value || undefined })}>
+              <option value="">Ganz egal</option><option value="wood">Holz</option><option value="metal">Metall</option><option value="stone">Stein</option><option value="concrete">Beton</option><option value="plastic">Kunststoff</option><option value="mixed">Gemischt</option>
+            </select>
+          </label>
+          <label className="filter-material">
+            <span>Platz für</span>
+            <select className="select min-h-11 w-full" value={filters.minSeats ?? ""} onChange={(event) => onChange({ ...filters, minSeats: event.target.value ? Number(event.target.value) : undefined })}>
+              <option value="">Egal wie viele</option><option value="2">mind. 2 Personen</option><option value="3">mind. 3 Personen</option><option value="4">mind. 4 Personen</option><option value="6">mind. 6 Personen</option>
+            </select>
+          </label>
+        </div>
+        <FilterGroup label="Von Menschen bewertet">
+          <FilterToggle active={(filters.minCommunityRating ?? 0) >= 4} icon={<Star />} label="Ab 4 Sternen" onClick={() => onChange({ ...filters, minCommunityRating: (filters.minCommunityRating ?? 0) >= 4 ? undefined : 4 })} />
+        </FilterGroup>
+      </details>
       <div className="filter-actions">
         <button className="clear-filters" disabled={activeCount === 0} onClick={() => onChange({})}><RotateCcw size={15} /> Auswahl löschen</button>
         <button className="filter-done" onClick={onClose}>Karte ansehen</button>

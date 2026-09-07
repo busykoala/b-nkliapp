@@ -7,6 +7,7 @@ from sqlalchemy.dialects.sqlite import insert
 
 from benchly.db import write
 from benchly.benches.models import Bench, BenchEnrichment, BenchMetadataEdit, Media
+from benchly.context.models import EnvironmentFeature
 
 
 EDITED_FIELDS = {
@@ -14,6 +15,8 @@ EDITED_FIELDS = {
     "armrest": "armrest",
     "covered": "covered",
     "wheelchair": "wheelchair",
+    "fireplace_nearby": "fireplaceNearby",
+    "waste_basket_nearby": "wasteBasketNearby",
     "seats": "seats",
     "material": "material",
     "direction_degrees": "direction",
@@ -26,12 +29,35 @@ EDITED_FIELDS = {
 }
 
 
+def refresh_nearby_amenities(database) -> None:
+    """Refresh editable OSM hints without overwriting a person's correction."""
+    available_columns = {row[1] for row in database.execute("PRAGMA table_info(benches)")}
+    for kind, column, edit_field in (
+        ("fireplace", Bench.fireplace_nearby, "fireplaceNearby"),
+        ("waste_basket", Bench.waste_basket_nearby, "wasteBasketNearby"),
+    ):
+        if column.key not in available_columns:
+            continue
+        edited = exists(select(BenchMetadataEdit.id).where(
+            BenchMetadataEdit.bench_row_id == Bench.row_id,
+            BenchMetadataEdit.field == edit_field,
+        ))
+        nearby = exists(select(EnvironmentFeature.row_id).where(
+            EnvironmentFeature.kind == kind,
+            EnvironmentFeature.center_latitude.between(Bench.latitude - .0007, Bench.latitude + .0007),
+            EnvironmentFeature.center_longitude.between(Bench.longitude - .00105, Bench.longitude + .00105),
+        ))
+        write(database, update(Bench).where(~edited).values({column.key: None}))
+        write(database, update(Bench).where(~edited, nearby).values({column.key: 1}))
+
+
 def upsert_osm_benches(database, rows: Sequence[dict[str, object]], preserve_edits: bool) -> None:
     if not rows:
         return
     rows = [Bench.model_validate(row).model_dump(exclude_unset=True, exclude={"row_id"}) for row in rows]
     statement = insert(Bench).values(list(rows))
     excluded = statement.excluded
+    available_columns = {row[1] for row in database.execute("PRAGMA table_info(benches)")}
     direct = {
         "latitude": excluded.latitude,
         "longitude": excluded.longitude,
@@ -43,6 +69,8 @@ def upsert_osm_benches(database, rows: Sequence[dict[str, object]], preserve_edi
         "imported_at": excluded.imported_at,
     }
     for column_name, edit_field in EDITED_FIELDS.items():
+        if column_name not in available_columns:
+            continue
         incoming = getattr(excluded, column_name)
         current = getattr(Bench, column_name)
         fallback = func.coalesce(incoming, current) if edit_field in {"name", "dedication", "location"} else incoming

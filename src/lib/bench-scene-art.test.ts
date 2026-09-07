@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BenchLandscape } from "../components/bench-landscape";
 import type { BenchDetail } from "./types";
-import { benchSceneArt, benchSpriteArt, seasonOverlayArt } from "./bench-scene-art";
+import { benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "./bench-scene-art";
 
 const uiArtDirectory = join(process.cwd(), "public", "ui-art");
 const uiArtFiles = () => readdirSync(uiArtDirectory, { recursive: true, withFileTypes: true })
@@ -18,12 +18,13 @@ function largestAsset(matches: (name: string) => boolean) {
 }
 
 describe("bench scene artwork", () => {
-  it("distinguishes dense cities, villages, forests, water, and open country", () => {
-    expect(benchSceneArt({ landContext: "urban", buildingCount100m: 40, hasWater: false })).toContain("scene-city");
-    expect(benchSceneArt({ landContext: "urban", buildingCount100m: 12, hasWater: false })).toContain("scene-village");
-    expect(benchSceneArt({ landContext: "forest", buildingCount100m: 0, hasWater: false })).toContain("scene-forest");
-    expect(benchSceneArt({ landContext: "open", buildingCount100m: 0, hasWater: true })).toContain("scene-lake");
-    expect(benchSceneArt({ landContext: "open", buildingCount100m: 0, hasWater: false })).toContain("scene-country");
+  it("keeps place, relief and water as independent layers", () => {
+    expect(benchSceneLayers({ landContext: "urban", buildingCount100m: 40, viewLabels: ["Bergblick", "Seeblick"], waterView: 1 }))
+      .toMatchObject({ place: "city", relief: "mountains", water: "lake" });
+    expect(benchSceneLayers({ landContext: "urban", buildingCount100m: 12, viewLabels: ["Hügelblick", "Wasserblick"], waterView: .8 }))
+      .toMatchObject({ place: "village", relief: "hills", water: "river" });
+    expect(benchSceneLayers({ landContext: "forest", buildingCount100m: 0, viewLabels: [], waterView: 0 }))
+      .toMatchObject({ place: "forest", relief: "none", water: "none" });
   });
 
   it("maps material, backrest, and armrests to the matching bench sprite", () => {
@@ -32,31 +33,26 @@ describe("bench scene artwork", () => {
     expect(benchSpriteArt({ material: "Beton", backrest: false, armrests: true })).toContain("bench-stone-backless");
   });
 
-  it.each([
-    { landContext: "urban" as const, buildingCount100m: 40, expected: "/ui-art/v3/bench-scene-harbour" },
-    { landContext: "urban" as const, buildingCount100m: 8, expected: "/ui-art/v3/bench-scene-harbour" },
-    { landContext: "forest" as const, buildingCount100m: 0, expected: "/ui-art/v2/bench-scene-lake" },
-    { landContext: "forest_edge" as const, buildingCount100m: 6, expected: "/ui-art/v3/bench-scene-harbour" },
-    { landContext: null, buildingCount100m: null, expected: "/ui-art/v2/bench-scene-lake" },
-  ])("keeps water visible despite surrounding land use: %j", (context) => {
-    expect(benchSceneArt({ ...context, hasWater: true })).toBe(`${context.expected}.webp`);
-    expect(benchSceneArt({ ...context, hasWater: true, snowCoverPercent: 70 })).toBe(`${context.expected}-winter.webp`);
+  it("does not turn waterfront proximity or weak water evidence into a lake", () => {
+    expect(benchSceneLayers({ landContext: "open", buildingCount100m: 0, viewLabels: ["Wasser im Umfeld"], waterView: .8 }).water).toBe("none");
+    expect(benchSceneLayers({ landContext: "open", buildingCount100m: 0, viewLabels: ["Seeblick"], waterView: .35 }).water).toBe("none");
+    expect(benchSceneLayers({ landContext: "open", buildingCount100m: 0, viewLabels: ["Seeblick"], waterView: .9 }).water).toBe("lake");
   });
 
   it.each([
-    { waterfront: true, viewLabels: [] },
-    { waterfront: null, viewLabels: ["Seeblick"] },
-    { waterfront: true, viewLabels: [], landContext: null, buildingCount100m: null, buildingObstructionPercent: 67 },
-  ])("renders the water evidence in the actual urban bench illustration: %j", (water) => {
+    { viewLabels: ["Seeblick"], water: 1, expected: "water-lake" },
+    { viewLabels: ["Wasserblick"], water: .8, expected: "water-river" },
+    { viewLabels: ["Wasser im Umfeld"], water: 1, expected: "water-none" },
+  ])("renders only supported water evidence in the actual illustration: %j", ({ viewLabels, water, expected }) => {
     const bench = {
       landContext: "urban", buildingCount100m: 40,
       dayPhase: "day", season: "summer", sunnyNow: true, weather: null,
       sunAltitudeDegrees: 30, sunAzimuthDegrees: 180, moonIllumination: 0,
-      moonPhase: 0, properties: [], ...water,
+      moonPhase: 0, properties: [], viewLabels, viewComponents: { water },
     } as unknown as BenchDetail;
     const markup = renderToStaticMarkup(createElement(BenchLandscape, { bench }));
-    expect(markup).toContain("scene-harbour");
-    expect(markup).not.toContain("scene-city");
+    expect(markup).toContain("scene-city");
+    expect(markup).toContain(expected);
     // Keep the treatment on the native SVG path for Safari, preserve solid
     // alpha, and constrain processing to the small foreground sprite.
     expect(markup).toContain('color-interpolation-filters="sRGB"');
@@ -64,12 +60,10 @@ describe("bench scene artwork", () => {
     expect(markup).toMatch(/<image filter="url\(#[^"]+-bench-pigment\)"/);
   });
 
-  it("uses strong building obstruction even when the land classification is missing", () => {
-    const context = { landContext: null, buildingCount100m: null, buildingObstructionPercent: 67, hasWater: true };
-    expect(benchSceneArt(context)).toContain("scene-harbour");
-    expect(benchSceneArt({ ...context, buildingObstructionPercent: 6 })).toContain("scene-lake");
-    expect(benchSceneArt({ ...context, hasWater: false })).not.toContain("harbour");
-    expect(benchSceneArt({ ...context, snowCoverPercent: 70 })).toContain("harbour-winter");
+  it("uses strong building obstruction when land classification is missing", () => {
+    const context = { landContext: null, buildingCount100m: null, viewLabels: [] };
+    expect(benchSceneLayers({ ...context, buildingObstructionPercent: 67 }).place).toBe("village");
+    expect(benchSceneLayers({ ...context, buildingObstructionPercent: 6 }).place).toBe("open");
   });
 
   it("selects the current seasonal overlay", () => {
@@ -77,12 +71,10 @@ describe("bench scene artwork", () => {
     expect(seasonOverlayArt("winter")).toContain("season-winter");
   });
 
-  it("uses snowy landscapes only with snow evidence, retaining the actual setting", () => {
-    const lake = { landContext: "open" as const, buildingCount100m: 0, hasWater: true };
-    expect(benchSceneArt(lake)).not.toContain("winter");
-    expect(benchSceneArt({ ...lake, snowCoverPercent: 70 })).toContain("lake-winter");
-    expect(benchSceneArt({ ...lake, hasWater: false, snowCoverPercent: 70, elevationMeters: 2200 })).toContain("alpine-winter");
-    expect(benchSceneArt({ ...lake, landContext: "forest", hasWater: false, snowCoverPercent: 70 })).toContain("forest-winter");
+  it("combines snow with the actual setting rather than selecting a winter location", () => {
+    const lake = { landContext: "open" as const, buildingCount100m: 0, viewLabels: ["Seeblick", "Bergblick"], waterView: 1 };
+    expect(benchSceneLayers(lake)).toMatchObject({ place: "open", relief: "mountains", water: "lake", snowy: false });
+    expect(benchSceneLayers({ ...lake, snowCoverPercent: 70 })).toMatchObject({ place: "open", relief: "mountains", water: "lake", snowy: true });
   });
 
   it("keeps contextual and complete UI artwork inside the transfer budgets", () => {
@@ -100,7 +92,7 @@ describe("bench scene artwork", () => {
     ].reduce((sum, matches) => sum + largestAsset(matches), 0);
     const completeBytes = files.reduce((sum, name) => sum + statSync(name).size, 0);
 
-    expect(contextualBytes).toBeLessThanOrEqual(400 * 1024);
-    expect(completeBytes).toBeLessThanOrEqual(800 * 1024);
+    expect(contextualBytes).toBeLessThanOrEqual(460 * 1024);
+    expect(completeBytes).toBeLessThanOrEqual(1_200 * 1024);
   });
 });

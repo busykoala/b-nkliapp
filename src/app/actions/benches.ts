@@ -16,12 +16,21 @@ const addSchema = z.object({
   longitude: z.coerce.number().min(5.7).max(10.7),
   name: z.string().trim().max(80).optional(),
   dedication: z.string().trim().max(180).optional(),
+  backrest: z.enum(["", "yes", "no"]).optional(),
+  armrest: z.enum(["", "yes", "no"]).optional(),
+  covered: z.enum(["", "yes", "no"]).optional(),
+  wheelchair: z.enum(["", "yes", "no"]).optional(),
+  fireplaceNearby: z.enum(["", "yes", "no"]).optional(),
+  wasteBasketNearby: z.enum(["", "yes", "no"]).optional(),
+  material: z.enum(["", "wood", "metal", "stone", "concrete", "plastic", "mixed"]).optional(),
+  seats: z.union([z.literal(""), z.coerce.number().int().min(1).max(20)]).optional(),
+  direction: z.union([z.literal(""), z.coerce.number().int().min(0).max(359).refine((value) => value % 45 === 0)]).optional(),
 });
 const editSchema = z.object({
   name: z.string().trim().max(80).optional(),
   dedication: z.string().trim().max(180).optional(),
 });
-const editableFieldSchema = z.enum(["backrest", "armrest", "covered", "wheelchair", "material", "seats", "direction"]);
+const editableFieldSchema = z.enum(["backrest", "armrest", "covered", "wheelchair", "fireplaceNearby", "wasteBasketNearby", "material", "seats", "direction"]);
 const booleanValueSchema = z.enum(["yes", "no"]);
 const materialValueSchema = z.enum(["wood", "metal", "stone", "concrete", "plastic", "mixed"]);
 
@@ -69,17 +78,34 @@ export async function addBench(_previous: ActionResult | null, formData: FormDat
     const location = await locationFor(parsed.data.latitude, parsed.data.longitude);
     const now = new Date().toISOString();
     const id = `community-${randomUUID()}`;
+    const bool = (value: "" | "yes" | "no" | undefined) => value ? value === "yes" ? 1 : 0 : null;
     const transaction = sqlite.transaction(() => {
       const result = sqlite.prepare(`INSERT INTO benches(
-        id,osm_type,osm_id,latitude,longitude,description,raw_tags,active,source_updated_at,imported_at,
+        id,osm_type,osm_id,latitude,longitude,backrest,armrest,covered,wheelchair,fireplace_nearby,waste_basket_nearby,seats,material,direction_degrees,
+        description,raw_tags,active,source_updated_at,imported_at,
         name,dedication,location_name,location_key,location_postcode,location_canton,created_by_user_id,verification_status
-      ) VALUES(?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?,?,'unverified')`).run(
-        id, "community", -randomInt(1, 2_000_000_000), parsed.data.latitude, parsed.data.longitude,
-        parsed.data.name || "Sitzbank", "{}", now, now, parsed.data.name || null, parsed.data.dedication || null,
-        location.name, normalizeLocationKey(location.name), location.postcode, location.canton, user.id,
-      );
+      ) VALUES(@id,'community',@osmId,@latitude,@longitude,@backrest,@armrest,@covered,@wheelchair,@fireplaceNearby,@wasteBasketNearby,@seats,@material,@direction,
+        @description,'{}',1,@now,@now,@name,@dedication,@locationName,@locationKey,@postcode,@canton,@userId,'unverified')`).run({
+        id, osmId: -randomInt(1, 2_000_000_000), latitude: parsed.data.latitude, longitude: parsed.data.longitude,
+        backrest: bool(parsed.data.backrest), armrest: bool(parsed.data.armrest), covered: bool(parsed.data.covered),
+        wheelchair: bool(parsed.data.wheelchair), seats: parsed.data.seats === "" ? null : parsed.data.seats ?? null,
+        fireplaceNearby: bool(parsed.data.fireplaceNearby), wasteBasketNearby: bool(parsed.data.wasteBasketNearby),
+        material: parsed.data.material || null, direction: parsed.data.direction === "" ? null : parsed.data.direction ?? null,
+        description: parsed.data.name || "Sitzbank", now, name: parsed.data.name || null, dedication: parsed.data.dedication || null,
+        locationName: location.name, locationKey: normalizeLocationKey(location.name), postcode: location.postcode,
+        canton: location.canton, userId: user.id,
+      });
+      const rowId = Number(result.lastInsertRowid);
       sqlite.prepare("INSERT INTO bench_confirmations(bench_row_id,user_id,created_at) VALUES(?,?,?)")
-        .run(Number(result.lastInsertRowid), user.id, now);
+        .run(rowId, user.id, now);
+      const edits = [
+        ["name", parsed.data.name], ["dedication", parsed.data.dedication], ["backrest", parsed.data.backrest],
+        ["armrest", parsed.data.armrest], ["covered", parsed.data.covered], ["wheelchair", parsed.data.wheelchair],
+        ["fireplaceNearby", parsed.data.fireplaceNearby], ["wasteBasketNearby", parsed.data.wasteBasketNearby],
+        ["material", parsed.data.material], ["seats", parsed.data.seats], ["direction", parsed.data.direction],
+      ].filter((entry) => entry[1] !== undefined && entry[1] !== "");
+      const insertEdit = sqlite.prepare("INSERT INTO bench_metadata_edits(bench_row_id,user_id,field,old_value,new_value,created_at) VALUES(?,?,?,?,?,?)");
+      for (const [field, value] of edits) insertEdit.run(rowId, user.id, field, null, String(value), now);
     });
     transaction();
     refreshUserBadges(user.id);
@@ -139,12 +165,12 @@ export async function editBenchField(benchId: string, fieldInput: unknown, value
   if (!field.success || typeof valueInput !== "string") return { ok: false, message: "Bitte Angabe prüfen." };
 
   let value: string | number;
-  let column: "backrest" | "armrest" | "covered" | "wheelchair" | "material" | "seats" | "direction_degrees";
-  if (["backrest", "armrest", "covered", "wheelchair"].includes(field.data)) {
+  let column: "backrest" | "armrest" | "covered" | "wheelchair" | "fireplace_nearby" | "waste_basket_nearby" | "material" | "seats" | "direction_degrees";
+  if (["backrest", "armrest", "covered", "wheelchair", "fireplaceNearby", "wasteBasketNearby"].includes(field.data)) {
     const parsed = booleanValueSchema.safeParse(valueInput);
     if (!parsed.success) return { ok: false, message: "Bitte Ja oder Nein wählen." };
     value = parsed.data === "yes" ? 1 : 0;
-    column = field.data as typeof column;
+    column = field.data === "fireplaceNearby" ? "fireplace_nearby" : field.data === "wasteBasketNearby" ? "waste_basket_nearby" : field.data as typeof column;
   } else if (field.data === "material") {
     const parsed = materialValueSchema.safeParse(valueInput);
     if (!parsed.success) return { ok: false, message: "Bitte Material wählen." };

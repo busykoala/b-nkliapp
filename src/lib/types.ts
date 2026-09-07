@@ -41,6 +41,8 @@ export type MapFilters = {
   armrest?: boolean;
   covered?: boolean;
   wheelchair?: boolean;
+  fireplaceNearby?: boolean;
+  wasteBasketNearby?: boolean;
   material?: string;
   minSeats?: number;
   minCommunityRating?: number;
@@ -75,11 +77,25 @@ export type ClusterMapFeature = {
 export type MapFeature = BenchMapFeature | ClusterMapFeature;
 
 export type BenchProperty = {
-  key: "backrest" | "armrest" | "covered" | "wheelchair" | "material" | "seats";
+  key: "backrest" | "armrest" | "covered" | "wheelchair" | "fireplaceNearby" | "wasteBasketNearby" | "material" | "seats";
   label: string;
   value: string;
   source: "OpenStreetMap" | "Bänkli App";
+  contributedByMe?: boolean;
 };
+
+export type BenchMoment = {
+  id: number;
+  kind: "memory" | "recommendation" | "poem" | "local_fact" | "photo";
+  body: string;
+  photoUrl: string | null;
+  username: string;
+  avatarSeed: string;
+  createdAt: string;
+  mine: boolean;
+};
+
+export type BenchCareKind = "cleaned" | "good" | "repair" | "beautiful";
 
 export type BenchMedia = {
   id: number;
@@ -166,6 +182,7 @@ export type BenchDetail = {
   verificationThreshold: number;
   removalConfirmationCount: number;
   description: string | null;
+  operatorName: string | null;
   properties: BenchProperty[];
   elevationMeters: number | null;
   elevationSource: string | null;
@@ -258,6 +275,11 @@ export type BenchDetail = {
   corrections: CommunityCorrection[];
   observations: BenchObservationSummary;
   media: BenchMedia[];
+  moments: BenchMoment[];
+  care: { counts: Partial<Record<BenchCareKind, number>>; mine: BenchCareKind[] };
+  followingBench: boolean;
+  followingPlace: boolean;
+  directionContributedByMe: boolean;
   sourceUpdatedAt: string;
   pipelineVersion: string | null;
 };

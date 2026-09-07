@@ -15,10 +15,20 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.getByLabel("Menü schliessen").click();
 }
 
+async function openContributionChapter(page: import("@playwright/test").Page, title: string) {
+  await page.getByRole("button", { name: "Beitragen", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  await expect(dialog).toBeVisible();
+  const summary = dialog.locator("summary").filter({ hasText: title });
+  await summary.click();
+  return dialog;
+}
+
 async function submitViewCorrection(page: import("@playwright/test").Page, targetBench: string) {
   await page.goto(`/bank/${targetBench}`);
   await page.getByRole("tab", { name: "Aussicht" }).click();
-  const prompt = page.getByLabel("Aussicht vor Ort einordnen");
+  const dialog = await openContributionChapter(page, "Aussicht & Umgebung");
+  const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
   await prompt.getByRole("button", { name: "Anders erlebt" }).click();
   await prompt.getByRole("button", { name: "Fast rundum" }).click();
   await prompt.getByRole("button", { name: "Offen", exact: true }).click();
@@ -39,9 +49,16 @@ test("keeps the view observation understandable in the mobile detail", async ({ 
   await page.goto(`/bank/${benchId}`);
   await page.getByRole("tab", { name: "Aussicht" }).click();
   await expect(page.getByRole("heading", { name: /Horizont|Blick/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Beitragen", exact: true })).toBeVisible();
   await page.waitForTimeout(100);
   await page.screenshot({ path: testInfo.outputPath("view-entry.png"), fullPage: false });
-  const prompt = page.getByLabel("Aussicht vor Ort einordnen");
+  await page.getByRole("button", { name: "Beitragen", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  await expect(dialog).toBeVisible();
+  await page.waitForTimeout(250);
+  await dialog.screenshot({ path: testInfo.outputPath("contribution-hub.png") });
+  await dialog.locator("summary").filter({ hasText: "Aussicht & Umgebung" }).click();
+  const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
   await expect(prompt).toBeVisible();
   await prompt.getByRole("button", { name: "Anders erlebt" }).click();
   const firstStep = prompt.getByText("Schritt 1 von 4").locator("..");
@@ -82,6 +99,7 @@ test("keeps the view observation understandable in the mobile detail", async ({ 
 
 test("does not turn observations into disabled decoration for guests", async ({ page }) => {
   await page.goto(`/bank/${benchId}`);
+  await expect(page.getByRole("link", { name: "Mitmachen" })).toBeVisible();
   await page.getByRole("tab", { name: "Aussicht" }).click();
   await expect(page.getByLabel("Aussicht vor Ort einordnen")).toHaveCount(0);
   await page.getByRole("tab", { name: "Licht" }).click();
@@ -100,8 +118,8 @@ test("keeps observation controls calm, semantic and touchable with reduced motio
   await expect(page.getByRole("tab", { name: "Wetter" })).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("Home");
   await expect(page.getByRole("tab", { name: "Bank" })).toHaveAttribute("aria-selected", "true");
-  await viewTab.click();
-  const prompt = page.getByLabel("Aussicht vor Ort einordnen");
+  const dialog = await openContributionChapter(page, "Aussicht & Umgebung");
+  const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
   await prompt.getByRole("button", { name: "Anders erlebt" }).click();
   await expect(prompt.getByText("Schritt 1 von 4").locator("..")).toBeFocused();
   const animationDuration = await prompt.locator(".view-observation-editor").evaluate((element) => getComputedStyle(element).animationDuration);
@@ -118,7 +136,8 @@ test("saves every daylight impression and supports undo", async ({ page }, testI
   await page.goto(`/bank/${benchId}`);
   await page.getByRole("tab", { name: "Licht" }).click();
   await page.waitForTimeout(100);
-  const prompt = page.getByLabel("Licht vor Ort melden");
+  const dialog = await openContributionChapter(page, "Licht gerade jetzt");
+  const prompt = dialog.getByLabel("Licht vor Ort melden");
   await expect(prompt).toBeVisible();
   for (const choice of ["Sonne", "Schatten", "Wechselhaft"]) {
     await prompt.getByRole("button", { name: choice, exact: true }).click();

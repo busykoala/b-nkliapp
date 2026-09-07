@@ -8,7 +8,7 @@ describe("map filters", () => {
   });
 
   it("counts only editable bench choices", () => {
-    expect(activeMapFilterCount({ backrest: true, minSeats: 4, material: "wood", minCommunityRating: 4 })).toBe(4);
+    expect(activeMapFilterCount({ backrest: true, fireplaceNearby: true, wasteBasketNearby: true, minSeats: 4, material: "wood", minCommunityRating: 4 })).toBe(6);
   });
 
   it("keeps sun, shade and unknown light distinct", () => {

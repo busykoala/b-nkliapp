@@ -80,9 +80,10 @@ describe("SQLite migrations and R*Tree", () => {
 
   it("upgrades existing environment data before accepting nearby amenities", () => {
     const database = new Database(":memory:");
-    const amenityMigration = migrations.at(-1);
+    const amenityIndex = migrations.findIndex(({ id }) => id === "0014_environment_amenities");
+    const amenityMigration = migrations[amenityIndex];
     expect(amenityMigration?.id).toBe("0014_environment_amenities");
-    applyMigrations(database, migrations.slice(0, -1));
+    applyMigrations(database, migrations.slice(0, amenityIndex));
     database.prepare(`INSERT INTO environment_features(
       source,source_id,kind,subtype,center_latitude,center_longitude,min_latitude,max_latitude,
       min_longitude,max_longitude,raw_tags,imported_at
@@ -107,6 +108,17 @@ describe("SQLite migrations and R*Tree", () => {
     expect(database.prepare("SELECT kind FROM environment_features ORDER BY row_id").all())
       .toEqual([{ kind: "tree" }, { kind: "fireplace" }, { kind: "waste_basket" }]);
     expect((database.prepare("SELECT count(*) count FROM environment_spatial_index").get() as { count: number }).count).toBe(3);
+    database.close();
+  });
+
+  it("stores nearby amenities as editable bench facts", () => {
+    const database = new Database(":memory:");
+    applyMigrations(database);
+    const columns = database.prepare("PRAGMA table_info(benches)").all() as Array<{ name: string }>;
+    expect(columns.map(({ name }) => name)).toEqual(expect.arrayContaining(["fireplace_nearby", "waste_basket_nearby"]));
+    const definition = (database.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='bench_metadata_edits'").get() as { sql: string }).sql;
+    expect(definition).toContain("fireplaceNearby");
+    expect(definition).toContain("wasteBasketNearby");
     database.close();
   });
 });
