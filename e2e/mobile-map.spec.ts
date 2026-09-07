@@ -33,6 +33,9 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   }
   await expect(painting.locator('.painting-water[href^="/ui-art/v5/"]')).toHaveCount(1);
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
+  await page.getByRole("button", { name: "Mitmachen", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
+  await expect(page).toHaveURL(/\/bank\/osm-node-101$/);
 });
 
 test("renders calm watercolor markers from overview to close range", async ({ page }, testInfo) => {
