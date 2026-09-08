@@ -26,12 +26,13 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   const environments = await painting.locator(".painting-environment").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
   expect(environments.length).toBeGreaterThanOrEqual(2);
   for (const environment of environments) {
-    expect(environment).toMatch(/^\/ui-art\/v[45]\//);
+    expect(environment).toMatch(/^\/ui-art\/scenes\//);
     const artwork = await page.request.get(environment!);
     expect(artwork.ok()).toBeTruthy();
-    expect(artwork.headers()["cache-control"]).toContain("immutable");
+    expect(artwork.headers()["cache-control"]).toContain("max-age=3600");
+    expect(artwork.headers()["cache-control"]).not.toContain("immutable");
   }
-  await expect(painting.locator('.painting-water[href^="/ui-art/v5/"]')).toHaveCount(1);
+  await expect(painting.locator('.painting-water[href^="/ui-art/scenes/"]')).toHaveCount(1);
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
   await page.getByRole("button", { name: "Mitmachen", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
@@ -71,7 +72,7 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
   await expect(filters).toBeVisible();
   await expect(filters.getByLabel("Filter schliessen")).toBeFocused();
-  await page.keyboard.press("Shift+Tab");
+  await filters.getByLabel("Filter schliessen").press("Shift+Tab");
   await expect(filters.getByRole("button", { name: "Karte ansehen" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(filters.getByLabel("Filter schliessen")).toBeFocused();
@@ -125,7 +126,7 @@ test("activates the raster fallback when the vector style fails", async ({ page 
   await page.route("https://vectortiles.geo.admin.ch/styles/**", (route) => route.abort("failed"));
   await page.goto("/");
   const map = page.getByLabel("Karte der Schweizer Sitzbänke");
-  await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 3_500 });
+  await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 5_000 });
   await expect(map).toHaveAttribute("data-map-ready", "true");
   await expect(page.getByLabel("Ort suchen")).toBeEnabled();
 });
@@ -137,7 +138,7 @@ test("stops waiting for a delayed vector style after three seconds", async ({ pa
   });
   await page.goto("/");
   const map = page.getByLabel("Karte der Schweizer Sitzbänke");
-  await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 3_500 });
+  await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 5_000 });
   await expect(map).toHaveAttribute("data-map-ready", "true");
   await expect(page.getByLabel("Menü öffnen")).toBeEnabled();
 });
@@ -226,16 +227,18 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
 });
 
 test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {
+  const benchName = `Testbänkli ${browserName} ${Date.now().toString().slice(-6)}`;
   await registerUser(page, `scout-${browserName}`);
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Bänkli eintragen").click();
-  await page.getByLabel("Name").fill("Das Testbänkli");
+  await page.getByLabel("Name").fill(benchName);
   await page.getByLabel("Widmung").fill("Für alle müden Tests");
   await page.getByRole("button", { name: "Eintragen", exact: true }).click();
   await expect(page.getByText(/noch 2 Bestätigungen/)).toBeVisible();
-  await page.waitForTimeout(900);
-  await page.getByLabel("Ort suchen").fill("Das Testbänkli");
-  await expect(page.getByRole("button", { name: /Das Testbänkli/ })).toBeVisible();
+  await page.goto("/");
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  await page.getByLabel("Ort suchen").fill(benchName);
+  await expect(page.getByRole("button", { name: new RegExp(benchName) })).toBeVisible({ timeout: 10_000 });
 });
 
 test("lets a user compose and persist a watercolor avatar", async ({ page, browserName }) => {

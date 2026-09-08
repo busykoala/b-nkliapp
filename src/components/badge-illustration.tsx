@@ -6,16 +6,16 @@ export type BadgeArt = "discoverer" | "pioneer" | "scout" | "checker" | "detecti
 export function BadgeIllustration({ kind, label, earned }: { kind: BadgeArt; label: string; earned: boolean }) {
   const instance = useId().replaceAll(":", "");
   const pigmentId = `badge-pigment-${instance}`;
-  const environment = kind === "guru" || kind === "legend" ? "/ui-art/v2/bench-scene-alpine-winter.webp"
-    : kind === "poet" || kind === "expert" ? "/ui-art/v2/bench-scene-lake.webp"
-      : kind === "detective" || kind === "checker" ? "/ui-art/v2/bench-scene-village.webp"
-        : "/ui-art/v1/bench-scene-country-v1.webp";
+  const environment = kind === "guru" || kind === "legend" ? "/ui-art/scenes/badge-alpine.webp"
+    : kind === "poet" || kind === "expert" ? "/ui-art/scenes/badge-lake.webp"
+      : kind === "detective" || kind === "checker" ? "/ui-art/scenes/badge-village.webp"
+        : "/ui-art/scenes/badge-country.webp";
 
   return <svg className="badge-illustration" viewBox="0 0 180 116" role="img" aria-label={label} data-earned={earned}>
     <defs><WatercolorPigment id={pigmentId} /><clipPath id={`${pigmentId}-edge`}><path d="M7 10 35 7 68 9 95 6 130 8 172 7l3 24-2 25 2 27-2 25-29 1-31-2-28 2-33-1-44 1-3-27 2-30-1-24Z" /></clipPath></defs>
     <g clipPath={`url(#${pigmentId}-edge)`}>
     <image className="badge-painted-environment" href={environment} x="2" y="4" width="176" height="108" preserveAspectRatio="xMidYMid slice" />
-    <image className="badge-painted-bench" href="/ui-art/v1/bench-wood-back-v1.webp" x="72" y="61" width="76" height="51" />
+    <image className="badge-painted-bench" href="/ui-art/benches/wood-back.webp" x="72" y="61" width="76" height="51" />
     </g>
     <g className="badge-emblem" filter={`url(#${pigmentId})`}>
     {(kind === "pioneer" || kind === "legend") && <g className="badge-flag"><path d="M42 42v45" /><path d="m43 44 25 8-25 9Z" /></g>}

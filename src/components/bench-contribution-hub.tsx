@@ -8,6 +8,7 @@ import { LightObservationPrompt, ViewObservationPrompt } from "@/features/bench-
 import { communityTheme } from "@/lib/community-theme";
 import type { ActionResult, BenchCareKind, BenchDetail } from "@/lib/types";
 import { BenchFeatureEditor } from "./bench-feature-editor";
+import { BenchPhotoCapture } from "@/features/bench-photos/photo-capture";
 import { BenchCommunityActions } from "./bench-community-actions";
 import { CorrectionForm, RatingForm } from "./contribution-forms";
 
@@ -41,7 +42,10 @@ export function BenchContributionHub({ bench, open, onClose, onChanged }: { benc
       <ContributionChapter title="Aussicht & Umgebung" summary={bench.observations.view.mine ? "Dein Eindruck ist eingetragen" : "Schätzung bestätigen oder anders einordnen"}>
         <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title="Einen Moment hinterlassen" summary="Erinnerung, Tipp, Gedicht, Ortswissen oder Bild">
+      <ContributionChapter title="Foto von diesem Platz" summary="Aufnehmen oder aus der Mediathek wählen">
+        <BenchPhotoCapture benchId={bench.id} onChanged={onChanged} />
+      </ContributionChapter>
+      <ContributionChapter title="Einen Moment hinterlassen" summary="Erinnerung, Tipp, Gedicht oder Ortswissen">
         <aside className="community-theme"><Sparkles size={17} aria-hidden="true" /><div><small>Gemeinsames Thema · diesen Monat</small><strong>{theme.title}</strong><p>{theme.prompt}</p></div></aside>
         <MomentForm bench={bench} onChanged={onChanged} />
       </ContributionChapter>
@@ -93,7 +97,7 @@ function MetadataEditor({ bench, onChanged }: { bench: BenchDetail; onChanged?: 
 }
 
 const momentKinds = [
-  ["memory", "Erinnerung"], ["recommendation", "Empfehlung"], ["poem", "Gedicht"], ["local_fact", "Ortswissen"], ["photo", "Bildmoment"],
+  ["memory", "Erinnerung"], ["recommendation", "Empfehlung"], ["poem", "Gedicht"], ["local_fact", "Ortswissen"],
 ] as const;
 
 function MomentForm({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {
@@ -108,7 +112,6 @@ function MomentForm({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refr
     <fieldset><legend>Was möchtest du teilen?</legend><div>{momentKinds.map(([value, label]) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)}>{label}</button>)}</div></fieldset>
     <input type="hidden" name="kind" value={kind} />
     <label><span>Dein Bänkli-Moment</span><textarea required name="body" minLength={2} maxLength={500} placeholder={kind === "poem" ? "Ein paar Zeilen für diesen Platz …" : "Was sollten andere über diesen Platz wissen?"} /></label>
-    {kind === "photo" && <label><span>Öffentlicher Bildlink <small>(https, optional)</small></span><input name="photoUrl" type="url" inputMode="url" placeholder="https://…" /></label>}
     <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
     <button disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Send size={15} />} Moment veröffentlichen</button>
     {state && <p role="status" className={state.ok ? "is-success" : "is-error"}>{state.message}</p>}

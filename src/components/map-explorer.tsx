@@ -16,7 +16,7 @@ import { SearchBox } from "./search-box";
 import { AddBenchDialog } from "./add-bench-dialog";
 import { AppMenu } from "./app-menu";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/lib/watercolor-map";
-import { featureCollection, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, showUserPosition, type UserPosition } from "@/lib/map-renderer";
+import { featureCollection, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/lib/map-renderer";
 
 const WalkPlanner = dynamic(() => import("./walks/walk-planner").then((m) => m.WalkPlanner), { ssr: false, loading: () => <aside className="journey-panel storybook-panel" role="status">Dein Spaziergangsjournal wird geöffnet …</aside> });
 const JourneyPlanner = dynamic(() => import("./journey/journey-planner").then((m) => m.JourneyPlanner), {
@@ -182,17 +182,32 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
           const item = event.features?.[0]?.properties as MapFeature | undefined;
           if (!item) return;
           if (item.kind === "cluster") {
-            const nextZoom = Math.min(map.getZoom() + 2, map.getMaxZoom());
-            map.easeTo({ center: [item.longitude, item.latitude], zoom: nextZoom, duration: 480 });
+            const longitudeSpan = Math.max(item.east - item.west, .00008);
+            const latitudeSpan = Math.max(item.north - item.south, .00006);
+            const longitudePadding = longitudeSpan * .16;
+            const latitudePadding = latitudeSpan * .16;
+            const camera = map.cameraForBounds([
+              [item.west - longitudePadding, item.south - latitudePadding],
+              [item.east + longitudePadding, item.north + latitudePadding],
+            ], {
+              padding: window.innerWidth >= 768
+                ? { top: 92, right: 72, bottom: 92, left: 72 }
+                : { top: 104, right: 34, bottom: 110, left: 34 },
+              maxZoom: 18,
+            });
+            // A broad cluster must advance at least one grid level; a compact
+            // cluster can zoom farther while its real extent still stays centred.
+            const nextZoom = clusterExpansionZoom(map.getZoom(), camera?.zoom);
+            map.easeTo({ center: camera?.center ?? [item.longitude, item.latitude], zoom: nextZoom, duration: 560 });
           }
           else {
             map.easeTo({ center: [item.longitude, item.latitude], offset: [0, -100], duration: 450 });
             selectBench(item.id);
           }
         };
-        map.on("click", "clusters", click);
+        map.on("click", "cluster-hits", click);
         map.on("click", "bench-hits", click);
-        for (const layer of ["clusters", "cluster-count", "bench-hits"]) {
+        for (const layer of ["cluster-hits", "bench-hits"]) {
           map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
           map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
         }

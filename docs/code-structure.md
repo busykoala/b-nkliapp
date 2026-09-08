@@ -5,9 +5,13 @@ just because two pieces of JSX or SQL look similar.
 
 - `src/app/` contains Next.js routes and Server Action entry points. Actions
   validate untrusted input and enforce permissions before invoking supporting code.
-- `src/components/` contains UI and composition. The journey folder keeps its
-  journal, request/map controller, and pure planner calculations together. Other
-  small components stay flat until grouping offers the same concrete benefit.
+- `src/features/` contains vertical slices when UI, application logic, and data
+  access form one concrete feature. `bench-detail` owns the detail panels and
+  its read model; `map` owns map queries and place search; observation and photo
+  slices own their respective workflows. Imports within a slice stay direct --
+  there are no barrel files hiding server dependencies.
+- `src/components/` contains shared UI and page-level composition. Small
+  components stay flat until grouping provides a concrete navigation benefit.
 - `src/integrations/` contains provider-specific clients and repositories. Each
   integration owns its transport validation and mapping into Benchly types;
   feature code never knows a provider URL. GeoAdmin and weather are the first
@@ -40,6 +44,13 @@ Provider modules stay server-only. Shared libraries must not import UI, and the
 journey controller must not be imported by server-side journey providers. Avoid
 barrel exports that accidentally pull providers into browser bundles.
 
+Interactive reads only use already imported application data. Network lookups,
+terrain analysis, and cache writes belong to workers or an explicit user action;
+opening a Bänkli must not trigger enrichment as a hidden side effect. Internal
+browser mutations use Server Actions, not Next.js Route Handlers. Route Handlers
+are reserved for a future genuine external HTTP boundary and require an explicit
+architecture decision.
+
 Keep existing CSS tokens and illustrated primitives when their meaning matches.
 Do not change artwork or layer geometry as a side effect of moving code.
 
@@ -47,10 +58,7 @@ Do not change artwork or layer geometry as a side effect of moving code.
 
 `CORE_MAP_ART`, `DECORATIVE_MAP_ART`, and `TRANSIT_MAP_ART`, plus the shared paper
 texture, enumerate shipped map artwork. A test checks the inventory and budgets.
-Retired map v1/v2 images and superseded v3 experiments are removed from `public/`;
-Git history retains them. Current UI artwork still uses **all three** UI version
-folders, so folder age alone is not evidence that an asset is unused.
-
-Never overwrite an immutable artwork URL with new pixels. Restore an older
-release's assets together with its code when rolling back. Clients running a
-much older map version may need a refresh after retired assets are removed.
+Superseded experiments are removed from `public/`; Git history is the version
+archive. Artwork lives at stable, descriptive paths instead of in `v1`, `v2`, or
+`v3` folders. Update that current asset in place and restore it together with its
+code when rolling back.

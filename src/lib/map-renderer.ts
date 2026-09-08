@@ -63,6 +63,10 @@ export function selectedBenchFeature(bench?: BenchDetail | null) {
 
 export type UserPosition = { longitude: number; latitude: number; accuracy: number };
 
+export function clusterExpansionZoom(currentZoom: number, fittedZoom?: number) {
+  return Math.min(18, Math.max(currentZoom + 1, fittedZoom ?? currentZoom + 3));
+}
+
 const countryWash = {
   type: "Feature" as const,
   properties: {},
@@ -97,16 +101,24 @@ export function addDecorativeMapLayers(map: MapLibreMap) {
   const firstSymbol = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
   const firstRelief = map.getStyle().layers.find((layer) => "source-layer" in layer && layer["source-layer"] === "hillshade")?.id;
   const firstGround = firstRelief ?? map.getStyle().layers.find((layer) => "source-layer" in layer && layer["source-layer"] === "landcover")?.id ?? firstSymbol;
-  if (landSource && map.hasImage("benchly-field-wash") && !map.getSource("benchly-country-wash")) {
+  if ((map.hasImage("benchly-palette-wash") || map.hasImage("benchly-field-wash")) && !map.getSource("benchly-country-wash")) {
     map.addSource("benchly-country-wash", { type: "geojson", data: countryWash });
+  }
+  if (map.getSource("benchly-country-wash") && map.hasImage("benchly-palette-wash") && !map.getLayer("benchly-palette-wash")) {
+    map.addLayer({
+      id: "benchly-palette-wash", type: "fill", source: "benchly-country-wash", minzoom: 5,
+      paint: { "fill-pattern": "benchly-palette-wash", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, .28, 9, .22, 12, .14, 15, .065, 18, .025] },
+    }, map.getLayer("landcover") ? "landcover" : firstGround);
+  }
+  if (map.getSource("benchly-country-wash") && map.hasImage("benchly-field-wash") && !map.getLayer("benchly-country-wash")) {
     map.addLayer({
       id: "benchly-country-wash", type: "fill", source: "benchly-country-wash", minzoom: 5,
-      paint: { "fill-color": "#ead7a1", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, .07, 11, .08, 14, .05, 17, .025, 19, .015], "fill-pattern": "benchly-field-wash" },
+      paint: { "fill-color": "#dce2a1", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, .05, 11, .065, 14, .04, 17, .02, 19, .012], "fill-pattern": "benchly-field-wash" },
     }, firstGround);
   }
   if (reliefSource && map.hasImage("benchly-mountain-wash") && !map.getLayer("benchly-mountain-wash")) map.addLayer({
     id: "benchly-mountain-wash", type: "fill", source: reliefSource, "source-layer": "hillshade", minzoom: 6,
-    paint: { "fill-pattern": "benchly-mountain-wash", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 6, .055, 10.5, .085, 13, .065, 16, .03, 19, .012] },
+    paint: { "fill-pattern": "benchly-mountain-wash", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 6, .075, 10.5, .11, 13, .08, 16, .035, 19, .014] },
   }, map.getLayer("landcover") ? "landcover" : firstSymbol);
   if (landSource && map.hasImage("benchly-land-wash") && !map.getLayer("benchly-land-wash")) map.addLayer({
     id: "benchly-land-wash", type: "fill", source: landSource, "source-layer": "landcover", minzoom: 6,
@@ -115,7 +127,7 @@ export function addDecorativeMapLayers(map: MapLibreMap) {
   if (landSource && map.hasImage("benchly-field-wash") && !map.getLayer("benchly-field-wash")) map.addLayer({
     id: "benchly-field-wash", type: "fill", source: landSource, "source-layer": "landcover", minzoom: 6,
     filter: OPEN_LAND_FILTER,
-    paint: { "fill-pattern": "benchly-field-wash", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 6, .14, 12, .2, 15, .14, 18, .065] },
+    paint: { "fill-pattern": "benchly-field-wash", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 6, .16, 12, .22, 15, .15, 18, .07] },
   }, map.getLayer("landcover_casing") ? "landcover_casing" : undefined);
   if (landuseSource && map.hasImage("benchly-field-wash") && !map.getLayer("benchly-meadow-wash")) map.addLayer({
     id: "benchly-meadow-wash", type: "fill", source: landuseSource, "source-layer": "landuse", minzoom: 8,
@@ -124,7 +136,7 @@ export function addDecorativeMapLayers(map: MapLibreMap) {
   if (landSource && map.hasImage("benchly-forest-relief") && !map.getLayer("benchly-forest-relief")) map.addLayer({
     id: "benchly-forest-relief", type: "fill", source: landSource, "source-layer": "landcover", minzoom: 6,
     filter: FOREST_FILTER,
-    paint: { "fill-pattern": "benchly-forest-relief", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 6, .18, 10.5, .3, 13, .24, 16, .13, 19, .07] },
+    paint: { "fill-pattern": "benchly-forest-relief", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 6, .22, 10.5, .36, 13, .29, 16, .16, 19, .08] },
   }, map.getLayer("landcover_casing") ? "landcover_casing" : undefined);
   if (landSource && map.hasImage("benchly-forest-stamp") && !map.getLayer("benchly-forest-stamps")) map.addLayer({
     id: "benchly-forest-stamps", type: "fill", source: landSource, "source-layer": "landcover", minzoom: 9.5,
@@ -147,7 +159,7 @@ export function addDecorativeMapLayers(map: MapLibreMap) {
     id: "benchly-road-brush", type: "line", source: routeSource, "source-layer": "transportation", minzoom: 10,
     filter: PAINTERLY_ROAD_FILTER,
     paint: {
-      "line-pattern": "benchly-road-brush", "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, .18, 14, .32, 16, .27, 19, .18],
+      "line-pattern": "benchly-road-brush", "line-opacity": ["interpolate", ["linear"], ["zoom"], 10, .24, 14, .4, 16, .34, 19, .24],
       "line-width": ["interpolate", ["linear"], ["zoom"],
         10, ["*", .32, ["match", ["get", "class"], ["motorway", "trunk"], 22, ["primary", "secondary"], 16, "tertiary", 12, ["residential", "service", "street"], 9, 7]],
         14, ["*", .65, ["match", ["get", "class"], ["motorway", "trunk"], 22, ["primary", "secondary"], 16, "tertiary", 12, ["residential", "service", "street"], 9, 7]],
@@ -203,7 +215,7 @@ export function addPainterlyVectorLayers(map: MapLibreMap) {
   }, map.getLayer("water") ? "water" : firstSymbol);
   if (waterSource && !map.getLayer("benchly-water-shore-bleed")) map.addLayer({
     id: "benchly-water-shore-bleed", type: "line", source: waterSource, "source-layer": "water", minzoom: 5,
-    paint: { "line-color": "#4f969a", "line-opacity": .13, "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 11, 18, 24], "line-blur": 7 },
+    paint: { "line-color": "#4ca2a5", "line-opacity": .15, "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 11, 18, 24], "line-blur": 7 },
   }, map.getLayer("building") ? "building" : firstSymbol);
   if (waterSource && !map.getLayer("benchly-water-ink")) map.addLayer({
     id: "benchly-water-ink", type: "line", source: waterSource, "source-layer": "water", minzoom: 7,
@@ -224,12 +236,12 @@ export function addPainterlyVectorLayers(map: MapLibreMap) {
   if (routeSource && !map.getLayer("benchly-road-bleed")) map.addLayer({
     id: "benchly-road-bleed", type: "line", source: routeSource, "source-layer": "transportation", minzoom: 6,
     filter: PAINTERLY_ROAD_FILTER,
-    paint: { "line-color": "#b78057", "line-opacity": .045, "line-width": ["interpolate", ["linear"], ["zoom"], 6, 2, 12, 5, 16, 10, 19, 17], "line-blur": 6 },
+    paint: { "line-color": "#d29a68", "line-opacity": .045, "line-width": ["interpolate", ["linear"], ["zoom"], 6, 2, 12, 5, 16, 10, 19, 17], "line-blur": 5 },
   }, firstRoute);
   if (routeSource && !map.getLayer("benchly-path-ink")) map.addLayer({
     id: "benchly-path-ink", type: "line", source: routeSource, "source-layer": "transportation", minzoom: 11,
     filter: ["match", ["get", "class"], ["path", "path_construction", "footway", "footway_construction", "trail", "via_ferrata"], true, false],
-    paint: { "line-color": "#765b43", "line-opacity": .38, "line-width": ["interpolate", ["linear"], ["zoom"], 11, .45, 18, 1.25], "line-blur": .4, "line-dasharray": [1.1, 1.45] },
+    paint: { "line-color": "#765b43", "line-opacity": .46, "line-width": ["interpolate", ["linear"], ["zoom"], 11, .5, 18, 1.35], "line-blur": .3, "line-dasharray": [1.1, 1.45] },
   }, firstSymbol);
   if (routeSource && !map.getLayer("benchly-bridge-shadow")) map.addLayer({
     id: "benchly-bridge-shadow", type: "line", source: routeSource, "source-layer": "transportation", minzoom: 10,
@@ -300,13 +312,13 @@ export function addCoreArtLayers(map: MapLibreMap) {
     .some((name) => available.has(name));
   if (hasBenchWash && !map.getLayer("benchly-bench-washes")) map.addLayer({
     id: "benchly-bench-washes", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "bench"],
-    layout: { "icon-image": benchWashIconExpression(available), "icon-size": ["interpolate", ["linear"], ["zoom"], 7, .36, 13, .46, 18, .62], "icon-offset": [0, 4], "icon-allow-overlap": true, "icon-ignore-placement": true },
-    paint: { "icon-opacity": .68 },
+    layout: { "icon-image": benchWashIconExpression(available), "icon-size": ["interpolate", ["linear"], ["zoom"], 7, .4, 13, .5, 18, .64], "icon-offset": [0, 3], "icon-allow-overlap": true, "icon-ignore-placement": true },
+    paint: { "icon-opacity": .66 },
   });
   if (available.has("benchly-bench") && !map.getLayer("benchly-benches-art")) map.addLayer({
     id: "benchly-benches-art", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "bench"],
     layout: { "icon-image": "benchly-bench", "icon-size": ["interpolate", ["linear"], ["zoom"], 7, .17, 13, .22, 18, .29], "icon-offset": [0, -1], "icon-allow-overlap": true, "icon-ignore-placement": true },
-    paint: { "icon-opacity": ["case", ["==", ["get", "verificationStatus"], "unverified"], .64, .88] },
+    paint: { "icon-opacity": ["case", ["==", ["get", "verificationStatus"], "unverified"], .62, .84] },
   });
   if (available.has("benchly-wash-selected") && !map.getLayer("benchly-selected-wash")) map.addLayer({
     id: "benchly-selected-wash", type: "symbol", source: "selected-bench",
@@ -340,6 +352,7 @@ export function addCoreMapLayers(map: MapLibreMap, initialFeatures: MapFeature[]
   map.addSource("benchly", { type: "geojson", data: featureCollection(initialFeatures) });
   map.addLayer({ id: "clusters", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-color": "#80513f", "circle-opacity": .9, "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 15, 50, 21, 500, 28], "circle-stroke-width": 3, "circle-stroke-color": "#f4dfb6", "circle-blur": .08 } });
   map.addLayer({ id: "cluster-count", type: "symbol", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], layout: { "text-field": ["to-string", ["get", "count"]], "text-font": ["Frutiger Neue Regular"], "text-size": 12 }, paint: { "text-color": "#fff4d7", "text-halo-color": "#684535", "text-halo-width": .4 } });
+  map.addLayer({ id: "cluster-hits", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "cluster"], paint: { "circle-radius": ["interpolate", ["linear"], ["get", "count"], 2, 24, 50, 29, 500, 36], "circle-opacity": 0 } });
   map.addLayer({ id: "bench-hits", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-radius": 22, "circle-opacity": 0 } });
   map.addLayer({ id: "benches", type: "circle", source: "benchly", filter: ["==", ["get", "kind"], "bench"], paint: { "circle-color": benchStatusColor, "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 9, 18, 14], "circle-stroke-width": 3, "circle-stroke-color": "#fff4d8", "circle-blur": .06 } });
   map.addSource("selected-bench", { type: "geojson", data: selectedBenchFeature() });

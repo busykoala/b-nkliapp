@@ -20,12 +20,22 @@ DEFAULT_MODEL = "benchly-vision"
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_REQUEST_BYTES = 24 * 1024 * 1024
 
-SCENE_PROMPT = """Analyze these nearby, openly licensed photographs only as environmental evidence.
+ASSESSMENT_GUIDE = """Assess the immediate setting and the visible horizontal view separately.
+The four land probabilities describe alternative dominant surroundings: forest is continuous woodland,
+park is managed green space or garden, open is field/meadow/alpine terrain with few built elements, and
+urban is predominantly buildings or paving. A tree row, orchard or one large tree is not a forest.
+View probabilities are independent and may be high together. Open view means a broad horizontal
+landscape sightline into the distance; visible sky above a wall, arch, hedge or close trees is not an
+open view. Limited view means most horizontal sightlines are blocked nearby. Mountain view requires
+recognisable high or steep alpine terrain; low rounded wooded or agricultural hills are not mountains.
+Lake view requires an actually visible lake. Never infer a view from location metadata.
+Canopy describes the local overhead tree cover, independently of the land class. Judge every field;
+do not force unrelated probabilities to zero merely because one trait is strong."""
+
+SCENE_PROMPT = f"""Analyze these nearby photographs, authorized for this analysis, only as environmental evidence.
 Do not identify or describe people, faces, licence plates, addresses or other personal information.
 Reject indoor, blurred, historical/artwork, close-object and otherwise irrelevant frames.
-Forest means predominantly continuous woodland with dense trees and understory. A park, waterfront,
-street, garden, orchard, row of trees or isolated overhead canopy is not forest. Never infer forest
-from one tree or canopy alone. Mark lake, mountain, open or limited view only when actually visible.
+{ASSESSMENT_GUIDE}
 Return JSON only with every key below. Probabilities are numbers from 0 to 1:
 relevance_probability, rejection_reason (none|blurred|indoor|close_object|historical|unrelated),
 forest_probability, park_probability, open_probability, urban_probability,
@@ -34,12 +44,11 @@ water_probability, lake_view_probability, mountain_view_probability, open_view_p
 limited_view_probability, buildings_probability, road_rail_probability, bench_visible_probability.
 Judge the shared scene, not the identity of any person or object owner."""
 
-FRAME_PROMPT = """Analyze each numbered nearby, openly licensed photograph independently.
+FRAME_PROMPT = f"""Analyze each numbered nearby photograph, authorized for this analysis, independently.
 Do not identify or describe people, faces, licence plates, addresses or other personal information.
 Mark indoor, blurred, historical/artwork, close-object and unrelated frames as irrelevant instead of
-letting them influence the other frames. Forest means predominantly continuous woodland with dense
-trees and understory; parks, waterfronts, streets, gardens, orchards, rows of trees and isolated canopy
-are not forest. Mark view traits only when actually visible. Return one strict prediction per index."""
+letting them influence the other frames. {ASSESSMENT_GUIDE}
+Return one strict prediction per index."""
 
 
 def _request_json(url: str, *, data: Optional[bytes] = None,

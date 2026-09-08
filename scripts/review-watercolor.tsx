@@ -103,8 +103,11 @@ async function main() {
   await capture("33-village-lake-mountains", { ...fixtures[13], viewLabels: ["Seeblick", "Bergblick"], viewComponents: { ...fixtures[13].viewComponents, water: 100 } });
   await capture("34-open-lake-mountains", { ...fixtures[1], viewLabels: ["Seeblick", "Bergblick"], viewComponents: { ...fixtures[1].viewComponents, water: 100 } });
   await capture("35-city-river", { ...fixtures[17], viewLabels: ["Wasserblick"], viewComponents: { ...fixtures[17].viewComponents, water: 100 } });
-  await capture("36-village-river", { ...fixtures[13], viewLabels: ["Wasserblick"], viewComponents: { ...fixtures[13].viewComponents, water: 100 } });
-  await capture("37-forest-river", { ...fixtures[9], viewLabels: ["Wasserblick"], viewComponents: { ...fixtures[9].viewComponents, water: 100 } });
+  await capture("36-village-river", { ...fixtures[13], viewLabels: ["Wasserblick", "Bergblick"], viewComponents: { ...fixtures[13].viewComponents, water: 100 } });
+  await capture("37-forest-river", { ...fixtures[9], viewLabels: ["Wasserblick", "Bergblick"], viewComponents: { ...fixtures[9].viewComponents, water: 100 } });
+  await capture("38-open-river-hills", { ...fixtures[1], viewLabels: ["Wasserblick", "Hügelblick"], viewComponents: { ...fixtures[1].viewComponents, water: 100 } });
+  await capture("39-forest-lake-mountains", { ...fixtures[9], viewLabels: ["Seeblick", "Bergblick"], viewComponents: { ...fixtures[9].viewComponents, water: 100 } });
+  await capture("40-open-lake-hills", { ...fixtures[1], viewLabels: ["Seeblick", "Hügelblick"], viewComponents: { ...fixtures[1].viewComponents, water: 100 } });
   const badges: BadgeArt[] = ["discoverer", "pioneer", "scout", "checker", "detective", "poet", "expert", "guru", "legend"];
   const identities = renderToStaticMarkup(<><section className="portraits">{Array.from({ length: 10 }, (_, i) => <TrailAvatar key={i} seed={`review-${i}`} username={`Wanderer ${i}`} appearance={{ ...randomAppearance(`review-${i}`), background: avatarOptionValues.background[i % 5], skin: avatarOptionValues.skin[i % 5], hairStyle: avatarOptionValues.hairStyle[i % 5], hat: avatarOptionValues.hat[i % 4], companion: avatarOptionValues.companion[i % 4] }} progress={i * 9} />)}</section><section className="badges">{badges.map((kind) => <div key={kind}><BadgeIllustration kind={kind} label={kind} earned /><p>{kind}</p></div>)}</section><section className="stamps">{(["mountain", "hill", "water", "city", "forest", "open"] as const).map((kind) => <LandscapeStamp key={kind} kind={kind} found />)}{(["spring", "summer", "autumn", "winter"] as const).map((season) => <SeasonStamp key={season} season={season} name={season} found />)}</section></>);
   await page.setViewportSize({ width: 1000, height: 920 });

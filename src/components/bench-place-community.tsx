@@ -1,8 +1,10 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- community photos come from the configured object store */
 
 import { Bookmark, Building2, HeartHandshake, MapPin, Share2, Trash2 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { deleteOwnBenchMoment, toggleBenchFollow } from "@/app/actions/bench-community";
+import { loadBenchPhoto } from "@/app/actions/bench-photos";
 import type { BenchCareKind, BenchDetail } from "@/lib/types";
 import { TrailAvatar } from "./trail-avatar";
 
@@ -57,11 +59,40 @@ export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: Ben
     {bench.moments.length ? <div className="bench-moment-list">{bench.moments.map((moment) => <article key={moment.id}>
       <TrailAvatar seed={moment.avatarSeed} username={moment.username} compact />
       <div><header><strong>{moment.username}</strong><span>{momentLabels[moment.kind]}</span></header><p>{moment.body}</p>
-        {moment.photoUrl && <a href={moment.photoUrl} target="_blank" rel="noreferrer">Öffentliches Bild öffnen ↗</a>}
+        {moment.hasPhoto && <CommunityPhoto id={moment.id} initialUrl={moment.photoUrl} username={moment.username} />}
         <time dateTime={moment.createdAt}>{new Date(moment.createdAt).toLocaleDateString("de-CH")}</time>
       </div>
       {moment.mine && <button type="button" disabled={pending} aria-label="Eigenen Moment löschen" onClick={() => remove(moment.id)}><Trash2 size={14} /></button>}
     </article>)}</div> : <p className="bench-moments-empty">Noch keine Geschichte hier. Das Bänkli wartet geduldig.</p>}
     {message && <p className="place-community-status" role="status">{message}</p>}
   </section>;
+}
+
+function CommunityPhoto({ id, initialUrl, username }: { id: number; initialUrl: string | null; username: string }) {
+  const container = useRef<HTMLDivElement>(null);
+  const [url, setUrl] = useState(initialUrl);
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (url || !container.current) return;
+    const target = container.current;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      startTransition(async () => {
+        const result = await loadBenchPhoto(id);
+        if (result.ok) setUrl(result.dataUrl);
+        else setMessage(result.message);
+      });
+    }, { rootMargin: "240px" });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [id, url]);
+
+  return <div ref={container} className="bench-moment-photo">
+    {url
+      ? <a href={url} target="_blank" rel="noreferrer"><img src={url} alt={`Bänkli-Foto von ${username}`} loading="lazy" decoding="async" /><span>Bild gross öffnen ↗</span></a>
+      : <p role="status">{loading ? "Bild wird hervorgeholt …" : message ?? "Bild wartet aufs Öffnen."}</p>}
+  </div>;
 }

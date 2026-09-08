@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from sqlalchemy import update
+from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.sqlite import insert
 
 from benchly.db import write
@@ -48,6 +48,17 @@ def upsert_evidence(database, values: dict[str, object]) -> None:
                 "direct_view_eligible": excluded.direct_view_eligible,
                 "evidence_weight": excluded.evidence_weight,
             },
+        ),
+    )
+
+
+def replace_source_evidence(database, bench_row_id: int, provider: str) -> None:
+    provider_images = select(ImageObservation.id).where(ImageObservation.provider == provider)
+    write(
+        database,
+        delete(BenchImageEvidence).where(
+            BenchImageEvidence.bench_row_id == bench_row_id,
+            BenchImageEvidence.image_observation_id.in_(provider_images),
         ),
     )
 

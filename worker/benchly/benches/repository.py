@@ -5,9 +5,9 @@ from collections.abc import Iterable, Sequence
 from sqlalchemy import case, delete, exists, func, literal, select, update
 from sqlalchemy.dialects.sqlite import insert
 
-from benchly.db import write
 from benchly.benches.models import Bench, BenchEnrichment, BenchMetadataEdit, Media
 from benchly.context.models import EnvironmentFeature
+from benchly.db import write
 
 
 EDITED_FIELDS = {
@@ -51,7 +51,7 @@ def refresh_nearby_amenities(database) -> None:
         write(database, update(Bench).where(~edited, nearby).values({column.key: 1}))
 
 
-def upsert_osm_benches(database, rows: Sequence[dict[str, object]], preserve_edits: bool) -> None:
+def upsert_inventory_benches(database, rows: Sequence[dict[str, object]], preserve_edits: bool) -> None:
     if not rows:
         return
     rows = [Bench.model_validate(row).model_dump(exclude_unset=True, exclude={"row_id"}) for row in rows]

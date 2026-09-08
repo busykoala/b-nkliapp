@@ -16,9 +16,9 @@ use the existing local-stop zoom threshold (14.5); names appear from zoom 16.
 
 ## Artwork
 
-- Saved asset: `public/map-art/v3/transit-ferry.png` (112 × 112, alpha PNG, 2×).
+- Saved asset: `public/map-art/transit/ferry.png` (112 × 112, alpha PNG, 2×).
 - Created using the built-in image generation tool, with the existing
-  `public/map-art/v3/transit-bus.png` as a style reference only.
+  `public/map-art/transit/bus.png` as a style reference only.
 - Resized and palette-compressed with Sharp, preserving transparency.
 - Loaded with the existing deferred transit assets, not the initial map bundle.
 

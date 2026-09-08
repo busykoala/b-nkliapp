@@ -13,7 +13,7 @@ from shapely import to_wkb
 from shapely.affinity import translate
 from shapely.geometry import Polygon
 
-from benchly.benches.domain import context_kind, parse_bool, parse_direction, parse_height, score_view
+from benchly.benches.domain import apply_environment_hints, context_kind, parse_bool, parse_direction, parse_height, score_view
 from benchly.benches.importer import import_osm
 from benchly.context.evidence import nearby_context, preferred_environment_context, preferred_exact_features
 from benchly.context.importer import finalize_swisstlm_import, import_swisstlm_geopackage
@@ -36,6 +36,7 @@ from benchly.imagery.prediction import validate_scene_prediction
 from benchly.imagery.providers import DiscoveredImage, ProviderDelay
 from benchly.runtime import exclusive_worker_lock
 from benchly.terrain import (
+    direct_sun_minutes,
     terrain_horizon_from_profile,
     terrain_profile_coordinates,
     wgs84_to_lv95,
@@ -48,6 +49,11 @@ from benchly.imagery.service import (
 
 
 class WorkerUnitTests(unittest.TestCase):
+    def test_direct_sun_duration_uses_a_timezone_aware_day(self):
+        minutes = direct_sun_minutes(46.69, 7.68, [0.0] * 72, 0, False, 6, 21)
+        self.assertGreater(minutes, 0)
+        self.assertLessEqual(minutes, 24 * 60)
+
     def test_direction_normalization(self):
         self.assertEqual(parse_direction("SW"), 225)
         self.assertEqual(parse_direction("-45"), 315)
@@ -62,6 +68,14 @@ class WorkerUnitTests(unittest.TestCase):
         self.assertEqual(score_view(1, 1, 1, 1, 1), 100)
         self.assertEqual(score_view(0, 0, 0, 0, 0), 0)
         self.assertEqual(score_view(1, 0, 0, 0, 0), 35)
+
+    def test_environment_impressions_are_blended_with_geometry(self):
+        result = apply_environment_hints(
+            {"relief": .5, "remoteness": .2},
+            '{"environment_hints":{"relief":0.85,"remoteness":0.9}}',
+        )
+        self.assertAlmostEqual(result["relief"], .64)
+        self.assertAlmostEqual(result["remoteness"], .48)
 
     def test_context_classification_and_height(self):
         self.assertEqual(context_kind({"building": "yes"}), "building")
@@ -581,8 +595,9 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(captured["response_format"]["type"], "json_schema")
         self.assertTrue(captured["response_format"]["json_schema"]["strict"])
         prompt = captured["messages"][0]["content"][0]["text"]
-        self.assertIn("isolated canopy", prompt)
-        self.assertIn("are not forest", prompt)
+        self.assertIn("visible horizontal view", prompt)
+        self.assertIn("low rounded wooded or agricultural hills are not mountains", prompt)
+        self.assertIn("not a forest", prompt)
 
     def test_evaluation_manifest_requires_labels_location_and_image_provenance(self):
         record = {

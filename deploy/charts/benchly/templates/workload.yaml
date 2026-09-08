@@ -33,6 +33,15 @@ spec:
             - {name: LANDSCAPE_DATABASE_PATH, value: "/data/landscape.sqlite"}
             - {name: SOURCE_STATUS_DATABASE_PATH, value: "/data/source-status.sqlite"}
             - {name: WALK_ROUTER_URL, value: {{ .Values.web.walkingRouterUrl | quote }}}
+            - {name: BENCHLY_PHOTO_S3_ENDPOINT, value: {{ .Values.web.photoStorageUrl | quote }}}
+            - {name: BENCHLY_PHOTO_BUCKET, value: {{ .Values.web.photoBucket | quote }}}
+            - {name: INFERENCE_BASE_URL, value: "http://inference-api.inference.svc.cluster.local:8080"}
+            - name: BENCHLY_PHOTO_ACCESS_KEY
+              valueFrom: {secretKeyRef: {name: {{ .Values.web.photoSecret }}, key: access-key}}
+            - name: BENCHLY_PHOTO_SECRET_KEY
+              valueFrom: {secretKeyRef: {name: {{ .Values.web.photoSecret }}, key: secret-key}}
+            - name: INFERENCE_API_KEY
+              valueFrom: {secretKeyRef: {name: {{ .Values.existingSecret }}, key: inference-api-key}}
             - {name: DATABASE_PATH, value: /data/benchly.sqlite}
             - {name: BENCHLY_SEED_DEMO, value: "false"}
             - {name: BENCHLY_AI_LABELS_ENABLED, value: {{ .Values.web.aiLabelsEnabled | quote }}}

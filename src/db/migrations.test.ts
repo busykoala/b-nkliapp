@@ -121,4 +121,5 @@ describe("SQLite migrations and R*Tree", () => {
     expect(definition).toContain("wasteBasketNearby");
     database.close();
   });
+
 });

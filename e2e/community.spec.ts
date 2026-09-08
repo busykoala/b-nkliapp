@@ -51,3 +51,46 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await expect(page.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText(/\d+× gereinigt/)).toBeVisible();
 });
+
+test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+  const runId = `${testInfo.project.name.slice(-6)}-photo-${Date.now().toString().slice(-5)}`;
+  await registerUser(page, runId);
+  await page.goto("/bank/osm-node-101");
+  await page.getByRole("button", { name: "Beitragen", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  await dialog.locator("summary").filter({ hasText: "Foto von diesem Platz" }).click();
+
+  await expect(dialog.getByText("Das Bänkli ins Bild setzen")).toBeVisible();
+  await expect(dialog.getByText(/Aus Fotomediathek, Kamera oder Dateien wählen/)).toBeVisible();
+  const input = dialog.getByLabel("Bänkli-Foto auswählen");
+  await expect(input).toHaveAttribute("accept", "image/*");
+  await expect(input).not.toHaveAttribute("capture", "environment");
+  const originalBytes = await input.evaluate(async (element) => {
+    const canvas = document.createElement("canvas"); canvas.width = 2_000; canvas.height = 1_500;
+    const context = canvas.getContext("2d"); if (!context) throw new Error("Missing canvas context");
+    const image = context.createImageData(canvas.width, canvas.height);
+    const pigment = new Uint8Array(canvas.width * canvas.height * 3);
+    for (let offset = 0; offset < pigment.length; offset += 65_536) crypto.getRandomValues(pigment.subarray(offset, Math.min(offset + 65_536, pigment.length)));
+    for (let index = 0; index < image.data.length; index += 4) {
+      const pigmentIndex = index / 4 * 3;
+      image.data[index] = pigment[pigmentIndex]; image.data[index + 1] = pigment[pigmentIndex + 1]; image.data[index + 2] = pigment[pigmentIndex + 2]; image.data[index + 3] = 255;
+    }
+    context.putImageData(image, 0, 0);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Missing photo blob");
+    const transfer = new DataTransfer(); transfer.items.add(new File([blob], "iphone-photo.png", { type: "image/png" }));
+    (element as HTMLInputElement).files = transfer.files;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    return blob.size;
+  });
+  expect(originalBytes).toBeGreaterThan(2_000_000);
+  await expect(dialog.getByAltText("Vorschau deines Bänkli-Fotos")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Foto veröffentlichen" })).toBeEnabled();
+  await expect(dialog.getByLabel(/Ein Satz dazu/)).toHaveAttribute("placeholder", "Was sieht man von diesem Bänkli?");
+  await dialog.getByRole("button", { name: "Foto veröffentlichen" }).click();
+  await expect(dialog.getByText("Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.")).toBeVisible();
+  expect(pageErrors).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("bench-photo-flow.png"), fullPage: true });
+});

@@ -1,12 +1,19 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
-import { addCoreArtLayers, addCoreMapLayers, featureCollection, loadMapArt, selectedBenchFeature } from "./map-renderer";
+import { addCoreArtLayers, addCoreMapLayers, clusterExpansionZoom, featureCollection, loadMapArt, selectedBenchFeature } from "./map-renderer";
 import type { BenchDetail, MapFeature } from "./types";
 
 describe("map rendering", () => {
+  it("opens every cluster by at least one level while respecting tightly fitted extents", () => {
+    expect(clusterExpansionZoom(7.2, 7.5)).toBe(8.2);
+    expect(clusterExpansionZoom(13, 16.4)).toBe(16.4);
+    expect(clusterExpansionZoom(17.5, 19)).toBe(18);
+  });
+
   it("preserves bench and cluster data in longitude/latitude order", () => {
     const features: MapFeature[] = [
-      { kind: "cluster", id: "cluster", longitude: 7.68, latitude: 46.68, count: 3 },
+      { kind: "cluster", id: "cluster", longitude: 7.68, latitude: 46.68, count: 3,
+        west: 7.67, south: 46.67, east: 7.69, north: 46.69 },
       { kind: "bench", id: "bench", longitude: 7.69, latitude: 46.69, sunnyNow: false,
         verificationStatus: "unverified", rating: null, viewScore: null, viewType: null },
     ];
@@ -28,6 +35,7 @@ describe("map rendering", () => {
     const layers = addLayer.mock.calls.map(([layer]) => layer);
     const layer = (id: string) => layers.find((item) => item.id === id);
     expect(layer("bench-hits").paint["circle-radius"]).toBe(22);
+    expect(layer("cluster-hits").paint["circle-radius"]).toEqual(["interpolate", ["linear"], ["get", "count"], 2, 24, 50, 29, 500, 36]);
     expect(layer("benches").paint["circle-color"]).toEqual(layer("selected-bench-core").paint["circle-color"]);
   });
 

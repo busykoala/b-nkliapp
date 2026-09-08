@@ -18,13 +18,10 @@ reconstructions or exact depictions of Spiez.
 Created using the **built-in image-generation tool**, following the imagegen
 skill, then resized/encoded locally with Sharp. No API/CLI generation fallback.
 
-- `public/ui-art/v3/bench-scene-harbour.webp` — 576 × 432, WebP quality 56.
-- `public/ui-art/v3/bench-scene-harbour-winter.webp` — same dimensions/encoding.
-- `public/ui-art/v3/bench-scene-city.webp` — existing city painting flattened onto
-  its ivory paper colour and re-encoded at quality 60, retaining 640 × 480.
-  This makes room for the new scenes within the unchanged 800 KiB total budget.
-  The original is preserved at
-  `docs/reviews/watercolor-sources/bench-scene-city-v1.webp`.
+The initial full harbour composites were later retired. The active implementation
+combines the independent `public/ui-art/scenes/place-city.webp`, water and relief
+layers at runtime so the same evidence can form a coherent scene without storing
+parallel versioned backgrounds.
 
 The original generated PNGs remain in the image tool's generation directory
 `01a06de2-5355-7930-8917-6e6ab3832528`, named
@@ -35,7 +32,7 @@ The original generated PNGs remain in the image tool's generation directory
 
 Use case: illustration-story. Asset type: a reusable opaque background painting for an adaptive Swiss bench illustration, landscape 4:3 composition. Paint a small Swiss lakeside town harbour, evocative of Spiez, in loose authentic transparent watercolor on warm ivory paper. Buildings are the dominant surroundings: ochre, cream and pale terracotta town houses with gently sketched tiled roofs frame both sides and part of the middle distance, enclosing a narrow but clearly visible opening onto a teal-blue lake, with pale Alpine relief across the water. Sparse small greenery only, not a forest, not a wild meadow. A stone-paved waterfront promenade fills the lower third; its central area (x=30%-70%, y=60%-95%) is empty and calm for a separately composited bench. Leave a quiet central sky opening in the top quarter for a separately rendered sun/moon. Layered wet washes, soft drybrush, lost and found edges, restrained ink, architectural forms readable but not photorealistic, light atmospheric watercolor. Soft neutral daytime light, no directional cast shadows. No bench, no people, no text, no labels, no logos, no sun or moon disc. Full-bleed painting without frame. The illustrated setting should combine strong built environment, a limited opening, lake water and distant mountain relief rather than a broad unobstructed wilderness panorama. Image supplied is a palette/painting-medium reference only; replace its wilderness setting with the described town harbour.
 
-Style reference: `public/ui-art/v2/bench-scene-lake.webp`.
+Historical style reference: `public/ui-art/scenes/badge-lake.webp`.
 
 ### Final winter prompt
 

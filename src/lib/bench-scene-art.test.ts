@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BenchLandscape } from "../components/bench-landscape";
 import type { BenchDetail } from "./types";
-import { benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "./bench-scene-art";
+import { benchSceneComposition, benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "./bench-scene-art";
 
 const uiArtDirectory = join(process.cwd(), "public", "ui-art");
 const uiArtFiles = () => readdirSync(uiArtDirectory, { recursive: true, withFileTypes: true })
@@ -27,10 +27,23 @@ describe("bench scene artwork", () => {
       .toMatchObject({ place: "forest", relief: "none", water: "none" });
   });
 
+  it("composes built waterfronts spatially instead of overlaying the settlement", () => {
+    expect(benchSceneComposition({ place: "city", water: "lake" })).toEqual({
+      builtWaterfront: true, placeX: 0, waterX: -58, waterY: 80, waterWidth: 560, waterHeight: 400, benchOffsetX: 82,
+    });
+    expect(benchSceneComposition({ place: "village", water: "river" })).toMatchObject({
+      builtWaterfront: true, waterX: -18, waterY: 128, waterWidth: 550, waterHeight: 352,
+    });
+    expect(benchSceneComposition({ place: "open", water: "lake" })).toEqual({
+      builtWaterfront: false, placeX: 0, waterX: 0, waterY: 0, waterWidth: 640, waterHeight: 480, benchOffsetX: 82,
+    });
+    expect(benchSceneComposition({ place: "forest", water: "none" }).benchOffsetX).toBe(0);
+  });
+
   it("maps material, backrest, and armrests to the matching bench sprite", () => {
-    expect(benchSpriteArt({ material: "Holz", backrest: true, armrests: true })).toContain("bench-wood-back-arm");
-    expect(benchSpriteArt({ material: "Metall", backrest: true, armrests: false })).toContain("bench-metal-back-v1");
-    expect(benchSpriteArt({ material: "Beton", backrest: false, armrests: true })).toContain("bench-stone-backless");
+    expect(benchSpriteArt({ material: "Holz", backrest: true, armrests: true })).toContain("/benches/wood-back-arm.webp");
+    expect(benchSpriteArt({ material: "Metall", backrest: true, armrests: false })).toContain("/benches/metal-back.webp");
+    expect(benchSpriteArt({ material: "Beton", backrest: false, armrests: true })).toContain("/benches/stone-backless.webp");
   });
 
   it("does not turn waterfront proximity or weak water evidence into a lake", () => {
@@ -56,6 +69,12 @@ describe("bench scene artwork", () => {
     // Keep the treatment on the native SVG path for Safari, preserve solid
     // alpha, and constrain processing to the small foreground sprite.
     expect(markup).toContain('color-interpolation-filters="sRGB"');
+    if (expected !== "water-none") {
+      expect(markup).toMatch(/<g mask="url\(#[^"]+-water-side-mask\)"><image class="painting-environment painting-water"/);
+      expect(markup).toMatch(/<image class="painting-environment painting-place" mask="url\(#[^"]+-place-side-mask\)"/);
+      expect(markup.indexOf("painting-water")).toBeLessThan(markup.indexOf("painting-place"));
+      expect(markup.indexOf("painting-ground")).toBeLessThan(markup.indexOf("painting-water"));
+    }
     expect(markup).toContain('<feFuncA type="identity"');
     expect(markup).toMatch(/<image filter="url\(#[^"]+-bench-pigment\)"/);
   });
@@ -67,8 +86,8 @@ describe("bench scene artwork", () => {
   });
 
   it("selects the current seasonal overlay", () => {
-    expect(seasonOverlayArt("spring")).toContain("season-spring");
-    expect(seasonOverlayArt("winter")).toContain("season-winter");
+    expect(seasonOverlayArt("spring")).toContain("/seasons/spring.webp");
+    expect(seasonOverlayArt("winter")).toContain("/seasons/winter.webp");
   });
 
   it("combines snow with the actual setting rather than selecting a winter location", () => {
@@ -81,14 +100,17 @@ describe("bench scene artwork", () => {
     const files = uiArtFiles();
     // A shoulder season can also have a light snow overlay. Include both, plus
     // the shared paper texture and the optional shelter, in the worst case.
-    const contextualBytes = statSync(join(process.cwd(), "public/map-art/v3/paper.webp")).size
-      + statSync(join(uiArtDirectory, "v2", "bench-shelter.webp")).size
-      + largestAsset((name) => name.includes("/season-")) + [
-      (name: string) => name.includes("/bench-scene-"),
-      (name: string) => /\/bench-(wood|metal|stone)-/.test(name),
-      (name: string) => name.includes("/season-"),
-      (name: string) => name.includes("/celestial-"),
-      (name: string) => name.includes("/weather-"),
+    const contextualBytes = statSync(join(process.cwd(), "public/map-art/textures/paper.webp")).size
+      + statSync(join(uiArtDirectory, "benches", "shelter.webp")).size
+      + largestAsset((name) => name.includes("/seasons/")) + [
+      (name: string) => name.includes("/scenes/place-open.webp"),
+      (name: string) => name.includes("/scenes/place-") && !name.includes("place-open"),
+      (name: string) => name.includes("/scenes/relief-"),
+      (name: string) => name.includes("/scenes/water-"),
+      (name: string) => /\/benches\/(wood|metal|stone)-/.test(name),
+      (name: string) => name.includes("/seasons/"),
+      (name: string) => /\/weather\/(sun|moon)\.webp$/.test(name),
+      (name: string) => name.includes("/weather/cloud.webp"),
     ].reduce((sum, matches) => sum + largestAsset(matches), 0);
     const completeBytes = files.reduce((sum, name) => sum + statSync(name).size, 0);
 

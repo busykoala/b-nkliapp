@@ -15,7 +15,7 @@ export const WATERCOLOR_LAYER_ORDER = [
 export const MINIMAL_MAP_STYLE = {
   version: 8,
   sources: {},
-  layers: [{ id: "background", type: "background", paint: { "background-color": "#f3e5c4" } }],
+  layers: [{ id: "background", type: "background", paint: { "background-color": "#f8efdc" } }],
 } satisfies StyleSpecification;
 
 export const FALLBACK_MAP_STYLE = {
@@ -30,8 +30,8 @@ export const FALLBACK_MAP_STYLE = {
     },
   },
   layers: [
-    { id: "background", type: "background", paint: { "background-color": "#ead9ad" } },
-    { id: "swisstopo", type: "raster", source: "swisstopo", paint: { "raster-opacity": .72, "raster-saturation": -.42, "raster-contrast": -.2, "raster-hue-rotate": 9 } },
+    { id: "background", type: "background", paint: { "background-color": "#f4e7cf" } },
+    { id: "swisstopo", type: "raster", source: "swisstopo", paint: { "raster-opacity": .76, "raster-saturation": .08, "raster-contrast": -.06, "raster-hue-rotate": 2 } },
   ],
 } satisfies StyleSpecification;
 
@@ -52,50 +52,52 @@ export type MapArtImage = {
   pixelRatio: number;
 };
 
-const ART_ROOT = "/map-art/v3";
-const MARKER_ART_ROOT = "/map-art/v4";
-const CLUSTER_ART_ROOT = "/map-art/v5";
+const TEXTURE_ART_ROOT = "/map-art/textures";
+const MARKER_ART_ROOT = "/map-art/markers";
+const WASH_ART_ROOT = "/map-art/washes";
+const TRANSIT_ART_ROOT = "/map-art/transit";
 
 export const CORE_MAP_ART: MapArtImage[] = [
-  { name: "benchly-bench", url: `${MARKER_ART_ROOT}/bench-marker.webp`, pixelRatio: 2 },
-  { name: "benchly-wash-sunny", url: `${ART_ROOT}/wash-sunny.png`, pixelRatio: 2 },
-  { name: "benchly-wash-shade", url: `${ART_ROOT}/wash-shade.png`, pixelRatio: 2 },
-  { name: "benchly-wash-neutral", url: `${ART_ROOT}/wash-neutral.png`, pixelRatio: 2 },
-  { name: "benchly-wash-unverified", url: `${ART_ROOT}/wash-unverified.png`, pixelRatio: 2 },
-  { name: "benchly-wash-cluster", url: `${CLUSTER_ART_ROOT}/cluster-marker.webp`, pixelRatio: 2 },
-  { name: "benchly-wash-selected", url: `${ART_ROOT}/wash-selected.png`, pixelRatio: 2 },
+  { name: "benchly-bench", url: `${MARKER_ART_ROOT}/bench.webp`, pixelRatio: 2 },
+  { name: "benchly-wash-sunny", url: `${WASH_ART_ROOT}/sunny.png`, pixelRatio: 2 },
+  { name: "benchly-wash-shade", url: `${WASH_ART_ROOT}/shade.png`, pixelRatio: 2 },
+  { name: "benchly-wash-neutral", url: `${WASH_ART_ROOT}/neutral.png`, pixelRatio: 2 },
+  { name: "benchly-wash-unverified", url: `${WASH_ART_ROOT}/unverified.png`, pixelRatio: 2 },
+  { name: "benchly-wash-cluster", url: `${MARKER_ART_ROOT}/cluster.webp`, pixelRatio: 2 },
+  { name: "benchly-wash-selected", url: `${WASH_ART_ROOT}/selected.png`, pixelRatio: 2 },
 ];
 
 export const BUILDING_PATTERN_ART: MapArtImage[] = [
-  { name: "benchly-building-roof-terracotta", url: `${ART_ROOT}/building-roof-terracotta.png`, pixelRatio: 1 },
-  { name: "benchly-building-roof-ochre", url: `${ART_ROOT}/building-roof-ochre.png`, pixelRatio: 1 },
-  { name: "benchly-building-roof-rose", url: `${ART_ROOT}/building-roof-rose.png`, pixelRatio: 1 },
-  { name: "benchly-building-roof-umber", url: `${ART_ROOT}/building-roof-umber.png`, pixelRatio: 1 },
+  { name: "benchly-building-roof-terracotta", url: `${TEXTURE_ART_ROOT}/building-roof-terracotta.png`, pixelRatio: 1 },
+  { name: "benchly-building-roof-ochre", url: `${TEXTURE_ART_ROOT}/building-roof-ochre.png`, pixelRatio: 1 },
+  { name: "benchly-building-roof-rose", url: `${TEXTURE_ART_ROOT}/building-roof-rose.png`, pixelRatio: 1 },
+  { name: "benchly-building-roof-umber", url: `${TEXTURE_ART_ROOT}/building-roof-umber.png`, pixelRatio: 1 },
 ];
 
 export const DECORATIVE_MAP_ART: MapArtImage[] = [
-  { name: "benchly-land-wash", url: `${ART_ROOT}/land-wash-v2.webp`, pixelRatio: 1 },
-  { name: "benchly-field-wash", url: `${ART_ROOT}/field-wash.webp`, pixelRatio: 1 },
-  { name: "benchly-mountain-wash", url: `${ART_ROOT}/mountain-mottle-v2.webp`, pixelRatio: 1 },
-  { name: "benchly-water-wash", url: `${ART_ROOT}/water-wash-v2.webp`, pixelRatio: 1 },
-  { name: "benchly-snow-wash", url: `${ART_ROOT}/snow-wash-v2.webp`, pixelRatio: 1 },
+  { name: "benchly-palette-wash", url: `${TEXTURE_ART_ROOT}/palette-wash.webp`, pixelRatio: .5 },
+  { name: "benchly-land-wash", url: `${TEXTURE_ART_ROOT}/land.webp`, pixelRatio: 1 },
+  { name: "benchly-field-wash", url: `${TEXTURE_ART_ROOT}/field.webp`, pixelRatio: 1 },
+  { name: "benchly-mountain-wash", url: `${TEXTURE_ART_ROOT}/mountain.webp`, pixelRatio: 1 },
+  { name: "benchly-water-wash", url: `${TEXTURE_ART_ROOT}/water.webp`, pixelRatio: 1 },
+  { name: "benchly-snow-wash", url: `${TEXTURE_ART_ROOT}/snow.webp`, pixelRatio: 1 },
   ...BUILDING_PATTERN_ART,
-  { name: "benchly-forest-relief", url: `${ART_ROOT}/forest-interior-alpha-v3.webp`, pixelRatio: 1 },
-  { name: "benchly-forest-stamp", url: `${ART_ROOT}/forest-stamp-v2.webp`, pixelRatio: 1 },
-  { name: "benchly-road-brush", url: `${ART_ROOT}/road-brush-pattern.png`, pixelRatio: 1 },
-  { name: "benchly-bridge-deck-pattern", url: `${ART_ROOT}/bridge-deck-pattern.png`, pixelRatio: 1 },
-  { name: "benchly-airport-airplane", url: `${ART_ROOT}/airport-airplane-v1.png`, pixelRatio: 2 },
+  { name: "benchly-forest-relief", url: `${TEXTURE_ART_ROOT}/forest-interior.webp`, pixelRatio: 1 },
+  { name: "benchly-forest-stamp", url: `${TEXTURE_ART_ROOT}/forest-stamp.webp`, pixelRatio: 1 },
+  { name: "benchly-road-brush", url: `${TEXTURE_ART_ROOT}/road-brush.png`, pixelRatio: 1 },
+  { name: "benchly-bridge-deck-pattern", url: `${TEXTURE_ART_ROOT}/bridge-deck.png`, pixelRatio: 1 },
+  { name: "benchly-airport-airplane", url: `${TRANSIT_ART_ROOT}/airport-airplane.png`, pixelRatio: 2 },
 ];
 
 export const TRANSIT_MAP_ART: MapArtImage[] = [
-  { name: "benchly-transit-bus", url: `${ART_ROOT}/transit-bus.png`, pixelRatio: 2 },
-  { name: "benchly-transit-rail", url: `${ART_ROOT}/transit-rail.png`, pixelRatio: 2 },
-  { name: "benchly-transit-tram", url: `${ART_ROOT}/transit-tram.png`, pixelRatio: 2 },
-  { name: "benchly-transit-metro", url: `${ART_ROOT}/transit-metro.png`, pixelRatio: 2 },
-  { name: "benchly-transit-funicular", url: `${ART_ROOT}/transit-funicular.png`, pixelRatio: 2 },
-  { name: "benchly-transit-cable-car", url: `${ART_ROOT}/transit-cable-car.png`, pixelRatio: 2 },
-  { name: "benchly-transit-ferry", url: `${ART_ROOT}/transit-ferry.png`, pixelRatio: 2 },
-  { name: "benchly-wash-transit", url: `${ART_ROOT}/wash-transit.png`, pixelRatio: 2 },
+  { name: "benchly-transit-bus", url: `${TRANSIT_ART_ROOT}/bus.png`, pixelRatio: 2 },
+  { name: "benchly-transit-rail", url: `${TRANSIT_ART_ROOT}/rail.png`, pixelRatio: 2 },
+  { name: "benchly-transit-tram", url: `${TRANSIT_ART_ROOT}/tram.png`, pixelRatio: 2 },
+  { name: "benchly-transit-metro", url: `${TRANSIT_ART_ROOT}/metro.png`, pixelRatio: 2 },
+  { name: "benchly-transit-funicular", url: `${TRANSIT_ART_ROOT}/funicular.png`, pixelRatio: 2 },
+  { name: "benchly-transit-cable-car", url: `${TRANSIT_ART_ROOT}/cable-car.png`, pixelRatio: 2 },
+  { name: "benchly-transit-ferry", url: `${TRANSIT_ART_ROOT}/ferry.png`, pixelRatio: 2 },
+  { name: "benchly-wash-transit", url: `${WASH_ART_ROOT}/transit.png`, pixelRatio: 2 },
 ];
 
 export const FOREST_FILTER: FilterSpecification = ["any",
@@ -215,7 +217,7 @@ export function watercolorLayerRank(layer: { type: string; "source-layer"?: stri
 
 export function mapDayPalette(phase: DayPhase) {
   return {
-    background: phase === "night" ? "#d8cfbd" : phase === "dusk" ? "#ead2b5" : phase === "dawn" ? "#f0ddbd" : "#f3e5c4",
+    background: phase === "night" ? "#d5d2c7" : phase === "dusk" ? "#ead5c4" : phase === "dawn" ? "#f2dfc7" : "#f8efdc",
     cluster: phase === "night" ? "#755343" : phase === "dusk" ? "#83513f" : "#8a5940",
     markerStroke: phase === "night" ? "#f2dca7" : "#fff4d8",
   } as const;
@@ -230,8 +232,8 @@ export function mapSunLighting(altitudeRadians: number, azimuthRadians: number) 
   return {
     directionDegrees,
     polarDegrees: Math.max(18, Math.min(86, 90 - altitudeDegrees)),
-    shadowOpacity: .095 + (1 - daylightStrength) * .07,
-    highlightOpacity: .035 + daylightStrength * .055,
+    shadowOpacity: .13 + (1 - daylightStrength) * .08,
+    highlightOpacity: .05 + daylightStrength * .065,
     shadowTranslate: [
       Number((Math.sin(directionRadians) * offset).toFixed(2)),
       Number((-Math.cos(directionRadians) * offset).toFixed(2)),
@@ -247,34 +249,34 @@ export function transformWatercolorStyle(input: StyleSpecification): StyleSpecif
     const paint = layer.paint ??= {};
     const layout = layer.layout ??= {};
 
-    if (layer.type === "background") paint["background-color"] = "#f3e5c4";
+    if (layer.type === "background") paint["background-color"] = "#f8efdc";
     if (source === "hillshade") {
       paint["fill-color"] = id.includes("yellow")
-        ? "#e4b86d"
-        : ["interpolate", ["linear"], ["to-number", ["get", "luminosity"]], -15, "#6c6870", -9, "#918783", -3, "#b8aa98", 0, "#ddd2b8"];
-      paint["fill-opacity"] = id.includes("yellow") ? .045 : ["interpolate", ["linear"], ["zoom"], 5, .06, 11, .12, 16, .17, 19, .2];
+        ? "#efb541"
+        : ["interpolate", ["linear"], ["to-number", ["get", "luminosity"]], -15, "#3e7181", -9, "#6f6884", -3, "#a38b9f", 0, "#ddd0b9"];
+      paint["fill-opacity"] = id.includes("yellow") ? .075 : ["interpolate", ["linear"], ["zoom"], 5, .11, 11, .17, 16, .2, 19, .22];
       paint["fill-antialias"] = true;
     }
     if (source === "landcover") {
       if (id === "pattern_landcover") layout.visibility = "none";
       if (layer.type === "fill") {
         paint["fill-color"] = ["case",
-          ["match", ["get", "class"], ["forest", "wood"], true, false], "#9eb486",
-          ["match", ["get", "subclass"], ["forest", "loose_forest", "woody_plant", "wood"], true, false], "#9eb486",
-          ["match", ["get", "class"], ["ice", "glacier"], true, false], "#dce9e5",
-          ["==", ["get", "class"], "sand"], "#e8c98d",
-          "#dfd5a8",
+          ["match", ["get", "class"], ["forest", "wood"], true, false], "#4f9874",
+          ["match", ["get", "subclass"], ["forest", "loose_forest", "woody_plant", "wood"], true, false], "#4f9874",
+          ["match", ["get", "class"], ["ice", "glacier"], true, false], "#dcebed",
+          ["==", ["get", "class"], "sand"], "#f0c75d",
+          "#b8cf78",
         ];
         paint["fill-opacity"] = ["interpolate", ["linear"], ["zoom"],
-          6, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .09, .16],
-          12, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .12, .16],
-          16, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .16, .16],
-          19, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .18, .16],
+          6, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .14, .14],
+          12, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .18, .16],
+          16, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .2, .17],
+          19, ["case", GLACIER_FILTER, .12, FOREST_FILTER, .22, .17],
         ];
         paint["fill-outline-color"] = "rgba(0,0,0,0)";
         paint["fill-antialias"] = true;
       } else {
-        paint["line-color"] = "#87937a";
+        paint["line-color"] = "#678474";
         paint["line-opacity"] = .025;
         paint["line-blur"] = 3;
         paint["line-dasharray"] = [1.2, 1.8];
@@ -282,30 +284,39 @@ export function transformWatercolorStyle(input: StyleSpecification): StyleSpecif
     }
     if (source === "landuse") {
       if (layer.type === "fill") {
-        paint["fill-color"] = id.includes("parking") ? "#dbc79d" : "#dfcf9f";
-        paint["fill-opacity"] = id.includes("parking") ? .23 : .18;
+        paint["fill-color"] = ["match", ["get", "class"],
+          ["forest", "wood", "park", "garden", "recreation_ground"], "#69a979",
+          ["grass", "meadow"], "#b9d36c",
+          ["farmland", "orchard", "vineyard"], "#e4cf61",
+          ["residential", "village_green"], "#e9b9ad",
+          ["commercial", "retail"], "#db8d9f",
+          "industrial", "#bd9bb9",
+          ["parking", "garages"], "#c8bba9",
+          "#d9ce84",
+        ];
+        paint["fill-opacity"] = id.includes("parking") ? .16 : ["interpolate", ["linear"], ["zoom"], 7, .18, 13, .22, 18, .17];
         paint["fill-outline-color"] = "rgba(0,0,0,0)";
         paint["fill-antialias"] = true;
       } else {
-        paint["line-color"] = "#9f8e69";
-        paint["line-opacity"] = .45;
+        paint["line-color"] = "#7e8c70";
+        paint["line-opacity"] = .28;
       }
     }
     if (source === "water") {
       if (layer.type === "fill") {
-        paint["fill-color"] = "#5f9ea5";
-        paint["fill-opacity"] = .47;
+        paint["fill-color"] = "#299aad";
+        paint["fill-opacity"] = .6;
         paint["fill-outline-color"] = "rgba(0,0,0,0)";
         paint["fill-antialias"] = true;
       } else {
-        paint["line-color"] = "#356c72";
-        paint["line-opacity"] = .4;
+        paint["line-color"] = "#176f82";
+        paint["line-opacity"] = .34;
         paint["line-blur"] = 1.1;
       }
     }
     if (source === "waterway" && layer.type === "line") {
-      paint["line-color"] = "#3f7f89";
-      paint["line-opacity"] = .68;
+      paint["line-color"] = "#238da2";
+      paint["line-opacity"] = .76;
       paint["line-blur"] = .8;
     }
     if (source === "contour_line") {
@@ -320,7 +331,7 @@ export function transformWatercolorStyle(input: StyleSpecification): StyleSpecif
     }
     if (source === "building" || source === "building_ln") {
       if (layer.type === "fill") {
-        paint["fill-color"] = ["interpolate", ["linear"], ["zoom"], 13, "#d5a06e", 17, "#c67c5b"];
+        paint["fill-color"] = ["interpolate", ["linear"], ["zoom"], 13, "#e59a72", 17, "#cf5e68"];
         paint["fill-opacity"] = ["interpolate", ["linear"], ["zoom"], 13, .15, 15, .25, 18, .3];
         paint["fill-outline-color"] = "rgba(0,0,0,0)";
         paint["fill-antialias"] = true;
@@ -373,9 +384,9 @@ export function transformWatercolorStyle(input: StyleSpecification): StyleSpecif
       const isTunnel = id.includes("tunnel");
       layout["line-cap"] = "round";
       layout["line-join"] = "round";
-      paint["line-color"] = isTransit ? "#765a78" : isCasing ? "#8b684c" : isPath ? "#966f48" : "#f5dfb2";
-      paint["line-opacity"] = isTunnel ? .13 : isTransit ? .66 : isCasing ? .012 : isPath ? .34 : .19;
-      paint["line-blur"] = isTransit ? .65 : isCasing ? 5 : isPath ? 1.35 : 2.2;
+      paint["line-color"] = isTransit ? "#745874" : isCasing ? "#806e5d" : isPath ? "#8a674b" : "#fbefd3";
+      paint["line-opacity"] = isTunnel ? .14 : isTransit ? .62 : isCasing ? .012 : isPath ? .39 : .3;
+      paint["line-blur"] = isTransit ? .65 : isCasing ? 4 : isPath ? .8 : 1.45;
       if (isPath) paint["line-dasharray"] = [1.4, 1.05];
     }
     if (source === "boundary") {
@@ -389,7 +400,7 @@ export function transformWatercolorStyle(input: StyleSpecification): StyleSpecif
     }
     if (layer.type === "symbol") {
       paint["text-color"] = source.includes("water") ? "#376d76" : source === "mountain_peak" ? "#58463a" : "#35453b";
-      paint["text-halo-color"] = "#f3e7c8";
+      paint["text-halo-color"] = "#f6ead1";
       paint["text-halo-width"] = 1.4;
       paint["text-halo-blur"] = .5;
       if (source === "poi" || source === "address" || source === "spot_elevation") layout.visibility = "none";

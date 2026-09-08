@@ -19,6 +19,9 @@ gateway:
 
 web:
   walkingRouterUrl: http://graphhopper.routing.svc.cluster.local:8989
+  photoStorageUrl: http://garage.storage.svc.cluster.local:3900
+  photoBucket: benchly-photos
+  photoSecret: benchly-photo-storage
   aiLabelsEnabled: auto
   verificationThreshold: 3
   resources:

@@ -1,8 +1,8 @@
 import type { BenchDetail, LandContext, PrecipitationType } from "./types";
 
-const UI_ART_ROOT = "/ui-art/v1";
-const SCENE_ART_ROOT = "/ui-art/v4";
-const WATER_ART_ROOT = "/ui-art/v5";
+const BENCH_ART_ROOT = "/ui-art/benches";
+const SCENE_ART_ROOT = "/ui-art/scenes";
+const SEASON_ART_ROOT = "/ui-art/seasons";
 
 type BenchMaterial = "wood" | "metal" | "stone";
 type BenchShape = "back-arm" | "back" | "backless";
@@ -19,6 +19,16 @@ export type BenchSceneLayers = {
   groundArt: string;
   reliefArt: string | null;
   waterArt: string | null;
+};
+
+export type BenchSceneComposition = {
+  builtWaterfront: boolean;
+  placeX: number;
+  waterX: number;
+  waterY: number;
+  waterWidth: number;
+  waterHeight: number;
+  benchOffsetX: number;
 };
 
 function hasLabel(labels: string[], value: string) {
@@ -64,7 +74,24 @@ export function benchSceneLayers(input: {
     placeArt: `${SCENE_ART_ROOT}/place-${place}.webp`,
     groundArt: `${SCENE_ART_ROOT}/place-open.webp`,
     reliefArt: relief === "none" ? null : `${SCENE_ART_ROOT}/relief-${relief}.webp`,
-    waterArt: water === "none" ? null : `${WATER_ART_ROOT}/water-${water}.webp`,
+    waterArt: water === "none" ? null : `${SCENE_ART_ROOT}/water-${water}.webp`,
+  };
+}
+
+/** Arrange independent motifs as one view. At a built waterfront, water is
+ * the view to the left rather than a translucent sheet over the settlement. */
+export function benchSceneComposition(scene: Pick<BenchSceneLayers, "place" | "water">): BenchSceneComposition {
+  const hasWater = scene.water !== "none";
+  const builtWaterfront = hasWater && (scene.place === "city" || scene.place === "village");
+  const builtRiver = builtWaterfront && scene.water === "river";
+  return {
+    builtWaterfront,
+    placeX: 0,
+    waterX: builtRiver ? -18 : builtWaterfront ? -58 : 0,
+    waterY: scene.water === "river" ? 128 : builtWaterfront ? 80 : 0,
+    waterWidth: scene.water === "river" ? builtRiver ? 550 : 610 : builtWaterfront ? 560 : 640,
+    waterHeight: scene.water === "river" ? 352 : builtWaterfront ? 400 : 480,
+    benchOffsetX: hasWater ? 82 : 0,
   };
 }
 
@@ -76,9 +103,9 @@ export function benchSpriteArt(input: { material: string; backrest: boolean; arm
       ? "metal"
       : "wood";
   const shape: BenchShape = input.backrest ? input.armrests ? "back-arm" : "back" : "backless";
-  return `${UI_ART_ROOT}/bench-${material}-${shape}-v1.webp`;
+  return `${BENCH_ART_ROOT}/${material}-${shape}.webp`;
 }
 
 export function seasonOverlayArt(season: BenchDetail["season"]) {
-  return `${UI_ART_ROOT}/season-${season}-v1.webp`;
+  return `${SEASON_ART_ROOT}/${season}.webp`;
 }

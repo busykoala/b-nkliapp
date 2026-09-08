@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { sqlite } from "@/db/client";
+import { deleteBenchPhoto } from "@/features/bench-photos/storage";
 import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 
 const momentSchema = z.object({
-  kind: z.enum(["memory", "recommendation", "poem", "local_fact", "photo"]),
+  kind: z.enum(["memory", "recommendation", "poem", "local_fact"]),
   body: z.string().trim().min(2).max(500),
-  photoUrl: z.union([z.literal(""), z.string().url().startsWith("https://").max(500)]).optional(),
   website: z.string().max(0).optional(),
 });
 const careSchema = z.enum(["cleaned", "good", "repair", "beautiful"]);
@@ -43,7 +43,7 @@ export async function submitBenchMoment(benchId: string, _previous: ActionResult
     if (!bench) return { ok: false, message: "Dieses Bänkli wurde nicht gefunden." };
     const now = new Date().toISOString();
     sqlite.prepare("INSERT INTO bench_moments(bench_row_id,user_id,kind,body,photo_url,created_at,updated_at) VALUES(?,?,?,?,?,?,?)")
-      .run(bench.row_id, user.id, parsed.data.kind, parsed.data.body, parsed.data.photoUrl || null, now, now);
+      .run(bench.row_id, user.id, parsed.data.kind, parsed.data.body, null, now, now);
     refresh(benchId);
     return { ok: true, message: "Dein Bänkli-Moment ist jetzt am Platz zu lesen." };
   } catch (error) {
@@ -55,8 +55,13 @@ export async function deleteOwnBenchMoment(benchId: string, momentId: number): P
   if (!Number.isInteger(momentId) || momentId < 1) return { ok: false, message: "Ungültiger Moment." };
   try {
     const user = await requireUser();
+    const moment = sqlite.prepare("SELECT photo_url FROM bench_moments WHERE id=? AND user_id=?").get(momentId, user.id) as { photo_url: string | null } | undefined;
+    if (!moment) return { ok: false, message: "Dieser Moment gehört nicht zu deinem Konto." };
     const result = sqlite.prepare("DELETE FROM bench_moments WHERE id=? AND user_id=?").run(momentId, user.id);
     if (!result.changes) return { ok: false, message: "Dieser Moment gehört nicht zu deinem Konto." };
+    // The database row is the publication boundary. Remove it first so a
+    // temporarily unavailable object store cannot keep an unwanted photo live.
+    if (moment.photo_url) await deleteBenchPhoto(moment.photo_url).catch(() => undefined);
     refresh(benchId);
     return { ok: true, message: "Dein Moment wurde entfernt." };
   } catch (error) {

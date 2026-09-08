@@ -66,12 +66,13 @@ describe("watercolor map style", () => {
     const styled = transformWatercolorStyle(fixture);
 
     expect(JSON.stringify(fixture)).toBe(original);
-    expect(layer(styled, "background").paint?.["background-color"]).toBe("#f3e5c4");
+    expect(layer(styled, "background").paint?.["background-color"]).toBe("#f8efdc");
     expect(layer(styled, "hillshade_grey").paint?.["fill-color"]).toBeInstanceOf(Array);
-    expect(layer(styled, "water").paint?.["fill-color"]).toBe("#5f9ea5");
+    expect(layer(styled, "water").paint?.["fill-color"]).toBe("#299aad");
     expect(layer(styled, "building").paint?.["fill-color"]).toBeInstanceOf(Array);
-    expect(layer(styled, "road_fill").paint?.["line-color"]).toBe("#f5dfb2");
-    expect(layer(styled, "public_transport").paint?.["line-color"]).toBe("#765a78");
+    expect(layer(styled, "road_fill").paint?.["line-color"]).toBe("#fbefd3");
+    expect(layer(styled, "road_fill").paint?.["line-opacity"]).toBe(.3);
+    expect(layer(styled, "public_transport").paint?.["line-color"]).toBe("#745874");
     expect(layer(styled, "construct").paint?.["fill-color"]).toBeInstanceOf(Array);
     expect(layer(styled, "aeroway_polygon_fill").paint?.["fill-color"]).toBeInstanceOf(Array);
     expect(layer(styled, "aeroway_polygon_casing").paint?.["line-opacity"]).toBe(.09);
@@ -153,7 +154,7 @@ describe("watercolor map style", () => {
   });
 
   it("keeps initial and complete artwork inside the transfer budgets", () => {
-    const paperBytes = assetBytes("/map-art/v3/paper.webp");
+    const paperBytes = assetBytes("/map-art/textures/paper.webp");
     const initialBytes = paperBytes + CORE_MAP_ART.reduce((sum, asset) => sum + assetBytes(asset.url), 0);
     const fullBytes = initialBytes
       + DECORATIVE_MAP_ART.reduce((sum, asset) => sum + assetBytes(asset.url), 0)
@@ -161,6 +162,7 @@ describe("watercolor map style", () => {
 
     expect(initialBytes).toBeLessThanOrEqual(INITIAL_ART_BUDGET_BYTES);
     expect(fullBytes).toBeLessThanOrEqual(FULL_ART_BUDGET_BYTES);
+    expect(DECORATIVE_MAP_ART.some((asset) => asset.name === "benchly-palette-wash")).toBe(true);
     expect(DECORATIVE_MAP_ART.some((asset) => asset.name === "benchly-airport-airplane")).toBe(true);
   });
 
@@ -169,7 +171,7 @@ describe("watercolor map style", () => {
     const files = readdirSync(directory, { recursive: true, withFileTypes: true })
       .filter((entry) => entry.isFile())
       .map((entry) => join(entry.parentPath, entry.name));
-    const used = ["/map-art/v3/paper.webp", ...CORE_MAP_ART.map((asset) => asset.url),
+    const used = ["/map-art/textures/paper.webp", ...CORE_MAP_ART.map((asset) => asset.url),
       ...DECORATIVE_MAP_ART.map((asset) => asset.url), ...TRANSIT_MAP_ART.map((asset) => asset.url)]
       .map((url) => join(process.cwd(), "public", url));
     expect(files.sort()).toEqual([...new Set(used)].sort());

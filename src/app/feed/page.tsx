@@ -5,6 +5,7 @@ import { AppMenu } from "@/components/app-menu";
 import { TrailAvatar } from "@/components/trail-avatar";
 import { getCurrentUser } from "@/lib/security";
 import { communityTheme } from "@/lib/community-theme";
+import { groupFeed } from "@/features/feed/model";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function FeedPage() {
       </div>
     </section>
     <section className="feed-scroll" aria-label="Neuigkeiten">
-      {feed.entries.length ? feed.entries.map((entry) => <FeedCard key={entry.id} entry={entry} />) : <div className="feed-empty"><span>🍂</span><p>Noch weht kein neuer Eintrag herein.</p></div>}
+      {feed.entries.length ? groupFeed(feed.entries).map((group) => <section className="feed-group" key={group.label} aria-labelledby={`feed-${group.key}`}><h2 id={`feed-${group.key}`}>{group.label}</h2>{group.entries.map((entry) => <FeedCard key={entry.id} entry={entry} />)}</section>) : <div className="feed-empty"><span>🍂</span><p>Noch weht kein neuer Eintrag herein.</p></div>}
     </section>
   </main>;
 }

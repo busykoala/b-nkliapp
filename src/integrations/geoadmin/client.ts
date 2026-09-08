@@ -41,25 +41,6 @@ export async function searchGeoAdminLocations(query: string, fetcher: typeof fet
   } catch { return []; }
 }
 
-export async function findNearestSwissName(latitude: number, longitude: number, fetcher: typeof fetch = fetch): Promise<string | null> {
-  const delta = .004;
-  const url = new URL(`${DATA_RUNTIME.geoAdminBaseUrl}/rest/services/api/SearchServer`);
-  url.searchParams.set("type", "locations");
-  url.searchParams.set("origins", "gazetteer");
-  url.searchParams.set("bbox", `${longitude - delta},${latitude - delta},${longitude + delta},${latitude + delta}`);
-  url.searchParams.set("sortbbox", "true");
-  url.searchParams.set("limit", "12");
-  url.searchParams.set("sr", "4326");
-  try {
-    const response = await fetcher(url, { next: { revalidate: 2_592_000 }, signal: AbortSignal.timeout(4_000) });
-    if (!response.ok) return null;
-    const data = await response.json() as { results?: SearchResult[] };
-    const result = (data.results ?? []).find(({ attrs }) => attrs?.layerBodId === "ch.swisstopo.swissnames3d");
-    const label = readableLabel(result?.attrs?.label);
-    return label || null;
-  } catch { return null; }
-}
-
 export async function reverseGeocodeSwiss(latitude: number, longitude: number): Promise<SwissLocation | null> {
   const parameters = new URLSearchParams({
     geometryType: "esriGeometryPoint", geometry: `${longitude},${latitude}`, sr: "4326",

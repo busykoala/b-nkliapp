@@ -1,21 +1,10 @@
 "use server";
 
 import { sqlite } from "@/db/client";
+import type { ActivityFeed, FeedEntry, WeeklyBench } from "@/features/feed/model";
 import { getCurrentUser } from "@/lib/security";
 
-export type FeedEntry = {
-  id: string;
-  kind: "added" | "rated" | "confirmed" | "missing" | "edited" | "moment" | "care";
-  username: string;
-  avatarSeed: string;
-  benchId: string;
-  benchName: string;
-  createdAt: string;
-  detail: string | null;
-};
-
-export type WeeklyBench = { id: string; name: string; place: string | null };
-export type ActivityFeed = { entries: FeedEntry[]; personalized: boolean; weeklyBench: WeeklyBench | null };
+export type { FeedEntry } from "@/features/feed/model";
 
 export async function getActivityFeed(limit = 36): Promise<ActivityFeed> {
   const user = await getCurrentUser();

@@ -11,7 +11,7 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Optional, Sequence
 
-from benchly.benches.domain import score_view
+from benchly.benches.domain import apply_environment_hints, score_view
 from benchly.benches.repository import upsert_enrichment
 from benchly.context.evidence import (
     feature_distance,
@@ -130,13 +130,13 @@ def _profile_values(connection, row: sqlite3.Row, terrain) -> dict[str, object]:
         elevation,
         obstruction_types,
     )
-    components = {
+    components = apply_environment_hints({
         "openness": openness,
         "relief": relief,
         "water": water,
         "naturalness": naturalness,
         "remoteness": remoteness,
-    }
+    }, row["raw_tags"])
     buildings = [feature for feature in local_context if feature["kind"] == "building"]
     paths = [feature for feature in local_context if feature["kind"] == "path"]
     waters = preferred_exact_features(context, "water", official_context)
@@ -207,7 +207,7 @@ def enrich_profile_batch_job(args: Namespace) -> None:
     try:
         rows = connection.execute(
             """
-            SELECT b.row_id,b.latitude,b.longitude,b.direction_degrees,b.covered,e.canopy_context
+            SELECT b.row_id,b.latitude,b.longitude,b.direction_degrees,b.covered,b.raw_tags,e.canopy_context
             FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
             WHERE b.active=1 AND (
                 e.terrain_horizon_profile IS NULL

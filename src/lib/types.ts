@@ -72,6 +72,10 @@ export type ClusterMapFeature = {
   latitude: number;
   longitude: number;
   count: number;
+  west: number;
+  south: number;
+  east: number;
+  north: number;
 };
 
 export type MapFeature = BenchMapFeature | ClusterMapFeature;
@@ -88,6 +92,7 @@ export type BenchMoment = {
   id: number;
   kind: "memory" | "recommendation" | "poem" | "local_fact" | "photo";
   body: string;
+  hasPhoto: boolean;
   photoUrl: string | null;
   username: string;
   avatarSeed: string;

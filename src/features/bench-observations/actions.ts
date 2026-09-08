@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sqlite } from "@/db/client";
-import { loadWeatherGrid, sampleWeatherGrid } from "@/integrations/weather/repository";
+import { readWeatherSample } from "@/integrations/weather/repository";
+import { wgs84ToLv95 } from "@/lib/elevation";
 import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
 import type { ActionResult } from "@/lib/types";
 import { benchObservationNow, lightObservationContext, observationSeason } from "./context";
@@ -53,8 +54,8 @@ export async function submitLightObservation(benchId: string, choiceInput: unkno
     const context = lightObservationContext(now, bench.latitude, bench.longitude);
     if (!context) return { ok: false, message: "Lichteindrücke kannst du hier erst wieder bei Tageslicht melden." };
     const { season, dayPhase } = context;
-    const cloudGrid = loadWeatherGrid("CLCT");
-    const cloudCover = cloudGrid ? sampleWeatherGrid(cloudGrid, bench.latitude, bench.longitude) : null;
+    const { easting, northing } = wgs84ToLv95(bench.latitude, bench.longitude);
+    const cloudCover = readWeatherSample("CLCT", easting, northing)?.value ?? null;
     const recent = sqlite.prepare(`
       SELECT id FROM bench_light_observations WHERE bench_row_id=? AND user_id=? AND retracted_at IS NULL
         AND observed_at>=datetime('now','-30 minutes') ORDER BY observed_at DESC LIMIT 1

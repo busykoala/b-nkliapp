@@ -9,7 +9,7 @@ import type { CurrentUser } from "@/lib/security";
 import { scenePoem } from "@/lib/scene-poetry";
 import { AccountDialog } from "./account-controls";
 import { BenchContributionHub } from "./bench-contribution-hub";
-import { BenchDetails } from "./bench-details";
+import { BenchDetails } from "@/features/bench-detail/bench-details";
 import { BenchLandscape } from "./bench-landscape";
 import { BenchPlaceCommunity } from "./bench-place-community";
 

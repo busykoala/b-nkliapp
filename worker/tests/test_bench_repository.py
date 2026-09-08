@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from benchly.benches.repository import refresh_nearby_amenities, upsert_osm_benches
+from benchly.benches.repository import refresh_nearby_amenities, upsert_inventory_benches
 
 
 class BenchRepositoryTests(unittest.TestCase):
@@ -42,7 +42,7 @@ class BenchRepositoryTests(unittest.TestCase):
 
     def test_osm_refresh_preserves_only_community_edited_fields(self):
         database = self.database()
-        upsert_osm_benches(database, [self.record(name="Alter Name")], preserve_edits=True)
+        upsert_inventory_benches(database, [self.record(name="Alter Name")], preserve_edits=True)
         row_id = database.execute("SELECT row_id FROM benches").fetchone()[0]
         database.execute(
             "INSERT INTO bench_metadata_edits VALUES(1,?,1,'name','Alter Name','Mein Bänkli','now')",
@@ -50,7 +50,7 @@ class BenchRepositoryTests(unittest.TestCase):
         )
         database.execute("UPDATE benches SET name='Mein Bänkli' WHERE row_id=?", (row_id,))
 
-        upsert_osm_benches(
+        upsert_inventory_benches(
             database,
             [self.record(latitude=46.69, name="Neuer OSM-Name", source_updated_at="v2", imported_at="v2")],
             preserve_edits=True,
@@ -63,7 +63,7 @@ class BenchRepositoryTests(unittest.TestCase):
 
     def test_nearby_amenity_hints_remain_editable(self):
         database = self.database()
-        upsert_osm_benches(database, [self.record()], preserve_edits=True)
+        upsert_inventory_benches(database, [self.record()], preserve_edits=True)
         row_id = database.execute("SELECT row_id FROM benches").fetchone()[0]
         database.execute("""INSERT INTO environment_features(
           row_id,source,source_id,kind,center_latitude,center_longitude,min_latitude,max_latitude,

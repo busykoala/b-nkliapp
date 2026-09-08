@@ -27,8 +27,8 @@ const grounds: Record<string, { x: number; y: number; scale: number; slope: numb
   alpine: { x: 314, y: 425, scale: .94, slope: -.04 },
 };
 
-export function benchPlacement(sceneKind: string, asset: string, seats: number) {
-  const kind = asset.match(/bench-(wood|metal|stone)-(back-arm|backless|back)-v1\.webp$/);
+export function benchPlacement(sceneKind: string, asset: string, seats: number, offsetX = 0) {
+  const kind = asset.match(/(wood|metal|stone)-(back-arm|backless|back)\.webp$/);
   const key = kind ? `${kind[1]}-${kind[2]}` : "wood-back";
   const contacts = feet[key].map(([x, y]) => ({ x: x * .88 - 132, y: y * .88 - 85 }));
   const centre = {
@@ -38,7 +38,7 @@ export function benchPlacement(sceneKind: string, asset: string, seats: number) 
   const ground = grounds[sceneKind] ?? grounds.country;
   const size = Number.isFinite(seats) && seats > 0 ? seats <= 2 ? .9 : seats >= 6 ? 1.08 : 1 : 1;
   const scale = ground.scale * size;
-  const translateX = ground.x - centre.x * scale;
+  const translateX = ground.x + offsetX - centre.x * scale;
   const translateY = ground.y - (centre.y + ground.slope * centre.x) * scale;
   return {
     // Apply this once to sprite AND shadows, so all variants and seat counts

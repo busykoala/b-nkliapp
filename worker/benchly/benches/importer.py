@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import sqlite3
 import sys
-import unicodedata
 import urllib.parse
 from pathlib import Path
 from typing import Optional
@@ -19,10 +18,18 @@ from benchly.benches.repository import (
     remove_demo_benches,
     refresh_nearby_amenities,
     replace_exact_imported_media,
-    upsert_osm_benches,
+    upsert_inventory_benches,
 )
 from benchly.context.repository import discard_old_osm_context, upsert_environment_features
-from benchly.benches.domain import CONTEXT_TAGS, KEEP_TAGS, context_kind, parse_bool, parse_direction, parse_height
+from benchly.benches.domain import (
+    CONTEXT_TAGS,
+    KEEP_TAGS,
+    context_kind,
+    normalize_location_key,
+    parse_bool,
+    parse_direction,
+    parse_height,
+)
 from benchly.context.geometry import (
     feature_bounds_wgs84,
     geometry_wkb_from_coordinates,
@@ -83,7 +90,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
         for bench in pending:
             tags = bench.tags
             location_name = tags.get("addr:city") or tags.get("place")
-            location_key = ("".join(character for character in unicodedata.normalize("NFKD", location_name or "") if not unicodedata.combining(character))).lower() or None
+            location_key = normalize_location_key(location_name)
             rows.append({
                 "id": f"osm-{bench.osm_type}-{bench.osm_id}",
                 "osm_type": bench.osm_type,
@@ -110,7 +117,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 "location_postcode": tags.get("addr:postcode"),
                 "location_canton": tags.get("addr:state"),
             })
-        upsert_osm_benches(connection, rows, preserve_edits=bool(metadata_edits_available))
+        upsert_inventory_benches(connection, rows, preserve_edits=bool(metadata_edits_available))
         for bench in pending:
             bench_id = f"osm-{bench.osm_type}-{bench.osm_id}"
             row = connection.execute("SELECT row_id FROM benches WHERE id=?", (bench_id,)).fetchone()

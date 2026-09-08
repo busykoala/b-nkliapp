@@ -1,6 +1,6 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
 import type { BenchDetail } from "@/lib/types";
-import { benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "@/lib/bench-scene-art";
+import { benchSceneComposition, benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "@/lib/bench-scene-art";
 import { benchPlacement } from "@/lib/bench-placement";
 
 function knownProperty(bench: BenchDetail, label: string) {
@@ -23,12 +23,13 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
     precipitationType: bench.weather?.precipitationType,
   });
   const sceneKind = scene.place;
+  const composition = benchSceneComposition(scene);
   const backrest = knownProperty(bench, "Rückenlehne") !== "Nein";
   const armrests = knownProperty(bench, "Armlehnen") === "Ja";
   const covered = knownProperty(bench, "Überdacht") === "Ja";
   const asset = benchSpriteArt({ material: knownProperty(bench, "Material"), backrest, armrests });
   const seats = Number.parseInt(knownProperty(bench, "Sitzplätze"), 10);
-  const placement = benchPlacement(sceneKind, asset, seats);
+  const placement = benchPlacement(sceneKind, asset, seats, composition.benchOffsetX);
   const weather = bench.weather;
   const cloudCover = weather?.cloudCover ?? 0;
   const precipitation = weather?.precipitationType ?? "none";
@@ -75,6 +76,20 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
           <stop offset=".76" stopColor="black" />
         </linearGradient>
         <mask id={`${id}-water-mask`}><rect width="640" height="480" fill={`url(#${id}-water)`} /></mask>
+        <linearGradient id={`${id}-water-side`} x1="0" x2="1">
+          <stop offset="0" stopColor="white" />
+          <stop offset=".38" stopColor="white" />
+          <stop offset=".66" stopColor="black" />
+          <stop offset="1" stopColor="black" />
+        </linearGradient>
+        <mask id={`${id}-water-side-mask`}><rect width="640" height="480" fill={`url(#${id}-water-side)`} /></mask>
+        <linearGradient id={`${id}-place-side`} x1="0" x2="1">
+          <stop offset="0" stopColor="black" />
+          <stop offset=".26" stopColor="black" />
+          <stop offset=".52" stopColor="white" />
+          <stop offset="1" stopColor="white" />
+        </linearGradient>
+        <mask id={`${id}-place-side-mask`}><rect width="640" height="480" fill={`url(#${id}-place-side)`} /></mask>
         <radialGradient id={`${id}-light`}><stop stopColor={night ? "#a8bfd0" : "#fff0b6"} stopOpacity=".32" /><stop offset="1" stopColor="#fff0b6" stopOpacity="0" /></radialGradient>
         <filter id={`${id}-ground`} x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="5" /></filter>
         <filter id={`${id}-contact`} x="-50%" y="-150%" width="200%" height="400%"><feGaussianBlur stdDeviation="1.2" /></filter>
@@ -93,13 +108,16 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
       <path className="painting-sky-wash" d="M0 0H640V205Q535 184 424 203T207 195 0 216Z" />
       {(sunVisible || moonVisible) && <g mask={`url(#${id}-sky-mask)`} className="painting-sky-light">
         <ellipse cx={skyX} cy={skyY} rx="90" ry="70" fill={`url(#${id}-light)`} />
-        <image clipPath={sunVisible ? undefined : `url(#${id}-moon-phase)`} href={`/ui-art/v1/celestial-${sunVisible ? "sun" : "moon"}-v1.webp`} x={skyX - 25} y={skyY - 25} width="50" height="50" />
+        <image clipPath={sunVisible ? undefined : `url(#${id}-moon-phase)`} href={`/ui-art/weather/${sunVisible ? "sun" : "moon"}.webp`} x={skyX - 25} y={skyY - 25} width="50" height="50" />
       </g>}
       {scene.reliefArt && <image className="painting-environment painting-relief" href={scene.reliefArt} width="640" height="480" preserveAspectRatio="none" />}
-      <image className="painting-environment painting-place" href={scene.placeArt} width="640" height="480" preserveAspectRatio="none" />
-      {scene.waterArt && <image className="painting-environment painting-water" mask={scene.water === "lake" ? `url(#${id}-water-mask)` : undefined} href={scene.waterArt} width="640" height="480" preserveAspectRatio="none" />}
       {scene.place !== "open" && <image className="painting-environment painting-ground" href={scene.groundArt} width="640" height="480" preserveAspectRatio="none" />}
-      {cloudCover > .25 && <image className="painting-clouds" href="/ui-art/v1/weather-cloud-v1.webp" x="40" y="-20" width="560" height="160" opacity={Math.min(.4, cloudCover * .42)} />}
+      {scene.place === "open" && <image className="painting-environment painting-place" href={scene.placeArt} x={composition.placeX} width="640" height="480" preserveAspectRatio="none" />}
+      {scene.waterArt && <g mask={composition.builtWaterfront ? `url(#${id}-water-side-mask)` : undefined}>
+        <image className="painting-environment painting-water" mask={scene.water === "lake" ? `url(#${id}-water-mask)` : undefined} href={scene.waterArt} x={composition.waterX} y={composition.waterY} width={composition.waterWidth} height={composition.waterHeight} preserveAspectRatio="none" />
+      </g>}
+      {scene.place !== "open" && <image className="painting-environment painting-place" mask={composition.builtWaterfront ? `url(#${id}-place-side-mask)` : undefined} href={scene.placeArt} x={composition.placeX} width="640" height="480" preserveAspectRatio="none" />}
+      {cloudCover > .25 && <image className="painting-clouds" href="/ui-art/weather/cloud.webp" x="40" y="-20" width="560" height="160" opacity={Math.min(.4, cloudCover * .42)} />}
       {(bench.season === "autumn" || bench.season === "spring") && <image className="painting-season" href={seasonOverlayArt(bench.season)} x="0" y="200" width="640" height="280" preserveAspectRatio="none" />}
       {snowCover > 5 && snowCover < 25 && <image className="painting-snow-ground" mask={`url(#${id}-snow-mask)`} href={seasonOverlayArt("winter")} width="640" height="480" opacity={Math.min(.3, snowCover / 120)} preserveAspectRatio="none" />}
       <rect className="painting-atmosphere" width="640" height="480" />
@@ -108,14 +126,14 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
         <ellipse className="painting-contact-shadow" cx={placement.centre.x} cy={placement.centre.y} rx="98" ry="17" transform={`rotate(10 ${placement.centre.x} ${placement.centre.y})`} filter={`url(#${id}-ground)`} />
         {placement.contacts.map((point, index) => <ellipse key={index} className="painting-foot-shadow" cx={point.x} cy={point.y} rx={placement.contactRadius} ry="2.2" filter={`url(#${id}-contact)`} />)}
       </g>
-      {covered && <svg className="painting-shelter" x="110" y="170" width="420" height="280" viewBox="0 0 1536 1024">
+      {covered && <svg className="painting-shelter" x={110 + composition.benchOffsetX} y="170" width="420" height="280" viewBox="0 0 1536 1024">
         <defs><clipPath id={`${id}-shelter`}>
           {/* The generator supplied an opaque atlas. Trace the timber silhouette
               in its native coordinates so none of its background is displayed. */}
           <path d="M81 370 231 131 250 88 273 89 1229 173 1240 190 1299 218 1310 236 1372 272 1384 295 1467 354 1440 389 1274 377 1269 411 1092 412 1036 485 998 508 995 786 950 786 950 510 906 472 884 417 640 417 595 490 575 512 576 797 534 797 532 513 501 467 475 415 423 411 423 923 343 925 337 422 281 394 191 389 135 380 125 395Z" />
           <path d="M1222 383 1294 377 1305 872 1269 878 1227 867Z" />
         </clipPath></defs>
-        <image href="/ui-art/v2/bench-shelter.webp" width="1536" height="1024" clipPath={`url(#${id}-shelter)`} />
+        <image href="/ui-art/benches/shelter.webp" width="1536" height="1024" clipPath={`url(#${id}-shelter)`} />
       </svg>}
       <g className="painting-bench" transform={placement.transform}>
         <image filter={`url(#${id}-bench-pigment)`} href={asset} x="-132" y="-85" width="264" height="176" preserveAspectRatio="xMidYMid meet" />

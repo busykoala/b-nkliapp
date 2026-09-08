@@ -1,4 +1,3 @@
-export const HORIZON_DISTANCES_METERS = [10, 25, 50, 75, 100, 150, ...Array.from({ length: 100 }, (_, index) => (index + 1) * 200)];
 /**
  * Official swisstopo approximation from WGS84 coordinates to LV95.
  * It is accurate enough to address the point-height service's terrain grid.

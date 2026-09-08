@@ -11,7 +11,11 @@ import os
 import sys
 from pathlib import Path
 
-from benchly.benches.jobs import import_osm_job, inventory_job, refresh_commons_job
+from benchly.benches.jobs import (
+    import_osm_job,
+    inventory_job,
+    refresh_commons_job,
+)
 from benchly.context.jobs import import_official_context_job, import_swissbuildings_job
 from benchly.context.regional_trees import import_basel_trees_job, import_zurich_trees_job
 from benchly.enrichment.jobs import enrich_batch_job, enrich_profile_batch_job

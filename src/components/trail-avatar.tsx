@@ -25,11 +25,11 @@ const accentColors: Record<Exclude<AvatarAppearance["accent"], "none">, string> 
 
 function AvatarBackground({ kind }: { kind: AvatarAppearance["background"] }) {
   const environments = {
-    mountain: "/ui-art/v2/bench-scene-alpine-winter.webp",
-    lake: "/ui-art/v2/bench-scene-lake.webp",
-    forest: "/ui-art/v1/bench-scene-forest-v1.webp",
-    city: "/ui-art/v3/bench-scene-city.webp",
-    meadow: "/ui-art/v1/bench-scene-country-v1.webp",
+    mountain: "/ui-art/scenes/badge-alpine.webp",
+    lake: "/ui-art/scenes/badge-lake.webp",
+    forest: "/ui-art/scenes/badge-forest.webp",
+    city: "/ui-art/scenes/badge-city.webp",
+    meadow: "/ui-art/scenes/badge-country.webp",
   };
   return <image className="avatar-painted-background" href={environments[kind]} x="18" y="15" width="208" height="215" preserveAspectRatio="xMidYMid slice" />;
 }

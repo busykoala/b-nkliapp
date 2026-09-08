@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import unicodedata
 from typing import Optional
 
 KEEP_TAGS = {
@@ -22,6 +24,13 @@ CARDINAL = {
     "SE": 135, "SSE": 157.5, "S": 180, "SSW": 202.5, "SW": 225,
     "WSW": 247.5, "W": 270, "WNW": 292.5, "NW": 315, "NNW": 337.5,
 }
+
+
+def normalize_location_key(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    normalized = unicodedata.normalize("NFKD", value)
+    return "".join(character for character in normalized if not unicodedata.combining(character)).lower()
 
 
 def parse_bool(value: Optional[str]) -> Optional[int]:
@@ -87,3 +96,31 @@ def context_kind(tags: dict[str, str]) -> Optional[str]:
 def score_view(openness: float, relief: float, water: float, naturalness: float, remoteness: float) -> int:
     values = [max(0.0, min(1.0, item)) for item in (openness, relief, water, naturalness, remoteness)]
     return round(100 * (0.35 * values[0] + 0.25 * values[1] + 0.15 * values[2] + 0.15 * values[3] + 0.10 * values[4]))
+
+
+def bench_environment_hints(raw_tags: object) -> dict[str, float]:
+    """Read optional human impressions stored with the normal bench record."""
+    try:
+        tags = json.loads(str(raw_tags or "{}"))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
+    hints = tags.get("environment_hints") if isinstance(tags, dict) else None
+    if not isinstance(hints, dict):
+        return {}
+    return {
+        key: max(0.0, min(1.0, float(value)))
+        for key, value in hints.items()
+        if key in {"openness", "relief", "water", "naturalness", "remoteness"}
+        and isinstance(value, (int, float))
+    }
+
+
+def apply_environment_hints(
+    components: dict[str, float], raw_tags: object, weight: float = 0.4,
+) -> dict[str, float]:
+    """Blend local impressions into geometric estimates without replacing them."""
+    result = dict(components)
+    for key, hint in bench_environment_hints(raw_tags).items():
+        current = result.get(key)
+        result[key] = hint if current is None else (1 - weight) * current + weight * hint
+    return result

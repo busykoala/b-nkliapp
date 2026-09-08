@@ -20,7 +20,7 @@ from benchly.context.evidence import (
     preferred_exact_features,
 )
 from benchly.terrain import RasterCollection, classify_view, direct_sun_minutes, horizon_profile
-from benchly.benches.domain import score_view
+from benchly.benches.domain import apply_environment_hints, score_view
 from benchly.catalog import load_catalog
 from benchly.context.geometry import canopy_neighborhood, deterministic_environment
 from benchly.runtime import now_iso
@@ -69,7 +69,7 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
     if not terrain.datasets:
         print("No terrain GeoTIFFs found; enrichment skipped. See worker/README.md.", file=sys.stderr)
         return 0
-    query = """SELECT b.row_id,b.latitude,b.longitude,b.direction_degrees,b.covered
+    query = """SELECT b.row_id,b.latitude,b.longitude,b.direction_degrees,b.covered,b.raw_tags
       FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
       WHERE b.active=1"""
     if not recompute:
@@ -120,7 +120,10 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
                 row["latitude"], row["longitude"], facing, horizon, terrain_horizon, context, relief,
                 far_max_elevations, elevation, obstruction_types,
             )
-            components = {"openness": openness, "relief": relief, "water": water, "naturalness": naturalness, "remoteness": remoteness}
+            components = apply_environment_hints(
+                {"openness": openness, "relief": relief, "water": water, "naturalness": naturalness, "remoteness": remoteness},
+                row["raw_tags"],
+            )
             view = score_view(**components)
             sun_confidence = "hoch" if surface.datasets and buildings else "mittel" if surface.datasets else "niedrig"
             view_confidence = "hoch" if facing is not None and surface.datasets and context else "mittel" if surface.datasets and context else "niedrig"

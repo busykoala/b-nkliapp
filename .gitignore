@@ -8,6 +8,7 @@ test-results
 !.env.example
 data/*.sqlite*
 data/tmp
+data/imports/
 public/sw.js.map
 *.log
 *.tsbuildinfo

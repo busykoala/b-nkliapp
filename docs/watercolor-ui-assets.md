@@ -1,6 +1,26 @@
 # Watercolor UI assets
 
-All raster artwork in `public/ui-art/v1/` was created with OpenAI's built-in image generation mode, then trimmed, cropped, resized and compressed as WebP. The app only requests the assets needed for the current bench context, season, weather and construction. Avatar people remain code-native layered SVG so users can compose them interactively.
+The raster artwork in `public/ui-art/` was created with OpenAI's built-in image generation mode, then trimmed, cropped, resized and compressed as WebP. Assets are grouped by purpose (`benches`, `scenes`, `seasons`, `weather`); Git provides versioning. The app only requests the assets needed for the current bench context, season, weather and construction. Avatar people remain code-native layered SVG so users can compose them interactively.
+
+## Map bench marker
+
+Final asset: `public/map-art/markers/bench.webp`. It was created with OpenAI's built-in image generation tool, chroma-keyed to genuine transparency, reduced to a stable 320 × 250 canvas and visually reviewed from the Switzerland overview down to street level. Its restrained three-quarter silhouette replaces the previous frontal miniature so it remains readable without looking like a pasted photograph.
+
+Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832528/exec-827b74f0-6426-49ac-b4c4-f958df513c8f.png`
+
+> Create a single compact watercolor map symbol of a Swiss park bench for use at 20–36 px. The bench is viewed in a gentle three-quarter side view and has exactly three warm terracotta-orange back slats, two simple seat strokes, and dark pine-green supports. Simplified bold silhouette, loose hand-inked contours, very little internal detail, playful imperfect watercolor pigment. Add only a tiny irregular teal-and-sage paint dab directly under the feet. Place the isolated symbol centered with generous even padding on a perfectly flat, uniform pure electric blue (#0000FF) background for chroma-key removal. The blue background must have absolutely no texture, paper, lighting, gradient, checks, shadows, or variation. No scenery, people, text, circle, wreath, pin, frame, or cast shadow.
+
+## Map palette wash
+
+Final asset: `public/map-art/textures/palette-wash.webp`. It was created with OpenAI's built-in image generation tool, corrected to genuine transparency, resized to a stable 576 × 576 texture and compressed below 80 KB. MapLibre renders it at half pixel density for broad, calm pigment fields instead of a small repeating motif. It sits behind semantic map geometry and fades toward street zooms, so it brings the overview to life without obscuring relief, roads or labels.
+
+Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832528/exec-2c63af2c-bf2a-431d-bbe9-15a37106e286.png`
+
+> Use case: stylized-concept. Asset type: seamless watercolor pigment texture for a production MapLibre basemap. Image 1 and Image 2 are style and color-composition references only; do not reproduce their cartography, places, labels, roads, icons, or objects. Create one square, softly tileable field of broad irregular transparent watercolor pigment washes that will be layered behind real map geometry. It should make the map feel like a joyful hand-painted artwork rather than a beige technical map. Use genuine hand-painted watercolor pigment, translucent glazing, blooms, granulation, backruns, dry-brush edges, natural overlaps and paper-like unpainted gaps. Use clear turquoise and cyan, fresh leaf and emerald green, warm lemon yellow and ochre, coral and vermilion red, dusty magenta and violet, with occasional blue-grey transitions. No recognizable objects, map geometry, text or dominant brown cast; genuine transparent alpha outside the pigment.
+
+Transparency correction:
+
+> Preserve every colored watercolor wash, its position, scale, palette, granulation, overlaps and soft brush edges exactly. Remove the entire grey-and-white checkerboard background everywhere, including all holes between the pigment clouds and all edge gaps. Replace every checkerboard/background pixel with genuine transparent alpha. Change only the background; do not repaint, move, crop, resize, add, sharpen, recolor or simplify any colored pigment.
 
 ## Landscape wash
 
@@ -10,7 +30,7 @@ Used for `bench-scene-lake-v1.webp`, `avatar-landscape-v1.webp` and `badge-lands
 
 > Create a production-ready transparent watercolor overlay texture for a responsive illustrated Swiss landscape scene in a mobile app. No discrete objects and no text: only loose, hand-painted atmospheric pigment. Wide 4:3 composition with softly layered sage-green and moss land washes concentrated in the lower half, muted blue-green water-like brush movement across the middle, very pale warm ochre and dusty rose clouds in the upper half, subtle granulation, dry-brush edges, blooms, backruns, and plenty of transparent holes so vector scenery underneath remains readable. The edges of every wash must feather naturally into transparency. Elegant Swiss travel-journal palette, restrained contrast, no hard rectangles, no frame, no paper background, no drop shadow, no repeated tile look. Transparent PNG with clean alpha outside the watercolor marks.
 
-References: `public/map-art/v3/land-wash-v2.webp`, `public/map-art/v3/water-wash-v2.webp`.
+References: `public/map-art/textures/land.webp`, `public/map-art/textures/water.webp`.
 
 ## Country scene
 
@@ -18,7 +38,7 @@ Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832
 
 > Create a production-ready transparent watercolor landscape vignette for reuse behind live vector details in a Swiss travel-journal mobile app. Wide 4:3 composition. A softly suggested Swiss meadow and rolling foothills, with only a very faint distant mountain rhythm; no lake, no river, no buildings, no roads, no bench, no people, no icons, and no text. Hand-painted watercolor with muted moss and sage greens, warm ochre field washes, tiny dusty-rose pigment blooms, blue-grey atmospheric distance, soft granulation and dry-brush edges. Keep the center and upper sky spacious and translucent so dynamic objects can be drawn over it. No hard outline, no rectangle, no frame, no paper background, no shadow. Feather all edges into transparent alpha. Elegant, quiet, colorful but restrained.
 
-References: `public/map-art/v3/field-wash.webp`, `public/map-art/v3/mountain-mottle-v2.webp`.
+References: `public/map-art/textures/field.webp`, `public/map-art/textures/mountain.webp`.
 
 ## Village scene
 
@@ -26,7 +46,7 @@ Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832
 
 > Create a production-ready transparent watercolor landscape vignette for reuse behind live vector details in a Swiss travel-journal mobile app. Wide 4:3 composition. A charming but understated Swiss village edge: a few small traditional houses and modest town roofs in warm terracotta and umber, loose tree clusters, pale foothills in the distance, and open foreground space where a live bench illustration will be drawn. No people, no bench, no vehicles, no street signs, no text, no logos. Hand-painted watercolor with fine loose sepia ink accents, muted sage and moss greens, dusty rose, warm ochre, restrained blue-grey distance, visible granulation, blooms, and dry-brush edges. Keep forms suggestive rather than architectural or photorealistic. No hard rectangle, no frame, no paper background, no drop shadow. All outer edges feather naturally into transparent alpha.
 
-References: `public/map-art/v3/building-roof-terracotta.png`, `public/map-art/v3/land-wash-v2.webp`.
+References: `public/map-art/textures/building-roof-terracotta.png`, `public/map-art/textures/land.webp`.
 
 ## City scene
 
@@ -34,7 +54,7 @@ Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832
 
 > Create a production-ready transparent watercolor city vignette for a Swiss travel-journal mobile app, used behind a live illustrated bench and weather overlay. Wide 4:3 composition. A believable contemporary Swiss city neighborhood: elegant mid-rise apartment façades, a few older tiled roofs, subtle tram wires and a tree-lined urban square, with low blue-grey hills far behind. Architecture should feel like Zürich, Basel, Bern, Lausanne or Geneva without depicting a specific landmark. Leave generous calm open foreground space for a live bench illustration. No people, no bench, no cars, no buses, no labels, no logos, no readable signs. Hand-painted watercolor with loose fine sepia ink, warm sandstone, terracotta, muted dusty rose, sage street trees, blue-grey shadows, pigment granulation, blooms and dry-brush edges. Suggestive and artistic rather than photorealistic. No hard rectangle, no frame, no paper background, no checkerboard pattern, no drop shadow. Outer edges must feather into true transparent alpha.
 
-References: `public/map-art/v3/building-roof-terracotta.png`, `public/map-art/v3/building-roof-rose.png`.
+References: `public/map-art/textures/building-roof-terracotta.png`, `public/map-art/textures/building-roof-rose.png`.
 
 ## Forest scene
 
@@ -42,7 +62,7 @@ Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832
 
 > Create a production-ready transparent watercolor forest vignette for a Swiss travel-journal mobile app, used behind a live illustrated bench and weather overlay. Wide 4:3 composition. A peaceful Swiss woodland clearing with a mix of beech, fir and spruce, layered mossy undergrowth and softly suggested forest depth. Keep a generous open clearing in the lower center where a live bench illustration will be drawn. No bench, no people, no buildings, no signs, no text, no logos. Hand-painted watercolor with restrained loose sepia ink, varied translucent sage, fern, moss and deep pine pigments, warm ochre light filtering between trees, blue-grey distance, granulation, blooms, backruns and dry-brush edges. Rich enough to read as forest but airy, not a dark wall of trees. No hard rectangle, no frame, no paper background, no checkerboard pattern, no drop shadow. Outer edges must feather naturally into true transparent alpha.
 
-References: `public/map-art/v3/forest-stamp-v2.webp`, `public/map-art/v3/forest-interior-alpha-v3.webp`.
+References: `public/map-art/textures/forest-stamp.webp`, `public/map-art/textures/forest-interior.webp`.
 
 ## Seasonal overlays
 
@@ -50,7 +70,7 @@ Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832
 
 > Create a clean 2 by 2 sprite atlas of four isolated transparent watercolor seasonal overlays for a Swiss travel-journal app. Equal quadrants, large spacing, nothing crossing quadrant boundaries, no text, no labels, no frames, no checkerboard, true transparent background. Top-left: delicate spring cherry/apple blossoms and tiny fresh green leaf washes drifting around the edges, center mostly transparent. Top-right: airy summer beech and linden foliage in varied fresh sage and deep moss greens, center mostly transparent. Bottom-left: loose autumn maple and beech leaves with ochre, burnt sienna, muted russet and dusty rose pigment blooms, center mostly transparent. Bottom-right: soft irregular banks and dustings of blue-white snow with pale blue-grey granulation, center mostly transparent. Hand-painted watercolor, dry-brush edges, backruns, pigment granulation, a few restrained sepia ink accents. No scene, no buildings, no people, no bench, no icons. Each quadrant must be usable independently as an overlay and fully contained within its cell.
 
-References: `public/map-art/v3/snow-wash-v2.webp`, `public/map-art/v3/forest-interior-alpha-v3.webp`.
+References: `public/map-art/textures/snow.webp`, `public/map-art/textures/forest-interior.webp`.
 
 ## Bench atlas
 
@@ -58,7 +78,7 @@ Source atlas: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6
 
 > Create a production-ready 3 by 3 sprite atlas of nine isolated hand-painted watercolor public benches for a Swiss map/travel-journal app. Exact equal grid, one bench centered in each cell, identical gentle elevated front three-quarter viewpoint, identical visual scale, horizontal orientation, large clear spacing, nothing crossing cell boundaries. No text, no labels, no frames, no scenery, no people, no plants, no ground, no cast shadows, no checkerboard; true transparent background. Columns define construction and must stay consistent in every row: LEFT = backrest plus clearly visible armrests; CENTER = backrest without armrests; RIGHT = backless bench without armrests. Rows define material: TOP = warm traditional timber slats on restrained dark supports; MIDDLE = elegant muted blue-grey painted metal/slatted municipal bench; BOTTOM = simple pale warm-grey stone or concrete bench. Style: charming watercolor travel-map vignette, translucent pigment, dry-brush variation, softly feathered edges, a few loose sepia/graphite ink accents, strong simple silhouette legible around 100 px. Keep every bench structurally accurate and visually distinct by material and fittings. No decorative circle, no pin, no badge, no icon background.
 
-Reference: `public/map-art/v3/bench.png`.
+Reference: `public/map-art/markers/bench.webp`.
 
 The generated atlas required a transparency correction. Corrected source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832528/exec-91ee74a8-6e08-45ee-8077-564d4aa320a4.png`.
 
@@ -70,7 +90,7 @@ Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832
 
 > Create a clean 2 by 2 sprite atlas of four isolated transparent watercolor light elements for a Swiss travel-journal app. Equal quadrants, large spacing, nothing crossing cell boundaries, no text, no labels, no frames, no checkerboard, true transparent background. Top-left: a warm golden watercolor sun disc with irregular translucent corona and a few loose hand-painted rays, centered. Top-right: a pale ivory-blue watercolor moon disc with subtle granulation and a soft irregular cool halo, centered; full disc without stars. Bottom-left: an abstract pool of direct sunlight, warm honey/ochre translucent oval wash with feathered broken edges and bright paper-like openings, no sun symbol. Bottom-right: an abstract cool shade pool, muted blue-green/indigo translucent oval wash with leafy dappled edges and transparent holes, no object. Style: elegant hand-painted watercolor, pigment blooms, backruns, granulation, dry-brush edges, restrained Swiss travel-map palette. Every element must be isolated and usable independently. No scene, no landscape, no bench, no hard shadows.
 
-References: `public/map-art/v3/wash-sunny.png`, `public/map-art/v3/wash-shade.png`.
+References: `public/map-art/washes/sunny.png`, `public/map-art/washes/shade.png`.
 
 ## Weather overlays
 
@@ -78,7 +98,7 @@ Source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832
 
 > Create a clean 2 by 2 sprite atlas of four isolated transparent watercolor weather overlays for a Swiss travel-journal app. Equal quadrants, large spacing, nothing crossing cell boundaries, no text, no labels, no frames, no checkerboard, true transparent background. Top-left: a loose airy cluster of pale blue-grey and warm ivory watercolor clouds, soft irregular edges, center partially transparent. Top-right: diagonal fine blue-grey watercolor rain streaks with three delicate puddle ripples, sparse and transparent, no cloud. Bottom-left: drifting powdery snowflakes and a few soft blue-white granular snow wisps, sparse and transparent, no cloud. Bottom-right: three elegant curved wind brush strokes in pale blue-grey and sage, hand-painted and slightly broken, sparse and transparent. Style: quiet artistic watercolor travel journal, pigment granulation, blooms, backruns, dry-brush edges, a few restrained graphite accents. Every quadrant must work independently as an atmospheric overlay. No scene, no landscape, no sun, no moon, no bench, no hard digital effects.
 
-References: `public/map-art/v3/water-wash-v2.webp`, `public/map-art/v3/snow-wash-v2.webp`.
+References: `public/map-art/textures/water.webp`, `public/map-art/textures/snow.webp`.
 
 ## Excluded experiments
 
@@ -88,11 +108,11 @@ Retained portrait source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7
 
 Retained tree source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-8917-6e6ab3832528/exec-eb0a945b-7b51-4be1-9c25-5deae4cfe713.png`.
 
-## Critical review revision: v2
+## Critical review revision
 
-The v1 entries above record the original generation, including assets subsequently retired. Superseded lake/village textures, profile backdrops and large weather/light overlays are no longer shipped. The active landscape artwork combines the retained v1 country, forest and city paintings with repaired v2 lake/village paintings and six separate snowy environments. Snow selection uses observed snow cover, not the calendar alone.
+The entries above record the original generation, including assets subsequently retired. Superseded lake/village textures, profile backdrops and large weather/light overlays are no longer shipped. Snow selection uses observed snow cover, not the calendar alone.
 
-New artwork was generated using the built-in tool. Opaque landscapes preserve their warm paper; the shelter uses an explicit SVG timber silhouette because its generated source did not contain alpha. Unused originals remain recoverable in `/tmp/benchly-retired-ui-art/`; generation sources remain in the directory listed below. All final v2 assets are in `public/ui-art/v2/`.
+New artwork was generated using the built-in tool. Opaque landscapes preserve their warm paper; the shelter uses an explicit SVG timber silhouette because its generated source did not contain alpha. Generation sources remain in the directory listed below; active assets live in their semantic folders below `public/ui-art/`.
 
 ### villageRepair
 
@@ -122,4 +142,10 @@ Correction source: `/Users/speedy/.codex/generated_images/01a06de2-5355-7930-891
 
 > Edit this exact watercolor timber shelter. Preserve the roof and the four timber posts, their drawing, composition, perspective and scale exactly. Remove the entire black/brown gradient background, all glow and all shadows outside the painted wood. Every non-shelter pixel, including all gaps between posts, MUST be true transparent alpha. Do not replace the background with checkerboard, black, white, grey or any other color. Return only the shelter on fully transparent background, ready to overlay onto a watercolor landscape. No ground, no shadows, no extra objects.
 
-The correction still returned opaque pixels. The runtime SVG clip follows the timber contour in source coordinates; no checkerboard is displayed. The compressed asset is `public/ui-art/v2/bench-shelter.webp`.
+The correction still returned opaque pixels. The runtime SVG clip follows the timber contour in source coordinates; no checkerboard is displayed. The compressed asset is `public/ui-art/benches/shelter.webp`.
+
+## Perspective river layer
+
+Final asset: `public/ui-art/scenes/water-river.webp`. It was created with the built-in image generation tool, verified for real alpha, resized to the shared 640 × 480 scene canvas and visually reviewed in city, village, forest and open terrain combinations.
+
+> Replace the flat horizontal water band with a natural river seen in perspective. The river begins narrow in the middle-left distance, follows a gentle irregular S-curve down the left half, and becomes moderately wider toward the lower-left foreground. Delicate hand-painted watercolor, soft granulating teal and blue-grey pigment, translucent washes and irregular dry-brush edges. Keep the right side and upper sky transparent for settlement, relief and the separately composited bench. Water only; no bank, vegetation, buildings, people, bench, text, frame or paper background. Genuine transparent alpha.
