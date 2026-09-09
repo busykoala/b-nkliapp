@@ -67,7 +67,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         featuresRef.current = result;
         setFeatures(result);
         (map.getSource("benchly") as GeoJSONSource | undefined)?.setData(featureCollection(result));
-        setMessage(null);
+        setMessage((current) => current === "Bänke konnten nicht geladen werden." ? null : current);
       }
     } catch {
       if (sequence === querySequence.current) setMessage("Bänke konnten nicht geladen werden.");
