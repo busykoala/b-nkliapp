@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { sqlite } from "@/db/client";
+import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { benchObservationNow } from "@/features/bench-observations/context";
 import { matchesLightFilter } from "@/lib/map-filters";
 import { calculateSunState, type ObstructionType } from "@/lib/sun";
@@ -198,7 +199,8 @@ function readIndividualFeatures(query: MapQuery, where: string, parameters: Arra
     const horizonProfile = parseArray<number>(row.horizon_profile);
     const obstructionTypes = parseArray<ObstructionType>(row.obstruction_types);
     const currentProfile = horizonProfile.length === 72
-      && ["4.2.0", "4.3.0", "4.4.0", "GeoAdmin-Horizont v4", "GeoAdmin-Horizont v5", "GeoAdmin-Horizont v6"].includes(String(row.pipeline_version));
+      && ["4.2.0", "4.3.0", "4.4.0", "GeoAdmin-Horizont v4", "GeoAdmin-Horizont v5", "GeoAdmin-Horizont v6",
+        DATA_RUNTIME.pipelineVersion, DATA_RUNTIME.profilePipelineVersion].includes(String(row.pipeline_version));
     const light = currentProfile ? calculateSunState({
       date: now,
       latitude: row.latitude,

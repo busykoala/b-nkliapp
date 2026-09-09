@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { executeMigration, migrations } from "@/db/migrations";
 import { getUserBadges, refreshUserBadges } from "./badges";
-import { recordBenchConfirmation, recordRemovalConfirmation, resolveVerificationThreshold } from "./bench-verification";
+import { recordBenchConfirmation, recordBenchPresence, recordRemovalConfirmation, resolveVerificationThreshold } from "./bench-verification";
 
 describe("community verification", () => {
   let database: Database.Database;
@@ -30,6 +30,17 @@ describe("community verification", () => {
     expect(recordBenchConfirmation(database, benchRowId, 3, 3, "2026-01-03")).toMatchObject({ added: true, count: 3, verified: true });
     expect((database.prepare("SELECT verification_status FROM benches WHERE row_id=?").get(benchRowId) as { verification_status: string }).verification_status).toBe("verified");
     expect(recordBenchConfirmation(database, benchRowId, 4, 3, "2026-01-04")).toMatchObject({ added: false, alreadyVerified: true });
+  });
+
+  it("renews presence without creating extra verification votes", () => {
+    expect(recordBenchPresence(database, benchRowId, 1, 3, "2026-01-02T10:00:00Z")).toMatchObject({ refreshed: true, added: false, count: 1, verified: false });
+    expect(recordBenchPresence(database, benchRowId, 1, 3, "2026-01-02T12:00:00Z")).toMatchObject({ refreshed: false, count: 1 });
+    recordBenchPresence(database, benchRowId, 2, 3, "2026-01-02T12:00:00Z");
+    recordBenchPresence(database, benchRowId, 3, 3, "2026-01-02T12:00:00Z");
+    expect(recordBenchPresence(database, benchRowId, 4, 3, "2026-01-03T12:00:00Z")).toMatchObject({ refreshed: true, count: 4, alreadyVerified: true });
+    expect(database.prepare("SELECT max(coalesce(last_seen_at,created_at)) at FROM bench_confirmations WHERE bench_row_id=?").get(benchRowId)).toEqual({ at: "2026-01-03T12:00:00Z" });
+    expect(database.prepare("SELECT created_at,last_seen_at FROM bench_confirmations WHERE bench_row_id=? AND user_id=1").get(benchRowId))
+      .toEqual({ created_at: "2026-01-01", last_seen_at: "2026-01-02T10:00:00Z" });
   });
 
   it("requires distinct removal confirmations and retains the history", () => {

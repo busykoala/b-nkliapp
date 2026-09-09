@@ -9,6 +9,8 @@ import type { CurrentUser } from "@/lib/security";
 import { scenePoem } from "@/lib/scene-poetry";
 import { AccountDialog } from "./account-controls";
 import { BenchContributionHub } from "./bench-contribution-hub";
+import { BenchSummary } from "@/features/bench-detail/bench-summary";
+import { BenchFeatureEditor } from "./bench-feature-editor";
 import { BenchDetails } from "@/features/bench-detail/bench-details";
 import { BenchLandscape } from "./bench-landscape";
 import { BenchPlaceCommunity } from "./bench-place-community";
@@ -21,60 +23,70 @@ const correctionLabels: Record<string, string> = {
   environment: "Umgebung, Aussicht oder Licht",
 };
 
-export function BenchDetailContent({ bench, user, onBenchChange, onJourney }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void }) {
+export function BenchDetailContent({ bench, user, onBenchChange, onJourney, created = false }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; created?: boolean }) {
   const router = useRouter();
   const [community, setCommunity] = useState(false);
   const [contributeOpen, setContributeOpen] = useState(false);
+  const [contributionMode, setContributionMode] = useState<"all" | "rating" | "presence">("all");
+  const [authenticated, setAuthenticated] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [reported, setReported] = useState<Set<string>>(new Set());
   const detailRef = useRef<HTMLDivElement>(null);
   const accountDialog = useRef<HTMLDialogElement>(null);
   const [, startTransition] = useTransition();
+  const signedIn = Boolean(user) || authenticated;
   const refreshBench = onBenchChange ?? (() => router.refresh());
+  const contribute = (mode: "all" | "rating" | "presence" = "all") => {
+    setContributionMode(mode);
+    if (signedIn) setContributeOpen(true);
+    else accountDialog.current?.showModal();
+  };
   const report = (type: "rating" | "correction", id: number) => startTransition(async () => {
-    const result = await reportContribution(type, id);
-    window.alert(result.message);
+    try {
+      const result = await reportContribution(type, id);
+      setStatus(result.message);
+      if (result.ok) setReported((current) => new Set(current).add(`${type}-${id}`));
+    } catch { setStatus("Meldung fehlgeschlagen. Bitte erneut versuchen."); }
   });
-
   useEffect(() => {
     if (community) detailRef.current?.parentElement?.scrollTo({ top: 0, behavior: "smooth" });
   }, [community]);
-
-  if (community) {
-    return <>
-      <div ref={detailRef} className="calm-detail community-detail pb-8">
-        <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> Zum Platz</button>
-        <Community bench={bench} report={report} user={user} onContribute={() => user ? setContributeOpen(true) : accountDialog.current?.showModal()} />
-        {user && <BenchContributionHub bench={bench} open={contributeOpen} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
-      </div>
-      {!user && <AccountDialog dialogRef={accountDialog} />}
-    </>;
-  }
-
+  useEffect(() => {
+    if (created) detailRef.current?.querySelector(".bench-created-status")?.scrollIntoView({ block: "start" });
+  }, [created]);
   const poem = scenePoem(bench);
-
+  const missingFields = bench.properties.filter((item) => /^(Unbekannt|Noch offen)$/i.test(item.value)).slice(0, 3).map((item) => item.key);
   return <div ref={detailRef} className="calm-detail pb-8">
-    <section className="bench-story-card">
-      <BenchLandscape bench={bench}>
-        <RatingEntry bench={bench} onOpen={() => setCommunity(true)} />
-      </BenchLandscape>
-      <header className="calm-title">
-        {bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
-        <div className="calm-title-row"><h2>{bench.title}</h2></div>
-        <div className="calm-title-meta"><p>{placeLine(bench)}</p></div>
-        <div className="bench-primary-actions">
-          {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span> Weg hierher</button>}
-          <button className="contribution-entry" onClick={() => user ? setContributeOpen(true) : accountDialog.current?.showModal()}><MessageCircleHeart size={17} /> {user ? "Beitragen" : "Mitmachen"}</button>
-        </div>
-      </header>
-    </section>
-
-    <div className="calm-story-body">
-      <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
-      <BenchDetails bench={bench} />
-      <BenchPlaceCommunity bench={bench} signedIn={Boolean(user)} onChanged={refreshBench} />
-      <PhotoStory bench={bench} />
-    </div>
-    {user && <BenchContributionHub bench={bench} open={contributeOpen} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
-    {!user && <AccountDialog dialogRef={accountDialog} />}
+    {community ? <>
+      <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> Zum Platz</button>
+      <Community bench={bench} report={report} reported={reported} user={user} onContribute={() => contribute("rating")} />
+    </> : <>
+      <section className="bench-story-card">
+        <BenchLandscape bench={bench}><RatingEntry bench={bench} onOpen={() => contribute("rating")} /></BenchLandscape>
+        <header className="calm-title">
+          {created ? <p role="status" className="bench-created-status">Bänkli eingetragen{bench.verificationStatus === "unverified" ? ` · noch ${Math.max(0, bench.verificationThreshold - bench.confirmationCount)} Bestätigungen` : " · bestätigt"}</p>
+            : bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
+          <div className="calm-title-row"><h2>{bench.title}</h2></div>
+          <div className="calm-title-meta"><p>{placeLine(bench)}</p></div>
+          <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} />
+          <div className="bench-primary-actions">
+            {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span> Weg hierher</button>}
+            <button className="contribution-entry" onClick={() => contribute()}><MessageCircleHeart size={17} /> {signedIn ? "Beitragen" : "Mitmachen"}</button>
+            <button className="contribution-entry" onClick={() => setCommunity(true)}>Bewertungen ansehen</button>
+          </div>
+        </header>
+      </section>
+      <div className="calm-story-body">
+        {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>Was kannst du noch ergänzen?</h3><p>Diese Angaben helfen bei der nächsten Pause.</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
+        <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
+        <BenchDetails bench={bench} signedIn={signedIn} onChanged={refreshBench} />
+        <BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refreshBench} />
+        <PhotoStory bench={bench} />
+      </div>
+    </>}
+    {status && <p role="status" className="contribution-inline-status">{status}</p>}
+    {signedIn && contributeOpen && <BenchContributionHub key={`${bench.id}-${contributionMode}`} bench={bench} open initialChapter={contributionMode} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
+    <AccountDialog dialogRef={accountDialog} intent={contributionMode === "rating" ? "Bewertung abgeben" : contributionMode === "presence" ? "Bänkli bestätigen" : "Zum Bänkli beitragen"} onAuthenticated={() => { setAuthenticated(true); setContributeOpen(true); void refreshBench(); }} />
   </div>;
 }
 
@@ -107,15 +119,15 @@ function PhotoStory({ bench }: { bench: BenchDetail }) {
   </section>;
 }
 
-function Community({ bench, report, user, onContribute }: { bench: BenchDetail; report: (type: "rating" | "correction", id: number) => void; user: CurrentUser | null; onContribute: () => void }) {
+function Community({ bench, report, reported, user, onContribute }: { bench: BenchDetail; reported: Set<string>; report: (type: "rating" | "correction", id: number) => void; user: CurrentUser | null; onContribute: () => void }) {
   return <div className="community-page">
     <header><small>Von Menschen vor Ort</small><h3>Wie war die Pause?</h3></header>
     {bench.ratingBreakdown && <div className="rating-line">{Object.entries({ Gesamt: bench.ratingBreakdown.overall, Aussicht: bench.ratingBreakdown.view, Komfort: bench.ratingBreakdown.comfort, Ruhe: bench.ratingBreakdown.quiet }).map(([label, value]) => <span key={label}><strong>{value}</strong><small>{label}</small></span>)}</div>}
     {user
       ? <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {bench.myRating ? "Meinen Beitrag bearbeiten" : "Einen Eindruck beitragen"}</button>
       : <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> Zum Mitmachen kurz anmelden</button>}
-    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{new Date(rating.createdAt).toLocaleDateString("de-CH")}</time><button aria-label="Bewertung melden" onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
-    {bench.corrections.length > 0 && <section className="community-notes"><h3>Hinweise</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ?? item.field}</small><button aria-label="Korrektur melden" onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
+    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{new Date(rating.createdAt).toLocaleDateString("de-CH")}</time><button disabled={reported.has(`rating-${rating.id}`)} aria-label={reported.has(`rating-${rating.id}`) ? "Bewertung gemeldet" : "Bewertung melden"} onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
+    {bench.corrections.length > 0 && <section className="community-notes"><h3>Hinweise</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ?? item.field}</small><button disabled={reported.has(`correction-${item.id}`)} aria-label={reported.has(`correction-${item.id}`) ? "Korrektur gemeldet" : "Korrektur melden"} onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
   </div>;
 }
 

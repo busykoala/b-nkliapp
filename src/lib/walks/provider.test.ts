@@ -90,3 +90,33 @@ it("offers several honest out-and-back choices when generated loops miss every b
   expect(result.suggestions.every(({ repeated }) => repeated)).toBe(true);
   expect(mocks.route.mock.calls.length).toBeLessThanOrEqual(21);
 });
+
+it("never relaxes the requested rest interval when benches cannot be reached frequently enough", async () => {
+  mocks.route.mockResolvedValue([{ geometry: [[7.68, 46.68], [7.685, 46.685]], distance: 850, referenceSeconds: 600, ascent: 20, warnings: [], instructions: [], details: {} }]);
+  expect((await discoverWalks({ ...query, maxRestMinutes: 5 })).suggestions).toEqual([]);
+  const longer = await discoverWalks({ ...query, maxRestMinutes: 15 });
+  expect(longer.suggestions.length).toBeGreaterThan(0);
+  expect(longer.suggestions.every((suggestion) => suggestion.rest && suggestion.rest.maxGapSeconds <= 900)).toBe(true);
+});
+
+it("adds real waypoints for nearby rest seats and rechecks the resulting walking times", async () => {
+  const { distanceMeters } = await import("../journey");
+  mocks.rows.mockReturnValue(Array.from({ length: 6 }, (_, index) => ({
+    id: `rest-${index}`, name: `Pause ${index}`, latitude: query.origin.latitude + (index % 2 ? .0001 : -.0001),
+    longitude: query.origin.longitude + (index + 1) * .003,
+    waterfront: 0, view_score: null, view_confidence: null,
+  })));
+  mocks.route.mockImplementation(async (request: { points: { label: string; latitude: number; longitude: number }[] }) => {
+    const points = request.points;
+    const distance = points.slice(1).reduce((total, point, index) => total + distanceMeters(points[index], point), 0);
+    return [{ geometry: points.map((point) => [point.longitude, point.latitude]), distance, referenceSeconds: distance / (5 / 3.6), ascent: 0, warnings: [], instructions: [], details: {} }];
+  });
+  const result = await discoverWalks({ ...query, maxRestMinutes: 5 });
+  expect(result.suggestions.length).toBeGreaterThan(0);
+  expect(mocks.route.mock.calls.some(([request]) => request.points.length > 2)).toBe(true);
+  for (const suggestion of result.suggestions) {
+    expect(suggestion.rest?.maxGapSeconds).toBeLessThanOrEqual(300.001);
+    expect(suggestion.rest?.stops.length).toBeGreaterThan(0);
+  }
+  expect(mocks.route.mock.calls.length).toBeLessThanOrEqual(24);
+});

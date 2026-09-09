@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "config/data-catalog.json@2026-09-06",
+  "generatedFrom": "config/data-catalog.json@2026-09-09",
   "timeZone": "Europe/Zurich",
   "jobs": [
     {
@@ -111,7 +111,9 @@
         "--requests-per-second",
         "1",
         "--max-runtime-minutes",
-        "45"
+        "45",
+        "--lock-wait-seconds",
+        "60"
       ],
       "profile": "standard",
       "purpose": "production"

@@ -32,12 +32,14 @@ function direction(value: number | null) {
   return `${["N", "NO", "O", "SO", "S", "SW", "W", "NW"][Math.round(value / 45) % 8]} · ${Math.round(value)}°`;
 }
 
-export function BenchFeatureEditor({ bench, onChanged }: { bench: BenchDetail; onChanged?: () => void | Promise<void> }) {
+export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: BenchDetail; onlyFields?: Field[]; onChanged?: () => void | Promise<void> }) {
   const [active, setActive] = useState<Field | null>(null);
-  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries([
+  const sourceValues: Record<string, string> = Object.fromEntries([
     ...bench.properties.map((item) => [item.key, item.value]),
     ["direction", direction(bench.directionDegrees)],
-  ]));
+  ]);
+  const [overrides, setOverrides] = useState<Record<string, { base: string; value: string }>>({});
+  const values = Object.fromEntries(Object.entries(sourceValues).map(([field, value]) => [field, overrides[field]?.base === value ? overrides[field].value : value]));
   const [mine, setMine] = useState(() => new Set([
     ...bench.properties.filter((item) => item.contributedByMe).map((item) => item.key),
     ...(bench.directionContributedByMe ? ["direction"] : []),
@@ -53,13 +55,15 @@ export function BenchFeatureEditor({ bench, onChanged }: { bench: BenchDetail; o
     const result = await editBenchField(bench.id, field, choice.value);
     setMessage(result.message);
     if (!result.ok) return;
-    setValues((current) => ({ ...current, [field]: choice.display ?? choice.label }));
+    setOverrides((current) => ({ ...current, [field]: { base: sourceValues[field], value: choice.display ?? choice.label } }));
     setMine((current) => new Set(current).add(field));
     setActive(null);
     if (onChanged) await onChanged();
   });
+  const known = Object.values(values).filter((value) => value && !/^(Unbekannt|Noch offen)$/i.test(value)).length;
   return <div className="contribution-feature-list">
-    {fields.map(({ field, label }) => <section key={field} className={active === field ? "is-open" : undefined}>
+    <p className="feature-progress" role="status">{known}/{fields.length} Angaben bekannt · Zum Ergänzen antippen</p>
+    {fields.filter(({ field }) => !onlyFields || onlyFields.includes(field)).map(({ field, label }) => <section key={field} className={active === field ? "is-open" : undefined}>
       <button type="button" aria-expanded={active === field} onClick={() => setActive(active === field ? null : field)}>
         <span><small>{label}</small><strong>{values[field] === "Unbekannt" ? "Noch offen" : values[field]}</strong></span>
         {mine.has(field) && <em><Check size={12} /> von dir</em>}

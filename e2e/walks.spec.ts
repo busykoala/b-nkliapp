@@ -9,8 +9,9 @@ test("opens a separate calm walk planner without requesting location or routing"
   await expect(panel).toBeVisible();
   await page.getByLabel("Spaziergang vergrössern oder verkleinern").click();
   await expect(panel.getByRole("button", { name: "ca. 50 min" })).toHaveAttribute("aria-pressed", "true");
-  await expect(panel.getByRole("button", { name: "Mein Bänkli entdecken" })).toBeDisabled();
+  await expect(panel.getByRole("button", { name: "Bänkli-Spaziergang finden" })).toBeDisabled();
   await expect(panel.getByRole("combobox", { name: "Schwierigkeit" })).not.toBeVisible();
+  await panel.locator("summary").filter({ hasText: "Optionen" }).click();
   await panel.getByRole("button", { name: "Einfache Strecke", exact: true }).click();
   await expect(panel.getByText(/Keine Zusage zu Barrierefreiheit/)).not.toBeVisible();
   const notes = panel.locator("summary").filter({ hasText: "Gut zu wissen" });
@@ -18,7 +19,6 @@ test("opens a separate calm walk planner without requesting location or routing"
   await page.keyboard.press("Enter");
   await expect(panel.getByText(/Keine Zusage zu Barrierefreiheit/)).toBeVisible();
   await notes.click();
-  await panel.locator("summary").filter({ hasText: "Anpassen" }).click();
   await expect(panel.getByRole("combobox", { name: "Schwierigkeit" })).toHaveValue("easy");
   await panel.getByLabel("Spaziergang schliessen").click();
   await expect(panel).toHaveCount(0);
@@ -45,7 +45,7 @@ test("offers several distinct Bänkli outings instead of one fixed route", async
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
   await panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" }).click();
-  await panel.getByRole("button", { name: "Mein Bänkli entdecken", exact: true }).click();
+  await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
   const choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
   await expect(choices).toBeVisible({ timeout: 18_000 });
   await expect(choices.getByRole("button")).toHaveCount(3);
@@ -62,8 +62,9 @@ test("shows a Bänkli-centred route and opens a private return journey", async (
   await panel.getByLabel("Spaziergang vergrössern oder verkleinern").click();
   await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
   await panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" }).click();
+  await panel.locator("summary").filter({ hasText: "Optionen" }).click();
   await panel.getByRole("button", { name: "Einfache Strecke", exact: true }).click();
-  await panel.getByRole("button", { name: "Mein Bänkli entdecken", exact: true }).click();
+  await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
   const route = panel.getByRole("region", { name: "Dein Spaziergang" });
   await expect(route).toBeVisible({ timeout: 18000 });
   await expect(route.getByRole("heading", { name: /Ein Spaziergang zum/ })).toBeVisible();

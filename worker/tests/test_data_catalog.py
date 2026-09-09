@@ -25,7 +25,7 @@ class DataCatalogTest(unittest.TestCase):
             for job in catalog.jobs if job.purpose == "production"
             for source_id in job.sourceIds
         ))
-        self.assertEqual(catalog.runtime.pipelineVersion, "4.4.0")
+        self.assertEqual(catalog.runtime.pipelineVersion, "4.5.0")
 
 
 if __name__ == "__main__":

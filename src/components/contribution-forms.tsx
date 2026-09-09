@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { MessageSquarePlus, Send, Star } from "lucide-react";
+import type { ActionResult } from "@/lib/types";
 import { submitCorrection, submitRating } from "@/app/actions/contributions";
 
 function SubmitButton({ label }: { label: string }) {
@@ -10,24 +11,16 @@ function SubmitButton({ label }: { label: string }) {
   return <button className="btn btn-primary min-h-12 w-full rounded-2xl" disabled={pending}>{pending ? <span className="loading loading-spinner loading-sm" /> : <Send size={18} />}{pending ? "Wird gespeichert …" : label}</button>;
 }
 
-export function RatingForm({ benchId, rating }: { benchId: string; rating: { overall: number; view: number; comfort: number; quiet: number; note: string | null } | null }) {
-  const action = submitRating.bind(null, benchId);
+export function RatingForm({ benchId, rating, onChanged }: { benchId: string; onChanged?: () => void | Promise<void>; rating: { overall: number; view: number; comfort: number; quiet: number; note: string | null } | null }) {
+  const action = async (_previous: ActionResult | null, data: FormData) => { const result = await submitRating(benchId, null, data); if (result.ok) await onChanged?.(); return result; };
   const [state, formAction] = useActionState(action, null);
   return (
     <form action={formAction} className="story-card p-4">
       <div className="story-eyebrow flex items-center gap-1.5"><Star size={14} /> Dein Eindruck</div>
       <h3 className="mt-1 text-lg font-extrabold">Wie war deine Pause?</h3>
       <p className="mb-3 mt-1 text-sm opacity-60">{rating ? "Deine frühere Bewertung ist vorausgefüllt – du kannst sie ändern." : "Vier kleine Eindrücke helfen anderen bei der Wahl."}</p>
-      <div className="grid grid-cols-2 gap-3">
-        {[["overall", "Gesamt"], ["view", "Aussicht"], ["comfort", "Komfort"], ["quiet", "Ruhe"]].map(([name, label]) => (
-          <label className="form-control" key={name}>
-            <span className="label pb-1 text-xs font-bold">{label}</span>
-            <select name={name} required defaultValue={rating?.[name as keyof NonNullable<typeof rating>] ?? ""} className="select story-card min-h-11 w-full" aria-label={`${label} bewerten`}>
-              <option value="" disabled>Wählen</option>
-              {[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score} {score === 1 ? "Stern" : "Sterne"}</option>)}
-            </select>
-          </label>
-        ))}
+      <div className="rating-controls">
+        {([ ["overall", "Gesamt"], ["view", "Aussicht"], ["comfort", "Komfort"], ["quiet", "Ruhe"] ] as const).map(([name, label]) => <StarRating key={name} name={name} label={label} initialValue={rating?.[name] ?? 0} />)}
       </div>
       <label className="form-control my-3 block">
         <span className="label pb-1 text-sm font-bold">Ein Gedanke dazu <span className="font-normal opacity-50">(freiwillig)</span></span>
@@ -40,8 +33,8 @@ export function RatingForm({ benchId, rating }: { benchId: string; rating: { ove
   );
 }
 
-export function CorrectionForm({ benchId }: { benchId: string }) {
-  const action = submitCorrection.bind(null, benchId);
+export function CorrectionForm({ benchId, onChanged }: { benchId: string; onChanged?: () => void | Promise<void> }) {
+  const action = async (_previous: ActionResult | null, data: FormData) => { const result = await submitCorrection(benchId, null, data); if (result.ok) await onChanged?.(); return result; };
   const [state, formAction] = useActionState(action, null);
   return (
     <form action={formAction} className="story-card p-4">
@@ -68,4 +61,12 @@ export function CorrectionForm({ benchId }: { benchId: string }) {
       {state && <p role="status" className={`mt-3 rounded-lg p-2 text-sm ${state.ok ? "bg-success/15 text-success" : "bg-error/15 text-error"}`}>{state.message}</p>}
     </form>
   );
+}
+
+function StarRating({ name, label, initialValue }: { name: string; label: string; initialValue: number }) {
+  const [value, setValue] = useState(initialValue);
+  return <fieldset className="rating-control"><legend>{label}</legend><div>{[1, 2, 3, 4, 5].map((score) => <label key={score} className={score <= value ? "is-filled" : ""}>
+    <input type="radio" name={name} value={score} required checked={value === score} onChange={() => setValue(score)} aria-label={`${score} ${score === 1 ? "Stern" : "Sterne"}`} />
+    <Star size={25} aria-hidden="true" />
+  </label>)}</div></fieldset>;
 }

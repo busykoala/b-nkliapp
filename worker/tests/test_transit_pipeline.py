@@ -58,3 +58,24 @@ class TransitImportTest(unittest.TestCase):
             import_archive(archive_path, target, dt.date(2026, 9, 5))
             with sqlite3.connect(target) as db:
                 self.assertEqual(db.execute("SELECT public_id,parent,platform FROM stops WHERE platform='33AB'").fetchone(), ("8503000", "Parentch:1:sloid:3000", "33AB"))
+
+    def test_import_keeps_international_stops_from_swiss_timetable(self):
+        with tempfile.TemporaryDirectory() as folder:
+            archive_path = self.fixture(folder)
+            with zipfile.ZipFile(archive_path) as source:
+                files = {name: source.read(name) for name in source.namelist()}
+            files["stops.txt"] = (
+                b"stop_id,stop_name,stop_lat,stop_lon,parent_station,platform_code\n"
+                b"8507000,Bern,46.949,7.439,,\n"
+                b"foreign-stop,Praha,50.08306107,14.4360434,,\n"
+            )
+            with zipfile.ZipFile(archive_path, "w") as archive:
+                for name, data in files.items():
+                    archive.writestr(name, data)
+            target = Path(folder) / "transit.sqlite"
+            import_archive(archive_path, target, dt.date(2026, 9, 5))
+            with sqlite3.connect(target) as db:
+                self.assertEqual(
+                    db.execute("SELECT lat,lon FROM stops WHERE id='foreign-stop'").fetchone(),
+                    (50.08306107, 14.4360434),
+                )

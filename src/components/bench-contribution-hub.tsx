@@ -14,7 +14,7 @@ import { CorrectionForm, RatingForm } from "./contribution-forms";
 
 type Refresh = () => void | Promise<void>;
 
-export function BenchContributionHub({ bench, open, onClose, onChanged }: { bench: BenchDetail; open: boolean; onClose: () => void; onChanged?: Refresh }) {
+export function BenchContributionHub({ bench, open, onClose, onChanged, initialChapter = "all" }: { initialChapter?: "all" | "rating" | "presence"; bench: BenchDetail; open: boolean; onClose: () => void; onChanged?: Refresh }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const theme = communityTheme();
@@ -29,6 +29,9 @@ export function BenchContributionHub({ bench, open, onClose, onChanged }: { benc
         <button type="button" className="btn btn-circle btn-ghost" onClick={onClose} aria-label="Beiträge schliessen"><X size={19} /></button>
       </header>
       <ContributionOverview bench={bench} />
+      {initialChapter === "rating" && <ContributionChapter open title="Wie war deine Pause?" summary="Deine Bewertung"><RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} /></ContributionChapter>}
+      {initialChapter === "presence" && <ContributionChapter open title="Bänkli bestätigen" summary="Hast du es vor Ort gesehen?"><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></ContributionChapter>}
+
 
       <ContributionChapter title="Bänkli beschreiben" summary="Name, Ausstattung und Blickrichtung">
         <MetadataEditor bench={bench} onChanged={onChanged} />
@@ -49,15 +52,15 @@ export function BenchContributionHub({ bench, open, onClose, onChanged }: { benc
         <aside className="community-theme"><Sparkles size={17} aria-hidden="true" /><div><small>Gemeinsames Thema · diesen Monat</small><strong>{theme.title}</strong><p>{theme.prompt}</p></div></aside>
         <MomentForm bench={bench} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title="Wie war deine Pause?" summary={bench.myRating ? `Deine Bewertung: ${bench.myRating.overall}/5` : "Komfort, Ruhe und Aussicht bewerten"}>
-        <RatingForm benchId={bench.id} rating={bench.myRating} />
-      </ContributionChapter>
-      <ContributionChapter title="Sich ums Bänkli kümmern" summary={bench.care.mine.length ? `${bench.care.mine.length} heutige ${bench.care.mine.length === 1 ? "Aktion" : "Aktionen"} von dir` : "Kleine, sichtbare Pflegeaktionen"}>
+      {initialChapter !== "rating" && <ContributionChapter title="Wie war deine Pause?" summary={bench.myRating ? `Deine Bewertung: ${bench.myRating.overall}/5` : "Komfort, Ruhe und Aussicht bewerten"}>
+        <RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} />
+      </ContributionChapter>}
+      <ContributionChapter open={initialChapter === "presence"} title="Sich ums Bänkli kümmern" summary={bench.care.mine.length ? `${bench.care.mine.length} heutige ${bench.care.mine.length === 1 ? "Aktion" : "Aktionen"} von dir` : "Kleine, sichtbare Pflegeaktionen"}>
         <CareActions bench={bench} onChanged={onChanged} />
-        <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />
+        {initialChapter !== "presence" && <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />}
       </ContributionChapter>
       <ContributionChapter title="Etwas stimmt nicht" summary="Position, Zustand oder Umgebung melden">
-        <CorrectionForm benchId={bench.id} />
+        <CorrectionForm benchId={bench.id} onChanged={onChanged} />
       </ContributionChapter>
     </div>
     <form method="dialog" className="modal-backdrop"><button onClick={onClose}>schliessen</button></form>

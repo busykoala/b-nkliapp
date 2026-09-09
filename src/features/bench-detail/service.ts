@@ -10,7 +10,7 @@ import type { CurrentUser } from "@/lib/security";
 import { readBenchObservationSummary } from "@/features/bench-observations/repository";
 import { directionalOpenness, scoreViewComponents } from "@/features/bench-observations/model";
 import { benchObservationNow } from "@/features/bench-observations/context";
-import { readBenchCommunity, readContributedFields, readDetailMetadata, readDetailRow, readEvidenceCoverage, readLatestVisionStats } from "./repository";
+import { readBenchCommunity, readContributedFields, readDetailMetadata, readDetailRow, readEvidenceCoverage, readLatestVisionStats, readPhotoEvidence } from "./repository";
 
 function aiLabelsEnabled() {
   return visionLabelsEnabled(process.env.BENCHLY_AI_LABELS_ENABLED, readLatestVisionStats());
@@ -157,13 +157,13 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     evidence: likelyEvidence,
   } : null;
 
-  const { all: contributedFields, mine: myContributedFields } = readContributedFields(Number(row.row_id), currentUser?.id ?? null);
+  const { all: contributedFields, mine: myContributedFields, lastConfirmedAt: myLastConfirmedAt } = readContributedFields(Number(row.row_id), currentUser?.id ?? null);
   const propertySource = (field: string) => contributedFields.has(field) || row.osm_type === "community" ? "Bänkli App" as const : "OpenStreetMap" as const;
   const properties = [
     { key: "backrest" as const, label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: propertySource("backrest"), contributedByMe: myContributedFields.has("backrest") },
     { key: "armrest" as const, label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: propertySource("armrest"), contributedByMe: myContributedFields.has("armrest") },
     { key: "covered" as const, label: "Überdacht", value: yesNoUnknown(row.covered as number | null), source: propertySource("covered"), contributedByMe: myContributedFields.has("covered") },
-    { key: "wheelchair" as const, label: "Barrierefrei", value: yesNoUnknown(row.wheelchair as number | null), source: propertySource("wheelchair"), contributedByMe: myContributedFields.has("wheelchair") },
+    { key: "wheelchair" as const, label: "Mit Rollstuhl nutzbar", value: yesNoUnknown(row.wheelchair as number | null), source: propertySource("wheelchair"), contributedByMe: myContributedFields.has("wheelchair") },
     { key: "fireplaceNearby" as const, label: "Feuerstelle nahebei", value: yesNoUnknown(row.fireplace_nearby as number | null), source: propertySource("fireplaceNearby"), contributedByMe: myContributedFields.has("fireplaceNearby") },
     { key: "wasteBasketNearby" as const, label: "Abfalleimer nahebei", value: yesNoUnknown(row.waste_basket_nearby as number | null), source: propertySource("wasteBasketNearby"), contributedByMe: myContributedFields.has("wasteBasketNearby") },
     { key: "material" as const, label: "Material", value: displayMaterial(row.material as string | null), source: propertySource("material"), contributedByMe: myContributedFields.has("material") },
@@ -179,6 +179,8 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     locationCanton: row.location_canton === null ? null : String(row.location_canton),
     verificationStatus: String(row.verification_status) === "unverified" ? "unverified" : "verified",
     confirmationCount: Number(row.confirmation_count ?? 0),
+    lastConfirmedAt: row.last_confirmed_at == null ? null : String(row.last_confirmed_at),
+    myLastConfirmedAt,
     verificationThreshold: Math.max(2, Math.min(10, Number(process.env.BENCH_VERIFICATION_THRESHOLD ?? 3) || 3)),
     removalConfirmationCount: Number(row.removal_confirmation_count ?? 0),
     description: null, operatorName: row.operator ? String(row.operator) : null, properties,
@@ -187,6 +189,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     analysisCoverage: hasTerrainModel ? "terrain" : "near-field",
     viewScore,
     viewComponents: displayedComponents,
+    photoEvidence: readPhotoEvidence(row),
     nearOpenness: displayedNearOpenness,
     viewConfidence: (hasTerrainModel
       ? pipelineVersion === "GeoAdmin-Horizont v6" && !exactOsmEvidence ? "niedrig" : row.view_confidence ?? "mittel"

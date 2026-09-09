@@ -21,6 +21,19 @@ export function recordBenchConfirmation(database: Database.Database, benchRowId:
   })();
 }
 
+/** Renew a person's observation without giving them another verification vote. */
+export function recordBenchPresence(database: Database.Database, benchRowId: number, userId: number, threshold: number, now: string) {
+  return database.transaction(() => {
+    const previous = database.prepare("SELECT coalesce(last_seen_at,created_at) observed_at FROM bench_confirmations WHERE bench_row_id=? AND user_id=?")
+      .get(benchRowId, userId) as { observed_at: string } | undefined;
+    const result = recordBenchConfirmation(database, benchRowId, userId, threshold, now);
+    if (previous?.observed_at.slice(0, 10) === now.slice(0, 10)) return { ...result, refreshed: false, observedAt: previous.observed_at };
+    database.prepare(`INSERT INTO bench_confirmations(bench_row_id,user_id,created_at,last_seen_at) VALUES(?,?,?,?)
+      ON CONFLICT(bench_row_id,user_id) DO UPDATE SET last_seen_at=excluded.last_seen_at`).run(benchRowId, userId, now, now);
+    return { ...result, count: result.count + (result.alreadyVerified && !previous ? 1 : 0), added: !previous, refreshed: true, observedAt: now };
+  })();
+}
+
 export function recordRemovalConfirmation(database: Database.Database, benchRowId: number, userId: number, threshold: number, now: string) {
   return database.transaction(() => {
     const bench = database.prepare("SELECT active FROM benches WHERE row_id=?").get(benchRowId) as { active: number } | undefined;

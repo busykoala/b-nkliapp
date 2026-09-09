@@ -26,8 +26,10 @@ class TransitStop(SQLModel, table=True):
     parent: str
     platform: str
     name: str
-    lat: Optional[float] = Field(default=None, ge=45, le=48)
-    lon: Optional[float] = Field(default=None, ge=5, le=11)
+    # The national timetable includes cross-border and international stops.
+    # Validate coordinates, but do not mistake the feed for a Swiss-only map.
+    lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    lon: Optional[float] = Field(default=None, ge=-180, le=180)
 
 
 class TransitTransfer(SQLModel, table=True):

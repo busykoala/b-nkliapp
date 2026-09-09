@@ -15,6 +15,7 @@ from benchly.context.evidence import (
     feature_distance,
     nearby_context,
     nearby_land_cover,
+    nearest_exact_context,
     official_context_version,
     preferred_environment_context,
     preferred_exact_features,
@@ -209,9 +210,8 @@ def reconcile_deterministic_context(connection: sqlite3.Connection, limit: int =
     stats = {"deterministic_reconciled": 0, "forest": 0, "waterfront": 0}
     official_context = official_context_version(connection)
     for row in rows:
-        context = nearby_context(connection, row["latitude"], row["longitude"], 10_000, ["forest", "water"])
-        forests = preferred_exact_features(context, "forest", official_context)
-        waters = preferred_exact_features(context, "water", official_context)
+        forests = nearest_exact_context(connection, row["latitude"], row["longitude"], "forest", official_context)
+        waters = nearest_exact_context(connection, row["latitude"], row["longitude"], "water", official_context)
         result = deterministic_environment(
             row["latitude"], row["longitude"], forests, waters,
             nearby_land_cover(connection, row["latitude"], row["longitude"]),

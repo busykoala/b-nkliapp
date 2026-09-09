@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Armchair, Check, Footprints, LogOut, Map, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
-import { logout } from "@/app/actions/account";
+import { ArrowLeft, Armchair, Check, Footprints, Map, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
 import type { CurrentUser } from "@/lib/security";
 import type { ProfileMoment, TrailProfile } from "@/lib/profile";
 import { AppMenu } from "@/components/app-menu";
@@ -20,7 +19,6 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
     <header className="profile-nav safe-top">
       <Link href={own ? "/" : "/feed"} aria-label={own ? "Zur Karte" : "Zum Bänkli-Feed"} className="calm-menu-button"><ArrowLeft size={19} /></Link>
       <div className="profile-nav-actions">
-        {own && <form action={logout}><button className="profile-logout"><LogOut size={16} /> Raus</button></form>}
         <AppMenu user={viewer} />
       </div>
     </header>
@@ -37,6 +35,18 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
           <small>Seit {new Intl.DateTimeFormat("de-CH", { month: "long", year: "numeric" }).format(new Date(profile.joinedAt))} unterwegs</small>
         </div>
       </section>
+      <section className="profile-section profile-numbers">
+        <header><div><small>Mitgemacht</small><h2>Kleine Dinge, die helfen</h2></div></header>
+        <div><ProfileNumber value={profile.activity.added} label="entdeckt" icon={<MapPinPlus />} /><ProfileNumber value={profile.activity.rated} label="bewertet" icon={<Star />} /><ProfileNumber value={profile.activity.confirmed} label="bestätigt" icon={<Check />} /><ProfileNumber value={profile.activity.edited + profile.activity.corrected} label="ergänzt" icon={<Pencil />} /></div>
+      </section>
+
+      {profile.recent.length > 0 && <section className="profile-section profile-moments">
+        <header><div><small>Letzte Beiträge</small><h2>Was du beigetragen hast</h2></div></header>
+        <div>{profile.recent.map((moment) => <Link key={moment.id} href={`/bank/${moment.benchId}`}><MomentIcon kind={moment.kind} /><p>{momentSentence(moment)}</p><time>{relativeTime(moment.createdAt)}</time></Link>)}</div>
+      </section>}
+
+      {own && <section className="profile-section profile-pending"><header><div><small>Deine Einträge</small><h2>Warten auf Bestätigung</h2></div></header>{profile.awaitingConfirmation.length ? <ul>{profile.awaitingConfirmation.map((bench) => <li key={bench.id}><Link href={`/bank/${bench.id}`}><strong>{bench.title}</strong><span>Noch {bench.remaining} Bestätigungen</span></Link></li>)}</ul> : <p>{profile.activity.added ? "Alle deine eingetragenen Bänkli sind bestätigt." : "Du hast noch kein Bänkli eingetragen."}</p>}</section>}
+
       {own && <AvatarCustomizer seed={profile.avatarSeed} username={profile.username} progress={profile.uniquePlaces} />}
 
       <section className="profile-section trail-progress-card">
@@ -65,16 +75,6 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
         <header><div><small>Jahreszeiten</small><h2>Dein Jahr draussen</h2></div></header>
         <div className="season-collection">{profile.seasons.map((season) => <SeasonStamp key={season.key} season={season.key} name={season.name} found={season.found} />)}</div>
       </section>
-
-      <section className="profile-section profile-numbers">
-        <header><div><small>Mitgemacht</small><h2>Kleine Dinge, die helfen</h2></div></header>
-        <div><ProfileNumber value={profile.activity.added} label="entdeckt" icon={<MapPinPlus />} /><ProfileNumber value={profile.activity.rated} label="bewertet" icon={<Star />} /><ProfileNumber value={profile.activity.confirmed} label="bestätigt" icon={<Check />} /><ProfileNumber value={profile.activity.edited + profile.activity.corrected} label="ergänzt" icon={<Pencil />} /></div>
-      </section>
-
-      {profile.recent.length > 0 && <section className="profile-section profile-moments">
-        <header><div><small>Letzte Spuren</small><h2>Aus deinem Wanderbuch</h2></div></header>
-        <div>{profile.recent.map((moment) => <Link key={moment.id} href={`/bank/${moment.benchId}`}><MomentIcon kind={moment.kind} /><p>{momentSentence(moment)}</p><time>{relativeTime(moment.createdAt)}</time></Link>)}</div>
-      </section>}
 
       <section className="profile-section badge-book">
         <header><div><small>Abzeichenbuch</small><h2>{earnedBadges.length ? `${earnedBadges.length} ${earnedBadges.length === 1 ? "Erinnerung" : "Erinnerungen"} gesammelt` : "Die erste Seite ist noch frei"}</h2></div><Armchair size={21} /></header>

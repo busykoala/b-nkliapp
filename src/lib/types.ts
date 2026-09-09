@@ -184,6 +184,8 @@ export type BenchDetail = {
   locationCanton: string | null;
   verificationStatus: "verified" | "unverified";
   confirmationCount: number;
+  lastConfirmedAt: string | null;
+  myLastConfirmedAt: string | null;
   verificationThreshold: number;
   removalConfirmationCount: number;
   description: string | null;
@@ -203,6 +205,7 @@ export type BenchDetail = {
   nearOpenness: number | null;
   viewConfidence: Confidence;
   viewExplanation: string[];
+  photoEvidence?: { observationCount: number } | null;
   sunrise: string;
   sunset: string;
   directSunrise: string;
@@ -290,6 +293,9 @@ export type BenchDetail = {
 };
 
 export type ActionResult = { ok: true; message: string } | { ok: false; message: string; errors?: Record<string, string[]> };
+
+export type NearbyBench = { id: string; title: string; latitude: number; longitude: number; distanceMeters: number };
+export type AddBenchResult = ActionResult & { benchId?: string; nearby?: NearbyBench[] };
 
 export type PlaceResult = {
   id: string;

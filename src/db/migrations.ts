@@ -739,4 +739,10 @@ export const migrations: Migration[] = [
         ON environment_features(kind,center_latitude,center_longitude);
     `,
   },
+  {
+    id: "0017_bench_confirmation_freshness",
+    sql: `
+      ALTER TABLE bench_confirmations ADD COLUMN last_seen_at TEXT;
+    `,
+  },
 ];

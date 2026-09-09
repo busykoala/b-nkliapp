@@ -11,6 +11,7 @@ import urllib.request
 from typing import Sequence
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter
+from scipy.spatial import cKDTree
 
 from benchly.catalog import load_catalog
 
@@ -31,6 +32,8 @@ class ProfilePoint(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     alts: ProfileAltitudes
+    easting: float | None = None
+    northing: float | None = None
 
 
 PROFILE_RESPONSE = TypeAdapter(list[ProfilePoint])
@@ -70,16 +73,36 @@ def terrain_profile_coordinates(latitude: float, longitude: float,
 
 
 def profile_height(point: ProfilePoint) -> float | None:
-    value = point.alts.COMB
-    if value is None:
-        value = point.alts.DTM2
-    if value is None:
-        value = point.alts.DTM25
+    for value in (point.alts.COMB, point.alts.DTM2, point.alts.DTM25):
+        try:
+            height = float(value) if value is not None else None
+        except (TypeError, ValueError):
+            continue
+        if height is not None and -100 <= height <= 5_000:
+            return height
+    return None
+
+
+def align_profile_points(points: Sequence[object], coordinates: Sequence[Sequence[float]]) -> list[ProfilePoint] | None:
+    """Match actual LV95 locations; GeoAdmin can omit points outside DEM coverage."""
     try:
-        height = float(value) if value is not None else None
-    except (TypeError, ValueError):
+        validated = PROFILE_RESPONSE.validate_python(points)
+    except ValueError:
         return None
-    return height if height is not None and -100 <= height <= 5_000 else None
+    if not validated or any(
+        point.easting is None or point.northing is None
+        or not math.isfinite(point.easting) or not math.isfinite(point.northing)
+        for point in validated
+    ):
+        return None
+    tree = cKDTree([(point.easting, point.northing) for point in validated])
+    # The service rounds coordinates to millimetres. A centimetre accommodates
+    # this rounding without substituting a height from another terrain sample.
+    distances, indices = tree.query(coordinates, distance_upper_bound=.01)
+    if any(not math.isfinite(distance) for distance in distances):
+        return None
+    aligned = [validated[int(index)] for index in indices]
+    return aligned if all(profile_height(point) is not None for point in aligned) else None
 
 
 def terrain_horizon_from_profile(points: Sequence[object], bearing_count: int = 72) -> tuple[float, list[float], list[float]] | None:
@@ -88,7 +111,7 @@ def terrain_horizon_from_profile(points: Sequence[object], bearing_count: int = 
     except ValueError:
         return None
     expected = 1 + bearing_count * (len(PROFILE_DISTANCES_METERS) + 1)
-    if len(validated) < expected:
+    if len(validated) != expected:
         return None
     elevation = profile_height(validated[0])
     if elevation is None:
@@ -101,9 +124,10 @@ def terrain_horizon_from_profile(points: Sequence[object], bearing_count: int = 
         for distance in PROFILE_DISTANCES_METERS:
             sample = profile_height(validated[cursor])
             cursor += 1
-            samples.append(elevation if sample is None else sample)
-            if sample is not None:
-                maximum_angle = max(maximum_angle, math.degrees(math.atan2(sample - (elevation + 1.1), distance)))
+            if sample is None:
+                return None
+            samples.append(sample)
+            maximum_angle = max(maximum_angle, math.degrees(math.atan2(sample - (elevation + 1.1), distance)))
         cursor += 1
         profile.append(round(maximum_angle, 2))
     return elevation, profile, samples
@@ -134,7 +158,8 @@ def fetch_terrain_horizon(latitude: float, longitude: float, timeout: float = 20
             )
             try:
                 with urllib.request.urlopen(request, timeout=timeout) as response:
-                    result = terrain_horizon_from_profile(json.load(response), len(bearings))
+                    aligned = align_profile_points(json.load(response), coordinates)
+                    result = terrain_horizon_from_profile(aligned, len(bearings)) if aligned is not None else None
                 break
             except Exception as error:
                 if attempt == 2:

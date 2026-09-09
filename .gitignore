@@ -9,6 +9,7 @@ test-results
 data/*.sqlite*
 data/tmp
 data/imports/
+data/sources/
 public/sw.js.map
 *.log
 *.tsbuildinfo
@@ -16,3 +17,4 @@ __pycache__/
 *.pyc
 data/.benchly-worker.lock
 worker/evaluation/.cache/
+data/photos/

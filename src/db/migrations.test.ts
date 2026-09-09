@@ -10,6 +10,24 @@ function applyMigrations(database: Database.Database, selected = migrations) {
 }
 
 describe("SQLite migrations and R*Tree", () => {
+  it("retains existing confirmation dates and votes when adding freshness", () => {
+    const database = new Database(":memory:");
+    try {
+      database.pragma("foreign_keys=ON");
+      const index = migrations.findIndex(({ id }) => id === "0017_bench_confirmation_freshness");
+      expect(index).toBeGreaterThan(0);
+      applyMigrations(database, migrations.slice(0, index));
+      database.prepare("INSERT INTO users(username,username_key,password_hash,created_at) VALUES('Observer','observer','test','2026-01-01')").run();
+      database.prepare(`INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at)
+        VALUES('old-bench','node',1,47,8,'2026-01-01','2026-01-01')`).run();
+      database.prepare("INSERT INTO bench_confirmations(bench_row_id,user_id,created_at) VALUES(1,1,'2026-01-02')").run();
+      applyMigrations(database, migrations.slice(index));
+      expect(database.prepare("SELECT created_at,last_seen_at,coalesce(last_seen_at,created_at) observed_at FROM bench_confirmations").all())
+        .toEqual([{ created_at: "2026-01-02", last_seen_at: null, observed_at: "2026-01-02" }]);
+      expect(database.pragma("foreign_key_check")).toEqual([]);
+    } finally { database.close(); }
+  });
+
   it("keeps the spatial index synchronized", () => {
     const database = new Database(":memory:");
     database.pragma("foreign_keys=ON");

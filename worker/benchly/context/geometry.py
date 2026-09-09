@@ -6,6 +6,8 @@ import json
 import math
 import sqlite3
 import subprocess
+import unicodedata
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
@@ -20,6 +22,7 @@ WGS84_TO_LV95 = Transformer.from_crs(4326, 2056, always_xy=True)
 LV95_TO_WGS84 = Transformer.from_crs(2056, 4326, always_xy=True)
 
 
+@lru_cache(maxsize=4096)
 def point_lv95(latitude: float, longitude: float) -> Point:
     easting, northing = WGS84_TO_LV95.transform(longitude, latitude)
     return Point(easting, northing)
@@ -79,6 +82,13 @@ def project_wgs84_wkb(value: bytes | str) -> bytes:
     return to_wkb(geometry, hex=False)
 
 
+@lru_cache(maxsize=2048)
+def _decoded_geometry(raw: bytes):
+    # Shapely 2 geometries are immutable. Horizon rays revisit the same exact
+    # features many times, so keep a bounded cache of their decoded shapes.
+    return from_wkb(raw)
+
+
 def _feature_geometry(feature: sqlite3.Row):
     try:
         raw = feature["geometry_wkb"]
@@ -87,7 +97,7 @@ def _feature_geometry(feature: sqlite3.Row):
     if raw is None:
         return None
     try:
-        return from_wkb(bytes(raw))
+        return _decoded_geometry(bytes(raw))
     except Exception:
         return None
 
@@ -106,11 +116,35 @@ def feature_contains_exact(latitude: float, longitude: float, feature: sqlite3.R
 
 def feature_is_large_water(feature: sqlite3.Row) -> bool:
     """Reserve the lake promise for broad, exact water surfaces."""
+    keys = feature.keys()
+    try:
+        tags = json.loads(feature["raw_tags"] or "{}") if "raw_tags" in keys else {}
+    except (ValueError, TypeError):
+        tags = {}
+    water_type = _normalized_type(tags.get("objektart") or tags.get("OBJEKTART") or tags.get("water") or tags.get("waterway") or "")
+    if water_type in {"fliessgewaesser", "river", "riverbank", "stream", "canal", "pool", "basin", "pond"}:
+        return False
+    if water_type in {"see", "stehendegewaesser", "lake", "reservoir"}:
+        return _feature_geometry(feature) is not None
     geometry = _feature_geometry(feature)
     if geometry is None or geometry.area < 20_000:
         return False
     min_x, min_y, max_x, max_y = geometry.bounds
     return max(max_x - min_x, max_y - min_y) >= 250 and min(max_x - min_x, max_y - min_y) >= 80
+
+
+def feature_is_surface_water(feature) -> bool:
+    """Keep subsurface hydrography out of visible-water and waterfront evidence."""
+    try:
+        tags = json.loads(feature["raw_tags"] or "{}")
+    except (KeyError, IndexError, ValueError, TypeError):
+        return True
+    course = _normalized_type(tags.get("verlauf") or tags.get("VERLAUF") or "")
+    # swissTLM3D VERLAUF 200/300: underground, known/unknown course.
+    # STUFE alone is insufficient: an open river under a bridge can be -1.
+    if course.startswith("unterirdisch") or course in {"200", "300"}:
+        return False
+    return str(tags.get("tunnel", "no")).casefold() not in {"yes", "culvert", "flooded"}
 
 
 def feature_nearest_location(latitude: float, longitude: float, feature: sqlite3.Row) -> Optional[tuple[float, float]]:
@@ -130,15 +164,25 @@ def feature_angular_half_width(
     if geometry is None:
         return None
     origin = point_lv95(latitude, longitude)
+    origin_x, origin_y = origin.x, origin.y
     bearings = [
-        (math.degrees(math.atan2(float(x) - origin.x, float(y) - origin.y)) + 360) % 360
+        (math.degrees(math.atan2(float(x) - origin_x, float(y) - origin_y)) + 360) % 360
         for x, y in get_coordinates(geometry)
-        if float(x) != origin.x or float(y) != origin.y
+        if float(x) != origin_x or float(y) != origin_y
     ]
     if not bearings:
         return None
     differences = [abs(((bearing - center_bearing + 540) % 360) - 180) for bearing in bearings]
     return min(89.0, max(2.5, max(differences)))
+
+
+@lru_cache(maxsize=288)
+def _bearing_ray(latitude: float, longitude: float, bearing: float, maximum_distance: float):
+    origin = point_lv95(latitude, longitude)
+    x, y = origin.x, origin.y
+    radians = math.radians(bearing)
+    return LineString([(x, y), (x + math.sin(radians) * maximum_distance,
+                               y + math.cos(radians) * maximum_distance)])
 
 
 def feature_ray_span(
@@ -149,9 +193,7 @@ def feature_ray_span(
     if geometry is None:
         return None
     origin = point_lv95(latitude, longitude)
-    radians = math.radians(bearing)
-    end = Point(origin.x + math.sin(radians) * maximum_distance, origin.y + math.cos(radians) * maximum_distance)
-    intersection = geometry.intersection(LineString([origin, end]))
+    intersection = geometry.intersection(_bearing_ray(latitude, longitude, bearing, maximum_distance))
     if intersection.is_empty:
         return None
 
@@ -248,7 +290,9 @@ def deterministic_environment(
     canopy_context: str,
 ) -> dict[str, object]:
     forest_distances = [distance for feature in forest_features if (distance := feature_distance_exact(latitude, longitude, feature)) is not None]
-    water_distances = [distance for feature in water_features if (distance := feature_distance_exact(latitude, longitude, feature)) is not None]
+    water_distances = [distance for feature in water_features
+                       if feature_is_surface_water(feature)
+                       and (distance := feature_distance_exact(latitude, longitude, feature)) is not None]
     in_forest = any(feature_contains_exact(latitude, longitude, feature) for feature in forest_features)
     forest_distance = min(forest_distances, default=None)
     water_distance = min(water_distances, default=None)
@@ -265,7 +309,7 @@ def deterministic_environment(
         land_context = "park"
     elif any(token in value for value in cover_classes for token in ("sied", "urban", "gebaeude", "building")):
         land_context = "urban"
-    elif any(token in value for value in cover_classes for token in ("acker", "wiese", "feld", "open", "fels")):
+    elif "wald nicht bestockt" in cover_classes or any(token in value for value in cover_classes for token in ("acker", "wiese", "feld", "open", "fels")):
         land_context = "open"
     elif cover_classes:
         land_context = "mixed"
@@ -282,16 +326,32 @@ def deterministic_environment(
     }
 
 
+def _normalized_type(value: str) -> str:
+    value = str(value).casefold().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
+    ascii_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+    return "".join(character for character in ascii_value if character.isalnum())
+
+
 def classify_official_layer(layer: str, properties: dict) -> tuple[Optional[str], Optional[str]]:
-    value = f"{layer} {' '.join(str(item) for item in properties.values())}".lower()
-    if any(token in value for token in ("gebaeude", "gebäude", "building")):
+    # Names such as "Seebad", "Waldpark" and "Flussstrasse" say nothing
+    # about the geometry's class. Only the layer and official object type do.
+    normalized_layer = _normalized_type(layer)
+    raw_type = properties.get("OBJEKTART") or properties.get("objektart") or properties.get("type") or "unknown"
+    object_type = _normalized_type(raw_type)
+    if any(token in normalized_layer for token in ("gebaeude", "gebaude", "building")):
         return "environment", "building"
-    if any(token in value for token in ("gewaesser", "gewässer", "see", "fluss", "river", "water")):
+    if any(token in normalized_layer for token in ("bodenbedeck", "landcover", "areal")):
+        if object_type in {"fliessgewaesser", "stehendegewaesser", "see", "lake", "river", "water"}:
+            return "environment", "water"
+        if object_type in {"wald", "waldoffen", "gebueschwald", "gebuschwald", "forest"}:
+            return "environment", "forest"
+        return "land_cover", str(raw_type)
+    if any(token in normalized_layer for token in ("gewaessername", "gewaesserlauf")):
+        return None, None
+    if any(token in normalized_layer for token in ("gewaesser", "gewasser", "river", "water")):
         return "environment", "water"
-    if any(token in value for token in ("wald", "forest")):
+    if any(token in normalized_layer for token in ("wald", "forest")):
         return "environment", "forest"
-    if any(token in layer.lower() for token in ("bodenbedeck", "landcover", "land_cover", "areal")):
-        return "land_cover", str(properties.get("OBJEKTART") or properties.get("objektart") or properties.get("type") or "unknown")
     return None, None
 
 

@@ -38,9 +38,24 @@ jobs:
           version: "0.11.21"
       - run: npm ci
       - run: uv sync --frozen
+      - name: Audit production JavaScript dependencies
+        run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npm run lint
       - run: npm run build
+      - name: Install mobile test browsers
+        run: npx playwright install --with-deps chromium webkit
+      - name: Test production browser flows
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_PRODUCTION: "1"
+      - name: Preserve browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-diagnostics
+          path: test-results
+          retention-days: 7
       - name: Test worker
         run: uv run pytest
       - name: Test worker container

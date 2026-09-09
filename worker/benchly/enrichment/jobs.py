@@ -24,7 +24,7 @@ from benchly.context.evidence import (
 from benchly.context.geometry import deterministic_environment
 from benchly.context.sources import download_stac_tiles
 from benchly.db import connect_database
-from benchly.enrichment.service import enrich_terrain, expand_bounds, next_enrichment_bounds
+from benchly.enrichment.service import PIPELINE_VERSION, enrich_terrain, expand_bounds, next_enrichment_bounds
 from benchly.runs.repository import begin_run, finish_run
 from benchly.runtime import now_iso
 from benchly.settings import PROFILE_PIPELINE_VERSION, PROVIDERS
@@ -212,11 +212,12 @@ def enrich_profile_batch_job(args: Namespace) -> None:
             WHERE b.active=1 AND (
                 e.terrain_horizon_profile IS NULL
                 OR length(e.terrain_horizon_profile)<100
-                OR e.pipeline_version<>?
+                OR e.pipeline_version IS NULL
+                OR e.pipeline_version NOT IN (?,?)
             )
             ORDER BY b.row_id LIMIT ?
             """,
-            (PROFILE_PIPELINE_VERSION, args.limit),
+            (PROFILE_PIPELINE_VERSION, PIPELINE_VERSION, args.limit),
         ).fetchall()
         stats["selected"] = len(rows)
         if not rows:

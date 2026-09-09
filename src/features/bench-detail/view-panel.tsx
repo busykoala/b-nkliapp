@@ -40,6 +40,7 @@ export function ViewPanel({ bench }: { bench: BenchDetail }) {
         {bench.canopyContext && bench.canopyContext !== "unknown" && <span><TreePine size={17} />{canopy(bench.canopyContext)}</span>}
       </div>}
       {bench.viewExplanation.length > 0 && <ul className="view-notes">{bench.viewExplanation.slice(0, 4).map((item) => <li key={item}>{item}</li>)}</ul>}
+      {bench.photoEvidence && <p className="view-notes">Mit Fotos ergänzt</p>}
       <DetailRows title="Aussicht" rows={[
         ["Analysebereich", bench.analysisCoverage === "terrain" ? "Nahbereich und Gelände bis 20 km" : "Nahbereich"],
         ["Gebäude am Horizont", percent(bench.buildingObstructionPercent)],

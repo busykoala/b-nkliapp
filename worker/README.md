@@ -72,7 +72,7 @@ logarithmic samples out to 20 km. Benchly merges those samples with OSM building
 individual trees and forest in the first 350 m, then caches elevation, sun windows
 and the complete view score. The request rate and runtime are deliberately capped.
 
-Enrichment is resumable and skips rows already produced by the current pipeline version. Use `--recompute` only after the terrain/surface inputs change. See `docs/data-pipeline.md` for national counts, the staged update strategy and limitations.
+Enrichment is resumable and skips rows already produced by the current pipeline version. Use `--recompute` only after the terrain/surface inputs change. Use `inventory` for current counts and `audit-environment --require-production` to check production readiness.
 
 `import-official-context` follows the official swissTLM3D STAC collection and only downloads
 the GeoPackage archive when its version changes. It streams selected layers through GDAL and

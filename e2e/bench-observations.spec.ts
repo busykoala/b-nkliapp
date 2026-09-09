@@ -48,7 +48,7 @@ test("keeps the view observation understandable in the mobile detail", async ({ 
   await registerUser(page, `view-${Date.now().toString().slice(-8)}`);
   await page.goto(`/bank/${benchId}`);
   await page.getByRole("tab", { name: "Aussicht" }).click();
-  await expect(page.getByRole("heading", { name: /Horizont|Blick/ })).toBeVisible();
+  await expect(page.getByRole("tabpanel", { name: "Aussicht" }).getByRole("heading", { name: /Horizont|Blick/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Beitragen", exact: true })).toBeVisible();
   await page.waitForTimeout(100);
   await page.screenshot({ path: testInfo.outputPath("view-entry.png"), fullPage: false });
