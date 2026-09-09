@@ -11,6 +11,9 @@ function migrate(sqlite: Database.Database) {
   const applied = sqlite.prepare("SELECT 1 FROM _migrations WHERE id = ?");
   const mark = sqlite.prepare("INSERT INTO _migrations (id, applied_at) VALUES (?, ?)");
   for (const migration of migrations) {
+    // A current schema can be opened while an enrichment worker owns the WAL writer.
+    // Keep the second check under the lock for concurrent first-time migrations.
+    if (applied.get(migration.id)) continue;
     sqlite.exec("BEGIN IMMEDIATE");
     try {
       // A Next.js build can import this module in several worker processes. The
