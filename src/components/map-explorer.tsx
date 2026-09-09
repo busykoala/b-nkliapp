@@ -170,8 +170,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       await response.blob();
     }));
 
-    import("maplibre-gl").then(({ AttributionControl, Map }) => {
+    import("maplibre-gl").then(({ AttributionControl, Map, getVersion, setWorkerUrl }) => {
       if (disposed || !containerRef.current) return;
+      // Bundling changes import.meta.url, so MapLibre cannot locate its own worker.
+      setWorkerUrl(`/maplibre/${getVersion()}/maplibre-gl-worker.mjs`);
       const map = new Map({
         container: containerRef.current,
         center: [8.25, 46.82],

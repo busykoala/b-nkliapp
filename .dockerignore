@@ -3,6 +3,7 @@
 .next
 .venv
 node_modules
+public/maplibre
 data
 coverage
 playwright-report
