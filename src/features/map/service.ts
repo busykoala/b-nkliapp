@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { attributeValueSql } from "@/features/bench-knowledge/attribute-sql";
 import { sqlite } from "@/db/client";
 import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { benchObservationNow } from "@/features/bench-observations/context";
@@ -77,7 +78,7 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
   const clauses = ["b.active = 1"];
   for (const field of ["backrest", "armrest", "covered", "wheelchair"] as const) {
     if (filters?.[field] === undefined) continue;
-    clauses.push(`b.${field} = ?`);
+    clauses.push(`${attributeValueSql(field)} = ?`);
     parameters.push(filters[field] ? 1 : 0);
   }
   for (const [filter, column] of [["fireplaceNearby", "fireplace_nearby"], ["wasteBasketNearby", "waste_basket_nearby"]] as const) {
@@ -86,11 +87,11 @@ function filterSql(filters: MapFilters | undefined, parameters: Array<string | n
     parameters.push(filters[filter] ? 1 : 0);
   }
   if (filters?.material) {
-    clauses.push("lower(b.material) = lower(?)");
+    clauses.push(`lower(${attributeValueSql("material")}) = lower(?)`);
     parameters.push(filters.material);
   }
   if (filters?.minSeats) {
-    clauses.push("b.seats >= ?");
+    clauses.push(`${attributeValueSql("seats")} >= ?`);
     parameters.push(filters.minSeats);
   }
   if (filters?.minCommunityRating) {
@@ -184,7 +185,7 @@ function readGroupedFeatures(query: MapQuery, where: string, parameters: Array<s
 
 function readIndividualFeatures(query: MapQuery, where: string, parameters: Array<string | number>) {
   const rows = sqlite.prepare(`
-    SELECT b.id,b.latitude,b.longitude,b.covered,b.verification_status,e.canopy_percent,e.horizon_profile,
+    SELECT b.id,b.latitude,b.longitude,${attributeValueSql("covered")} covered,b.verification_status,e.canopy_percent,e.horizon_profile,
       e.obstruction_types,e.pipeline_version,e.view_score,e.view_labels,
       (SELECT avg(r.overall) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_average
     FROM bench_spatial_index s

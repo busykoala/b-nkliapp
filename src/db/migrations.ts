@@ -1,3 +1,4 @@
+import { knowledgeMigrations } from "./knowledge-migrations";
 import type Database from "better-sqlite3";
 
 export type Migration = { id: string; sql: string; unsafe?: boolean };
@@ -745,4 +746,14 @@ export const migrations: Migration[] = [
       ALTER TABLE bench_confirmations ADD COLUMN last_seen_at TEXT;
     `,
   },
+  {
+    id: "0018_osm_provenance",
+    sql: `
+      ALTER TABLE benches ADD COLUMN osm_version INTEGER;
+      ALTER TABLE benches ADD COLUMN osm_timestamp TEXT;
+      ALTER TABLE benches ADD COLUMN osm_changeset INTEGER;
+      UPDATE benches SET source_updated_at='' WHERE id LIKE 'osm-%';
+    `,
+  },
+  ...knowledgeMigrations,
 ];

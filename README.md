@@ -77,3 +77,35 @@ Use `python3 worker/benchly_worker.py inventory` for current totals and field co
 - Nearby Commons images are explicitly labelled as nearby and may not depict the bench.
 
 The interface includes attribution to [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), [swisstopo](https://www.swisstopo.admin.ch/en/terms-of-use-swisstopo-app), and individual Wikimedia media authors/licenses.
+
+## About, privacy and community
+
+The menu's project page (`/danke`) explains sources and calculations with expandable examples
+and an interactive map/account/photo data-flow view. `/lieblingsplaetze` is the signed-in
+owner's private saved-bench list. The feed groups each bench's activity by Swiss calendar day
+and loads further pages with a stable timestamp/event-ID cursor. Photos open in a swipeable,
+keyboard-accessible modal that keeps the current bench in place.
+
+Configure the public operator's name and contact email before publishing the privacy/contact
+pages. `.env.example` lists `BENCHLY_OPERATOR_NAME`, `BENCHLY_OPERATOR_EMAIL`, optional postal
+address, hosting country and infrastructure/retention statements. Production reads matching
+optional fields from `benchly-secrets`; those public details must be accurate, even though the
+configuration travels through a Kubernetes Secret. The app does not invent operator details
+from Git credentials. The legal text describes this free community service, not an online shop:
+Swiss [privacy information duties](https://www.edoeb.admin.ch/de/faq-datenschutz) still apply;
+SECO's [identification rules for online commerce](https://www.seco.admin.ch/de/onlinehandel)
+should be reassessed if payments or commercial ordering are introduced. Verify actual hosting,
+international recipients and retention when configuring the deployment.
+
+## Evidence and gradual enrichment
+
+The existing `benches` row stays the canonical identity. Additive tables hold official location,
+source records, per-attribute evidence, nearby facilities, local approaches and separate noise
+channels. Conflicts remain in the evidence history; uncertain or missing values stay unknown.
+The detail page shows resolved physical attributes and an expandable explanation of sources,
+confidence and completeness by category. Direct edits stay visible while resolution is queued.
+
+See [the worker's source and method notes](worker/README.md#knowledge-pipeline) for the complete
+import/backfill commands. Migration `0018` clears the old import-clock OSM freshness values;
+the next OSM import supplies the actual object timestamp/version/changeset. No full database
+rebuild or production-to-local database copy is required for this release.

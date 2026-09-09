@@ -23,7 +23,7 @@ test("filters are beside search and removable after the panel closes", async ({ 
   await page.screenshot({ path: info.outputPath("persistent-filters.png") });
   await page.getByRole("button", { name: "Menü öffnen" }).click();
   const items = await page.getByRole("navigation", { name: "Hauptnavigation" }).locator(":scope > a, :scope > button").allTextContents();
-  expect(items.slice(0, 5).map((text) => text.trim())).toEqual(["Bänkli auswählen 1", "Bänkli eintragen", "Spaziergang", "Bänkli-Feed", "Anmelden"]);
+  expect(items.slice(0, 4).map((text) => text.trim())).toEqual(["Bänkli eintragen", "Spaziergang", "Bänkli-Feed", "Anmelden"]);
 });
 
 test("guest rating resumes directly into four tap controls after authentication", async ({ page }, info) => {
@@ -84,7 +84,7 @@ test("freshness can be renewed inline and account actions use conventional label
   await expect(summary.getByRole("button", { name: "Heute von dir bestätigt" })).toBeDisabled();
   await expect(summary.getByText("Heute bestätigt", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Menü öffnen" }).click();
-  await page.getByText("Konto & Einstellungen", { exact: true }).click();
+  await expect(page.getByText("Konto & Einstellungen", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Abmelden", exact: true })).toBeVisible();
 });
 
@@ -104,8 +104,8 @@ test("functional text is readable and utility controls keep the illustration sep
   const summary = page.getByRole("region", { name: "Auf einen Blick" });
   const sizes = await summary.locator("li, .summary-access-note, .bench-freshness").evaluateAll((elements) => elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize)));
   expect(sizes.every((size) => size >= 13)).toBe(true);
-  await expect(page.getByRole("tablist", { name: "Detailkapitel" }).getByRole("tab")).toHaveCount(4);
-  const order = await page.evaluate(() => document.querySelector(".bench-summary")!.compareDocumentPosition(document.querySelector(".detail-tabs")!) & Node.DOCUMENT_POSITION_FOLLOWING);
+  await expect(page.locator(".detail-disclosures > details > summary")).toHaveCount(4);
+  const order = await page.evaluate(() => document.querySelector(".bench-summary")!.compareDocumentPosition(document.querySelector(".detail-disclosures")!) & Node.DOCUMENT_POSITION_FOLLOWING);
   expect(order).toBeTruthy();
   await page.goto("/?action=walk");
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });

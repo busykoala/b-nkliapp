@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Optional
 
 from benchly.benches.repository import upsert_enrichment
+from benchly.knowledge.approaches import enrich_approach, terrain_metadata
+from benchly.knowledge.repository import available as knowledge_available
 from benchly.context.evidence import (
     feature_distance,
     nearby_context,
@@ -66,6 +68,7 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
                    bounds: Optional[tuple[float, float, float, float]] = None,
                    deadline_monotonic: Optional[float] = None) -> int:
     terrain = RasterCollection(terrain_dir)
+    terrain_inputs = terrain_metadata(terrain)
     surface = RasterCollection(surface_dir)
     if not terrain.datasets:
         print("No terrain GeoTIFFs found; enrichment skipped. See worker/README.md.", file=sys.stderr)
@@ -87,6 +90,7 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
     rows = connection.execute(query, query_parameters).fetchall()
     updated = 0
     official_context = official_context_version(connection)
+    knowledge_enabled = knowledge_available(connection)
     try:
         for row in rows:
             if deadline_monotonic is not None and time.monotonic() >= deadline_monotonic:
@@ -181,6 +185,8 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
                 "vegetation_max_height": canopy["max_height"],
                 "environment_computed_at": now_iso(),
             })
+            if knowledge_enabled:
+                enrich_approach(connection, dict(row), local_context, terrain.sample, dem_inputs=terrain_inputs)
             updated += 1
             if updated % 50 == 0:
                 connection.commit()

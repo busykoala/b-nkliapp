@@ -81,6 +81,7 @@ const catalogSchema = z.object({
     swissImageLayer: z.string().min(1),
     sonbaseDayCogUrl: z.url(),
     zurichTreeWfsUrl: z.url(),
+    zurichBenchWfsUrl: z.url(),
     baselTreeGeoJsonUrl: z.url(),
     inferenceDefaultUrl: z.url(),
   }),

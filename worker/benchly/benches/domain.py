@@ -15,10 +15,11 @@ KEEP_TAGS = {
 }
 CONTEXT_TAGS = KEEP_TAGS | {
     "building", "building:levels", "height", "roof:height", "natural", "water", "waterway",
+    "barrier", "smoothness", "width", "incline", "step_count", "kerb", "tourism", "drinking_water", "bridge", "tunnel", "layer",
     "landuse", "leisure", "highway", "name", "leaf_type", "leaf_cycle", "maxspeed", "foot", "sac_scale",
 }
 MAJOR_ROADS = {"motorway", "trunk", "primary", "secondary", "tertiary"}
-PATHS = {"footway", "path", "pedestrian", "track", "steps", "bridleway", "cycleway"}
+PATHS = {"footway", "path", "pedestrian", "track", "steps", "bridleway", "cycleway", "residential", "living_street", "service"}
 CARDINAL = {
     "N": 0, "NNE": 22.5, "NE": 45, "ENE": 67.5, "E": 90, "ESE": 112.5,
     "SE": 135, "SSE": 157.5, "S": 180, "SSW": 202.5, "SW": 225,
@@ -86,7 +87,13 @@ def context_kind(tags: dict[str, str]) -> Optional[str]:
         return "major_road"
     if tags.get("highway") in PATHS:
         return "path"
-    if tags.get("amenity") == "fireplace":
+    if tags.get("barrier") not in {None, "no"}:
+        return "barrier"
+    if tags.get("amenity") in {"toilets", "drinking_water", "fountain", "shelter"}:
+        return tags["amenity"]
+    if tags.get("leisure") in {"picnic_table", "playground"}:
+        return tags["leisure"]
+    if tags.get("amenity") == "fireplace" or tags.get("leisure") == "firepit":
         return "fireplace"
     if tags.get("amenity") == "waste_basket":
         return "waste_basket"

@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 test("renders geographic features through the packaged map worker", async ({ page }, testInfo) => {
   // A local polygon exercises worker startup, GeoJSON tiling and WebGL rendering
   // without depending on swisstopo availability or accepting a blank ready canvas.
+  // Decorative paint is tested separately; it can change the sampled polygon colour.
+  await page.route("**/map-art/textures/{palette-wash,field}.webp", (route) => route.abort());
   await page.route("https://vectortiles.geo.admin.ch/styles/**", (route) => route.fulfill({
     json: {
       version: 8,

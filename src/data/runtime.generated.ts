@@ -1,6 +1,6 @@
 // Generated from config/data-catalog.json. Do not edit by hand.
 export const DATA_RUNTIME = {
-  "pipelineVersion": "4.5.0",
+  "pipelineVersion": "4.6.0",
   "profilePipelineVersion": "GeoAdmin-Horizont v7",
   "scenePromptVersion": "benchly-scene-1.4",
   "sceneReconcilerVersion": "benchly-evidence-1.1",
@@ -44,6 +44,7 @@ export const DATA_PROVIDERS = {
   "swissImageLayer": "ch.swisstopo.swissimage",
   "sonbaseDayCogUrl": "https://data.geo.admin.ch/ch.bafu.laerm-strassenlaerm_tag/laerm-strassenlaerm_tag/laerm-strassenlaerm_tag_2056.tif",
   "zurichTreeWfsUrl": "https://www.ogd.stadt-zuerich.ch/wfs/geoportal/Baumkataster",
+  "zurichBenchWfsUrl": "https://www.ogd.stadt-zuerich.ch/wfs/geoportal/Sitzbankkataster_OGD",
   "baselTreeGeoJsonUrl": "https://data.bs.ch/api/explore/v2.1/catalog/datasets/100052/exports/geojson?lang=de&timezone=Europe%2FZurich",
   "inferenceDefaultUrl": "http://inference-api.inference.svc.cluster.local:8080"
 } as const;

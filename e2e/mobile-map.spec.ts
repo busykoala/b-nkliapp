@@ -67,8 +67,7 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await expect(search).toHaveValue("");
   await expect(search).toHaveAttribute("aria-expanded", "false");
 
-  await page.getByLabel("Menü öffnen").click();
-  await page.getByRole("button", { name: "Bänkli auswählen" }).click();
+  await page.getByRole("button", { name: "Filter öffnen" }).click();
   const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
   await expect(filters).toBeVisible();
   await expect(filters.getByLabel("Filter schliessen")).toBeFocused();
@@ -112,8 +111,7 @@ test("keeps core pages contained from tablet to large desktop", async ({ page },
   await page.screenshot({ path: testInfo.outputPath("bench-desktop.png"), fullPage: false });
 
   await page.goto("/");
-  await page.getByLabel("Menü öffnen").click();
-  await page.getByRole("button", { name: "Bänkli auswählen" }).click();
+  await page.getByRole("button", { name: "Filter öffnen" }).click();
   const panel = page.getByRole("dialog", { name: "Was brauchst du?" });
   const box = await panel.boundingBox();
   expect(box).not.toBeNull();
@@ -269,11 +267,11 @@ test("lets a user compose and persist a watercolor avatar", async ({ page, brows
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   await expect(page.getByRole("figure")).toBeVisible();
-  await page.getByRole("tab", { name: "Licht" }).click();
+  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Licht" }).click();
   await expect(page.getByText(/Direkte Sonne|Geschätzte Sonne/).first()).toBeVisible();
-  await page.getByRole("tab", { name: "Aussicht" }).click();
+  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
   await page.getByText("Aussicht im Detail").click();
-  await expect(page.getByText("Was den Horizont prägt")).toBeVisible();
+  await expect(page.locator(".detail-panel-view").getByText("Was den Horizont prägt")).toBeVisible();
   await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
 });
 

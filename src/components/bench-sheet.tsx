@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { RefreshCw, X } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, X } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { BenchDetailContent } from "./bench-detail-content";
 import type { CurrentUser } from "@/lib/security";
@@ -22,7 +22,7 @@ export function BenchSheet({ created = false, bench, loading, error, onRetry, on
   return (
     <aside aria-label="Bankdetails" className="desktop-sheet storybook-sheet sheet-shadow fixed inset-x-0 bottom-0 z-40 h-[calc(100dvh-4.5rem)] overflow-hidden rounded-t-[2rem] transition-transform duration-300" style={{ transform: translate }}>
       <div className="sheet-chrome absolute inset-x-0 top-0 z-30 rounded-t-[2rem] px-4 pb-1 pt-2" onTouchStart={(e) => { touchStart.current = e.touches[0].clientY; }} onTouchEnd={(e) => finishDrag(e.changedTouches[0].clientY)}>
-        <button aria-label="Detailhöhe ändern" className="mx-auto block h-6 w-full" onClick={() => setSnap(snap === "full" ? "half" : "full")}><span className="mx-auto block h-1 w-12 rounded-full bg-primary/25" /></button>
+        <button aria-label="Detailhöhe ändern" aria-expanded={snap === "full"} className="overlay-resize" onClick={() => setSnap(snap === "full" ? "half" : "full")}>{snap === "full" ? <ChevronDown size={20} /> : <ChevronUp size={20} />}</button>
         <div className="flex items-center justify-end">
           <button aria-label="Bank schliessen" className="sheet-close btn btn-circle btn-ghost btn-sm" onClick={onClose}><X size={19} /></button>
         </div>

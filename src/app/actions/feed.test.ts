@@ -1,0 +1,34 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type Database from "better-sqlite3";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+const auth = vi.hoisted(() => ({ getCurrentUser: vi.fn() }));
+vi.mock("@/lib/security", () => auth);
+let folder: string, database: Database.Database, userId: number, rowId: number;
+beforeEach(async () => {
+  folder = mkdtempSync(join(tmpdir(), "benchly-feed-"));
+  vi.stubEnv("DATABASE_PATH", join(folder, "test.sqlite")); vi.stubEnv("BENCHLY_SEED_DEMO", "true"); vi.resetModules();
+  database = (await import("@/db/client")).sqlite;
+  userId = Number(database.prepare("INSERT INTO users(username,username_key,password_hash,created_at) VALUES('Reader','reader','hash','2026-09-09')").run().lastInsertRowid);
+  rowId = (database.prepare("SELECT row_id FROM benches WHERE id='osm-node-101'").get() as { row_id: number }).row_id;
+  auth.getCurrentUser.mockResolvedValue(null);
+  for (let index = 0; index < 7; index++) database.prepare("INSERT INTO bench_moments(bench_row_id,user_id,kind,body,created_at,updated_at) VALUES(?,?,'memory',?,'2026-09-09T12:00:00Z','2026-09-09T12:00:00Z')").run(rowId, userId, `Moment ${index}`);
+});
+afterEach(() => { database.close(); delete (globalThis as typeof globalThis & { benchlySqlite?: Database.Database }).benchlySqlite; vi.unstubAllEnvs(); rmSync(folder, { recursive: true, force: true }); });
+it("paginates a shared timestamp without missing or duplicating any event", async () => {
+  const { getFeedPage } = await import("./feed");
+  const first = await getFeedPage(null, 3), second = await getFeedPage(first.nextCursor, 3), last = await getFeedPage(second.nextCursor, 3);
+  expect(first.entries).toHaveLength(3); expect(second.entries).toHaveLength(3); expect(last.entries).toHaveLength(1);
+  expect(new Set([...first.entries, ...second.entries, ...last.entries].map((entry) => entry.id)).size).toBe(7);
+  expect(last.nextCursor).toBeNull();
+});
+it("checks personalization on every page and rejects malformed cursors", async () => {
+  auth.getCurrentUser.mockResolvedValue({ id: userId });
+  database.prepare("INSERT INTO bench_follows(bench_row_id,user_id,created_at) VALUES(?,?,?)").run(rowId, userId, "2026-09-09");
+  const { getFeedPage } = await import("./feed");
+  expect((await getFeedPage()).personalized).toBe(true);
+  database.prepare("DELETE FROM bench_follows WHERE user_id=?").run(userId);
+  expect((await getFeedPage(null, Number.NaN)).personalized).toBe(false);
+  await expect(getFeedPage({ id: "x", createdAt: "broken" })).rejects.toThrow();
+});

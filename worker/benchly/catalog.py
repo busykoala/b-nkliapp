@@ -56,6 +56,7 @@ class ProviderConfig(StrictModel):
     swissImageLayer: str
     sonbaseDayCogUrl: HttpUrl
     zurichTreeWfsUrl: HttpUrl
+    zurichBenchWfsUrl: HttpUrl
     baselTreeGeoJsonUrl: HttpUrl
     inferenceDefaultUrl: HttpUrl
 

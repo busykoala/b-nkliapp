@@ -40,6 +40,7 @@ export function AccountDialog({ dialogRef, onAuthenticated, intent }: { dialogRe
       <div className="story-eyebrow">Mach mit</div>
       <h2 id={titleId} className="mt-1 text-2xl font-black">{mode === "login" ? "Willkommen zurück" : "Dein Bänkli-Konto"}</h2>
       <p id={descriptionId} className="mt-1 text-sm text-base-content/70">Nur Benutzername und Passwort. Ganz ohne E-Mail.</p>
+      <p className="account-privacy-note"><a href="/datenschutz" target="_blank" rel="noreferrer">Was mit deinen Daten passiert ↗</a></p>
       {intent && <p className="auth-intent">Danach geht es weiter: {intent}.</p>}
       {isOpen && <AccountForm key={mode} mode={mode} onSuccess={() => { dialogRef.current?.close(); onAuthenticated?.(); router.refresh(); }} />}
       <button type="button" className="btn btn-ghost mt-2 min-h-11 w-full" onClick={() => setMode(mode === "login" ? "register" : "login")}>{mode === "login" ? "Neu hier? Konto erstellen" : "Ich habe schon ein Konto"}</button>

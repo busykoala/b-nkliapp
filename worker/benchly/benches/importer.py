@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 import sqlite3
 import sys
 import urllib.parse
 from pathlib import Path
 from typing import Optional
+from types import SimpleNamespace
 
 from pydantic.dataclasses import dataclass
 
@@ -44,6 +46,9 @@ class ImportedBench:
     latitude: float
     longitude: float
     tags: dict[str, str]
+    version: Optional[int] = None
+    timestamp: Optional[str] = None
+    changeset: Optional[int] = None
 
 
 @dataclass
@@ -59,6 +64,46 @@ class ImportedContext:
     max_longitude: float
     tags: dict[str, str]
     geometry_wkb: Optional[bytes]
+    timestamp: Optional[str] = None
+
+
+def osm_timestamp(element) -> Optional[str]:
+    """Use source metadata (PBF/XML); never substitute the download/import clock."""
+    timestamp = getattr(element, "timestamp", None)
+    if isinstance(timestamp, str):
+        timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    if timestamp is None or timestamp.year <= 1970:
+        return None
+    return timestamp.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def import_json_snapshot(path, handler):
+    """Read a complete OSM/Overpass JSON snapshot using the same persistence as PBF/XML."""
+    payload = json.loads(path.read_text())
+    if not isinstance(payload.get("elements"), list):
+        raise ValueError("Expected an OSM JSON elements array")
+    elements = payload["elements"]
+    nodes = {item["id"]: (item["lat"], item["lon"]) for item in elements
+             if item.get("type") == "node" and "lat" in item and "lon" in item}
+    for item in elements:
+        kind = item.get("type")
+        if kind not in {"node", "way"}:
+            continue
+        tags = [SimpleNamespace(k=key, v=str(value)) for key, value in item.get("tags", {}).items()]
+        metadata = SimpleNamespace(version=item.get("version") or 0, timestamp=item.get("timestamp"), changeset=item.get("changeset") or 0)
+        if kind == "node":
+            coords = [nodes[item["id"]]] if item["id"] in nodes else []
+        elif item.get("geometry"):
+            coords = [(point["lat"], point["lon"]) for point in item["geometry"]]
+        else:
+            refs = item.get("nodes", [])
+            coords = [nodes[ref] for ref in refs] if all(ref in nodes for ref in refs) else []
+        center = item.get("center")
+        position = (sum(p[0] for p in coords) / len(coords), sum(p[1] for p in coords) / len(coords)) if coords else (center["lat"], center["lon"]) if center else None
+        if item.get("tags", {}).get("amenity") == "bench" and position:
+            handler._append(kind, item["id"], *position, tags, metadata)
+        if coords:
+            handler._append_context(kind, item["id"], coords, tags, node_refs=item.get("nodes"), timestamp=osm_timestamp(metadata))
 
 
 def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: str = "local") -> tuple[int, int]:
@@ -108,8 +153,11 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 "description": tags.get("description"),
                 "raw_tags": json.dumps(tags, ensure_ascii=False, separators=(",", ":")),
                 "active": 1,
-                "source_updated_at": imported_at,
+                "source_updated_at": bench.timestamp or "",
                 "imported_at": imported_at,
+                "osm_version": bench.version,
+                "osm_timestamp": bench.timestamp,
+                "osm_changeset": bench.changeset,
                 "name": tags.get("name"),
                 "dedication": tags.get("inscription") or tags.get("memorial:text"),
                 "location_name": location_name,
@@ -180,7 +228,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 "geometry_wkb": item.geometry_wkb,
                 "geometry_crs": 2056,
                 "source_version": source_version,
-                "source_updated_at": imported_at,
+                "source_updated_at": item.timestamp,
             })
         upsert_environment_features(connection, rows)
         connection.commit()
@@ -188,19 +236,22 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
         pending_context.clear()
 
     class BenchHandler(osmium.SimpleHandler):
-        def _append(self, osm_type: str, osm_id: int, latitude: float, longitude: float, tags) -> None:
+        def _append(self, osm_type: str, osm_id: int, latitude: float, longitude: float, tags, element) -> None:
             if not (45.7 <= latitude <= 47.9 and 5.7 <= longitude <= 10.7):
                 return
             clean_tags = {tag.k: tag.v for tag in tags if tag.k in KEEP_TAGS}
-            pending.append(ImportedBench(osm_type, int(osm_id), latitude, longitude, clean_tags))
+            pending.append(ImportedBench(osm_type, int(osm_id), latitude, longitude, clean_tags,
+                int(element.version) or None, osm_timestamp(element), int(element.changeset) or None))
             if len(pending) >= 1000:
                 flush()
 
-        def _append_context(self, osm_type: str, osm_id: int, coordinates, tags, geometry_wkb: Optional[bytes] = None) -> None:
+        def _append_context(self, osm_type: str, osm_id: int, coordinates, tags, geometry_wkb: Optional[bytes] = None, node_refs=None, timestamp=None) -> None:
             clean_tags = {tag.k: tag.v for tag in tags if tag.k in CONTEXT_TAGS}
             kind = context_kind(clean_tags)
             if not kind or not coordinates:
                 return
+            if kind == "path" and node_refs:
+                clean_tags["_node_refs"] = ",".join(str(ref) for ref in node_refs)
             latitudes = [point[0] for point in coordinates]
             longitudes = [point[1] for point in coordinates]
             if max(latitudes) < 45.7 or min(latitudes) > 47.9 or max(longitudes) < 5.7 or min(longitudes) > 10.7:
@@ -213,21 +264,22 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                     coordinates, kind,
                     len(coordinates) >= 4 and coordinates[0] == coordinates[-1],
                 ),
+                timestamp,
             ))
             if len(pending_context) >= 2000:
                 flush_context()
 
         def node(self, node) -> None:
             if node.tags.get("amenity") == "bench" and node.location.valid():
-                self._append("node", node.id, node.location.lat, node.location.lon, node.tags)
-            if node.location.valid() and (node.tags.get("natural") == "tree" or node.tags.get("amenity") in {"fireplace", "waste_basket"}):
-                self._append_context("node", node.id, [(node.location.lat, node.location.lon)], node.tags)
+                self._append("node", node.id, node.location.lat, node.location.lon, node.tags, node)
+            if node.location.valid() and context_kind({tag.k: tag.v for tag in node.tags}):
+                self._append_context("node", node.id, [(node.location.lat, node.location.lon)], node.tags, timestamp=osm_timestamp(node))
 
         def way(self, way) -> None:
             locations = [(node.lat, node.lon) for node in way.nodes if node.location.valid()]
             if way.tags.get("amenity") == "bench" and locations:
-                self._append("way", way.id, sum(p[0] for p in locations) / len(locations), sum(p[1] for p in locations) / len(locations), way.tags)
-            self._append_context("way", way.id, locations, way.tags)
+                self._append("way", way.id, sum(p[0] for p in locations) / len(locations), sum(p[1] for p in locations) / len(locations), way.tags, way)
+            self._append_context("way", way.id, locations, way.tags, node_refs=[node.ref for node in way.nodes if node.location.valid()], timestamp=osm_timestamp(way))
 
         def area(self, area) -> None:
             clean_tags = {tag.k: tag.v for tag in area.tags if tag.k in CONTEXT_TAGS}
@@ -239,11 +291,14 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 # Area IDs distinguish relation-derived areas from way callbacks.
                 bounds = feature_bounds_wgs84(geometry)
                 coordinates = [(bounds[1], bounds[0]), (bounds[3], bounds[2])]
-                self._append_context("area", area.id, coordinates, area.tags, geometry)
+                self._append_context("area", area.id, coordinates, area.tags, geometry, timestamp=osm_timestamp(area))
             except Exception as error:
                 print(f"Skipping invalid OSM area {area.id}: {error}", file=sys.stderr)
 
-    BenchHandler().apply_file(str(pbf_path), locations=True)
+    if pbf_path.suffix.lower() == ".json":
+        import_json_snapshot(pbf_path, BenchHandler())
+    else:
+        BenchHandler().apply_file(str(pbf_path), locations=True)
     flush()
     flush_context()
     refresh_nearby_amenities(connection)

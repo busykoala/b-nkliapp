@@ -13,6 +13,8 @@ import { BenchSummary } from "@/features/bench-detail/bench-summary";
 import { BenchFeatureEditor } from "./bench-feature-editor";
 import { BenchDetails } from "@/features/bench-detail/bench-details";
 import { BenchLandscape } from "./bench-landscape";
+import { VerificationQuestion } from "@/features/bench-knowledge/verification-question";
+import { PhotoGallery } from "./photo-gallery";
 import { BenchPlaceCommunity } from "./bench-place-community";
 
 const correctionLabels: Record<string, string> = {
@@ -79,6 +81,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
       <div className="calm-story-body">
         {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>Was kannst du noch ergänzen?</h3><p>Diese Angaben helfen bei der nächsten Pause.</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
         <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
+        {signedIn && bench.knowledge?.question && <VerificationQuestion benchId={bench.id} question={bench.knowledge.question} onChanged={refreshBench} />}
         <BenchDetails bench={bench} signedIn={signedIn} onChanged={refreshBench} />
         <BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refreshBench} />
         <PhotoStory bench={bench} />
@@ -111,11 +114,7 @@ function PhotoStory({ bench }: { bench: BenchDetail }) {
   if (!media.length) return null;
   return <section className="photo-story">
     <h3>Ein Blick in die Nähe</h3>
-    <div className="photo-ribbon">{media.map((item) => <a key={item.id} href={item.sourceUrl} target="_blank" rel="noreferrer">
-      <MediaImage src={item.thumbnailUrl} alt={item.title ?? "Bild aus der Umgebung der Sitzbank"} />
-      <span>{item.relation === "nearby" ? "Aus der Umgebung" : item.title ?? "Dieser Platz"}</span>
-      <small>{item.author ?? item.provider} · {item.license ?? "Lizenz bei Quelle"}</small>
-    </a>)}</div>
+    <PhotoGallery photos={media.map((item) => ({ id: String(item.id), src: item.thumbnailUrl, caption: item.relation === "nearby" ? "Aus der Umgebung · nicht zwingend diese Bank" : item.title ?? "Dieser Platz", credit: `${item.author ?? item.provider} · ${item.license ?? "Lizenz bei Quelle"}`, sourceUrl: item.sourceUrl }))} />
   </section>;
 }
 
@@ -134,7 +133,3 @@ function Community({ bench, report, reported, user, onContribute }: { bench: Ben
 function placeLine(bench: BenchDetail) {
   return [bench.elevationMeters !== null ? `${Math.round(bench.elevationMeters)} m ü. M.` : null, bench.locationName].filter(Boolean).join(" · ") || "Ein stiller Platz";
 }
-
-// External Commons hosts are intentionally rendered directly so thumbnails are not rehosted or proxied.
-// eslint-disable-next-line @next/next/no-img-element
-function MediaImage({ src, alt }: { src: string; alt: string }) { return <img src={src} alt={alt} loading="lazy" />; }

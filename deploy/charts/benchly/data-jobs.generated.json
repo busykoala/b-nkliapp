@@ -314,6 +314,62 @@
       ],
       "profile": "standard",
       "purpose": "monitoring"
+    },
+    {
+      "name": "zurich-benches",
+      "schedule": "30 4 3 * *",
+      "deadline": 1800,
+      "args": [
+        "import-zurich-benches",
+        "--database",
+        "/data/benchly.sqlite",
+        "--cache-dir",
+        "/data/sources/municipal"
+      ],
+      "profile": "standard",
+      "purpose": "production"
+    },
+    {
+      "name": "official-places",
+      "schedule": "10 5 3 * *",
+      "deadline": 7200,
+      "args": [
+        "refresh-official-places",
+        "--database",
+        "/data/benchly.sqlite",
+        "--cache-dir",
+        "/data/sources/places"
+      ],
+      "profile": "standard",
+      "purpose": "production"
+    },
+    {
+      "name": "knowledge",
+      "schedule": "25 * * * *",
+      "deadline": 1500,
+      "args": [
+        "backfill-knowledge",
+        "--database",
+        "/data/benchly.sqlite",
+        "--noise-dir",
+        "/data/sources",
+        "--limit",
+        "500"
+      ],
+      "profile": "standard",
+      "purpose": "production"
+    },
+    {
+      "name": "noise-rasters",
+      "schedule": "40 5 * * 1",
+      "deadline": 5400,
+      "args": [
+        "refresh-noise-rasters",
+        "--directory",
+        "/data/sources"
+      ],
+      "profile": "landscape",
+      "purpose": "production"
     }
   ]
 }

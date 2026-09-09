@@ -50,7 +50,7 @@ export function ViewPanel({ bench }: { bench: BenchDetail }) {
         ["Mittlere Vegetationshöhe", meters(bench.vegetationMedianHeight)],
         ["Höchste Vegetation", meters(bench.vegetationMaxHeight)],
       ]} />
-      {bench.likelyEnvironment?.traits.length ? <div className="image-hints"><small>Hinweise aus Bildern der Umgebung</small>{bench.likelyEnvironment.traits.map((trait) => <span key={trait.kind}>{trait.label} · {Math.round(trait.probability * 100)}%</span>)}</div> : null}
+      {bench.likelyEnvironment?.traits.length ? <div className="image-hints"><small>Hinweise aus Bildern der Umgebung</small>{bench.likelyEnvironment.traits.map((trait) => <span key={trait.kind}>{trait.label} · {({ low: "schwacher Hinweis", medium: "gestützter Hinweis", high: "mehrfach gestützt" })[trait.confidence]}</span>)}<p>Modellhinweise, keine Messungen. Die Rohwerte des Bildmodells sind keine kalibrierten Wahrscheinlichkeiten.</p></div> : null}
     </details>
   </section>;
 }

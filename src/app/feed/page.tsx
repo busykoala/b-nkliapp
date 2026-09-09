@@ -1,69 +1,27 @@
 import Link from "next/link";
-import { ArrowLeft, Check, HeartHandshake, MapPinPlus, MessageCircleHeart, Pencil, Search, Sparkles, Star } from "lucide-react";
-import { getActivityFeed, type FeedEntry } from "@/app/actions/feed";
+import { ArrowLeft, Sparkles } from "lucide-react";
+import { getActivityFeed } from "@/app/actions/feed";
 import { AppMenu } from "@/components/app-menu";
-import { TrailAvatar } from "@/components/trail-avatar";
+import { FeedStream } from "@/features/feed/feed-stream";
 import { getCurrentUser } from "@/lib/security";
 import { communityTheme } from "@/lib/community-theme";
-import { groupFeed } from "@/features/feed/model";
 
 export const dynamic = "force-dynamic";
 
-const feedIcons = { added: MapPinPlus, rated: Star, confirmed: Check, missing: Search, edited: Pencil, moment: MessageCircleHeart, care: HeartHandshake } as const;
 
 export default async function FeedPage() {
   const [feed, user] = await Promise.all([getActivityFeed(), getCurrentUser()]);
   const theme = communityTheme();
   return <main className="feed-page min-h-dvh safe-bottom">
     <header className="feed-nav safe-top"><Link href="/" aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
-    <section className="feed-intro"><span><Sparkles size={14} /> {feed.personalized ? "Aus deinen Lieblingsorten" : "Was sich an Bänkli bewegt"}</span><h1>Bänkli-Momente</h1><p>{feed.personalized ? "Geschichten und kleine Pflegezeichen von Plätzen, denen du folgst." : "Keine endlose Timeline – nur ein paar neue Geschichten, Pausen und Menschen, die genauer hinschauen."}</p>
+    <section className="feed-intro"><span><Sparkles size={14} /> {feed.personalized ? "Aus deinen Lieblingsorten" : "Was sich an Bänkli bewegt"}</span><h1>Bänkli-Momente</h1><p>{feed.personalized ? "Geschichten und kleine Pflegezeichen von Plätzen, denen du folgst." : "Geschichten, Pausen und kleine Entdeckungen – pro Bänkli und Tag zusammengefasst."}</p>
       <div className="feed-rituals">
         {feed.weeklyBench && <Link href={`/bank/${feed.weeklyBench.id}`}><small>Bänkli dieser Woche</small><strong>{feed.weeklyBench.name}</strong>{feed.weeklyBench.place && feed.weeklyBench.place !== feed.weeklyBench.name && <span>{feed.weeklyBench.place}</span>}</Link>}
         <aside><small>Gemeinsames Thema</small><strong>{theme.title}</strong><span>{theme.prompt}</span></aside>
       </div>
     </section>
     <section className="feed-scroll" aria-label="Neuigkeiten">
-      {feed.entries.length ? groupFeed(feed.entries).map((group) => <section className="feed-group" key={group.label} aria-labelledby={`feed-${group.key}`}><h2 id={`feed-${group.key}`}>{group.label}</h2>{group.entries.map((entry) => <FeedCard key={entry.id} entry={entry} />)}</section>) : <div className="feed-empty"><span>🍂</span><p>Noch weht kein neuer Eintrag herein.</p></div>}
+      <FeedStream initial={feed} />
     </section>
   </main>;
-}
-
-function FeedCard({ entry }: { entry: FeedEntry }) {
-  const Icon = feedIcons[entry.kind];
-  return <article className={`feed-entry feed-${entry.kind}`}>
-    <Link href={`/profil/${encodeURIComponent(entry.username)}`} className="feed-avatar" aria-label={`Wanderbuch von ${entry.username} öffnen`}>
-      <TrailAvatar seed={entry.avatarSeed} username={entry.username} compact />
-      <span className="feed-kind-mark"><Icon size={13} aria-hidden="true" /></span>
-    </Link>
-    <div><p>{feedSentence(entry)}</p><time dateTime={entry.createdAt}>{relativeTime(entry.createdAt)}</time></div>
-    <Link href={`/bank/${entry.benchId}`} className="feed-arrow" aria-label={`${entry.benchName} öffnen`}>→</Link>
-  </article>;
-}
-
-function feedSentence(entry: FeedEntry) {
-  const name = <Link href={`/profil/${encodeURIComponent(entry.username)}`} className="feed-person">{entry.username}</Link>;
-  const bench = <Link href={`/bank/${entry.benchId}`} className="feed-bench">{entry.benchName}</Link>;
-  if (entry.kind === "moment") return <>{name} hat bei {bench} einen Moment hinterlassen.{entry.detail && <q>{entry.detail}</q>}</>;
-  if (entry.kind === "care") return <>{name} hat bei {bench} {careSentence(entry.detail)}.</>;
-  if (entry.kind === "added") return <>{name} hat {bench} auf die Karte gesetzt. Ein neues Plätzli wartet.</>;
-  if (entry.kind === "rated") return <>{name} hat bei {bench} kurz innegehalten und eine Stimme dagelassen.</>;
-  if (entry.kind === "confirmed") return <>{name} hat nachgeschaut: {bench} steht wirklich da.</>;
-  if (entry.kind === "missing") return <>{name} vermisst {bench}. Vielleicht ist das Bänkli weitergezogen.</>;
-  return <>{name} hat {bench} ein kleines Detail geschenkt.</>;
-}
-
-function careSentence(kind: string | null) {
-  return ({ cleaned: "kurz aufgeräumt", good: "nach dem Rechten gesehen", repair: "Reparaturbedarf bemerkt", beautiful: "einen besonders schönen Augenblick entdeckt" } as Record<string, string>)[kind ?? ""] ?? "nachgeschaut";
-}
-
-function relativeTime(value: string) {
-  const difference = Date.now() - new Date(value).getTime();
-  const minutes = Math.max(0, Math.floor(difference / 60_000));
-  if (minutes < 1) return "gerade eben";
-  if (minutes < 60) return `vor ${minutes} Min.`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `vor ${hours} Std.`;
-  const days = Math.floor(hours / 24);
-  if (days < 14) return `vor ${days} ${days === 1 ? "Tag" : "Tagen"}`;
-  return new Intl.DateTimeFormat("de-CH", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
 }

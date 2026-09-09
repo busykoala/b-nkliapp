@@ -2,7 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const testDatabase = join(tmpdir(), `benchly-e2e-${process.pid}.sqlite`);
+const testDatabase = process.env.BENCHLY_E2E_DATABASE ?? join(tmpdir(), `benchly-e2e-${process.pid}.sqlite`);
+process.env.BENCHLY_E2E_DATABASE = testDatabase;
 const production = process.env.PLAYWRIGHT_PRODUCTION === "1";
 const baseURL = production ? "https://localhost:3100" : "http://localhost:3100";
 

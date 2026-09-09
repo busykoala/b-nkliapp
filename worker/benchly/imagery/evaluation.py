@@ -12,6 +12,7 @@ from typing import Sequence
 
 from benchly.imagery.client import DEFAULT_MODEL, download_image, infer_scene, inference_endpoint
 from benchly.imagery.providers import optional_float
+from benchly.imagery.calibration import evaluate_predictions, sample_strata
 
 EVALUATION_CATEGORIES = {
     "true_forest", "forest_edge", "park", "urban", "alpine_open", "waterfront", "irrelevant",
@@ -64,7 +65,7 @@ def validate_evaluation_dataset(records: Sequence[object], allow_small: bool = F
             normalized_images.append(values)
         identifiers.add(identifier)
         categories[category] += 1
-        normalized.append({**raw, "latitude": latitude, "longitude": longitude, "images": normalized_images})
+        normalized.append({**raw, **sample_strata(raw), "latitude": latitude, "longitude": longitude, "images": normalized_images})
     if not allow_small and any(count < 5 for count in categories.values()):
         raise ValueError("evaluation must contain at least five locations in every required category")
     return normalized
@@ -88,6 +89,7 @@ def benchmark_models(dataset_path: Path, models: Sequence[str], allow_small: boo
         high_confidence_forest: list[tuple[bool, bool]] = []
         durations: list[float] = []
         valid = 0
+        predictions = {}
         for record_index, record in enumerate(records, start=1):
             images = []
             for image in record.get("images", [])[:4]:
@@ -107,6 +109,7 @@ def benchmark_models(dataset_path: Path, models: Sequence[str], allow_small: boo
             if prediction is None:
                 continue
             valid += 1
+            predictions[record["id"]] = prediction
             expected = record.get("expected", {})
             relevant = prediction["relevance_probability"] >= .55 and prediction["rejection_reason"] == "none"
             high_confidence_forest.append((
@@ -127,6 +130,7 @@ def benchmark_models(dataset_path: Path, models: Sequence[str], allow_small: boo
         p95 = ordered[min(len(ordered) - 1, math.ceil(len(ordered) * .95) - 1)] if ordered else math.inf
         macro_f1 = sum(f1_values) / len(f1_values) if f1_values else 0
         results[model] = {
+            "validation": evaluate_predictions(records, predictions),
             "locations": len(records), "valid_json_rate": valid / len(records) if records else 0,
             "forest_false_positive_rate": forest_false_positive_rate,
             "high_confidence_forest_predictions": high_forest_predictions,

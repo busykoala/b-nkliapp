@@ -1,9 +1,10 @@
 import "server-only";
+import { readBenchKnowledge } from "@/features/bench-knowledge/repository";
 
 import { sqlite } from "@/db/client";
 import { displayMaterial, yesNoUnknown } from "@/lib/bench";
 import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState, getSkyTrack, getSunTimes, type ObstructionType } from "@/lib/sun";
-import type { BenchDetail, LikelyEnvironment } from "@/lib/types";
+import type { BenchDetail, BenchProperty, LikelyEnvironment } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { getLocalWeather } from "@/integrations/weather/service";
 import type { CurrentUser } from "@/lib/security";
@@ -42,7 +43,7 @@ function zurichSeason(date: Date): BenchDetail["season"] {
 }
 
 export function readBenchPageMetadata(benchId: string) {
-  if (!/^(osm-(node|way)-\d+|community-[0-9a-f-]{36})$/.test(benchId)) return null;
+  if (!/^(osm-(node|way)-\d+|community-[0-9a-f-]{36}|inventory-[0-9a-f]{24})$/.test(benchId)) return null;
   const row = readDetailMetadata(benchId);
   if (!row) return null;
   const viewScore = row.view_score === null ? null : Math.max(1, Math.min(5, Math.round(row.view_score / 20)));
@@ -50,10 +51,18 @@ export function readBenchPageMetadata(benchId: string) {
 }
 
 export function readBenchDetail(benchId: string, currentUser: CurrentUser | null): BenchDetail | null {
-  if (!/^(osm-(node|way)-\d+|community-[0-9a-f-]{36})$/.test(benchId)) return null;
+  if (!/^(osm-(node|way)-\d+|community-[0-9a-f-]{36}|inventory-[0-9a-f]{24})$/.test(benchId)) return null;
   const row = readDetailRow(benchId);
   if (!row) return null;
 
+  const knowledge = readBenchKnowledge(Number(row.row_id), currentUser?.id);
+  const { all: contributedFields, mine: myContributedFields, latestEdits, lastConfirmedAt: myLastConfirmedAt } = readContributedFields(Number(row.row_id), currentUser?.id ?? null);
+  // A direct edit remains immediately visible while the bounded worker resolves new evidence.
+  const resolved = (field: string) => knowledge.attributes.find((item) => item.attribute === field
+    && (!latestEdits[field] || Date.parse(item.resolvedAt ?? "") >= Date.parse(latestEdits[field]))
+    && (row.osm_timestamp == null || Date.parse(item.resolvedAt ?? "") >= Date.parse(String(row.imported_at))));
+  const roof = resolved("covered");
+  const covered = roof ? roof.value : row.covered;
   const latitude = Number(row.latitude);
   const longitude = Number(row.longitude);
   const directionDegrees = row.direction_degrees === null ? null : Number(row.direction_degrees);
@@ -84,7 +93,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
   const vegetationMaxHeight = row.vegetation_max_height === null ? null : Number(row.vegetation_max_height);
   const distanceWaterMeters = !exactLandEvidence || row.distance_water_meters === null ? null : Number(row.distance_water_meters);
   const distancePathMeters = !exactOsmEvidence || row.distance_path_meters === null ? null : Number(row.distance_path_meters);
-  const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(row.covered), canopyPercent };
+  const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(covered), canopyPercent };
   const now = benchObservationNow();
   const season = zurichSeason(now);
   const sun = calculateSunState({ ...sunInput, date: now });
@@ -157,9 +166,8 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     evidence: likelyEvidence,
   } : null;
 
-  const { all: contributedFields, mine: myContributedFields, lastConfirmedAt: myLastConfirmedAt } = readContributedFields(Number(row.row_id), currentUser?.id ?? null);
-  const propertySource = (field: string) => contributedFields.has(field) || row.osm_type === "community" ? "Bänkli App" as const : "OpenStreetMap" as const;
-  const properties = [
+  const propertySource = (field: string): BenchProperty["source"] => contributedFields.has(field) || row.osm_type === "community" ? "Bänkli App" : String(row.id).startsWith("inventory-") ? "Amtliche Daten" : "OpenStreetMap";
+  const properties: BenchProperty[] = [
     { key: "backrest" as const, label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: propertySource("backrest"), contributedByMe: myContributedFields.has("backrest") },
     { key: "armrest" as const, label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: propertySource("armrest"), contributedByMe: myContributedFields.has("armrest") },
     { key: "covered" as const, label: "Überdacht", value: yesNoUnknown(row.covered as number | null), source: propertySource("covered"), contributedByMe: myContributedFields.has("covered") },
@@ -168,7 +176,17 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     { key: "wasteBasketNearby" as const, label: "Abfalleimer nahebei", value: yesNoUnknown(row.waste_basket_nearby as number | null), source: propertySource("wasteBasketNearby"), contributedByMe: myContributedFields.has("wasteBasketNearby") },
     { key: "material" as const, label: "Material", value: displayMaterial(row.material as string | null), source: propertySource("material"), contributedByMe: myContributedFields.has("material") },
     { key: "seats" as const, label: "Sitzplätze", value: row.seats ? String(row.seats) : "Unbekannt", source: propertySource("seats"), contributedByMe: myContributedFields.has("seats") },
-  ];
+  ].map((property) => {
+    const state = resolved(property.key);
+    if (!state) return property;
+    const value = state.value == null ? "Unbekannt"
+      : property.key === "material" ? displayMaterial(String(state.value))
+      : property.key === "seats" ? String(state.value)
+      : yesNoUnknown(Number(state.value));
+    const source: BenchProperty["source"] = state.sourceTypes.length > 1 ? "Mehrere Quellen"
+      : state.sourceTypes[0] === "community" ? "Bänkli App" : state.sourceTypes[0] === "official" ? "Amtliche Daten" : "OpenStreetMap";
+    return { ...property, value, source };
+  });
   return {
     id: String(row.id), osmType: String(row.osm_type), osmId: Number(row.osm_id),
     latitude, longitude, title: String(row.name || row.description || "Sitzbank"),
@@ -238,7 +256,10 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     moments: community.moments, care: { counts: community.careCounts, mine: community.myCare },
     followingBench: community.followingBench, followingPlace: community.followingPlace,
     directionContributedByMe: myContributedFields.has("direction"),
-    sourceUpdatedAt: String(row.source_updated_at), pipelineVersion,
+    knowledge,
+    sourceUpdatedAt: !String(row.id).startsWith("osm-") ? (row.source_updated_at ? String(row.source_updated_at) : null) : row.osm_timestamp ? String(row.osm_timestamp) : null,
+    importedAt: String(row.imported_at), osmVersion: row.osm_version == null ? null : Number(row.osm_version),
+    osmChangeset: row.osm_changeset == null ? null : Number(row.osm_changeset), pipelineVersion,
   };
 }
 

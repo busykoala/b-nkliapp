@@ -11,6 +11,8 @@ import os
 import sys
 from pathlib import Path
 
+from benchly.knowledge.municipal import import_zurich_benches
+from benchly.knowledge.jobs import backfill_knowledge, refresh_places, import_municipal, refresh_noise_job, prepare_benchmark
 from benchly.benches.jobs import (
     import_osm_job,
     inventory_job,
@@ -42,6 +44,48 @@ from benchly.weather.jobs import refresh_weather_job
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Import and enrich Swiss benches into Benchly's database.")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    knowledge = subparsers.add_parser("backfill-knowledge", help="Resume geography, evidence, amenities, approaches and separate noise enrichment")
+    _database_argument(knowledge)
+    knowledge.add_argument("--limit", type=int, default=1000)
+    knowledge.add_argument("--after-row-id", type=int)
+    knowledge.add_argument("--queued-only", action="store_true")
+    knowledge.add_argument("--terrain-dir")
+    knowledge.add_argument("--noise-dir", default="./data/sources")
+    knowledge.set_defaults(function=backfill_knowledge, uses_lock=True)
+
+    places = subparsers.add_parser("refresh-official-places", help="Cache and import official boundaries and locality names")
+    _database_argument(places)
+    places.add_argument("--boundaries", type=Path)
+    places.add_argument("--names", type=Path)
+    places.add_argument("--source-version")
+    places.add_argument("--cache-dir", default="./data/sources/places")
+    places.set_defaults(function=refresh_places, uses_lock=True)
+
+    zurich_benches = subparsers.add_parser("import-zurich-benches", help="Import the official CC0 municipal inventory with conservative matching")
+    zurich_benches.add_argument("--database", default="./data/benchly.sqlite")
+    zurich_benches.add_argument("--cache-dir", default="./data/sources/municipal")
+    zurich_benches.add_argument("--input", help="Use a previously downloaded official GeoJSON response")
+    zurich_benches.set_defaults(function=import_zurich_benches, uses_lock=True)
+
+    municipal = subparsers.add_parser("import-municipal-inventory", help="Import WGS84 GeoJSON/JSONL while preserving ambiguous source records")
+    _database_argument(municipal)
+    municipal.add_argument("input", type=Path)
+    municipal.add_argument("--source", required=True)
+    municipal.add_argument("--source-version", required=True)
+    municipal.add_argument("--id-field", default="id")
+    municipal.add_argument("--updated-field", default="updated_at")
+    municipal.set_defaults(function=import_municipal, uses_lock=True)
+
+    noise = subparsers.add_parser("refresh-noise-rasters", help="Cache official road and rail noise for day and night")
+    noise.add_argument("--directory", default="./data/sources")
+    noise.set_defaults(function=refresh_noise_job, uses_lock=False)
+
+    benchmark = subparsers.add_parser("prepare-vision-benchmark", help="Add source strata and report progress towards 1000 human-labelled locations")
+    _database_argument(benchmark)
+    benchmark.add_argument("input", type=Path)
+    benchmark.add_argument("--output", required=True, type=Path)
+    benchmark.set_defaults(function=prepare_benchmark, uses_lock=False)
 
     bank_photos = subparsers.add_parser(
         "analyze-source-photos", help="Analyze source-linked photos in RAM into a separate resumable evidence DB"

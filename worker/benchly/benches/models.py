@@ -33,6 +33,9 @@ class Bench(SQLModel, table=True):
     active: int = 1
     source_updated_at: str
     imported_at: str
+    osm_version: Optional[int] = None
+    osm_timestamp: Optional[str] = None
+    osm_changeset: Optional[int] = None
     name: Optional[str] = None
     dedication: Optional[str] = None
     location_name: Optional[str] = None

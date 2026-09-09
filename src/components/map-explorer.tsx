@@ -401,7 +401,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         <div className="pointer-events-auto flex items-center gap-2">
           <SearchBox onSelect={choosePlace} onLocate={locate} />
           <button aria-label="Filter öffnen" aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>Filter</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
-          <AppMenu user={user} onAdd={openAdd} onWalk={() => setWalkOpen(true)} activeFilters={activeFilterCount} onFilter={() => setFilterOpen(true)} />
+          <AppMenu user={user} onAdd={openAdd} onWalk={() => setWalkOpen(true)} />
         </div>
         {activeFilterCount > 0 && <div className="active-filter-chips pointer-events-auto" aria-label="Aktive Filter">{activeMapFilters(filters).map(({ key, label }) => <button key={key} type="button" aria-label={`${label} entfernen`} onClick={() => setFilters((current) => ({ ...current, [key]: undefined }))}>{label}<X size={14} /></button>)}</div>}
       </header>

@@ -84,7 +84,7 @@ export type BenchProperty = {
   key: "backrest" | "armrest" | "covered" | "wheelchair" | "fireplaceNearby" | "wasteBasketNearby" | "material" | "seats";
   label: string;
   value: string;
-  source: "OpenStreetMap" | "Bänkli App";
+  source: "OpenStreetMap" | "Bänkli App" | "Amtliche Daten" | "Mehrere Quellen";
   contributedByMe?: boolean;
 };
 
@@ -171,6 +171,7 @@ export type BenchObservationSummary = {
 };
 
 export type BenchDetail = {
+  knowledge?: import("@/features/bench-knowledge/model").BenchKnowledge;
   id: string;
   osmType: string;
   osmId: number;
@@ -288,7 +289,10 @@ export type BenchDetail = {
   followingBench: boolean;
   followingPlace: boolean;
   directionContributedByMe: boolean;
-  sourceUpdatedAt: string;
+  sourceUpdatedAt: string | null;
+  importedAt: string;
+  osmVersion: number | null;
+  osmChangeset: number | null;
   pipelineVersion: string | null;
 };
 

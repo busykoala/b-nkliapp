@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { Footprints, X, Sun, Trees, MapPin } from "lucide-react";
+import { ChevronDown, ChevronUp, Footprints, X, Sun, Trees, MapPin } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { journeyMinutes, PACE_OPTIONS } from "@/lib/journey";
 import { walkCopy } from "@/lib/walks/model";
@@ -15,7 +15,7 @@ export function WalkPlanner({ getMap, onClose, onReturn }: { getMap: () => MapLi
   useEffect(() => { title.current?.focus(); }, []);
   const copy = p.chosen && p.result ? walkCopy([p.chosen.bench], p.result.query.shape, p.chosen.extraBenches.length) : null;
   return <aside className={`journey-panel storybook-panel ${expanded ? "is-expanded" : ""}`} aria-label="Spaziergang entdecken">
-    <div className="journey-chrome"><button className="journey-resize" aria-label="Spaziergang vergrössern oder verkleinern" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}><span className="journey-handle" /></button><button aria-label="Spaziergang schliessen" onClick={onClose}><X size={18} /></button></div>
+    <div className="journey-chrome"><button className="overlay-resize" aria-label="Spaziergang vergrössern oder verkleinern" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? <ChevronDown size={20} /> : <ChevronUp size={20} />}</button><button aria-label="Spaziergang schliessen" onClick={onClose}><X size={18} /></button></div>
     <div className="journey-scroll"><header><span className="story-eyebrow">Zeit für ein Bänkli</span><h2 ref={title} tabIndex={-1}>Spaziergang entdecken</h2><p>Ein schöner Weg. Ein Bänkli zum Innehalten.</p></header>
       <section className="journey-controls" aria-label="Spaziergang planen">
         <StartPicker origin={p.origin} onChange={p.chooseOrigin} getMap={getMap} />

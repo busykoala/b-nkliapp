@@ -11,7 +11,7 @@ import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 
 const inputSchema = z.object({ caption: z.string().trim().max(180), website: z.string().max(0).optional() });
-const benchIdSchema = z.string().regex(/^(osm-(node|way)-\d+|community-[0-9a-f-]{36})$/);
+const benchIdSchema = z.string().regex(/^(osm-(node|way)-\d+|community-[0-9a-f-]{36}|inventory-[0-9a-f]{24})$/);
 const allowedTypes = new Set(["image/webp", "image/jpeg", "image/png"]);
 
 export type BenchPhotoResult = { ok: true; dataUrl: string } | { ok: false; message: string };

@@ -1,3 +1,4 @@
+import { KnowledgeDetails } from "@/features/bench-knowledge/knowledge-details";
 import { BenchFeatureEditor } from "@/components/bench-feature-editor";
 import { Accessibility, Armchair, ChevronDown, Compass, Flame, Hammer, MoveHorizontal, Trash2, Umbrella, UsersRound } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
@@ -27,9 +28,17 @@ export function BenchPanel({ bench, signedIn = false, onChanged }: { bench: Benc
       <DetailRows title="Ort & Lage" rows={[
         ["Höhe", bench.elevationMeters === null ? null : `${Math.round(bench.elevationMeters)} m ü. M.`],
         ["Ort", [bench.locationPostcode, bench.locationName, bench.locationCanton].filter(Boolean).join(" ") || null],
+        ["Politische Gemeinde", bench.knowledge?.geography?.municipalityName ? `${bench.knowledge.geography.municipalityName} · BFS ${bench.knowledge.geography.municipalityId ?? "offen"}` : null],
+        ["Kanton", bench.knowledge?.geography?.cantonName ?? null],
+        ["Bezirk", bench.knowledge?.geography?.districtName ?? null],
+        ["Ortsname in der Nähe", bench.knowledge?.geography?.localityName ?? null],
+        ["Quelleneintrag geändert", bench.sourceUpdatedAt ? new Date(bench.sourceUpdatedAt).toLocaleDateString("de-CH") : "Unbekannt"],
+        ["Bei uns eingelesen", bench.importedAt ? new Date(bench.importedAt).toLocaleDateString("de-CH") : null],
+        ["OSM-Version", bench.osmVersion == null ? null : String(bench.osmVersion)],
         ["Koordinaten", `${bench.latitude.toFixed(6)}, ${bench.longitude.toFixed(6)}`],
       ]} />
     </details>
+    {bench.knowledge && <KnowledgeDetails knowledge={bench.knowledge} />}
   </section>;
 }
 

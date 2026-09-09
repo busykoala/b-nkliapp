@@ -54,6 +54,8 @@ def refresh_nearby_amenities(database) -> None:
 def upsert_inventory_benches(database, rows: Sequence[dict[str, object]], preserve_edits: bool) -> None:
     if not rows:
         return
+    available_columns = {row[1] for row in database.execute("PRAGMA table_info(benches)")}
+    rows = [{key: value for key, value in row.items() if key in available_columns} for row in rows]
     rows = [Bench.model_validate(row).model_dump(exclude_unset=True, exclude={"row_id"}) for row in rows]
     statement = insert(Bench).values(list(rows))
     excluded = statement.excluded
@@ -68,6 +70,9 @@ def upsert_inventory_benches(database, rows: Sequence[dict[str, object]], preser
         "source_updated_at": excluded.source_updated_at,
         "imported_at": excluded.imported_at,
     }
+    for key in ("osm_version", "osm_timestamp", "osm_changeset"):
+        if key in available_columns:
+            direct[key] = getattr(excluded, key)
     for column_name, edit_field in EDITED_FIELDS.items():
         if column_name not in available_columns:
             continue

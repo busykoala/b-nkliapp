@@ -1,20 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-test("opens catalog-driven thanks, sources and refreshes", async ({ page }, testInfo) => {
+test("explains sources and data use without exposing job controls", async ({ page }, info) => {
   await page.goto("/");
   await page.getByLabel("Menü öffnen").click();
-  await page.getByRole("link", { name: "Danke und Daten" }).click();
+  await page.getByRole("link", { name: "Über die Bänkli App", exact: true }).click();
   await expect(page).toHaveURL(/\/danke$/);
-  await expect(page.getByRole("heading", { name: "Danke fürs Bänkli." })).toBeVisible();
-  for (const name of ["Stephan", "Matthias", "Jonas", "Community", "GraphHopper", "Qwen3-VL 8B · Bänkli Vision"]) {
-    await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
-  }
-  await expect(page.getByText("in Prüfung", { exact: false })).toHaveCount(0);
-  await expect(page.getByText("nur Forschung", { exact: false })).toHaveCount(0);
-  await expect(page.getByText("STATPOP", { exact: false })).toHaveCount(0);
-  await page.locator(".source-card").filter({ hasText: "Qwen3-VL 8B · Bänkli Vision" }).screenshot({ path: testInfo.outputPath("inference-model-source.png") });
-  await expect(page.getByText(/^stündlich/)).toBeVisible();
-  await expect(page.locator(".refresh-list details")).toHaveCount(17);
-  await page.locator(".refresh-list details").first().locator("summary").click();
-  await expect(page.getByText(/Noch kein erfolgreicher Lauf gemeldet|Stand/).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ein guter Platz für eine Pause." })).toBeVisible();
+  const buildings = page.locator(".about-sources details").filter({ hasText: "swissBUILDINGS3D 3.0" });
+  await buildings.locator("summary").click();
+  await expect(buildings.getByText(/Sonne dahinter/)).toBeVisible();
+  await expect(page.getByText(/CronJob|Datenküche|letzter Lauf/)).toHaveCount(0);
+  await page.getByRole("button", { name: "Foto beitragen", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Bildprüfung auf unserem Modellserver" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Kurze Pause im Speicher" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Fehler oder Idee melden ↗" })).toHaveAttribute("href", "https://github.com/busykoala/b-nkliapp/issues");
+  await page.locator(".privacy-flow").screenshot({ path: info.outputPath("privacy-flow.png") });
+  await page.getByRole("link", { name: "Datenschutz & Kontakt" }).click();
+  await expect(page.getByRole("heading", { name: "Wofür wir Daten brauchen" })).toBeVisible();
 });

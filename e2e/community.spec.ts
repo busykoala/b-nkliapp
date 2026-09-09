@@ -21,7 +21,7 @@ test("keeps the community feed local, finite and centred on places", async ({ pa
   await expect(page.getByRole("heading", { name: "Bänkli-Momente" })).toBeVisible();
   await expect(page.getByText("Bänkli dieser Woche", { exact: true })).toBeVisible();
   await expect(page.getByText("Gemeinsames Thema", { exact: true })).toBeVisible();
-  const entryCount = await page.locator(".feed-entry").count();
+  const entryCount = await page.locator(".feed-bench-group").count();
   expect(entryCount).toBeLessThanOrEqual(36);
   if (!entryCount) await expect(page.getByText("Noch weht kein neuer Eintrag herein.")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("community-feed-empty.png"), fullPage: true });
@@ -49,6 +49,11 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await follow.click();
   await expect(page.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText(/\d+× gereinigt/)).toBeVisible();
+  await page.getByRole("link", { name: "Alle Lieblingsplätze" }).click();
+  await expect(page.getByRole("heading", { name: "Meine Lieblingsplätze" })).toBeVisible();
+  await expect(page.locator(".saved-benches a[href='/bank/osm-node-101']")).toBeVisible();
+  await page.locator(".saved-benches a[href='/bank/osm-node-101']").click();
+  await expect(page.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {

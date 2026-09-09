@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Armchair, Check, Footprints, Map, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, Armchair, Bookmark, Check, Footprints, Map, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
 import type { CurrentUser } from "@/lib/security";
 import type { ProfileMoment, TrailProfile } from "@/lib/profile";
 import { AppMenu } from "@/components/app-menu";
@@ -35,6 +35,7 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
           <small>Seit {new Intl.DateTimeFormat("de-CH", { month: "long", year: "numeric" }).format(new Date(profile.joinedAt))} unterwegs</small>
         </div>
       </section>
+      {own && <Link href="/lieblingsplaetze" className="ui-button profile-favourites"><Bookmark size={18} /> Meine Lieblingsplätze</Link>}
       <section className="profile-section profile-numbers">
         <header><div><small>Mitgemacht</small><h2>Kleine Dinge, die helfen</h2></div></header>
         <div><ProfileNumber value={profile.activity.added} label="entdeckt" icon={<MapPinPlus />} /><ProfileNumber value={profile.activity.rated} label="bewertet" icon={<Star />} /><ProfileNumber value={profile.activity.confirmed} label="bestätigt" icon={<Check />} /><ProfileNumber value={profile.activity.edited + profile.activity.corrected} label="ergänzt" icon={<Pencil />} /></div>

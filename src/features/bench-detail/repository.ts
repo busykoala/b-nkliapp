@@ -138,13 +138,12 @@ export function readBenchCommunity(row: DetailRow, userId: number | null) {
 }
 
 export function readContributedFields(rowId: number, userId: number | null) {
-  const all = new Set((sqlite.prepare(
-    "SELECT DISTINCT field FROM bench_metadata_edits WHERE bench_row_id=?",
-  ).all(rowId) as Array<{ field: string }>).map((item) => item.field));
+  const edits = sqlite.prepare("SELECT field,max(created_at) latest_at FROM bench_metadata_edits WHERE bench_row_id=? GROUP BY field").all(rowId) as Array<{ field: string; latest_at: string }>;
+  const all = new Set(edits.map((item) => item.field));
   const mine = new Set(userId === null ? [] : (sqlite.prepare(
     "SELECT DISTINCT field FROM bench_metadata_edits WHERE bench_row_id=? AND user_id=?",
   ).all(rowId, userId) as Array<{ field: string }>).map((item) => item.field));
   const confirmation = userId === null ? undefined : sqlite.prepare("SELECT coalesce(last_seen_at,created_at) created_at FROM bench_confirmations WHERE bench_row_id=? AND user_id=?")
     .get(rowId, userId) as { created_at: string } | undefined;
-  return { all, mine, lastConfirmedAt: confirmation?.created_at ?? null };
+  return { all, mine, latestEdits: Object.fromEntries(edits.map((item) => [item.field, item.latest_at])), lastConfirmedAt: confirmation?.created_at ?? null };
 }
