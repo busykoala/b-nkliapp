@@ -31,9 +31,17 @@ export default defineConfig({
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=tsx --import=${join(process.cwd(), "scripts/journey-test-providers.ts")}`,
     },
   },
-  use: { baseURL, ignoreHTTPSErrors: production, trace: "retain-on-failure" },
+  use: {
+    baseURL,
+    ignoreHTTPSErrors: production,
+    // Keep DOM/network diagnostics without recording every WebGL animation frame.
+    trace: { mode: "retain-on-failure", screenshots: false, snapshots: true, sources: true },
+    screenshot: "only-on-failure",
+  },
   projects: [
-    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
-    { name: "mobile-safari", use: { ...devices["iPhone 14"], browserName: "webkit" } },
+    // Hosted runners render WebGL in software. Keep mobile viewports and touch
+    // input at 1x in CI; the performance test explicitly retains native density.
+    { name: "mobile-chrome", use: { ...devices["Pixel 7"], ...(process.env.CI ? { deviceScaleFactor: 1 } : {}) } },
+    { name: "mobile-safari", use: { ...devices["iPhone 14"], browserName: "webkit", ...(process.env.CI ? { deviceScaleFactor: 1 } : {}) } },
   ],
 });

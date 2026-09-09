@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const benchId = process.env.BENCHLY_E2E_BENCH_ID ?? "osm-node-101";
 
 async function registerUser(page: import("@playwright/test").Page, username: string) {
-  await page.goto("/");
+  await page.goto(`/bank/${benchId}`);
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Anmelden").click();
   await page.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
