@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 async function registerUser(page: import("@playwright/test").Page, username: string) {
-  await page.goto("/");
+  await page.goto("/bank/osm-node-101");
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Anmelden").click();
   await page.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
@@ -31,7 +31,6 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   const runId = `${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
   const moment = `Die Limmat klingt hier morgens besonders ruhig (${runId}).`;
   await registerUser(page, `p-${runId}`);
-  await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: "Beitragen", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
 
@@ -57,7 +56,6 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   page.on("pageerror", (error) => pageErrors.push(error));
   const runId = `${testInfo.project.name.slice(-6)}-photo-${Date.now().toString().slice(-5)}`;
   await registerUser(page, runId);
-  await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: "Beitragen", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
   await dialog.locator("summary").filter({ hasText: "Foto von diesem Platz" }).click();
