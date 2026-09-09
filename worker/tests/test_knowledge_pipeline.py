@@ -129,6 +129,7 @@ def test_amenity_area_and_way_count_once_without_merging_neighbouring_objects(mi
     from benchly.context.geometry import WGS84_TO_LV95
     from benchly.db import connect_database
     from benchly.knowledge.amenities import enrich_amenities, source_object_id
+    from benchly.knowledge.evidence import refresh_states
     database = connect_database(migrated_database)
     try:
         bench = dict(database.execute("SELECT * FROM benches").fetchone())
@@ -141,5 +142,8 @@ def test_amenity_area_and_way_count_once_without_merging_neighbouring_objects(mi
         assert shelter["distance_meters"] == 18
         assert shelter["count_100m"] == shelter["count_500m"] == 3
         assert source_object_id(context[-1]) == "relation-13"
+        assert refresh_states(database, bench)["shelter"]["value_json"] == "18.0"
+        enrich_amenities(database, bench, [])
+        assert "shelter" not in refresh_states(database, bench)
     finally:
         database.close()

@@ -190,7 +190,7 @@ def refresh_states(database, bench):
             from benchly.geo import distance_meters
             if distance_meters(current[0], current[1], bench["latitude"], bench["longitude"]) > 6:
                 continue
-        if row["method_version"] == "nearby-amenities-1":
+        if row["method_version"].startswith("nearby-amenities-"):
             current = database.execute("SELECT distance_meters FROM bench_amenities WHERE bench_row_id=? AND category=?", (bench["row_id"], row["attribute"])).fetchone()
             if not current or current[0] != json.loads(row["value_json"]):
                 continue
