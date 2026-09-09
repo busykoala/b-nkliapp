@@ -17,7 +17,10 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
   useEffect(() => {
     // A closing native menu dialog restores focus to its trigger after the
     // filter has mounted. Focus once that browser restoration has settled.
-    const focusTimer = window.setTimeout(() => closeRef.current?.focus(), 60);
+    const focusTimer = window.setTimeout(() => {
+      // Keep the user's focus if they already started navigating the filter.
+      if (!panelRef.current?.contains(document.activeElement)) closeRef.current?.focus();
+    }, 60);
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onCloseRef.current();

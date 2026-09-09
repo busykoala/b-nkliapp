@@ -45,6 +45,10 @@ async function submitViewCorrection(page: import("@playwright/test").Page, targe
 }
 
 test("keeps the view observation understandable in the mobile detail", async ({ page }, testInfo) => {
+  // This covers registration, all four steps, back navigation, save and undo.
+  // Linux WebKit spends 1–3 seconds per click; keep individual actions bounded.
+  test.setTimeout(60_000);
+  page.setDefaultTimeout(5_000);
   await registerUser(page, `view-${Date.now().toString().slice(-8)}`);
   await page.goto(`/bank/${benchId}`);
   await page.getByRole("tab", { name: "Aussicht" }).click();
