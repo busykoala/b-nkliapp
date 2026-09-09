@@ -200,7 +200,7 @@ def refresh_states(database, bench):
             current = database.execute(f"SELECT {field} FROM bench_approaches WHERE bench_row_id=?", (bench["row_id"],)).fetchone() if field else None
             if not current or current[0] != json.loads(row["value_json"]):
                 continue
-        if row["method_version"] == "official-places-1":
+        if row["method_version"].startswith("official-places-"):
             current = database.execute("SELECT source_version FROM bench_geography WHERE bench_row_id=?", (bench["row_id"],)).fetchone()
             if not current or current[0] != metadata.get("source_version"):
                 continue

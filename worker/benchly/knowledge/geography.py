@@ -12,9 +12,17 @@ from benchly.knowledge.models import Geography, PlaceFeature
 from benchly.knowledge.repository import upsert
 from benchly.runtime import now_iso
 
-METHOD = "official-places-1"
-LOCALITIES = {"2300": 0, "2301": 1, "2302": 2, "2303": 3, "1500": 0, "1501": 1, "1502": 2, "1503": 3,
-              "ort": 0, "ortsteil": 1, "quartier": 2, "quartierteil": 3, "1101": 4, "lokalname swisstopo": 4}
+METHOD = "official-places-2"
+LOCALITIES = {"2300": 2, "2301": 0, "2302": 0, "2303": 1, "1500": 2, "1501": 0, "1502": 0, "1503": 1,
+              "ort": 2, "ortsteil": 0, "quartier": 0, "quartierteil": 1, "1101": 3, "lokalname swisstopo": 3}
+
+
+def local_name_priority(props):
+    # Several language records share one geometric UUID. Keep the local official
+    # name, rather than whichever translated name happens to arrive last.
+    name_type = str(props.get("NAMEN_TYP", "")).lower()
+    local = 2 if name_type == "exonym" else 0 if name_type in {"endonym", "einfacher name"} else 1
+    return local, str(props.get("STATUS", "")).lower() != "offiziell", str(props.get("NAME", ""))
 
 
 @lru_cache(maxsize=4096)
@@ -32,6 +40,7 @@ def import_places(database, path: Path, source: str, version: str):
     """Read GPKG/GDB through GDAL once. Swap generations only after a complete import."""
     imported = now_iso()
     count = 0
+    chosen_names = {}
     for layer in geopackage_layers(path):
         upper = layer.upper()
         kind = "locality" if source == "swissNAMES3D" else (
@@ -49,17 +58,23 @@ def import_places(database, path: Path, source: str, version: str):
             source_id = props.get("UUID") or feature.get("id")
             if not name or source_id is None:
                 continue
+            key = f"{layer}:{source_id}"
+            if kind == "locality" and key in chosen_names and local_name_priority(props) >= chosen_names[key]:
+                continue
             original = shape(feature["geometry"])
             if original.is_empty or not original.is_valid:
                 continue
             min_lon, min_lat, max_lon, max_lat = original.bounds
             projected = transform(WGS84_TO_LV95.transform, original)
-            upsert(database, PlaceFeature, dict(source=source, source_id=f"{layer}:{source_id}", kind=kind, name=str(name),
+            upsert(database, PlaceFeature, dict(source=source, source_id=key, kind=kind, name=str(name),
                 municipality_id=identifier(props.get("BFS_NUMMER")) if kind == "municipality" else None,
                 canton_id=identifier(props.get("KANTONSNUMMER")), district_id=identifier(props.get("BEZIRKSNUMMER")),
                 rank=LOCALITIES.get(category, 0), geometry_wkb=to_wkb(projected), min_lon=min_lon, max_lon=max_lon,
                 min_lat=min_lat, max_lat=max_lat, source_version=version, source_updated_at=None, imported_at=imported), ["source", "source_id"])
-            count += 1
+            if kind != "locality" or key not in chosen_names:
+                count += 1
+            if kind == "locality":
+                chosen_names[key] = local_name_priority(props)
     if not count:
         raise ValueError(f"No recognised {source} features; the existing generation was retained")
     write(database, delete(PlaceFeature).where(PlaceFeature.source == source, PlaceFeature.imported_at != imported))

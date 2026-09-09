@@ -143,13 +143,16 @@ def test_matching_requires_attributes_as_well_as_distance():
 
 
 def test_boundary_containment_beats_nearest_locality(database):
+    from benchly.knowledge.geography import LOCALITIES
     database.execute("CREATE VIRTUAL TABLE official_place_spatial USING rtree(id,min_lon,max_lon,min_lat,max_lat)")
     b = bench()
     x, y = WGS84_TO_LV95.transform(b["longitude"], b["latitude"])
-    rows = [("municipality", "Spiez", box(x-100, y-100, x+100, y+100)), ("locality", "Hafen", Point(x+20, y))]
-    for index, (kind, name, geom) in enumerate(rows, 1):
+    rows = [("municipality", "Spiez", box(x-100, y-100, x+100, y+100), 0),
+            ("locality", "Hafen", Point(x+20, y), LOCALITIES["quartier"]),
+            ("locality", "Spiez", box(x-100, y-100, x+100, y+100), LOCALITIES["ort"])]
+    for index, (kind, name, geom, rank) in enumerate(rows, 1):
         upsert(database, PlaceFeature, dict(id=index, source="fixture", source_id=str(index), kind=kind, name=name,
-            municipality_id="768" if kind == "municipality" else None, geometry_wkb=to_wkb(geom),
+            municipality_id="768" if kind == "municipality" else None, geometry_wkb=to_wkb(geom), rank=rank,
             min_lon=7.67, max_lon=7.69, min_lat=46.67, max_lat=46.69, source_version="2026", imported_at="2026-09-01"), ["source", "source_id"])
         database.execute("INSERT INTO official_place_spatial VALUES(?,?,?,?,?)", (index, 7.67, 7.69, 46.67, 46.69))
     result = enrich_geography(database, b)
@@ -222,3 +225,15 @@ def test_amenities_preserve_building_use_and_drinking_water_evidence():
     assert amenity_categories({"kind": "building", "raw_tags": '{"building":"yes","amenity":"toilets"}'}) == {"toilets"}
     assert amenity_categories({"kind": "fountain", "raw_tags": '{"amenity":"fountain"}'}) == {"fountain"}
     assert amenity_categories({"kind": "fountain", "raw_tags": '{"amenity":"fountain","drinking_water":"yes"}'}) == {"fountain", "drinking_water"}
+
+
+def test_locality_language_variants_do_not_overwrite_the_official_local_name(database, monkeypatch, tmp_path):
+    from benchly.knowledge import geography
+    rows = [dict(properties=dict(UUID="same-object", NAME=name, OBJEKTART="Ort", NAMEN_TYP=kind, STATUS=status),
+                 geometry=dict(type="Point", coordinates=[8.54, 47.37]))
+            for name, kind, status in (("Zürich", "Endonym", "offiziell"), ("Zurigo", "Exonym", "informell"))]
+    monkeypatch.setattr(geography, "geopackage_layers", lambda path: ["swissnames3d_pkt"])
+    for order in (rows, list(reversed(rows))):
+        monkeypatch.setattr(geography, "iter_layer_features", lambda path, layer: iter(order))
+        assert geography.import_places(database, tmp_path / 'names.gpkg', "swissNAMES3D", "2026") == 1
+        assert database.execute("SELECT name FROM official_place_features").fetchone()[0] == "Zürich"
