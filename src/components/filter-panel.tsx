@@ -17,7 +17,10 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
   useEffect(() => {
     // A closing native menu dialog restores focus to its trigger after the
     // filter has mounted. Focus once that browser restoration has settled.
-    const focusTimer = window.setTimeout(() => closeRef.current?.focus(), 60);
+    const focusTimer = window.setTimeout(() => {
+      // Keep the user's focus if they already started navigating the filter.
+      if (!panelRef.current?.contains(document.activeElement)) closeRef.current?.focus();
+    }, 60);
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onCloseRef.current();
@@ -40,7 +43,7 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
     return () => {
       window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKey);
-      window.setTimeout(() => document.querySelector<HTMLButtonElement>('[aria-label="Menü öffnen"]')?.focus(), 0);
+      window.setTimeout(() => document.querySelector<HTMLButtonElement>('[aria-label="Filter öffnen"]')?.focus(), 0);
     };
   }, []);
   const toggle = (key: keyof MapFilters) => onChange({ ...filters, [key]: filters[key] === true ? undefined : true });
@@ -51,14 +54,14 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
         <div><p className="filter-eyebrow">Bänkli auswählen</p><h2 id={titleId}>Was brauchst du?</h2>{activeCount > 0 && <p className="filter-count" role="status">{activeCount} Filter aktiv</p>}</div>
         <button ref={closeRef} autoFocus className="btn btn-circle btn-ghost btn-sm" aria-label="Filter schliessen" onClick={onClose}><X size={19} /></button>
       </div>
-      <p className="filter-intro">Nur Angaben, die Menschen vor Ort ergänzen oder korrigieren können.</p>
+      <p className="filter-intro">Ausstattung nach erfassten Angaben. Licht wird aus Gelände und Umgebung geschätzt.</p>
       <FilterGroup label="Für deine Pause">
         <FilterToggle active={filters.backrest === true} icon={<Armchair />} label="Rückenlehne" onClick={() => toggle("backrest")} />
         <FilterToggle active={filters.covered === true} icon={<Umbrella />} label="Überdacht" onClick={() => toggle("covered")} />
         <FilterToggle active={filters.fireplaceNearby === true} icon={<Flame />} label="Feuerstelle" onClick={() => toggle("fireplaceNearby")} />
         <FilterToggle active={filters.wasteBasketNearby === true} icon={<Trash2 />} label="Abfalleimer" onClick={() => toggle("wasteBasketNearby")} />
       </FilterGroup>
-      <FilterGroup label="Licht jetzt">
+      <FilterGroup label="Licht jetzt · geschätzt">
         <FilterToggle active={filters.sunnyNow === true} icon={<Sun />} label="Sonne" onClick={() => setLight(true)} />
         <FilterToggle active={filters.sunnyNow === false} icon={<CloudSun />} label="Schatten" onClick={() => setLight(false)} />
       </FilterGroup>
@@ -66,8 +69,9 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
         <summary>Mehr Wünsche</summary>
         <FilterGroup label="Zugang & Komfort">
           <FilterToggle active={filters.armrest === true} icon={<Hand />} label="Armlehnen" onClick={() => toggle("armrest")} />
-          <FilterToggle active={filters.wheelchair === true} icon={<Accessibility />} label="Stufenlos" onClick={() => toggle("wheelchair")} />
+          <FilterToggle active={filters.wheelchair === true} icon={<Accessibility />} label="Mit Rollstuhl nutzbar" onClick={() => toggle("wheelchair")} />
         </FilterGroup>
+        <p className="filter-intro">Diese Angabe betrifft das Bänkli. Der Zugangsweg ist damit noch nicht geprüft.</p>
         <div className="filter-select-grid">
           <label className="filter-material">
             <span>Material</span>

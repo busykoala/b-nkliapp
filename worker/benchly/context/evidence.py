@@ -11,6 +11,7 @@ from benchly.context.geometry import (
     feature_contains_exact,
     feature_distance_exact,
     feature_nearest_location,
+    feature_is_surface_water,
     point_hits_exact_building,
 )
 
@@ -26,7 +27,7 @@ def nearby_context(connection: sqlite3.Connection, latitude: float, longitude: f
         parameters.extend(kinds)
     return connection.execute(f"""
         SELECT f.* FROM environment_spatial_index s
-        JOIN environment_features f ON f.row_id=s.row_id
+        CROSS JOIN environment_features f ON f.row_id=s.row_id
         WHERE s.max_longitude>=? AND s.min_longitude<=? AND s.max_latitude>=? AND s.min_latitude<=?
         {kind_clause}
     """, parameters).fetchall()
@@ -46,7 +47,7 @@ def nearby_land_cover(connection: sqlite3.Connection, latitude: float, longitude
         parameters.append(official_context)
     return connection.execute("""
         SELECT f.* FROM land_cover_spatial_index s
-        JOIN land_cover_features f ON f.row_id=s.row_id
+        CROSS JOIN land_cover_features f ON f.row_id=s.row_id
         WHERE s.max_longitude>=? AND s.min_longitude<=? AND s.max_latitude>=? AND s.min_latitude<=?
         {source_clause}
     """.format(source_clause=source_clause), parameters).fetchall()
@@ -84,6 +85,7 @@ def preferred_exact_features(
     exact = [
         feature for feature in features
         if feature["kind"] == kind and feature["geometry_wkb"] is not None
+        and (kind != "water" or feature_is_surface_water(feature))
     ]
     if kind == "building":
         detailed = [feature for feature in exact if feature["source"] == "swissBUILDINGS3D"]
@@ -118,6 +120,24 @@ def feature_distance(latitude: float, longitude: float, feature: sqlite3.Row) ->
     nearest_latitude = min(max(latitude, feature["min_latitude"]), feature["max_latitude"])
     nearest_longitude = min(max(longitude, feature["min_longitude"]), feature["max_longitude"])
     return distance_meters(latitude, longitude, nearest_latitude, nearest_longitude)
+
+
+def nearest_exact_context(connection, latitude: float, longitude: float, kind: str,
+                          official_context: bool | str | None) -> list[sqlite3.Row]:
+    """Find the nearest exact geometry without decoding the entire 10 km area.
+
+    A bounding-box hit alone is insufficient: an elongated polygon can be far
+    away. Stop expanding only when an exact distance is within the search
+    radius. The small bbox margin covers the geographic/metre approximation.
+    """
+    for radius in (100, 500, 2_000, 10_000):
+        features = preferred_exact_features(
+            nearby_context(connection, latitude, longitude, radius * 1.02, [kind]),
+            kind, official_context,
+        )
+        if any(feature_distance(latitude, longitude, feature) <= radius for feature in features):
+            return features
+    return features
 
 
 def feature_bearing(latitude: float, longitude: float, feature: sqlite3.Row) -> float:

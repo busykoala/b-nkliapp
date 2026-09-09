@@ -23,7 +23,7 @@ export function useWalkPlanner(getMap: () => MapLibreMap | null) {
   const [settings, setSettings] = useState(() => {
     let speed: WalkQuery["speed"] = 4.2;
     try { speed = parsePreferences(localStorage.getItem(PREFERENCES_KEY)).speed; } catch {}
-    return { minutes: 50 as WalkQuery["minutes"], shape: "loop" as WalkQuery["shape"], light: "any" as WalkQuery["light"], difficulty: "easy" as WalkQuery["difficulty"], speed, time: "" };
+    return { minutes: 50 as WalkQuery["minutes"], shape: "loop" as WalkQuery["shape"], light: "any" as WalkQuery["light"], difficulty: "easy" as WalkQuery["difficulty"], speed, time: "", maxRestMinutes: undefined as WalkQuery["maxRestMinutes"] };
   });
   const [result, setResult] = useState<WalkResult | null>(null); const [selected, setSelected] = useState("");
   const [error, setError] = useState(""); const [dirty, setDirty] = useState(false); const [pending, startTransition] = useTransition();
@@ -44,7 +44,7 @@ export function useWalkPlanner(getMap: () => MapLibreMap | null) {
     const paint = () => {
       if (painted || !map.isStyleLoaded()) return;
       painted = paintJourney(map, result.suggestions.map((s) => summarizeJourney(s.id, walkLegs(s, result.query))), selected, active);
-      const data: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: extras ? chosen.extraBenches.map((b) => ({ type: "Feature", properties: { title: b.label }, geometry: { type: "Point", coordinates: [b.longitude, b.latitude] } })) : [] };
+      const data: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: extras || chosen.rest ? chosen.extraBenches.map((b) => ({ type: "Feature", properties: { title: b.label }, geometry: { type: "Point", coordinates: [b.longitude, b.latitude] } })) : [] };
       if (map.getSource("walk-extra-benches")) (map.getSource("walk-extra-benches") as GeoJSONSource).setData(data);
       else { map.addSource("walk-extra-benches", { type: "geojson", data }); map.addLayer({ id: "walk-extra-benches", type: "circle", source: "walk-extra-benches", paint: { "circle-radius": 15, "circle-color": "#71855b", "circle-opacity": .45, "circle-blur": .5 } }); }
       const labels: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [{ type: "Feature", properties: { label: result.query.shape === "loop" ? "Start & Rückkehr" : "Start" }, geometry: { type: "Point", coordinates: [result.query.origin.longitude, result.query.origin.latitude] } }, { type: "Feature", properties: { label: chosen.bench.label }, geometry: { type: "Point", coordinates: [chosen.bench.longitude, chosen.bench.latitude] } }] };

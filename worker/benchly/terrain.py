@@ -11,7 +11,7 @@ from typing import Optional, Sequence
 
 from benchly.context.evidence import feature_bearing, feature_distance, point_hits_building
 from benchly.geo import destination, distance_meters
-from benchly.context.geometry import feature_angular_half_width, feature_contains_exact, feature_is_large_water, feature_ray_span
+from benchly.context.geometry import feature_angular_half_width, feature_contains_exact, feature_is_large_water, feature_is_surface_water, feature_ray_span
 from benchly.enrichment.terrain_profile import (
     PROFILE_DISTANCES_METERS,
     fetch_terrain_horizon,
@@ -171,12 +171,15 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
                   terrain_profile: Sequence[float], context: Sequence[sqlite3.Row], relief: float,
                   terrain_samples: Sequence[float] = (), origin_elevation: Optional[float] = None,
                   obstruction_types: Sequence[str] = ()) -> tuple[list[str], float, float, float, float, dict]:
-    indices = list(range(72)) if facing is None else [index for index in range(72) if abs((((index * 5 - facing) + 180) % 360) - 180) <= 45]
+    indices = list(range(72)) if facing is None else sorted(
+        (index for index in range(72) if circular_difference(index * 5, facing) <= 45),
+        key=lambda index: ((index * 5 - facing + 180) % 360) - 180,
+    )
     selected = [profile[index] for index in indices]
     openness = sum(max(0.0, 1 - max(0.0, angle) / 35) for angle in selected) / max(1, len(selected))
     buildings = [feature for feature in context if feature["kind"] == "building"]
     forests = [feature for feature in context if feature["kind"] == "forest"]
-    water_features = [feature for feature in context if feature["kind"] == "water"]
+    water_features = [feature for feature in context if feature["kind"] == "water" and feature_is_surface_water(feature)]
     roads = [feature for feature in context if feature["kind"] == "major_road"]
 
     def in_view(feature: sqlite3.Row, maximum_distance: float) -> bool:
@@ -192,13 +195,33 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
     def row_value(feature: sqlite3.Row, key: str, default=None):
         return feature[key] if key in feature.keys() and feature[key] is not None else default
 
+    has_full_terrain = len(terrain_samples) == 72 * len(PROFILE_DISTANCES_METERS) and origin_elevation is not None
+    # Obstacle geometry and height are constant across every water ray. Resolve
+    # them once per bench instead of once per ray and water feature.
+    water_blockers = []
+    if has_full_terrain and water_features:
+        eye = float(origin_elevation) + 1.1
+        for blocker in context:
+            if blocker["kind"] not in {"building", "tree"}:
+                continue
+            distance = feature_distance(latitude, longitude, blocker)
+            if distance > 350:
+                continue
+            direction = feature_bearing(latitude, longitude, blocker)
+            half_width = feature_angular_half_width(latitude, longitude, blocker, direction) or 3.0
+            height = float(row_value(blocker, "height_meters", 8.5 if blocker["kind"] == "building" else 12.0))
+            roof = row_value(blocker, "roof_elevation_meters")
+            nearest = min(range(len(PROFILE_DISTANCES_METERS)), key=lambda sample: abs(PROFILE_DISTANCES_METERS[sample] - distance))
+            base = float(terrain_samples[(int(round(direction / 5)) % 72) * len(PROFILE_DISTANCES_METERS) + nearest])
+            top = float(roof) if roof is not None else base + height
+            top_angle = math.degrees(math.atan2(top - eye, max(2.5, distance)))
+            water_blockers.append((distance, direction, half_width, top_angle))
+
     def visible_water_rays(feature: sqlite3.Row) -> list[bool]:
         distance = feature_distance(latitude, longitude, feature)
         if distance > 10_000:
             return [False] * 72
-        has_full_terrain = len(terrain_samples) == 72 * len(PROFILE_DISTANCES_METERS) and origin_elevation is not None
         result = [False] * 72
-        blockers = [item for item in context if item["kind"] in {"building", "tree"}]
         for index in range(72):
             bearing = index * 5
             if facing is not None and abs((((bearing - facing) + 180) % 360) - 180) > 55:
@@ -223,20 +246,12 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
                     break
                 elevation = float(terrain_samples[index * len(PROFILE_DISTANCES_METERS) + sample_index])
                 foreground_angle = max(foreground_angle, math.degrees(math.atan2(elevation - eye, sample_distance)))
-            for blocker in blockers:
-                blocker_distance = feature_distance(latitude, longitude, blocker)
-                if blocker_distance >= entry or blocker_distance > 350:
+            for blocker_distance, blocker_bearing, half_width, top_angle in water_blockers:
+                if blocker_distance >= entry:
                     continue
-                blocker_bearing = feature_bearing(latitude, longitude, blocker)
-                half_width = feature_angular_half_width(latitude, longitude, blocker, blocker_bearing) or 3.0
                 if abs((((bearing - blocker_bearing) + 180) % 360) - 180) > half_width:
                     continue
-                height = float(row_value(blocker, "height_meters", 8.5 if blocker["kind"] == "building" else 12.0))
-                roof = row_value(blocker, "roof_elevation_meters")
-                nearest_base_sample = min(range(len(PROFILE_DISTANCES_METERS)), key=lambda sample: abs(PROFILE_DISTANCES_METERS[sample] - blocker_distance))
-                base = float(terrain_samples[(int(round(blocker_bearing / 5)) % 72) * len(PROFILE_DISTANCES_METERS) + nearest_base_sample])
-                top = float(roof) if roof is not None else base + height
-                foreground_angle = max(foreground_angle, math.degrees(math.atan2(top - eye, max(2.5, blocker_distance))))
+                foreground_angle = max(foreground_angle, top_angle)
             result[index] = target_angle + .6 >= foreground_angle
         return result
 
@@ -292,18 +307,29 @@ def classify_view(latitude: float, longitude: float, facing: Optional[float], pr
     minimum_run = 8 if facing is None else 4
     mountain_run = _longest_view_run([bool(sector["mountain"]) for sector in terrain_sectors], facing is None)
     hill_run = _longest_view_run([bool(sector["hill"]) for sector in terrain_sectors], facing is None)
-    if blocked_share < .5 and mountain_run >= minimum_run:
+    if mountain_run >= minimum_run:
         labels.append("Bergblick")
-    elif blocked_share < .5 and hill_run >= minimum_run:
+    elif hill_run >= minimum_run:
         labels.append("Hügelblick")
     if visible_water:
         labels.append("Seeblick" if any(feature_is_large_water(feature) for feature in visible_water) else "Wasserblick")
-    if openness >= 0.75:
+    # A broad unobstructed sector can coexist with buildings behind a bench.
+    # Sky above a nearby hedge is not a distant horizontal view. Requiring a
+    # contiguous sector also avoids treating many narrow gaps as a panorama.
+    clear_sectors = [
+        profile[index] <= terrain_profile[index] + .5
+        and (not obstruction_types or obstruction_types[index] not in {"building", "vegetation"})
+        and (profile[index] < 12 or bool(terrain_sectors[position]["mountain"]) or bool(terrain_sectors[position]["hill"]))
+        for position, index in enumerate(indices)
+    ]
+    long_view = _longest_view_run(clear_sectors, facing is None) >= (18 if facing is None else 12)
+    if long_view:
         labels.append("Weitsicht")
     if (in_forest or nearest_forest <= 25 or visible_forests) and naturalness >= 0.7:
         labels.append("Waldumgebung")
-    if openness < 0.4 or sum(selected) / max(1, len(selected)) > 22 or blocked_share >= 0.5:
-        labels = [label for label in labels if label not in {"Bergblick", "Hügelblick", "Weitsicht"}]
+    if not long_view and not any(label in labels for label in ("Bergblick", "Hügelblick")) and (
+        openness < 0.4 or sum(selected) / max(1, len(selected)) > 22 or blocked_share >= 0.5
+    ):
         labels.append("Eingeschränkte Aussicht")
     if not labels:
         labels.append("Keine besondere Aussicht")

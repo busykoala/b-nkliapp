@@ -1,6 +1,7 @@
 import "server-only";
 
 import { sqlite } from "@/db/client";
+import { DATA_RUNTIME } from "@/data/runtime.generated";
 import type { BenchDetail } from "@/lib/types";
 
 export type DetailRow = Record<string, string | number | null>;
@@ -30,6 +31,7 @@ export function readDetailRow(benchId: string) {
       (SELECT avg(comfort) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_comfort,
       (SELECT avg(quiet) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_quiet,
       (SELECT count(*) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id) confirmation_count,
+      (SELECT max(coalesce(last_seen_at,created_at)) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id) last_confirmed_at,
       (SELECT count(*) FROM bench_removal_confirmations rc
         JOIN bench_removal_requests rr ON rr.id=rc.request_id
         WHERE rr.bench_row_id=b.row_id AND rr.status='pending') removal_confirmation_count
@@ -47,9 +49,9 @@ export function readEvidenceCoverage() {
   const exactOsm = Boolean(sqlite.prepare(`
     SELECT 1 FROM pipeline_runs
     WHERE kind IN ('import-osm','refresh') AND status='completed'
-      AND pipeline_version IN ('4.2.0','4.3.0','4.4.0')
+      AND pipeline_version IN ('4.2.0','4.3.0','4.4.0',?)
     LIMIT 1
-  `).get());
+  `).get(DATA_RUNTIME.pipelineVersion));
   return { exactOsm, exactLand: officialLand || exactOsm };
 }
 
@@ -59,6 +61,30 @@ export function readLatestVisionStats() {
     WHERE kind='vision-benchmark' AND status='completed'
     ORDER BY finished_at DESC,id DESC LIMIT 1
   `).get() as { stats: string | null } | undefined)?.stats ?? null;
+}
+
+export function readPhotoEvidence(row: DetailRow): BenchDetail["photoEvidence"] {
+  if (!sqlite.prepare("SELECT 1 FROM sqlite_master WHERE name='bank_photo_evidence'").get()) return null;
+  const evidence = sqlite.prepare(`SELECT signals,base_enrichment,applied_enrichment
+    FROM bank_photo_evidence WHERE bench_row_id=? AND bench_id=? AND bench_latitude=? AND bench_longitude=?
+  `).get(row.row_id, row.id, row.latitude, row.longitude) as {
+    signals: string; base_enrichment: string | null; applied_enrichment: string | null;
+  } | undefined;
+  if (!evidence) return null;
+  try {
+    const base = JSON.parse(evidence.base_enrichment ?? "{}") as Record<string, unknown>;
+    const applied = JSON.parse(evidence.applied_enrichment ?? "{}") as Record<string, unknown>;
+    const contributes = Object.keys(applied).some((key) => applied[key] !== base[key] && applied[key] === row[key]);
+    if (!contributes) return null;
+    const signals = JSON.parse(evidence.signals) as { photos?: Array<{ source_id: number; image_id: number }> };
+    const photos = new Set((signals.photos ?? [])
+      .filter(({ source_id, image_id }) => Number.isSafeInteger(source_id) && source_id > 0
+        && Number.isSafeInteger(image_id) && image_id > 0)
+      .map(({ source_id, image_id }) => `${source_id}:${image_id}`));
+    return photos.size ? { observationCount: photos.size } : null;
+  } catch {
+    return null;
+  }
 }
 
 export function readBenchCommunity(row: DetailRow, userId: number | null) {
@@ -118,5 +144,7 @@ export function readContributedFields(rowId: number, userId: number | null) {
   const mine = new Set(userId === null ? [] : (sqlite.prepare(
     "SELECT DISTINCT field FROM bench_metadata_edits WHERE bench_row_id=? AND user_id=?",
   ).all(rowId, userId) as Array<{ field: string }>).map((item) => item.field));
-  return { all, mine };
+  const confirmation = userId === null ? undefined : sqlite.prepare("SELECT coalesce(last_seen_at,created_at) created_at FROM bench_confirmations WHERE bench_row_id=? AND user_id=?")
+    .get(rowId, userId) as { created_at: string } | undefined;
+  return { all, mine, lastConfirmedAt: confirmation?.created_at ?? null };
 }

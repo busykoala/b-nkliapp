@@ -78,7 +78,7 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 ## 4. Datenbankentscheidung
 
 - [x] SQLite-RTree-Queryplan korrigieren.
-- [x] Vorläufige Beibehaltung von SQLite und Grenzen des früheren Vergleichs in `docs/storage-decision.md` festhalten.
+- [x] Vorläufige Beibehaltung von SQLite und Grenzen des früheren Vergleichs festhalten.
 - [x] Temporäre Container, Indizes, Messdaten und Benchmarkcode nach der Entscheidung entfernen.
 - [x] SQLite vorerst beibehalten, weil der Vergleich keinen ausreichend vollständigen, betrieblich validierten Migrationsentscheid begründet.
 
@@ -92,7 +92,7 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 - [x] Regelbasis, regularisierte logistische Modelle, PCA-Ablation und HistGradientBoosting mit räumlich getrennten Holdouts vergleichen.
 - [x] Kalibrierung und mögliche regionale Slices auswerten; saisonale Slices sind für die statischen Labels nicht anwendbar.
 - [x] ResNet18-Bildmerkmale lokal auf Apple MPS gegen klassische/geografische Merkmale und per Provider-Holdout prüfen.
-- [x] Laufzeit, Speicher, Artefaktgrösse und Qualitätsgewinn in `docs/environment-model-evaluation.md` dokumentieren.
+- [x] Laufzeit, Speicher, Artefaktgrösse und Qualitätsgewinn auswerten.
 - [x] Aus dem ersten 100er-Versuch kein Modell übernehmen, da Kalibrierung sowie regionale und anbieterübergreifende Evidenz die Qualitätsgrenzen verfehlten; die spätere schweizweite Gegenprobe ist separat dokumentiert.
 - [x] Temporäre Versuchsskripte, Bilder, Modellgewichte und Paketcaches nach der Entscheidung löschen.
 - [x] RTX-5090-Integration mangels praktischem Produktionsvorteil gegenüber direkter amtlicher Geometrie verwerfen; bestehenden Inference-Service unverändert lassen.
@@ -114,7 +114,7 @@ markiert, wenn Implementierung und passende Prüfung abgeschlossen sind.
 - [x] Mobile Darstellung von Einstieg, Editor und gespeichertem Zustand mit realer Detailansicht visuell prüfen.
 - [x] Semantische Rollen, Fokusführung, mindestens 44 px grosse Touchziele und Reduced Motion im mobilen Browser prüfen.
 - [x] Prüfen, dass Unsicherheiten sichtbar bleiben, aber die Hauptinformation nicht verdrängen.
-- [x] UI nach Review vereinfachen und die Designentscheidung in `docs/community-observation-ux.md` dokumentieren.
+- [x] UI nach Review vereinfachen.
 
 ## 7. Abschluss
 

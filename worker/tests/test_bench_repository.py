@@ -1,10 +1,20 @@
 import sqlite3
 import unittest
 
-from benchly.benches.repository import refresh_nearby_amenities, upsert_inventory_benches
+from benchly.benches.repository import refresh_nearby_amenities, upsert_enrichment, upsert_inventory_benches
 
 
 class BenchRepositoryTests(unittest.TestCase):
+    def test_partial_context_refresh_preserves_measured_confidence(self):
+        database = sqlite3.connect(":memory:")
+        database.execute("""CREATE TABLE bench_enrichments(
+            bench_row_id INTEGER PRIMARY KEY, land_context TEXT,
+            sun_confidence TEXT NOT NULL, view_confidence TEXT NOT NULL)""")
+        upsert_enrichment(database, {"bench_row_id": 1, "sun_confidence": "hoch", "view_confidence": "mittel"})
+        upsert_enrichment(database, {"bench_row_id": 1, "land_context": "park"})
+        self.assertEqual(database.execute("SELECT land_context,sun_confidence,view_confidence FROM bench_enrichments").fetchone(),
+                         ("park", "hoch", "mittel"))
+
     def database(self):
         database = sqlite3.connect(":memory:")
         database.row_factory = sqlite3.Row

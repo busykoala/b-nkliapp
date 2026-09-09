@@ -38,6 +38,7 @@ export type TrailProfile = {
   landscapes: Array<{ key: LandscapeKey; name: string; hint: string; found: boolean; benchId: string | null }>;
   seasons: Array<{ key: SeasonKey; name: string; found: boolean }>;
   recent: ProfileMoment[];
+  awaitingConfirmation: Array<{ id: string; title: string; remaining: number }>;
   nextPrompt: { title: string; copy: string };
 };
 
@@ -48,6 +49,8 @@ const rawInteractions = `
   SELECT bench_row_id, updated_at, 'rated' FROM ratings WHERE user_id=@userId AND visible=1
   UNION ALL
   SELECT bench_row_id, created_at, 'confirmed' FROM bench_confirmations WHERE user_id=@userId
+  UNION ALL
+  SELECT bench_row_id, last_seen_at, 'confirmed' FROM bench_confirmations WHERE user_id=@userId AND last_seen_at IS NOT NULL
   UNION ALL
   SELECT rr.bench_row_id, rc.created_at, 'missing'
   FROM bench_removal_confirmations rc JOIN bench_removal_requests rr ON rr.id=rc.request_id
@@ -177,6 +180,10 @@ export function getTrailProfile(userId: number, database: Database.Database = sq
     landscapes,
     seasons,
     recent,
+    awaitingConfirmation: (database.prepare(`SELECT b.id,coalesce(b.name,b.description,'Bänkli') title,
+      max(0,?-(SELECT count(*) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id)) remaining
+      FROM benches b WHERE b.created_by_user_id=? AND b.active=1 AND b.verification_status='unverified'
+      ORDER BY b.imported_at DESC LIMIT 20`).all(Math.max(2, Math.min(10, Number(process.env.BENCH_VERIFICATION_THRESHOLD ?? 3) || 3)), userId) as TrailProfile["awaitingConfirmation"]),
     nextPrompt: nextPrompt(activity, landscapes),
   };
 }

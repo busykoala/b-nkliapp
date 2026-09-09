@@ -1,7 +1,7 @@
 // Generated from config/data-catalog.json. Do not edit by hand.
 export const DATA_RUNTIME = {
-  "pipelineVersion": "4.4.0",
-  "profilePipelineVersion": "GeoAdmin-Horizont v6",
+  "pipelineVersion": "4.5.0",
+  "profilePipelineVersion": "GeoAdmin-Horizont v7",
   "scenePromptVersion": "benchly-scene-1.4",
   "sceneReconcilerVersion": "benchly-evidence-1.1",
   "osmPbfUrl": "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf",

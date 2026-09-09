@@ -1,8 +1,11 @@
 import "server-only";
 
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { readArchivedBenchPhoto } from "./photo-archive";
 
 function config() {
+  // A local production snapshot must never write back to its original bucket.
+  if (process.env.BENCHLY_PHOTO_ARCHIVE_PATH) throw new Error("Der Foto-Speicher macht gerade Pause.");
   const endpoint = process.env.BENCHLY_PHOTO_S3_ENDPOINT;
   const bucket = process.env.BENCHLY_PHOTO_BUCKET;
   const accessKeyId = process.env.BENCHLY_PHOTO_ACCESS_KEY;
@@ -31,6 +34,8 @@ export async function deleteBenchPhoto(url: string) {
 
 export async function readBenchPhoto(url: string) {
   if (!url.startsWith("garage:")) return null;
+  const archive = process.env.BENCHLY_PHOTO_ARCHIVE_PATH;
+  if (archive) return readArchivedBenchPhoto(archive, url.slice(7));
   const settings = config();
   const object = await client(settings).send(new GetObjectCommand({ Bucket: settings.bucket, Key: url.slice(7) }));
   if (!object.Body) return null;

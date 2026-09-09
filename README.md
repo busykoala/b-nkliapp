@@ -34,9 +34,7 @@ npx tsx scripts/hash-password.ts 'a-long-admin-password'
 
 Put the resulting `scrypt$...` value in `ADMIN_PASSWORD_HASH`. Without it, the development-only password is `benchly-admin`; production refuses that fallback. Recentring the map uses location in the browser. Explicitly requesting a route sends coordinates to our server. Footrouting is self-hosted; address and nearby-station searches use GeoAdmin and transport.opendata.ch. Personal-endpoint routes remain in bounded server memory for at most five minutes; no journey history is stored. Providers have their own request-retention policies. Anonymous contribution and daily IP identifiers are HMAC hashes, and raw IP addresses are not stored.
 
-The illustrated journey planner is always available via **Weg hierher** in a bench's map details. **Spaziergang entdecken** offers Bänkli-centred walks; see [setup, infrastructure ownership and release checks](docs/walks.md). GraphHopper and inference deployments live exclusively in the sibling server repository. See [journey setup and rollout](docs/journey-planner.md) for the daily GTFS worker, provider limits and privacy notes.
-
-See [code boundaries and artwork lifecycle](docs/code-structure.md) for the implementation conventions.
+The illustrated journey planner is available via **Weg hierher** in a bench's map details. **Spaziergang entdecken** offers walks with optional maximum intervals of 5, 10 or 15 minutes between benches. GraphHopper and inference deployments live exclusively in the sibling server repository; Benchly releases use the [application chart](deploy/charts/README.md).
 
 All app reads and writes use Server Actions. There are no custom route handlers or `/api` endpoints. The browser talks directly to the public swisstopo WMTS only for map tiles.
 
@@ -69,7 +67,7 @@ Start with `--limit 100 --max-geodata-tiles 10`. A full Swiss terrain analysis d
 
 Production uses the separate `import-osm`, `enrich-batch` and `refresh-commons` commands so every network-heavy stage is bounded and resumable.
 
-Use `python3 worker/benchly_worker.py inventory` for current totals and field completeness. The detailed source and batching strategy is documented in [`docs/data-pipeline.md`](docs/data-pipeline.md).
+Use `python3 worker/benchly_worker.py inventory` for current totals and field completeness. See the [worker commands](worker/README.md) for imports and bounded enrichment jobs.
 
 ## Data labels and licenses
 

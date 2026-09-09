@@ -2,19 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Footprints, Info } from "lucide-react";
+import { Crosshair, Footprints, Info, SlidersHorizontal, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
-import { activeMapFilterCount } from "@/lib/map-filters";
+import { activeMapFilterCount, activeMapFilters } from "@/lib/map-filters";
 import { BenchSheet } from "./bench-sheet";
 import { FilterPanel } from "./filter-panel";
 import { SearchBox } from "./search-box";
 import { AddBenchDialog } from "./add-bench-dialog";
 import { AppMenu } from "./app-menu";
+import { AccountDialog } from "./account-controls";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/lib/watercolor-map";
 import { featureCollection, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/lib/map-renderer";
 
@@ -47,7 +48,14 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [mapLoading, setMapLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
+  const [addStage, setAddStage] = useState<"position" | "details" | null>(null);
+  const [createdBenchId, setCreatedBenchId] = useState<string | null>(null);
+  const placingRef = useRef(false);
+  const canAdd = useRef(Boolean(user));
+  const pendingAdd = useRef<{ latitude: number; longitude: number } | null>(null);
+  const addAccount = useRef<HTMLDialogElement>(null);
+  const handledAction = useRef<string | null>(null);
+  useEffect(() => { canAdd.current = Boolean(user); }, [user]);
   const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
 
   const loadVisible = useCallback(async (map: MapLibreMap, nextFilters: MapFilters) => {
@@ -59,7 +67,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         featuresRef.current = result;
         setFeatures(result);
         (map.getSource("benchly") as GeoJSONSource | undefined)?.setData(featureCollection(result));
-        setMessage(null);
+        setMessage((current) => current === "Bänke konnten nicht geladen werden." ? null : current);
       }
     } catch {
       if (sequence === querySequence.current) setMessage("Bänke konnten nicht geladen werden.");
@@ -97,25 +105,37 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     const sequence = ++detailSequence.current;
     try {
       const detail = await getBenchDetail(selectedId);
-      if (detail && sequence === detailSequence.current) {
+      if (sequence === detailSequence.current) {
         setBench(detail);
-        (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature(detail));
+        (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature(detail ?? undefined));
+        if (!detail) setSelectedId(null);
+        if (mapRef.current) await loadVisible(mapRef.current, filtersRef.current);
+        if (!detail) setMessage("Dieses Bänkli wurde als nicht mehr vorhanden bestätigt.");
       }
     } catch {
       setMessage("Die neue Angabe ist gespeichert. Die Ansicht aktualisiert sich beim nächsten Öffnen.");
     }
-  }, [selectedId]);
+  }, [selectedId, loadVisible]);
 
-  const openAddAt = (latitude: number, longitude: number) => {
-    if (!user) {
-      setMessage("Zum Eintragen bitte zuerst im Menü anmelden.");
+  const beginPlacement = useCallback((latitude: number, longitude: number) => {
+    placingRef.current = true;
+    detailSequence.current += 1;
+    setSelectedId(null); setBench(null); setJourneyOpen(false); setWalkOpen(false); setReturnJourney(null); setFilterOpen(false);
+    (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature());
+    setAddCoordinates({ latitude, longitude });
+    setAddStage("position");
+    mapRef.current?.stop();
+    mapRef.current?.jumpTo({ center: [longitude, latitude], zoom: Math.max(17, mapRef.current.getZoom()) });
+  }, []);
+
+  const openAddAt = useCallback((latitude: number, longitude: number) => {
+    if (!canAdd.current) {
+      pendingAdd.current = { latitude, longitude };
+      addAccount.current?.showModal();
       return;
     }
-    setAddCoordinates({ latitude, longitude });
-    const source = mapRef.current?.getSource("add-position") as GeoJSONSource | undefined;
-    source?.setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [longitude, latitude] } });
-    setAddOpen(true);
-  };
+    beginPlacement(latitude, longitude);
+  }, [beginPlacement]);
 
   const locate = (onFound?: (position: UserPosition) => void) => {
     if (!navigator.geolocation) { setMessage("Dein Browser unterstützt die Standortsuche nicht."); return; }
@@ -179,6 +199,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         ambientTimer = window.setInterval(() => applyMapAtmosphere(map), 5 * 60 * 1000);
         if (pendingPosition.current && showUserPosition(map, pendingPosition.current)) pendingPosition.current = null;
         const click = (event: MapLayerMouseEvent) => {
+          if (placingRef.current) return;
           const item = event.features?.[0]?.properties as MapFeature | undefined;
           if (!item) return;
           if (item.kind === "cluster") {
@@ -216,6 +237,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         const canvas = map.getCanvas();
         const cancelPress = () => { window.clearTimeout(pressTimer); pressStart = null; };
         const beginPress = (event: PointerEvent) => {
+          if (placingRef.current) return;
           if (event.pointerType === "mouse" && event.button !== 0) return;
           pressStart = { x: event.offsetX, y: event.offsetY };
           pressTimer = window.setTimeout(() => {
@@ -292,6 +314,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       });
 
       map.on("moveend", () => {
+        if (placingRef.current) { const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); }
         if (!map.getSource("benchly")) return;
         window.clearTimeout(moveTimeout);
         moveTimeout = window.setTimeout(() => {
@@ -342,9 +365,21 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     navigator.permissions?.query({ name: "geolocation" }).then((permission) => { if (permission.state === "granted") locate(); }).catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (!mapReady || !action || handledAction.current === action) return;
+    handledAction.current = action;
+    const timer = window.setTimeout(() => {
+      if (action === "filter") setFilterOpen(true);
+      if (action === "walk") setWalkOpen(true);
+      if (action === "add") { const point = mapRef.current?.getCenter(); if (point) openAddAt(point.lat, point.lng); }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [mapReady, searchParams, openAddAt]);
+
   const choosePlace = (place: PlaceResult) => {
     mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: place.kind === "bench" ? 17 : 14 });
-    if (place.kind === "bench" && place.benchId) void selectBench(place.benchId);
+    if (!placingRef.current && place.kind === "bench" && place.benchId) void selectBench(place.benchId);
   };
   const openAdd = () => {
     const center = mapRef.current?.getCenter();
@@ -353,7 +388,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const closeAdd = () => {
     const source = mapRef.current?.getSource("add-position") as GeoJSONSource | undefined;
     source?.setData({ type: "FeatureCollection", features: [] });
-    setAddOpen(false);
+    placingRef.current = false;
+    setAddStage(null);
   };
   const activeFilterCount = activeMapFilterCount(filters);
   return (
@@ -362,18 +398,25 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       <header className="map-topbar safe-top pointer-events-none absolute inset-x-0 top-0 z-20 px-3 md:max-w-xl md:px-4">
         <div className="pointer-events-auto flex items-center gap-2">
           <SearchBox onSelect={choosePlace} onLocate={locate} />
-          <AppMenu user={user} onAdd={openAdd} activeFilters={activeFilterCount} onFilter={() => setFilterOpen(true)} />
+          <button aria-label="Filter öffnen" aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>Filter</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
+          <AppMenu user={user} onAdd={openAdd} onWalk={() => setWalkOpen(true)} activeFilters={activeFilterCount} onFilter={() => setFilterOpen(true)} />
         </div>
+        {activeFilterCount > 0 && <div className="active-filter-chips pointer-events-auto" aria-label="Aktive Filter">{activeMapFilters(filters).map(({ key, label }) => <button key={key} type="button" aria-label={`${label} entfernen`} onClick={() => setFilters((current) => ({ ...current, [key]: undefined }))}>{label}<X size={14} /></button>)}</div>}
       </header>
+      {addStage === "position" && <>
+        <div className="placement-crosshair" aria-hidden="true"><Crosshair size={38} /></div>
+        <section className="placement-controls" aria-label="Position wählen"><h2>Position wählen</h2><p>Verschiebe die Karte, bis das Fadenkreuz auf dem Bänkli liegt.</p><button type="button" onClick={() => locate((point) => beginPlacement(point.latitude, point.longitude))}><Crosshair size={18} /> Meinen Standort verwenden</button><div><button type="button" onClick={closeAdd}>Abbrechen</button><button type="button" className="btn btn-primary" onClick={() => { const map = mapRef.current; if (!map) return; map.stop(); const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); setAddStage("details"); }}>Hier eintragen</button></div></section>
+      </>}
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>Karte wird gemalt …</span></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
-      {!journeyOpen && !walkOpen && !returnJourney && !selectedId && <button className="walk-entry" onClick={() => setWalkOpen(true)}><Footprints size={20} /> Spaziergang entdecken</button>}
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && <button className="walk-entry" onClick={() => setWalkOpen(true)}><Footprints size={20} /> Spaziergang entdecken</button>}
       {walkOpen && <WalkPlanner getMap={getJourneyMap} onClose={() => setWalkOpen(false)} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} />}
       {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: returnJourney.destination.label }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
       {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
-      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
-      <AddBenchDialog open={addOpen} coordinates={addCoordinates} onUseCurrentLocation={() => locate((position) => openAddAt(position.latitude, position.longitude))} onClose={closeAdd} />
+      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {addStage === "details" && <AddBenchDialog coordinates={addCoordinates} onChoosePosition={() => setAddStage("position")} onClose={closeAdd} onExisting={(id) => { closeAdd(); void selectBench(id, true); }} onCreated={(id) => { closeAdd(); setCreatedBenchId(id); void selectBench(id, true); if (mapRef.current) void loadVisible(mapRef.current, filtersRef.current); }} />}
+      <AccountDialog dialogRef={addAccount} intent="Bänkli eintragen" onAuthenticated={() => { canAdd.current = true; const point = pendingAdd.current; pendingAdd.current = null; if (point) beginPlacement(point.latitude, point.longitude); }} />
     </main>
   );
 }

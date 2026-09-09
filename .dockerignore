@@ -12,3 +12,6 @@ test-results
 Dockerfile*
 docker-compose.yml
 
+worker/evaluation/.cache
+**/__pycache__
+**/*.pyc

@@ -3,6 +3,7 @@ import { sqlite } from "@/db/client";
 import { distanceMeters } from "../journey";
 import { routeWalk, type WalkRequest } from "../walking-provider";
 import { nearestRoutePoint, pathSeconds, routeCells, routeOverlap, routePoint, type WalkPath } from "../walking";
+import { restCoverage, restWaypoints } from "./rest-stops";
 import { evaluateRoute } from "./evidence";
 import { landscapeScore, verifiedExtras, type WalkBench, type WalkQuery, type WalkResult, type WalkSuggestion } from "./model";
 
@@ -31,9 +32,11 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
   const signal = AbortSignal.timeout(15000);
   const result: WalkResult = { query, suggestions: [], fetchedAt: new Date().toISOString(), partial: false };
   let calls = 0;
+  let callLimit = query.maxRestMinutes ? 18 : 24;
   const route = (request: WalkRequest) => {
     signal.throwIfAborted();
-    if (++calls > 24) throw new Error("Search budget exhausted");
+    if (calls >= callLimit) throw new Error("Search budget exhausted");
+    calls++;
     return routeWalk({ ...request, difficulty: query.difficulty, scenic: true }, signal, true);
   };
   const benches = nearbyBenches(query);
@@ -94,7 +97,7 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
           .map((bench) => ({ bench, bearing: bearingDegrees(query.origin, bench), distance: distanceMeters(query.origin, bench) }))
           .sort((a, b) => Math.abs(a.distance * 2 - targetMeters) - Math.abs(b.distance * 2 - targetMeters));
         for (const candidate of fallback) {
-          if (result.suggestions.length >= 3 || calls >= 21) break;
+          if (result.suggestions.length >= 3 || calls >= (query.maxRestMinutes ? 15 : 21)) break;
           if (chosenBearings.some((bearing) => angleDifference(bearing, candidate.bearing) < 35)) continue;
           try {
             add((await route({ points: [query.origin, candidate.bench, query.origin] }))[0], candidate.bench);
@@ -104,9 +107,39 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
       }
     }
     result.suggestions.sort((a, b) => Number(b.withinBudget) - Number(a.withinBudget) || (a.withinBudget ? b.score - a.score : Math.abs(a.durationSeconds - query.minutes * 60) - Math.abs(b.durationSeconds - query.minutes * 60)));
+    if (query.maxRestMinutes) {
+      callLimit = 24;
+      const candidates = result.suggestions;
+      result.suggestions = [];
+      for (const suggestion of candidates) {
+        if (signal.aborted || result.suggestions.length >= 3) break;
+        let path = suggestion.path;
+        let coverage = restCoverage(path, benches, query);
+        for (let attempt = 0; !coverage && attempt < 2 && calls < callLimit; attempt++) {
+          const points = restWaypoints(path, benches, suggestion.bench, query);
+          if (!points) break;
+          try {
+            path = (await route({ points }))[0];
+            coverage = restCoverage(path, benches, query);
+          } catch { result.partial = true; break; }
+        }
+        if (!coverage || nearestRoutePoint(path, suggestion.bench).distance > 1) continue;
+        if (query.shape === "one-way" && distanceMeters(routePoint(path.geometry.at(-1)!), suggestion.bench) > 1) continue;
+        const durationSeconds = pathSeconds(path, query.speed), evidence = evaluateRoute(path, query);
+        const cells = routeCells(path), repeated = cells.size * 25 / Math.max(1, path.distance) < .6;
+        if (result.suggestions.some((other) => routeOverlap(routeCells(other.path), cells) > .92)) continue;
+        result.suggestions.push({ ...suggestion, path, durationSeconds, evidence, repeated,
+          withinBudget: Math.abs(durationSeconds - query.minutes * 60) <= query.minutes * 12,
+          score: landscapeScore(evidence, suggestion.bench, query.light) - (repeated ? .12 : 0),
+          benchIndex: nearestRoutePoint(path, suggestion.bench).index, rest: coverage,
+          extraBenches: verifiedExtras(coverage.stops.map((stop) => stop.bench), [suggestion.bench]) });
+      }
+      result.suggestions.sort((a, b) => Number(b.withinBudget) - Number(a.withinBudget) || b.score - a.score);
+    }
     result.suggestions = result.suggestions.slice(0, 3);
     // Only actual routed access is evidence; do not count a radius around the line.
     for (const suggestion of result.suggestions) {
+      if (query.maxRestMinutes) continue;
       const candidates = benches.filter((b) => b.id !== suggestion.bench.id).map((bench) => ({ bench, ...nearestRoutePoint(suggestion.path, bench) })).filter((b) => b.distance <= 25).sort((a, b) => a.distance - b.distance);
       for (const candidate of candidates) {
         if (calls >= 24 || signal.aborted) break;
@@ -119,7 +152,9 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
       suggestion.extraBenches = verifiedExtras(suggestion.extraBenches, [suggestion.bench]);
     }
   } catch { result.partial = true; }
-  if (!result.suggestions.length) result.message = "Noch kein geprüfter Spaziergang verfügbar. Bitte Start oder Gehzeit ändern. Der eigene Routenservice muss bereit sein.";
+  if (query.maxRestMinutes) result.suggestions = result.suggestions.filter((suggestion) => suggestion.rest && suggestion.rest.maxGapSeconds <= query.maxRestMinutes! * 60 + .001);
+  if (query.maxRestMinutes && !result.suggestions.length) result.message = `Kein geprüfter Weg mit höchstens ${query.maxRestMinutes} Minuten zwischen Sitzgelegenheiten gefunden. Bitte Start, Dauer oder Pausenabstand ändern.`;
+  else if (!result.suggestions.length) result.message = "Noch kein geprüfter Spaziergang verfügbar. Bitte Start oder Gehzeit ändern. Der eigene Routenservice muss bereit sein.";
   else if (!result.suggestions[0].withinBudget) result.message = "Die gewünschte Gehzeit passt hier nicht genau. Dies ist der nächstliegende geprüfte Vorschlag; die tatsächliche Dauer steht dabei.";
   return result;
 }

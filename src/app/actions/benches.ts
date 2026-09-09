@@ -4,10 +4,11 @@ import { randomInt, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { sqlite } from "@/db/client";
 import { refreshUserBadges } from "@/lib/badges";
-import { recordBenchConfirmation, recordRemovalConfirmation, resolveVerificationThreshold } from "@/lib/bench-verification";
+import { recordBenchPresence, recordRemovalConfirmation, resolveVerificationThreshold } from "@/lib/bench-verification";
 import { normalizeLocationKey, reverseGeocodeSwiss, type SwissLocation } from "@/integrations/geoadmin/client";
 import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
-import type { ActionResult } from "@/lib/types";
+import type { ActionResult, AddBenchResult, NearbyBench } from "@/lib/types";
+import { readNearbyBenches } from "@/features/bench-submission/repository";
 import { z } from "zod";
 
 const threshold = resolveVerificationThreshold();
@@ -16,6 +17,8 @@ const addSchema = z.object({
   longitude: z.coerce.number().min(5.7).max(10.7),
   name: z.string().trim().max(80).optional(),
   dedication: z.string().trim().max(180).optional(),
+  nearbyReviewed: z.literal("yes").optional(),
+  nearbyIds: z.string().max(20_000).optional(),
   backrest: z.enum(["", "yes", "no"]).optional(),
   armrest: z.enum(["", "yes", "no"]).optional(),
   covered: z.enum(["", "yes", "no"]).optional(),
@@ -70,7 +73,12 @@ export async function resolveBenchLocation(latitude: number, longitude: number):
   return point.success ? locationFor(point.data.latitude, point.data.longitude) : null;
 }
 
-export async function addBench(_previous: ActionResult | null, formData: FormData): Promise<ActionResult> {
+export async function getNearbyBenches(latitude: number, longitude: number): Promise<NearbyBench[]> {
+  const point = z.object({ latitude: z.number().min(45.7).max(47.9), longitude: z.number().min(5.7).max(10.7) }).parse({ latitude, longitude });
+  return readNearbyBenches(point.latitude, point.longitude);
+}
+
+export async function addBench(_previous: AddBenchResult | null, formData: FormData): Promise<AddBenchResult> {
   const parsed = addSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, message: "Bitte Standort prüfen." };
   try {
@@ -79,7 +87,11 @@ export async function addBench(_previous: ActionResult | null, formData: FormDat
     const now = new Date().toISOString();
     const id = `community-${randomUUID()}`;
     const bool = (value: "" | "yes" | "no" | undefined) => value ? value === "yes" ? 1 : 0 : null;
-    const transaction = sqlite.transaction(() => {
+    const transaction = sqlite.transaction((): AddBenchResult => {
+      const nearby = readNearbyBenches(parsed.data.latitude, parsed.data.longitude);
+      if (nearby.length && (parsed.data.nearbyReviewed !== "yes" || parsed.data.nearbyIds !== JSON.stringify(nearby.map((bench) => bench.id).sort()))) {
+        return { ok: false, message: "Bitte prüfe zuerst die Bänkli in der Nähe. Ist deines schon eingetragen?", nearby };
+      }
       const result = sqlite.prepare(`INSERT INTO benches(
         id,osm_type,osm_id,latitude,longitude,backrest,armrest,covered,wheelchair,fireplace_nearby,waste_basket_nearby,seats,material,direction_degrees,
         description,raw_tags,active,source_updated_at,imported_at,
@@ -106,11 +118,13 @@ export async function addBench(_previous: ActionResult | null, formData: FormDat
       ].filter((entry) => entry[1] !== undefined && entry[1] !== "");
       const insertEdit = sqlite.prepare("INSERT INTO bench_metadata_edits(bench_row_id,user_id,field,old_value,new_value,created_at) VALUES(?,?,?,?,?,?)");
       for (const [field, value] of edits) insertEdit.run(rowId, user.id, field, null, String(value), now);
+      return { ok: true, benchId: id, message: `Bänkli eingetragen · noch ${threshold - 1} Bestätigung${threshold - 1 === 1 ? "" : "en"}.` };
     });
-    transaction();
+    const result = transaction.immediate();
+    if (!result.ok) return result;
     refreshUserBadges(user.id);
     refresh(id);
-    return { ok: true, message: `Bänkli eingetragen – noch ${threshold - 1} Bestätigung${threshold - 1 === 1 ? "" : "en"}.` };
+    return result;
   } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Bänkli konnte nicht gespeichert werden." }; }
 }
 
@@ -119,12 +133,12 @@ export async function confirmBench(benchId: string): Promise<ActionResult> {
     const user = await writeActor("confirm-bench", 100, 300);
     const rowId = rowFor(benchId);
     const now = new Date().toISOString();
-    const result = recordBenchConfirmation(sqlite, rowId, user.id, threshold, now);
+    const result = recordBenchPresence(sqlite, rowId, user.id, threshold, now);
     if (result.added) refreshUserBadges(user.id);
     if (result.verified && result.creatorUserId) refreshUserBadges(result.creatorUserId);
     refresh(benchId);
-    if (result.alreadyVerified) return { ok: false, message: "Dieses Bänkli ist bereits bestätigt." };
-    if (!result.added) return { ok: false, message: "Du hast dieses Bänkli schon bestätigt." };
+    if (!result.refreshed) return { ok: true, message: "Heute bereits von dir bestätigt." };
+    if (result.alreadyVerified) return { ok: true, message: "Danke – heute als noch vorhanden bestätigt." };
     return { ok: true, message: result.verified ? "Dieses Bänkli ist jetzt bestätigt!" : `Noch ${threshold - result.count} Bestätigung${threshold - result.count === 1 ? "" : "en"}.` };
   } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Bestätigung fehlgeschlagen." }; }
 }

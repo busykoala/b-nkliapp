@@ -91,14 +91,14 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await expect(filters.getByRole("button", { name: "Feuerstelle" })).toBeVisible();
   await expect(filters.getByRole("button", { name: "Abfalleimer" })).toBeVisible();
   await filters.getByText("Mehr Wünsche", { exact: true }).click();
-  await expect(filters.getByRole("button", { name: "Stufenlos" })).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Mit Rollstuhl nutzbar" })).toBeVisible();
   await backrest.click();
   await expect(filters.getByText("2 Filter aktiv")).toBeVisible();
   await expect(page.getByText("Bänke konnten nicht geladen werden.")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("map-filters-more.png"), fullPage: false });
   await page.keyboard.press("Escape");
   await expect(filters).toHaveCount(0);
-  await expect(page.getByLabel("Menü öffnen")).toBeFocused();
+  await expect(page.getByLabel("Filter öffnen")).toBeFocused();
 });
 
 test("keeps core pages contained from tablet to large desktop", async ({ page }, testInfo) => {
@@ -202,7 +202,8 @@ test("location denial leaves the map usable", async ({ page, context }) => {
 test("keeps browsing public but requires an account for contributions", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
-  await expect(page.getByText("Zum Mitmachen kurz anmelden")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
+  await expect(page.getByText("Danach geht es weiter: Bewertung abgeben.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Bewertung veröffentlichen" })).toHaveCount(0);
 });
 
@@ -210,13 +211,11 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
-  await page.getByRole("button", { name: "Einen Eindruck beitragen" }).click();
   const contribution = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
-  await contribution.locator("summary").filter({ hasText: "Wie war deine Pause?" }).click();
-  await page.getByLabel("Gesamt bewerten").selectOption("5");
-  await page.getByLabel("Aussicht bewerten").selectOption("4");
-  await page.getByLabel("Komfort bewerten").selectOption("4");
-  await page.getByLabel("Ruhe bewerten").selectOption("5");
+  await contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
+  await contribution.getByRole("group", { name: "Aussicht", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
+  await contribution.getByRole("group", { name: "Komfort", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
+  await contribution.getByRole("group", { name: "Ruhe", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
   await page.getByPlaceholder("Was hat dir hier gefallen?").fill("Playwright-Testbewertung");
   await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
@@ -231,10 +230,16 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
   await registerUser(page, `scout-${browserName}`);
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Bänkli eintragen").click();
-  await page.getByLabel("Name").fill(benchName);
+  await expect(page.getByRole("heading", { name: "Position wählen" })).toBeVisible();
+  await page.getByRole("button", { name: "Hier eintragen" }).click();
+  await page.getByLabel("Name", { exact: false }).fill(benchName);
   await page.getByLabel("Widmung").fill("Für alle müden Tests");
+  await expect(page.getByText("Bestehende Bänkli in der Nähe werden geprüft …")).toHaveCount(0);
+  const duplicateCheck = page.getByLabel("Geprüft: Meins ist ein weiteres Bänkli.");
+  if (await duplicateCheck.isVisible()) await duplicateCheck.check();
   await page.getByRole("button", { name: "Eintragen", exact: true }).click();
   await expect(page.getByText(/noch 2 Bestätigungen/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: benchName, exact: true })).toBeVisible();
   await page.goto("/");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
   await page.getByLabel("Ort suchen").fill(benchName);

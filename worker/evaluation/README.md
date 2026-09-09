@@ -14,8 +14,7 @@ The reviewed scene fixture remains because it guards the production vision
 pipeline. Temporary model weights, database indexes and experiment reports are
 not part of the repository.
 
-The reproducible conclusions from the original benchmark and the later
-26-canton SWISSIMAGE countercheck are recorded in
-`docs/environment-model-evaluation.md`. The nationwide sample, downloaded image
-bytes and one-off training code were deleted after the decision; they are not a
-second production pipeline.
+The original benchmark and the later 26-canton SWISSIMAGE countercheck did not
+justify replacing direct geographic evidence. The nationwide sample, downloaded
+image bytes and one-off training code were deleted after the decision; they are
+not a second production pipeline.

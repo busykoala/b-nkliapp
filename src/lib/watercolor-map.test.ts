@@ -55,7 +55,7 @@ function assetBytes(url: string) {
 }
 
 function evaluateTransit(expression: unknown, properties: Record<string, string | number>) {
-  const compiled = createExpression(expression);
+  const compiled = createExpression(expression, "layers[0].layout.icon-image");
   if (compiled.result === "error") throw new Error(JSON.stringify(compiled.value));
   return compiled.value.evaluate({ zoom: 16 }, { type: "Point", properties });
 }

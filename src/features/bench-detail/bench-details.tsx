@@ -18,7 +18,7 @@ const panels: Array<{ id: DetailPanel; label: string; icon: ReactNode }> = [
   { id: "weather", label: "Wetter", icon: <CloudSun size={18} /> },
 ];
 
-export function BenchDetails({ bench }: { bench: BenchDetail }) {
+export function BenchDetails({ bench, signedIn = false, onChanged }: { bench: BenchDetail; signedIn?: boolean; onChanged?: () => void | Promise<void> }) {
   const [activePanel, setActivePanel] = useState<DetailPanel>("bench");
   const panelRef = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -55,7 +55,7 @@ export function BenchDetails({ bench }: { bench: BenchDetail }) {
         >{panel.icon}<span>{panel.label}</span></button>)}
       </div>
       <div ref={panelRef} className="detail-panel-frame" id={`${id}-${activePanel}-panel`} role="tabpanel" aria-labelledby={`${id}-${activePanel}-tab`}>
-        {activePanel === "bench" && <BenchPanel bench={bench} />}
+        {activePanel === "bench" && <BenchPanel bench={bench} signedIn={signedIn} onChanged={onChanged} />}
         {activePanel === "light" && <LightPanel bench={bench} />}
         {activePanel === "view" && <ViewPanel bench={bench} />}
         {activePanel === "weather" && <WeatherPanel bench={bench} />}

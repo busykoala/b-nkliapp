@@ -8,7 +8,9 @@ const baseURL = production ? "https://localhost:3100" : "http://localhost:3100";
 
 export default defineConfig({
   testDir: "./e2e",
-  workers: process.env.CI ? 2 : 4,
+  // Software-rendered mobile browsers and CPU throttling need an unshared CPU.
+  workers: process.env.CI ? 1 : 4,
+  reporter: process.env.CI ? "list" : undefined,
   webServer: {
     command: production ? "tsx scripts/serve-production-tests.ts" : "npm run dev -- --port 3100",
     url: baseURL,
@@ -29,7 +31,7 @@ export default defineConfig({
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=tsx --import=${join(process.cwd(), "scripts/journey-test-providers.ts")}`,
     },
   },
-  use: { baseURL, ignoreHTTPSErrors: production, trace: "on-first-retry" },
+  use: { baseURL, ignoreHTTPSErrors: production, trace: "retain-on-failure" },
   projects: [
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
     { name: "mobile-safari", use: { ...devices["iPhone 14"], browserName: "webkit" } },

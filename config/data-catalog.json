@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026-09-06",
+  "catalogVersion": "2026-09-09",
   "timeZone": "Europe/Zurich",
   "runtime": {
-    "pipelineVersion": "4.4.0",
-    "profilePipelineVersion": "GeoAdmin-Horizont v6",
+    "pipelineVersion": "4.5.0",
+    "profilePipelineVersion": "GeoAdmin-Horizont v7",
     "scenePromptVersion": "benchly-scene-1.4",
     "sceneReconcilerVersion": "benchly-evidence-1.1",
     "osmPbfUrl": "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf",
@@ -335,6 +335,17 @@
       "statusNote": "Läuft unter dem Alias benchly-vision auf der eigenen Inference-Infrastruktur; Geometrie und Community-Hinweise bleiben getrennte Evidenz."
     },
     {
+      "id": "qwen35-bank-photos",
+      "name": "Qwen3.5 35B-A3B · Bankfotos",
+      "kind": "Inference-Modell",
+      "url": "https://huggingface.co/Qwen/Qwen3.5-35B-A3B",
+      "provides": ["Perspektive, sichtbares Umfeld und positive Aussichtsevidenz aus Bankfotos"],
+      "license": "Apache-2.0; Q4_K_M-GGUF und Vision-Projektor lokal betrieben",
+      "usedBy": ["bench-photo-evidence"],
+      "access": "open-source",
+      "statusNote": "Eigenes Inference-System, qwen35-general; kein Bildinhalt widerlegt allein eine Aussicht. Modellwahrscheinlichkeiten sind keine kalibrierten Messwerte."
+    },
+    {
       "id": "benchly-community",
       "name": "Bänkli-Community",
       "kind": "community",
@@ -346,7 +357,7 @@
     }
   ],
   "artifacts": [
-    {"id": "benchly-db", "label": "Bänkli- und Umgebungsindex", "path": "/data/benchly.sqlite", "version": "pipeline-4.4.0"},
+    {"id": "benchly-db", "label": "Bänkli- und Umgebungsindex", "path": "/data/benchly.sqlite", "version": "pipeline-4.5.0"},
     {"id": "transit-db", "label": "GTFS-Umsteigeindex", "path": "/data/transit.sqlite", "version": "validity-selected"},
     {"id": "landscape-db", "label": "Landschaftsevidenz für Spaziergänge", "path": "/data/landscape.sqlite", "version": "landscape-1"},
     {"id": "sonbase-day", "label": "sonBASE Strassenlärm am Tag", "path": "/data/sources/sonbase-day.tif", "version": "official-cog"},
@@ -361,7 +372,7 @@
     {"id":"transit","title":"ÖV-Umsteigeindex","schedule":"45 5 * * *","frequency":"täglich um 05:45","deadlineSeconds":1800,"command":"refresh-transit","args":["--transit-database","/data/transit.sqlite"],"sourceIds":["swiss-gtfs"],"artifactIds":["transit-db"],"profile":"standard","purpose":"production"},
     {"id":"import-osm","title":"Schweizer Bänkli-Inventar","schedule":"15 1 * * 0","frequency":"sonntags um 01:15","deadlineSeconds":14400,"command":"import-osm","args":["--database","/data/benchly.sqlite"],"sourceIds":["openstreetmap","geofabrik"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"enrich","title":"Gelände- und Oberflächenanreicherung","schedule":"15 1 * * 1-6","frequency":"Montag bis Samstag um 01:15","deadlineSeconds":29700,"command":"enrich-batch","args":["--database","/data/benchly.sqlite","--limit","1000","--max-runtime-hours","8","--max-download-gib","80"],"sourceIds":["swissalti3d","swisssurface3d","swissbuildings3d"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
-    {"id":"horizon","title":"Berg-Horizonte","schedule":"30 10 * * *","frequency":"täglich um 10:30","deadlineSeconds":3300,"command":"enrich-profile-batch","args":["--database","/data/benchly.sqlite","--limit","1000","--requests-per-second","1","--max-runtime-minutes","45"],"sourceIds":["swisstopo-map","swissalti3d"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
+    {"id":"horizon","title":"Berg-Horizonte","schedule":"30 10 * * *","frequency":"täglich um 10:30","deadlineSeconds":3300,"command":"enrich-profile-batch","args":["--database","/data/benchly.sqlite","--limit","1000","--requests-per-second","1","--max-runtime-minutes","45","--lock-wait-seconds","60"],"sourceIds":["swisstopo-map","swissalti3d"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"commons","title":"Commons-Metadaten","schedule":"0 19 * * *","frequency":"täglich um 19:00","deadlineSeconds":7200,"command":"refresh-commons","args":["--database","/data/benchly.sqlite","--limit","500"],"sourceIds":["wikimedia-commons"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"official-context","title":"Offizieller Landschaftskontext","schedule":"0 12 * * 0","frequency":"sonntags um 12:00; Import nur am ersten Sonntag","deadlineSeconds":29700,"command":"import-official-context","args":["--database","/data/benchly.sqlite","--first-sunday-only"],"sourceIds":["swisstlm3d"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"buildings","title":"3D-Gebäude","schedule":"35 2 * * *","frequency":"täglich um 02:35, in räumlichen Batches","deadlineSeconds":43200,"command":"import-swissbuildings3d","args":["--database","/data/benchly.sqlite","--max-cells","3"],"sourceIds":["swissbuildings3d"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},

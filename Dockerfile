@@ -14,6 +14,7 @@ COPY package.json package-lock.json next-env.d.ts next.config.ts postcss.config.
 COPY config ./config
 COPY deploy/charts/benchly/data-jobs.generated.json ./deploy/charts/benchly/data-jobs.generated.json
 COPY scripts/generate-data-jobs.ts ./scripts/generate-data-jobs.ts
+COPY scripts/migrate.ts ./scripts/migrate.ts
 COPY public ./public
 COPY src ./src
 RUN npm run build

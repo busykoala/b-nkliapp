@@ -77,11 +77,20 @@ def _request_json(url: str, *, data: Optional[bytes] = None,
 
 def download_image(url: str) -> tuple[bytes, str]:
     request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (temporary scene analysis)"})
-    with urllib.request.urlopen(request, timeout=60) as response:
-        content_type = response.headers.get_content_type()
-        if not content_type.startswith("image/"):
-            raise ValueError(f"not an image: {content_type}")
-        payload = response.read(MAX_IMAGE_BYTES + 1)
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            content_type = response.headers.get_content_type()
+            if not content_type.startswith("image/"):
+                raise ValueError(f"not an image: {content_type}")
+            payload = response.read(MAX_IMAGE_BYTES + 1)
+    except urllib.error.HTTPError as error:
+        if error.code in {429, 503}:
+            retry_after = error.headers.get("Retry-After")
+            raise ProviderDelay(
+                f"{error.code} from {urllib.parse.urlsplit(url).netloc}",
+                int(retry_after) if retry_after and retry_after.isdigit() else 3600,
+            ) from error
+        raise
     if len(payload) > MAX_IMAGE_BYTES:
         raise ValueError("image exceeds 8 MB")
     return payload, content_type
@@ -112,7 +121,8 @@ def _image_content(images: Sequence[tuple[bytes, str]], prompt: str,
 
 
 def _inference_request(images: Sequence[tuple[bytes, str]], endpoint: str, api_key: str, model: str,
-                       prompt: str, response_format: dict[str, object], numbered: bool = False) -> object:
+                       prompt: str, response_format: dict[str, object], numbered: bool = False,
+                       disable_thinking: bool = False) -> object:
     encoded_bytes = sum(4 * math.ceil(len(payload) / 3) for payload, _ in images)
     if not images or encoded_bytes > MAX_REQUEST_BYTES:
         raise ValueError("invalid inference image payload")
@@ -120,6 +130,7 @@ def _inference_request(images: Sequence[tuple[bytes, str]], endpoint: str, api_k
         "model": model, "temperature": 0, "max_tokens": 1800,
         "messages": [{"role": "user", "content": _image_content(images, prompt, numbered)}],
         "response_format": response_format,
+        **({"chat_template_kwargs": {"enable_thinking": False}} if disable_thinking else {}),
     }, separators=(",", ":")).encode()
     if len(request_payload) > MAX_REQUEST_BYTES:
         raise ValueError("invalid inference request payload")

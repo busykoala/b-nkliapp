@@ -72,6 +72,11 @@ test("draws a complete journal with real-provider-shaped walking and transfer da
   const connections = journal.getByRole("region", { name: "Deine Verbindungen" });
   await expect(connections).toBeVisible({ timeout: 18000 });
   await expect(connections.getByText("Verlauf schematisch", { exact: false }).first()).toBeVisible();
+  await expect(connections.getByText(/zu Fuss insgesamt/)).toBeVisible();
+  await expect(connections.getByText(/Letzter Fussweg:/)).toBeVisible();
+  await expect(connections.getByRole("link", { name: "In SBB öffnen" })).toHaveAttribute("href", /^https:\/\/www\.sbb\.ch\/de\?/);
+  await expect(connections.getByRole("link", { name: "In Karten öffnen" })).toHaveAttribute("href", /destination=/);
+
   await expect(connections.getByText("Ein Stück zu Fuss", { exact: true })).toHaveCount(2);
   await expect(connections.getByText(/32 statt 31/)).toBeVisible();
   await connections.locator("summary").filter({ hasText: "Viel Luft" }).click();

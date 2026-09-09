@@ -137,6 +137,10 @@ def add_media(database, rows: Sequence[dict[str, object]]) -> None:
 
 
 def upsert_enrichment(database, values: dict[str, object], update_fields: Iterable[str] | None = None) -> None:
+    from benchly.imagery.photo_repository import project_enrichment_with_photos
+
+    if update_fields is None:
+        values = project_enrichment_with_photos(database, values)
     supplied_fields = tuple(values)
     validated = BenchEnrichment.model_validate(values)
     values = {field: getattr(validated, field) for field in supplied_fields}
@@ -146,7 +150,9 @@ def upsert_enrichment(database, values: dict[str, object], update_fields: Iterab
             values[field] = getattr(validated, field)
     statement = insert(BenchEnrichment).values(values)
     excluded = statement.excluded
-    fields = tuple(update_fields or (key for key in values if key != "bench_row_id"))
+    # Defaults are needed for a new row, but a partial context refresh must not
+    # reset the confidence of previously measured sun/view data.
+    fields = tuple(update_fields or (key for key in supplied_fields if key != "bench_row_id"))
     write(
         database,
         statement.on_conflict_do_update(

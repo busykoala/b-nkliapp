@@ -77,6 +77,11 @@ def discard_old_official_generation(database, imported_at: str) -> None:
     )
 
 
+def discard_environment_rows(database, row_ids: Sequence[int]) -> None:
+    if row_ids:
+        write(database, delete(EnvironmentFeature).where(EnvironmentFeature.row_id.in_(row_ids)))
+
+
 def discard_old_osm_context(database, imported_at: str) -> None:
     write(
         database,

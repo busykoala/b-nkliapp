@@ -1,13 +1,15 @@
+import { BenchFeatureEditor } from "@/components/bench-feature-editor";
 import { Accessibility, Armchair, ChevronDown, Compass, Flame, Hammer, MoveHorizontal, Trash2, Umbrella, UsersRound } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { DetailRows, PanelHeading } from "./panel-ui";
 
-export function BenchPanel({ bench }: { bench: BenchDetail }) {
+export function BenchPanel({ bench, signedIn = false, onChanged }: { bench: BenchDetail; signedIn?: boolean; onChanged?: () => void | Promise<void> }) {
   const known = bench.properties.filter((property) => !/^(unbekannt|noch offen)$/i.test(property.value.trim()));
   const missingCount = bench.properties.length - known.length;
   return <section className="detail-panel detail-panel-bench">
     <PanelHeading eyebrow="So sitzt es sich hier" title={known.length ? "Was die Bank mitbringt" : "Die Bank wird noch erkundet"} />
-    {known.length > 0 && <div className="bench-fact-grid">
+    {signedIn && <BenchFeatureEditor bench={bench} onChanged={onChanged} />}
+    {!signedIn && known.length > 0 && <div className="bench-fact-grid">
       {known.map((property) => <div className={property.source === "Bänkli App" ? "is-community" : ""} key={property.label}>
         <span className="fact-mark"><PropertyIcon label={property.label} /></span>
         <small>{property.label}</small>
@@ -35,7 +37,7 @@ function PropertyIcon({ label }: { label: string }) {
   if (label === "Rückenlehne") return <Armchair size={19} />;
   if (label === "Armlehnen") return <MoveHorizontal size={19} />;
   if (label === "Überdacht") return <Umbrella size={19} />;
-  if (label === "Barrierefrei") return <Accessibility size={19} />;
+  if (label === "Mit Rollstuhl nutzbar") return <Accessibility size={19} />;
   if (label === "Feuerstelle nahebei") return <Flame size={19} />;
   if (label === "Abfalleimer nahebei") return <Trash2 size={19} />;
   if (label === "Material") return <Hammer size={19} />;

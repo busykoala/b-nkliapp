@@ -26,6 +26,8 @@ from benchly.imagery.jobs import (
     discover_open_images_job,
     reconcile_environment_job,
 )
+from benchly.imagery.photo_source import analyze_bank_photos
+from benchly.imagery.photo_import import import_photo_checkpoint_job
 from benchly.refresh import refresh_job
 from benchly.runtime import exclusive_worker_lock
 from benchly.settings import DEFAULT_OSM_PBF_URL
@@ -40,6 +42,26 @@ from benchly.weather.jobs import refresh_weather_job
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Import and enrich Swiss benches into Benchly's database.")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    bank_photos = subparsers.add_parser(
+        "analyze-source-photos", help="Analyze source-linked photos in RAM into a separate resumable evidence DB"
+    )
+    bank_photos.add_argument("--output", required=True)
+    bank_photos.add_argument("--index", help="Previously downloaded public /benches metadata JSON")
+    bank_photos.add_argument("--model", default="qwen35-general")
+    bank_photos.add_argument("--source-ids", type=int, nargs="+")
+    bank_photos.add_argument("--priority-source-ids", type=int, nargs="+", help="Process these sources first, then the remainder")
+    bank_photos.add_argument("--discover-comments", action="store_true")
+    bank_photos.add_argument("--limit", type=int, default=0, help="Zero processes all outstanding photos")
+    bank_photos.add_argument("--max-attempts", type=int, default=3)
+    bank_photos.set_defaults(function=analyze_bank_photos, uses_lock=False)
+
+    photo_import = subparsers.add_parser("import-bank-photo-evidence", help="Validate, match and merge a photo checkpoint")
+    _database_argument(photo_import)
+    photo_import.add_argument("input", type=Path)
+    photo_import.add_argument("--apply", action="store_true")
+    photo_import.add_argument("--reviews", type=Path, help="Content-hash-bound visual review decisions")
+    photo_import.set_defaults(function=import_photo_checkpoint_job, uses_lock=True)
 
     source_versions = subparsers.add_parser(
         "check-source-versions", help="Record bounded version signals for catalog sources"
@@ -141,6 +163,8 @@ def build_parser() -> argparse.ArgumentParser:
     profile.add_argument("--limit", type=int, default=1000)
     profile.add_argument("--requests-per-second", type=float, default=1.0)
     profile.add_argument("--max-runtime-minutes", type=float, default=45)
+    profile.add_argument("--lock-wait-seconds", type=float, default=0,
+                         help="Wait at most this long for another writer to finish")
     profile.set_defaults(function=enrich_profile_batch_job, uses_lock=True)
 
     commons = subparsers.add_parser("refresh-commons", help="Refresh a bounded number of nearby Commons results")
@@ -232,7 +256,9 @@ def main(argv: list[str] | None = None) -> int:
         if not args.uses_lock:
             args.function(args)
             return 0
-        with exclusive_worker_lock(Path(args.database).resolve()) as acquired:
+        with exclusive_worker_lock(
+            Path(args.database).resolve(), timeout_seconds=getattr(args, "lock_wait_seconds", 0)
+        ) as acquired:
             if not acquired:
                 print("Another Benchly worker owns the SQLite writer lock; skipping this run.")
                 return 0

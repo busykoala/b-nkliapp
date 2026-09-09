@@ -9,6 +9,7 @@ dependencies = [
   "meteodata-lab==0.8.0",
   "numpy==2.3.4",
   "osmium==4.1.1",
+  "pillow>=11.3,<13",
   "pydantic>=2.12,<3",
   "pyproj==3.7.2",
   "rasterio==1.4.3",

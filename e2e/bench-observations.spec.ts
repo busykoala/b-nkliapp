@@ -45,10 +45,14 @@ async function submitViewCorrection(page: import("@playwright/test").Page, targe
 }
 
 test("keeps the view observation understandable in the mobile detail", async ({ page }, testInfo) => {
+  // This covers registration, all four steps, back navigation, save and undo.
+  // Linux WebKit spends 1–3 seconds per click; keep individual actions bounded.
+  test.setTimeout(60_000);
+  page.setDefaultTimeout(5_000);
   await registerUser(page, `view-${Date.now().toString().slice(-8)}`);
   await page.goto(`/bank/${benchId}`);
   await page.getByRole("tab", { name: "Aussicht" }).click();
-  await expect(page.getByRole("heading", { name: /Horizont|Blick/ })).toBeVisible();
+  await expect(page.getByRole("tabpanel", { name: "Aussicht" }).getByRole("heading", { name: /Horizont|Blick/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Beitragen", exact: true })).toBeVisible();
   await page.waitForTimeout(100);
   await page.screenshot({ path: testInfo.outputPath("view-entry.png"), fullPage: false });
