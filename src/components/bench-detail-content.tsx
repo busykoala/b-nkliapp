@@ -15,6 +15,7 @@ import { BenchDetails } from "@/features/bench-detail/bench-details";
 import { BenchLandscape } from "./bench-landscape";
 import { VerificationQuestion } from "@/features/bench-knowledge/verification-question";
 import { PhotoGallery } from "./photo-gallery";
+import { galleryImageUrl } from "@/features/bench-photos/media-source";
 import { BenchPlaceCommunity } from "./bench-place-community";
 
 const correctionLabels: Record<string, string> = {
@@ -112,9 +113,15 @@ function RatingEntry({ bench, onOpen }: { bench: BenchDetail; onOpen: () => void
 function PhotoStory({ bench }: { bench: BenchDetail }) {
   const media = [...bench.media.filter((item) => item.relation === "exact"), ...bench.media.filter((item) => item.relation === "nearby")];
   if (!media.length) return null;
+  const photos = media.flatMap((item) => {
+    const src = galleryImageUrl(item.thumbnailUrl);
+    return src ? [{ id: String(item.id), src, caption: item.relation === "nearby" ? "Aus der Umgebung · nicht zwingend diese Bank" : item.title ?? "Dieser Platz", credit: `${item.author ?? item.provider} · ${item.license ?? "Lizenz bei Quelle"}`, sourceUrl: item.sourceUrl }] : [];
+  });
+  const links = media.filter((item) => !galleryImageUrl(item.thumbnailUrl) && /^https?:\/\//.test(item.sourceUrl));
   return <section className="photo-story">
     <h3>Ein Blick in die Nähe</h3>
-    <PhotoGallery photos={media.map((item) => ({ id: String(item.id), src: item.thumbnailUrl, caption: item.relation === "nearby" ? "Aus der Umgebung · nicht zwingend diese Bank" : item.title ?? "Dieser Platz", credit: `${item.author ?? item.provider} · ${item.license ?? "Lizenz bei Quelle"}`, sourceUrl: item.sourceUrl }))} />
+    {photos.length > 0 && <PhotoGallery photos={photos} />}
+    {links.map((item) => <p key={item.id}><a href={item.sourceUrl} target="_blank" rel="noreferrer">Externer Hinweis zum Platz ↗</a></p>)}
   </section>;
 }
 

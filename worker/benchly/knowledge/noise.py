@@ -8,7 +8,7 @@ from benchly.context.geometry import WGS84_TO_LV95
 from benchly.knowledge.models import NoiseExposure
 from benchly.knowledge.repository import record_evidence, upsert
 from benchly.runtime import now_iso
-from benchly.sources.artifacts import refresh_sonbase
+from benchly.sources.artifacts import is_lv95_crs, refresh_sonbase
 
 LAYERS = {
     ("road", "day"): "strassenlaerm_tag", ("road", "night"): "strassenlaerm_nacht",
@@ -37,7 +37,7 @@ class NoiseRasters:
             if not path.exists():
                 continue
             dataset = self.stack.enter_context(rasterio.open(path))
-            if dataset.crs is None or dataset.crs.to_epsg() != 2056 or dataset.count != 1:
+            if not is_lv95_crs(dataset.crs) or dataset.count != 1:
                 self.close()
                 raise ValueError(f"Expected one-band LV95 noise raster: {path}")
             state_path = path.with_suffix(path.suffix + ".json")

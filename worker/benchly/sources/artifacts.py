@@ -16,6 +16,25 @@ from benchly.runtime import now_iso
 MAX_SONBASE_BYTES = 750_000_000
 
 
+def is_lv95_crs(crs) -> bool:
+    if crs is None:
+        return False
+    if crs.to_epsg() == 2056:
+        return True
+    # The official daytime rail TIFF uses equivalent Hotine WKT without an EPSG ID.
+    # Require both an LV95 match and unchanged metre coordinates across Switzerland.
+    from pyproj import CRS, Transformer
+    candidate = CRS.from_wkt(crs.to_wkt())
+    if not candidate.is_projected or candidate.to_epsg(min_confidence=20) != 2056:
+        return False
+    transform = Transformer.from_crs(candidate, 2056, always_xy=True)
+    for x, y in ((2485000, 1075000), (2600000, 1200000), (2820000, 1295000)):
+        east, north = transform.transform(x, y)
+        if not (abs(east - x) < .001 and abs(north - y) < .001):
+            return False
+    return True
+
+
 class RasterArtifactState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -31,7 +50,7 @@ def validate_sonbase_raster(path: Path) -> None:
     import rasterio
 
     with rasterio.open(path) as dataset:
-        if dataset.count != 1 or dataset.crs is None or dataset.crs.to_epsg() != 2056:
+        if dataset.count != 1 or not is_lv95_crs(dataset.crs):
             raise ValueError("sonBASE raster must be a one-band EPSG:2056 GeoTIFF")
         if dataset.nodata is None or dataset.width < 1 or dataset.height < 1:
             raise ValueError("sonBASE raster has no valid dimensions or NoData marker")
