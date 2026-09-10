@@ -19,7 +19,12 @@ export default defineConfig({
   // server. Retry only the affected test once; green runs keep their current
   // speed and a recovery still remains inside the four-minute job budget.
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? "list" : undefined,
+  // Linux WebKit can need more than Playwright's 30-second default while the
+  // software-rendered map settles. Successful tests remain just as fast.
+  timeout: process.env.CI ? 45_000 : 30_000,
+  // Surface the precise failing assertion as a public check annotation; the
+  // list reporter remains useful in the raw job log.
+  reporter: process.env.CI ? [["list"], ["github"]] : undefined,
   webServer: {
     command: production ? "tsx scripts/serve-production-tests.ts" : "npm run dev -- --port 3100",
     url: baseURL,
