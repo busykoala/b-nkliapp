@@ -22,48 +22,105 @@ env:
   IMAGE_NAME: ghcr.io/busykoala/b-nkliapp
 
 jobs:
-  checks:
+  web-checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - uses: astral-sh/setup-uv@v7
-        with:
-          version: "0.11.21"
       - run: npm ci
-      - run: uv sync --frozen
       - name: Audit production JavaScript dependencies
         run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npm run lint
       - run: npm run build
-      - name: Install mobile test browsers
-        run: npx playwright install --with-deps chromium webkit
+
+  browser-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: mobile-chrome
+            browser: chromium
+            shard: 1/2
+            part: 1
+          - project: mobile-chrome
+            browser: chromium
+            shard: 2/2
+            part: 2
+          - project: mobile-safari
+            browser: webkit
+            shard: 1/2
+            part: 1
+          - project: mobile-safari
+            browser: webkit
+            shard: 2/2
+            part: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install ${{ matrix.browser }} test browser
+        run: npx playwright install --with-deps ${{ matrix.browser }}
       - name: Test production browser flows
-        run: npm run test:e2e
+        run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}
         env:
           PLAYWRIGHT_PRODUCTION: "1"
       - name: Preserve browser diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-diagnostics
+          name: browser-diagnostics-${{ matrix.project }}-${{ matrix.part }}
           path: test-results
           retention-days: 7
+
+  worker-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.21"
+          enable-cache: true
+      - run: uv sync --frozen
       - name: Test worker
         run: uv run pytest
+
+  worker-container-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
       - name: Test worker container
-        run: docker build --target test -f worker/Dockerfile .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: worker/Dockerfile
+          target: test
+          push: false
+          cache-from: |
+            type=gha,scope=worker-test
+            type=gha,scope=worker
+          cache-to: type=gha,mode=max,scope=worker-test
 
   containers:
-    needs: checks
+    needs: [web-checks, browser-checks, worker-checks, worker-container-check]
     runs-on: ubuntu-latest
+    timeout-minutes: 4
     strategy:
       matrix:
         include:
@@ -117,6 +174,7 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: containers
     runs-on: [self-hosted, linux, x64, benchly]
+    timeout-minutes: 4
     environment: production
     steps:
       - uses: actions/checkout@v4
@@ -194,7 +252,7 @@ jobs:
                   | jq -r '[.[] | select(.status == "deployed")][-1].revision // empty')"
                 test -n "$deployed_revision"
                 echo "Recovering $release from $status via revision $deployed_revision"
-                helm rollback "$release" "$deployed_revision" --namespace "$namespace" --wait --timeout 20m \
+                helm rollback "$release" "$deployed_revision" --namespace "$namespace" --wait --timeout 2m \
                   "${helm_conflict_flags[@]}"
                 ;;
             esac
@@ -221,7 +279,7 @@ jobs:
           }
           kubectl get deployment benchly --namespace benchly >/dev/null
           # Foot journeys must not be switched before their internal router is ready.
-          kubectl --namespace routing rollout status deployment/graphhopper --timeout=2m
+          kubectl --namespace routing rollout status deployment/graphhopper --timeout=30s
           helm lint "$GITHUB_WORKSPACE/deploy/charts/benchly"
           kubectl --namespace benchly create secret docker-registry benchly-ghcr \
             --docker-server=ghcr.io \
@@ -241,7 +299,7 @@ jobs:
           recover_pending_release benchly benchly
           set +e
           benchly_upgrade_output="$(helm upgrade benchly "$GITHUB_WORKSPACE/deploy/charts/benchly" \
-            --namespace benchly --wait --timeout 20m "${helm_safety_flags[@]}" \
+            --namespace benchly --wait --timeout 2m "${helm_safety_flags[@]}" \
             --set-string "images.web=$WEB_IMAGE" \
             --set-string "images.worker=$WORKER_IMAGE" 2>&1)"
           benchly_upgrade_status=$?
@@ -262,9 +320,9 @@ jobs:
           fi
           kubectl --namespace benchly annotate deployment/benchly \
             "benchly.io/revision=$GITHUB_SHA" --overwrite
-          kubectl --namespace benchly rollout status deployment/benchly --timeout=10m
+          kubectl --namespace benchly rollout status deployment/benchly --timeout=90s
           set +e
-          benchly_test_output="$(helm test benchly --namespace benchly --logs --timeout 10m 2>&1)"
+          benchly_test_output="$(helm test benchly --namespace benchly --logs --timeout 90s 2>&1)"
           benchly_test_status=$?
           set -e
           echo "$benchly_test_output"
@@ -283,39 +341,8 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             exit "$benchly_test_status"
           fi
-          run_bounded_job() {
-            cronjob="$1"
-            job_name="$2"
-            shift 2
-            args_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
-            kubectl --namespace benchly create job --from="cronjob/$cronjob" "$job_name" \
-              --dry-run=client -o json \
-              | jq --argjson args "$args_json" '.spec.backoffLimit=0 | .spec.template.spec.containers[0].args=$args' \
-              | kubectl --namespace benchly apply -f -
-            if ! kubectl --namespace benchly wait --for=condition=complete "job/$job_name" --timeout=20m; then
-              kubectl --namespace benchly logs "job/$job_name" --all-containers --tail=200 || true
-              return 1
-            fi
-            kubectl --namespace benchly logs "job/$job_name" --all-containers --tail=200
-            kubectl --namespace benchly delete job "$job_name" --wait=false
-          }
-          pilot_suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          pilot_bounds=(7.8085 46.6618 7.8100 46.6629)
           bootstrap_active="$(kubectl --namespace benchly get job benchly-official-context-bootstrap \
             -o jsonpath='{.status.active}' 2>/dev/null || true)"
-          if [[ "$bootstrap_active" == "1" ]]; then
-            echo 'Skipped the tiny shoreline pilot while the exact context import owns the SQLite writer lock.' \
-              >> "$GITHUB_STEP_SUMMARY"
-          else
-            run_bounded_job benchly-image-discovery "benchly-daerligen-discover-$pilot_suffix" \
-              discover-open-images --database /data/benchly.sqlite --max-cells 1 --requests-per-second 1 \
-              --include-resolved --bounds "${pilot_bounds[@]}"
-            run_bounded_job benchly-scene-analysis "benchly-daerligen-analyze-$pilot_suffix" \
-              analyze-scenes --database /data/benchly.sqlite --limit 10 --max-runtime-hours 0.25 \
-              --requests-per-second 0.25 --bounds "${pilot_bounds[@]}"
-            run_bounded_job benchly-environment-reconcile "benchly-daerligen-reconcile-$pilot_suffix" \
-              reconcile-environment --database /data/benchly.sqlite --limit 100 --bounds "${pilot_bounds[@]}"
-          fi
           osm_bootstrap=benchly-osm-geometry-v2-bootstrap
           osm_started=0
           if [[ "$bootstrap_active" != "1" ]] && ! kubectl --namespace benchly get job "$osm_bootstrap" >/dev/null 2>&1; then
