@@ -357,3 +357,20 @@ def test_physical_photo_estimates_require_validation_and_unique_non_conflicting_
     finally:
         database.rollback()
         database.close()
+
+
+def test_empty_terrain_cache_records_missing_outcome_and_advances_cell(migrated_database):
+    from benchly.db import connect_database
+    from benchly.enrichment.service import enrich_terrain, next_enrichment_bounds
+    database = connect_database(migrated_database)
+    try:
+        bounds = next_enrichment_bounds(database)
+        assert bounds is not None
+        assert enrich_terrain(database, None, None, limit=10, bounds=bounds) == 0
+        attempt = database.execute('SELECT status,coverage_json FROM bench_terrain_attempts').fetchone()
+        assert attempt['status'] == 'missing_source'
+        assert json.loads(attempt['coverage_json']) == {'reason': 'missing_origin_elevation'}
+        assert next_enrichment_bounds(database) is None
+        assert database.execute('SELECT count(*) FROM bench_enrichments').fetchone()[0] == 0
+    finally:
+        database.close()

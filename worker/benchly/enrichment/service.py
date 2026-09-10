@@ -73,8 +73,7 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
     terrain_inputs = terrain_metadata(terrain)
     surface = RasterCollection(surface_dir)
     if not terrain.datasets:
-        print("No terrain GeoTIFFs found; enrichment skipped. See worker/README.md.", file=sys.stderr)
-        return 0
+        print("No terrain GeoTIFFs found; recording missing-source attempts for this batch.", file=sys.stderr)
     query = """SELECT b.row_id,b.latitude,b.longitude,b.direction_degrees,b.covered,b.raw_tags
       FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
       WHERE b.active=1"""
