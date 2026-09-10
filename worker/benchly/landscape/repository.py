@@ -13,9 +13,9 @@ def create_schema(database: Database) -> None:
     columns = {row[1] for row in database.execute("PRAGMA table_info(cells)")}
     if "road_noise_db" not in columns:
         database.execute("ALTER TABLE cells ADD COLUMN road_noise_db REAL")
-    for column in ("road_night_noise_db", "rail_day_noise_db", "rail_night_noise_db", "noise_versions"):
+    for column in ("road_night_noise_db", "rail_day_noise_db", "rail_night_noise_db", "noise_versions", "input_generation"):
         if column not in columns:
-            database.execute(f"ALTER TABLE cells ADD COLUMN {column} {'TEXT' if column == 'noise_versions' else 'REAL'}")
+            database.execute(f"ALTER TABLE cells ADD COLUMN {column} {'TEXT' if column in {'noise_versions', 'input_generation'} else 'REAL'}")
 
 
 def upsert_cells(database: Database, values: Sequence[dict[str, object]]) -> None:

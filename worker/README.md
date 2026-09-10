@@ -231,7 +231,10 @@ sum or a live exposure measurement. For internal preference ranking only, the ma
 06–22 / 22–06 period contributes the lesser of the road-proximity preference and each available
 noise preference `clamp((70 - Lr) / 30, 0, 1)`. Rail noise can therefore lower a railway-adjacent
 route's rank without inventing a combined peacefulness measurement. Missing channels remain
-unknown. Facilities use straight-line geometry distances, not walking distances or access claims.
+unknown. Landscape v3 versions every cell and spatial checkpoint by source generation, raster
+inputs and algorithm. Same-day source changes restart affected sweeps; a source publication
+during sampling leaves the previous published snapshot intact. Facilities use straight-line
+geometry distances, not walking distances or access claims.
 
 ## Physical photo estimates and independent review
 

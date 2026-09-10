@@ -4,6 +4,7 @@ Only existing local geometries/raster files are read. Missing height coverage is
 NULL evidence, not a fabricated flat horizon. Published SQLite snapshots are atomic.
 """
 import json
+import hashlib
 import fcntl
 import math
 import os
@@ -25,6 +26,28 @@ from benchly.landscape.repository import create_schema, upsert_cells, upsert_met
 
 TO_SWISS = Transformer.from_crs(4326, 2056, always_xy=True).transform
 TO_WGS = Transformer.from_crs(2056, 4326, always_xy=True).transform
+METHOD = "landscape-v3"
+
+
+def source_generation(source):
+    if source.execute("SELECT 1 FROM sqlite_master WHERE name='knowledge_generation'").fetchone():
+        return source.execute("SELECT revision FROM knowledge_generation WHERE id=1").fetchone()[0]
+    return source.execute("SELECT max(imported_at) FROM environment_features").fetchone()[0]
+
+
+def input_generation(source_revision, terrain, surface, noise, noise_layers):
+    def raster_inputs(dataset):
+        if dataset is None:
+            return None
+        if isinstance(dataset, RasterCollection):
+            return dataset.datasets
+        path = Path(dataset.name)
+        stat = path.stat()
+        return [str(path), stat.st_size, stat.st_mtime_ns]
+    inputs = {"method": METHOD, "sources": source_revision,
+        "rasters": [raster_inputs(item) for item in (terrain, surface, noise)],
+        "noise": {f"{mode}_{period}": str(value[1]) for (mode, period), value in noise_layers.datasets.items()}}
+    return hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()[:24]
 
 
 def metric_geometry(row):
@@ -179,8 +202,12 @@ def build_snapshot(args):
         if bounds and not (5.7 <= bounds[0] < bounds[2] <= 10.7 and 45.7 <= bounds[1] < bounds[3] <= 47.9):
             raise ValueError("Invalid Swiss pilot bounds")
         checkpoint_key = "last_path" if not bounds else "last_path:" + json.dumps(bounds)
+        source_revision = source_generation(source)
+        generation = input_generation(source_revision, terrain, surface, noise, noise_layers)
+        generation_key = "inputs:" + checkpoint_key
+        previous_inputs = state.execute("SELECT value FROM metadata WHERE key=?", (generation_key,)).fetchone()
         checkpoint = state.execute("SELECT value FROM metadata WHERE key=?", (checkpoint_key,)).fetchone()
-        last = int(checkpoint[0]) if checkpoint else 0
+        last = int(checkpoint[0]) if checkpoint and previous_inputs and previous_inputs[0] == generation else 0
         if args.limit < 1 or args.limit > 10000:
             raise ValueError("Path batch must be between 1 and 10000")
         condition = " AND max_longitude>=? AND min_longitude<=? AND max_latitude>=? AND min_latitude<=?" if bounds else ""
@@ -217,7 +244,7 @@ def build_snapshot(args):
                                 if (cx, cy) in visited:
                                     continue
                                 visited.add((cx, cy))
-                                if state.execute("SELECT 1 FROM cells WHERE x=? AND y=? AND updated_at>=?", (cx, cy, now[:10])).fetchone():
+                                if state.execute("SELECT 1 FROM cells WHERE x=? AND y=? AND updated_at>=? AND input_generation=?", (cx, cy, now[:10], generation)).fetchone():
                                     continue
                                 lat, lon = cy / 4000, cx / 4000
                                 evidence = cell_evidence(source, lat, lon, terrain, surface, noise)
@@ -235,6 +262,7 @@ def build_snapshot(args):
                                     "rail_day_noise_db": transport.get(("rail", "day")),
                                     "rail_night_noise_db": transport.get(("rail", "night")),
                                     "noise_versions": json.dumps({f"{mode}_{period}": str(values[1]) for (mode, period), values in noise_layers.datasets.items()}),
+                                    "input_generation": generation,
                                     "nature": evidence[1],
                                     "water": evidence[2],
                                     "view": evidence[3],
@@ -248,10 +276,14 @@ def build_snapshot(args):
             except (ValueError, TypeError):
                 continue
         flush_cells()
+        if source_generation(source) != source_revision:
+            state.rollback()
+            raise RuntimeError("Landscape sources changed during sampling; previous snapshot retained")
         upsert_metadata(state, {
             checkpoint_key: str(paths[-1]["row_id"] if paths else 0),
+            generation_key: generation,
             "updated_at": now,
-            "version": "landscape-v2",
+            "version": METHOD,
         })
         state.commit()
         if not state.execute("SELECT count(*) FROM cells").fetchone()[0]:
@@ -270,7 +302,7 @@ def build_snapshot(args):
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)
-        print(json.dumps({"pipeline": "landscape", "paths": len(paths), "cells": cells, "updated_at": now}))
+        print(json.dumps({"pipeline": "landscape", "paths": len(paths), "cells": cells, "generation": generation, "updated_at": now}))
     finally:
         noise_layers.close()
         projected_geometry.cache_clear()

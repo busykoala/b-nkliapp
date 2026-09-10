@@ -94,3 +94,60 @@ class LandscapeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 refresh(args)
             self.assertEqual(target.read_bytes(), before)
+
+
+def test_same_day_noise_revision_restarts_paths_and_failed_refresh_retains_snapshot(tmp_path, monkeypatch):
+    import benchly.landscape.service as service
+    source_path, target = tmp_path / 'source.sqlite', tmp_path / 'landscape.sqlite'
+    with sqlite3.connect(source_path) as db:
+        db.executescript("""CREATE TABLE knowledge_generation(id INTEGER PRIMARY KEY,revision INTEGER);
+            INSERT INTO knowledge_generation VALUES(1,1);
+            CREATE TABLE environment_features(row_id INTEGER PRIMARY KEY,kind TEXT,geometry_wkb BLOB,geometry_crs INTEGER);
+            CREATE TABLE land_cover_features(row_id INTEGER PRIMARY KEY,class TEXT,geometry_wkb BLOB,geometry_crs INTEGER);
+            CREATE VIRTUAL TABLE environment_spatial_index USING rtree(row_id,min_longitude,max_longitude,min_latitude,max_latitude);
+            CREATE VIRTUAL TABLE land_cover_spatial_index USING rtree(row_id,min_longitude,max_longitude,min_latitude,max_latitude);""")
+        line = LineString([(7.68, 46.68), (7.6802, 46.6802)])
+        db.execute("INSERT INTO environment_features VALUES(1,'path',?,4326)", (line.wkb,))
+    args = SimpleNamespace(database=str(source_path), landscape_database=str(target), limit=2, bounds=None,
+        terrain_raster=None, surface_raster=None, noise_raster=None)
+
+    class Noise:
+        version, level = 'rail-v1', 70
+
+        def __init__(self, _directory):
+            self.datasets = {('rail', 'day'): (None, self.version, 'rail')}
+
+        def sample(self, *_args):
+            return {('rail', 'day'): self.level}
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(service, 'NoiseRasters', Noise)
+    refresh(args)
+    with sqlite3.connect(target) as db:
+        assert db.execute('SELECT DISTINCT rail_day_noise_db FROM cells').fetchall() == [(70,)]
+        generation = db.execute('SELECT input_generation FROM cells LIMIT 1').fetchone()[0]
+    Noise.version, Noise.level = 'rail-v2', 55
+    refresh(args)
+    with sqlite3.connect(target) as db:
+        assert db.execute('SELECT DISTINCT rail_day_noise_db FROM cells').fetchall() == [(55,)]
+        assert db.execute('SELECT input_generation FROM cells LIMIT 1').fetchone()[0] != generation
+    before = target.read_bytes()
+    Noise.version = 'rail-v3'
+    original = service.cell_evidence
+    changed = False
+
+    def source_edit(*args, **kwargs):
+        nonlocal changed
+        if not changed:
+            with sqlite3.connect(source_path) as db:
+                db.execute('UPDATE knowledge_generation SET revision=2')
+            changed = True
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service, 'cell_evidence', source_edit)
+    import pytest
+    with pytest.raises(RuntimeError, match='sources changed'):
+        refresh(args)
+    assert target.read_bytes() == before

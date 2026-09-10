@@ -29,6 +29,7 @@ class LandscapeCell(SQLModel, table=True):
     rail_day_noise_db: Optional[float] = None
     rail_night_noise_db: Optional[float] = None
     noise_versions: Optional[str] = None
+    input_generation: Optional[str] = None
     nature: float
     water: float
     view: Optional[float] = None
