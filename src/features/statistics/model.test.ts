@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyRecordKeys, dateSeed, municipalityPersonality, pearsonCorrelation, ratio, statisticsRecordKeys } from "./model";
+import { dailyRecordKeys, dateSeed, linearTrend, municipalityPersonality, pearsonCorrelation, ratio, statisticsRecordKeys } from "./model";
 
 describe("Bänklilogie statistics", () => {
   it("keeps missing denominators unknown instead of turning them into zero", () => {
@@ -11,6 +11,11 @@ describe("Bänklilogie statistics", () => {
     expect(pearsonCorrelation({ count: 3, sumX: 6, sumY: 12, sumXX: 14, sumYY: 56, sumXY: 28 })).toBeCloseTo(1);
     expect(pearsonCorrelation({ count: 2, sumX: 3, sumY: 4, sumXX: 5, sumYY: 10, sumXY: 7 })).toBeNull();
     expect(pearsonCorrelation({ count: 3, sumX: 3, sumY: 6, sumXX: 3, sumYY: 14, sumXY: 6 })).toBeNull();
+  });
+
+  it("calculates an ordinary least-squares trend without inventing one for a flat input", () => {
+    expect(linearTrend({ count: 3, sumX: 6, sumY: 12, sumXX: 14, sumXY: 28 })).toEqual({ slope: 2, intercept: 0 });
+    expect(linearTrend({ count: 3, sumX: 3, sumY: 6, sumXX: 3, sumXY: 6 })).toBeNull();
   });
 
   it("assigns the strongest factual municipality personality", () => {

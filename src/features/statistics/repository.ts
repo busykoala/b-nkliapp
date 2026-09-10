@@ -2,12 +2,15 @@ import "server-only";
 
 import type Database from "better-sqlite3";
 import { sqlite } from "@/db/client";
+import populationSnapshot from "./municipality-population.json";
 import {
   dateSeed,
   dailyRecordKeys,
+  linearTrend,
   municipalityPersonality,
   pearsonCorrelation,
   ratio,
+  type BoxPlotGroup,
   type BenchFact,
   type MunicipalityPortrait,
   type MunicipalitySummary,
@@ -15,6 +18,9 @@ import {
   type StatisticsDashboard,
   type StatisticsRecordKey,
 } from "./model";
+
+const municipalityPopulation = populationSnapshot.population as Record<string, number>;
+const minimumRankedBenches = 10;
 
 type FactRow = { id: string; title: string | null; place: string | null; metric: number | null };
 type MunicipalityRow = {
@@ -31,11 +37,15 @@ function fact(row: FactRow | undefined): BenchFact | null {
 }
 
 function municipality(row: MunicipalityRow): MunicipalitySummary {
+  const population = municipalityPopulation[String(Number(row.id))] ?? null;
+  const benchCount = Number(row.bench_count);
   return {
     id: row.id,
     name: row.name,
     canton: row.canton,
-    benchCount: Number(row.bench_count),
+    benchCount,
+    population,
+    benchesPerThousand: population ? benchCount / population * 1_000 : null,
     averageElevation: row.average_elevation === null ? null : Number(row.average_elevation),
     sunnyShare: ratio(Number(row.sunny_count), Number(row.sunny_known)),
     scenicShare: ratio(Number(row.scenic_count), Number(row.scenic_known)),
@@ -106,7 +116,7 @@ export function readStatisticsDashboard(date = statisticsDate(), database: Datab
     LEFT JOIN bench_geography g ON g.bench_row_id=b.row_id WHERE b.active=1`).get() as {
       total: number; enriched: number; located: number; municipalities: number;
     };
-  const municipalityRows = database.prepare(`${municipalitySelect} GROUP BY g.municipality_id ORDER BY bench_count DESC,name LIMIT 8`).all() as MunicipalityRow[];
+  const municipalityRows = database.prepare(`${municipalitySelect} GROUP BY g.municipality_id`).all() as MunicipalityRow[];
   const correlation = database.prepare(`SELECT count(*) count,sum(e.sun_minutes_winter) sum_x,sum(e.view_score) sum_y,
     sum(e.sun_minutes_winter*e.sun_minutes_winter) sum_xx,sum(e.view_score*e.view_score) sum_yy,
     sum(e.sun_minutes_winter*e.view_score) sum_xy
@@ -120,22 +130,53 @@ export function readStatisticsDashboard(date = statisticsDate(), database: Datab
     JOIN bench_enrichments e ON e.bench_row_id=b.row_id
     WHERE b.active=1 AND e.sun_minutes_winter IS NOT NULL AND e.view_score IS NOT NULL AND b.row_id % ?=0
     ORDER BY b.row_id LIMIT 90`).all(step) as Array<{ id: string; title: string | null; winter_sun_minutes: number; view_score: number }>;
+  const boxPlots = database.prepare(`WITH sun_ranked AS (
+      SELECT e.sun_minutes_winter sun,e.view_score view,ntile(4) OVER (ORDER BY e.sun_minutes_winter) sun_quartile
+      FROM benches b JOIN bench_enrichments e ON e.bench_row_id=b.row_id
+      WHERE b.active=1 AND e.sun_minutes_winter IS NOT NULL AND e.view_score IS NOT NULL
+    ), view_ranked AS (
+      SELECT sun_quartile,sun,view,row_number() OVER (PARTITION BY sun_quartile ORDER BY view) position,
+        count(*) OVER (PARTITION BY sun_quartile) group_count
+      FROM sun_ranked
+    )
+    SELECT sun_quartile quartile,count(*) count,min(sun) sun_minimum,max(sun) sun_maximum,
+      min(view) minimum,
+      min(CASE WHEN position >= (group_count+3)/4 THEN view END) lower_quartile,
+      min(CASE WHEN position >= (group_count+1)/2 THEN view END) median,
+      min(CASE WHEN position >= (3*group_count+3)/4 THEN view END) upper_quartile,
+      max(view) maximum
+    FROM view_ranked GROUP BY sun_quartile ORDER BY sun_quartile`).all() as Array<{
+      quartile: number; count: number; sun_minimum: number; sun_maximum: number; minimum: number;
+      lower_quartile: number; median: number; upper_quartile: number; maximum: number;
+    }>;
   const records = dailyRecordKeys(date).flatMap((key) => {
     const [expression, direction] = recordDefinitions[key];
     const value = record(database, expression, direction);
     return value ? [{ key, fact: value }] : [];
   });
+  const municipalitySummaries = municipalityRows.map(municipality);
+  const eligibleMunicipalities = municipalitySummaries.filter((item) => item.benchesPerThousand !== null && item.benchCount >= minimumRankedBenches);
+  const rankedMunicipalities = (eligibleMunicipalities.length ? eligibleMunicipalities : municipalitySummaries.filter((item) => item.benchesPerThousand !== null))
+    .sort((left, right) => (right.benchesPerThousand ?? 0) - (left.benchesPerThousand ?? 0) || right.benchCount - left.benchCount || left.name.localeCompare(right.name))
+    .slice(0, 8);
+  const trendValues = { count: Number(correlation.count), sumX: Number(correlation.sum_x ?? 0), sumY: Number(correlation.sum_y ?? 0),
+    sumXX: Number(correlation.sum_xx ?? 0), sumXY: Number(correlation.sum_xy ?? 0) };
   return {
     totalBenches: Number(totals.total),
     enrichedBenches: Number(totals.enriched),
     locatedBenches: Number(totals.located),
     municipalityCount: Number(totals.municipalities),
+    populationYear: populationSnapshot.year,
     benchOfTheDay: dailyBench(database, date),
     records,
-    municipalities: municipalityRows.map(municipality),
+    municipalities: rankedMunicipalities,
     correlation: {
       coefficient: pearsonCorrelation({ count: Number(correlation.count), sumX: Number(correlation.sum_x ?? 0), sumY: Number(correlation.sum_y ?? 0),
         sumXX: Number(correlation.sum_xx ?? 0), sumYY: Number(correlation.sum_yy ?? 0), sumXY: Number(correlation.sum_xy ?? 0) }),
+      trend: linearTrend(trendValues),
+      boxPlots: boxPlots.map((row): BoxPlotGroup => ({ quartile: Number(row.quartile), count: Number(row.count),
+        sunMinimum: Number(row.sun_minimum), sunMaximum: Number(row.sun_maximum), minimum: Number(row.minimum),
+        lowerQuartile: Number(row.lower_quartile), median: Number(row.median), upperQuartile: Number(row.upper_quartile), maximum: Number(row.maximum) })),
       sampleSize: Number(correlation.count),
       points: points.map((point) => ({ id: point.id, title: point.title, winterSunMinutes: Number(point.winter_sun_minutes), viewScore: Number(point.view_score) })),
     },

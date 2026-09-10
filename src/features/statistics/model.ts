@@ -10,6 +10,8 @@ export type MunicipalitySummary = {
   name: string;
   canton: string | null;
   benchCount: number;
+  population: number | null;
+  benchesPerThousand: number | null;
   averageElevation: number | null;
   sunnyShare: number | null;
   scenicShare: number | null;
@@ -24,16 +26,31 @@ export type CorrelationPoint = {
   viewScore: number;
 };
 
+export type BoxPlotGroup = {
+  quartile: number;
+  count: number;
+  sunMinimum: number;
+  sunMaximum: number;
+  minimum: number;
+  lowerQuartile: number;
+  median: number;
+  upperQuartile: number;
+  maximum: number;
+};
+
 export type StatisticsDashboard = {
   totalBenches: number;
   enrichedBenches: number;
   locatedBenches: number;
   municipalityCount: number;
+  populationYear: number;
   benchOfTheDay: BenchFact | null;
   records: Array<{ key: StatisticsRecordKey; fact: BenchFact }>;
   municipalities: MunicipalitySummary[];
   correlation: {
     coefficient: number | null;
+    trend: { slope: number; intercept: number } | null;
+    boxPlots: BoxPlotGroup[];
     sampleSize: number;
     points: CorrelationPoint[];
   };
@@ -80,6 +97,14 @@ export function pearsonCorrelation(values: { count: number; sumX: number; sumY: 
   const varianceY = count * sumYY - sumY * sumY;
   if (varianceX <= 0 || varianceY <= 0) return null;
   return Math.max(-1, Math.min(1, (count * sumXY - sumX * sumY) / Math.sqrt(varianceX * varianceY)));
+}
+
+export function linearTrend(values: { count: number; sumX: number; sumY: number; sumXX: number; sumXY: number }): { slope: number; intercept: number } | null {
+  const { count, sumX, sumY, sumXX, sumXY } = values;
+  const denominator = count * sumXX - sumX * sumX;
+  if (count < 2 || denominator <= 0) return null;
+  const slope = (count * sumXY - sumX * sumY) / denominator;
+  return { slope, intercept: (sumY - slope * sumX) / count };
 }
 
 export function municipalityPersonality(municipality: Pick<MunicipalitySummary, "benchCount" | "sunnyShare" | "scenicShare" | "watersideShare" | "forestShare"> & { metadataKnownShare: number }): MunicipalityPersonality {

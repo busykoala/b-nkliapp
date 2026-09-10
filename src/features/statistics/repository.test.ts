@@ -28,6 +28,11 @@ it("builds rotating records, a correlation and municipality portraits from known
   expect(dashboard.records).toHaveLength(4);
   expect(dashboard.correlation.sampleSize).toBe(12);
   expect(dashboard.correlation.coefficient).not.toBeNull();
+  expect(dashboard.correlation.trend).not.toBeNull();
+  expect(dashboard.correlation.boxPlots).toHaveLength(4);
+  expect(dashboard.correlation.boxPlots.every((group) => group.lowerQuartile <= group.median && group.median <= group.upperQuartile)).toBe(true);
+  expect(dashboard.populationYear).toBe(2025);
+  expect(dashboard.municipalities[0]).toMatchObject({ population: expect.any(Number), benchesPerThousand: expect.any(Number) });
   expect(dashboard.benchOfTheDay?.id).toMatch(/^osm-node-/);
 
   const zurich = readMunicipalityPortrait("261", undefined, new Date("2026-09-10T12:00:00Z"));
