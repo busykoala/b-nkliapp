@@ -167,6 +167,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--landscape-database", default=os.environ.get("LANDSCAPE_DATABASE_PATH", "./data/landscape.sqlite")
     )
     landscape.add_argument("--limit", type=int, default=2000)
+    landscape.add_argument("--max-runtime-minutes", type=float, default=40,
+        help="Publish sampled cells before the deadline and resume unfinished paths next time")
     landscape.add_argument(
         "--bounds",
         type=float,

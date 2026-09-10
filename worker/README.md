@@ -200,6 +200,9 @@ geometries, so nearby municipal trees do not reconstruct a projection for every 
 Its spatial cursor continues across source changes and wraps at the end of a sweep. Each cell
 retains its actual input generation; daily terrain downloads cannot repeatedly reset work to
 the first paths and leave later regions unprocessed.
+Landscape sampling stops after 40 minutes, leaving time to publish before the 55-minute
+Kubernetes deadline. It publishes completed cells while keeping the cursor before an
+unfinished path; the next batch reuses those cells and finishes that path without gaps.
 Creates, moves, source changes, contributions, withdrawals and terrain updates invalidate work;
 algorithm/source manifests and a weekly refresh window invalidate the nationwide sweep.
 `bench_knowledge_outcomes` records each category as `current`, `missing_source`,

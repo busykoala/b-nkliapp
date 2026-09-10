@@ -17,7 +17,9 @@
         "--terrain-cache",
         "/data/terrain-cache-v1",
         "--limit",
-        "2000"
+        "2000",
+        "--max-runtime-minutes",
+        "40"
       ],
       "profile": "landscape",
       "purpose": "production"

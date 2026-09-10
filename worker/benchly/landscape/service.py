@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
 import tempfile
+import time
 from functools import lru_cache
 
 from pyproj import Transformer
@@ -71,6 +72,21 @@ def select_paths(source, last, limit, bounds=None):
 
 def metric_geometry(row):
     return projected_geometry(row["geometry_wkb"], row["geometry_crs"])
+
+
+def path_grid_cells(row):
+    """Sample the same neighbouring grid cells for each mapped path segment."""
+    line = metric_geometry(row)
+    if line.geom_type not in ("LineString", "MultiLineString"):
+        return
+    for part in list(line.geoms) if line.geom_type == "MultiLineString" else [line]:
+        for step in range(max(1, math.ceil(part.length / 15)) + 1):
+            point = part.interpolate(min(part.length, step * 15))
+            lon, lat = TO_WGS(point.x, point.y)
+            x, y = round(lon * 4000), round(lat * 4000)
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    yield x + dx, y + dy
 
 
 @lru_cache(maxsize=8)
@@ -196,6 +212,10 @@ def refresh(args):
 
 
 def build_snapshot(args):
+    minutes = getattr(args, "max_runtime_minutes", 40)
+    if not math.isfinite(minutes) or minutes <= 0:
+        raise ValueError("Landscape runtime must be finite and positive")
+    deadline = time.monotonic() + minutes * 60
     target = Path(args.landscape_database)
     target.parent.mkdir(parents=True, exist_ok=True)
     state_path = target.with_suffix(".working.sqlite")
@@ -237,11 +257,14 @@ def build_snapshot(args):
             raise ValueError("Path batch must be between 1 and 10000")
         paths = select_paths(source, last, args.limit, bounds)
         if not paths and last:
+            last = 0
             paths = select_paths(source, 0, args.limit, bounds)
         now = datetime.now(timezone.utc).isoformat()
         cells = 0
         visited = set()
         pending_cells: list[dict[str, object]] = []
+        completed_paths = 0
+        time_limit_reached = False
 
         def flush_cells() -> None:
             if not pending_cells:
@@ -251,61 +274,54 @@ def build_snapshot(args):
 
         for row in paths:
             try:
-                line = metric_geometry(row)
-                if line.geom_type not in ("LineString", "MultiLineString"):
-                    continue
-                lines = list(line.geoms) if line.geom_type == "MultiLineString" else [line]
-                for part in lines:
-                    for step in range(max(1, math.ceil(part.length / 15)) + 1):
-                        p = part.interpolate(min(part.length, step * 15))
-                        lon, lat = TO_WGS(p.x, p.y)
-                        x, y = round(lon * 4000), round(lat * 4000)
-                        # Evaluate neighbouring cells explicitly: route simplification
-                        # and grid rounding must not create gaps beside known paths.
-                        # These are fresh spatial measurements, not copied evidence.
-                        for dx in (-1, 0, 1):
-                            for dy in (-1, 0, 1):
-                                cx, cy = x + dx, y + dy
-                                if (cx, cy) in visited:
-                                    continue
-                                visited.add((cx, cy))
-                                if state.execute("SELECT 1 FROM cells WHERE x=? AND y=? AND updated_at>=? AND input_generation=?", (cx, cy, now[:10], generation)).fetchone():
-                                    continue
-                                lat, lon = cy / 4000, cx / 4000
-                                evidence = cell_evidence(source, lat, lon, terrain, surface, noise)
-                                transport = noise_layers.sample(lat, lon)
-                                # Preserve source age rather than claiming fresh observations.
-                                updated = now
-                                pending_cells.append({
-                                    "x": cx,
-                                    "y": cy,
-                                    "latitude": lat,
-                                    "longitude": lon,
-                                    "quiet": evidence[0],
-                                    "road_noise_db": transport.get(("road", "day"), evidence[6]),
-                                    "road_night_noise_db": transport.get(("road", "night")),
-                                    "rail_day_noise_db": transport.get(("rail", "day")),
-                                    "rail_night_noise_db": transport.get(("rail", "night")),
-                                    "noise_versions": json.dumps({f"{mode}_{period}": str(values[1]) for (mode, period), values in noise_layers.datasets.items()}),
-                                    "input_generation": generation,
-                                    "nature": evidence[1],
-                                    "water": evidence[2],
-                                    "view": evidence[3],
-                                    "canopy": evidence[4],
-                                    "horizon": evidence[5],
-                                    "updated_at": updated,
-                                })
-                                if len(pending_cells) >= 500:
-                                    flush_cells()
-                                cells += 1
+                for cx, cy in path_grid_cells(row):
+                    if time.monotonic() >= deadline:
+                        time_limit_reached = True
+                        break
+                    if (cx, cy) in visited:
+                        continue
+                    visited.add((cx, cy))
+                    if state.execute("SELECT 1 FROM cells WHERE x=? AND y=? AND updated_at>=? AND input_generation=?", (cx, cy, now[:10], generation)).fetchone():
+                        continue
+                    lat, lon = cy / 4000, cx / 4000
+                    evidence = cell_evidence(source, lat, lon, terrain, surface, noise)
+                    transport = noise_layers.sample(lat, lon)
+                    # Preserve source age rather than claiming fresh observations.
+                    updated = now
+                    pending_cells.append({
+                        "x": cx,
+                        "y": cy,
+                        "latitude": lat,
+                        "longitude": lon,
+                        "quiet": evidence[0],
+                        "road_noise_db": transport.get(("road", "day"), evidence[6]),
+                        "road_night_noise_db": transport.get(("road", "night")),
+                        "rail_day_noise_db": transport.get(("rail", "day")),
+                        "rail_night_noise_db": transport.get(("rail", "night")),
+                        "noise_versions": json.dumps({f"{mode}_{period}": str(values[1]) for (mode, period), values in noise_layers.datasets.items()}),
+                        "input_generation": generation,
+                        "nature": evidence[1],
+                        "water": evidence[2],
+                        "view": evidence[3],
+                        "canopy": evidence[4],
+                        "horizon": evidence[5],
+                        "updated_at": updated,
+                    })
+                    if len(pending_cells) >= 500:
+                        flush_cells()
+                    cells += 1
             except (ValueError, TypeError):
-                continue
+                pass
+            if time_limit_reached:
+                break
+            last = row["row_id"]
+            completed_paths += 1
         flush_cells()
         if source_generation(source) != source_revision:
             state.rollback()
             raise RuntimeError("Landscape sources changed during sampling; previous snapshot retained")
         upsert_metadata(state, {
-            checkpoint_key: str(paths[-1]["row_id"] if paths else 0),
+            checkpoint_key: str(last),
             generation_key: generation,
             "updated_at": now,
             "version": METHOD,
@@ -327,7 +343,7 @@ def build_snapshot(args):
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)
-        print(json.dumps({"pipeline": "landscape", "paths": len(paths), "cells": cells, "generation": generation, "updated_at": now}))
+        print(json.dumps({"pipeline": "landscape", "paths": completed_paths, "selected_paths": len(paths), "time_limit_reached": time_limit_reached, "cells": cells, "generation": generation, "updated_at": now}))
     finally:
         noise_layers.close()
         projected_geometry.cache_clear()

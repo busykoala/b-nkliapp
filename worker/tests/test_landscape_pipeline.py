@@ -207,3 +207,49 @@ def test_changing_sources_do_not_starve_later_paths_and_cells_keep_actual_genera
             if revision == 4:
                 assert oldest_cell == generation
                 assert oldest_cell != first_generation
+
+
+def test_time_budget_publishes_partial_path_and_resumes_without_repeating_cells(tmp_path, monkeypatch, capsys):
+    import json
+    from collections import Counter
+    import benchly.landscape.service as service
+    source_path, target = tmp_path / 'source.sqlite', tmp_path / 'landscape.sqlite'
+    with sqlite3.connect(source_path) as db:
+        db.executescript("""CREATE TABLE knowledge_generation(id INTEGER PRIMARY KEY,revision INTEGER);
+            INSERT INTO knowledge_generation VALUES(1,1);
+            CREATE TABLE environment_features(row_id INTEGER PRIMARY KEY,kind TEXT,geometry_wkb BLOB,geometry_crs INTEGER);""")
+        line = LineString([(7.68, 46.68), (7.6802, 46.6802)])
+        db.execute("INSERT INTO environment_features VALUES(1,'path',?,4326)", (line.wkb,))
+    args = SimpleNamespace(database=str(source_path), landscape_database=str(target), limit=1, bounds=None,
+        terrain_raster=None, surface_raster=None, noise_raster=None, max_runtime_minutes=2 / 60)
+    clock, revision, samples = [0.], [1], []
+    monkeypatch.setattr(service, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+
+    def sample(_source, lat, lon, *_args):
+        samples.append((revision[0], lat, lon))
+        clock[0] += 1
+        return (.5, .5, 0., None, 0., None, None)
+
+    monkeypatch.setattr(service, 'cell_evidence', sample)
+    for version in (1, 2):
+        revision[0] = version
+        with sqlite3.connect(source_path) as db:
+            db.execute('UPDATE knowledge_generation SET revision=?', (version,))
+        args.max_runtime_minutes = 2 / 60
+        refresh(args)
+        report = json.loads(capsys.readouterr().out.strip())
+        assert report['time_limit_reached'] and report['paths'] == 0 and report['cells'] == 2
+        with sqlite3.connect(target) as db:
+            assert db.execute("SELECT value FROM metadata WHERE key='last_path'").fetchone()[0] == '0'
+            assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+        args.max_runtime_minutes = 40
+        refresh(args)
+        report = json.loads(capsys.readouterr().out.strip())
+        assert not report['time_limit_reached'] and report['paths'] == 1
+        with sqlite3.connect(target) as db:
+            assert db.execute("SELECT value FROM metadata WHERE key='last_path'").fetchone()[0] == '1'
+            stored = {(lat, lon) for lat, lon in db.execute('SELECT latitude,longitude FROM cells')}
+            assert db.execute('SELECT count(DISTINCT input_generation) FROM cells').fetchone()[0] == 1
+        assert stored == {(lat, lon) for source, lat, lon in samples if source == version}
+        assert len(stored) > 2
+    assert all(count == 1 for count in Counter(samples).values())
