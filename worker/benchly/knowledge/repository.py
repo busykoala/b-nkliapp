@@ -25,6 +25,22 @@ def upsert(database, model, values, keys):
     }))
 
 
+def upsert_many(database, model, records, keys):
+    """Publish one bench's derived rows together, with a portable bind-parameter bound."""
+    values = [model.model_validate(row).model_dump(exclude_unset=True) for row in records]
+    if not values:
+        return
+    columns = set(values[0])
+    if any(set(row) != columns for row in values):
+        raise ValueError("A typed batch must contain the same columns in every row")
+    limit = max(1, 900 // len(columns))
+    for offset in range(0, len(values), limit):
+        statement = insert(model).values(values[offset:offset + limit])
+        write(database, statement.on_conflict_do_update(index_elements=keys, set_={
+            key: getattr(statement.excluded, key) for key in columns if key not in keys and key != "id"
+        }))
+
+
 def record_evidence(database, bench_id, attribute, value, source_type, source_id, *,
                     observed_at=None, source_updated_at=None, confidence=None, method="knowledge-1", metadata=None, withdraw=False):
     if value is None and not withdraw:

@@ -11,7 +11,7 @@ from sqlalchemy import update
 from benchly.db import write
 from benchly.knowledge.evidence import CATEGORIES
 from benchly.knowledge.models import KnowledgeGeneration, KnowledgeOutcome
-from benchly.knowledge.repository import compact, upsert
+from benchly.knowledge.repository import compact, upsert_many
 from benchly.runtime import now_iso
 
 METHOD = "knowledge-2"
@@ -46,15 +46,17 @@ def outcomes(database, bench, work_generation, input_revision, error=None):
     completeness = {row["category"]: dict(row) for row in database.execute(
         "SELECT * FROM bench_completeness WHERE bench_row_id=?", (bench["row_id"],))}
     conflicts = {row[0] for row in database.execute("SELECT attribute FROM bench_attribute_state WHERE bench_row_id=? AND conflicting=1", (bench["row_id"],))}
+    rows = []
     for category, attributes in CATEGORIES.items():
         value = completeness.get(category, {})
         known = value.get("known_count", 0)
         uncertain = value.get("uncertain_count", 0)
         status = "retryable_failure" if error else "missing_source" if known == 0 and not conflicts.intersection(attributes) else "unresolved" if uncertain or known < len(attributes) else "current"
-        upsert(database, KnowledgeOutcome, dict(bench_row_id=bench["row_id"], category=category,
+        rows.append(dict(bench_row_id=bench["row_id"], category=category,
             generation=work_generation, input_revision=input_revision, status=status, known_count=known,
             total_count=len(attributes), attempts=previous.get(category, 0)+1, error=error,
-            processed_at=now_iso()), ["bench_row_id", "category"])
+            processed_at=now_iso()))
+    upsert_many(database, KnowledgeOutcome, rows, ["bench_row_id", "category"])
 
 
 def report(database, work_generation):

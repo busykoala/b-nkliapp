@@ -48,6 +48,19 @@ def test_missing_osm_timestamp_is_unknown_not_today():
     assert osm_timestamp(SimpleNamespace(timestamp=datetime(1970, 1, 1, tzinfo=timezone.utc))) is None
 
 
+def test_bounded_publications_update_nulls_and_share_the_callers_transaction(database):
+    from benchly.knowledge.repository import upsert_many
+    records = [dict(bench_row_id=index, municipality_name="Spiez", confidence="high", source_version="2026",
+        method_version="test", computed_at="2026-09-10") for index in range(1, 401)]
+    upsert_many(database, Geography, records, ["bench_row_id"])
+    database.commit()
+    changed = [{**row, "municipality_name": None} for row in records]
+    upsert_many(database, Geography, changed, ["bench_row_id"])
+    assert database.execute("SELECT count(*) FROM bench_geography WHERE municipality_name IS NULL").fetchone()[0] == 400
+    database.rollback()
+    assert database.execute("SELECT count(*) FROM bench_geography WHERE municipality_name='Spiez'").fetchone()[0] == 400
+
+
 def assertion(value, source_id="one", source_type="community", date="2026-09-01T00:00:00Z", confidence=.9):
     return dict(attribute="backrest", value_json=json.dumps(value), source_type=source_type, source_id=source_id,
                 observed_at=date, source_updated_at=None, imported_at=date, confidence=confidence)
@@ -109,6 +122,18 @@ def test_steps_are_recorded_and_missing_dem_does_not_mean_flat():
     assert result["steps"] == 1
     assert result["step_free_possible"] == 0
     assert result["maximum_slope_percent"] is None
+
+
+def test_cached_approach_rechecks_access_geometry_and_bench_position():
+    b = bench()
+    x, y = WGS84_TO_LV95.transform(b["longitude"], b["latitude"])
+    coords = [(x, y), (x, y + 220)]
+    assert analyze_approach(b, [context_line(coords)])["length_meters"] == 200
+    assert analyze_approach(b, [context_line(coords, access="private")])["confidence"] == "unknown"
+    assert analyze_approach(b, [context_line(coords, highway="steps")])["steps"] == 1
+    assert analyze_approach(b, [context_line([(x + 80, y), (x + 80, y + 220)])])["confidence"] == "unknown"
+    moved = {**b, "longitude": b["longitude"] + .01}
+    assert analyze_approach(moved, [context_line(coords)])["confidence"] == "unknown"
 
 
 def test_grade_uses_horizontal_route_distance():

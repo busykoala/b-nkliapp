@@ -4,6 +4,9 @@ import json
 import math
 import hashlib
 from collections import defaultdict
+from functools import lru_cache
+import numpy as np
+import shapely
 from shapely.geometry import LineString, Point
 from shapely.ops import substring
 from pyproj import Transformer
@@ -61,32 +64,43 @@ def slope_profile(coordinates, sample, coverage=None):
     return round(sum(grade * length for grade, length in zip(grades, lengths)) / sum(lengths), 2), round(max(grades), 2), round(sum(gains), 2)
 
 
+@lru_cache(maxsize=512)
+def path_structure(blob, raw_tags):
+    """Reuse immutable segments for nearby benches; geometry or tag edits change the key."""
+    tags = json.loads(raw_tags or "{}")
+    if not usable(tags):
+        return None
+    line = geometry(blob)
+    if line.geom_type != "LineString" or line.length < 1:
+        return None
+    coords = tuple(tuple(coord[:2]) for coord in line.coords)
+    refs = tags.get("_node_refs", "").split(",")
+    # Node identity creates junctions, never merely crossing line geometry.
+    keys = tuple(("osm", refs[index]) if len(refs) == len(coords) and refs[index] else
+        ("geometry", round(coord[0], 3), round(coord[1], 3), tags.get("layer", "0"))
+        for index, coord in enumerate(coords))
+    parts = shapely.linestrings(np.stack((coords[:-1], coords[1:]), axis=1))
+    return coords, keys, parts, shapely.length(parts)
+
+
 def approach_candidates(bench, context):
     point = Point(*WGS84_TO_LV95.transform(bench["longitude"], bench["latitude"]))
     segments, graph = [], defaultdict(list)
     for row in context:
-        tags = json.loads(row["raw_tags"] or "{}")
-        if row["kind"] != "path" or not usable(tags) or not row["geometry_wkb"]:
+        if row["kind"] != "path" or not row["geometry_wkb"]:
             continue
-        line = geometry(row["geometry_wkb"])
-        if line.geom_type != "LineString" or line.length < 1:
+        structure = path_structure(row["geometry_wkb"], row["raw_tags"])
+        if structure is None:
             continue
-        coords = [tuple(coord[:2]) for coord in line.coords]
-        refs = tags.get("_node_refs", "").split(",")
-        def node_key(index):
-            # OSM node identity allows real junctions and bridges, but never creates a junction at a crossing.
-            if len(refs) == len(coords) and refs[index]:
-                return ("osm", refs[index])
-            return ("geometry", round(coords[index][0], 3), round(coords[index][1], 3), tags.get("layer", "0"))
-        for index in range(1, len(coords)):
-            segment = LineString([coords[index - 1], coords[index]])
-            if segment.length < .01 or segment.distance(point) > 325:
-                continue
+        coords, keys, parts, lengths = structure
+        # Vectorized GEOS distances preserve the exact metric cutoff and original order.
+        for index in np.flatnonzero((lengths >= .01) & (shapely.distance(parts, point) <= 325)):
+            segment = parts[index]
             edge = len(segments)
-            first, last = node_key(index - 1), node_key(index)
+            first, last = keys[index], keys[index + 1]
             segments.append((segment, row, first, last))
-            graph[first].append((edge, last, coords[index]))
-            graph[last].append((edge, first, coords[index - 1]))
+            graph[first].append((edge, last, coords[index + 1]))
+            graph[last].append((edge, first, coords[index]))
     if not segments:
         return []
     edge = min(range(len(segments)), key=lambda index: (segments[index][0].distance(point), segments[index][1]["source_id"]))

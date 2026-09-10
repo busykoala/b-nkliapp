@@ -188,6 +188,10 @@ subgroup metrics or making deployment decisions.
 The knowledge worker prepares geometry, raster samples and evidence statements before opening a
 write transaction. Publication checks both the source revision and the bench input revision under
 `BEGIN IMMEDIATE`, then commits one bench. An edit during computation leaves the queue intact.
+Derived states, completeness and outcomes use bounded typed batches within that transaction.
+Approach calculations retain at most 512 immutable path structures, keyed by geometry and tags;
+each bench still performs its own exact distance and connectivity checks. These optimizations
+preserve assertions and checkpoints while reducing CPU work and writer-lock duration.
 Creates, moves, source changes, contributions, withdrawals and terrain updates invalidate work;
 algorithm/source manifests and a weekly refresh window invalidate the nationwide sweep.
 `bench_knowledge_outcomes` records each category as `current`, `missing_source`,

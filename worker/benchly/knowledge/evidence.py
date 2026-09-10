@@ -7,7 +7,7 @@ from benchly.db import write
 from datetime import datetime, timezone
 from benchly.benches.domain import parse_bool
 from benchly.knowledge.models import AttributeState, Completeness
-from benchly.knowledge.repository import compact, record_evidence, upsert
+from benchly.knowledge.repository import compact, record_evidence, upsert_many
 from benchly.runtime import now_iso
 
 METHOD = "attribute-resolution-3"
@@ -251,13 +251,16 @@ def refresh_states(database, bench):
         assertions[row["attribute"]].append(row)
     now = now_iso()
     states = {}
+    state_rows, completeness_rows = [], []
     for attr, rows in assertions.items():
         state = resolve(rows)
         states[attr] = state
-        upsert(database, AttributeState, dict(bench_row_id=bench["row_id"], attribute=attr, **state, method_version=METHOD, resolved_at=now), ["bench_row_id", "attribute"])
+        state_rows.append(dict(bench_row_id=bench["row_id"], attribute=attr, **state, method_version=METHOD, resolved_at=now))
     for category, attrs in CATEGORIES.items():
         missing = [attr for attr in attrs if attr not in states or states[attr]["value_json"] is None]
         uncertain = sum(attr in states and (states[attr]["confidence"] in {"low", "unknown"} or states[attr]["conflicting"]) for attr in attrs)
-        upsert(database, Completeness, dict(bench_row_id=bench["row_id"], category=category, known_count=len(attrs) - len(missing),
-            total_count=len(attrs), uncertain_count=uncertain, missing_json=compact(missing), computed_at=now, method_version=METHOD), ["bench_row_id", "category"])
+        completeness_rows.append(dict(bench_row_id=bench["row_id"], category=category, known_count=len(attrs) - len(missing),
+            total_count=len(attrs), uncertain_count=uncertain, missing_json=compact(missing), computed_at=now, method_version=METHOD))
+    upsert_many(database, AttributeState, state_rows, ["bench_row_id", "attribute"])
+    upsert_many(database, Completeness, completeness_rows, ["bench_row_id", "category"])
     return states
