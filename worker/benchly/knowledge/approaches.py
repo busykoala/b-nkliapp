@@ -159,7 +159,8 @@ def analyze_approach(bench, context, sample=None, preferred_coordinates=None):
                                           item["maximum_slope_percent"] if item["maximum_slope_percent"] is not None else 1000))
 
 
-def enrich_approach(database, bench, context, sample=None, dem_inputs=None):
+def prepare_approach(database, bench, context, sample=None, dem_inputs=None):
+    """Read previous evidence and sample the DEM before acquiring a write lock."""
     previous = database.execute("SELECT * FROM bench_approaches WHERE bench_row_id=?", (bench["row_id"],)).fetchone()
     previous_metadata = json.loads(previous["evidence_json"]) if previous else {}
     previous_dem = previous_metadata.pop("dem_inputs", None)
@@ -174,8 +175,16 @@ def enrich_approach(database, bench, context, sample=None, dem_inputs=None):
     elif sample is not None:
         metadata["dem_inputs"] = dem_inputs or [{"source": "supplied DEM", "version": None}]
     values["evidence_json"] = compact(metadata)
+    return values
+
+
+def store_approach(database, bench, values):
     upsert(database, Approach, values, ["bench_row_id"])
     for attr, field in {"approach_steps": "steps", "approach_surface": "surface", "approach_slope": "maximum_slope_percent", "step_free": "step_free_possible"}.items():
         record_evidence(database, bench["row_id"], attr, values[field], "gis", "local-approach", confidence=.65,
                         method=METHOD, metadata={"latitude": bench["latitude"], "longitude": bench["longitude"], "source_id": values["source_id"]})
     return values
+
+
+def enrich_approach(database, bench, context, sample=None, dem_inputs=None):
+    return store_approach(database, bench, prepare_approach(database, bench, context, sample, dem_inputs))

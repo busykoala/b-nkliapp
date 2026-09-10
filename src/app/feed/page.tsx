@@ -9,8 +9,10 @@ import { communityTheme } from "@/lib/community-theme";
 export const dynamic = "force-dynamic";
 
 
-export default async function FeedPage() {
-  const [feed, user] = await Promise.all([getActivityFeed(), getCurrentUser()]);
+export default async function FeedPage({ searchParams }: { searchParams: Promise<{ view?: string | string[] }> }) {
+  const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
+  const scope = params.view === "following" && user ? "following" : "all";
+  const feed = await getActivityFeed(48, scope);
   const theme = communityTheme();
   return <main className="feed-page min-h-dvh safe-bottom">
     <header className="feed-nav safe-top"><Link href="/" aria-label="Zur Karte" className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
@@ -21,7 +23,11 @@ export default async function FeedPage() {
       </div>
     </section>
     <section className="feed-scroll" aria-label="Neuigkeiten">
-      <FeedStream initial={feed} />
+      {user && <nav className="feed-filters" aria-label="Feed-Filter">
+        <Link className="ui-button" href="/feed" aria-current={scope === "all" ? "page" : undefined}>Alle Beiträge</Link>
+        <Link className="ui-button" href="/feed?view=following" aria-current={scope === "following" ? "page" : undefined}>Lieblingsplätze</Link>
+      </nav>}
+      <FeedStream key={scope} initial={feed} scope={scope} />
     </section>
   </main>;
 }

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from benchly.benches.repository import upsert_enrichment
-from benchly.knowledge.approaches import enrich_approach, terrain_metadata
+from benchly.knowledge.approaches import prepare_approach, store_approach, terrain_metadata
 from benchly.knowledge.repository import available as knowledge_available
 from benchly.context.evidence import (
     feature_distance,
@@ -145,7 +145,7 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
             roads = [feature for feature in context if feature["kind"] == "major_road"]
             forests = [feature for feature in context if feature["kind"] == "forest"]
             nearest = lambda features: min((feature_distance(row["latitude"], row["longitude"], feature) for feature in features), default=None)
-            upsert_enrichment(connection, {
+            values = {
                 "bench_row_id": row["row_id"],
                 "elevation_meters": elevation,
                 "in_forest": in_forest,
@@ -184,14 +184,16 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
                 "vegetation_median_height": canopy["median_height"],
                 "vegetation_max_height": canopy["max_height"],
                 "environment_computed_at": now_iso(),
-            })
-            if knowledge_enabled:
-                enrich_approach(connection, dict(row), local_context, terrain.sample, dem_inputs=terrain_inputs)
+            }
+            approach = prepare_approach(connection, dict(row), local_context, terrain.sample, dem_inputs=terrain_inputs) if knowledge_enabled else None
+            # Terrain/DEM calculations can take minutes per bench. Only hold the
+            # shared writer while storing one complete result, never between benches.
+            with connection:
+                upsert_enrichment(connection, values)
+                if approach is not None:
+                    store_approach(connection, dict(row), approach)
             updated += 1
-            if updated % 50 == 0:
-                connection.commit()
-                print(f"Enriched {updated}/{len(rows)} benches", file=sys.stderr)
-        connection.commit()
+            print(f"Enriched {updated}/{len(rows)} benches (last row {row['row_id']})", file=sys.stderr)
     finally:
         terrain.close()
         surface.close()
@@ -235,7 +237,6 @@ def reconcile_deterministic_context(connection: sqlite3.Connection, limit: int =
         stats["deterministic_reconciled"] += 1
         stats["forest"] += int(bool(result["in_forest"]))
         stats["waterfront"] += int(bool(result["waterfront"]))
-        if stats["deterministic_reconciled"] % 100 == 0:
-            connection.commit()
+        connection.commit()
     connection.commit()
     return stats

@@ -1,21 +1,20 @@
 "use server";
 
 import { sqlite } from "@/db/client";
-import type { ActivityFeed, FeedCursor, FeedEntry, FeedPage, WeeklyBench } from "@/features/feed/model";
+import type { ActivityFeed, FeedCursor, FeedEntry, FeedPage, FeedScope, WeeklyBench } from "@/features/feed/model";
 import { getCurrentUser } from "@/lib/security";
 
 export type { FeedEntry } from "@/features/feed/model";
 
-export async function getActivityFeed(limit = 48): Promise<ActivityFeed> {
-  return { ...await getFeedPage(null, limit), weeklyBench: weeklyBench() };
+export async function getActivityFeed(limit = 48, scope: FeedScope = "all"): Promise<ActivityFeed> {
+  return { ...await getFeedPage(null, limit, scope), weeklyBench: weeklyBench() };
 }
 
-export async function getFeedPage(cursor: FeedCursor | null = null, limit = 48): Promise<FeedPage> {
+export async function getFeedPage(cursor: FeedCursor | null = null, limit = 48, scope: FeedScope = "all"): Promise<FeedPage> {
+  if (scope !== "all" && scope !== "following") throw new Error("Ungültiger Feed-Filter.");
   if (cursor && (typeof cursor.id !== "string" || cursor.id.length > 100 || typeof cursor.createdAt !== "string" || cursor.createdAt.length > 40 || !Number.isFinite(Date.parse(cursor.createdAt)))) throw new Error("Ungültige Feed-Seite.");
-  const user = await getCurrentUser();
-  const personalized = Boolean(user && sqlite.prepare(`
-    SELECT 1 FROM bench_follows WHERE user_id=? UNION SELECT 1 FROM place_follows WHERE user_id=? LIMIT 1
-  `).get(user.id, user.id));
+  const personalized = scope === "following";
+  const user = personalized ? await getCurrentUser() : null;
   const safeLimit = Math.max(1, Math.min(48, Number.isFinite(limit) ? Math.trunc(limit) : 48));
   const rows = sqlite.prepare(`
     SELECT * FROM (

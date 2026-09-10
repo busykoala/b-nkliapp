@@ -54,6 +54,16 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await expect(page.locator(".saved-benches a[href='/bank/osm-node-101']")).toBeVisible();
   await page.locator(".saved-benches a[href='/bank/osm-node-101']").click();
   await expect(page.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/feed");
+  const filters = page.getByRole("navigation", { name: "Feed-Filter" });
+  await expect(filters.getByRole("link", { name: "Alle Beiträge" })).toHaveAttribute("aria-current", "page");
+  await filters.getByRole("link", { name: "Lieblingsplätze" }).click();
+  await expect(filters.getByRole("link", { name: "Lieblingsplätze" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByText("Aus deinen Lieblingsorten", { exact: true })).toBeVisible();
+  await page.locator(".feed-bench-group summary").first().click();
+  await expect(page.getByText(moment, { exact: true })).toBeVisible();
+  await filters.getByRole("link", { name: "Alle Beiträge" }).click();
+  await expect(page.getByText("Was sich an Bänkli bewegt", { exact: true })).toBeVisible();
 });
 
 test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {

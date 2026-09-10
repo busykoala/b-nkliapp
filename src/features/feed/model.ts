@@ -11,6 +11,7 @@ export type FeedEntry = {
 
 export type WeeklyBench = { id: string; name: string; place: string | null };
 export type FeedCursor = { createdAt: string; id: string };
+export type FeedScope = "all" | "following";
 export type FeedPage = { entries: FeedEntry[]; personalized: boolean; nextCursor: FeedCursor | null };
 export type ActivityFeed = FeedPage & { weeklyBench: WeeklyBench | null };
 

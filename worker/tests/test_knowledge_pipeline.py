@@ -147,3 +147,72 @@ def test_amenity_area_and_way_count_once_without_merging_neighbouring_objects(mi
         assert "shelter" not in refresh_states(database, bench)
     finally:
         database.close()
+
+
+@pytest.mark.parametrize("fail_second_store", [False, True])
+def test_terrain_calculations_allow_app_writes_and_commit_one_complete_bench(migrated_database, monkeypatch, fail_second_store):
+    from benchly.db import connect_database
+    from benchly.enrichment import service
+    from benchly.knowledge import approaches
+    with sqlite3.connect(migrated_database) as setup:
+        setup.execute("""INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,raw_tags,source_updated_at,imported_at)
+          VALUES('osm-node-124','node',124,46.68,7.681,'{}','','2026-09-09')""")
+    app = sqlite3.connect(migrated_database, timeout=.05)
+    database = connect_database(migrated_database)
+    observed = []
+
+    def app_write_during_calculation():
+        # A real second connection, like the route planner's rate limiter.
+        with app:
+            app.execute("""INSERT INTO rate_limits(key_hash,action,window_start,count) VALUES('test','walk-plan',0,1)
+              ON CONFLICT(key_hash,action,window_start) DO UPDATE SET count=count+1""")
+            observed.append(app.execute("SELECT count(*) FROM bench_enrichments").fetchone()[0])
+
+    class Raster:
+        datasets = [object()]
+
+        def __init__(self, _path):
+            pass
+
+        def sample(self, _lat, _lon):
+            app_write_during_calculation()
+            return 500
+
+        def close(self):
+            pass
+
+    original_analyze = approaches.analyze_approach
+    def analyze(*args, **kwargs):
+        app_write_during_calculation()
+        return original_analyze(*args, **kwargs)
+
+    original_store = service.store_approach
+    def store(connection, bench, values):
+        if fail_second_store and bench["row_id"] == 2:
+            raise RuntimeError("interrupted store")
+        return original_store(connection, bench, values)
+
+    monkeypatch.setattr(service, "RasterCollection", Raster)
+    monkeypatch.setattr(service, "terrain_metadata", lambda _: [])
+    monkeypatch.setattr(service, "nearby_context", lambda *args: [])
+    monkeypatch.setattr(service, "nearby_land_cover", lambda *args: [])
+    monkeypatch.setattr(service, "canopy_neighborhood", lambda *args: dict(share_3m=None, share_10m=None, share_25m=None, context="unknown", median_height=None, max_height=None))
+    monkeypatch.setattr(service, "horizon_profile", lambda *args: ([0] * 72, [0] * 72, ["terrain"] * 72, [None] * 72, [500], [500] * 72))
+    monkeypatch.setattr(service, "classify_view", lambda *args: ([], .5, 0, .5, .5, []))
+    monkeypatch.setattr(service, "direct_sun_minutes", lambda *args: 0)
+    monkeypatch.setattr(approaches, "analyze_approach", analyze)
+    monkeypatch.setattr(service, "store_approach", store)
+    try:
+        if fail_second_store:
+            with pytest.raises(RuntimeError, match="interrupted store"):
+                service.enrich_terrain(database, None, None)
+        else:
+            assert service.enrich_terrain(database, None, None) == 2
+        assert observed == [0, 0, 1, 1]
+        expected = 1 if fail_second_store else 2
+        assert app.execute("SELECT count(*) FROM bench_enrichments").fetchone()[0] == expected
+        assert app.execute("SELECT count(*) FROM bench_approaches").fetchone()[0] == expected
+        app_write_during_calculation()
+    finally:
+        database.close()
+        app.close()

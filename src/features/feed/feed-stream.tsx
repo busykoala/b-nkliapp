@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ChevronDown, Rss } from "lucide-react";
 import { getFeedPage } from "@/app/actions/feed";
-import { groupBenchActivity, type FeedEntry, type FeedPage } from "./model";
+import { groupBenchActivity, type FeedEntry, type FeedPage, type FeedScope } from "./model";
 
 const labels: Record<FeedEntry["kind"], string> = { added: "entdeckt", rated: "bewertet", confirmed: "bestätigt", missing: "vermisst", edited: "ergänzt", moment: "Momente", care: "Pflegezeichen" };
-export function FeedStream({ initial }: { initial: FeedPage }) {
+export function FeedStream({ initial, scope }: { initial: FeedPage; scope: FeedScope }) {
   const [entries, setEntries] = useState(initial.entries);
   const [cursor, setCursor] = useState(initial.nextCursor);
   const [pending, startTransition] = useTransition();
@@ -16,7 +16,7 @@ export function FeedStream({ initial }: { initial: FeedPage }) {
   const more = () => startTransition(async () => {
     setError(null);
     try {
-      const page = await getFeedPage(cursor);
+      const page = await getFeedPage(cursor, 48, scope);
       setEntries((current) => [...current, ...page.entries]);
       setCursor(page.nextCursor);
       setAnnouncement(`${page.entries.length} weitere Beiträge geladen.`);
@@ -35,7 +35,7 @@ export function FeedStream({ initial }: { initial: FeedPage }) {
         <details><summary>Beiträge ansehen ({group.entries.length}) <ChevronDown size={16} /></summary><ul>{group.entries.map((entry) => <li key={entry.id}><Link href={`/profil/${encodeURIComponent(entry.username)}`}>{entry.username}</Link><span>{labels[entry.kind]}</span>{entry.detail && ["moment", "rated"].includes(entry.kind) && <q>{entry.detail}</q>}</li>)}</ul></details>
       </article>;
     })}
-    {!groups.length && <div className="feed-empty"><p>Noch weht kein neuer Eintrag herein.</p></div>}
+    {!groups.length && <div className="feed-empty"><p>{scope === "following" ? "An deinen Lieblingsplätzen gibt es noch keine Beiträge." : "Noch weht kein neuer Eintrag herein."}</p>{scope === "following" && <Link className="ui-button" href="/feed">Alle Beiträge ansehen</Link>}</div>}
     {error && <p role="alert">{error}</p>}
     <p className="sr-only" role="status">{announcement}</p>
     {cursor ? <button className="ui-button feed-load-more" disabled={pending} onClick={more}>{pending ? "Wird geladen …" : "Mehr Beiträge laden"}</button> : groups.length > 0 && <p className="feed-end">Hier beginnt die Geschichte. Du hast alle Beiträge gesehen.</p>}

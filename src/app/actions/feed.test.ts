@@ -23,12 +23,30 @@ it("paginates a shared timestamp without missing or duplicating any event", asyn
   expect(new Set([...first.entries, ...second.entries, ...last.entries].map((entry) => entry.id)).size).toBe(7);
   expect(last.nextCursor).toBeNull();
 });
-it("checks personalization on every page and rejects malformed cursors", async () => {
+it("keeps other users visible by default and filters only when following is explicitly selected", async () => {
   auth.getCurrentUser.mockResolvedValue({ id: userId });
   database.prepare("INSERT INTO bench_follows(bench_row_id,user_id,created_at) VALUES(?,?,?)").run(rowId, userId, "2026-09-09");
+  const otherUser = database.prepare("INSERT INTO users(username,username_key,password_hash,created_at) VALUES('Neighbour','neighbour','hash','2026-09-09')").run().lastInsertRowid;
+  const otherBench = (database.prepare("SELECT row_id FROM benches WHERE row_id<>? LIMIT 1").get(rowId) as { row_id: number }).row_id;
+  database.prepare("INSERT INTO bench_moments(bench_row_id,user_id,kind,body,created_at,updated_at) VALUES(?,?,'memory','Another place','2026-09-08T12:00:00Z','2026-09-08T12:00:00Z')").run(otherBench, otherUser);
   const { getFeedPage } = await import("./feed");
-  expect((await getFeedPage()).personalized).toBe(true);
+  const first = await getFeedPage(null, 7);
+  expect(first.personalized).toBe(false);
+  expect((await getFeedPage(first.nextCursor, 7)).entries.map((entry) => entry.username)).toEqual(["Neighbour"]);
+  const following = await getFeedPage(null, 3, "following");
+  expect(following.personalized).toBe(true);
+  expect(following.entries).toHaveLength(3);
+  const next = await getFeedPage(following.nextCursor, 48, "following");
+  expect(next.entries).toHaveLength(4);
+  expect(next.entries.every((entry) => entry.username === "Reader")).toBe(true);
+  expect(next.nextCursor).toBeNull();
   database.prepare("DELETE FROM bench_follows WHERE user_id=?").run(userId);
+  expect((await getFeedPage(null, 48, "following")).entries).toEqual([]);
   expect((await getFeedPage(null, Number.NaN)).personalized).toBe(false);
+});
+it("does not fall back to the global feed for an expired following session and rejects malformed requests", async () => {
+  const { getFeedPage } = await import("./feed");
+  expect((await getFeedPage(null, 48, "following")).entries).toEqual([]);
   await expect(getFeedPage({ id: "x", createdAt: "broken" })).rejects.toThrow();
+  await expect(getFeedPage(null, 48, "invalid" as "all")).rejects.toThrow();
 });
