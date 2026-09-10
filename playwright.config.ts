@@ -9,6 +9,10 @@ const baseURL = production ? "https://localhost:3100" : "http://localhost:3100";
 
 export default defineConfig({
   testDir: "./e2e",
+  // Let Playwright distribute individual tests instead of whole spec files.
+  // Several suites intentionally contain many scenarios, so file-level sharding
+  // left one release runner doing almost the entire mobile-map suite.
+  fullyParallel: Boolean(process.env.CI),
   // Software-rendered mobile browsers and CPU throttling need an unshared CPU.
   workers: process.env.CI ? 1 : 4,
   reporter: process.env.CI ? "list" : undefined,
