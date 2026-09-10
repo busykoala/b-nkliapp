@@ -1,15 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { JourneyPoint, JourneyQuery } from "./journey";
 vi.mock("./security", () => ({ consumeRateLimit: vi.fn() }));
-vi.mock("./journey-gtfs", () => ({ lookupTransfer: () => null, transitFeedDate: () => null }));
+const localStationSearch = vi.hoisted(() => vi.fn(() => [] as JourneyPoint[]));
+vi.mock("./journey-gtfs", () => ({ lookupTransfer: () => null, transitFeedDate: () => null, searchLocalStations: localStationSearch }));
 const origin = { kind: "station" as const, label: "Bern", latitude: 46.949, longitude: 7.439, stationId: "8507000" };
 const destination: JourneyPoint = { label: "Spiez Hafenbank", latitude: 46.68844, longitude: 7.68949 };
 const query: JourneyQuery = { benchId: "osm-node-1", origin, mode: "walk", time: "2026-09-05T08:00:00Z", arriveBy: false, speedKmh: 4.2, bufferMinutes: 3 };
-beforeEach(() => { vi.resetModules(); Reflect.deleteProperty(globalThis, "journeyNetwork"); Reflect.deleteProperty(globalThis, "benchlyWalking"); });
+beforeEach(() => { vi.resetModules(); localStationSearch.mockReset().mockReturnValue([]); Reflect.deleteProperty(globalThis, "journeyNetwork"); Reflect.deleteProperty(globalThis, "benchlyWalking"); });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); });
 function walkingResponse(points: number[][] = [[7.439,46.949],[7.68949,46.68844]], distance = 700, gap = 0) { const snapped = points.map((p) => [...p]); if (gap) snapped[snapped.length-1][1] += gap / 111195; return { paths: [{ distance, time: distance / (5 / 3.6) * 1000, ascend: 0, points: { coordinates: snapped }, snapped_waypoints: { coordinates: snapped } }] }; }
 
 describe("journey providers", () => {
+  it("keeps imported station locations searchable when the external service fails", async () => {
+    localStationSearch.mockReturnValue([origin]);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("provider unavailable")));
+    const { findStations } = await import("./journey-provider");
+    await expect(findStations("Bern", new AbortController().signal)).resolves.toEqual([origin]);
+    expect(localStationSearch).toHaveBeenCalledWith("Bern");
+  });
   it.each([
     { speedKmh: 4.2 as const, bufferMinutes: 3 as const, delay: 0, count: 1 },
     { speedKmh: 3 as const, bufferMinutes: 3 as const, delay: 0, count: 0 },

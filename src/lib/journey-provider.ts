@@ -5,7 +5,7 @@ import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { assessTransfer, distanceMeters, summarizeJourney, swissWallTime, type JourneyLeg, type JourneyOption, type JourneyPoint, type JourneyQuery, type JourneyResult } from "./journey";
 import { walkPath } from "./walking-provider";
 import { pathSeconds, type WalkPath as Walk } from "./walking";
-import { lookupTransfer, transitFeedDate } from "./journey-gtfs";
+import { lookupTransfer, searchLocalStations, transitFeedDate } from "./journey-gtfs";
 import { consumeRateLimit } from "./security";
 
 const coordinate = z.object({ x: z.number().min(-90).max(90), y: z.number().min(-180).max(180) });
@@ -95,9 +95,13 @@ function iso(value: string | null | undefined): string {
   return new Date(value).toISOString();
 }
 export async function findStations(query: string, signal: AbortSignal): Promise<JourneyPoint[]> {
-  const url = new URL(`${DATA_RUNTIME.transportApiBaseUrl}/locations`); url.searchParams.set("query", query); url.searchParams.set("type", "station");
-  const data = z.object({ stations: z.array(z.unknown()) }).parse(await json(url, signal, 86400000));
-  return data.stations.flatMap((item) => { const parsed = station.safeParse(item); const p = parsed.success ? point(parsed.data) : null; return p?.stationId ? [p] : []; }).slice(0, 8);
+  try {
+    const url = new URL(`${DATA_RUNTIME.transportApiBaseUrl}/locations`); url.searchParams.set("query", query); url.searchParams.set("type", "station");
+    const data = z.object({ stations: z.array(z.unknown()) }).parse(await json(url, signal, 86400000));
+    const stations = data.stations.flatMap((item) => { const parsed = station.safeParse(item); const p = parsed.success ? point(parsed.data) : null; return p?.stationId ? [p] : []; }).slice(0, 8);
+    if (stations.length) return stations;
+  } catch { /* Stop locations are also present in the imported official inventory. */ }
+  return searchLocalStations(query);
 }
 async function nearby(p: JourneyPoint, signal: AbortSignal): Promise<JourneyPoint[]> {
   if (p.stationId) return [p];

@@ -358,7 +358,10 @@
         "--terrain-dir",
         "/data/terrain-cache-v1/swissalti3d",
         "--limit",
-        "2500"
+        "2500",
+        "--until-complete",
+        "--max-runtime-minutes",
+        "20"
       ],
       "profile": "standard",
       "purpose": "production"

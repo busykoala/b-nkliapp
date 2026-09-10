@@ -15,6 +15,29 @@ export function transitFeedDate(): string | null {
   try { return (db?.prepare("SELECT value FROM metadata WHERE key='updated_at'").get() as { value: string } | undefined)?.value ?? null; }
   catch { return null; } finally { db?.close(); }
 }
+
+/** Search the imported stop inventory when the live location service is unavailable. */
+export function searchLocalStations(input: string): TransitStop[] {
+  const query = input.trim().toLocaleLowerCase("de-CH");
+  if (query.length < 2 || query.length > 80) return [];
+  const db = openTransitData();
+  if (!db) return [];
+  try {
+    const prefix = `${query.replace(/[\\%_]/g, "\\$&")}%`;
+    const rows = db.prepare(`SELECT public_id,name,lat,lon FROM stops
+      WHERE lower(name) LIKE ? ESCAPE '\\' AND lat BETWEEN 45.7 AND 47.9 AND lon BETWEEN 5.9 AND 10.6
+      ORDER BY lower(name)=? DESC,(parent='') DESC,(platform='') DESC,length(name),name,id LIMIT 64
+    `).all(prefix, query) as { public_id: string; name: string; lat: number; lon: number }[];
+    const seen = new Set<string>();
+    return rows.flatMap((row) => {
+      const stationId = row.public_id.replace(/^0+(?=\d)/, "");
+      if (!/^\d{1,12}$/.test(stationId) || seen.has(stationId)) return [];
+      seen.add(stationId);
+      return [{ stationId, label: row.name, latitude: row.lat, longitude: row.lon }];
+    }).slice(0, 8);
+  } catch { return []; } finally { db.close(); }
+}
+
 export function lookupTransfer(from: JourneyPoint, to: JourneyPoint, serviceDate = new Date().toISOString().slice(0, 10)): TransferRule | null {
   const db = openTransitData();
   if (!db) return null;
