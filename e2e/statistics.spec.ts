@@ -27,7 +27,10 @@ test("statistics stay readable at a narrow mobile viewport", async ({ page }) =>
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto("/statistiken");
   await expect(page.locator(".statistics-hero")).toBeVisible();
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  // Linux WebKit reserves a 15px classic scrollbar inside clientWidth. Compare
+  // against the CSS viewport so a vertical scrollbar is not reported as
+  // horizontal content overflow (macOS uses overlay scrollbars and hid this).
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   const clippedLabels = await page.locator(".daily-bench-link strong, .daily-bench-link small, .municipality-table strong, .municipality-table small, .municipality-table em").evaluateAll((elements) => elements.filter((element) => element.scrollWidth > element.clientWidth + 1).map((element) => element.textContent));
   expect(clippedLabels).toEqual([]);
