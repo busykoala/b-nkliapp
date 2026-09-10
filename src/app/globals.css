@@ -89,6 +89,7 @@ input::placeholder, textarea::placeholder { color: #596a61; opacity: 1; }
 
 /* Institut für angewandte Bänklilogie */
 .statistics-page {
+  overflow-x: hidden;
   color: #294239;
   background:
     radial-gradient(circle at 86% 4%, rgb(233 176 62 / 22%), transparent 24rem),
