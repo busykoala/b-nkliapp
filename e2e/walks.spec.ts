@@ -50,7 +50,12 @@ test("offers several distinct Bänkli outings instead of one fixed route", async
   await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
-  await panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" }).click();
+  const address = panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" });
+  // The address provider is an in-process fixture in browser checks. Fail fast
+  // enough for Playwright's one retry to stay inside the release budget if a
+  // hosted WebKit server action is ever lost during startup.
+  await expect(address).toBeVisible({ timeout: 5_000 });
+  await address.click();
   await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
   const choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
   await expect(choices).toBeVisible({ timeout: 18_000 });
@@ -67,7 +72,9 @@ test("shows a Bänkli-centred route and opens a private return journey", async (
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await panel.getByLabel("Spaziergang vergrössern oder verkleinern").click();
   await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
-  await panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" }).click();
+  const address = panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" });
+  await expect(address).toBeVisible({ timeout: 5_000 });
+  await address.click();
   await panel.locator("summary").filter({ hasText: "Optionen" }).click();
   await panel.getByRole("button", { name: "Einfache Strecke", exact: true }).click();
   await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
