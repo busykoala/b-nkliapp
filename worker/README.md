@@ -203,6 +203,10 @@ algorithm/source manifests and a weekly refresh window invalidate the nationwide
 `unresolved` or `retryable_failure`, with generation, revision, attempts and processing time.
 A recorded outcome does not imply that all attributes are known. Failures keep the previous usable
 publication and retry after 30 minutes; successful work is not repeated after a crash.
+The hourly job continues through pending batches for up to 20 minutes, then releases the worker
+lock before Kubernetes' deadline. A fixed 2,500-bench hourly allowance cannot finish a national
+sweep between daily terrain-input changes; the time budget lets later regions catch up while
+leaving time for the other scheduled jobs.
 
 ```bash
 uv run python worker/benchly_worker.py backfill-knowledge --database /data/benchly.sqlite \

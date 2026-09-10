@@ -52,6 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
     knowledge.add_argument("--after-row-id", type=int)
     knowledge.add_argument("--queued-only", action="store_true")
     knowledge.add_argument("--until-complete", action="store_true", help="Continue resumable batches until every eligible active bench has an outcome")
+    knowledge.add_argument("--max-runtime-minutes", type=float, help="Stop between benches, preserving the checkpoint for the next scheduled run")
     knowledge.add_argument("--report-only", action="store_true")
     knowledge.add_argument("--bounds", type=float, nargs=4, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
     knowledge.add_argument("--terrain-dir")

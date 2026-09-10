@@ -2,6 +2,7 @@
 from __future__ import annotations
 import hashlib
 import json
+import time
 import urllib.request
 from pathlib import Path
 from benchly.context.sources import download_file, safe_extract_zip
@@ -39,6 +40,10 @@ def prepare_bench(database, bench, terrain, noise, terrain_inputs, estimates=Non
 
 
 def backfill_knowledge(args):
+    minutes = getattr(args, "max_runtime_minutes", None)
+    if minutes is not None and minutes <= 0:
+        raise ValueError("Knowledge runtime must be positive")
+    deadline = time.monotonic() + minutes * 60 if minutes is not None else float("inf")
     database = connect_database(Path(args.database))
     terrain = RasterCollection(Path(args.terrain_dir) if args.terrain_dir else None)
     noise = NoiseRasters(args.noise_dir)
@@ -55,6 +60,8 @@ def backfill_knowledge(args):
         # Current outcomes are the checkpoint. This survives a crash after any
         # bench, includes newly inserted lower IDs, and invalidates on source changes.
         while True:
+            if time.monotonic() >= deadline:
+                break
             parameters = [work_generation]
             selection = ""
             if args.queued_only:
@@ -78,6 +85,8 @@ def backfill_knowledge(args):
             if not rows:
                 break
             for raw in rows:
+                if time.monotonic() >= deadline:
+                    break
                 bench = dict(raw)
                 input_revision = bench.pop("input_revision")
                 try:
@@ -108,6 +117,7 @@ def backfill_knowledge(args):
             if not getattr(args, "until_complete", False) or progress.source_revision(database) != sources:
                 break
         print(json.dumps({"processed_this_run": processed, "failed_this_run": failed, "superseded_this_run": superseded,
+            "time_limit_reached": time.monotonic() >= deadline,
             **progress.report(database, work_generation)}), flush=True)
         if failed:
             raise RuntimeError(f"{failed} benches recorded retryable failures; prior usable results retained")

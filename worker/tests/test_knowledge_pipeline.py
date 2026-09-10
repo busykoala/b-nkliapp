@@ -45,6 +45,33 @@ def test_full_backfill_is_resumable_idempotent_and_keeps_unknowns(migrated_datab
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
+def test_time_budget_releases_work_between_benches_and_resumes_without_repeating(migrated_database, monkeypatch):
+    from benchly.knowledge import jobs
+    with sqlite3.connect(migrated_database) as connection:
+        for number in (124, 125):
+            connection.execute("""INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,raw_tags,source_updated_at,imported_at)
+                VALUES(?,'node',?,46.68,7.68,'{}','2026-09-09','2026-09-10')""", (f"osm-node-{number}", number))
+    clock = [0.0]
+    monkeypatch.setattr(jobs.time, "monotonic", lambda: clock[0])
+    original = jobs.prepare_bench
+    def prepare(*args, **kwargs):
+        prepared = original(*args, **kwargs)
+        clock[0] = 60.0
+        return prepared
+    monkeypatch.setattr(jobs, "prepare_bench", prepare)
+    args = SimpleNamespace(database=migrated_database, terrain_dir=None, noise_dir=None, limit=2,
+        after_row_id=None, queued_only=False, until_complete=True, max_runtime_minutes=.5)
+    backfill_knowledge(args)
+    with sqlite3.connect(migrated_database) as connection:
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_outcomes").fetchone()[0] == 8
+    args.max_runtime_minutes = None
+    backfill_knowledge(args)
+    with sqlite3.connect(migrated_database) as connection:
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_outcomes").fetchone()[0] == 24
+        assert connection.execute("SELECT max(attempts) FROM bench_knowledge_outcomes").fetchone()[0] == 1
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_queue").fetchone()[0] == 0
+
+
 def test_moving_a_bench_invalidates_its_spatial_context(migrated_database):
     run(migrated_database)
     with sqlite3.connect(migrated_database) as connection:
