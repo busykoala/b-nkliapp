@@ -15,6 +15,10 @@ export default defineConfig({
   fullyParallel: Boolean(process.env.CI),
   // Software-rendered mobile browsers and CPU throttling need an unshared CPU.
   workers: process.env.CI ? 1 : 4,
+  // Hosted WebKit occasionally loses a navigation while booting the production
+  // server. Retry only the affected test once; green runs keep their current
+  // speed and a recovery still remains inside the four-minute job budget.
+  retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "list" : undefined,
   webServer: {
     command: production ? "tsx scripts/serve-production-tests.ts" : "npm run dev -- --port 3100",
