@@ -54,6 +54,10 @@ def read_photo_checkpoint(path):
 
 def import_photo_checkpoint(database, checkpoint, *, apply=False, reviews=()):
     sources, photos = read_photo_checkpoint(checkpoint)
+    return reconcile_photo_records(database, sources, photos, apply=apply, reviews=reviews)
+
+
+def reconcile_photo_records(database, sources, photos, *, apply=False, reviews=()):
     benches = [dict(row) for row in database.execute(
         "SELECT row_id,id,latitude,longitude FROM benches WHERE active=1")]
     matches = match_photo_sources(sources, benches)
@@ -113,7 +117,7 @@ def import_photo_checkpoint(database, checkpoint, *, apply=False, reviews=()):
             "rule_version": PHOTO_RULE_VERSION, "evaluated_at": now_iso(),
         })
         upsert_enrichment(database, {"bench_row_id": bench["row_id"]})
-        if index % 100 == 0:
+        if index % 25 == 0:
             database.commit()
     database.commit()
     return stats
@@ -135,6 +139,26 @@ def import_photo_checkpoint_job(args):
         database.rollback()
         if run_id is not None:
             finish_run(database, run_id, "failed", {"error": str(error)})
+        raise
+    finally:
+        database.close()
+
+
+def reconcile_stored_photos_job(args):
+    """Recheck identity after an inventory refresh without fetching any images."""
+    from benchly.db import connect_database
+    from benchly.runs.repository import begin_run, finish_run
+    database = connect_database(Path(args.database).resolve())
+    run_id = begin_run(database, "reconcile-source-photos", PHOTO_MODEL_VERSION)
+    try:
+        sources = [dict(row) for row in database.execute("SELECT * FROM bank_photo_sources")]
+        photos = [dict(row) for row in database.execute("SELECT * FROM bank_photo_observations")]
+        stats = reconcile_photo_records(database, sources, photos, apply=True)
+        finish_run(database, run_id, "completed", stats)
+        print(json.dumps(stats), flush=True)
+    except Exception as error:
+        database.rollback()
+        finish_run(database, run_id, "failed", {"error": str(error)})
         raise
     finally:
         database.close()

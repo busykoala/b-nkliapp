@@ -1,7 +1,7 @@
 "use client";
 import { useFormatter, useTranslations } from "next-intl";
 
-import { Accessibility, Armchair, Check, Sun, Volume1 } from "lucide-react";
+import { Accessibility, Armchair, Check, Droplets, Sun, Toilet, Volume1 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { confirmBench } from "@/app/actions/benches";
 import type { Translator } from "@/i18n/types";
@@ -42,6 +42,11 @@ export function BenchSummary({ bench, signedIn, onSignIn, onChanged }: { bench: 
       <li><Accessibility size={17} /><span>{wheelchair === "Ja" ? t("bench.attributes.wheelchair") : wheelchair === "Nein" ? t("bench.summary.noWheelchair") : t("bench.summary.unknownWheelchair")}</span></li>
       <li><Volume1 size={17} /><span>{bench.ratingBreakdown ? t("bench.summary.quiet", {score: format.number(bench.ratingBreakdown.quiet, {minimumFractionDigits: 1, maximumFractionDigits: 1})}) : t("bench.summary.unknownQuiet")}</span></li>
     </ul>
+    {bench.knowledge?.amenities.some((item) => ["toilets", "drinking_water"].includes(item.category) && item.distanceMeters !== null) && <ul className="mt-3">
+      {bench.knowledge.amenities.filter((item) => ["toilets", "drinking_water"].includes(item.category) && item.distanceMeters !== null).map((item) => <li key={item.category}>
+        {item.category === "toilets" ? <Toilet size={17} /> : <Droplets size={17} />}<span>{t("knowledge.nearby.shortDistance", {facility: t(item.category === "toilets" ? "knowledge.amenities.toilets" : "knowledge.amenities.drinking_water"), distance: Math.round(item.distanceMeters!)})}</span>
+      </li>)}
+    </ul>}
     <p className="summary-access-note">{t("bench.summary.accessNote")}</p>
     <div className="bench-freshness"><span>{confirmationAge(confirmedAt, t)}</span><button type="button" disabled={pending || mine} onClick={confirm}><Check size={16} />{pending ? t("bench.summary.confirming") : mine ? t("bench.summary.mine") : t("community.presence.confirm")}</button></div>
     {message && <p role="status">{message}</p>}

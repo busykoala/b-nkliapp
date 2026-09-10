@@ -44,7 +44,9 @@
   "nearby": {
     "title": "In der Nähe",
     "distance": "ca. {distance} m",
-    "explanation": "Abstand in Luftlinie zu erfassten Einrichtungen innerhalb von 500 m. Ein Brunnen ist nicht automatisch Trinkwasser."
+    "explanation": "Abstand in Luftlinie zu erfassten Einrichtungen innerhalb von 500 m. Ein Brunnen ist nicht automatisch Trinkwasser.",
+    "shortDistance": "{facility} · ca. {distance} m Luftlinie",
+    "unknown": "Die Karte kennt nicht alle Einrichtungen. Vor Ort kann es mehr geben."
   },
   "approach": {
     "title": "Das letzte Wegstück",
@@ -63,7 +65,10 @@
     "smoothness": "Beschaffenheit laut Karte",
     "width": "Schmalste erfasste Breite",
     "explanation": "{confidence} · Nur ein lokaler Zugang, keine Prüfung der gesamten Anreise. Fehlende Hindernisse in der Karte sind keine Zusage zur Barrierefreiheit.",
-    "empty": "Noch kein ausreichend naher Fussweg zugeordnet."
+    "empty": "Noch kein ausreichend naher Fussweg zugeordnet.",
+    "unmapped": "Letzte nicht kartierte Meter",
+    "structure": "Brücke oder Tunnel: Das Geländemodell belegt die Wegsteigung hier nicht.",
+    "sampleCoverage": "Geländehöhe an {sampled} von {expected} Wegpunkten verfügbar."
   },
   "noise": {
     "title": "Verkehrslärm im Modell",
@@ -136,5 +141,18 @@
     "horrible": "Stark beschädigt",
     "very_horrible": "Extrem beschädigt",
     "impassable": "Unpassierbar"
+  },
+  "freshness": {
+    "unknown": "Alter der Quelle unbekannt",
+    "recent": "Quelle zeitlich aktuell",
+    "old": "Ältere Quelle"
+  },
+  "estimates": {
+    "title": "Auf Fotos geschätzt",
+    "explanation": "Geprüfte Bildmodell-Schätzungen, getrennt von bestätigten Angaben. Sie zählen nicht für Ausstattungsfilter oder Aussagen zur Barrierefreiheit.",
+    "provenance": "Bildmodell: {model} · {count} unabhängig geprüfte Beispiele"
+  },
+  "view": {
+    "distinctions": "Wasser in der Nähe ist noch kein Wasserblick. Offene Umgebung ist noch keine Weitsicht im Sitzen. Fotos zeigen nur einen Ausschnitt und belegen weder dauerhaften Schatten noch eine unbekannte Blickrichtung."
   }
 }

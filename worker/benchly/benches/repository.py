@@ -30,7 +30,14 @@ EDITED_FIELDS = {
 
 
 def refresh_nearby_amenities(database) -> None:
-    """Refresh editable OSM hints without overwriting a person's correction."""
+    """Legacy 75m hints; geometry outside writes and bounded publication.
+
+    Rich facilities (including unknown coverage) live in bench_amenities. These
+    two editable legacy hints are retained for existing clients.
+    """
+    from shapely.geometry import Point
+    from shapely import from_wkb
+    from benchly.context.geometry import WGS84_TO_LV95
     available_columns = {row[1] for row in database.execute("PRAGMA table_info(benches)")}
     for kind, column, edit_field in (
         ("fireplace", Bench.fireplace_nearby, "fireplaceNearby"),
@@ -38,17 +45,26 @@ def refresh_nearby_amenities(database) -> None:
     ):
         if column.key not in available_columns:
             continue
-        edited = exists(select(BenchMetadataEdit.id).where(
-            BenchMetadataEdit.bench_row_id == Bench.row_id,
-            BenchMetadataEdit.field == edit_field,
-        ))
-        nearby = exists(select(EnvironmentFeature.row_id).where(
-            EnvironmentFeature.kind == kind,
-            EnvironmentFeature.center_latitude.between(Bench.latitude - .0007, Bench.latitude + .0007),
-            EnvironmentFeature.center_longitude.between(Bench.longitude - .00105, Bench.longitude + .00105),
-        ))
-        write(database, update(Bench).where(~edited).values({column.key: None}))
-        write(database, update(Bench).where(~edited, nearby).values({column.key: 1}))
+        positives = set()
+        for feature in database.execute("SELECT * FROM environment_features WHERE kind=?", (kind,)):
+            shape = from_wkb(feature["geometry_wkb"]) if feature["geometry_wkb"] else Point(*WGS84_TO_LV95.transform(feature["center_longitude"], feature["center_latitude"]))
+            candidates = database.execute("""SELECT b.row_id,b.longitude,b.latitude FROM bench_spatial_index s JOIN benches b ON b.row_id=s.row_id
+                WHERE s.min_longitude<=? AND s.max_longitude>=? AND s.min_latitude<=? AND s.max_latitude>=? AND b.active=1""",
+                (feature["max_longitude"]+.0011, feature["min_longitude"]-.0011, feature["max_latitude"]+.0007, feature["min_latitude"]-.0007))
+            for bench in candidates:
+                if shape.distance(Point(*WGS84_TO_LV95.transform(bench["longitude"], bench["latitude"]))) <= 75:
+                    positives.add(bench["row_id"])
+        edited = exists(select(BenchMetadataEdit.id).where(BenchMetadataEdit.bench_row_id == Bench.row_id, BenchMetadataEdit.field == edit_field))
+        after = 0
+        while True:
+            ids = [row[0] for row in database.execute("SELECT row_id FROM benches WHERE row_id>? ORDER BY row_id LIMIT 500", (after,))]
+            if not ids:
+                break
+            matched = [row_id for row_id in ids if row_id in positives]
+            value = case((Bench.row_id.in_(matched), 1), else_=None)
+            write(database, update(Bench).where(Bench.row_id.in_(ids), ~edited).values({column.key: value}))
+            database.commit()
+            after = ids[-1]
 
 
 def upsert_inventory_benches(database, rows: Sequence[dict[str, object]], preserve_edits: bool) -> None:
@@ -96,12 +112,12 @@ def upsert_inventory_benches(database, rows: Sequence[dict[str, object]], preser
 
 
 def deactivate_stale_osm_benches(database, imported_at: str) -> None:
-    write(
-        database,
-        update(Bench)
-        .where(Bench.imported_at != imported_at, Bench.id.like("osm-%"))
-        .values(active=0),
-    )
+    while True:
+        ids = [row[0] for row in database.execute("SELECT row_id FROM benches WHERE active=1 AND imported_at!=? AND id LIKE 'osm-%' LIMIT 500", (imported_at,))]
+        if not ids:
+            return
+        write(database, update(Bench).where(Bench.row_id.in_(ids)).values(active=0))
+        database.commit()
 
 
 def remove_demo_benches(database) -> None:
@@ -167,7 +183,7 @@ def upsert_enrichment(database, values: dict[str, object], update_fields: Iterab
     )
 
 
-def invalidate_enrichment(database, *, environment: bool = False, bounds=None) -> None:
+def invalidate_enrichment(database, *, environment: bool = False, bounds=None, publish_batches=False) -> None:
     values = {"pipeline_version": None}
     if environment:
         values.update({"environment_computed_at": None, "context_source_version": None})
@@ -182,7 +198,17 @@ def invalidate_enrichment(database, *, environment: bool = False, bounds=None) -
             Bench.latitude.between(bounds[1], bounds[3]),
         )
         statement = statement.where(BenchEnrichment.bench_row_id.in_(bench_ids))
-    write(database, statement)
+    if publish_batches:
+        after = 0
+        while True:
+            ids = [row[0] for row in database.execute("SELECT bench_row_id FROM bench_enrichments WHERE bench_row_id>? ORDER BY bench_row_id LIMIT 500", (after,))]
+            if not ids:
+                break
+            write(database, statement.where(BenchEnrichment.bench_row_id.in_(ids)))
+            database.commit()
+            after = ids[-1]
+    else:
+        write(database, statement)
 
 
 def update_enrichment(database, bench_row_id: int, **values: object) -> None:

@@ -11,7 +11,9 @@
     "nature": "Beaucoup d’environs naturels",
     "open": "Terrain ouvert le long du chemin",
     "incomplete": "Les données du paysage sont incomplètes ; la plus belle variante ne peut pas être estimée avec certitude.",
-    "lightUnknown": "Le soleil et l’ombre le long de ce chemin ne peuvent pas encore être estimés de manière fiable."
+    "lightUnknown": "Le soleil et l’ombre le long de ce chemin ne peuvent pas encore être estimés de manière fiable.",
+    "transportNoise": "Le classement tient compte du bruit routier et ferroviaire modélisé, séparément pour le jour et la nuit. Ce n’est pas une mesure du calme sur place.",
+    "noiseCoverage": "{mode}, {period} : couverture du modèle {coverage}% · niveau d’évaluation moyen {value} dB(A) Lr"
   },
   "planner": {
     "title": "Découvrir une balade",
@@ -56,7 +58,7 @@
     "start": "Ton excursion commence ici",
     "return": "Retour au point de départ",
     "why": "Pourquoi cette proposition ?",
-    "explanation": "Nous comparons le calme, la nature, la vue, la proximité de l’eau et le banc le long du chemin réel. C’est une estimation fondée sur des données, pas une garantie de beauté.",
+    "explanation": "Nous comparons la circulation, la nature, la vue, la proximité de l’eau et le banc le long du parcours réel. C’est une estimation fondée sur les données, pas une garantie de beauté.",
     "updated": "Données du paysage du {date}.",
     "noData": "Les données du paysage manquent encore.",
     "extrasNote": "Les bancs supplémentaires confirmés ont un court accès à pied vérifié ; ceux non vérifiés ne sont pas comptés.",

@@ -62,7 +62,10 @@
     "shadeEstimate": "Ombre estimée",
     "seatsFrom": "Dès {count} places assises",
     "starsFrom": "Dès {count} étoiles",
-    "without": "Sans {label}"
+    "without": "Sans {label}",
+    "toilets": "Toilettes à moins de 250 m",
+    "drinkingWater": "Eau potable à moins de 250 m",
+    "facilityDistance": "Équipements recensés, distance à vol d’oiseau. Le trajet à pied peut être plus long ; une absence de données ne signifie pas une absence sur place."
   },
   "placement": {
     "title": "Choisir la position",

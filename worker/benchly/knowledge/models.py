@@ -43,6 +43,8 @@ class Geography(KnowledgeModel, table=True):
     locality_id: Optional[str] = None
     locality_name: Optional[str] = None
     locality_distance_meters: Optional[float] = None
+    municipality_search: Optional[str] = None
+    locality_search: Optional[str] = None
     confidence: str
     source_version: str
     method_version: str
@@ -76,6 +78,8 @@ class AttributeState(KnowledgeModel, table=True):
     evidence_count: int
     source_types_json: str
     latest_at: Optional[str] = None
+    freshness: str = "unknown"
+    coverage: str = "unknown"
     method_version: str
     resolved_at: str
 
@@ -172,3 +176,29 @@ class KnowledgeProgress(KnowledgeModel, table=True):
     job: str = Field(primary_key=True)
     after_row_id: int
     updated_at: str
+
+
+class KnowledgeOutcome(KnowledgeModel, table=True):
+    __tablename__ = "bench_knowledge_outcomes"
+    bench_row_id: int = Field(primary_key=True)
+    category: str = Field(primary_key=True)
+    generation: str
+    input_revision: int
+    status: str
+    known_count: int = 0
+    total_count: int = 0
+    attempts: int = 1
+    error: Optional[str] = None
+    processed_at: str
+
+
+class KnowledgeGeneration(KnowledgeModel, table=True):
+    __tablename__ = "knowledge_generation"
+    id: int = Field(primary_key=True)
+    revision: int
+
+
+class KnowledgeRevision(KnowledgeModel, table=True):
+    __tablename__ = "bench_knowledge_revisions"
+    bench_row_id: int = Field(primary_key=True)
+    revision: int

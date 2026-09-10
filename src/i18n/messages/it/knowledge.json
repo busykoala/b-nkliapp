@@ -44,7 +44,9 @@
   "nearby": {
     "title": "Nelle vicinanze",
     "distance": "circa {distance} m",
-    "explanation": "Distanza in linea d’aria dai servizi registrati entro 500 m. Una fontana non fornisce necessariamente acqua potabile."
+    "explanation": "Distanza in linea d’aria dai servizi registrati entro 500 m. Una fontana non fornisce necessariamente acqua potabile.",
+    "shortDistance": "{facility} · circa {distance} m in linea d’aria",
+    "unknown": "La mappa non registra tutti i servizi. Sul posto potrebbero essercene altri."
   },
   "approach": {
     "title": "L’ultimo tratto di strada",
@@ -63,7 +65,10 @@
     "smoothness": "Condizioni secondo la mappa",
     "width": "Larghezza minima registrata",
     "explanation": "{confidence} · Solo un accesso locale, senza verifica dell’intero tragitto. L’assenza di ostacoli sulla mappa non garantisce l’accessibilità.",
-    "empty": "Non è ancora stato associato un sentiero pedonale sufficientemente vicino."
+    "empty": "Non è ancora stato associato un sentiero pedonale sufficientemente vicino.",
+    "unmapped": "Ultimi metri non mappati",
+    "structure": "Ponte o galleria: il modello del terreno non dimostra la pendenza del percorso.",
+    "sampleCoverage": "Quota disponibile per {sampled} punti del percorso su {expected}."
   },
   "noise": {
     "title": "Rumore del traffico nel modello",
@@ -136,5 +141,18 @@
     "horrible": "Molto deteriorato",
     "very_horrible": "Estremamente deteriorato",
     "impassable": "Impraticabile"
+  },
+  "freshness": {
+    "unknown": "Età della fonte sconosciuta",
+    "recent": "Fonte recente",
+    "old": "Fonte meno recente"
+  },
+  "estimates": {
+    "title": "Stimato dalle foto",
+    "explanation": "Stime di un modello visivo valutato, separate dai dati confermati. Non vengono usate per i filtri della dotazione o per indicazioni sull’accessibilità.",
+    "provenance": "Modello visivo: {model} · {count} esempi verificati in modo indipendente"
+  },
+  "view": {
+    "distinctions": "L’acqua vicina non garantisce una vista sull’acqua. Un ambiente aperto non garantisce una vista lontana da seduti. Le foto mostrano solo un’inquadratura e non dimostrano né ombra permanente né una direzione di vista sconosciuta."
   }
 }

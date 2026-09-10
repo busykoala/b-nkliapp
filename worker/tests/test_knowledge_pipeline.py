@@ -216,3 +216,144 @@ def test_terrain_calculations_allow_app_writes_and_commit_one_complete_bench(mig
     finally:
         database.close()
         app.close()
+
+
+def test_backfill_calculates_without_writer_lock_and_does_not_acknowledge_new_edit(migrated_database, monkeypatch):
+    from benchly.knowledge import jobs
+    original = jobs.prepare_bench
+    def concurrent_edit(database, bench, *args):
+        result = original(database, bench, *args)
+        with sqlite3.connect(migrated_database, timeout=.05) as app:
+            app.execute("UPDATE benches SET longitude=longitude+.001 WHERE row_id=?", (bench["row_id"],))
+        return result
+    monkeypatch.setattr(jobs, "prepare_bench", concurrent_edit)
+    run(migrated_database)
+    with sqlite3.connect(migrated_database) as connection:
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_queue").fetchone()[0] == 1
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_outcomes").fetchone()[0] == 0
+        assert connection.execute("SELECT count(*) FROM bench_approaches").fetchone()[0] == 0
+    monkeypatch.setattr(jobs, "prepare_bench", original)
+    run(migrated_database)
+    with sqlite3.connect(migrated_database) as connection:
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_outcomes").fetchone()[0] == 8
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_queue").fetchone()[0] == 0
+
+
+def test_failed_backfill_retains_previous_values_and_records_retry(migrated_database, monkeypatch):
+    from benchly.knowledge import jobs
+    run(migrated_database)
+    with sqlite3.connect(migrated_database) as connection:
+        before = connection.execute("SELECT * FROM bench_attribute_state").fetchall()
+        connection.execute("UPDATE knowledge_generation SET revision=revision+1")
+    monkeypatch.setattr(jobs, "nearby_context", lambda *_: (_ for _ in ()).throw(RuntimeError("source unavailable")))
+    with pytest.raises(RuntimeError, match="recorded retryable failures"):
+        run(migrated_database)
+    with sqlite3.connect(migrated_database) as connection:
+        assert connection.execute("SELECT * FROM bench_attribute_state").fetchall() == before
+        assert connection.execute("SELECT count(*) FROM bench_knowledge_outcomes WHERE status='retryable_failure'").fetchone()[0] == 8
+
+
+def test_failed_osm_parse_after_staging_a_batch_keeps_source_generation(migrated_database, tmp_path):
+    from benchly.benches.importer import import_osm
+    from benchly.db import connect_database
+    elements = [{"type": "node", "id": index, "lat": 46.68, "lon": 7.68, "tags": {"amenity": "bench"}, "version": 2}
+                for index in range(1000, 2100)]
+    elements[-1]["timestamp"] = "invalid-source-date"
+    path = tmp_path / "broken.json"
+    path.write_text(json.dumps({"elements": elements}))
+    database = connect_database(migrated_database)
+    before = dict(database.execute("SELECT * FROM benches").fetchone())
+    try:
+        with pytest.raises(ValueError):
+            import_osm(database, path, "failed-generation")
+        assert dict(database.execute("SELECT * FROM benches").fetchone()) == before
+        assert database.execute("SELECT count(*) FROM benches").fetchone()[0] == 1
+    finally:
+        database.close()
+
+
+def test_osm_publication_resumes_without_losing_community_edits(migrated_database, tmp_path, monkeypatch):
+    from benchly.benches import importer
+    from benchly.db import connect_database
+    path = tmp_path / "valid.json"
+    path.write_text(json.dumps({"elements": [{"type": "node", "id": index, "lat": 46.68, "lon": 7.68,
+        "tags": {"amenity": "bench", "backrest": "yes"}, "timestamp": "2026-09-01T08:00:00Z", "version": 8} for index in range(1000, 2100)]}))
+    database = connect_database(migrated_database)
+    original = importer.upsert_inventory_benches
+    calls = 0
+    def interrupted(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("interrupted publication")
+        return original(*args, **kwargs)
+    monkeypatch.setattr(importer, "upsert_inventory_benches", interrupted)
+    try:
+        with pytest.raises(RuntimeError, match="interrupted publication"):
+            importer.import_osm(database, path, "v8")
+        database.rollback()
+        assert database.execute("SELECT count(*) FROM benches WHERE osm_version=8").fetchone()[0] == 250
+        monkeypatch.setattr(importer, "upsert_inventory_benches", original)
+        assert importer.import_osm(database, path, "v8")[0] == 1100
+        assert database.execute("SELECT count(*) FROM benches WHERE active=1 AND osm_timestamp IS NOT NULL AND osm_changeset IS NULL").fetchone()[0] == 1100
+    finally:
+        database.close()
+
+
+def test_imports_every_amenity_category_and_barriers(migrated_database, tmp_path):
+    from benchly.benches.importer import import_osm
+    from benchly.db import connect_database
+    from benchly.knowledge.amenities import CATEGORIES
+    elements = [{"type": "node", "id": 123, "lat": 46.68, "lon": 7.68, "version": 8, "tags": {"amenity": "bench"}}]
+    for index, category in enumerate(CATEGORIES):
+        key, value = ("leisure", "firepit") if category == "fireplace" else ("leisure", category) if category in {"picnic_table", "playground"} else ("amenity", category)
+        elements.append({"type": "node", "id": 200+index, "lat": 46.6801, "lon": 7.68, "tags": {key: value}})
+    elements.append({"type": "node", "id": 300, "lat": 46.68, "lon": 7.68, "tags": {"barrier": "stile"}})
+    path = tmp_path / "amenities.json"
+    path.write_text(json.dumps({"elements": elements}))
+    database = connect_database(migrated_database)
+    try:
+        import_osm(database, path, "all-kinds")
+        kinds = {row[0] for row in database.execute("SELECT DISTINCT kind FROM environment_features")}
+        assert kinds == {*CATEGORIES, "barrier"}
+    finally:
+        database.close()
+    run(migrated_database)
+    with sqlite3.connect(migrated_database) as connection:
+        assert connection.execute("SELECT count(*) FROM bench_amenities WHERE distance_meters BETWEEN 0 AND 250").fetchone()[0] == 8
+
+
+def test_physical_photo_estimates_require_validation_and_unique_non_conflicting_images(migrated_database):
+    from benchly.db import connect_database
+    from benchly.imagery.photo_models import BankPhotoSource, BankPhotoObservation
+    from benchly.imagery.physical_estimates import PhysicalEstimates
+    database = connect_database(migrated_database)
+    database.create_tables([BankPhotoSource, BankPhotoObservation])
+    database.commit()
+    bench = dict(database.execute("SELECT * FROM benches").fetchone())
+    prediction = json.dumps({"bench_visible": True, "perspective": "closeup", "usable_for_context": False, "backrest": True, "armrests": False, "material": "wood"})
+    try:
+        database.execute("""INSERT INTO bank_photo_sources(source_id,latitude,longitude,source_url,source_metadata,discovered_at,bench_id,match_method,match_distance_meters)
+            VALUES(1,46.68,7.68,'https://example.org','{}','2026-09-01','osm-node-123','source_coordinate',0)""")
+        database.execute("""INSERT INTO bank_photo_observations(source_id,image_id,fetch_url,status,image_sha256,prediction,model_version,prompt_version,attempts)
+            VALUES(1,1,'https://example.org/image','analyzed','hash',?,'model','prompt',1)""", (prediction,))
+        estimates = PhysicalEstimates(database)
+        estimates.enrich(database, bench)
+        assert {row[0] for row in database.execute("SELECT status FROM bench_photo_estimates")} == {"unvalidated"}
+        assert database.execute("SELECT count(*) FROM bench_attribute_state").fetchone()[0] == 0
+        estimates.validation = {("model", "prompt", attr): {"samples": 40, "accepted": True} for attr in ("backrest", "armrest", "material")}
+        estimates.enrich(database, bench)
+        assert database.execute("SELECT count(*) FROM bench_photo_estimates WHERE status='eligible'").fetchone()[0] == 3
+        database.execute("UPDATE benches SET longitude=7.69")
+        estimates.enrich(database, dict(database.execute("SELECT * FROM benches").fetchone()))
+        assert database.execute("SELECT count(*) FROM bench_photo_estimates").fetchone()[0] == 0
+        database.execute("UPDATE benches SET longitude=7.68")
+        database.execute("""INSERT INTO bank_photo_sources(source_id,latitude,longitude,source_url,source_metadata,discovered_at,bench_id,match_method)
+            VALUES(2,47,8,'https://example.org','{}','2026-09-01',NULL,'unmatched')""")
+        database.execute("""INSERT INTO bank_photo_observations(source_id,image_id,fetch_url,status,image_sha256,prediction,attempts)
+            VALUES(2,2,'https://example.org/image','analyzed','hash',?,1)""", (prediction,))
+        estimates.enrich(database, bench)
+        assert database.execute("SELECT count(*) FROM bench_photo_estimates").fetchone()[0] == 0
+    finally:
+        database.rollback()
+        database.close()

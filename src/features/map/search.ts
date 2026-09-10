@@ -29,9 +29,10 @@ export async function searchMapPlaces(input: string): Promise<PlaceResult[]> {
   const normalized = normalizeLocationKey(query);
   const text = `%${query.toLocaleLowerCase("de-CH")}%`;
   const benches = sqlite.prepare(`
-    SELECT id,coalesce(nullif(name,''),nullif(nullif(description,'Sitzbank'),''),'') label,latitude,longitude,location_name,location_canton
-    FROM benches
-    WHERE active=1 AND (lower(coalesce(name,'')) LIKE ? OR lower(coalesce(description,'')) LIKE ?)
+    SELECT b.id,coalesce(nullif(b.name,''),nullif(nullif(b.description,'Sitzbank'),''),'') label,b.latitude,b.longitude,
+      coalesce(g.locality_name,g.municipality_name,b.location_name) location_name,coalesce(g.canton_name,b.location_canton) location_canton
+    FROM benches b LEFT JOIN bench_geography g ON g.bench_row_id=b.row_id
+    WHERE b.active=1 AND (lower(coalesce(name,'')) LIKE ? OR lower(coalesce(description,'')) LIKE ?)
     ORDER BY name IS NOT NULL DESC,verification_status='verified' DESC,source_updated_at DESC LIMIT 6
   `).all(text, text) as BenchSearchRow[];
   const places = sqlite.prepare(`
@@ -40,6 +41,13 @@ export async function searchMapPlaces(input: string): Promise<PlaceResult[]> {
     GROUP BY location_key,location_postcode,location_canton ORDER BY count(*) DESC LIMIT 4
   `).all(`%${normalized}%`, text) as PlaceSearchRow[];
 
+  const official = sqlite.prepare(`
+    SELECT coalesce(g.locality_name,g.municipality_name) location_name,NULL location_postcode,g.canton_name location_canton,
+      avg(b.latitude) latitude,avg(b.longitude) longitude
+    FROM bench_geography g JOIN benches b ON b.row_id=g.bench_row_id WHERE b.active=1
+      AND (coalesce(g.locality_search,lower(g.locality_name)) LIKE ? OR coalesce(g.municipality_search,lower(g.municipality_name)) LIKE ?)
+    GROUP BY g.municipality_id,g.locality_id ORDER BY count(*) DESC LIMIT 4
+  `).all(`%${normalized}%`, `%${normalized}%`) as PlaceSearchRow[];
   const results: PlaceResult[] = [
     ...benches.map((bench) => ({
       id: `bench-${bench.id}`,
@@ -49,7 +57,7 @@ export async function searchMapPlaces(input: string): Promise<PlaceResult[]> {
       kind: "bench" as const,
       benchId: bench.id,
     })),
-    ...places.map((place) => ({
+    ...[...official, ...places].map((place) => ({
       id: `local-${place.latitude}-${place.longitude}`,
       label: [place.location_postcode, place.location_name, place.location_canton].filter(Boolean).join(" "),
       latitude: place.latitude,

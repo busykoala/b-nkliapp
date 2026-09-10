@@ -19,6 +19,8 @@ from shapely.geometry import Point
 from shapely.ops import transform
 
 from benchly.db import open_database
+from benchly.context.rasters import RasterCollection
+from benchly.knowledge.noise import NoiseRasters
 from benchly.landscape.repository import create_schema, upsert_cells, upsert_metadata
 
 TO_SWISS = Transformer.from_crs(4326, 2056, always_xy=True).transform
@@ -47,6 +49,12 @@ def horizon_at(point, terrain, surface=None):
     if terrain is None:
         return None
     def height(dataset, x, y):
+        if isinstance(dataset, RasterCollection):
+            lon, lat = TO_WGS(x, y)
+            value = dataset.sample(lat, lon)
+            if value is None:
+                raise ValueError("Missing raster coverage")
+            return value
         sample = next(dataset.sample([(x, y)], masked=True))[0]
         if getattr(sample, "mask", False) or not math.isfinite(float(sample)):
             raise ValueError("Missing raster coverage")
@@ -149,7 +157,12 @@ def build_snapshot(args):
     state = open_database(state_path)
     create_schema(state)
     terrain = surface = noise = None
+    noise_layers = NoiseRasters(getattr(args, "noise_dir", None))
     try:
+        cache = getattr(args, "terrain_cache", None)
+        if cache:
+            terrain = RasterCollection(Path(cache) / "swissalti3d")
+            surface = RasterCollection(Path(cache) / "swisssurface3d")
         if args.terrain_raster or args.surface_raster:
             import rasterio
             terrain = rasterio.open(args.terrain_raster) if args.terrain_raster else None
@@ -208,15 +221,20 @@ def build_snapshot(args):
                                     continue
                                 lat, lon = cy / 4000, cx / 4000
                                 evidence = cell_evidence(source, lat, lon, terrain, surface, noise)
+                                transport = noise_layers.sample(lat, lon)
                                 # Preserve source age rather than claiming fresh observations.
-                                updated = row["imported_at"] or now
+                                updated = now
                                 pending_cells.append({
                                     "x": cx,
                                     "y": cy,
                                     "latitude": lat,
                                     "longitude": lon,
                                     "quiet": evidence[0],
-                                    "road_noise_db": evidence[6],
+                                    "road_noise_db": transport.get(("road", "day"), evidence[6]),
+                                    "road_night_noise_db": transport.get(("road", "night")),
+                                    "rail_day_noise_db": transport.get(("rail", "day")),
+                                    "rail_night_noise_db": transport.get(("rail", "night")),
+                                    "noise_versions": json.dumps({f"{mode}_{period}": str(values[1]) for (mode, period), values in noise_layers.datasets.items()}),
                                     "nature": evidence[1],
                                     "water": evidence[2],
                                     "view": evidence[3],
@@ -233,7 +251,7 @@ def build_snapshot(args):
         upsert_metadata(state, {
             checkpoint_key: str(paths[-1]["row_id"] if paths else 0),
             "updated_at": now,
-            "version": "landscape-v1",
+            "version": "landscape-v2",
         })
         state.commit()
         if not state.execute("SELECT count(*) FROM cells").fetchone()[0]:
@@ -254,6 +272,7 @@ def build_snapshot(args):
                 os.unlink(temporary)
         print(json.dumps({"pipeline": "landscape", "paths": len(paths), "cells": cells, "updated_at": now}))
     finally:
+        noise_layers.close()
         projected_geometry.cache_clear()
         state.close()
         source.close()

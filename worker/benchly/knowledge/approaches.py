@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 import math
-from pathlib import Path
+import hashlib
 from collections import defaultdict
 from shapely.geometry import LineString, Point
 from shapely.ops import substring
@@ -13,27 +13,31 @@ from benchly.knowledge.models import Approach
 from benchly.knowledge.repository import compact, record_evidence, upsert
 from benchly.runtime import now_iso
 
-METHOD = "pedestrian-approach-1"
+METHOD = "pedestrian-approach-2"
 TO_WGS84 = Transformer.from_crs(2056, 4326, always_xy=True)
 WALKABLE = {"footway", "path", "pedestrian", "track", "steps", "living_street", "residential", "service"}
 
 
 def terrain_metadata(terrain):
-    return [{"source": "swissALTI3D", "asset": Path(dataset.name).name,
-             "version": dataset.tags().get("dataset_version") or (Path(dataset.name).name if "swissalti3d" in dataset.name.lower() else None),
-             "crs": str(dataset.crs), "resolution_meters": list(dataset.res)} for dataset in terrain.datasets]
+    if not terrain.datasets:
+        return []
+    return [{"source": "swissALTI3D", "cache_manifest": hashlib.sha256(compact(terrain.datasets).encode()).hexdigest(),
+             "tile_count": len(terrain.datasets), "surface": "bare_earth"}]
 
 
 def usable(tags):
     return (tags.get("highway") in WALKABLE or tags.get("highway") in {"cycleway", "bridleway"} and tags.get("foot") in {"yes", "designated", "permissive"}) and tags.get("foot", tags.get("access")) not in {"no", "private"}
 
 
-def slope_profile(coordinates, sample):
+def slope_profile(coordinates, sample, coverage=None):
     """Absolute, distance-weighted grade and uphill gain along the actual approach."""
     line = LineString(coordinates)
+    coverage = coverage if coverage is not None else {}
+    coverage.update(expected=0, sampled=0)
     if line.length < 1 or sample is None:
         return None, None, None
     distances = [float(value) for value in range(0, math.ceil(line.length), 10)] + [line.length]
+    coverage["expected"] = len(distances)
     heights = []
     for distance in distances:
         point = line.interpolate(distance)
@@ -42,6 +46,7 @@ def slope_profile(coordinates, sample):
         if height is None or not math.isfinite(height):
             return None, None, None
         heights.append(height)
+        coverage["sampled"] += 1
     grades, lengths, gains = [], [], []
     for index in range(1, len(distances)):
         length = distances[index] - distances[index - 1]
@@ -127,7 +132,9 @@ def analyze_approach(bench, context, sample=None, preferred_coordinates=None):
             if row["kind"] == "barrier" and row["geometry_wkb"] and route.distance(geometry(row["geometry_wkb"])) <= 1.5:
                 barriers.append({"source_id": row["source_id"], "tags": json.loads(row["raw_tags"] or "{}")})
         steps = any(tag.get("highway") == "steps" for tag in tags)
-        average, maximum, gain = slope_profile(list(reversed(coords)), sample)
+        structure = any(tag.get("bridge", "no") != "no" or tag.get("tunnel", "no") != "no" for tag in tags)
+        dem_coverage = {}
+        average, maximum, gain = slope_profile(list(reversed(coords)), None if structure else sample, dem_coverage)
         explicit = all(tag.get("wheelchair") in {"yes", "designated"} for tag in tags)
         blocked = steps or any(item["tags"].get("access") in {"no", "private"} or item["tags"].get("barrier") in {"stile", "turnstile"} for item in barriers)
         step_free = 0 if blocked else 1 if explicit and not barriers and route.length >= 100 and distance <= 3 else None
@@ -148,6 +155,8 @@ def analyze_approach(bench, context, sample=None, preferred_coordinates=None):
             width_meters=min(widths) if len(widths) == len(tags) else None, step_free_possible=step_free,
             confidence="medium" if route.length >= 100 and distance <= 3 and average is not None else "low",
             evidence_json=compact({"source_ids": [row["source_id"] for row in sources], "tags": tags, "coordinates_lv95": coords,
+                "terrain_ambiguity": "bridge_or_tunnel" if structure else None,
+                "dem_coverage": dem_coverage,
                 "dem_sample_spacing_meters": 10, "scope": "local_approach_only", "unmapped_last_meters": distance,
                 "barriers_completeness": "unknown", "latitude": bench["latitude"], "longitude": bench["longitude"]}),
             method_version=METHOD, computed_at=now_iso())
@@ -164,14 +173,18 @@ def prepare_approach(database, bench, context, sample=None, dem_inputs=None):
     previous = database.execute("SELECT * FROM bench_approaches WHERE bench_row_id=?", (bench["row_id"],)).fetchone()
     previous_metadata = json.loads(previous["evidence_json"]) if previous else {}
     previous_dem = previous_metadata.pop("dem_inputs", None)
+    previous_coverage = previous_metadata.pop("dem_coverage", None)
     values = Approach.model_validate(analyze_approach(bench, context, sample,
         preferred_coordinates=previous_metadata.get("coordinates_lv95") if sample is None else None)).model_dump()
     metadata = json.loads(values["evidence_json"])
-    if sample is None and previous and previous["method_version"] == METHOD and previous_metadata == metadata:
+    comparison = {key: value for key, value in metadata.items() if key != "dem_coverage"}
+    if sample is None and previous and previous["method_version"] == METHOD and previous_metadata == comparison:
         for field in ("average_slope_percent", "maximum_slope_percent", "elevation_gain_meters", "confidence"):
             values[field] = previous[field]
         if previous_dem:
             metadata["dem_inputs"] = previous_dem
+        if previous_coverage:
+            metadata["dem_coverage"] = previous_coverage
     elif sample is not None:
         metadata["dem_inputs"] = dem_inputs or [{"source": "supplied DEM", "version": None}]
     values["evidence_json"] = compact(metadata)

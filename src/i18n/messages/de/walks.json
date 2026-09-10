@@ -11,7 +11,9 @@
     "nature": "Viel natürliche Umgebung",
     "open": "Offenes Gelände entlang des Wegs",
     "incomplete": "Landschaftsdaten noch unvollständig; die schönste Variante ist nicht sicher einschätzbar.",
-    "lightUnknown": "Sonne und Schatten entlang dieses Wegs sind noch nicht verlässlich einschätzbar."
+    "lightUnknown": "Sonne und Schatten entlang dieses Wegs sind noch nicht verlässlich einschätzbar.",
+    "transportNoise": "Die Rangfolge berücksichtigt modellierten Strassen- und Bahnlärm getrennt für Tag und Nacht. Das ist keine Messung der Ruhe vor Ort.",
+    "noiseCoverage": "{mode}, {period}: Modellabdeckung {coverage}% · mittlerer Beurteilungspegel {value} dB(A) Lr"
   },
   "planner": {
     "title": "Spaziergang entdecken",
@@ -56,7 +58,7 @@
     "start": "Hier beginnt dein Ausflug",
     "return": "Zurück zum Ausgangspunkt",
     "why": "Warum dieser Vorschlag?",
-    "explanation": "Wir vergleichen Ruhe, Natur, Aussicht, Wassernähe und das Bänkli entlang des tatsächlichen Wegs. Das ist eine datengestützte Einschätzung, keine Schönheitsgarantie.",
+    "explanation": "Wir vergleichen Verkehrsbelastung, Natur, Aussicht, Wassernähe und das Bänkli entlang des tatsächlichen Wegs. Das ist eine datengestützte Einschätzung, keine Schönheitsgarantie.",
     "updated": "Landschaftsdaten vom {date}.",
     "noData": "Landschaftsdaten fehlen noch.",
     "extrasNote": "Bestätigte zusätzliche Bänkli haben einen kurzen geprüften Fusszugang; nicht geprüfte werden nicht gezählt.",

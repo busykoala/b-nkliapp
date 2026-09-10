@@ -52,8 +52,9 @@ class NoiseRasters:
     def close(self):
         self.stack.close()
 
-    def enrich(self, database, bench):
-        x, y = WGS84_TO_LV95.transform(bench["longitude"], bench["latitude"])
+    def sample(self, latitude, longitude):
+        x, y = WGS84_TO_LV95.transform(longitude, latitude)
+        samples = {}
         for (mode, period), (dataset, version, layer) in self.datasets.items():
             value = None
             if dataset.bounds.left <= x < dataset.bounds.right and dataset.bounds.bottom < y <= dataset.bounds.top:
@@ -62,6 +63,13 @@ class NoiseRasters:
                     measurement = float(raw) * dataset.scales[0] + dataset.offsets[0]
                     if math.isfinite(measurement) and 0 <= measurement <= 150:
                         value = measurement
+            samples[(mode, period)] = value
+        return samples
+
+    def enrich(self, database, bench):
+        samples = self.sample(bench["latitude"], bench["longitude"])
+        for (mode, period), (dataset, version, layer) in self.datasets.items():
+            value = samples[(mode, period)]
             upsert(database, NoiseExposure, dict(bench_row_id=bench["row_id"], mode=mode, period=period, value=value,
                 unit="dB(A) Lr", source=f"ch.bafu.laerm-{layer}", dataset_version=str(version), method_version=METHOD,
                 computed_at=now_iso()), ["bench_row_id", "mode", "period"])

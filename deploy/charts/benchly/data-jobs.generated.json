@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "config/data-catalog.json@2026-09-09",
+  "generatedFrom": "config/data-catalog.json@2026-09-10",
   "timeZone": "Europe/Zurich",
   "jobs": [
     {
@@ -12,8 +12,10 @@
         "/data/benchly.sqlite",
         "--landscape-database",
         "/data/landscape.sqlite",
-        "--noise-raster",
-        "/data/sources/sonbase-day.tif",
+        "--noise-dir",
+        "/data/sources",
+        "--terrain-cache",
+        "/data/terrain-cache-v1",
         "--limit",
         "2000"
       ],
@@ -353,8 +355,10 @@
         "/data/benchly.sqlite",
         "--noise-dir",
         "/data/sources",
+        "--terrain-dir",
+        "/data/terrain-cache-v1/swissalti3d",
         "--limit",
-        "500"
+        "2500"
       ],
       "profile": "standard",
       "purpose": "production"

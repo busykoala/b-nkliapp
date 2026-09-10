@@ -43,6 +43,8 @@ export type MapFilters = {
   wheelchair?: boolean;
   fireplaceNearby?: boolean;
   wasteBasketNearby?: boolean;
+  toiletsNearby?: true;
+  drinkingWaterNearby?: true;
   material?: string;
   minSeats?: number;
   minCommunityRating?: number;

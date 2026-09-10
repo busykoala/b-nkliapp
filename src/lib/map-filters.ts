@@ -13,6 +13,7 @@ export function activeMapFilters(filters: MapFilters, t: Translator): Array<{ ke
   const labels: Partial<Record<keyof MapFilters, string>> = {
     backrest: t("bench.attributes.backrest"), armrest: t("bench.attributes.armrest"), covered: t("bench.attributes.covered"), wheelchair: t("bench.attributes.wheelchair"),
     fireplaceNearby: t("map.filters.fireplace"), wasteBasketNearby: t("map.filters.bin"),
+    toiletsNearby: t("map.filters.toilets"), drinkingWaterNearby: t("map.filters.drinkingWater"),
   };
   const material: Record<string, string> = { wood: t("bench.materials.wood"), metal: t("bench.materials.metal"), stone: t("bench.materials.stone"), concrete: t("bench.materials.concrete"), plastic: t("bench.materials.plastic"), mixed: t("bench.materials.mixed") };
   return (Object.entries(filters) as Array<[keyof MapFilters, MapFilters[keyof MapFilters]]>)

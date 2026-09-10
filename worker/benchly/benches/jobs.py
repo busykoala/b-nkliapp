@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import tempfile
+import sqlite3
 from argparse import Namespace
 from pathlib import Path
 
@@ -17,24 +17,33 @@ from benchly.runs.repository import begin_run, finish_run, set_source_version
 def import_osm_job(args: Namespace) -> None:
     database = Path(args.database).resolve()
     connection = connect_database(database)
-    temporary_context = tempfile.TemporaryDirectory(prefix="benchly-osm-") if not args.work_dir else None
-    work_dir = Path(args.work_dir or temporary_context.name)
+    work_dir = Path(args.work_dir or database.parent / "sources" / "osm")
+    work_dir.mkdir(parents=True, exist_ok=True)
     pbf = Path(args.pbf).resolve() if args.pbf else work_dir / "switzerland-latest.osm.pbf"
     run_id = begin_run(connection, "import-osm")
     stats: dict[str, object] = {}
+    pending = work_dir / "pending.json"
     try:
-        source_version = "local" if args.pbf else download_file(args.pbf_url, pbf)
+        resumable = False
+        if not args.pbf and pending.exists() and pbf.exists():
+            for stage in (work_dir / ".osm-stage-v1").glob("*.sqlite"):
+                with sqlite3.connect(f"file:{stage}?mode=ro", uri=True) as scratch:
+                    if scratch.execute("SELECT 1 FROM osm_stage_metadata WHERE key='complete'").fetchone():
+                        resumable = True
+        source_version = "local" if args.pbf else json.loads(pending.read_text())["source_version"] if resumable else download_file(args.pbf_url, pbf)
+        if not args.pbf:
+            pending.write_text(json.dumps({"source_version": source_version}))
         stats["imported"], stats["context_features"] = import_osm(connection, pbf, source_version)
+        pending.unlink(missing_ok=True)
         set_source_version(connection, run_id, source_version)
         finish_run(connection, run_id, "completed", stats)
         print(json.dumps(stats, indent=2))
     except Exception as error:
+        connection.rollback()
         finish_run(connection, run_id, "failed", {"error": str(error), **stats})
         raise
     finally:
         connection.close()
-        if temporary_context:
-            temporary_context.cleanup()
 
 
 def refresh_commons_job(args: Namespace) -> None:

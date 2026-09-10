@@ -24,6 +24,7 @@ export function ViewPanel({ bench }: { bench: BenchDetail }) {
     </p>}
     <details className="technical-fold view-evidence-fold">
       <summary><span><strong>{t("bench.view.details")}</strong><small>{t("bench.view.detailsSummary")}</small></span><ChevronDown size={16} /></summary>
+      <p className="view-notes">{t("knowledge.view.distinctions")}</p>
       <MetricSketch values={[
         [t("bench.view.metrics.directions"), bench.nearOpenness],
         [t("bench.view.metrics.sky"), bench.viewComponents.openness],

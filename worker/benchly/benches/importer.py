@@ -37,7 +37,7 @@ from benchly.context.geometry import (
     geometry_wkb_from_coordinates,
     project_wgs84_wkb,
 )
-from benchly.runtime import now_iso
+from benchly.benches.staging import OsmStage
 
 @dataclass
 class ImportedBench:
@@ -118,18 +118,22 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
     metadata_edits_available = connection.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='bench_metadata_edits'"
     ).fetchone()
-    # Demo records make a fresh UI useful, but must never survive the first real import.
-    remove_demo_benches(connection)
-    connection.commit()
-    imported_at = now_iso()
+    stage = OsmStage(pbf_path, source_version)
+    imported_at = stage.imported_at
+    publishing = False
     pending: list[ImportedBench] = []
     pending_context: list[ImportedContext] = []
     total = 0
     context_total = 0
+    finished = False
 
     def flush() -> None:
         nonlocal total
         if not pending:
+            return
+        if not publishing:
+            stage.append("bench", pending)
+            pending.clear()
             return
         rows = []
         for bench in pending:
@@ -208,6 +212,10 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
         nonlocal context_total
         if not pending_context:
             return
+        if not publishing:
+            stage.append("context", pending_context)
+            pending_context.clear()
+            return
         rows = []
         for item in pending_context:
             tags = item.tags
@@ -242,7 +250,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
             clean_tags = {tag.k: tag.v for tag in tags if tag.k in KEEP_TAGS}
             pending.append(ImportedBench(osm_type, int(osm_id), latitude, longitude, clean_tags,
                 int(element.version) or None, osm_timestamp(element), int(element.changeset) or None))
-            if len(pending) >= 1000:
+            if len(pending) >= 250:
                 flush()
 
         def _append_context(self, osm_type: str, osm_id: int, coordinates, tags, geometry_wkb: Optional[bytes] = None, node_refs=None, timestamp=None) -> None:
@@ -266,7 +274,7 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
                 ),
                 timestamp,
             ))
-            if len(pending_context) >= 2000:
+            if len(pending_context) >= 1000:
                 flush_context()
 
         def node(self, node) -> None:
@@ -295,15 +303,42 @@ def import_osm(connection: sqlite3.Connection, pbf_path: Path, source_version: s
             except Exception as error:
                 print(f"Skipping invalid OSM area {area.id}: {error}", file=sys.stderr)
 
-    if pbf_path.suffix.lower() == ".json":
-        import_json_snapshot(pbf_path, BenchHandler())
-    else:
-        BenchHandler().apply_file(str(pbf_path), locations=True)
-    flush()
-    flush_context()
-    refresh_nearby_amenities(connection)
-    deactivate_stale_osm_benches(connection, imported_at)
-    discard_old_osm_context(connection, imported_at)
-    invalidate_enrichment(connection, environment=True)
-    connection.commit()
-    return total, context_total
+    try:
+        if not stage.complete:
+            if pbf_path.suffix.lower() == ".json":
+                import_json_snapshot(pbf_path, BenchHandler())
+            else:
+                BenchHandler().apply_file(str(pbf_path), locations=True)
+            flush()
+            flush_context()
+            previous_count = connection.execute("SELECT count(*) FROM benches WHERE active=1 AND osm_type IN ('node','way')").fetchone()[0]
+            stage.validate(previous_count)
+        # Parsing, coordinate projection and upstream failures cannot mutate the
+        # published source. Publication is bounded and replays idempotently.
+        publishing = True
+        for batch_id, kind, records in stage.remaining():
+            if kind == "bench":
+                pending.extend(ImportedBench(**record) for record in records)
+                flush()
+            else:
+                pending_context.extend(ImportedContext(**record) for record in records)
+                flush_context()
+            stage.acknowledge(batch_id)
+            if batch_id % 25 == 0:
+                print(json.dumps({"stage": "publishing", "batch": batch_id, "benches": total, "context_features": context_total}), flush=True)
+        remove_demo_benches(connection)
+        connection.commit()
+        # These cleanup functions publish in short batches too. A failed download
+        # or parser never reaches this generation retirement boundary.
+        refresh_nearby_amenities(connection)
+        deactivate_stale_osm_benches(connection, imported_at)
+        discard_old_osm_context(connection, imported_at)
+        invalidate_enrichment(connection, environment=True, publish_batches=True)
+        connection.commit()
+        counts = stage.counts()
+        finished = True
+        return counts.get("bench", 0), counts.get("context", 0)
+    finally:
+        stage.close()
+        if finished:
+            stage.path.unlink(missing_ok=True)

@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Optional
 
 from benchly.benches.repository import upsert_enrichment
+from benchly.knowledge import progress
+from benchly.enrichment.attempts import RETRY_ELIGIBLE_SQL, record_attempt
 from benchly.knowledge.approaches import prepare_approach, store_approach, terrain_metadata
 from benchly.knowledge.repository import available as knowledge_available
 from benchly.context.evidence import (
@@ -51,13 +53,13 @@ def expand_bounds(bounds: tuple[float, float, float, float], meters: float) -> t
 
 
 def next_enrichment_bounds(connection: sqlite3.Connection, cell_degrees: float = 0.05) -> Optional[tuple[float, float, float, float]]:
-    row = connection.execute("""
+    row = connection.execute(f"""
         SELECT b.latitude,b.longitude
         FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
-        WHERE b.active=1 AND (e.pipeline_version IS NULL OR e.pipeline_version<>?)
+        WHERE b.active=1 AND (e.pipeline_version IS NULL OR e.pipeline_version<>?) AND {RETRY_ELIGIBLE_SQL}
         ORDER BY coalesce(e.computed_at, ''), b.row_id
         LIMIT 1
-    """, (PIPELINE_VERSION,)).fetchone()
+    """, (PIPELINE_VERSION, PIPELINE_VERSION)).fetchone()
     if not row:
         return None
     return spatial_cell_bounds(row["latitude"], row["longitude"], cell_degrees)
@@ -77,8 +79,8 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
       FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
       WHERE b.active=1"""
     if not recompute:
-        query += " AND (e.pipeline_version IS NULL OR e.pipeline_version<>?)"
-        query_parameters: tuple[object, ...] = (PIPELINE_VERSION,)
+        query += " AND (e.pipeline_version IS NULL OR e.pipeline_version<>?) AND " + RETRY_ELIGIBLE_SQL
+        query_parameters: tuple[object, ...] = (PIPELINE_VERSION, PIPELINE_VERSION)
     else:
         query_parameters = ()
     if bounds:
@@ -96,8 +98,16 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
             if deadline_monotonic is not None and time.monotonic() >= deadline_monotonic:
                 print("Enrichment runtime limit reached; remaining benches stay eligible.", file=sys.stderr)
                 break
+            input_revision = progress.revision(connection, row["row_id"]) if knowledge_enabled else None
+            source_revision = progress.source_revision(connection) if knowledge_enabled else None
             elevation = terrain.sample(row["latitude"], row["longitude"])
             if elevation is None:
+                with connection:
+                    if hasattr(connection, "begin_immediate"):
+                        connection.begin_immediate()
+                    if knowledge_enabled and (progress.revision(connection, row["row_id"]) != input_revision or progress.source_revision(connection) != source_revision):
+                        continue
+                    record_attempt(connection, row, PIPELINE_VERSION, "missing_source", {"reason": "missing_origin_elevation"})
                 continue
             local_context = nearby_context(connection, row["latitude"], row["longitude"], 350)
             distant_context = nearby_context(connection, row["latitude"], row["longitude"], 10_000, ["water", "forest", "major_road"])
@@ -116,9 +126,22 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
             in_forest = int(bool(environment["in_forest"]))
             # A seated eye is approximately 1.1 m above bare terrain. Using the surface height
             # as origin would incorrectly place the observer on top of a tree canopy or roof.
+            coverage = {"method": "raster-horizon-2", "latitude": row["latitude"], "longitude": row["longitude"], "computed_at": now_iso()}
             horizon, terrain_horizon, obstruction_types, obstruction_distances, elevations, far_max_elevations = horizon_profile(
-                row["latitude"], row["longitude"], elevation + 1.1, surface, terrain, buildings,
+                row["latitude"], row["longitude"], elevation + 1.1, surface, terrain, buildings, coverage,
             )
+            if any(value is None for value in horizon):
+                coverage["status"] = "partial"
+                with connection:
+                    if hasattr(connection, "begin_immediate"):
+                        connection.begin_immediate()
+                    if knowledge_enabled and (progress.revision(connection, row["row_id"]) != input_revision or progress.source_revision(connection) != source_revision):
+                        continue
+                    upsert_enrichment(connection, {"bench_row_id": row["row_id"], "terrain_coverage": json.dumps(coverage)})
+                    record_attempt(connection, row, PIPELINE_VERSION, "missing_source", coverage)
+                print(f"Incomplete raster coverage for bench {row['row_id']}; previous usable values retained", file=sys.stderr)
+                continue
+            coverage["status"] = "complete"
             facing = row["direction_degrees"]
             relief = min(1.0, ((max(elevations) - min(elevations)) / 1500.0) if elevations else 0.0)
             labels, openness, water, naturalness, remoteness, view_sectors = classify_view(
@@ -155,6 +178,7 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
                 "distance_path_meters": nearest(paths),
                 "distance_major_road_meters": nearest(roads),
                 "horizon_profile": json.dumps(horizon),
+                "terrain_coverage": json.dumps(coverage),
                 "terrain_horizon_profile": json.dumps(terrain_horizon),
                 "obstruction_types": json.dumps(obstruction_types),
                 "obstruction_distances": json.dumps(obstruction_distances),
@@ -189,7 +213,12 @@ def enrich_terrain(connection: sqlite3.Connection, terrain_dir: Optional[Path], 
             # Terrain/DEM calculations can take minutes per bench. Only hold the
             # shared writer while storing one complete result, never between benches.
             with connection:
+                if hasattr(connection, "begin_immediate"):
+                    connection.begin_immediate()
+                if knowledge_enabled and (progress.revision(connection, row["row_id"]) != input_revision or progress.source_revision(connection) != source_revision):
+                    continue
                 upsert_enrichment(connection, values)
+                record_attempt(connection, row, PIPELINE_VERSION, "current", coverage)
                 if approach is not None:
                     store_approach(connection, dict(row), approach)
             updated += 1

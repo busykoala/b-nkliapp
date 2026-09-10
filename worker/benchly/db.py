@@ -54,6 +54,9 @@ class Database:
         """Execute a SQLAlchemy expression created from a SQLModel table."""
         return self._connection.execute(statement, parameters or {})
 
+    def begin_immediate(self) -> None:
+        self._connection.exec_driver_sql("BEGIN IMMEDIATE")
+
     def create_tables(self, models: Iterable[type]) -> None:
         for model in models:
             model.__table__.create(bind=self._connection, checkfirst=True)
@@ -97,6 +100,30 @@ def connect_database(path: Path) -> Database:
     return database
 
 
+class PreparedWrites:
+    """Read live inputs and prepare typed publications without acquiring a write lock.
+
+    Reads intentionally do not see pending writes. Callers publish before reading
+    derived state, and must validate their input revision under the publish lock.
+    """
+
+    def __init__(self, database):
+        self.database = database
+        self.statements = []
+
+    def execute(self, query, parameters=()):
+        if not query.lstrip().upper().startswith("SELECT"):
+            raise ValueError("Prepared computations may only read the live database")
+        return self.database.execute(query, parameters)
+
+    def write(self, statement, parameters=None):
+        self.statements.append((statement, parameters))
+
+    def publish(self):
+        for statement, parameters in self.statements:
+            write(self.database, statement, parameters)
+
+
 def write(database, statement, parameters: Optional[object] = None):
     """Execute a typed statement on the worker DB or a lightweight test DB.
 
@@ -104,7 +131,7 @@ def write(database, statement, parameters: Optional[object] = None):
     same SQLAlchemy expression for those connections keeps tests fast without
     introducing a second persistence implementation.
     """
-    if isinstance(database, Database):
+    if isinstance(database, (Database, PreparedWrites)):
         return database.write(statement, parameters)
     if parameters is not None:
         raise TypeError("typed batch parameters require a Database connection")

@@ -28,6 +28,9 @@ class BenchRepositoryTests(unittest.TestCase):
             name TEXT,dedication TEXT,location_name TEXT,location_key TEXT,location_postcode TEXT,
             location_canton TEXT,UNIQUE(osm_type,osm_id)
           );
+          CREATE VIRTUAL TABLE bench_spatial_index USING rtree(row_id,min_longitude,max_longitude,min_latitude,max_latitude);
+          CREATE TRIGGER bench_spatial_insert AFTER INSERT ON benches BEGIN
+            INSERT INTO bench_spatial_index VALUES(new.row_id,new.longitude,new.longitude,new.latitude,new.latitude); END;
           CREATE TABLE bench_metadata_edits(
             id INTEGER PRIMARY KEY,bench_row_id INTEGER,user_id INTEGER,field TEXT,
             old_value TEXT,new_value TEXT,created_at TEXT

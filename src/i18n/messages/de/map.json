@@ -62,7 +62,10 @@
     "shadeEstimate": "Schatten geschätzt",
     "seatsFrom": "Ab {count} Sitzplätzen",
     "starsFrom": "Ab {count} Sternen",
-    "without": "Ohne {label}"
+    "without": "Ohne {label}",
+    "toilets": "Toilette bis 250 m",
+    "drinkingWater": "Trinkwasser bis 250 m",
+    "facilityDistance": "Erfasste Einrichtungen, Abstand in Luftlinie. Der Fussweg kann länger sein; fehlende Einträge bedeuten nicht, dass es nichts gibt."
   },
   "placement": {
     "title": "Position wählen",

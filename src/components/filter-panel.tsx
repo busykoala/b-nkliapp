@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { useEffect, useId, useRef } from "react";
-import { Accessibility, Armchair, CloudSun, Flame, Hand, RotateCcw, Star, Sun, Trash2, Umbrella, X } from "lucide-react";
+import { Accessibility, Armchair, CloudSun, Droplets, Flame, Hand, RotateCcw, Star, Sun, Toilet, Trash2, Umbrella, X } from "lucide-react";
 import { activeMapFilterCount } from "@/lib/map-filters";
 import type { MapFilters } from "@/lib/types";
 
@@ -63,6 +63,11 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
         <FilterToggle active={filters.fireplaceNearby === true} icon={<Flame />} label={t("map.filters.fireplace")} onClick={() => toggle("fireplaceNearby")} />
         <FilterToggle active={filters.wasteBasketNearby === true} icon={<Trash2 />} label={t("map.filters.bin")} onClick={() => toggle("wasteBasketNearby")} />
       </FilterGroup>
+      <FilterGroup label={t("knowledge.nearby.title")}>
+        <FilterToggle active={filters.toiletsNearby === true} icon={<Toilet />} label={t("map.filters.toilets")} onClick={() => toggle("toiletsNearby")} />
+        <FilterToggle active={filters.drinkingWaterNearby === true} icon={<Droplets />} label={t("map.filters.drinkingWater")} onClick={() => toggle("drinkingWaterNearby")} />
+      </FilterGroup>
+      <p className="filter-intro">{t("map.filters.facilityDistance")}</p>
       <FilterGroup label={t("map.filters.light")}>
         <FilterToggle active={filters.sunnyNow === true} icon={<Sun />} label={t("map.filters.sun")} onClick={() => setLight(true)} />
         <FilterToggle active={filters.sunnyNow === false} icon={<CloudSun />} label={t("map.filters.shade")} onClick={() => setLight(false)} />

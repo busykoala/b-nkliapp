@@ -121,4 +121,113 @@ export const knowledgeMigrations: Migration[] = [
       DELETE FROM bench_image_evidence WHERE bench_row_id=new.row_id;
       DELETE FROM bench_likely_metadata WHERE bench_row_id=new.row_id; END;
   ` },
+  { id: "0027_knowledge_outcomes", sql: `
+    ALTER TABLE bench_enrichments ADD COLUMN terrain_coverage TEXT;
+    CREATE TABLE bench_terrain_attempts (
+      bench_row_id INTEGER PRIMARY KEY REFERENCES benches(row_id) ON DELETE CASCADE,latitude REAL NOT NULL,longitude REAL NOT NULL,
+      method_version TEXT NOT NULL,status TEXT NOT NULL,coverage_json TEXT NOT NULL,attempted_at TEXT NOT NULL
+    );
+    ALTER TABLE bench_geography ADD COLUMN municipality_search TEXT;
+    ALTER TABLE bench_geography ADD COLUMN locality_search TEXT;
+    CREATE TABLE knowledge_generation (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL);
+    INSERT INTO knowledge_generation VALUES(1,1);
+    CREATE TRIGGER knowledge_source_completed AFTER UPDATE OF status ON pipeline_runs
+      WHEN new.status='completed' AND new.kind IN ('import-osm','import-official-context','import-swissbuildings','import-basel-trees','import-zurich-trees','import-bank-photo-evidence','reconcile-source-photos') BEGIN
+      UPDATE knowledge_generation SET revision=revision+1 WHERE id=1; END;
+    ALTER TABLE bench_attribute_state ADD COLUMN freshness TEXT NOT NULL DEFAULT 'unknown';
+    ALTER TABLE bench_attribute_state ADD COLUMN coverage TEXT NOT NULL DEFAULT 'unknown';
+    CREATE TABLE bench_knowledge_revisions (
+      bench_row_id INTEGER PRIMARY KEY REFERENCES benches(row_id) ON DELETE CASCADE,
+      revision INTEGER NOT NULL DEFAULT 1
+    );
+    INSERT INTO bench_knowledge_revisions SELECT row_id,1 FROM benches;
+    CREATE TABLE bench_knowledge_outcomes (
+      bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+      category TEXT NOT NULL, generation TEXT NOT NULL, input_revision INTEGER NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('current','missing_source','retryable_failure','unresolved')),
+      known_count INTEGER NOT NULL DEFAULT 0, total_count INTEGER NOT NULL DEFAULT 0,
+      attempts INTEGER NOT NULL DEFAULT 1, error TEXT, processed_at TEXT NOT NULL,
+      PRIMARY KEY(bench_row_id,category)
+    );
+    CREATE INDEX knowledge_outcome_generation ON bench_knowledge_outcomes(generation,status,bench_row_id);
+    CREATE INDEX amenity_positive_filter ON bench_amenities(category,distance_meters,bench_row_id);
+    CREATE INDEX geography_search_municipality ON bench_geography(municipality_name,bench_row_id);
+    CREATE INDEX geography_search_locality ON bench_geography(locality_name,bench_row_id);
+    CREATE TRIGGER knowledge_queue_created AFTER INSERT ON bench_knowledge_queue BEGIN
+      INSERT INTO bench_knowledge_revisions VALUES(new.bench_row_id,1)
+      ON CONFLICT(bench_row_id) DO UPDATE SET revision=revision+1; END;
+    CREATE TRIGGER knowledge_queue_changed AFTER UPDATE ON bench_knowledge_queue BEGIN
+      INSERT INTO bench_knowledge_revisions VALUES(new.bench_row_id,1)
+      ON CONFLICT(bench_row_id) DO UPDATE SET revision=revision+1; END;
+    CREATE TRIGGER knowledge_bench_source_changed AFTER UPDATE OF raw_tags,osm_version,osm_timestamp,active ON benches
+      WHEN old.raw_tags IS NOT new.raw_tags OR old.osm_version IS NOT new.osm_version OR old.osm_timestamp IS NOT new.osm_timestamp OR old.active!=new.active BEGIN
+      INSERT INTO bench_knowledge_queue VALUES(new.row_id,'source',strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_presence_insert AFTER INSERT ON bench_confirmations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT new.bench_row_id,'presence',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=new.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_presence_update AFTER UPDATE ON bench_confirmations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT new.bench_row_id,'presence',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=new.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_presence_delete AFTER DELETE ON bench_confirmations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT old.bench_row_id,'presence',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=old.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_view_insert AFTER INSERT ON bench_view_observations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT new.bench_row_id,'view',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=new.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_view_update AFTER UPDATE ON bench_view_observations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT new.bench_row_id,'view',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=new.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_view_delete AFTER DELETE ON bench_view_observations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT old.bench_row_id,'view',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=old.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_light_insert AFTER INSERT ON bench_light_observations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT new.bench_row_id,'light',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=new.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_light_update AFTER UPDATE ON bench_light_observations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT new.bench_row_id,'light',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=new.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_light_delete AFTER DELETE ON bench_light_observations BEGIN
+      INSERT INTO bench_knowledge_queue SELECT old.bench_row_id,'light',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=old.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_metadata_deleted AFTER DELETE ON bench_metadata_edits BEGIN
+      INSERT INTO bench_knowledge_queue SELECT old.bench_row_id,'metadata',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=old.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_verification_deleted AFTER DELETE ON bench_verification_answers BEGIN
+      INSERT INTO bench_knowledge_queue SELECT old.bench_row_id,'verification',strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE EXISTS(SELECT 1 FROM benches WHERE row_id=old.bench_row_id)
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_environment_created AFTER INSERT ON bench_enrichments BEGIN
+      INSERT INTO bench_knowledge_queue VALUES(new.bench_row_id,'environment',strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+    CREATE TRIGGER knowledge_environment_updated AFTER UPDATE OF environment_computed_at,elevation_meters,pipeline_version ON bench_enrichments BEGIN
+      INSERT INTO bench_knowledge_queue VALUES(new.bench_row_id,'environment',strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      ON CONFLICT(bench_row_id) DO UPDATE SET reason=excluded.reason,requested_at=excluded.requested_at; END;
+  ` },
+  { id: "0028_physical_photo_estimates", sql: `
+    CREATE TABLE bench_photo_estimates (
+      bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE, attribute TEXT NOT NULL,
+      value_json TEXT, status TEXT NOT NULL CHECK(status IN ('eligible','unvalidated','conflicting')),
+      image_hashes_json TEXT NOT NULL,model_version TEXT NOT NULL,prompt_version TEXT NOT NULL,
+      captured_at TEXT,assessed_at TEXT NOT NULL,validation_samples INTEGER NOT NULL,method_version TEXT NOT NULL,
+      latitude REAL NOT NULL,longitude REAL NOT NULL,PRIMARY KEY(bench_row_id,attribute)
+    );
+    CREATE TABLE photo_physical_reviews (
+      image_sha256 TEXT NOT NULL,reviewer TEXT NOT NULL,labels_json TEXT NOT NULL,reviewed_at TEXT NOT NULL,
+      PRIMARY KEY(image_sha256,reviewer)
+    );
+    CREATE TRIGGER knowledge_photo_estimates_moved AFTER UPDATE OF latitude,longitude ON benches
+      WHEN old.latitude!=new.latitude OR old.longitude!=new.longitude BEGIN
+      DELETE FROM bench_photo_estimates WHERE bench_row_id=new.row_id; END;
+  ` },
 ];

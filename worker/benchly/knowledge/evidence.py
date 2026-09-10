@@ -10,7 +10,7 @@ from benchly.knowledge.models import AttributeState, Completeness
 from benchly.knowledge.repository import compact, record_evidence, upsert
 from benchly.runtime import now_iso
 
-METHOD = "attribute-resolution-1"
+METHOD = "attribute-resolution-2"
 PHYSICAL = ("backrest", "armrest", "covered", "wheelchair", "seats", "material", "direction")
 CATEGORIES = {
     "physical": PHYSICAL,
@@ -38,10 +38,27 @@ def age_days(value, now):
 def resolve(assertions, now=None):
     now = now or datetime.now(timezone.utc)
     # Multiple runs/images from one capture group or edits by one person do not create independent votes.
+    parents, images = {}, {}
+    def root(key):
+        parents.setdefault(key, key)
+        if parents[key] != key:
+            parents[key] = root(parents[key])
+        return parents[key]
+    for row in assertions:
+        if row["source_type"] != "imagery":
+            continue
+        image_hash = json.loads(row.get("metadata_json") or "{}").get("image_sha256")
+        key = (row["source_type"], row["source_id"])
+        if image_hash:
+            if image_hash in images:
+                parents[root(key)] = root(images[image_hash])
+            images[image_hash] = key
     latest = {}
     for row in assertions:
-        key = (row["source_type"], row["source_id"])
-        timestamp = row.get("observed_at") or row.get("source_updated_at") or row["imported_at"]
+        key = root((row["source_type"], row["source_id"]))
+        # Import order supersedes a withdrawn assertion even when its object date
+        # is unknown. Parse dates: mixed offsets must not be sorted lexically.
+        timestamp = -(age_days(row.get("imported_at"), now) or 0)
         if key not in latest or timestamp >= latest[key][0]:
             latest[key] = (timestamp, row)
     support = defaultdict(float)
@@ -50,26 +67,34 @@ def resolve(assertions, now=None):
         value = row["value_json"]
         if value == "null":
             continue
-        age = age_days(row.get("observed_at") or row.get("source_updated_at"), now)
-        half_life = 180 if row["attribute"] == "presence" else 730
-        freshness = .5 if age is None else 1 / (1 + age / half_life)
         reliability = row.get("confidence") if row.get("confidence") is not None else .5
         # Model self-confidence cannot promote imagery to a measurement.
         if row["source_type"] == "imagery":
             reliability = min(reliability, .5)
-        support[value] += PRIORITY.get(row["source_type"], .25) * reliability * freshness
-        voters[value].add((row["source_type"], row["source_id"]))
+        support[value] += PRIORITY.get(row["source_type"], .25) * reliability
+        voters[value].add(root((row["source_type"], row["source_id"])))
     if not support:
-        return {"value_json": None, "confidence": "unknown", "conflicting": 0, "evidence_count": 0, "source_types_json": "[]", "latest_at": None}
+        return {"value_json": None, "confidence": "unknown", "conflicting": 0, "evidence_count": 0, "source_types_json": "[]", "latest_at": None, "freshness": "unknown", "coverage": "missing"}
     ranked = sorted(support, key=lambda value: (-support[value], value))
     winner = ranked[0]
     conflict = len(ranked) > 1
     # Close contradictions stay unresolved; all underlying assertions remain inspectable.
     unresolved = conflict and support[winner] < support[ranked[1]] * 1.5
     confidence = "unknown" if unresolved else "low" if conflict or support[winner] < .5 else "high" if support[winner] >= 1 and len(voters[winner]) > 1 else "medium"
+    exact_official = any(row["source_type"] == "official" and row["value_json"] == winner
+        and row["attribute"] in {"municipality", "canton", "district"}
+        and row.get("method_version", "").startswith("official-places-") for _, row in latest.values())
+    if exact_official and not conflict:
+        confidence = "high"
+    winning = [row for _, row in latest.values() if row["value_json"] == winner]
+    dates = [(age_days(row.get("observed_at") or row.get("source_updated_at"), now), row) for row in winning]
+    dated = [(age, row) for age, row in dates if age is not None]
+    newest = min(dated, key=lambda pair: pair[0]) if dated else None
+    freshness = "unknown" if not newest else "recent" if newest[0] <= (180 if newest[1]["attribute"] == "presence" else 730) else "old"
     return dict(value_json=None if unresolved else winner, confidence=confidence, conflicting=int(conflict),
                 evidence_count=len(latest), source_types_json=compact(sorted({key[0] for key in latest})),
-                latest_at=max((row.get("observed_at") or row.get("source_updated_at") or "" for _, row in latest.values()), default="") or None)
+                latest_at=(newest[1].get("observed_at") or newest[1].get("source_updated_at")) if newest else None,
+                freshness=freshness, coverage="partial" if conflict else "observed")
 
 
 def collect_existing(database, bench):
@@ -95,10 +120,11 @@ def collect_existing(database, bench):
         elif edit["field"] == "seats" and value is not None:
             value = int(value) if value.isdigit() else None
         record_evidence(database, row_id, edit["field"], value, "community", f"user:{edit['user_id']}",
-                        observed_at=edit["created_at"], confidence=.9, method="community-edit-1", withdraw=True)
+                        observed_at=edit["created_at"], confidence=.9, method="community-edit-1", withdraw=True,
+                        metadata={"edit_id": edit["id"]})
     for answer in database.execute("SELECT * FROM bench_verification_answers WHERE bench_row_id=?", (row_id,)):
         record_evidence(database, row_id, answer["attribute"], json.loads(answer["value_json"]), "community", f"user:{answer['user_id']}",
-                        observed_at=answer["observed_at"], confidence=.9, method="verification-1")
+                        observed_at=answer["observed_at"], confidence=.9, method="verification-1", withdraw=True)
     for sighting in database.execute("SELECT * FROM bench_confirmations WHERE bench_row_id=?", (row_id,)):
         record_evidence(database, row_id, "presence", True, "community", f"user:{sighting['user_id']}",
                         observed_at=sighting["last_seen_at"] or sighting["created_at"], confidence=.9, method="presence-1")
@@ -128,9 +154,10 @@ def collect_existing(database, bench):
             if value == "unknown":
                 value = None
             record_evidence(database, row_id, attr, value, "gis", "environment",
-                            source_updated_at=enrichment.get("environment_computed_at") or enrichment.get("computed_at"), confidence=.7,
+                            source_updated_at=None, confidence=.7,
                             method=enrichment.get("pipeline_version") or "legacy-gis",
-                            withdraw=True, metadata={"latitude": bench["latitude"], "longitude": bench["longitude"]})
+                            withdraw=True, metadata={"latitude": bench["latitude"], "longitude": bench["longitude"],
+                                "computed_at": enrichment.get("environment_computed_at") or enrichment.get("computed_at")})
     images = database.execute("""SELECT i.*,e.distance_meters,e.direct_view_eligible FROM bench_image_evidence e
       JOIN image_observations i ON i.id=e.image_observation_id WHERE e.bench_row_id=? AND i.analysis_status='analyzed'""", (row_id,)).fetchall()
     for image in images:
@@ -139,15 +166,15 @@ def collect_existing(database, bench):
             if attribute.endswith("_probability"):
                 record_evidence(database, row_id, f"image_score:{attribute.removesuffix('_probability')}", value, "imagery",
                     f"{image['provider']}:{image['capture_group_id']}", observed_at=image["captured_at"], confidence=.4,
-                    method=image["model_version"] or "legacy-image", metadata={"image_id": image["id"], "calibrated": False})
+                    method=image["model_version"] or "legacy-image", metadata={"image_id": image["id"], "image_sha256": image["image_sha256"], "calibrated": False})
         land = max(("forest", "park", "open", "urban"), key=lambda key: predictions.get(f"{key}_probability", 0))
         if predictions.get(f"{land}_probability", 0) >= .85:
             record_evidence(database, row_id, "land_context", land, "imagery", f"{image['provider']}:{image['capture_group_id']}",
                 observed_at=image["captured_at"], confidence=.4, method=image["model_version"] or "legacy-image",
-                metadata={"image_id": image["id"], "latitude": bench["latitude"], "longitude": bench["longitude"], "calibrated": False})
+                metadata={"image_id": image["id"], "image_sha256": image["image_sha256"], "latitude": bench["latitude"], "longitude": bench["longitude"], "calibrated": False})
         record_evidence(database, row_id, "imagery_available", True, "imagery", f"{image['provider']}:{image['capture_group_id']}",
                         observed_at=image["captured_at"], confidence=.4, method=image["model_version"] or "legacy-image",
-                        metadata={"image_id": image["id"], "distance_meters": image["distance_meters"], "predictions": json.loads(image["predictions"] or "{}"), "calibrated": False})
+                        metadata={"image_id": image["id"], "image_sha256": image["image_sha256"], "distance_meters": image["distance_meters"], "predictions": json.loads(image["predictions"] or "{}"), "calibrated": False})
     for view in database.execute("SELECT * FROM bench_view_observations WHERE bench_row_id=? AND retracted_at IS NULL AND kind='correction'", (row_id,)):
         for attr in ("openness", "sky", "relief", "water", "horizon", "naturalness", "disturbance"):
             record_evidence(database, row_id, f"view_{attr}", view[attr], "community", f"user:{view['user_id']}",
@@ -163,6 +190,18 @@ def refresh_states(database, bench):
     for row in database.execute("SELECT * FROM bench_attribute_evidence WHERE bench_row_id=? ORDER BY id", (bench["row_id"],)):
         row = dict(row)
         metadata = json.loads(row["metadata_json"])
+        if row["method_version"] == "community-edit-1":
+            if not database.execute("SELECT 1 FROM bench_metadata_edits WHERE bench_row_id=? AND user_id=? AND field=? AND created_at=?",
+                (bench["row_id"], row["source_id"].removeprefix("user:"), row["attribute"], row["observed_at"])).fetchone():
+                continue
+        if row["method_version"] == "verification-1":
+            if not database.execute("SELECT 1 FROM bench_verification_answers WHERE bench_row_id=? AND user_id=? AND attribute=? AND observed_at=? AND value_json=?",
+                (bench["row_id"], row["source_id"].removeprefix("user:"), row["attribute"], row["observed_at"], row["value_json"])).fetchone():
+                continue
+        if row["method_version"] == "presence-1":
+            if not database.execute("SELECT 1 FROM bench_confirmations WHERE bench_row_id=? AND user_id=? AND coalesce(last_seen_at,created_at)=?",
+                (bench["row_id"], row["source_id"].removeprefix("user:"), row["observed_at"])).fetchone():
+                continue
         # Retain historical spatial evidence, but exclude it after a move.
         if "latitude" in metadata and (metadata["latitude"] != bench["latitude"] or metadata["longitude"] != bench["longitude"]):
             continue
@@ -194,7 +233,7 @@ def refresh_states(database, bench):
             current = database.execute("SELECT distance_meters FROM bench_amenities WHERE bench_row_id=? AND category=?", (bench["row_id"], row["attribute"])).fetchone()
             if not current or current[0] != json.loads(row["value_json"]):
                 continue
-        if row["method_version"] == "pedestrian-approach-1":
+        if row["method_version"].startswith("pedestrian-approach-"):
             fields = {"approach_steps": "steps", "approach_surface": "surface", "approach_slope": "maximum_slope_percent", "step_free": "step_free_possible"}
             field = fields.get(row["attribute"])
             current = database.execute(f"SELECT {field} FROM bench_approaches WHERE bench_row_id=?", (bench["row_id"],)).fetchone() if field else None

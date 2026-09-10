@@ -1,6 +1,6 @@
 // Generated from config/data-catalog.json. Do not edit by hand.
 export const DATA_RUNTIME = {
-  "pipelineVersion": "4.6.0",
+  "pipelineVersion": "4.7.0",
   "profilePipelineVersion": "GeoAdmin-Horizont v7",
   "scenePromptVersion": "benchly-scene-1.4",
   "sceneReconcilerVersion": "benchly-evidence-1.1",

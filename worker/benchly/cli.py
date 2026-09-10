@@ -29,7 +29,8 @@ from benchly.imagery.jobs import (
     reconcile_environment_job,
 )
 from benchly.imagery.photo_source import analyze_bank_photos
-from benchly.imagery.photo_import import import_photo_checkpoint_job
+from benchly.imagery.photo_import import import_photo_checkpoint_job, reconcile_stored_photos_job
+from benchly.imagery.physical_estimates import review_job
 from benchly.refresh import refresh_job
 from benchly.runtime import exclusive_worker_lock
 from benchly.settings import DEFAULT_OSM_PBF_URL
@@ -50,6 +51,9 @@ def build_parser() -> argparse.ArgumentParser:
     knowledge.add_argument("--limit", type=int, default=1000)
     knowledge.add_argument("--after-row-id", type=int)
     knowledge.add_argument("--queued-only", action="store_true")
+    knowledge.add_argument("--until-complete", action="store_true", help="Continue resumable batches until every eligible active bench has an outcome")
+    knowledge.add_argument("--report-only", action="store_true")
+    knowledge.add_argument("--bounds", type=float, nargs=4, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
     knowledge.add_argument("--terrain-dir")
     knowledge.add_argument("--noise-dir", default="./data/sources")
     knowledge.set_defaults(function=backfill_knowledge, uses_lock=True)
@@ -79,13 +83,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     noise = subparsers.add_parser("refresh-noise-rasters", help="Cache official road and rail noise for day and night")
     noise.add_argument("--directory", default="./data/sources")
-    noise.set_defaults(function=refresh_noise_job, uses_lock=False)
+    noise.set_defaults(function=refresh_noise_job, uses_lock=True)
 
-    benchmark = subparsers.add_parser("prepare-vision-benchmark", help="Add source strata and report progress towards 1000 human-labelled locations")
+    benchmark = subparsers.add_parser("prepare-vision-benchmark", help="Add available source strata and report independently reviewed benchmark coverage")
     _database_argument(benchmark)
     benchmark.add_argument("input", type=Path)
     benchmark.add_argument("--output", required=True, type=Path)
     benchmark.set_defaults(function=prepare_benchmark, uses_lock=False)
+
+    review = subparsers.add_parser("review-photo-attributes", help="Blind physical-feature review queue and independent validation")
+    _database_argument(review)
+    mode = review.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--export", help="Local, untracked JSONL review queue; do not publish source URLs")
+    mode.add_argument("--import-reviews", help="Completed human labels bound to original image hashes")
+    review.add_argument("--reviewer")
+    review.add_argument("--limit", type=int, default=100)
+    review.set_defaults(function=review_job, uses_lock=True)
 
     bank_photos = subparsers.add_parser(
         "analyze-source-photos", help="Analyze source-linked photos in RAM into a separate resumable evidence DB"
@@ -99,6 +112,10 @@ def build_parser() -> argparse.ArgumentParser:
     bank_photos.add_argument("--limit", type=int, default=0, help="Zero processes all outstanding photos")
     bank_photos.add_argument("--max-attempts", type=int, default=3)
     bank_photos.set_defaults(function=analyze_bank_photos, uses_lock=False)
+
+    photo_rematch = subparsers.add_parser("reconcile-source-photos", help="Recheck stored photo identity and evidence after inventory changes; no downloads")
+    _database_argument(photo_rematch)
+    photo_rematch.set_defaults(function=reconcile_stored_photos_job, uses_lock=True)
 
     photo_import = subparsers.add_parser("import-bank-photo-evidence", help="Validate, match and merge a photo checkpoint")
     _database_argument(photo_import)
@@ -159,6 +176,8 @@ def build_parser() -> argparse.ArgumentParser:
     landscape.add_argument("--terrain-raster", help="Optional local LV95 DTM GeoTIFF")
     landscape.add_argument("--surface-raster", help="Optional local LV95 DSM GeoTIFF")
     landscape.add_argument("--noise-raster", help="Optional local LV95 sonBASE daytime-noise GeoTIFF")
+    landscape.add_argument("--noise-dir", help="Separate official road/rail day/night rasters")
+    landscape.add_argument("--terrain-cache", help="Shared versioned DTM/DSM tile cache")
     landscape.set_defaults(function=refresh_landscape, uses_lock=False)
 
     osm_import = subparsers.add_parser("import-osm", help="Download and import the current national OSM extract")

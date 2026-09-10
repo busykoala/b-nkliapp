@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import math
 import sqlite3
-import sys
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional, Sequence
 
 from benchly.context.evidence import feature_bearing, feature_distance, point_hits_building
@@ -20,40 +18,7 @@ from benchly.enrichment.terrain_profile import (
     wgs84_to_lv95,
 )
 
-class RasterCollection:
-    def __init__(self, directory: Optional[Path]):
-        self.datasets = []
-        if not directory or not directory.exists():
-            return
-        try:
-            import rasterio
-        except ImportError as error:
-            raise RuntimeError("Terrain analysis requires rasterio.") from error
-        for path in sorted(directory.rglob("*.tif")):
-            try:
-                dataset = rasterio.open(path)
-                self.datasets.append(dataset)
-            except Exception as error:  # continue after a corrupt/non-raster tile
-                print(f"Skipping {path}: {error}", file=sys.stderr)
-
-    def sample(self, latitude: float, longitude: float) -> Optional[float]:
-        if not self.datasets:
-            return None
-        from rasterio.warp import transform
-        for dataset in self.datasets:
-            try:
-                x, y = transform("EPSG:4326", dataset.crs, [longitude], [latitude])
-                if dataset.bounds.left <= x[0] <= dataset.bounds.right and dataset.bounds.bottom <= y[0] <= dataset.bounds.top:
-                    value = next(dataset.sample([(x[0], y[0])]))[0]
-                    if dataset.nodata is None or value != dataset.nodata:
-                        return float(value)
-            except Exception:
-                continue
-        return None
-
-    def close(self) -> None:
-        for dataset in self.datasets:
-            dataset.close()
+from benchly.context.rasters import RasterCollection
 
 
 def circular_difference(first: float, second: float) -> float:
@@ -103,7 +68,7 @@ def merge_near_obstructions(latitude: float, longitude: float, origin_elevation:
 
 
 def horizon_profile(latitude: float, longitude: float, origin_height: float, surface: RasterCollection,
-                    terrain: RasterCollection, buildings: Sequence[sqlite3.Row]) -> tuple[list[float], list[float], list[str], list[float], list[float], list[float]]:
+                    terrain: RasterCollection, buildings: Sequence[sqlite3.Row], coverage: Optional[dict] = None):
     profile: list[float] = []
     terrain_profile: list[float] = []
     obstruction_types: list[str] = []
@@ -112,20 +77,27 @@ def horizon_profile(latitude: float, longitude: float, origin_height: float, sur
     far_max_elevations: list[float] = []
     near_distances = list(range(2, 22, 2)) + list(range(25, 101, 5)) + list(range(120, 301, 20))
     far_distances = [300 * (20_000 / 300) ** (index / 48) for index in range(1, 49)]
+    coverage = coverage if coverage is not None else {}
+    coverage.update(terrain_expected=72 * (len(near_distances) + len(far_distances)), terrain_samples=0,
+                    surface_expected=72 * len(near_distances), surface_samples=0, rays=[])
     for bearing in range(0, 360, 5):
         maximum_angle = -5.0
         maximum_terrain_angle = -5.0
         maximum_type = "unknown"
         maximum_distance = 0.0
+        terrain_count = surface_count = 0
         for sample_distance in near_distances:
             lat, lon = destination(latitude, longitude, bearing, sample_distance)
             terrain_elevation = terrain.sample(lat, lon)
             surface_elevation = surface.sample(lat, lon) if surface.datasets else None
             if terrain_elevation is not None:
+                terrain_count += 1
                 relief_samples.append(terrain_elevation)
                 terrain_angle = math.degrees(math.atan2(terrain_elevation - origin_height, sample_distance))
                 maximum_terrain_angle = max(maximum_terrain_angle, terrain_angle)
             elevation = surface_elevation if surface_elevation is not None else terrain_elevation
+            if surface_elevation is not None:
+                surface_count += 1
             if elevation is None:
                 continue
             angle = math.degrees(math.atan2(elevation - origin_height, sample_distance))
@@ -141,6 +113,7 @@ def horizon_profile(latitude: float, longitude: float, origin_height: float, sur
             if elevation is None:
                 continue
             relief_samples.append(elevation)
+            terrain_count += 1
             far_max_elevation = max(far_max_elevation, elevation)
             angle = math.degrees(math.atan2(elevation - origin_height, sample_distance))
             maximum_terrain_angle = max(maximum_terrain_angle, angle)
@@ -148,11 +121,16 @@ def horizon_profile(latitude: float, longitude: float, origin_height: float, sur
                 maximum_angle = angle
                 maximum_type = "terrain"
                 maximum_distance = float(sample_distance)
-        profile.append(round(maximum_angle, 2))
-        terrain_profile.append(round(maximum_terrain_angle, 2))
+        complete_terrain = terrain_count == len(near_distances) + len(far_distances)
+        complete_surface = surface_count == len(near_distances)
+        profile.append(round(maximum_angle, 2) if complete_terrain and complete_surface else None)
+        terrain_profile.append(round(maximum_terrain_angle, 2) if complete_terrain else None)
         obstruction_types.append(maximum_type)
         obstruction_distances.append(round(maximum_distance, 1))
         far_max_elevations.append(round(far_max_elevation, 1))
+        coverage["terrain_samples"] += terrain_count
+        coverage["surface_samples"] += surface_count
+        coverage["rays"].append({"bearing": bearing, "terrain_samples": terrain_count, "surface_samples": surface_count})
     return profile, terrain_profile, obstruction_types, obstruction_distances, relief_samples, far_max_elevations
 
 

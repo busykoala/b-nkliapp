@@ -117,20 +117,20 @@ uv run python worker/benchly_worker.py import-zurich-benches --database /data/be
 uv run python worker/benchly_worker.py refresh-noise-rasters --directory /data/sources
 ```
 
-`--queued-only` restricts a knowledge batch to changed benches; `--after-row-id` overrides the
-stored sweep cursor. `--terrain-dir` can supply cached swissALTI3D tiles. The existing raster
+`--queued-only` restricts a knowledge batch to changed benches; `--after-row-id` restricts
+the selection to larger row IDs. Recorded outcomes, rather than a fragile cursor, drive resumption. `--terrain-dir` can supply cached swissALTI3D tiles. The existing raster
 `enrich-batch` also computes approach slopes while the relevant DEM is loaded, avoiding a
 second download. Later batches without tiles preserve slopes only for identical route evidence.
 
 | Feature | Source and exact method | Stored result/version |
 | --- | --- | --- |
 | OSM freshness | Geofabrik Swiss PBF, OSM XML or complete OSM/Overpass JSON snapshots. Read original object version, timestamp and changeset from osmium; absent timestamps stay unknown. Import time is separate. | `benches.osm_*`, `source_updated_at`, `imported_at`; original tags and OSM source record |
-| Administrative location | [swissBOUNDARIES3D](https://www.swisstopo.admin.ch/de/landschaftsmodell-swissboundaries3d), latest LV95 GeoPackage from the official STAC collection. RTree candidates followed by exact polygon containment; canton and district queried independently. Border ambiguity stays unknown. | `bench_geography`: municipality/BFS, canton/district IDs and names; `official-places-2` and dataset version |
+| Administrative location | [swissBOUNDARIES3D](https://www.swisstopo.admin.ch/de/landschaftsmodell-swissboundaries3d), latest LV95 GeoPackage from the official STAC collection. RTree candidates followed by exact polygon containment; canton and district queried independently. Border ambiguity stays unknown. | `bench_geography`: municipality/BFS, canton/district IDs and names; `official-places-3` and dataset version |
 | Local place label | [swissNAMES3D](https://www.swisstopo.admin.ch/de/landschaftsmodell-swissnames3d), cached GeoPackage. Suitable objects within 2.5 km, ranked by distance + 100 m per type rank: quarter/subdivision 0, smaller quarter 1, town 2, local field name 3. Prefer the local official name over translated variants sharing the same geometric UUID, independent of file order. This label is separate from the political municipality. | Locality ID/name/distance in `bench_geography` |
-| Evidence resolution | Original OSM tags, official inventory assertions, geometric results, matched imagery and community observations. Latest assertion per independent source; source weights community 1, official .9, OSM .8, GIS .65, imagery .4, multiplied by confidence and age decay `1/(1+days/half_life)`. Half-life 730 days, presence 180; unknown date freshness .5. Image self-confidence capped .5. A lead below 1.5× a contradictory runner-up stays unresolved. | Append-only `bench_attribute_evidence`, materialized `bench_attribute_state`, `attribute-resolution-1`. Support grades are not probabilities. Old spatial evidence remains historical after moves. |
+| Evidence resolution | Original OSM tags, official inventory assertions, geometric results, matched imagery and community observations. Latest assertion per independent source; source weights community 1, official .9, OSM .8, GIS .65, imagery .4, multiplied by evidence reliability. Confidence is independent of freshness: source age is recent/old/unknown (730 days, presence 180). Exact, unambiguous administrative joins have strong support even without an object date. Image self-confidence capped .5. A lead below 1.5× a contradictory runner-up stays unresolved. | Append-only `bench_attribute_evidence`, materialized `bench_attribute_state`, `attribute-resolution-2`. Support grades are not probabilities. Old spatial evidence remains historical after moves. |
 | Completeness | Count usable values separately in physical/location/accessibility/imagery/surroundings/amenities/environment/recent-verification categories, listing missing and uncertain attributes. | `bench_completeness`; no combined quality score |
-| Amenities | Local OSM geometry with RTree prefilter and exact LV95 distance within 500 m. Separate toilets, drinking water, fountains, shelters, picnic tables, playgrounds, waste baskets and fireplaces; mapped counts within 100/250/500 m. | `bench_amenities`, source ID/version, `nearby-amenities-1`. No nearby mapped object means unknown, not an assertion that none exists. |
-| Approach | OSM pedestrian graph using shared node IDs and vertices; visual line crossings do not connect. Snap within 25 m, trace up to 200 m, prefer fewer steps/barriers and sufficiently long routes. Sample DEM every 10 m; grade is `100*abs(height delta)/horizontal distance`, mean weighted by distance, ascent measured toward the bench. Explicit positive tags are needed for a possible step-free path. | `bench_approaches`: steps, barrier evidence, surface/smoothness/width, max/mean grade, ascent, confidence, route coordinates, source IDs and DEM asset/version/resolution evidence; `pedestrian-approach-1`. Unmapped final metres, incomplete tags and missing DEM prevent a complete accessibility claim. |
+| Amenities | Local OSM geometry with RTree prefilter and exact LV95 distance within 500 m. Separate toilets, drinking water, fountains, shelters, picnic tables, playgrounds, waste baskets and fireplaces; mapped counts within 100/250/500 m. | `bench_amenities`, source ID/version, `nearby-amenities-2`. No nearby mapped object means unknown, not an assertion that none exists. |
+| Approach | OSM pedestrian graph using shared node IDs and vertices; visual line crossings do not connect. Snap within 25 m, trace up to 200 m, prefer fewer steps/barriers and sufficiently long routes. Sample DEM every 10 m; grade is `100*abs(height delta)/horizontal distance`, mean weighted by distance, ascent measured toward the bench. Explicit positive tags are needed for a possible step-free path. | `bench_approaches`: steps, barrier evidence, surface/smoothness/width, max/mean grade, ascent, confidence, route coordinates, source IDs and DEM asset/version/resolution evidence; `pedestrian-approach-2`. Unmapped final metres, incomplete tags and missing DEM prevent a complete accessibility claim. Bridge/tunnel gradients remain unknown with bare-earth inputs. |
 | Active verification | One question selected by user value × uncertainty × staleness × usefulness × ease; recent own answers suppressed for 30 days. Authenticated, rate-limited yes/no/unknown responses append evidence and queue resolution. Repeated answers from the same person do not become independent votes. | `bench_verification_answers` + evidence history, `verification-1` |
 | Canonical inventories | [Zürich Sitzbankkataster](https://data.stadt-zuerich.ch/dataset/geo_sitzbankkataster_ogd), CC0 WFS, stable `objid`, WGS84, original model/address fields. No modification dates are supplied: content SHA-256 identifies each dataset. Compare canonical neighbours within 15 m; auto-match within 6 m with a compatible attribute, or within 2 m with two attributes and 5 m separation from alternatives in dense areas. Contradictions or ambiguous neighbours remain review records. | `bench_source_records`, independent source geometry/timestamps/raw attributes, `inventory-match-1`. New canonical IDs are stable hashes, existing OSM IDs remain valid. |
 | Road and railway noise | [BAFU sonBASE](https://www.bafu.admin.ch/de/sonbase), official `ch.bafu.laerm-strassenlaerm_tag`, `_nacht`, `ch.bafu.laerm-bahnlaerm_tag`, `_nacht` single-band LV95 rasters. Point sample with scale/offset, masked NoData, ETag/Last-Modified version. Road-day reuses the existing landscape raster. The rail-day asset's equivalent WKT without an EPSG identifier is accepted only after an LV95 CRS match and three coordinate checks within 1 mm. | `bench_noise_exposure`: four separate channels in `dB(A) Lr`, `sonbase-point-1`. Day 06–22, night 22–06. Modelled assessment levels, not live measurements or an unexplained combined quietness score. |
@@ -162,7 +162,7 @@ The existing benchmark gate remains compatible with its 100-location seed. The e
 format accepts `canton`, `region`, `elevation_meters`/`elevation_band`, `landscape_type`, `provider`,
 `imagery_distance_meters`/`distance_band`, `season`, `capture_date` and `image_quality`. Missing
 strata are explicitly `unknown`; ground truth must still be labelled by people. There is no
-1,000-example cap: the coverage report tracks progress toward 1,000 without generating labels.
+mandatory sample target: the coverage report describes the actual reviewed examples without generating labels.
 
 ```bash
 uv run python worker/benchly_worker.py prepare-vision-benchmark evaluation.jsonl \
@@ -181,3 +181,88 @@ relaxed by this report. Runtime image hints remain qualitative until a validated
 specific calibration is explicitly deployed; raw classifier scores are never displayed as
 calibrated percentages. Expand geographically diverse human labels before interpreting sparse
 subgroup metrics or making deployment decisions.
+
+
+## Reliable coverage and publication
+
+The knowledge worker prepares geometry, raster samples and evidence statements before opening a
+write transaction. Publication checks both the source revision and the bench input revision under
+`BEGIN IMMEDIATE`, then commits one bench. An edit during computation leaves the queue intact.
+Creates, moves, source changes, contributions, withdrawals and terrain updates invalidate work;
+algorithm/source manifests and a weekly refresh window invalidate the nationwide sweep.
+`bench_knowledge_outcomes` records each category as `current`, `missing_source`,
+`unresolved` or `retryable_failure`, with generation, revision, attempts and processing time.
+A recorded outcome does not imply that all attributes are known. Failures keep the previous usable
+publication and retry after 30 minutes; successful work is not repeated after a crash.
+
+```bash
+uv run python worker/benchly_worker.py backfill-knowledge --database /data/benchly.sqlite \
+  --noise-dir /data/sources --terrain-dir /data/terrain-cache-v1/swissalti3d \
+  --limit 2500 --until-complete
+uv run python worker/benchly_worker.py backfill-knowledge --database /data/benchly.sqlite \
+  --noise-dir /data/sources --terrain-dir /data/terrain-cache-v1/swissalti3d --report-only
+```
+
+Use `--bounds WEST SOUTH EAST NORTH` for pilots before the national sweep. Compare changed
+assertions as well as counts in Spiez harbour/river, a dense city and an alpine area. Unknown
+coverage is an acceptable outcome; unexpected new claims need investigation.
+
+OSM parsing is staged in a separate scratch database under `/data/sources/osm`, containing only
+normalized source batches. No production database is copied. Download/parse failure leaves the
+published generation intact. Publication commits bounded batches and resumes idempotently;
+retirement of old source objects happens only after successful publication. A suspicious loss of
+more than 20% of a national inventory is rejected before publication. The input must be a complete
+country extract. [Geofabrik public downloads](https://www.geofabrik.de/data/download.html) omit
+changeset IDs; these remain null, while supplied versions and timestamps are retained.
+
+Raster jobs share `/data/terrain-cache-v1`, capped at **160 GiB** across DTM and DSM. The existing
+80 GiB per-job download limit remains. Versioned asset URLs, source sidecars and persistent RTree
+footprints identify tiles; only eight raster handles are open per collection. Recently used tiles
+are retained, and the current batch is pinned during eviction. Bench horizons, approaches and walk
+context reuse this cache. Horizon metadata records actual/expected terrain and surface samples
+per bearing. Missing samples never produce a complete horizon; incomplete attempts preserve the
+last usable values. Approach metadata records sample counts and unmapped final metres. Bridges
+and tunnels cannot obtain gradients from bare-earth samples: [swissALTI3D](https://www.swisstopo.admin.ch/en/height-model-swissalti3d)
+excludes vegetation and development.
+
+Walk cells retain all four sonBASE channels with their versions. Route details show separate
+coverage and time-weighted mean assessment levels; these are spatial summaries, not an acoustic
+sum or a live exposure measurement. For internal preference ranking only, the matching local
+06–22 / 22–06 period contributes the lesser of the road-proximity preference and each available
+noise preference `clamp((70 - Lr) / 30, 0, 1)`. Rail noise can therefore lower a railway-adjacent
+route's rank without inventing a combined peacefulness measurement. Missing channels remain
+unknown. Facilities use straight-line geometry distances, not walking distances or access claims.
+
+## Physical photo estimates and independent review
+
+`bench_photo_estimates` is deliberately separate from factual attributes and filters. Current
+unique matches within 5 m, visible benches and non-conflicting content hashes are required.
+Close-ups may support backrest/armrest/material estimates, but do not establish permanent shade,
+accessibility, a seated distant outlook or an unseen viewing direction. Contrary confirmed
+attributes suppress publication. Duplicate photos and capture groups never become extra votes.
+
+The review queue is blind to model predictions and bound to original image hashes. Keep its
+source URLs and any downloaded bytes in ignored operator storage. Human reviewers inspect the
+original hash-verified image, fill `labels` with booleans/material or null, then import the JSONL:
+
+```bash
+uv run python worker/benchly_worker.py review-photo-attributes --database /data/benchly.sqlite \
+  --export /data/imports/physical-review.jsonl --limit 100
+uv run python worker/benchly_worker.py review-photo-attributes --database /data/benchly.sqlite \
+  --import-reviews /data/imports/physical-review.jsonl --reviewer independent-reviewer
+```
+
+Validation is specific to attribute, model and prompt. It requires at least 30 independently
+reviewed benches, at least five examples per predicted class (two boolean classes or three
+material classes), and a 95% Wilson accuracy lower bound of at least .8. Repeated bench images and
+disagreeing labels do not count as independent examples. Until these conditions hold, estimates
+remain unpublished and can only inform a short on-site verification question. No human ground
+truth is generated by the model. Raw outputs, validation accuracy and calibrated probabilities
+are different quantities; this publication has no per-image probability.
+
+After an OSM refresh, run `reconcile-source-photos --database /data/benchly.sqlite` before
+knowledge pilots. This reuses stored predictions and hashes, recomputes unique current matches,
+withdraws obsolete photo projections and downloads no images. Physical estimates additionally
+check current neighbours at publication preparation, so a newly mapped adjacent bench can make
+an old match ineligible. Terrain batches record missing-source attempts and advance to other
+spatial cells; incomplete cells retry weekly rather than blocking nationwide progress.

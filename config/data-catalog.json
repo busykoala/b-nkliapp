@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026-09-09",
+  "catalogVersion": "2026-09-10",
   "timeZone": "Europe/Zurich",
   "runtime": {
-    "pipelineVersion": "4.6.0",
+    "pipelineVersion": "4.7.0",
     "profilePipelineVersion": "GeoAdmin-Horizont v7",
     "scenePromptVersion": "benchly-scene-1.4",
     "sceneReconcilerVersion": "benchly-evidence-1.1",
@@ -579,7 +579,7 @@
     }
   ],
   "jobs": [
-    {"id":"landscape","title":"Landschaftsindex","schedule":"15 * * * *","frequency":"stündlich in ressourcenschonenden Batches","deadlineSeconds":3300,"command":"refresh-landscape","args":["--database","/data/benchly.sqlite","--landscape-database","/data/landscape.sqlite","--noise-raster","/data/sources/sonbase-day.tif","--limit","2000"],"sourceIds":["openstreetmap","swisstlm3d","swissalti3d","swisssurface3d","sonbase"],"artifactIds":["landscape-db","sonbase-day"],"profile":"landscape","purpose":"production"},
+    {"id":"landscape","title":"Landschaftsindex","schedule":"15 * * * *","frequency":"stündlich in ressourcenschonenden Batches","deadlineSeconds":3300,"command":"refresh-landscape","args":["--database","/data/benchly.sqlite","--landscape-database","/data/landscape.sqlite","--noise-dir","/data/sources","--terrain-cache","/data/terrain-cache-v1","--limit","2000"],"sourceIds":["openstreetmap","swisstlm3d","swissalti3d","swisssurface3d","sonbase"],"artifactIds":["landscape-db","sonbase-day"],"profile":"landscape","purpose":"production"},
     {"id":"sonbase","title":"Strassenlärm-Raster","schedule":"40 4 * * 1","frequency":"montags um 04:40; Download nur bei neuer Serverversion","deadlineSeconds":3600,"command":"refresh-sonbase","args":["--target","/data/sources/sonbase-day.tif"],"sourceIds":["sonbase"],"artifactIds":["sonbase-day"],"profile":"landscape","purpose":"production"},
     {"id":"zurich-trees","title":"Zürcher Baumkataster","schedule":"10 3 2 * *","frequency":"monatlich am 2. um 03:10","deadlineSeconds":1800,"command":"import-zurich-trees","args":["--database","/data/benchly.sqlite"],"sourceIds":["zurich-trees"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"basel-trees","title":"Basler Baumkataster","schedule":"30 3 2 * *","frequency":"monatlich am 2. um 03:30","deadlineSeconds":1800,"command":"import-basel-trees","args":["--database","/data/benchly.sqlite"],"sourceIds":["basel-trees"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
@@ -602,7 +602,7 @@
     {"id":"source-check-yearly","title":"Luftdaten-Version prüfen","schedule":"5 5 15 2 *","frequency":"jährlich am 15. Februar um 05:05","deadlineSeconds":300,"command":"check-source-versions","args":["--database","/data/source-status.sqlite","--sources","foen-air"],"sourceIds":["foen-air"],"artifactIds":["source-status"],"profile":"standard","purpose":"monitoring"},
     {"id":"zurich-benches","title":"Amtliche Zürcher Bänkli","schedule":"30 4 3 * *","frequency":"monatlich; gebündelter Download des städtischen Inventars","deadlineSeconds":1800,"command":"import-zurich-benches","args":["--database","/data/benchly.sqlite","--cache-dir","/data/sources/municipal"],"sourceIds":["zurich-benches"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"official-places","title":"Gemeinden und Ortsnamen","schedule":"10 5 3 * *","frequency":"monatlich, gesammelt und lokal zwischengespeichert","deadlineSeconds":7200,"command":"refresh-official-places","args":["--database","/data/benchly.sqlite","--cache-dir","/data/sources/places"],"sourceIds":["swissboundaries3d","swissnames3d"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
-    {"id":"knowledge","title":"Belegbare Bänkli-Informationen","schedule":"25 * * * *","frequency":"stündlich in fortsetzbaren Batches","deadlineSeconds":1500,"command":"backfill-knowledge","args":["--database","/data/benchly.sqlite","--noise-dir","/data/sources","--limit","500"],"sourceIds":["openstreetmap","swissboundaries3d","swissnames3d","swissalti3d","sonbase"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
+    {"id":"knowledge","title":"Belegbare Bänkli-Informationen","schedule":"25 * * * *","frequency":"stündlich in fortsetzbaren Batches","deadlineSeconds":1500,"command":"backfill-knowledge","args":["--database","/data/benchly.sqlite","--noise-dir","/data/sources","--terrain-dir","/data/terrain-cache-v1/swissalti3d","--limit","2500"],"sourceIds":["openstreetmap","swissboundaries3d","swissnames3d","swissalti3d","sonbase"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},
     {"id":"noise-rasters","title":"Getrennte Strassen- und Bahnlärm-Raster","schedule":"40 5 * * 1","frequency":"wöchentlich; Download nur bei geänderter Version","deadlineSeconds":5400,"command":"refresh-noise-rasters","args":["--directory","/data/sources"],"sourceIds":["sonbase"],"artifactIds":["noise-rasters"],"profile":"landscape","purpose":"production"}
   ]
 }

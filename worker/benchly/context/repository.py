@@ -83,13 +83,16 @@ def discard_environment_rows(database, row_ids: Sequence[int]) -> None:
 
 
 def discard_old_osm_context(database, imported_at: str) -> None:
-    write(
-        database,
-        delete(EnvironmentFeature).where(
-            EnvironmentFeature.source == "OpenStreetMap",
-            EnvironmentFeature.imported_at != imported_at,
-        ),
-    )
+    after = 0
+    while True:
+        rows = database.execute("SELECT row_id,imported_at FROM environment_features WHERE source='OpenStreetMap' AND row_id>? ORDER BY row_id LIMIT 1000", (after,)).fetchall()
+        if not rows:
+            return
+        stale = [row[0] for row in rows if row[1] != imported_at]
+        if stale:
+            write(database, delete(EnvironmentFeature).where(EnvironmentFeature.row_id.in_(stale)))
+            database.commit()
+        after = rows[-1][0]
 
 
 def discard_old_source_generation(database, source: str, imported_at: str) -> None:

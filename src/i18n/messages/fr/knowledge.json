@@ -44,7 +44,9 @@
   "nearby": {
     "title": "À proximité",
     "distance": "env. {distance} m",
-    "explanation": "Distance à vol d’oiseau vers les équipements recensés dans un rayon de 500 m. Une fontaine ne fournit pas forcément de l’eau potable."
+    "explanation": "Distance à vol d’oiseau vers les équipements recensés dans un rayon de 500 m. Une fontaine ne fournit pas forcément de l’eau potable.",
+    "shortDistance": "{facility} · env. {distance} m à vol d’oiseau",
+    "unknown": "La carte ne recense pas tous les équipements. Il peut y en avoir davantage sur place."
   },
   "approach": {
     "title": "Le dernier bout de chemin",
@@ -63,7 +65,10 @@
     "smoothness": "État du chemin selon la carte",
     "width": "Largeur minimale recensée",
     "explanation": "{confidence} · Un accès local seulement, sans vérification du trajet complet. L’absence d’obstacles sur la carte ne garantit pas l’accessibilité.",
-    "empty": "Aucun chemin piéton assez proche n’a encore été associé."
+    "empty": "Aucun chemin piéton assez proche n’a encore été associé.",
+    "unmapped": "Derniers mètres non cartographiés",
+    "structure": "Pont ou tunnel : le modèle du terrain ne permet pas d’établir la pente du chemin.",
+    "sampleCoverage": "Altitude disponible pour {sampled} points du chemin sur {expected}."
   },
   "noise": {
     "title": "Bruit du trafic selon le modèle",
@@ -136,5 +141,18 @@
     "horrible": "Très dégradé",
     "very_horrible": "Extrêmement dégradé",
     "impassable": "Impraticable"
+  },
+  "freshness": {
+    "unknown": "Âge de la source inconnu",
+    "recent": "Source récente",
+    "old": "Source ancienne"
+  },
+  "estimates": {
+    "title": "Estimé à partir de photos",
+    "explanation": "Estimations d’un modèle d’image évalué, séparées des informations confirmées. Elles ne servent ni aux filtres d’équipement ni aux indications d’accessibilité.",
+    "provenance": "Modèle d’image : {model} · {count} exemples examinés indépendamment"
+  },
+  "view": {
+    "distinctions": "De l’eau à proximité ne garantit pas une vue sur l’eau. Un espace ouvert ne garantit pas une vue lointaine en position assise. Les photos ne montrent qu’un cadrage et ne prouvent ni une ombre permanente ni une direction de vue inconnue."
   }
 }

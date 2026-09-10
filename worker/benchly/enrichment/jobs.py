@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import sqlite3
 import sys
-import tempfile
 import time
 from argparse import Namespace
 from pathlib import Path
@@ -23,18 +22,20 @@ from benchly.context.evidence import (
 )
 from benchly.context.geometry import deterministic_environment
 from benchly.context.sources import download_stac_tiles
+from benchly.context.raster_cache import RasterCache
 from benchly.db import connect_database
 from benchly.enrichment.service import PIPELINE_VERSION, enrich_terrain, expand_bounds, next_enrichment_bounds
 from benchly.runs.repository import begin_run, finish_run
 from benchly.runtime import now_iso
+from benchly.knowledge import progress
 from benchly.settings import PROFILE_PIPELINE_VERSION, PROVIDERS
 from benchly.terrain import classify_view, direct_sun_minutes, fetch_terrain_horizon, merge_near_obstructions
 
 
 def enrich_batch_job(args: Namespace) -> None:
     connection = connect_database(Path(args.database).resolve())
-    temporary_context = tempfile.TemporaryDirectory(prefix="benchly-enrich-") if not args.work_dir else None
-    work_dir = Path(args.work_dir or temporary_context.name)
+    work_dir = Path(args.work_dir or Path(args.database).resolve().parent / "terrain-cache-v1")
+    cache = RasterCache(work_dir)
     run_id = begin_run(connection, "enrich-batch")
     stats: dict[str, object] = {}
     try:
@@ -54,6 +55,7 @@ def enrich_batch_job(args: Namespace) -> None:
             args.max_geodata_tiles,
             expand_bounds(bounds, 20_500),
             per_collection_bytes,
+            cache=cache,
         )
         stats["surface_tiles"] = download_stac_tiles(
             connection,
@@ -62,6 +64,7 @@ def enrich_batch_job(args: Namespace) -> None:
             args.max_geodata_tiles,
             expand_bounds(bounds, 500),
             per_collection_bytes,
+            cache=cache,
         )
         stats["enriched"] = enrich_terrain(
             connection,
@@ -79,8 +82,6 @@ def enrich_batch_job(args: Namespace) -> None:
         raise
     finally:
         connection.close()
-        if temporary_context:
-            temporary_context.cleanup()
 
 
 def _nearest(
@@ -230,12 +231,18 @@ def enrich_profile_batch_job(args: Namespace) -> None:
             if time.monotonic() >= deadline:
                 break
             request_started = time.monotonic()
+            input_revision = progress.revision(connection, row["row_id"])
+            source_revision = progress.source_revision(connection)
             terrain = fetch_terrain_horizon(row["latitude"], row["longitude"])
             if terrain is None:
                 stats["failed"] += 1
             else:
+                values = _profile_values(connection, row, terrain)
                 with connection:
-                    upsert_enrichment(connection, _profile_values(connection, row, terrain))
+                    connection.begin_immediate()
+                    if progress.revision(connection, row["row_id"]) != input_revision or progress.source_revision(connection) != source_revision:
+                        continue
+                    upsert_enrichment(connection, values)
                 stats["enriched"] += 1
                 if stats["enriched"] % 25 == 0:
                     print(f"Profile-enriched {stats['enriched']}/{len(rows)} benches", file=sys.stderr)

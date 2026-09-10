@@ -27,6 +27,8 @@ const filtersSchema = z.object({
   wheelchair: z.boolean().optional(),
   fireplaceNearby: z.boolean().optional(),
   wasteBasketNearby: z.boolean().optional(),
+  toiletsNearby: z.literal(true).optional(),
+  drinkingWaterNearby: z.literal(true).optional(),
   material: z.string().max(40).optional(),
   minSeats: z.number().int().min(1).max(12).optional(),
   minCommunityRating: z.number().min(1).max(5).optional(),
@@ -76,6 +78,12 @@ function mapViewType(labels: string[]): BenchViewType | null {
 
 function filterSql(filters: MapFilters | undefined, parameters: Array<string | number>) {
   const clauses = ["b.active = 1"];
+  for (const [filter, category] of [["toiletsNearby", "toilets"], ["drinkingWaterNearby", "drinking_water"]] as const) {
+    if (filters?.[filter]) {
+      clauses.push("EXISTS(SELECT 1 FROM bench_amenities a WHERE a.bench_row_id=b.row_id AND a.category=? AND a.distance_meters<=250)");
+      parameters.push(category);
+    }
+  }
   for (const field of ["backrest", "armrest", "covered", "wheelchair"] as const) {
     if (filters?.[field] === undefined) continue;
     clauses.push(`${attributeValueSql(field)} = ?`);

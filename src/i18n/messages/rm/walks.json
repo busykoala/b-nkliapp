@@ -11,7 +11,9 @@
     "nature": "Blers conturns natirals",
     "open": "Terren avert per lung da la via",
     "incomplete": "Datas da la cuntrada anc incumplettas; la varianta la pli bella na po betg vegnir stimada cun segirezza.",
-    "lightUnknown": "Sulegl e sumbriva per lung da questa via na pon anc betg vegnir stimads fidada­main."
+    "lightUnknown": "Sulegl e sumbriva per lung da questa via na pon anc betg vegnir stimads fidada­main.",
+    "transportNoise": "La rangaziun resguarda la canera modelada da vias e viafier, separadamain per di e notg. Quai n’è betg ina mesiraziun da la quietezza al lieu.",
+    "noiseCoverage": "{mode}, {period}: cuvrida dal model {coverage}% · nivel da valitaziun mez {value} dB(A) Lr"
   },
   "planner": {
     "title": "Scuvrir ina spassegiada",
@@ -56,7 +58,7 @@
     "start": "Qua cumenza tia excursiun",
     "return": "Enavos al punct da partenza",
     "why": "Pertge questa proposta?",
-    "explanation": "Nus cumparegliain quietezza, natira, vista, vischinanza da l’aua ed il banc per lung da la via effectiva. Quai è ina stimaziun basada sin datas, nagina garanzia da bellezza.",
+    "explanation": "Nus cumparegliain il traffic, la natira, la vista, la vischinanza da l’aua ed il banc lung la via efectiva. Quai è ina stimaziun basada sin datas, nagina garanzia da bellezza.",
     "updated": "Datas da la cuntrada dals {date}.",
     "noData": "Datas da la cuntrada mancan anc.",
     "extrasNote": "Bancs supplementars confermads han in curt access a pe verifitgà; bancs betg verifitgads na vegnan betg quintads.",

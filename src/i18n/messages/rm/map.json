@@ -62,7 +62,10 @@
     "shadeEstimate": "Sumbriva stimada",
     "seatsFrom": "A partir da {count} plazs da seser",
     "starsFrom": "A partir da {count} stailas",
-    "without": "Senza {label}"
+    "without": "Senza {label}",
+    "toilets": "Tualetta entaifer 250 m",
+    "drinkingWater": "Aua da baiver entaifer 250 m",
+    "facilityDistance": "Indrizs registrads, distanza en lingia directa. La via a pe po esser pli lunga; indicaziuns mancantas na signifitgan betg ch’i na dat nagut."
   },
   "placement": {
     "title": "Tscherner la posiziun",

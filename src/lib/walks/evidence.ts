@@ -8,7 +8,13 @@ import { pathTimes, routePoint, type WalkPath } from "../walking";
 import type { RouteEvidence, WalkQuery } from "./model";
 import { loadWeatherGrid, sampleWeatherGrid } from "@/integrations/weather/repository";
 
-type Cell = { quiet: number; road_noise_db?: number | null; nature: number; water: number; view: number | null; canopy: number; horizon: string | null; latitude: number; longitude: number; updated_at: string };
+type Cell = { quiet: number; road_noise_db?: number | null; road_night_noise_db?: number | null; rail_day_noise_db?: number | null; rail_night_noise_db?: number | null; noise_versions?: string | null; nature: number; water: number; view: number | null; canopy: number; horizon: string | null; latitude: number; longitude: number; updated_at: string };
+// Internal preference contribution, not an acoustic sum or a peacefulness measurement.
+export function transportRankingScore(proximity: number, values: Array<number | null | undefined>) {
+  return values.filter((value): value is number => value != null && Number.isFinite(value))
+    .reduce((score, value) => Math.min(score, Math.max(0, Math.min(1, (70 - value) / 30))), proximity);
+}
+
 export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
   const result: RouteEvidence = { quiet: null, nature: null, water: null, view: null, light: null, lightCoverage: 0, coverage: 0, updatedAt: null, sources: [], reasons: [], warnings: [] };
   let db: Database.Database | undefined;
@@ -16,6 +22,13 @@ export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
     db = new Database(process.env.LANDSCAPE_DATABASE_PATH ?? join(dirname(process.env.DATABASE_PATH ?? "data/benchly.sqlite"), "landscape.sqlite"), { readonly: true, fileMustExist: true });
     const lookup = db.prepare("SELECT * FROM cells WHERE x=? AND y=?");
     const clouds = loadWeatherGrid("CLCT");
+    const clock = new Intl.DateTimeFormat("en-GB", {timeZone: "Europe/Zurich", hour: "2-digit", hourCycle: "h23"});
+    const layers = [
+      {mode: "road" as const, period: "day" as const, field: "road_noise_db" as const},
+      {mode: "road" as const, period: "night" as const, field: "road_night_noise_db" as const},
+      {mode: "rail" as const, period: "day" as const, field: "rail_day_noise_db" as const},
+      {mode: "rail" as const, period: "night" as const, field: "rail_night_noise_db" as const},
+    ].map((layer) => ({...layer, weight: 0, sum: 0, versions: new Set<string>()}));
     let total = 0, known = 0, quiet = 0, nature = 0, water = 0, view = 0, viewKnown = 0, lit = 0, lightKnown = 0, noiseKnown = 0;
     const times = pathTimes(path, query.speed);
     let elapsed = 0;
@@ -29,13 +42,24 @@ export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
         const c = lookup.get(Math.round(longitude * 4000), Math.round(latitude * 4000)) as Cell | undefined;
         if (!c || !Number.isFinite(Date.parse(c.updated_at)) || Date.now() - Date.parse(c.updated_at) > 30 * 86400000) continue;
         result.updatedAt = !result.updatedAt || c.updated_at < result.updatedAt ? c.updated_at : result.updatedAt;
-        known += weight; quiet += c.quiet * weight; nature += c.nature * weight; water += c.water * weight;
+        const at = new Date(Date.parse(query.time) + (elapsed + seconds * (n + .5) / count) * 1000);
+        const hour = Number(clock.format(at));
+        const period = hour >= 6 && hour < 22 ? "day" : "night";
+        const versions = c.noise_versions ? JSON.parse(c.noise_versions) as Record<string, string> : {};
+        for (const layer of layers) {
+          const value = c[layer.field];
+          if (value == null || !Number.isFinite(value)) continue;
+          layer.weight += weight; layer.sum += value * weight;
+          const version = versions[`${layer.mode}_${layer.period}`];
+          if (version) layer.versions.add(version);
+        }
+        const ranking = transportRankingScore(c.quiet, layers.filter((layer) => layer.period === period).map((layer) => c[layer.field]));
+        known += weight; quiet += ranking * weight; nature += c.nature * weight; water += c.water * weight;
         if (c.road_noise_db !== null && c.road_noise_db !== undefined) noiseKnown += weight;
         if (c.view !== null) { view += c.view * weight; viewKnown += weight; }
         if (c.horizon) {
           const horizon: unknown = JSON.parse(c.horizon);
           if (!Array.isArray(horizon) || horizon.length !== 72 || !horizon.every((v) => typeof v === "number" && Number.isFinite(v))) continue;
-          const at = new Date(Date.parse(query.time) + (elapsed + seconds * (n + .5) / count) * 1000);
           const sun = SunCalc.getPosition(at, latitude, longitude);
           if (sun.altitude <= 0) continue; // Night is not evidence for a shaded walk.
           const azimuth = (sun.azimuth * 180 / Math.PI + 180 + 360) % 360;
@@ -55,9 +79,11 @@ export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
     if (result.coverage >= .8) { result.quiet = quiet / known; result.nature = nature / known; result.water = water / known; }
     if (viewKnown / Math.max(1, total) >= .8) result.view = view / viewKnown;
     if (query.light !== "any" && result.lightCoverage >= .8) result.light = lit / Math.max(total, 1);
-    result.sources = ["OpenStreetMap", "swissTLM3D", ...(noiseKnown / Math.max(1, total) >= .8 ? ["BAFU sonBASE"] : [])];
+    result.noise = layers.map((layer) => ({mode: layer.mode, period: layer.period, coverage: layer.weight / Math.max(1, total),
+      meanDb: layer.weight ? layer.sum / layer.weight : null, datasetVersions: [...layer.versions]}));
+    result.sources = ["OpenStreetMap", "swissTLM3D", ...(noiseKnown > 0 || layers.some((layer) => layer.weight > 0) ? ["BAFU sonBASE"] : [])];
+    if (layers.some((layer) => layer.weight > 0)) result.warnings.push(message("walks.evidence.transportNoise"));
     if ((result.water ?? 0) >= .55) result.reasons.push(message("walks.evidence.water"));
-    if ((result.quiet ?? 0) >= .75) result.reasons.push(message("walks.evidence.quiet"));
     if ((result.nature ?? 0) >= .55) result.reasons.push(message("walks.evidence.nature"));
     if ((result.view ?? 0) >= .65) result.reasons.push(message("walks.evidence.open"));
   } catch { /* Plain routing still works without the offline landscape artifact. */ }

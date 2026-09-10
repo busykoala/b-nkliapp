@@ -11,7 +11,9 @@
     "nature": "Molti dintorni naturali",
     "open": "Terreno aperto lungo il percorso",
     "incomplete": "Dati del paesaggio ancora incompleti; la variante più bella non può essere stimata con certezza.",
-    "lightUnknown": "Sole e ombra lungo questo percorso non sono ancora stimabili in modo affidabile."
+    "lightUnknown": "Sole e ombra lungo questo percorso non sono ancora stimabili in modo affidabile.",
+    "transportNoise": "La graduatoria considera il rumore stradale e ferroviario modellato, separatamente per giorno e notte. Non è una misura della tranquillità sul posto.",
+    "noiseCoverage": "{mode}, {period}: copertura del modello {coverage}% · livello di valutazione medio {value} dB(A) Lr"
   },
   "planner": {
     "title": "Scopri una passeggiata",
@@ -56,7 +58,7 @@
     "start": "La tua gita inizia qui",
     "return": "Ritorno al punto di partenza",
     "why": "Perché questa proposta?",
-    "explanation": "Confrontiamo tranquillità, natura, vista, vicinanza all’acqua e panchina lungo il percorso reale. È una stima basata sui dati, non una garanzia di bellezza.",
+    "explanation": "Confrontiamo traffico, natura, panorama, vicinanza all’acqua e panchina lungo il percorso reale. È una stima basata sui dati, non una garanzia di bellezza.",
     "updated": "Dati del paesaggio del {date}.",
     "noData": "Mancano ancora i dati del paesaggio.",
     "extrasNote": "Le panchine aggiuntive confermate hanno un breve accesso a piedi verificato; quelle non verificate non vengono contate.",

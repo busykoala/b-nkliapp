@@ -174,7 +174,8 @@ def test_shared_images_never_cross_calibration_test_split():
     records = [{"id": "a", "latitude": 46.68, "longitude": 7.68, "images": [{"url": "same"}]},
                {"id": "b", "latitude": 47.68, "longitude": 8.68, "images": [{"url": "same"}]}]
     assert len(set(split_groups(records))) == 1
-    assert benchmark_coverage(records)["remaining"] == 998
+    assert benchmark_coverage(records)["labelled"] == 2
+    assert benchmark_coverage(records)["physical_labels_reviewed"] == 0
     assert benchmark_coverage(records)["strata"]["image_quality"] == {"unknown": 2}
 
 
@@ -237,3 +238,31 @@ def test_locality_language_variants_do_not_overwrite_the_official_local_name(dat
         monkeypatch.setattr(geography, "iter_layer_features", lambda path, layer: iter(order))
         assert geography.import_places(database, tmp_path / 'names.gpkg', "swissNAMES3D", "2026") == 1
         assert database.execute("SELECT name FROM official_place_features").fetchone()[0] == "Zürich"
+
+
+def test_exact_administrative_join_has_strong_support_with_unknown_object_age():
+    value = assertion("Spiez", "swiss-place:municipality", "official", None, .9)
+    value.update(attribute="municipality", imported_at="2026-09-10T12:00:00Z", method_version="official-places-2")
+    result = resolve([value], datetime(2026, 9, 10, tzinfo=timezone.utc))
+    assert result["confidence"] == "high"
+    assert result["freshness"] == "unknown"
+    assert result["latest_at"] is None
+
+
+def test_old_supported_evidence_keeps_strength_and_reports_age_separately():
+    result = resolve([assertion(1, "one", date="2005-01-01T00:00:00Z"), assertion(1, "two", date="2005-01-01T00:00:00Z")], datetime(2026, 9, 10, tzinfo=timezone.utc))
+    assert result["confidence"] == "high"
+    assert result["freshness"] == "old"
+
+
+def test_river_separated_toilet_distance_does_not_imply_a_walkable_connection():
+    from benchly.knowledge.approaches import analyze_approach
+    from benchly.knowledge.amenities import enrich_amenities
+    from benchly.db import PreparedWrites
+    x, y = WGS84_TO_LV95.transform(7.68, 46.68)
+    toilet = {"source": "OpenStreetMap", "source_id": "node-4", "kind": "toilets", "raw_tags": "{}", "geometry_wkb": Point(x+80,y).wkb,
+              "source_version": "v1", "source_updated_at": None}
+    bench = {"row_id": 1, "latitude": 46.68, "longitude": 7.68}
+    rows = enrich_amenities(PreparedWrites(None), bench, [toilet])
+    assert next(row for row in rows if row["category"] == "toilets")["distance_meters"] == 80
+    assert analyze_approach(bench, [toilet])["confidence"] == "unknown"

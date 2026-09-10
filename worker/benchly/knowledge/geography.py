@@ -1,18 +1,19 @@
 """Exact LV95 boundary joins; locality names are ranked separately, never administrative proof."""
 from __future__ import annotations
 from functools import lru_cache
+import unicodedata
 from pathlib import Path
 from sqlalchemy import delete
 from shapely import from_wkb, to_wkb
 from shapely.geometry import Point, shape
 from shapely.ops import transform
 from benchly.context.geometry import WGS84_TO_LV95, geopackage_layers, iter_layer_features
-from benchly.db import write
+from benchly.db import open_database, write
 from benchly.knowledge.models import Geography, PlaceFeature
 from benchly.knowledge.repository import upsert
 from benchly.runtime import now_iso
 
-METHOD = "official-places-2"
+METHOD = "official-places-3"
 LOCALITIES = {"2300": 2, "2301": 0, "2302": 0, "2303": 1, "1500": 2, "1501": 0, "1502": 0, "1503": 1,
               "ort": 2, "ortsteil": 0, "quartier": 0, "quartierteil": 1, "1101": 3, "lokalname swisstopo": 3}
 
@@ -36,7 +37,7 @@ def identifier(value):
     return str(int(value)) if isinstance(value, (int, float)) else str(value)
 
 
-def import_places(database, path: Path, source: str, version: str):
+def _stage_places(database, path: Path, source: str, version: str):
     """Read GPKG/GDB through GDAL once. Swap generations only after a complete import."""
     imported = now_iso()
     count = 0
@@ -78,9 +79,46 @@ def import_places(database, path: Path, source: str, version: str):
     if not count:
         raise ValueError(f"No recognised {source} features; the existing generation was retained")
     write(database, delete(PlaceFeature).where(PlaceFeature.source == source, PlaceFeature.imported_at != imported))
+    if database.execute("SELECT 1 FROM sqlite_master WHERE name='knowledge_generation'").fetchone():
+        from benchly.knowledge.progress import source_changed
+        source_changed(database)
     database.commit()
     geometry.cache_clear()
     return count
+
+
+def import_places(database, path: Path, source: str, version: str):
+    """Project and validate the full source away from the production writer."""
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="benchly-places-stage-") as directory:
+        staged = open_database(Path(directory) / "places.sqlite")
+        staged.create_tables([PlaceFeature])
+        try:
+            count = _stage_places(staged, path, source, version)
+            imported = staged.execute("SELECT max(imported_at) FROM official_place_features").fetchone()[0]
+            published = 0
+            for row in staged.execute("SELECT * FROM official_place_features ORDER BY id"):
+                values = dict(row)
+                values.pop("id")
+                upsert(database, PlaceFeature, values, ["source", "source_id"])
+                published += 1
+                if published % 500 == 0:
+                    database.commit()
+            database.commit()
+            while True:
+                ids = [row[0] for row in database.execute("SELECT id FROM official_place_features WHERE source=? AND imported_at!=? LIMIT 500", (source, imported))]
+                if not ids:
+                    break
+                write(database, delete(PlaceFeature).where(PlaceFeature.id.in_(ids)))
+                database.commit()
+            if database.execute("SELECT 1 FROM sqlite_master WHERE name='knowledge_generation'").fetchone():
+                from benchly.knowledge.progress import source_changed
+                source_changed(database)
+            database.commit()
+            geometry.cache_clear()
+            return count
+        finally:
+            staged.close()
 
 
 def enrich_geography(database, bench):
@@ -112,5 +150,8 @@ def enrich_geography(database, bench):
     values.update(locality_id=names[0][1]["source_id"] if names else None,
                   locality_name=names[0][1]["name"] if names else None,
                   locality_distance_meters=round(names[0][0], 1) if names else None)
+    for kind in ("municipality", "locality"):
+        name = values.get(f"{kind}_name")
+        values[f"{kind}_search"] = "".join(char for char in unicodedata.normalize("NFKD", name) if not unicodedata.combining(char)).lower().strip() if name else None
     upsert(database, Geography, values, ["bench_row_id"])
     return values

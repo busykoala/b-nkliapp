@@ -97,6 +97,7 @@ class BenchEnrichment(SQLModel, table=True):
     distance_path_meters: Optional[float] = None
     distance_major_road_meters: Optional[float] = None
     horizon_profile: Optional[str] = None
+    terrain_coverage: Optional[str] = None
     sun_minutes_summer: Optional[int] = None
     sun_minutes_winter: Optional[int] = None
     sun_confidence: str = Field(default="niedrig", sa_column_kwargs={"server_default": "niedrig"})

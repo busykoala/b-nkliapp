@@ -1,9 +1,10 @@
-export type AttributeKnowledge = { attribute: string; value: unknown; confidence: "unknown" | "low" | "medium" | "high"; conflicting: boolean; evidenceCount: number; sourceTypes: string[]; latestAt: string | null; resolvedAt?: string };
+export type AttributeKnowledge = { attribute: string; value: unknown; confidence: "unknown" | "low" | "medium" | "high"; conflicting: boolean; evidenceCount: number; sourceTypes: string[]; latestAt: string | null; resolvedAt?: string; freshness?: "unknown" | "recent" | "old"; coverage?: string };
 export type BenchKnowledge = {
   attributes: AttributeKnowledge[];
   geography: { municipalityName: string | null; municipalityId: string | null; cantonName: string | null; districtName: string | null; localityName: string | null; confidence: string; sourceVersion: string } | null;
-  amenities: Array<{ category: string; distanceMeters: number | null; sourceId: string | null; count100m: number | null; count250m: number | null; count500m: number | null }>;
-  approach: { lengthMeters: number | null; maximumSlopePercent: number | null; averageSlopePercent: number | null; elevationGainMeters: number | null; steps: boolean | null; surface: string | null; smoothness: string | null; widthMeters: number | null; stepFreePossible: boolean | null; confidence: string } | null;
+  amenities: Array<{ category: string; distanceMeters: number | null; sourceId: string | null; count100m: number | null; count250m: number | null; count500m: number | null; distanceType?: "straight_line"; computedAt?: string; sourceVersion?: string | null; coverage?: "recorded" | "unknown" }>;
+  approach: { lengthMeters: number | null; maximumSlopePercent: number | null; averageSlopePercent: number | null; elevationGainMeters: number | null; steps: boolean | null; surface: string | null; smoothness: string | null; widthMeters: number | null; stepFreePossible: boolean | null; confidence: string; unmappedLastMeters?: number | null; terrainAmbiguity?: string | null; sampleCoverage?: {expected: number; sampled: number} | null; computedAt?: string } | null;
+  photoEstimates?: Array<{ attribute: "backrest" | "armrest" | "material"; value: boolean | string; imageHashes: string[]; modelVersion: string; promptVersion: string; capturedAt: string | null; assessedAt: string; validationSamples: number }>;
   noise: Array<{ mode: "road" | "rail"; period: "day" | "night"; value: number | null; unit: string; datasetVersion: string }>;
   completeness: Array<{ category: string; known: number; total: number; uncertain: number; missing: string[] }>;
   question: VerificationQuestion | null;

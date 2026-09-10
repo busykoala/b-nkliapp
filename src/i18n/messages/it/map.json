@@ -62,7 +62,10 @@
     "shadeEstimate": "Ombra stimata",
     "seatsFrom": "Da {count} posti a sedere",
     "starsFrom": "Da {count} stelle",
-    "without": "Senza {label}"
+    "without": "Senza {label}",
+    "toilets": "Toilette entro 250 m",
+    "drinkingWater": "Acqua potabile entro 250 m",
+    "facilityDistance": "Servizi registrati, distanza in linea d’aria. Il percorso a piedi può essere più lungo; dati mancanti non significano assenza di servizi."
   },
   "placement": {
     "title": "Scegli la posizione",

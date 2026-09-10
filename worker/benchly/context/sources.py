@@ -19,15 +19,22 @@ from benchly.runtime import now_iso
 _PROVIDERS = load_catalog().providers
 
 
-def download_file(url: str, destination: Path) -> str:
+def download_file(url: str, destination: Path, max_bytes: int | None = None) -> str:
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".part")
     request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (+https://github.com/benchly)"})
-    with urllib.request.urlopen(request, timeout=120) as response, temporary.open("wb") as output:
-        while chunk := response.read(1024 * 1024):
-            output.write(chunk)
-        version = response.headers.get("Last-Modified") or response.headers.get("ETag") or now_iso()
-    temporary.replace(destination)
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response, temporary.open("wb") as output:
+            size = 0
+            while chunk := response.read(1024 * 1024):
+                size += len(chunk)
+                if max_bytes is not None and size > max_bytes:
+                    raise RuntimeError(f"Download byte limit exceeded: {destination.name}")
+                output.write(chunk)
+            version = response.headers.get("Last-Modified") or response.headers.get("ETag") or now_iso()
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
     return version
 
 
@@ -87,7 +94,7 @@ def safe_extract_zip(archive: Path, destination: Path) -> None:
 def download_stac_tiles(connection: sqlite3.Connection, collection: str, destination: Path,
                         max_tiles: int | None = None,
                         bounds: tuple[float, float, float, float] | None = None,
-                        max_bytes: int | None = None) -> int:
+                        max_bytes: int | None = None, cache=None) -> int:
     """Download STAC assets for a bounded batch, with hard tile and byte limits."""
     destination.mkdir(parents=True, exist_ok=True)
     parameters = {"limit": "100"}
@@ -131,14 +138,27 @@ def download_stac_tiles(connection: sqlite3.Connection, collection: str, destina
                 if href in seen_assets or (max_tiles is not None and downloaded >= max_tiles):
                     continue
                 seen_assets.add(href)
-                target = destination / Path(urllib.parse.urlparse(href).path).name
+                # Keep URL/version identity, even if two editions share a basename.
+                asset_key = hashlib.sha256(href.encode()).hexdigest()[:16]
+                target = destination / (asset_key + "-" + Path(urllib.parse.urlparse(href).path).name)
+                if cache:
+                    cache.pin(target)
                 if not target.exists():
                     print(f"Downloading {collection}: {target.name}", file=sys.stderr)
-                    download_file(href, target)
+                    remaining = max_bytes - downloaded_bytes if max_bytes is not None else None
+                    if cache:
+                        # Reserve the remaining download budget before streaming;
+                        # neither the cache nor temporary download can exceed the cap.
+                        cache.trim(reserve=remaining or 0)
+                    download_file(href, target, max_bytes=remaining)
                     downloaded_bytes += target.stat().st_size
                     if max_bytes is not None and downloaded_bytes > max_bytes:
                         target.unlink(missing_ok=True)
                         raise RuntimeError(f"STAC download limit exceeded for {collection}: {max_bytes} bytes")
+                    target.with_suffix(".tif.json").write_text(json.dumps({"url": href, "collection": collection,
+                        "source_version": item.id, "source_updated_at": item.properties.datetime, "bbox": bbox}))
+                if cache:
+                    cache.trim()
                 downloaded += 1
         next_link = next((str(link.href) for link in page.links if link.rel == "next"), None)
         url = urllib.parse.urljoin(url, next_link) if next_link else ""

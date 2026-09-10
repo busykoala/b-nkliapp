@@ -44,7 +44,9 @@
   "nearby": {
     "title": "En vischinanza",
     "distance": "ca. {distance} m",
-    "explanation": "Distanza en lingia directa tar infrastructura registrada entaifer 500 m. In bigl na furnescha betg automaticamain aua da baiver."
+    "explanation": "Distanza en lingia directa tar infrastructura registrada entaifer 500 m. In bigl na furnescha betg automaticamain aua da baiver.",
+    "shortDistance": "{facility} · ca. {distance} m en lingia directa",
+    "unknown": "La charta na cuntegna betg tut ils indrizs. Al lieu poi dar dapli."
   },
   "approach": {
     "title": "L’ultim toc da via",
@@ -63,7 +65,10 @@
     "smoothness": "Stadi tenor la carta",
     "width": "Ladezza minimala registrada",
     "explanation": "{confidence} · Mo in access local, nagina controlla da l’entir viadi. Obstachels che mancan sin la carta na garanteschan betg in access senza barrieras.",
-    "empty": "Anc nagina senda da peduns avunda datiers attribuida."
+    "empty": "Anc nagina senda da peduns avunda datiers attribuida.",
+    "unmapped": "Ultims meters betg cartads",
+    "structure": "Punt u tunnel: il model dal terren na cumprova betg la pendenza da la via.",
+    "sampleCoverage": "Autezza dal terren disponibla per {sampled} da {expected} puncts da la via."
   },
   "noise": {
     "title": "Canera dal traffic en il model",
@@ -136,5 +141,18 @@
     "horrible": "Fermamain donnegià",
     "very_horrible": "Extremamain donnegià",
     "impassable": "Betg passabel"
+  },
+  "freshness": {
+    "unknown": "Vegliadetgna da la funtauna nunenconuschenta",
+    "recent": "Funtauna actuala",
+    "old": "Funtauna pli veglia"
+  },
+  "estimates": {
+    "title": "Stimà sin fotografias",
+    "explanation": "Stimaziuns d’in model visual examinà, separadas da las indicaziuns confermadas. Ellas na vegnan betg duvradas per ils filters da l’equipament u per indicaziuns davart l’accessibilitad.",
+    "provenance": "Model visual: {model} · {count} exempels examinads independentamain"
+  },
+  "view": {
+    "distinctions": "Aua en vischinanza na garantescha betg ina vista sin l’aua. In conturn avert na garantescha betg ina vista lontana en seser. Fotografias mussan mo in detagl e na cumprovan ni sumbriva permanenta ni ina direcziun da vista nunenconuschenta."
   }
 }

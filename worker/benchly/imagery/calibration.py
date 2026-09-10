@@ -28,7 +28,7 @@ def benchmark_coverage(records):
     for record in records:
         for key, value in sample_strata(record).items():
             coverage[key][str(value)] += 1
-    return {"labelled": len(records), "target": 1000, "remaining": max(0, 1000 - len(records)),
+    return {"labelled": len(records), "physical_labels_reviewed": sum(bool(record.get("physical_reviewed_at")) for record in records),
             "strata": {key: dict(counts) for key, counts in coverage.items()}}
 
 

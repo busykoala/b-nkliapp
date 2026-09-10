@@ -62,7 +62,7 @@ def validate_evaluation_dataset(records: Sequence[object], allow_small: bool = F
             values = {key: str(image.get(key) or "") for key in ("url", "provider", "source_url", "license")}
             if not values["url"].startswith("https://") or not values["source_url"].startswith("https://") or not values["provider"] or not values["license"]:
                 raise ValueError(f"invalid image provenance: {identifier}")
-            normalized_images.append(values)
+            normalized_images.append({**image, **values})
         identifiers.add(identifier)
         categories[category] += 1
         normalized.append({**raw, **sample_strata(raw), "latitude": latitude, "longitude": longitude, "images": normalized_images})

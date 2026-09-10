@@ -5,17 +5,37 @@ import json
 import urllib.request
 from pathlib import Path
 from benchly.context.sources import download_file, safe_extract_zip
-from benchly.db import connect_database
+from benchly.db import PreparedWrites, connect_database
 from benchly.knowledge.amenities import enrich_amenities, nearby_context
 from benchly.knowledge.approaches import enrich_approach, terrain_metadata
 from benchly.knowledge.evidence import collect_existing, refresh_states
 from benchly.knowledge.geography import enrich_geography, import_places
 from benchly.knowledge.inventories import import_inventory, retain_osm_source
-from benchly.knowledge.models import KnowledgeProgress
 from benchly.knowledge.noise import NoiseRasters, refresh_noise
-from benchly.knowledge.repository import finish_queue, record_evidence, upsert
+from benchly.knowledge.repository import finish_queue, record_evidence
+from benchly.knowledge import progress
 from benchly.runtime import now_iso
 from benchly.terrain import RasterCollection
+from benchly.imagery.physical_estimates import PhysicalEstimates
+
+
+def prepare_bench(database, bench, terrain, noise, terrain_inputs, estimates=None):
+    prepared = PreparedWrites(database)
+    collect_existing(prepared, bench)
+    geography = enrich_geography(prepared, bench)
+    if geography:
+        for kind in ("municipality", "canton", "district", "locality"):
+            record_evidence(prepared, bench["row_id"], kind, geography.get(f"{kind}_name"), "official", f"swiss-place:{kind}",
+                confidence=.9 if kind != "locality" else .6, method=geography["method_version"],
+                metadata={"source_version": geography["source_version"], "latitude": bench["latitude"], "longitude": bench["longitude"]})
+    context = nearby_context(database, bench)
+    enrich_amenities(prepared, bench, context)
+    enrich_approach(prepared, bench, context, terrain.sample if terrain.datasets else None, dem_inputs=terrain_inputs)
+    retain_osm_source(prepared, bench)
+    noise.enrich(prepared, bench)
+    if estimates:
+        estimates.enrich(prepared, bench)
+    return prepared
 
 
 def backfill_knowledge(args):
@@ -23,43 +43,74 @@ def backfill_knowledge(args):
     terrain = RasterCollection(Path(args.terrain_dir) if args.terrain_dir else None)
     noise = NoiseRasters(args.noise_dir)
     terrain_inputs = terrain_metadata(terrain)
-    processed = 0
+    estimates = PhysicalEstimates(database)
+    processed = failed = superseded = 0
     try:
-        checkpoint = database.execute("SELECT after_row_id FROM knowledge_progress WHERE job='knowledge-1'").fetchone()
-        after = args.after_row_id if args.after_row_id is not None else checkpoint[0] if checkpoint else 0
+        work_generation = progress.generation(database, terrain_inputs, noise)
+        sources = progress.source_revision(database)
+        if getattr(args, "report_only", False):
+            print(json.dumps(progress.report(database, work_generation)), flush=True)
+            return
         limit = max(1, min(5000, args.limit))
-        queued = database.execute("""SELECT b.* FROM bench_knowledge_queue q JOIN benches b ON b.row_id=q.bench_row_id
-          WHERE b.active=1 ORDER BY q.requested_at,b.row_id LIMIT ?""", (limit,)).fetchall()
-        remaining = limit - len(queued)
-        sweep = database.execute("SELECT * FROM benches WHERE active=1 AND row_id>? ORDER BY row_id LIMIT ?", (after, remaining)).fetchall() if remaining and not args.queued_only else []
-        seen = set()
-        for raw in [*queued, *sweep]:
-            bench = dict(raw)
-            if bench["row_id"] in seen:
-                continue
-            seen.add(bench["row_id"])
-            collect_existing(database, bench)
-            geography = enrich_geography(database, bench)
-            if geography:
-                for kind in ("municipality", "canton", "district", "locality"):
-                    record_evidence(database, bench["row_id"], kind, geography.get(f"{kind}_name"), "official", f"swiss-place:{kind}",
-                        confidence=.9 if kind != "locality" else .6, method=geography["method_version"],
-                        metadata={"source_version": geography["source_version"], "latitude": bench["latitude"], "longitude": bench["longitude"]})
-            context = nearby_context(database, bench)
-            enrich_amenities(database, bench, context)
-            enrich_approach(database, bench, context, terrain.sample if terrain.datasets else None, dem_inputs=terrain_inputs)
-            retain_osm_source(database, bench)
-            noise.enrich(database, bench)
-            refresh_states(database, bench)
-            finish_queue(database, bench["row_id"])
-            database.commit()
-            processed += 1
-            if processed % 100 == 0:
-                print(json.dumps({"processed": processed, "last_bench_row_id": bench["row_id"]}), flush=True)
-        next_after = sweep[-1]["row_id"] if sweep else 0 if remaining and not args.queued_only else after
-        upsert(database, KnowledgeProgress, dict(job="knowledge-1", after_row_id=next_after, updated_at=now_iso()), ["job"])
-        database.commit()
-        print(json.dumps({"processed": processed, "next_after_row_id": next_after, "queued": len(queued), "method": "knowledge-1"}))
+        # Current outcomes are the checkpoint. This survives a crash after any
+        # bench, includes newly inserted lower IDs, and invalidates on source changes.
+        while True:
+            parameters = [work_generation]
+            selection = ""
+            if args.queued_only:
+                selection += " AND q.bench_row_id IS NOT NULL"
+            if args.after_row_id is not None:
+                selection += " AND b.row_id>?"
+                parameters.append(args.after_row_id)
+            bounds = getattr(args, "bounds", None)
+            if bounds:
+                selection += " AND b.longitude BETWEEN ? AND ? AND b.latitude BETWEEN ? AND ?"
+                parameters.extend([bounds[0], bounds[2], bounds[1], bounds[3]])
+            parameters.append(limit)
+            rows = database.execute("""SELECT b.*,COALESCE(r.revision,0) input_revision FROM benches b
+              LEFT JOIN bench_knowledge_revisions r ON r.bench_row_id=b.row_id
+              LEFT JOIN bench_knowledge_queue q ON q.bench_row_id=b.row_id
+              LEFT JOIN bench_knowledge_outcomes o ON o.bench_row_id=b.row_id AND o.category='physical'
+              WHERE b.active=1 AND (o.bench_row_id IS NULL OR o.generation!=? OR o.input_revision!=COALESCE(r.revision,0)
+                OR (o.status='retryable_failure' AND julianday(o.processed_at)<julianday('now','-30 minutes')))
+              """ + selection + """ ORDER BY CASE q.reason WHEN 'created' THEN 0 WHEN 'moved' THEN 0 WHEN 'source' THEN 2 ELSE 1 END,
+              CASE WHEN q.bench_row_id IS NULL THEN 1 ELSE 0 END,q.requested_at,b.row_id LIMIT ?""", parameters).fetchall()
+            if not rows:
+                break
+            for raw in rows:
+                bench = dict(raw)
+                input_revision = bench.pop("input_revision")
+                try:
+                    prepared = prepare_bench(database, bench, terrain, noise, terrain_inputs, estimates)
+                    database.begin_immediate()
+                    if progress.revision(database, bench["row_id"]) != input_revision or progress.source_revision(database) != sources:
+                        database.rollback()
+                        superseded += 1
+                        continue
+                    prepared.publish()
+                    refresh_states(database, bench)
+                    progress.outcomes(database, bench, work_generation, input_revision)
+                    # The revision is checked while holding the writer lock. A
+                    # later edit requeues itself instead of being acknowledged here.
+                    finish_queue(database, bench["row_id"])
+                    database.commit()
+                    processed += 1
+                except Exception as error:
+                    database.rollback()
+                    database.begin_immediate()
+                    if progress.revision(database, bench["row_id"]) == input_revision:
+                        progress.outcomes(database, bench, work_generation, input_revision, error=f"{type(error).__name__}: {error}"[:500])
+                    database.commit()
+                    failed += 1
+                    print(json.dumps({"bench_row_id": bench["row_id"], "status": "retryable_failure", "error": str(error)[:500]}), flush=True)
+                if (processed + failed + superseded) % 100 == 0:
+                    print(json.dumps({"processed": processed, "failed": failed, "superseded": superseded, "last_bench_row_id": bench["row_id"]}), flush=True)
+            if not getattr(args, "until_complete", False) or progress.source_revision(database) != sources:
+                break
+        print(json.dumps({"processed_this_run": processed, "failed_this_run": failed, "superseded_this_run": superseded,
+            **progress.report(database, work_generation)}), flush=True)
+        if failed:
+            raise RuntimeError(f"{failed} benches recorded retryable failures; prior usable results retained")
     finally:
         terrain.close()
         noise.close()
@@ -135,13 +186,32 @@ def prepare_benchmark(args):
     try:
         enriched = []
         for record in records:
-            row = database.execute("""SELECT g.canton_name,e.elevation_meters FROM bench_spatial_index s
+            row = database.execute("""SELECT b.row_id,b.id,b.latitude,b.longitude,g.canton_name,e.elevation_meters FROM bench_spatial_index s
               JOIN benches b ON b.row_id=s.row_id LEFT JOIN bench_geography g ON g.bench_row_id=b.row_id
               LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id WHERE s.min_latitude BETWEEN ? AND ?
               AND s.min_longitude BETWEEN ? AND ? ORDER BY abs(b.latitude-?)+abs(b.longitude-?) LIMIT 1""",
               (record["latitude"]-.0001, record["latitude"]+.0001, record["longitude"]-.00015, record["longitude"]+.00015, record["latitude"], record["longitude"])).fetchone()
             if row:
-                record.update(canton=row["canton_name"] or record.get("canton", "unknown"), elevation_meters=row["elevation_meters"])
+                from benchly.geo import distance_meters
+                if distance_meters(row["latitude"], row["longitude"], record["latitude"], record["longitude"]) <= 15:
+                    record.update(bench_id=row["id"], canton=row["canton_name"] or record.get("canton", "unknown"), elevation_meters=row["elevation_meters"])
+            if record.get("canton") in {None, "unknown"}:
+                # Exact boundary lookup works even before the nationwide backfill;
+                # this read-only benchmark preparation must not publish bench state.
+                place = enrich_geography(PreparedWrites(database), {"row_id": 0, "latitude": record["latitude"], "longitude": record["longitude"]})
+                if place:
+                    record["canton"] = place.get("canton_name") or "unknown"
+            first = record["images"][0]
+            image = database.execute("SELECT latitude,longitude,captured_at FROM image_observations WHERE image_sha256=? OR fetch_url=? LIMIT 1",
+                (first.get("sha256"), first["url"])).fetchone()
+            if image:
+                from benchly.geo import distance_meters
+                record["imagery_distance_meters"] = round(distance_meters(image["latitude"], image["longitude"], record["latitude"], record["longitude"]), 1)
+                record["capture_date"] = image["captured_at"] or "unknown"
+            elif first.get("provider") == "SWISSIMAGE":
+                record["distance_band"] = "overhead"  # map-centred orthophoto, not a ground camera at zero metres
+            # Available quality metadata describes integrity, not invented visual labels.
+            record["image_integrity"] = "hash_recorded" if first.get("sha256") else "unknown"
             enriched.append({**record, **sample_strata(record)})
         Path(args.output).write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in enriched) + "\n")
         print(json.dumps(benchmark_coverage(enriched), ensure_ascii=False, indent=2))
