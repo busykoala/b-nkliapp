@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+// Keep map fixtures under Playwright routing; service-worker requests can bypass
+// those routes in WebKit. Offline behaviour has its own service-worker suite.
+test.use({ serviceWorkers: "block" });
+
 test("applies facility filters while the basemap is still loading", async ({ page, context }) => {
   let release!: () => void;
   const pending = new Promise<void>((resolve) => { release = resolve; });

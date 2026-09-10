@@ -17,7 +17,7 @@ remain explicit SQLite queries because they are local, complex and easier to
 audit that way. `benchly/db.py` provides the single transaction boundary for
 both without hiding either model behind a generic framework.
 
-The worker is deliberately separate from the web image. It downloads or reads a Geofabrik Switzerland PBF, imports every `amenity=bench` plus spatial building/tree/water/forest/path context, optionally computes terrain/surface evidence, and optionally stores nearby Wikimedia Commons metadata. Its only durable output is the same SQLite file used by the app.
+The worker is deliberately separate from the web image. It downloads or reads a Geofabrik Switzerland PBF, imports every `amenity=bench` plus spatial building/tree/water/forest/path context, optionally computes terrain/surface evidence, and optionally stores nearby Wikimedia Commons metadata. It publishes bench evidence into the app's SQLite database, with separate derived landscape/transit artifacts and reusable source caches under `/data`.
 
 Forest, water and building decisions use exact LV95 WKB geometry. R*Tree bounds only select
 candidates. A surface-height peak is measured across 3 m, 10 m and 25 m neighborhoods and
@@ -62,8 +62,8 @@ uv run python worker/benchly_worker.py audit-environment --database /data/benchl
 ```
 
 `enrich-batch` chooses the next stale geographic cell, requests only intersecting STAC
-assets (including the required terrain and surface buffers), checkpoints results and removes
-its temporary files. Repeated runs therefore make national coverage progress without a
+assets (including the required terrain and surface buffers), checkpoints results and retains
+downloaded tiles in the bounded shared cache. Repeated runs therefore make national coverage progress without a
 single unbounded download.
 
 `enrich-profile-batch` is the lightweight complement to the raster pipeline. One
