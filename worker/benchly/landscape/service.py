@@ -229,12 +229,15 @@ def build_snapshot(args):
         source_revision = source_generation(source)
         generation = input_generation(source_revision, terrain, surface, noise, noise_layers)
         generation_key = "inputs:" + checkpoint_key
-        previous_inputs = state.execute("SELECT value FROM metadata WHERE key=?", (generation_key,)).fetchone()
         checkpoint = state.execute("SELECT value FROM metadata WHERE key=?", (checkpoint_key,)).fetchone()
-        last = int(checkpoint[0]) if checkpoint and previous_inputs and previous_inputs[0] == generation else 0
+        # Each cell records its actual input generation. Keep spatial progress
+        # across source changes: daily terrain updates must not starve later paths.
+        last = int(checkpoint[0]) if checkpoint else 0
         if args.limit < 1 or args.limit > 10000:
             raise ValueError("Path batch must be between 1 and 10000")
         paths = select_paths(source, last, args.limit, bounds)
+        if not paths and last:
+            paths = select_paths(source, 0, args.limit, bounds)
         now = datetime.now(timezone.utc).isoformat()
         cells = 0
         visited = set()

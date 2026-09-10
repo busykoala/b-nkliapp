@@ -197,6 +197,9 @@ ordered kind-index scans for nationwide work. They never sort every remaining pa
 to select the next batch from a full OSM import.
 The landscape worker also reuses up to eight coordinate transformers and 2,048 projected
 geometries, so nearby municipal trees do not reconstruct a projection for every sampled point.
+Its spatial cursor continues across source changes and wraps at the end of a sweep. Each cell
+retains its actual input generation; daily terrain downloads cannot repeatedly reset work to
+the first paths and leave later regions unprocessed.
 Creates, moves, source changes, contributions, withdrawals and terrain updates invalidate work;
 algorithm/source manifests and a weekly refresh window invalidate the nationwide sweep.
 `bench_knowledge_outcomes` records each category as `current`, `missing_source`,

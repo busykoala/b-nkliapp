@@ -119,7 +119,7 @@ class LandscapeTests(unittest.TestCase):
             self.assertEqual(target.read_bytes(), before)
 
 
-def test_same_day_noise_revision_restarts_paths_and_failed_refresh_retains_snapshot(tmp_path, monkeypatch):
+def test_same_day_noise_revision_refreshes_completed_sweep_and_failure_retains_snapshot(tmp_path, monkeypatch):
     import benchly.landscape.service as service
     source_path, target = tmp_path / 'source.sqlite', tmp_path / 'landscape.sqlite'
     with sqlite3.connect(source_path) as db:
@@ -174,3 +174,36 @@ def test_same_day_noise_revision_restarts_paths_and_failed_refresh_retains_snaps
     with pytest.raises(RuntimeError, match='sources changed'):
         refresh(args)
     assert target.read_bytes() == before
+
+
+def test_changing_sources_do_not_starve_later_paths_and_cells_keep_actual_generation(tmp_path, monkeypatch):
+    import benchly.landscape.service as service
+    source_path, target = tmp_path / 'source.sqlite', tmp_path / 'landscape.sqlite'
+    with sqlite3.connect(source_path) as db:
+        db.executescript("""CREATE TABLE knowledge_generation(id INTEGER PRIMARY KEY,revision INTEGER);
+            INSERT INTO knowledge_generation VALUES(1,1);
+            CREATE TABLE environment_features(row_id INTEGER PRIMARY KEY,kind TEXT,geometry_wkb BLOB,geometry_crs INTEGER);""")
+        for row_id in range(1, 4):
+            lon = 6.68 + row_id
+            line = LineString([(lon, 46.68), (lon + .0002, 46.6802)])
+            db.execute("INSERT INTO environment_features VALUES(?,'path',?,4326)", (row_id, line.wkb))
+    args = SimpleNamespace(database=str(source_path), landscape_database=str(target), limit=1, bounds=None,
+        terrain_raster=None, surface_raster=None, noise_raster=None)
+    monkeypatch.setattr(service, 'cell_evidence', lambda *_args: (.5, .5, 0., None, 0., None, None))
+    first_generation = None
+    for revision, expected_cursor in enumerate((1, 2, 3, 1), start=1):
+        with sqlite3.connect(source_path) as db:
+            db.execute('UPDATE knowledge_generation SET revision=?', (revision,))
+        refresh(args)
+        with sqlite3.connect(target) as db:
+            assert db.execute("SELECT value FROM metadata WHERE key='last_path'").fetchone()[0] == str(expected_cursor)
+            generation = db.execute("SELECT value FROM metadata WHERE key='inputs:last_path'").fetchone()[0]
+            oldest_cell = db.execute('SELECT input_generation FROM cells ORDER BY longitude,latitude LIMIT 1').fetchone()[0]
+            if revision == 1:
+                first_generation = generation
+            if revision in (2, 3):
+                assert oldest_cell == first_generation
+                assert oldest_cell != generation
+            if revision == 4:
+                assert oldest_cell == generation
+                assert oldest_cell != first_generation
