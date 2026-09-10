@@ -47,28 +47,36 @@ jobs:
         include:
           - project: mobile-chrome
             browser: chromium
-            shard: 1/3
+            shard: 1/4
             part: 1
           - project: mobile-chrome
             browser: chromium
-            shard: 2/3
+            shard: 2/4
             part: 2
           - project: mobile-chrome
             browser: chromium
-            shard: 3/3
+            shard: 3/4
             part: 3
+          - project: mobile-chrome
+            browser: chromium
+            shard: 4/4
+            part: 4
           - project: mobile-safari
             browser: webkit
-            shard: 1/3
+            shard: 1/4
             part: 1
           - project: mobile-safari
             browser: webkit
-            shard: 2/3
+            shard: 2/4
             part: 2
           - project: mobile-safari
             browser: webkit
-            shard: 3/3
+            shard: 3/4
             part: 3
+          - project: mobile-safari
+            browser: webkit
+            shard: 4/4
+            part: 4
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -126,7 +134,6 @@ jobs:
           cache-to: type=gha,mode=max,scope=worker-test
 
   containers:
-    needs: [web-checks, browser-checks, worker-checks, worker-container-check]
     runs-on: ubuntu-latest
     timeout-minutes: 4
     strategy:
@@ -153,10 +160,8 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=sha-${{ github.sha }},enable=${{ matrix.variant == 'web' }}
-            type=raw,value=latest,enable=${{ matrix.variant == 'web' && github.ref == 'refs/heads/main' }}
             type=ref,event=tag,enable=${{ matrix.variant == 'web' }}
             type=raw,value=worker-sha-${{ github.sha }},enable=${{ matrix.variant == 'worker' }}
-            type=raw,value=worker-latest,enable=${{ matrix.variant == 'worker' && github.ref == 'refs/heads/main' }}
             type=ref,event=tag,prefix=worker-,enable=${{ matrix.variant == 'worker' }}
           labels: |
             org.opencontainers.image.source=https://github.com/busykoala/b-nkliapp
@@ -178,9 +183,26 @@ jobs:
         if: github.event_name != 'pull_request'
         run: echo '${{ matrix.variant }} ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}' >> "$GITHUB_STEP_SUMMARY"
 
+  promote-moving-tags:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [containers, web-checks, browser-checks, worker-checks, worker-container-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Promote verified images
+        run: |
+          docker buildx imagetools create --tag "$IMAGE_NAME:latest" "$IMAGE_NAME:sha-$GITHUB_SHA"
+          docker buildx imagetools create --tag "$IMAGE_NAME:worker-latest" "$IMAGE_NAME:worker-sha-$GITHUB_SHA"
+
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: containers
+    needs: [containers, web-checks, browser-checks, worker-checks, worker-container-check]
     runs-on: [self-hosted, linux, x64, benchly]
     timeout-minutes: 4
     environment: production
