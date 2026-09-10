@@ -166,6 +166,10 @@ input::placeholder, textarea::placeholder { color: #596a61; opacity: 1; }
 .empty-statistics { border:1px dashed rgb(50 76 63 / 24%); border-radius:1.2rem; padding:1.2rem; color:#627068; }
 .lab-section { position:relative; }
 .lab-sticker { border:2px solid #9c7138; border-radius:.25rem; padding:.45rem .65rem; color:#8d642d; font-family:ui-monospace,monospace; font-size:.8rem; font-weight:800; transform:rotate(3deg); }
+.lab-months { display:grid; grid-template-columns:repeat(12,minmax(3.2rem,1fr)); gap:.35rem; overflow-x:auto; margin:.9rem 0 1rem; padding:.3rem .15rem .55rem; scrollbar-width:thin; }
+.lab-months a { display:grid; min-height:2.55rem; place-items:center; border:1px solid rgb(39 76 61 / 18%); border-radius:999px; color:#5b6b62; font-size:.7rem; font-weight:850; letter-spacing:.04em; text-transform:uppercase; transition:background .15s,color .15s,transform .15s; }
+.lab-months a:hover { transform:translateY(-1px); background:#e8dfc9; color:#254d3e; }
+.lab-months a[aria-current="page"] { border-color:#315f4d; background:#315f4d; color:#fff5dd; box-shadow:0 .35rem 1rem rgb(38 76 60 / 18%); }
 .lab-console { overflow:hidden; border:1px solid rgb(32 69 55 / 20%); border-radius:1.6rem; background:linear-gradient(145deg,rgb(30 68 55 / 96%),rgb(39 80 63 / 92%)); color:#f6ecd5; box-shadow:0 1.4rem 3.5rem rgb(29 55 45 / 18%),inset 0 1px rgb(255 255 255 / 14%); }
 .lab-console-header { display:flex; min-height:3.2rem; align-items:center; justify-content:space-between; gap:1rem; border-bottom:1px solid rgb(244 230 193 / 16%); padding:.7rem 1rem; color:#d8e3d5; font-family:ui-monospace,monospace; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; }
 .lab-console-header span { display:flex; align-items:center; gap:.45rem; }
@@ -258,6 +262,7 @@ input::placeholder, textarea::placeholder { color: #596a61; opacity: 1; }
   .municipality-pills { display:none; }
   .municipality-density { min-width:0; }
   .lab-copy { grid-template-columns:1fr; padding:1rem; }
+  .lab-months { grid-template-columns:repeat(4,minmax(0,1fr)); overflow:visible; margin-inline:0; }
   .lab-copy dl { grid-template-columns:repeat(3,1fr); }
   .lab-copy dl div { padding:.65rem .5rem; }
   .lab-copy dd { font-size:1rem; }

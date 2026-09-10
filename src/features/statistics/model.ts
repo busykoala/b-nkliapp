@@ -22,15 +22,15 @@ export type MunicipalitySummary = {
 export type CorrelationPoint = {
   id: string;
   title: string | null;
-  winterSunMinutes: number;
-  viewScore: number;
+  xValue: number;
+  yValue: number;
 };
 
 export type BoxPlotGroup = {
   quartile: number;
   count: number;
-  sunMinimum: number;
-  sunMaximum: number;
+  xMinimum: number;
+  xMaximum: number;
   minimum: number;
   lowerQuartile: number;
   median: number;
@@ -48,6 +48,14 @@ export type StatisticsDashboard = {
   records: Array<{ key: StatisticsRecordKey; fact: BenchFact }>;
   municipalities: MunicipalitySummary[];
   correlation: {
+    study: LabStudyKey;
+    month: number;
+    benchMetric: LabBenchMetric;
+    series: LabExternalSeries;
+    sourceYear: number;
+    sourceUrl: string;
+    perCapita: boolean;
+    hypothesesTested: number;
     coefficient: number | null;
     trend: { slope: number; intercept: number } | null;
     boxPlots: BoxPlotGroup[];
@@ -55,6 +63,10 @@ export type StatisticsDashboard = {
     points: CorrelationPoint[];
   };
 };
+
+export type LabBenchMetric = "benchCount" | "namedShare" | "backrestShare" | "coveredShare" | "averageElevation" | "winterSun" | "averageSeats" | "canopy";
+export type LabExternalSeries = "centenarians" | "alpacas" | "hotelNights" | "cinemaSeats" | "motorcycles" | "greenVotes" | "crimes" | "mri" | "populationGrowth" | "carePlaces" | "roadAccidents" | "woodHarvest";
+export type LabStudyKey = LabExternalSeries;
 
 export type MunicipalityPortrait = MunicipalitySummary & {
   sunnyKnown: number;
@@ -105,6 +117,42 @@ export function linearTrend(values: { count: number; sumX: number; sumY: number;
   if (count < 2 || denominator <= 0) return null;
   const slope = (count * sumXY - sumX * sumY) / denominator;
   return { slope, intercept: (sumY - slope * sumX) / count };
+}
+
+export function correlationSummary(points: Array<{ xValue: number; yValue: number }>) {
+  return points.reduce((summary, point) => ({
+    count: summary.count + 1,
+    sumX: summary.sumX + point.xValue,
+    sumY: summary.sumY + point.yValue,
+    sumXX: summary.sumXX + point.xValue * point.xValue,
+    sumYY: summary.sumYY + point.yValue * point.yValue,
+    sumXY: summary.sumXY + point.xValue * point.yValue,
+  }), { count: 0, sumX: 0, sumY: 0, sumXX: 0, sumYY: 0, sumXY: 0 });
+}
+
+function nearestRank(values: number[], proportion: number): number {
+  return values[Math.max(0, Math.ceil(values.length * proportion) - 1)];
+}
+
+export function quartileBoxPlots(points: Array<{ xValue: number; yValue: number }>): BoxPlotGroup[] {
+  const sorted = [...points].sort((left, right) => left.xValue - right.xValue || left.yValue - right.yValue);
+  return Array.from({ length: Math.min(4, sorted.length) }, (_, index) => {
+    const from = Math.floor(index * sorted.length / 4);
+    const to = Math.floor((index + 1) * sorted.length / 4);
+    const group = sorted.slice(from, to);
+    const values = group.map((point) => point.yValue).sort((left, right) => left - right);
+    return {
+      quartile: index + 1,
+      count: group.length,
+      xMinimum: Math.min(...group.map((point) => point.xValue)),
+      xMaximum: Math.max(...group.map((point) => point.xValue)),
+      minimum: values[0],
+      lowerQuartile: nearestRank(values, .25),
+      median: nearestRank(values, .5),
+      upperQuartile: nearestRank(values, .75),
+      maximum: values.at(-1) ?? values[0],
+    };
+  }).filter((group) => group.count > 0);
 }
 
 export function municipalityPersonality(municipality: Pick<MunicipalitySummary, "benchCount" | "sunnyShare" | "scenicShare" | "watersideShare" | "forestShare"> & { metadataKnownShare: number }): MunicipalityPersonality {

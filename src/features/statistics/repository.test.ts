@@ -26,7 +26,9 @@ it("builds rotating records, a correlation and municipality portraits from known
   expect(dashboard.locatedBenches).toBe(12);
   expect(dashboard.municipalityCount).toBe(12);
   expect(dashboard.records).toHaveLength(4);
-  expect(dashboard.correlation.sampleSize).toBe(12);
+  expect(dashboard.correlation.sampleSize).toBe(11);
+  expect(dashboard.correlation.study).toBe("alpacas");
+  expect(dashboard.correlation.hypothesesTested).toBeGreaterThan(200);
   expect(dashboard.correlation.coefficient).not.toBeNull();
   expect(dashboard.correlation.trend).not.toBeNull();
   expect(dashboard.correlation.boxPlots).toHaveLength(4);
@@ -39,6 +41,18 @@ it("builds rotating records, a correlation and municipality portraits from known
   expect(zurich).toMatchObject({ name: "Zürich", canton: "Zürich", benchCount: 1 });
   expect(zurich?.records.bestView?.id).toBe("osm-node-101");
   expect(zurich?.metadataKnownShare).toBe(1);
+});
+
+it("offers a different external-data study for every month", async () => {
+  const { readStatisticsDashboard } = await seededStatistics();
+  const correlations = Array.from({ length: 12 }, (_, index) => readStatisticsDashboard("2026-09-10", undefined, index + 1).correlation);
+  const studies = correlations.map((correlation) => correlation.study);
+  expect(new Set(studies).size).toBe(12);
+  expect(studies).toContain("alpacas");
+  expect(studies).toContain("cinemaSeats");
+  expect(studies).toContain("woodHarvest");
+  expect(correlations.every((correlation) => correlation.coefficient !== null && correlation.trend !== null)).toBe(true);
+  expect(correlations.every((correlation) => correlation.boxPlots.length === 4 && correlation.sampleSize >= 8)).toBe(true);
 });
 
 it("supports all roulette modes and rejects invalid municipality identifiers", async () => {

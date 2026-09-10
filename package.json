@@ -17,6 +17,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "data:refresh": "uv run python worker/benchly_worker.py refresh",
     "statistics:population:update": "tsx scripts/update-municipality-population.ts",
+    "statistics:external:update": "tsx scripts/update-statistics-external.ts",
     "test:worker": "uv run pytest",
     "test:worker:container": "docker build --target test -f worker/Dockerfile .",
     "data:catalog:generate": "tsx scripts/generate-data-jobs.ts",

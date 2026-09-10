@@ -6,9 +6,14 @@ test("discovers the rotating statistics and opens a municipality portrait", asyn
   await expect(page.getByRole("heading", { name: "Bänkli des Tages" })).toBeVisible();
   await expect(page.locator(".record-grid article")).toHaveCount(4);
   await expect(page.locator(".lab-sticker")).toContainText("r =");
+  await expect(page.locator(".lab-months a")).toHaveCount(12);
+  await expect(page.getByRole("heading", { name: "Ziehen Alpakas zusätzliche Bänkli an?" })).toBeVisible();
   await expect(page.locator(".lab-trend")).toBeVisible();
   await expect(page.locator(".box-group")).toHaveCount(4);
   await expect(page.locator(".municipality-density").first()).toContainText("1'000");
+
+  await page.locator('.lab-months a[href="/statistiken?lab=12"]').click();
+  await expect(page.getByRole("heading", { name: "Wird Holz geerntet, wo Bänkli stehen?" })).toBeVisible();
 
   const municipality = page.locator(".municipality-table a").first();
   await expect(municipality).toBeVisible();

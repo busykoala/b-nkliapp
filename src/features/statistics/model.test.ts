@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyRecordKeys, dateSeed, linearTrend, municipalityPersonality, pearsonCorrelation, ratio, statisticsRecordKeys } from "./model";
+import { correlationSummary, dailyRecordKeys, dateSeed, linearTrend, municipalityPersonality, pearsonCorrelation, quartileBoxPlots, ratio, statisticsRecordKeys } from "./model";
 
 describe("Bänklilogie statistics", () => {
   it("keeps missing denominators unknown instead of turning them into zero", () => {
@@ -16,6 +16,15 @@ describe("Bänklilogie statistics", () => {
   it("calculates an ordinary least-squares trend without inventing one for a flat input", () => {
     expect(linearTrend({ count: 3, sumX: 6, sumY: 12, sumXX: 14, sumXY: 28 })).toEqual({ slope: 2, intercept: 0 });
     expect(linearTrend({ count: 3, sumX: 3, sumY: 6, sumXX: 3, sumXY: 6 })).toBeNull();
+  });
+
+  it("summarizes points and builds four ordered box-plot groups", () => {
+    const points = Array.from({ length: 12 }, (_, index) => ({ xValue: index + 1, yValue: (index + 1) * 2 }));
+    expect(pearsonCorrelation(correlationSummary(points))).toBeCloseTo(1);
+    const groups = quartileBoxPlots(points);
+    expect(groups).toHaveLength(4);
+    expect(groups[0]).toMatchObject({ count: 3, xMinimum: 1, xMaximum: 3, median: 4 });
+    expect(groups.every((group) => group.lowerQuartile <= group.median && group.median <= group.upperQuartile)).toBe(true);
   });
 
   it("assigns the strongest factual municipality personality", () => {

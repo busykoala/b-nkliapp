@@ -35,9 +35,9 @@ function seed(sqlite: Database.Database) {
   const now = new Date().toISOString();
   const insertBench = sqlite.prepare(`
     INSERT INTO benches (id, osm_type, osm_id, latitude, longitude, backrest, armrest, covered,
-      wheelchair, seats, material, direction_degrees, description, raw_tags, active, source_updated_at, imported_at)
+      wheelchair, seats, material, direction_degrees, description, name, raw_tags, active, source_updated_at, imported_at)
     VALUES (@id, 'node', @osmId, @lat, @lon, @backrest, @armrest, @covered, @wheelchair, @seats,
-      @material, @direction, @place, @tags, 1, @now, @now)
+      @material, @direction, @place, @name, @tags, 1, @now, @now)
   `);
   const insertEnrichment = sqlite.prepare(`
     INSERT INTO bench_enrichments (bench_row_id, elevation_meters, in_forest, canopy_percent,
@@ -62,7 +62,7 @@ function seed(sqlite: Database.Database) {
       return;
     }
     for (const bench of sampleBenches) {
-      const result = insertBench.run({ ...bench, tags: JSON.stringify({ amenity: "bench", material: bench.material }), now });
+      const result = insertBench.run({ ...bench, name: bench.osmId % 2 ? bench.place : null, tags: JSON.stringify({ amenity: "bench", material: bench.material }), now });
       const rowId = Number(result.lastInsertRowid);
       const horizon = Array.from({ length: 72 }, (_, i) => Number((2 + 5 * Math.abs(Math.sin((i * Math.PI) / 36))).toFixed(1)));
       const obstructionTypes = Array.from({ length: 72 }, (_, i) => i % 13 === 0 ? "building" : i % 7 === 0 && bench.canopy > 15 ? "vegetation" : "terrain");

@@ -17,17 +17,25 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("title"), description: t("description") };
 }
 
-export default async function StatisticsPage() {
-  const [t, format, user] = await Promise.all([getTranslations(), getFormatter(), getCurrentUser()]);
+export default async function StatisticsPage({ searchParams }: { searchParams: Promise<{ lab?: string | string[] }> }) {
+  const [t, format, user, query] = await Promise.all([getTranslations(), getFormatter(), getCurrentUser(), searchParams]);
   const date = statisticsDate();
-  const data = readStatisticsDashboard(date);
+  const requestedMonth = typeof query.lab === "string" ? Number(query.lab) : Number.NaN;
+  const labMonth = Number.isInteger(requestedMonth) && requestedMonth >= 1 && requestedMonth <= 12 ? requestedMonth : Number(date.slice(5, 7));
+  const data = readStatisticsDashboard(date, undefined, labMonth);
   const number = (value: number) => format.number(value, { maximumFractionDigits: 0 });
   const decimal = (value: number, digits = 1) => format.number(value, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const percent = (value: number | null) => value === null ? t("common.values.unknown") : format.number(value, { style: "percent", maximumFractionDigits: 0 });
   const correlation = data.correlation.coefficient;
   const explainedVariance = correlation === null ? null : correlation * correlation;
-  const hourlySlope = data.correlation.trend ? data.correlation.trend.slope * 60 : null;
+  const slope = data.correlation.trend?.slope ?? null;
   const correlationTone = correlation === null ? t("statistics.lab.unknown") : Math.abs(correlation) < .2 ? t("statistics.lab.tiny") : Math.abs(correlation) < .5 ? t("statistics.lab.middling") : t("statistics.lab.strong");
+  const labMetric = (value: number) => data.correlation.benchMetric === "benchCount" ? number(value)
+    : data.correlation.benchMetric === "averageElevation" ? `${number(value)} m`
+      : data.correlation.benchMetric === "winterSun" ? `${decimal(value, 1)} h`
+        : data.correlation.benchMetric === "averageSeats" ? decimal(value, 1) : `${decimal(value, 1)}%`;
+  const seriesAxis = t(`statistics.lab.series.${data.correlation.series}.axis`, { year: data.correlation.sourceYear })
+    + (data.correlation.perCapita ? ` · ${t("statistics.lab.perHundredThousand")}` : "");
   const recordPresentation: Record<StatisticsRecordKey, { icon: React.ReactNode; value: (fact: BenchFact) => string }> = {
     highest: { icon: <MountainSnow />, value: (item) => `${number(item.metric ?? 0)} m` }, lowest: { icon: <MountainSnow />, value: (item) => `${number(item.metric ?? 0)} m` },
     sunniestWinter: { icon: <Sun />, value: (item) => t("statistics.units.hours", { value: number((item.metric ?? 0) / 60) }) }, shadiestWinter: { icon: <Sun />, value: (item) => t("statistics.units.hours", { value: number((item.metric ?? 0) / 60) }) },
@@ -89,17 +97,20 @@ export default async function StatisticsPage() {
 
     <section className="statistics-section lab-section">
       <div className="section-heading"><div><small>{t("statistics.lab.eyebrow")}</small><h2>{t("statistics.lab.title")}</h2></div><span className="lab-sticker">r = {correlation === null ? "?" : format.number(correlation, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+      <nav className="lab-months" aria-label={t("statistics.lab.archive")}>
+        {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => <Link key={month} href={`/statistiken?lab=${month}`} aria-current={month === data.correlation.month ? "page" : undefined} scroll={false}>{format.dateTime(new Date(Date.UTC(2026, month - 1, 15)), { month: "short" })}</Link>)}
+      </nav>
       <div className="lab-console">
         <header className="lab-console-header"><span><i /> {t("statistics.lab.status")}</span><strong>{t("statistics.lab.observations", { count: number(data.correlation.sampleSize) })}</strong></header>
-        <div className="lab-copy"><div><h3>{t("statistics.lab.question")}</h3><p>{t("statistics.lab.answer", { tone: correlationTone })}</p></div><dl><div><dt>{t("statistics.lab.coefficient")}</dt><dd>{correlation === null ? "—" : decimal(correlation, 2)}</dd></div><div><dt>{t("statistics.lab.explained")}</dt><dd>{explainedVariance === null ? "—" : percent(explainedVariance)}</dd></div><div><dt>{t("statistics.lab.slope")}</dt><dd>{hourlySlope === null ? "—" : t("statistics.lab.pointsPerHour", { value: decimal(hourlySlope, 1) })}</dd></div></dl></div>
+        <div className="lab-copy"><div><h3>{t(`statistics.lab.series.${data.correlation.series}.question`)}</h3><p>{t("statistics.lab.answer", { tone: correlationTone })}</p></div><dl><div><dt>{t("statistics.lab.coefficient")}</dt><dd>{correlation === null ? "—" : decimal(correlation, 2)}</dd></div><div><dt>{t("statistics.lab.explained")}</dt><dd>{explainedVariance === null ? "—" : percent(explainedVariance)}</dd></div><div><dt>{t(`statistics.lab.metrics.${data.correlation.benchMetric}.slope`)}</dt><dd>{slope === null ? "—" : t("statistics.lab.slopeValue", { value: decimal(slope, 1) })}</dd></div></dl></div>
         <div className="lab-verdict"><Activity /><div><small>{t("statistics.lab.verdictLabel")}</small><strong>{t("statistics.lab.verdict")}</strong></div></div>
         <div className="lab-visual-grid">
-          <CorrelationPlot points={data.correlation.points} trend={data.correlation.trend} label={t("statistics.lab.plotLabel")} trendLabel={t("statistics.lab.trendLabel")} xLabel={t("statistics.lab.xAxis")} yLabel={t("statistics.lab.yAxis")} />
-          <BoxPlot groups={data.correlation.boxPlots} label={t("statistics.lab.boxLabel")} title={t("statistics.lab.boxTitle")} description={t("statistics.lab.boxDescription")} groupLabel={(group) => t("statistics.lab.quartileRange", { from: number(group.sunMinimum / 60), to: number(group.sunMaximum / 60) })} />
+          <CorrelationPlot points={data.correlation.points} trend={data.correlation.trend} label={t("statistics.lab.plotLabel", { series: seriesAxis })} trendLabel={t("statistics.lab.trendLabel")} xLabel={t(`statistics.lab.metrics.${data.correlation.benchMetric}.axis`)} yLabel={seriesAxis} />
+          <BoxPlot groups={data.correlation.boxPlots} label={t("statistics.lab.boxLabel", { series: seriesAxis })} title={t("statistics.lab.boxTitle")} description={t("statistics.lab.boxDescription")} groupLabel={(group) => t("statistics.lab.quartileRange", { from: labMetric(group.xMinimum), to: labMetric(group.xMaximum) })} />
         </div>
-        <div className="lab-reality-checks"><span><small>{t("statistics.lab.sample")}</small><strong>{number(data.correlation.sampleSize)}</strong></span><span><small>{t("statistics.lab.causality")}</small><strong>{t("statistics.lab.none")}</strong></span><span><small>{t("statistics.lab.benchValue")}</small><strong>{t("statistics.lab.excellent")}</strong></span></div>
+        <div className="lab-reality-checks"><span><small>{t("statistics.lab.sample")}</small><strong>{t("statistics.lab.cantons", { count: number(data.correlation.sampleSize) })}</strong></span><span><small>{t("statistics.lab.causality")}</small><strong>{t("statistics.lab.none")}</strong></span><span><small>{t("statistics.lab.hypotheses")}</small><strong>{number(data.correlation.hypothesesTested)}</strong></span></div>
       </div>
-      <p className="method-note">{t("statistics.lab.note")}</p>
+      <p className="method-note">{t("statistics.lab.note", { year: data.correlation.sourceYear, count: number(data.correlation.hypothesesTested) })} <a href={data.correlation.sourceUrl} target="_blank" rel="noreferrer">{t("statistics.lab.source")}</a></p>
     </section>
 
     <footer className="statistics-footer"><span>{t("statistics.footer")}</span><Link href="/danke">{t("statistics.methodsLink")}</Link></footer>
