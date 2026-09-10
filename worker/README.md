@@ -209,7 +209,8 @@ publication and retry after 30 minutes; successful work is not repeated after a 
 The hourly job continues through pending batches for up to 20 minutes, then releases the worker
 lock before Kubernetes' deadline. A fixed 2,500-bench hourly allowance cannot finish a national
 sweep between daily terrain-input changes; the time budget lets later regions catch up while
-leaving time for the other scheduled jobs.
+leaving time for the other scheduled jobs. After priority edits, the sweep visits the oldest
+processed outcomes first, so repeated input changes also cannot starve later benches.
 
 ```bash
 uv run python worker/benchly_worker.py backfill-knowledge --database /data/benchly.sqlite \

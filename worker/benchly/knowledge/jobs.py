@@ -81,7 +81,8 @@ def backfill_knowledge(args):
               WHERE b.active=1 AND (o.bench_row_id IS NULL OR o.generation!=? OR o.input_revision!=COALESCE(r.revision,0)
                 OR (o.status='retryable_failure' AND julianday(o.processed_at)<julianday('now','-30 minutes')))
               """ + selection + """ ORDER BY CASE q.reason WHEN 'created' THEN 0 WHEN 'moved' THEN 0 WHEN 'source' THEN 2 ELSE 1 END,
-              CASE WHEN q.bench_row_id IS NULL THEN 1 ELSE 0 END,q.requested_at,b.row_id LIMIT ?""", parameters).fetchall()
+              CASE WHEN q.bench_row_id IS NULL THEN 1 ELSE 0 END,q.requested_at,
+              coalesce(o.processed_at,''),b.row_id LIMIT ?""", parameters).fetchall()
             if not rows:
                 break
             for raw in rows:

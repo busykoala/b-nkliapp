@@ -85,6 +85,32 @@ def test_moving_a_bench_invalidates_its_spatial_context(migrated_database):
     run(migrated_database)
 
 
+def test_repeated_source_changes_refresh_oldest_outcomes_without_delaying_moves(migrated_database, monkeypatch):
+    from benchly.knowledge import jobs
+    with sqlite3.connect(migrated_database) as connection:
+        for number in (124, 125):
+            connection.execute("""INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,raw_tags,source_updated_at,imported_at)
+                VALUES(?,'node',?,46.68,7.68,'{}','2026-09-09','2026-09-10')""", (f"osm-node-{number}", number))
+    run(migrated_database)
+    with sqlite3.connect(migrated_database) as connection:
+        connection.execute("UPDATE bench_knowledge_outcomes SET processed_at='2000-01-01T00:00:00Z'")
+    processed = []
+    original = jobs.prepare_bench
+    def prepare(database, bench, *args, **kwargs):
+        processed.append(bench['row_id'])
+        return original(database, bench, *args, **kwargs)
+    monkeypatch.setattr(jobs, 'prepare_bench', prepare)
+    args = SimpleNamespace(database=migrated_database, terrain_dir=None, noise_dir=None, limit=1,
+        after_row_id=None, queued_only=False)
+    for revision in range(2, 6):
+        with sqlite3.connect(migrated_database) as connection:
+            connection.execute('UPDATE knowledge_generation SET revision=?', (revision,))
+            if revision == 5:
+                connection.execute('UPDATE benches SET longitude=7.69 WHERE row_id=1')
+        backfill_knowledge(args)
+    assert processed == [1, 2, 3, 1]
+
+
 def test_noise_channels_preserve_zero_and_mask_nodata(migrated_database, tmp_path):
     import numpy as np
     import rasterio
