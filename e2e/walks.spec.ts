@@ -31,9 +31,15 @@ test("denied walk location leaves address fallback and preserves privacy", async
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await panel.getByRole("button", { name: "Mein Standort", exact: true }).click();
   await expect(panel.getByRole("status")).toContainText("Standort nicht verfügbar");
-  await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Bern");
-  await expect(panel.getByRole("option", { name: "Bern Haltestelle" })).toBeVisible();
-  await page.keyboard.press("ArrowDown"); await page.keyboard.press("Enter");
+  const input = panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" });
+  const station = panel.getByRole("option", { name: "Bern Haltestelle" });
+  await input.fill("Bern");
+  await expect(station).toBeVisible();
+  // Target the combobox after the asynchronous search; a global key press can
+  // reach Safari's page instead. Verify the highlighted option before choosing.
+  await input.press("ArrowDown");
+  await expect(station).toHaveAttribute("aria-selected", "true");
+  await input.press("Enter");
   await expect(panel.locator(".journey-start-summary")).toContainText("Bern");
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("46.949");
   expect(page.url()).not.toContain("46.949");
