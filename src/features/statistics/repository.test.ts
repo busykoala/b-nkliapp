@@ -1,0 +1,45 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, expect, it, vi } from "vitest";
+
+const folders: string[] = [];
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.resetModules();
+  for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true });
+});
+
+async function seededStatistics() {
+  const folder = mkdtempSync(join(tmpdir(), "benchly-statistics-"));
+  folders.push(folder);
+  vi.stubEnv("DATABASE_PATH", join(folder, "benchly.sqlite"));
+  vi.stubEnv("BENCHLY_SEED_DEMO", "true");
+  vi.resetModules();
+  return await import("./repository");
+}
+
+it("builds rotating records, a correlation and municipality portraits from known data", async () => {
+  const { readMunicipalityPortrait, readStatisticsDashboard } = await seededStatistics();
+  const dashboard = readStatisticsDashboard("2026-09-10");
+  expect(dashboard.totalBenches).toBe(12);
+  expect(dashboard.locatedBenches).toBe(12);
+  expect(dashboard.municipalityCount).toBe(12);
+  expect(dashboard.records).toHaveLength(4);
+  expect(dashboard.correlation.sampleSize).toBe(12);
+  expect(dashboard.correlation.coefficient).not.toBeNull();
+  expect(dashboard.benchOfTheDay?.id).toMatch(/^osm-node-/);
+
+  const zurich = readMunicipalityPortrait("261", undefined, new Date("2026-09-10T12:00:00Z"));
+  expect(zurich).toMatchObject({ name: "Zürich", canton: "Zürich", benchCount: 1 });
+  expect(zurich?.records.bestView?.id).toBe("osm-node-101");
+  expect(zurich?.metadataKnownShare).toBe(1);
+});
+
+it("supports all roulette modes and rejects invalid municipality identifiers", async () => {
+  const { readMunicipalityPortrait, readRouletteBench } = await seededStatistics();
+  expect(readRouletteBench("beautiful", () => 0)).toMatch(/^osm-node-/);
+  expect(readRouletteBench("sunny", () => .999)).toMatch(/^osm-node-/);
+  expect(readRouletteBench("wild", () => .5)).toMatch(/^osm-node-/);
+  expect(readMunicipalityPortrait("../../etc/passwd")).toBeNull();
+});

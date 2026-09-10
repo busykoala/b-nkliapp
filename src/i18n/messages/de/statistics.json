@@ -1,0 +1,35 @@
+{
+  "metadata": { "title": "Institut für angewandte Bänklilogie", "description": "Schweizer Bänkli-Rekorde, Gemeinde-Portraits und wissenschaftlich fragwürdige Zusammenhänge." },
+  "hero": { "eyebrow": "Abteilung für sitzende Forschung", "title": "Institut für angewandte Bänklilogie", "description": "Wir behandeln Schweizer Sitzgelegenheiten mit einem Ernst, um den sie nie gebeten haben. Alle Resultate stammen aus vorhandenen Bänkli-Daten – Lücken inklusive." },
+  "totals": { "benches": "bekannte Bänkli", "enriched": "mit Landschaftsanalyse", "located": "amtlich einer Gemeinde zugeordnet" },
+  "units": { "hours": "{value} h" },
+  "values": { "somewhere": "Irgendwo in der Schweiz", "noData": "Noch nicht genügend Daten" },
+  "daily": { "eyebrow": "Tagesprotokoll", "title": "Bänkli des Tages", "note": "Für alle am selben Schweizer Kalendertag gleich. Morgen sitzt der Zufall anderswo." },
+  "roulette": {
+    "eyebrow": "Feldversuch Nr. 3", "title": "Bänkli-Roulette", "description": "Keine Entscheidungskraft nötig. Wähle nur, wie vernünftig der Zufall sein soll.",
+    "beautiful": { "title": "Schön", "description": "Aussichtswert ab 80" },
+    "sunny": { "title": "Sonnig", "description": "Mindestens vier Winterstunden" },
+    "wild": { "title": "Chaos", "description": "Wirklich irgendeins" }
+  },
+  "records": { "eyebrow": "Eidgenössisches Rekordbüro", "title": "Bänkli-Superlative des Tages", "highest": "Höchstes bekanntes Bänkli", "lowest": "Tiefstes bekanntes Bänkli", "sunniestWinter": "Meiste modellierte Wintersonne", "shadiestWinter": "Wenigste modellierte Wintersonne", "sunniestSummer": "Meiste modellierte Sommersonne", "shadiestSummer": "Wenigste modellierte Sommersonne", "bestView": "Höchster Aussichtswert", "closestWater": "Am nächsten am Wasser", "furthestWater": "Am weitesten vom Wasser", "densestCanopy": "Dichtestes Blätterdach", "clearestCanopy": "Freiestes Blätterdach", "closestPath": "Am nächsten am Weg", "furthestPath": "Am weitesten vom Weg", "mostSeats": "Meiste bekannte Sitzplätze", "mostBuildings": "Geselligstes Gebäudeumfeld", "fewestBuildings": "Wenigste Gebäude im Umkreis", "mostBlockedView": "Stärkste Gebäudeabschirmung", "wildest": "Höchster Naturwert", "remotest": "Höchster Abgelegenheitswert", "note": "Heute zeigt das Rekordbüro vier aus 19 möglichen Disziplinen; morgen wird neu gezogen. Rekorde gelten nur innerhalb der aktuell bekannten und für das jeweilige Merkmal ausgewerteten Bänkli. Modellwerte sind keine Beobachtungen vor Ort." },
+  "municipalities": { "eyebrow": "Kommunale Sitzordnung", "title": "Gemeinden mit den meisten bekannten Bänkli", "description": "{count} Gemeinden sind derzeit amtlich zugeordnet und können ein Portrait erhalten.", "benches": "Bänkli", "empty": "Die amtliche Gemeindezuordnung wird gerade aufgebaut. Die Portraits erscheinen, sobald genügend Daten vorliegen.", "note": "Die Rangliste zählt bekannte Bänkli, nicht Sitzplätze. Gemeindeabdeckung im gesamten Bestand: {coverage}. Unterschiedliche Kartierungsdichte kann das Resultat stark beeinflussen." },
+  "lab": { "eyebrow": "Statistik-Labor", "title": "Korrelation des Monats", "question": "Macht Wintersonne die Aussicht besser?", "answer": "Der Zusammenhang ist {tone}. Das beweist ungefähr gar nichts.", "unknown": "noch unbekannt", "tiny": "kaum messbar", "middling": "vorsichtig sichtbar", "strong": "auffällig", "sample": "Ausgewertete Bänkli", "causality": "Kausalität", "none": "Nicht einmal ein bisschen nachgewiesen", "benchValue": "Bänkliwert", "excellent": "Hervorragend", "plotLabel": "Stichprobe von Bänkli nach modellierten Wintersonnenminuten und Aussichtswert", "xAxis": "Wintersonne pro Tag", "yAxis": "Aussichtswert", "note": "Pearson-Korrelation über alle Bänkli mit beiden Modellwerten. Die Grafik zeigt eine gleichmässige technische Stichprobe. Gelände, Höhe, Region und Kartierungsqualität werden nicht kontrolliert." },
+  "footer": "Geprüft vom Ausschuss für unverhältnismässige Sitzanalyse.", "methodsLink": "Quellen & Methoden",
+  "municipality": {
+    "metadataTitle": "{name} – Bänkli in Zahlen", "metadataDescription": "{count} bekannte Bänkli und ein transparentes Datenportrait für {name}.", "notFound": "Gemeinde nicht gefunden", "back": "Zurück zur Bänklilogie", "title": "Bänkli in Zahlen",
+    "personality": {
+      "eyebrow": "Amtlich inoffizieller Gemeindetyp",
+      "sunny": { "title": "Sonnenanbeterin", "description": "Überdurchschnittlich viele ausgewertete Bänkli bekommen auch im Winter ordentlich direktes Licht." },
+      "scenic": { "title": "Bergguckerin", "description": "Hier sitzt man offenbar gern mit Horizont. Der Anteil hoher Aussichtswerte sticht heraus." },
+      "waterside": { "title": "Uferhockerin", "description": "Wasser ist bei erstaunlich vielen ausgewerteten Bänkli nicht weit." },
+      "forest": { "title": "Waldschrat", "description": "Viele ausgewertete Bänkli liegen im Wald. Harz an der Hose ist statistisch nicht erfasst." },
+      "collector": { "title": "Bänkli-Sammlerin", "description": "Die Menge macht Eindruck, auch ohne einen einzelnen Qualitätswert daraus zu erfinden." },
+      "mysterious": { "title": "Datenmysterium", "description": "Diese Gemeinde bewahrt noch einige Geheimnisse. Fehlende Angaben bleiben bewusst unbekannt." }
+    },
+    "numbers": { "eyebrow": "Das Portrait", "title": "Was die Daten sagen", "benches": "bekannte Bänkli", "sunny": "mit mindestens 3 h Wintersonne", "scenic": "mit Aussichtswert ab 75", "water": "höchstens 250 m vom Wasser", "forest": "im Wald", "wheelchair": "als rollstuhlgerecht erfasst", "note": "Prozentwerte verwenden nur Bänkli, bei denen das jeweilige Merkmal bekannt ist. Darum zeigen wir darunter stets die Stichprobengrösse." },
+    "known": "von {count} ausgewertet",
+    "records": { "eyebrow": "Lokales Rekordbüro", "title": "Die Spitzenplätze" },
+    "audit": { "eyebrow": "Was könnte besser werden?", "title": "Bänkli-Datenaudit", "description": "Keine geheime Gesamtnote, sondern konkrete Lücken, die sich prüfen und verbessern lassen.", "backrest": "ohne Angabe zur Rückenlehne", "seats": "ohne bekannte Sitzplatzzahl", "direction": "ohne bekannte Blickrichtung", "freshness": "mit unbekannter oder alter OSM-Aktualität", "coverage": "{coverage} der vier Basisangaben sind bekannt", "note": "Bei {stale} Bänkli liegt die letzte OSM-Bearbeitung mehr als fünf Jahre zurück; bei {unknown} ist die OSM-Aktualität unbekannt. Das ist Kartierungsalter, nicht das Alter des Bänklis." },
+    "allStatistics": "Alle Bänklilogie-Resultate"
+  }
+}

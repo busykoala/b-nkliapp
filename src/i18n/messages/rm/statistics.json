@@ -1,0 +1,35 @@
+{
+  "metadata": { "title": "Institut per bancologia applitgada", "description": "Records da bancs svizzers, purtrets communals e connexs statisticamain dubius." },
+  "hero": { "eyebrow": "Departament da perscrutaziun sedentara", "title": "Institut per bancologia applitgada", "description": "Nus examinain ils bancs svizzers cun ina seriusadad ch’els n’han mai dumandà. Tut ils resultats derivan da las datas avant maun, inclus las largias." },
+  "totals": { "benches": "bancs enconuschents", "enriched": "cun analisa da la cuntrada", "located": "attribuids uffizialmain ad ina vischnanca" },
+  "units": { "hours": "{value} h" },
+  "values": { "somewhere": "Insanua en Svizra", "noData": "Anc betg avunda datas" },
+  "daily": { "eyebrow": "Protocol dal di", "title": "Banc dal di", "note": "Il medem per tuts durant il medem di civil svizzer. Damaun sesa la casualitad insanua auter." },
+  "roulette": {
+    "eyebrow": "Experiment da champ nr. 3", "title": "Rulleta da bancs", "description": "Naginas decisiuns grevas. Tscherna mo quant raschunaivla che la casualitad duai esser.",
+    "beautiful": { "title": "Bel", "description": "Vista cun almain 80 puncts" },
+    "sunny": { "title": "Suleglià", "description": "Almain quatter uras d’enviern" },
+    "wild": { "title": "Chaos", "description": "Propi in casual" }
+  },
+  "records": { "eyebrow": "Biro federal da records", "title": "Superlativs dal di", "highest": "Banc enconuschent il pli aut", "lowest": "Banc enconuschent il pli bass", "sunniestWinter": "Il pli bler sulegl d’enviern modellà", "shadiestWinter": "Il pli pauc sulegl d’enviern modellà", "sunniestSummer": "Il pli bler sulegl da stad modellà", "shadiestSummer": "Il pli pauc sulegl da stad modellà", "bestView": "La pli auta valitaziun da vista", "closestWater": "Il pli datiers da l’aua", "furthestWater": "Il pli lunsch da l’aua", "densestCanopy": "Il tetg da feglia il pli spess", "clearestCanopy": "Il tetg da feglia il pli avert", "closestPath": "Il pli datiers d’ina senda", "furthestPath": "Il pli lunsch d’ina senda", "mostSeats": "Il pli blers plazs enconuschents", "mostBuildings": "Il conturn il pli surbajegià", "fewestBuildings": "Il pli pauc edifizis en il conturn", "mostBlockedView": "La pli ferma schermada tras edifizis", "wildest": "La pli auta valur da natira", "remotest": "La pli auta valur d’isolaziun", "note": "Oz mussa il biro quatter da 19 disciplinas; damaun datti ina nova schelta. Ils records valan mo tranter ils bancs enconuschents ed analisads per la caracteristica. Valurs modelladas n’èn betg observaziuns al lieu." },
+  "municipalities": { "eyebrow": "Urden da seser communal", "title": "Vischnancas cun ils pli blers bancs enconuschents", "description": "{count} vischnancas èn actualmain attribuidas uffizialmain e pon survegnir in purtret.", "benches": "bancs", "empty": "L’attribuziun uffiziala a las vischnancas vegn gist construida. Ils purtrets cumparan uschespert che las datas bastan.", "note": "La rangaziun dumbra bancs enconuschents, betg plazs da seser. Cuvrida communala da l’inventari: {coverage}. Differenzas da cartografia pon influenzar fermamain il resultat." },
+  "lab": { "eyebrow": "Labor statistic", "title": "Correlaziun dal mais", "question": "Fa il sulegl d’enviern la vista pli bella?", "answer": "Il connex è {tone}. Quai cumprova circa nagut.", "unknown": "anc nunenconuschent", "tiny": "strusch mesirabel", "middling": "vesaivel cun precauziun", "strong": "remartgabel", "sample": "Bancs analisads", "causality": "Causalitad", "none": "Insumma betg cumprovada", "benchValue": "Valur bancologica", "excellent": "Excellent", "plotLabel": "Emprova da bancs tenor minutas da sulegl d’enviern modelladas e valitaziun da vista", "xAxis": "Sulegl d’enviern per di", "yAxis": "Valitaziun da vista", "note": "Correlaziun da Pearson sur tut ils bancs cun omaduas valurs modelladas. La grafica mussa ina emprova tecnica regulara. Cuntrada, autezza, regiun e qualitad da cartografia na vegnan betg controlladas." },
+  "footer": "Controllà dal comité per analisas sproporziunadas da sesidas.", "methodsLink": "Funtaunas e metodas",
+  "municipality": {
+    "metadataTitle": "{name} – bancs en cifras", "metadataDescription": "{count} bancs enconuschents ed in purtret transparent da datas per {name}.", "notFound": "Vischnanca betg chattada", "back": "Enavos a la bancologia", "title": "Bancs en cifras",
+    "personality": {
+      "eyebrow": "Tip communal uffizialmain inuffizial",
+      "sunny": { "title": "Aduradra dal sulegl", "description": "Ina part remartgabla dals bancs analisads survegn er d’enviern blera glisch directa." },
+      "scenic": { "title": "Observadra d’orizonts", "description": "Qua sesan ins apparentamain gugent cun vista. La part da bunas valitaziuns da vista dat en egl." },
+      "waterside": { "title": "Amia da la riva", "description": "Per surprendentamain blers bancs analisads n’è l’aua betg lunsch davent." },
+      "forest": { "title": "Spiert dal guaud", "description": "Blers bancs analisads èn en il guaud. Rascha sin las chautschas n’è betg registrada." },
+      "collector": { "title": "Collectadra da bancs", "description": "La quantitad impressiunescha senza inventar ina nota totala." },
+      "mysterious": { "title": "Misteri da datas", "description": "Questa vischnanca conserva anc intgins secrets. Indicaziuns mancantas restan sapientivamain nunenconuschentas." }
+    },
+    "numbers": { "eyebrow": "Il purtret", "title": "Tge che las datas din", "benches": "bancs enconuschents", "sunny": "cun almain 3 h sulegl d’enviern", "scenic": "cun vista d’almain 75", "water": "maximalmain 250 m da l’aua", "forest": "en il guaud", "wheelchair": "registrads sco accessibels cun sutga cun rodas", "note": "Las procentualas dovran mo bancs nua che la caracteristica è enconuschenta. Perquai mussain nus adina la grondezza da l’emprova." },
+    "known": "{count} analisads",
+    "records": { "eyebrow": "Biro local da records", "title": "Ils emprims plazs" },
+    "audit": { "eyebrow": "Tge pudess vegnir meglier?", "title": "Audit da datas dals bancs", "description": "Nagina nota totala secreta, mabain largias concretas che pon vegnir controlladas e meglieradas.", "backrest": "senza indicaziun dal pusape", "seats": "senza dumber da plazs enconuschent", "direction": "senza direcziun enconuschenta", "freshness": "cun actualitad OSM nunenconuschenta u veglia", "coverage": "{coverage} da las quatter indicaziuns da basa èn enconuschentas", "note": "Tar {stale} bancs è l’ultima midada OSM pli veglia che tschintg onns; tar {unknown} è l’actualitad OSM nunenconuschenta. Quai è la vegliadetgna da la cartografia, betg dal banc." },
+    "allStatistics": "Tut ils resultats bancologics"
+  }
+}

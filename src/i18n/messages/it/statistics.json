@@ -1,0 +1,35 @@
+{
+  "metadata": { "title": "Istituto di panchinologia applicata", "description": "Record delle panchine svizzere, ritratti comunali e relazioni statisticamente discutibili." },
+  "hero": { "eyebrow": "Dipartimento di ricerca da seduti", "title": "Istituto di panchinologia applicata", "description": "Studiamo le panchine svizzere con una serietà che non hanno mai chiesto. Tutti i risultati provengono dai dati disponibili, lacune comprese." },
+  "totals": { "benches": "panchine note", "enriched": "con analisi del paesaggio", "located": "assegnate ufficialmente a un comune" },
+  "units": { "hours": "{value} h" },
+  "values": { "somewhere": "Da qualche parte in Svizzera", "noData": "Dati ancora insufficienti" },
+  "daily": { "eyebrow": "Verbale quotidiano", "title": "Panchina del giorno", "note": "Uguale per tutti nello stesso giorno civile svizzero. Domani il caso si siederà altrove." },
+  "roulette": {
+    "eyebrow": "Esperimento sul campo n. 3", "title": "Roulette delle panchine", "description": "Nessuna decisione difficile. Scegli solo quanto debba essere ragionevole il caso.",
+    "beautiful": { "title": "Bella", "description": "Vista con almeno 80 punti" },
+    "sunny": { "title": "Soleggiata", "description": "Almeno quattro ore invernali" },
+    "wild": { "title": "Caos", "description": "Davvero una qualsiasi" }
+  },
+  "records": { "eyebrow": "Ufficio federale dei record", "title": "Superlativi del giorno", "highest": "Panchina nota più alta", "lowest": "Panchina nota più bassa", "sunniestWinter": "Più sole invernale modellato", "shadiestWinter": "Meno sole invernale modellato", "sunniestSummer": "Più sole estivo modellato", "shadiestSummer": "Meno sole estivo modellato", "bestView": "Punteggio panoramico più alto", "closestWater": "Più vicina all’acqua", "furthestWater": "Più lontana dall’acqua", "densestCanopy": "Chioma più fitta", "clearestCanopy": "Chioma più aperta", "closestPath": "Più vicina a un sentiero", "furthestPath": "Più lontana da un sentiero", "mostSeats": "Più posti noti", "mostBuildings": "Ambiente più edificato", "fewestBuildings": "Meno edifici nei dintorni", "mostBlockedView": "Schermatura edilizia più forte", "wildest": "Valore naturale più alto", "remotest": "Valore di isolamento più alto", "note": "Oggi l’ufficio mostra quattro discipline su 19; domani si estrae di nuovo. I record valgono solo tra le panchine note e analizzate per la caratteristica. I valori modellati non sono osservazioni sul posto." },
+  "municipalities": { "eyebrow": "Ordine dei posti comunale", "title": "Comuni con più panchine note", "description": "{count} comuni sono attualmente assegnati ufficialmente e possono ricevere un ritratto.", "benches": "panchine", "empty": "L’assegnazione ufficiale ai comuni è in costruzione. I ritratti appariranno quando i dati saranno sufficienti.", "note": "La classifica conta le panchine note, non i posti a sedere. Copertura comunale dell’intero inventario: {coverage}. Differenze nella mappatura possono influire molto sul risultato." },
+  "lab": { "eyebrow": "Laboratorio statistico", "title": "Correlazione del mese", "question": "Il sole invernale migliora il panorama?", "answer": "La relazione è {tone}. Questo non dimostra praticamente nulla.", "unknown": "ancora sconosciuta", "tiny": "appena misurabile", "middling": "visibile con cautela", "strong": "notevole", "sample": "Panchine analizzate", "causality": "Causalità", "none": "Per nulla dimostrata", "benchValue": "Valore panchinologico", "excellent": "Eccellente", "plotLabel": "Campione di panchine per minuti di sole invernale modellati e punteggio panoramico", "xAxis": "Sole invernale al giorno", "yAxis": "Punteggio panoramico", "note": "Correlazione di Pearson su tutte le panchine con entrambi i valori modellati. Il grafico mostra un campione tecnico regolare. Terreno, altitudine, regione e qualità della mappatura non sono controllati." },
+  "footer": "Verificato dal comitato per l’analisi sproporzionata dei posti a sedere.", "methodsLink": "Fonti e metodi",
+  "municipality": {
+    "metadataTitle": "{name} – panchine in cifre", "metadataDescription": "{count} panchine note e un ritratto trasparente dei dati per {name}.", "notFound": "Comune non trovato", "back": "Torna alla panchinologia", "title": "Panchine in cifre",
+    "personality": {
+      "eyebrow": "Tipo comunale ufficialmente ufficioso",
+      "sunny": { "title": "Adoratrice del sole", "description": "Una quota notevole delle panchine analizzate riceve molta luce diretta anche in inverno." },
+      "scenic": { "title": "Cacciatrice di orizzonti", "description": "Qui sembra piacere sedersi davanti al paesaggio. La quota di punteggi panoramici elevati spicca." },
+      "waterside": { "title": "Amica delle rive", "description": "Per un numero sorprendente di panchine analizzate l’acqua non è lontana." },
+      "forest": { "title": "Spirito del bosco", "description": "Molte panchine analizzate sono nel bosco. La resina sui pantaloni non è registrata." },
+      "collector": { "title": "Collezionista di panchine", "description": "La quantità impressiona senza bisogno di inventare un punteggio complessivo." },
+      "mysterious": { "title": "Mistero dei dati", "description": "Questo comune custodisce ancora qualche segreto. Le informazioni mancanti restano volutamente sconosciute." }
+    },
+    "numbers": { "eyebrow": "Il ritratto", "title": "Cosa dicono i dati", "benches": "panchine note", "sunny": "con almeno 3 h di sole invernale", "scenic": "con panorama da almeno 75", "water": "a non più di 250 m dall’acqua", "forest": "nel bosco", "wheelchair": "registrate accessibili in sedia a rotelle", "note": "Le percentuali usano solo le panchine per cui la caratteristica è nota. Per questo mostriamo sempre la dimensione del campione." },
+    "known": "{count} analizzate",
+    "records": { "eyebrow": "Ufficio locale dei record", "title": "I primi posti" },
+    "audit": { "eyebrow": "Cosa si potrebbe migliorare?", "title": "Audit dei dati", "description": "Nessun voto complessivo segreto, ma lacune concrete che si possono verificare e colmare.", "backrest": "senza indicazione dello schienale", "seats": "senza numero di posti noto", "direction": "senza direzione nota", "freshness": "con aggiornamento OSM ignoto o vecchio", "coverage": "È noto il {coverage} dei quattro dati di base", "note": "Per {stale} panchine l’ultima modifica OSM risale a più di cinque anni fa; per {unknown} la freschezza OSM è ignota. È l’età della mappatura, non della panchina." },
+    "allStatistics": "Tutti i risultati panchinologici"
+  }
+}

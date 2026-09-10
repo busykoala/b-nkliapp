@@ -49,6 +49,11 @@ function seed(sqlite: Database.Database) {
       @confidence, @view, @confidence, @components, @obstructionTypes, @obstructionDistances,
       @buildingObstruction, @vegetationObstruction, @distanceBuilding, @buildingCount, @viewLabels, 'demo-2.0', @now)
   `);
+  const insertGeography = sqlite.prepare(`
+    INSERT INTO bench_geography (bench_row_id, municipality_id, municipality_name, canton_id, canton_name,
+      locality_name, confidence, source_version, method_version, computed_at)
+    VALUES (@rowId, @municipalityId, @municipality, @cantonId, @canton, @place, 'high', 'demo-1', 'demo-1', @now)
+  `);
   sqlite.exec("BEGIN IMMEDIATE");
   try {
     const count = sqlite.prepare("SELECT count(*) AS count FROM benches").get() as { count: number };
@@ -58,10 +63,12 @@ function seed(sqlite: Database.Database) {
     }
     for (const bench of sampleBenches) {
       const result = insertBench.run({ ...bench, tags: JSON.stringify({ amenity: "bench", material: bench.material }), now });
+      const rowId = Number(result.lastInsertRowid);
       const horizon = Array.from({ length: 72 }, (_, i) => Number((2 + 5 * Math.abs(Math.sin((i * Math.PI) / 36))).toFixed(1)));
       const obstructionTypes = Array.from({ length: 72 }, (_, i) => i % 13 === 0 ? "building" : i % 7 === 0 && bench.canopy > 15 ? "vegetation" : "terrain");
       const viewLabels = [bench.components[1] > 0.7 ? "Bergblick" : null, bench.components[2] > 0.75 ? "Seeblick" : null, bench.components[0] > 0.85 ? "Weitsicht" : null].filter(Boolean);
-      insertEnrichment.run({ ...bench, rowId: Number(result.lastInsertRowid), horizon: JSON.stringify(horizon), components: JSON.stringify({ openness: bench.components[0], relief: bench.components[1], water: bench.components[2], naturalness: bench.components[3], remoteness: bench.components[4] }), obstructionTypes: JSON.stringify(obstructionTypes), obstructionDistances: JSON.stringify(Array(72).fill(85)), buildingObstruction: 8.3, vegetationObstruction: bench.canopy / 3, distanceBuilding: 42, buildingCount: 5, viewLabels: JSON.stringify(viewLabels), now });
+      insertEnrichment.run({ ...bench, rowId, horizon: JSON.stringify(horizon), components: JSON.stringify({ openness: bench.components[0], relief: bench.components[1], water: bench.components[2], naturalness: bench.components[3], remoteness: bench.components[4] }), obstructionTypes: JSON.stringify(obstructionTypes), obstructionDistances: JSON.stringify(Array(72).fill(85)), buildingObstruction: 8.3, vegetationObstruction: bench.canopy / 3, distanceBuilding: 42, buildingCount: 5, viewLabels: JSON.stringify(viewLabels), now });
+      insertGeography.run({ ...bench, rowId, now });
     }
     sqlite.exec("COMMIT");
   } catch (error) {

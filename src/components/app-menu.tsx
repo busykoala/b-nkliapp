@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bookmark, Download, Footprints, Info, LogIn, LogOut, Menu, Plus, Rss, Share, X } from "lucide-react";
+import { BarChart3, Bookmark, Download, Footprints, Info, LogIn, LogOut, Menu, Plus, Rss, Share, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { CurrentUser } from "@/lib/security";
 import { logout } from "@/app/actions/account";
@@ -61,6 +61,7 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
           {user ? <Link aria-label={t("common.navigation.profile")} href="/profil" className="app-menu-row" onClick={close}><span className="app-menu-avatar"><TrailAvatar seed={user.avatarSeed} username={user.username} compact /></span>  {t("common.navigation.profile")}</Link>
             : <button aria-label={t("common.navigation.signIn")} className="app-menu-row" onClick={openAccount}><LogIn size={19} /> {t("common.navigation.signIn")}</button>}
           {user && <form action={logout}><button className="app-menu-row" onClick={close}><LogOut size={19} /> {t("common.navigation.signOut")}</button></form>}
+          <Link aria-label={t("common.navigation.statistics")} href="/statistiken" className={`app-menu-row ${pathname === "/statistiken" || pathname.startsWith("/gemeinde/") ? "is-current" : ""}`} onClick={close}><BarChart3 size={19} /> {t("common.navigation.statistics")}</Link>
           {(ios || installEvent) && <button className="app-menu-row" onClick={install}><Download size={19} /> {t("common.install.button")}</button>}
           <Link aria-label={t("common.navigation.about")} href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Info size={19} /> {t("common.navigation.about")}</Link>
         </nav>

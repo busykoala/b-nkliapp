@@ -1,0 +1,35 @@
+{
+  "metadata": { "title": "Institut de bancologie appliquée", "description": "Records des bancs suisses, portraits communaux et liens statistiquement douteux." },
+  "hero": { "eyebrow": "Département de recherche assise", "title": "Institut de bancologie appliquée", "description": "Nous étudions les bancs suisses avec un sérieux qu’ils n’ont jamais demandé. Tous les résultats reposent sur les données disponibles, lacunes comprises." },
+  "totals": { "benches": "bancs connus", "enriched": "avec analyse du paysage", "located": "attribués officiellement à une commune" },
+  "units": { "hours": "{value} h" },
+  "values": { "somewhere": "Quelque part en Suisse", "noData": "Pas encore assez de données" },
+  "daily": { "eyebrow": "Rapport quotidien", "title": "Banc du jour", "note": "Le même pour tout le monde pendant la journée civile suisse. Demain, le hasard s’assiéra ailleurs." },
+  "roulette": {
+    "eyebrow": "Expérience de terrain n° 3", "title": "Roulette des bancs", "description": "Aucune décision difficile. Choisis seulement le degré de sagesse du hasard.",
+    "beautiful": { "title": "Beau", "description": "Vue notée au moins 80" },
+    "sunny": { "title": "Ensoleillé", "description": "Au moins quatre heures d’hiver" },
+    "wild": { "title": "Chaos", "description": "Vraiment n’importe lequel" }
+  },
+  "records": { "eyebrow": "Bureau fédéral des records", "title": "Superlatifs du jour", "highest": "Banc connu le plus haut", "lowest": "Banc connu le plus bas", "sunniestWinter": "Plus de soleil hivernal modélisé", "shadiestWinter": "Moins de soleil hivernal modélisé", "sunniestSummer": "Plus de soleil estival modélisé", "shadiestSummer": "Moins de soleil estival modélisé", "bestView": "Meilleure note de vue", "closestWater": "Le plus proche de l’eau", "furthestWater": "Le plus loin de l’eau", "densestCanopy": "Canopée la plus dense", "clearestCanopy": "Canopée la plus ouverte", "closestPath": "Le plus proche d’un chemin", "furthestPath": "Le plus loin d’un chemin", "mostSeats": "Plus grand nombre de places connu", "mostBuildings": "Environnement le plus bâti", "fewestBuildings": "Le moins de bâtiments alentour", "mostBlockedView": "Écran bâti le plus fort", "wildest": "Indice de nature le plus élevé", "remotest": "Indice d’isolement le plus élevé", "note": "Aujourd’hui, le bureau présente quatre disciplines parmi 19 ; demain, nouveau tirage. Les records ne concernent que les bancs connus et analysés pour la caractéristique donnée. Les valeurs modélisées ne sont pas des observations sur place." },
+  "municipalities": { "eyebrow": "Plan de table communal", "title": "Communes avec le plus de bancs connus", "description": "{count} communes sont actuellement attribuées officiellement et peuvent recevoir un portrait.", "benches": "bancs", "empty": "L’attribution officielle aux communes est en cours. Les portraits apparaîtront dès que les données suffiront.", "note": "Le classement compte les bancs connus, pas les places assises. Couverture communale du parc complet : {coverage}. Les différences de cartographie peuvent fortement influencer le résultat." },
+  "lab": { "eyebrow": "Laboratoire statistique", "title": "Corrélation du mois", "question": "Le soleil d’hiver améliore-t-il la vue ?", "answer": "Le lien est {tone}. Cela ne prouve à peu près rien.", "unknown": "encore inconnu", "tiny": "à peine mesurable", "middling": "prudemment visible", "strong": "frappant", "sample": "Bancs analysés", "causality": "Causalité", "none": "Absolument pas démontrée", "benchValue": "Valeur bancologique", "excellent": "Excellente", "plotLabel": "Échantillon de bancs selon les minutes de soleil hivernal modélisées et la note de vue", "xAxis": "Soleil hivernal par jour", "yAxis": "Note de vue", "note": "Corrélation de Pearson sur tous les bancs disposant des deux valeurs modélisées. Le graphique montre un échantillon technique régulier. Relief, altitude, région et qualité cartographique ne sont pas contrôlés." },
+  "footer": "Validé par le comité d’analyse disproportionnée des sièges.", "methodsLink": "Sources et méthodes",
+  "municipality": {
+    "metadataTitle": "{name} – les bancs en chiffres", "metadataDescription": "{count} bancs connus et un portrait transparent des données pour {name}.", "notFound": "Commune introuvable", "back": "Retour à la bancologie", "title": "Les bancs en chiffres",
+    "personality": {
+      "eyebrow": "Type communal officiellement officieux",
+      "sunny": { "title": "Adoratrice du soleil", "description": "Une part remarquable des bancs analysés reçoit encore beaucoup de lumière directe en hiver." },
+      "scenic": { "title": "Guetteuse d’horizons", "description": "Ici, on semble aimer s’asseoir face au paysage. La part de bonnes notes de vue se distingue." },
+      "waterside": { "title": "Amie des rives", "description": "L’eau n’est étonnamment pas loin de nombreux bancs analysés." },
+      "forest": { "title": "Esprit des bois", "description": "De nombreux bancs analysés se trouvent en forêt. La résine sur le pantalon n’est pas recensée." },
+      "collector": { "title": "Collectionneuse de bancs", "description": "Le nombre impressionne sans qu’il soit nécessaire d’inventer une note globale." },
+      "mysterious": { "title": "Mystère de données", "description": "Cette commune garde encore quelques secrets. Les données absentes restent volontairement inconnues." }
+    },
+    "numbers": { "eyebrow": "Le portrait", "title": "Ce que disent les données", "benches": "bancs connus", "sunny": "avec au moins 3 h de soleil hivernal", "scenic": "avec une vue notée au moins 75", "water": "à 250 m au plus de l’eau", "forest": "en forêt", "wheelchair": "signalés accessibles en fauteuil", "note": "Les pourcentages n’emploient que les bancs pour lesquels la caractéristique est connue. La taille de l’échantillon figure donc toujours dessous." },
+    "known": "{count} analysés",
+    "records": { "eyebrow": "Bureau local des records", "title": "Les premières places" },
+    "audit": { "eyebrow": "Que pourrait-on améliorer ?", "title": "Audit des données", "description": "Pas de note globale secrète, mais des lacunes concrètes que l’on peut vérifier et combler.", "backrest": "sans information sur le dossier", "seats": "sans nombre de places connu", "direction": "sans orientation connue", "freshness": "à fraîcheur OSM inconnue ou ancienne", "coverage": "{coverage} des quatre données de base sont connues", "note": "Pour {stale} bancs, la dernière modification OSM date de plus de cinq ans ; pour {unknown}, la fraîcheur OSM est inconnue. Il s’agit de l’âge de la cartographie, pas de celui du banc." },
+    "allStatistics": "Tous les résultats bancologiques"
+  }
+}

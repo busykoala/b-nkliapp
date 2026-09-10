@@ -86,6 +86,141 @@ input::placeholder, textarea::placeholder { color: #596a61; opacity: 1; }
 .journey-sources { margin-top:1.5rem; padding-top:1rem; border-top:1px solid #7d806a33; }.journey-sources a { display:block; text-decoration:underline; }
 @media(min-width:768px) { .journey-panel,.journey-panel.is-expanded { left:auto; right:1rem; bottom:1rem; top:5rem; width:440px; height:auto; border-radius:1.5rem; }.journey-chrome .journey-resize { visibility:hidden; } }
 @media(prefers-reduced-motion:reduce) { .journey-panel * { scroll-behavior:auto!important; transition:none!important; } }
+
+/* Institut für angewandte Bänklilogie */
+.statistics-page {
+  color: #294239;
+  background:
+    radial-gradient(circle at 86% 4%, rgb(233 176 62 / 22%), transparent 24rem),
+    radial-gradient(circle at 6% 32%, rgb(51 113 91 / 12%), transparent 30rem),
+    #f6ecd5 url("/map-art/textures/paper.webp") repeat;
+  background-size: auto, auto, 256px;
+}
+.statistics-nav { display:flex; min-height:4.5rem; align-items:center; justify-content:space-between; padding-inline:.85rem; }
+.statistics-hero,.statistics-section,.statistics-footer,.municipality-hero { width:min(72rem,100%); margin-inline:auto; padding-inline:1.1rem; }
+.statistics-hero { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:1.2rem 2rem; padding-top:2.2rem; padding-bottom:4.2rem; }
+.statistics-kicker { display:flex; grid-column:1/-1; align-items:center; gap:.4rem; color:#376654; font-size:.77rem; font-weight:850; letter-spacing:.13em; text-transform:uppercase; }
+.statistics-hero-copy h1,.municipality-hero h1 { max-width:16ch; margin:.35rem 0 .9rem; font-family:Iowan Old Style,Palatino Linotype,ui-serif,serif; font-size:clamp(2.8rem,9vw,5.8rem); font-weight:700; line-height:.87; letter-spacing:-.055em; }
+.statistics-hero-copy p { max-width:43rem; color:#52645c; font-size:clamp(1rem,2.3vw,1.2rem); line-height:1.6; }
+.statistics-seal { display:grid; width:7.8rem; height:7.8rem; place-content:center; align-self:center; border:2px solid #9d7137; border-radius:50%; color:#845e2d; text-align:center; transform:rotate(7deg); box-shadow:inset 0 0 0 5px #f6ecd5,inset 0 0 0 6px #9d713766; }
+.statistics-seal span { font-family:Iowan Old Style,serif; font-size:2.25rem; font-weight:800; line-height:1; }
+.statistics-seal small { display:block; margin-top:.35rem; font-size:.6rem; font-weight:800; letter-spacing:.12em; }
+.statistics-totals { display:grid; grid-column:1/-1; grid-template-columns:repeat(3,minmax(0,1fr)); margin:1.2rem 0 0; border-block:1px solid rgb(55 80 66 / 18%); }
+.statistics-totals div { display:flex; min-height:7.5rem; flex-direction:column-reverse; justify-content:center; padding:1rem clamp(.65rem,3vw,1.5rem); }
+.statistics-totals div+div { border-left:1px solid rgb(55 80 66 / 18%); }
+.statistics-totals dt { color:#5b685f; font-size:.79rem; line-height:1.3; }
+.statistics-totals dd { margin:0; color:#254d3e; font-family:Iowan Old Style,serif; font-size:clamp(1.75rem,5vw,3.1rem); font-weight:750; line-height:1; }
+.statistics-section { padding-top:4.3rem; padding-bottom:4.3rem; border-top:1px solid rgb(55 80 66 / 14%); }
+.section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
+.section-heading h2 { margin:.12rem 0 1rem; font-family:Iowan Old Style,Palatino Linotype,ui-serif,serif; font-size:clamp(2rem,5vw,3.25rem); font-weight:700; line-height:.96; letter-spacing:-.035em; }
+.section-heading small { color:#527060; font-size:.72rem; font-weight:850; letter-spacing:.13em; text-transform:uppercase; }
+.section-heading>svg { width:2rem; height:2rem; color:#5f7e6c; }
+.section-lead { max-width:45rem; margin:-.2rem 0 1.7rem; color:#58685f; line-height:1.6; }
+.daily-and-roulette { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.18fr); gap:1rem; }
+.daily-bench-card,.roulette-card { overflow:hidden; border:1px solid rgb(52 76 62 / 14%); border-radius:1.7rem; background:rgb(255 249 232 / 68%); padding:1.25rem; box-shadow:inset 0 1px rgb(255 255 255 / 75%),0 14px 35px rgb(42 60 50 / 8%); }
+.daily-bench-card .section-heading h2,.roulette-card .section-heading h2 { font-size:2rem; }
+.daily-date { border:1px solid rgb(48 78 62 / 14%); border-radius:999px; padding:.35rem .6rem; color:#5d6a61; font-family:ui-monospace,monospace; font-size:.72rem; }
+.daily-bench-link { display:grid; min-height:9.2rem; grid-template-columns:6.2rem minmax(0,1fr) auto; align-items:center; gap:.8rem; margin:.5rem 0 1rem; border-radius:1.2rem; background:#dce3cf; padding:.8rem; color:#294c3e; }
+.daily-bench-link>span:nth-child(2) { min-width:0; }
+.daily-bench-link strong,.daily-bench-link small { display:block; }
+.daily-bench-link strong { font-family:Iowan Old Style,serif; font-size:1.35rem; line-height:1.05; }
+.daily-bench-link small { display:flex; align-items:center; gap:.25rem; margin-top:.45rem; color:#52645c; font-size:.76rem; }
+.daily-bench-illustration { position:relative; display:grid; height:6.2rem; place-items:center; overflow:hidden; border-radius:1rem; background:linear-gradient(#c9dbd4 0 58%,#799776 59%); color:#3c6656; }
+.daily-bench-illustration svg { position:absolute; right:-.8rem; bottom:.8rem; width:5rem; height:5rem; opacity:.35; }
+.daily-bench-illustration span { position:absolute; left:1.1rem; bottom:1.3rem; width:3.5rem; height:.75rem; border:4px solid #78563e; border-top-width:8px; border-radius:.15rem; box-shadow:0 .75rem 0 -5px #78563e; transform:skew(-5deg); }
+.card-note,.roulette-card>p,.method-note { color:#68736c; font-size:.79rem; line-height:1.5; }
+.roulette-buttons { display:grid; gap:.55rem; margin-top:1rem; }
+.roulette-buttons button { display:grid; width:100%; min-height:4.25rem; grid-template-columns:2.7rem 1fr; grid-template-rows:auto auto; align-items:center; column-gap:.75rem; border:1px solid rgb(49 78 64 / 12%); border-radius:1rem; background:rgb(246 238 214 / 72%); padding:.55rem .75rem; text-align:left; transition:transform .16s ease,background .16s ease; }
+.roulette-buttons button:hover { background:#e4e8d6; transform:translateX(.2rem); }
+.roulette-buttons button>span { display:grid; grid-row:1/3; width:2.7rem; height:2.7rem; place-items:center; border-radius:50%; background:#315f4e; color:#fff4d8; }
+.roulette-buttons button svg { width:1.15rem; }
+.roulette-buttons strong { align-self:end; font-size:.9rem; }
+.roulette-buttons small { align-self:start; color:#69756e; font-size:.72rem; }
+.record-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.75rem; }
+.record-grid article { display:flex; min-height:14.5rem; flex-direction:column; align-items:flex-start; border:1px solid rgb(60 70 54 / 13%); border-radius:1.15rem 1.5rem 1.05rem 1.4rem; background:rgb(255 250 237 / 62%); padding:1rem; }
+.record-grid article:nth-child(2n) { transform:translateY(.4rem) rotate(.25deg); }
+.record-icon { display:grid; width:2.5rem; height:2.5rem; place-items:center; margin-bottom:1.8rem; border-radius:50%; background:#dce4d2; color:#31604e; }
+.record-icon svg { width:1.25rem; }
+.record-grid article>small { min-height:2.4rem; color:#657169; font-size:.72rem; line-height:1.25; }
+.record-grid article>strong { margin:.3rem 0; color:#8b6129; font-family:Iowan Old Style,serif; font-size:1.8rem; line-height:1; }
+.record-grid article>a { display:flex; align-items:center; gap:.25rem; margin-top:auto; color:#315e4e; font-size:.82rem; font-weight:750; line-height:1.25; }
+.record-grid article>p { margin:.3rem 0 0; color:#738077; font-size:.7rem; }
+.records-section>.method-note,.municipality-section>.method-note,.lab-section>.method-note { max-width:52rem; margin:1.5rem 0 0; }
+.municipality-table { overflow:hidden; border:1px solid rgb(48 75 61 / 13%); border-radius:1.4rem; background:rgb(255 250 237 / 62%); }
+.municipality-table>a { display:grid; min-height:5rem; grid-template-columns:2.5rem minmax(8rem,1.35fr) minmax(5rem,.55fr) minmax(9rem,1fr) auto; align-items:center; gap:.75rem; padding:.65rem 1rem; }
+.municipality-table>a+a { border-top:1px solid rgb(48 75 61 / 11%); }
+.municipality-table>a:hover { background:rgb(220 229 209 / 55%); }
+.municipality-table strong,.municipality-table small { display:block; }
+.municipality-table small { margin-top:.15rem; color:#718077; font-size:.7rem; }
+.municipality-rank { color:#a47b42; font-family:ui-monospace,monospace; font-size:.78rem; }
+.municipality-pills { display:flex; gap:.35rem; }
+.municipality-pills i { display:flex; align-items:center; gap:.25rem; border-radius:999px; background:#e4e8d7; padding:.25rem .45rem; font-size:.72rem; font-style:normal; }
+.municipality-pills svg { width:.8rem; height:.8rem; }
+.empty-statistics { border:1px dashed rgb(50 76 63 / 24%); border-radius:1.2rem; padding:1.2rem; color:#627068; }
+.lab-section { position:relative; }
+.lab-sticker { border:2px solid #9c7138; border-radius:.25rem; padding:.45rem .65rem; color:#8d642d; font-family:ui-monospace,monospace; font-size:.8rem; font-weight:800; transform:rotate(3deg); }
+.lab-copy { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(15rem,1fr); gap:1rem; }
+.lab-copy h3 { max-width:20ch; margin:0; font-family:Iowan Old Style,serif; font-size:1.7rem; }
+.lab-copy p { color:#617068; }
+.lab-copy dl { display:grid; grid-template-columns:repeat(3,1fr); margin:0; border-block:1px solid rgb(54 75 63 / 14%); }
+.lab-copy dl div { padding:.75rem; }
+.lab-copy dl div+div { border-left:1px solid rgb(54 75 63 / 14%); }
+.lab-copy dt { color:#728078; font-size:.66rem; text-transform:uppercase; }
+.lab-copy dd { margin:.3rem 0 0; font-size:.82rem; font-weight:750; line-height:1.25; }
+.lab-plot { margin:1.5rem 0 0; border:1px solid rgb(48 75 61 / 13%); border-radius:1.3rem; background:rgb(255 250 237 / 58%); padding:.65rem; }
+.lab-plot svg { display:block; width:100%; max-height:24rem; }
+.lab-plot circle { fill:#b96f3e; opacity:.57; }
+.lab-plot circle:hover { fill:#255e4b; opacity:1; }
+.lab-plot text { fill:#66746c; font-size:10px; font-family:inherit; }
+.lab-grid { fill:none; stroke:#476453; stroke-width:1; opacity:.2; }
+.statistics-footer { display:flex; justify-content:space-between; gap:1rem; padding-top:2rem; padding-bottom:3rem; border-top:1px solid rgb(55 80 66 / 14%); color:#68756d; font-size:.8rem; }
+.statistics-footer a { color:#315e4e; font-weight:750; }
+
+.municipality-hero { padding-top:2.2rem; padding-bottom:3.6rem; }
+.municipality-hero h1 { max-width:18ch; margin-top:.6rem; }
+.municipality-hero>p { margin-top:-.25rem; color:#5d6c63; font-family:Iowan Old Style,serif; font-size:1.35rem; }
+.personality-card { display:grid; max-width:48rem; grid-template-columns:4.6rem 1fr; gap:1rem; margin-top:2rem; border:1px solid rgb(48 75 61 / 14%); border-radius:1.45rem; background:rgb(255 250 237 / 68%); padding:1rem; }
+.personality-card>span { display:grid; width:4.6rem; height:4.6rem; place-items:center; border-radius:1.1rem; background:#dce5d3; color:#386551; }
+.personality-card>span svg { width:2rem; height:2rem; }
+.personality-card small { color:#6c786f; font-size:.65rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.personality-card strong { display:block; margin:.15rem 0; font-family:Iowan Old Style,serif; font-size:1.55rem; }
+.personality-card p { margin:0; color:#5f6d65; font-size:.85rem; line-height:1.45; }
+.personality-sunny>span { background:#f4d994; color:#89611c; }.personality-waterside>span { background:#cce1df; color:#2c6970; }.personality-forest>span { background:#cddcbf; }
+.portrait-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.65rem; }
+.portrait-grid article { display:grid; min-height:9.5rem; grid-template-columns:auto 1fr; grid-template-rows:auto auto 1fr; column-gap:.65rem; border:1px solid rgb(52 76 62 / 12%); border-radius:1.2rem; background:rgb(255 250 237 / 62%); padding:1rem; }
+.portrait-grid article>svg { grid-row:1/3; width:1.25rem; color:#49705f; }
+.portrait-grid strong { font-family:Iowan Old Style,serif; font-size:2rem; line-height:1; }
+.portrait-grid span { align-self:start; color:#596960; font-size:.8rem; }
+.portrait-grid small { grid-column:1/-1; align-self:end; color:#7b837d; font-size:.68rem; }
+.municipal-records .record-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.audit-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.65rem; }
+.audit-grid article { min-height:9rem; border:1px solid rgb(52 76 62 / 12%); border-radius:1.2rem; background:rgb(255 250 237 / 62%); padding:1rem; }
+.audit-grid article>span { display:grid; width:2rem; height:2rem; place-items:center; border-radius:50%; background:#ebddba; color:#765c2e; }
+.audit-grid svg { width:1rem; }
+.audit-grid strong { display:block; margin:.7rem 0 .25rem; font-family:Iowan Old Style,serif; font-size:1.8rem; }
+.audit-grid p { margin:0; color:#617067; font-size:.76rem; line-height:1.35; }
+.coverage-strip { position:relative; overflow:hidden; margin-top:1rem; border:1px solid rgb(52 76 62 / 12%); border-radius:999px; background:#e7dfc7; }
+.coverage-strip>span { position:absolute; inset:0 auto 0 0; background:#9eb894; }
+.coverage-strip>strong { position:relative; display:block; padding:.55rem .8rem; font-size:.72rem; text-align:center; }
+
+@media(max-width:720px) {
+  .statistics-hero { grid-template-columns:1fr; padding-top:1.2rem; padding-bottom:3.2rem; }
+  .statistics-seal { position:absolute; top:0; right:1rem; width:5.2rem; height:5.2rem; opacity:.78; }
+  .statistics-seal span { font-size:1.45rem; }.statistics-seal small { font-size:.48rem; }
+  .statistics-hero-copy h1 { max-width:11ch; padding-right:2.5rem; }
+  .statistics-totals { grid-template-columns:1fr 1fr; }
+  .statistics-totals div { min-height:6.2rem; }
+  .statistics-totals div:nth-child(3) { grid-column:1/-1; border-top:1px solid rgb(55 80 66 / 18%); border-left:0; }
+  .daily-and-roulette,.lab-copy { grid-template-columns:1fr; }
+  .record-grid,.municipal-records .record-grid { display:flex; overflow-x:auto; margin-inline:-1.1rem; padding:.2rem 1.1rem .8rem; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .record-grid article { min-width:72vw; scroll-snap-align:start; }.record-grid article:nth-child(2n) { transform:none; }
+  .municipality-table>a { grid-template-columns:2rem 1fr auto; }
+  .municipality-table>a>span:nth-child(3),.municipality-pills { display:none; }
+  .lab-copy dl { grid-template-columns:1fr; }.lab-copy dl div+div { border-top:1px solid rgb(54 75 63 / 14%); border-left:0; }
+  .portrait-grid { grid-template-columns:1fr 1fr; }.audit-grid { grid-template-columns:1fr 1fr; }
+  .statistics-footer { flex-direction:column; }
+}
+@media(max-width:390px) { .portrait-grid { grid-template-columns:1fr; }.daily-bench-link { grid-template-columns:5rem minmax(0,1fr); }.daily-bench-link>svg { display:none; } }
 @plugin "daisyui" {
   themes: benchly --default;
 }
