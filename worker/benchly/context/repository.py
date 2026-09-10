@@ -83,16 +83,18 @@ def discard_environment_rows(database, row_ids: Sequence[int]) -> None:
 
 
 def discard_old_osm_context(database, imported_at: str) -> None:
-    after = 0
-    while True:
-        rows = database.execute("SELECT row_id,imported_at FROM environment_features WHERE source='OpenStreetMap' AND row_id>? ORDER BY row_id LIMIT 1000", (after,)).fetchall()
-        if not rows:
-            return
-        stale = [row[0] for row in rows if row[1] != imported_at]
-        if stale:
+    # The existing (source, imported_at) index includes row_id. Partition !=
+    # into two index ranges: paging by row_id made SQLite repeatedly sort the
+    # entire national source. Deleting each selected batch advances the range.
+    for comparison in ("<", ">"):
+        while True:
+            stale = [row[0] for row in database.execute(
+                f"SELECT row_id FROM environment_features WHERE source='OpenStreetMap' AND imported_at{comparison}? LIMIT 1000",
+                (imported_at,)).fetchall()]
+            if not stale:
+                break
             write(database, delete(EnvironmentFeature).where(EnvironmentFeature.row_id.in_(stale)))
             database.commit()
-        after = rows[-1][0]
 
 
 def discard_old_source_generation(database, source: str, imported_at: str) -> None:

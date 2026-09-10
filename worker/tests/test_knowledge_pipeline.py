@@ -374,3 +374,21 @@ def test_empty_terrain_cache_records_missing_outcome_and_advances_cell(migrated_
         assert database.execute('SELECT count(*) FROM bench_enrichments').fetchone()[0] == 0
     finally:
         database.close()
+
+
+def test_source_retirement_uses_bounded_index_ranges_and_preserves_other_generations(migrated_database):
+    from benchly.db import connect_database
+    from benchly.context.repository import discard_old_osm_context
+    database = connect_database(migrated_database)
+    try:
+        for index in range(2105):
+            database.execute("""INSERT INTO environment_features(source,source_id,kind,center_latitude,center_longitude,
+                min_latitude,max_latitude,min_longitude,max_longitude,raw_tags,imported_at)
+                VALUES(?,?,'tree',46.68,7.68,46.68,46.68,7.68,7.68,'{}',?)""",
+                ('official' if index == 2104 else 'OpenStreetMap', str(index),
+                 '2026-09-10' if index == 2103 else '2026-09-11' if index > 1100 else '2026-09-09'))
+        database.commit()
+        discard_old_osm_context(database, '2026-09-10')
+        assert [tuple(row) for row in database.execute('SELECT source,source_id FROM environment_features ORDER BY row_id')] == [('OpenStreetMap','2103'),('official','2104')]
+    finally:
+        database.close()
