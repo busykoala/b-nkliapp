@@ -195,6 +195,8 @@ preserve assertions and checkpoints while reducing CPU work and writer-lock dura
 Walking-landscape batches use the spatial index for pilot bounds and merge two limited,
 ordered kind-index scans for nationwide work. They never sort every remaining path geometry
 to select the next batch from a full OSM import.
+The landscape worker also reuses up to eight coordinate transformers and 2,048 projected
+geometries, so nearby municipal trees do not reconstruct a projection for every sampled point.
 Creates, moves, source changes, contributions, withdrawals and terrain updates invalidate work;
 algorithm/source manifests and a weekly refresh window invalidate the nationwide sweep.
 `bench_knowledge_outcomes` records each category as `current`, `missing_source`,

@@ -73,12 +73,17 @@ def metric_geometry(row):
     return projected_geometry(row["geometry_wkb"], row["geometry_crs"])
 
 
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=8)
+def metric_transformer(crs):
+    return Transformer.from_crs(crs, 2056, always_xy=True)
+
+
+@lru_cache(maxsize=2048)
 def projected_geometry(blob, crs):
-    """Nearby cells repeatedly inspect the same forest/lake polygon."""
+    """Nearby cells reuse trees and polygons, including municipal WGS84 features."""
     geometry = wkb.loads(blob)
     if crs != 2056:
-        geometry = transform(Transformer.from_crs(crs, 2056, always_xy=True).transform, geometry)
+        geometry = transform(metric_transformer(crs).transform, geometry)
     return geometry
 
 
