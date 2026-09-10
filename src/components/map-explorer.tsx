@@ -379,8 +379,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   useEffect(() => {
     filtersRef.current = filters;
     const map = mapRef.current;
-    if (map?.isStyleLoaded()) loadVisible(map, filters);
-  }, [filters, loadVisible]);
+    // Basemap tiles can still be loading after the interactive layers are ready.
+    // Their loading state must never discard a bench-filter change.
+    if (mapReady && map) void loadVisible(map, filters);
+  }, [filters, mapReady, loadVisible]);
 
   const autoLocate = useEffectEvent(() => locate());
   useEffect(() => {
