@@ -4,7 +4,30 @@ import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 from shapely.geometry import Point, LineString
-from benchly.landscape.service import cell_evidence, horizon_at, refresh
+from benchly.landscape.service import cell_evidence, horizon_at, refresh, select_paths
+
+
+def test_path_batches_merge_kinds_and_resume_inside_exact_spatial_bounds():
+    with sqlite3.connect(":memory:") as source:
+        source.row_factory = sqlite3.Row
+        source.executescript("""CREATE TABLE environment_features(row_id INTEGER PRIMARY KEY,kind TEXT,
+            geometry_wkb BLOB,min_longitude REAL,max_longitude REAL,min_latitude REAL,max_latitude REAL);
+            CREATE INDEX environment_kind_idx ON environment_features(kind);
+            CREATE VIRTUAL TABLE environment_spatial_index USING rtree(row_id,min_longitude,max_longitude,min_latitude,max_latitude);""")
+        for row_id in range(1, 101):
+            lon = 8.54 if row_id % 3 else 8.7
+            source.execute("INSERT INTO environment_features VALUES(?,?,?,?,?,?,?)",
+                (row_id, ("path", "major_road", "tree")[row_id % 3], b"geometry" if row_id % 10 else None, lon, lon + .0001, 47.37, 47.371))
+        source.execute("INSERT INTO environment_spatial_index SELECT row_id,min_longitude,max_longitude,min_latitude,max_latitude FROM environment_features")
+        for bounds in (None, [8.53, 47.36, 8.55, 47.38]):
+            actual, last = [], 0
+            while batch := select_paths(source, last, 7, bounds):
+                actual.extend(row["row_id"] for row in batch)
+                last = actual[-1]
+            sql = "SELECT row_id FROM environment_features WHERE kind IN ('path','major_road') AND geometry_wkb IS NOT NULL"
+            if bounds:
+                sql += " AND max_longitude>=8.53 AND min_longitude<=8.55 AND max_latitude>=47.36 AND min_latitude<=47.38"
+            assert actual == [row[0] for row in source.execute(sql + " ORDER BY row_id")]
 
 
 class LandscapeTests(unittest.TestCase):

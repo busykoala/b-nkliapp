@@ -192,6 +192,9 @@ Derived states, completeness and outcomes use bounded typed batches within that 
 Approach calculations retain at most 512 immutable path structures, keyed by geometry and tags;
 each bench still performs its own exact distance and connectivity checks. These optimizations
 preserve assertions and checkpoints while reducing CPU work and writer-lock duration.
+Walking-landscape batches use the spatial index for pilot bounds and merge two limited,
+ordered kind-index scans for nationwide work. They never sort every remaining path geometry
+to select the next batch from a full OSM import.
 Creates, moves, source changes, contributions, withdrawals and terrain updates invalidate work;
 algorithm/source manifests and a weekly refresh window invalidate the nationwide sweep.
 `bench_knowledge_outcomes` records each category as `current`, `missing_source`,

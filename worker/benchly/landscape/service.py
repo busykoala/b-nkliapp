@@ -50,6 +50,25 @@ def input_generation(source_revision, terrain, surface, noise, noise_layers):
     return hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()[:24]
 
 
+def select_paths(source, last, limit, bounds=None):
+    """Bound geometry reads before sorting, using the existing kind/RTree indexes."""
+    if bounds:
+        return source.execute("""SELECT f.* FROM environment_spatial_index s
+            CROSS JOIN environment_features f ON f.row_id=s.row_id
+            WHERE s.max_longitude>=? AND s.min_longitude<=? AND s.max_latitude>=? AND s.min_latitude<=?
+              AND f.max_longitude>=? AND f.min_longitude<=? AND f.max_latitude>=? AND f.min_latitude<=?
+              AND f.row_id>? AND f.kind IN ('path','major_road') AND f.geometry_wkb IS NOT NULL
+            ORDER BY f.row_id LIMIT ?""", [bounds[0], bounds[2], bounds[1], bounds[3]] * 2 + [last, limit]).fetchall()
+    # IN(kind1,kind2) makes SQLite sort all remaining ways before applying LIMIT.
+    # Each equality instead walks the existing (kind,rowid) index in row order.
+    rows = []
+    for kind in ("path", "major_road"):
+        rows.extend(source.execute("""SELECT * FROM environment_features
+            WHERE kind=? AND row_id>? AND geometry_wkb IS NOT NULL ORDER BY row_id LIMIT ?""",
+            (kind, last, limit)).fetchall())
+    return sorted(rows, key=lambda row: row["row_id"])[:limit]
+
+
 def metric_geometry(row):
     return projected_geometry(row["geometry_wkb"], row["geometry_crs"])
 
@@ -210,9 +229,7 @@ def build_snapshot(args):
         last = int(checkpoint[0]) if checkpoint and previous_inputs and previous_inputs[0] == generation else 0
         if args.limit < 1 or args.limit > 10000:
             raise ValueError("Path batch must be between 1 and 10000")
-        condition = " AND max_longitude>=? AND min_longitude<=? AND max_latitude>=? AND min_latitude<=?" if bounds else ""
-        parameters = [last] + ([bounds[0], bounds[2], bounds[1], bounds[3]] if bounds else []) + [args.limit]
-        paths = source.execute("SELECT * FROM environment_features WHERE kind IN ('path','major_road') AND geometry_wkb IS NOT NULL AND row_id>?" + condition + " ORDER BY row_id LIMIT ?", parameters).fetchall()
+        paths = select_paths(source, last, args.limit, bounds)
         now = datetime.now(timezone.utc).isoformat()
         cells = 0
         visited = set()
