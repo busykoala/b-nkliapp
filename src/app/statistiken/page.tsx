@@ -26,7 +26,10 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
   const number = (value: number) => format.number(value, { maximumFractionDigits: 0 });
   const decimal = (value: number, digits = 1) => format.number(value, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const percent = (value: number | null) => value === null ? t("common.values.unknown") : format.number(value, { style: "percent", maximumFractionDigits: 0 });
-  const coveragePercent = (value: number | null) => value === null ? t("common.values.unknown") : format.number(value, { style: "percent", maximumFractionDigits: 1 });
+  const coveragePercent = (value: number | null) => {
+    if (value === null) return t("common.values.unknown");
+    return format.number(value, { style: "percent", maximumFractionDigits: value > 0 && value < .001 ? 2 : 1 });
+  };
   const correlation = data.correlation.coefficient;
   const explainedVariance = correlation === null ? null : correlation * correlation;
   const slope = data.correlation.trend?.slope ?? null;
@@ -44,7 +47,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
     bestView: { icon: <Eye />, value: (item) => `${number(item.metric ?? 0)}/100` },
     closestWater: { icon: <Droplets />, value: (item) => `${number(item.metric ?? 0)} m` }, furthestWater: { icon: <Droplets />, value: (item) => `${number(item.metric ?? 0)} m` },
     densestCanopy: { icon: <Trees />, value: (item) => `${number(item.metric ?? 0)}%` }, clearestCanopy: { icon: <Trees />, value: (item) => `${number(item.metric ?? 0)}%` },
-    closestPath: { icon: <MapPin />, value: (item) => `${number(item.metric ?? 0)} m` }, furthestPath: { icon: <MapPin />, value: (item) => `${number(item.metric ?? 0)} m` },
+    closestPath: { icon: <MapPin />, value: (item) => `${number(item.metric ?? 0)} m` },
     mostSeats: { icon: <BarChart3 />, value: (item) => number(item.metric ?? 0) }, mostBuildings: { icon: <BarChart3 />, value: (item) => number(item.metric ?? 0) }, fewestBuildings: { icon: <BarChart3 />, value: (item) => number(item.metric ?? 0) },
     mostBlockedView: { icon: <Eye />, value: (item) => `${number(item.metric ?? 0)}%` }, wildest: { icon: <Trees />, value: (item) => `${number((item.metric ?? 0) * 100)}/100` }, remotest: { icon: <MountainSnow />, value: (item) => `${number((item.metric ?? 0) * 100)}/100` },
   };

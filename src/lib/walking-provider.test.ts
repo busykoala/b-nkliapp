@@ -38,3 +38,14 @@ it("accepts generated round-trip waypoints but checks both ends against the orig
   const [path] = await routeWalk({ points: [a], roundTrip: { meters: 3500, seed: 0 } }, new AbortController().signal);
   expect(path.warnings).toEqual([]);
 });
+it("reads and caches the router's nearest mapped way distance", async () => {
+  const fetcher = vi.fn(async () => Response.json({type: "Point", coordinates: [7.60001, 46.60001], distance: 5.23}));
+  vi.stubGlobal("fetch", fetcher);
+  vi.stubEnv("WALK_ROUTER_URL", "http://graphhopper.routing.svc.cluster.local:8989");
+  const { nearestMappedWayDistance } = await import("./walking-provider");
+  const signal = new AbortController().signal;
+  expect(await nearestMappedWayDistance(a, signal)).toBe(5.23);
+  expect(await nearestMappedWayDistance(a, signal)).toBe(5.23);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(String((fetcher.mock.calls as unknown[][])[0][0])).toBe("http://graphhopper.routing.svc.cluster.local:8989/nearest?point=46.6%2C7.6");
+});

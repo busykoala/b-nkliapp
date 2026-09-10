@@ -272,6 +272,8 @@ test("shows useful sun and view information before terrain enrichment", async ({
   await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
   await page.getByText("Aussicht im Detail").click();
   await expect(page.locator(".detail-panel-view").getByText("Was den Horizont prägt")).toBeVisible();
+  await expect(page.locator(".distance-ribbon")).toContainText("Weg oder Strasse");
+  await expect(page.locator(".distance-ribbon")).toContainText("direkt");
   await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
 });
 

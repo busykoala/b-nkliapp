@@ -57,7 +57,7 @@ it("counts only complete analyses and ranks the nearest path or road", async () 
   let recordDate = "";
   for (let offset = 0; offset < 365; offset += 1) {
     const candidate = new Date(Date.UTC(2026, 0, 1 + offset)).toISOString().slice(0, 10);
-    if (dailyRecordKeys(candidate).includes("furthestPath")) {
+    if (dailyRecordKeys(candidate).includes("closestPath")) {
       recordDate = candidate;
       break;
     }
@@ -66,9 +66,9 @@ it("counts only complete analyses and ranks the nearest path or road", async () 
 
   const dashboard = readStatisticsDashboard(recordDate);
   expect(dashboard.enrichedBenches).toBe(11);
-  const furthest = dashboard.records.find((record) => record.key === "furthestPath");
-  expect(furthest?.fact.id).not.toBe("osm-node-101");
-  expect(furthest?.fact.metric).toBe(100);
+  const closest = dashboard.records.find((record) => record.key === "closestPath");
+  expect(closest?.fact.id).toBe("osm-node-101");
+  expect(closest?.fact.metric).toBe(1.4);
 });
 
 it("offers a different external-data study for every month", async () => {
@@ -81,6 +81,13 @@ it("offers a different external-data study for every month", async () => {
   expect(studies).toContain("woodHarvest");
   expect(correlations.every((correlation) => correlation.coefficient !== null && correlation.trend !== null)).toBe(true);
   expect(correlations.every((correlation) => correlation.boxPlots.length === 4 && correlation.sampleSize >= 8)).toBe(true);
+});
+
+it("does not publish the unreliable furthest-from-way superlative", async () => {
+  expect(Array.from({ length: 365 }, (_, offset) => {
+    const date = new Date(Date.UTC(2026, 0, 1 + offset)).toISOString().slice(0, 10);
+    return dailyRecordKeys(date);
+  }).flat()).not.toContain("furthestPath");
 });
 
 it("supports all roulette modes and rejects invalid municipality identifiers", async () => {

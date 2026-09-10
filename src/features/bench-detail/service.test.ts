@@ -62,4 +62,19 @@ describe("bench detail read model", () => {
     const { readBenchDetail } = await import("./service");
     expect(readBenchDetail("osm-node-101", null)?.distancePathMeters).toBe(1.4);
   });
+
+  it("supersedes a stale stored distance with the current routing graph", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "benchly-detail-nearest-"));
+    folders.push(folder);
+    vi.stubEnv("DATABASE_PATH", join(folder, "benchly.sqlite"));
+    vi.stubEnv("BENCHLY_SEED_DEMO", "true");
+    vi.stubEnv("WALK_ROUTER_URL", "http://router.internal:8989");
+    vi.resetModules();
+    const fetcher = vi.fn(async () => Response.json({type: "Point", coordinates: [8.54171, 47.3769], distance: 5.23}));
+    vi.stubGlobal("fetch", fetcher);
+    const { readVerifiedBenchDetail } = await import("./service");
+
+    expect((await readVerifiedBenchDetail("osm-node-101", null))?.distancePathMeters).toBe(5.23);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
 });

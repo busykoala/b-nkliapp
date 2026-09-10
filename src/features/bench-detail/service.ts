@@ -7,6 +7,7 @@ import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState,
 import type { BenchDetail, BenchProperty, LikelyEnvironment } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { getLocalWeather } from "@/integrations/weather/service";
+import { nearestMappedWayDistance } from "@/lib/walking-provider";
 import type { CurrentUser } from "@/lib/security";
 import { readBenchObservationSummary } from "@/features/bench-observations/repository";
 import { directionalOpenness, scoreViewComponents } from "@/features/bench-observations/model";
@@ -263,6 +264,20 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     importedAt: String(row.imported_at), osmVersion: row.osm_version == null ? null : Number(row.osm_version),
     osmChangeset: row.osm_changeset == null ? null : Number(row.osm_changeset), pipelineVersion,
   };
+}
+
+export async function readVerifiedBenchDetail(benchId: string, currentUser: CurrentUser | null): Promise<BenchDetail | null> {
+  const bench = readBenchDetail(benchId, currentUser);
+  if (!bench) return null;
+  try {
+    const distancePathMeters = await nearestMappedWayDistance(
+      { label: bench.title || bench.id, latitude: bench.latitude, longitude: bench.longitude },
+      AbortSignal.timeout(1_500),
+    );
+    return { ...bench, distancePathMeters };
+  } catch {
+    return { ...bench, distancePathMeters: null };
+  }
 }
 
 function likelyTrait(kind: "lake" | "mountain" | "open" | "limited" | "buildings" | "roadRail", value: string | number | null) {

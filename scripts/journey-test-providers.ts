@@ -26,6 +26,7 @@ if (process.env.BENCHLY_JOURNEY_TEST_FIXTURES === "true") {
       return Response.json({ connections: [] });
     }
     if (url.hostname === "127.0.0.1" && url.port === "8989") {
+      if (url.pathname === "/nearest") return Response.json({type: "Point", coordinates: [8.54171, 47.3769], distance: 1.2});
       const body = JSON.parse(String(init?.body)) as { points: number[][]; algorithm?: string; custom_model?: object; "round_trip.seed"?: number };
       const roundTrip = body.algorithm === "round_trip";
       const seed = Number(body["round_trip.seed"] ?? 0);

@@ -57,7 +57,6 @@
     "densestCanopy": "Dichtestes Blätterdach",
     "clearestCanopy": "Freiestes Blätterdach",
     "closestPath": "Am nächsten an Weg oder Strasse",
-    "furthestPath": "Am weitesten von Weg oder Strasse",
     "mostSeats": "Meiste bekannte Sitzplätze",
     "mostBuildings": "Geselligstes Gebäudeumfeld",
     "fewestBuildings": "Wenigste Gebäude im Umkreis",
@@ -65,7 +64,7 @@
     "wildest": "Höchster Naturwert",
     "remotest": "Höchster Abgelegenheitswert",
     "scrollCue": "Seitwärts wischen für das ganze Rekordprotokoll.",
-    "note": "Heute zeigt das Rekordbüro vier aus 19 möglichen Disziplinen; morgen wird neu gezogen. Rekorde gelten nur innerhalb der aktuell bekannten und für das jeweilige Merkmal ausgewerteten Bänkli. Modellwerte sind keine Beobachtungen vor Ort."
+    "note": "Heute zeigt das Rekordbüro vier aus 18 möglichen Disziplinen; morgen wird neu gezogen. Rekorde gelten nur innerhalb der aktuell bekannten und für das jeweilige Merkmal ausgewerteten Bänkli. Modellwerte sind keine Beobachtungen vor Ort."
   },
   "municipalities": {
     "eyebrow": "Kommunale Sitzordnung",

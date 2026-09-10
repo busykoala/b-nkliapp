@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { BenchDetailContent } from "@/components/bench-detail-content";
 import { getCurrentUser } from "@/lib/security";
 import { AppMenu } from "@/components/app-menu";
-import { readBenchDetail, readBenchPageMetadata } from "@/features/bench-detail/service";
+import { readBenchPageMetadata, readVerifiedBenchDetail } from "@/features/bench-detail/service";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function BenchPage({ params }: { params: Promise<{ id: string }> }) {
   const t = await getTranslations();
   const user = await getCurrentUser();
-  const bench = readBenchDetail((await params).id, user);
+  const bench = await readVerifiedBenchDetail((await params).id, user);
   if (!bench) notFound();
   return <main className="standalone-bench min-h-dvh">
     <header className="safe-top sticky top-0 z-20 flex min-h-16 items-center justify-between px-3">

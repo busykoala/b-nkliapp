@@ -95,7 +95,7 @@ export type MunicipalityPortrait = MunicipalitySummary & {
 export type MunicipalityPersonality = "sunny" | "scenic" | "waterside" | "forest" | "collector" | "mysterious";
 export type RouletteMode = "beautiful" | "sunny" | "wild";
 export type StatisticsRecordKey = "highest" | "lowest" | "sunniestWinter" | "shadiestWinter" | "sunniestSummer" | "shadiestSummer"
-  | "bestView" | "closestWater" | "furthestWater" | "densestCanopy" | "clearestCanopy" | "closestPath" | "furthestPath"
+  | "bestView" | "closestWater" | "furthestWater" | "densestCanopy" | "clearestCanopy" | "closestPath"
   | "mostSeats" | "mostBuildings" | "fewestBuildings" | "mostBlockedView" | "wildest" | "remotest";
 
 export function ratio(numerator: number, denominator: number): number | null {
@@ -178,7 +178,7 @@ export function dateSeed(date: string): number {
 }
 
 export const statisticsRecordKeys: StatisticsRecordKey[] = ["highest", "lowest", "sunniestWinter", "shadiestWinter", "sunniestSummer", "shadiestSummer",
-  "bestView", "closestWater", "furthestWater", "densestCanopy", "clearestCanopy", "closestPath", "furthestPath", "mostSeats", "mostBuildings",
+  "bestView", "closestWater", "furthestWater", "densestCanopy", "clearestCanopy", "closestPath", "mostSeats", "mostBuildings",
   "fewestBuildings", "mostBlockedView", "wildest", "remotest"];
 
 export function dailyRecordKeys(date: string, count = 4): StatisticsRecordKey[] {

@@ -16,9 +16,16 @@ const responseSchema = z.object({ paths: z.array(z.object({
     ferry: z.string().max(80).optional(), distance: z.number().nonnegative(), interval: z.tuple([z.number().int().nonnegative(), z.number().int().nonnegative()]) })).max(10000).default([]),
   details: z.record(z.string(), z.array(z.tuple([z.number().int().nonnegative(), z.number().int().nonnegative(), z.union([z.string(), z.number(), z.null()])]))).default({}),
 })).min(1).max(3) });
+const nearestResponseSchema = z.object({
+  type: z.literal("Point"),
+  coordinates: coordinate,
+  distance: z.number().nonnegative().max(300000),
+});
 type Entry = { paths: WalkPath[]; expiry: number; bytes: number; timer: ReturnType<typeof setTimeout> };
-const global = globalThis as typeof globalThis & { benchlyWalking?: { active: number; cache: Map<string, Entry>; bytes: number; cooldown: number } };
-const state = global.benchlyWalking ??= { active: 0, cache: new Map(), bytes: 0, cooldown: 0 };
+type NearestEntry = { distance: number; expiry: number; timer: ReturnType<typeof setTimeout> };
+const global = globalThis as typeof globalThis & { benchlyWalking?: { active: number; cache: Map<string, Entry>; bytes: number; cooldown: number; nearest?: Map<string, NearestEntry> } };
+const state = global.benchlyWalking ??= { active: 0, cache: new Map(), bytes: 0, cooldown: 0, nearest: new Map() };
+const nearestCache = state.nearest ??= new Map();
 function evict(key: string) { const item = state.cache.get(key); if (item) { clearTimeout(item.timer); state.bytes -= item.bytes; state.cache.delete(key); } }
 export type WalkRequest = { points: JourneyPoint[]; difficulty?: "easy" | "t2"; scenic?: boolean; roundTrip?: { meters: number; seed: number }; alternatives?: boolean };
 
@@ -77,4 +84,31 @@ export async function routeWalk(request: WalkRequest, signal: AbortSignal, perso
 }
 export async function walkPath(a: JourneyPoint, b: JourneyPoint, signal: AbortSignal, personal: boolean) {
   return (await routeWalk({ points: [a, b] }, signal, personal))[0];
+}
+
+export async function nearestMappedWayDistance(point: JourneyPoint, signal: AbortSignal): Promise<number> {
+  const base = new URL(process.env.WALK_ROUTER_URL ?? DATA_RUNTIME.graphHopperDefaultUrl);
+  if (!["http:", "https:"].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error("Invalid router configuration");
+  const key = `${point.latitude.toFixed(6)},${point.longitude.toFixed(6)}`;
+  const cached = nearestCache.get(key);
+  if (cached && cached.expiry > Date.now()) return cached.distance;
+  signal.throwIfAborted();
+  const url = new URL("/nearest", base);
+  url.searchParams.set("point", `${point.latitude},${point.longitude}`);
+  const response = await fetch(url, { signal, redirect: "error", cache: "no-store" });
+  if (!response.ok) throw new Error("Router unavailable");
+  const text = await response.text();
+  if (text.length > 10_000) throw new Error("Nearest response too large");
+  const distance = nearestResponseSchema.parse(JSON.parse(text)).distance;
+  while (nearestCache.size >= 2_000) {
+    const oldest = nearestCache.keys().next().value;
+    if (oldest === undefined) break;
+    clearTimeout(nearestCache.get(oldest)?.timer);
+    nearestCache.delete(oldest);
+  }
+  const expiry = Date.now() + 7 * 86400000;
+  const timer = setTimeout(() => nearestCache.delete(key), expiry - Date.now());
+  timer.unref();
+  nearestCache.set(key, { distance, expiry, timer });
+  return distance;
 }

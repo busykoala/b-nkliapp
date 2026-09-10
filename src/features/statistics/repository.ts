@@ -182,7 +182,7 @@ const recordDefinitions: Record<StatisticsRecordKey, [string, "ASC" | "DESC"]> =
   sunniestSummer: ["e.sun_minutes_summer", "DESC"], shadiestSummer: ["e.sun_minutes_summer", "ASC"],
   bestView: ["e.view_score", "DESC"], closestWater: ["e.distance_water_meters", "ASC"], furthestWater: ["e.distance_water_meters", "DESC"],
   densestCanopy: ["e.canopy_percent", "DESC"], clearestCanopy: ["e.canopy_percent", "ASC"],
-  closestPath: [distanceMappedWaySql, "ASC"], furthestPath: [distanceMappedWaySql, "DESC"],
+  closestPath: [distanceMappedWaySql, "ASC"],
   mostSeats: ["b.seats", "DESC"], mostBuildings: ["e.building_count_100m", "DESC"], fewestBuildings: ["e.building_count_100m", "ASC"],
   mostBlockedView: ["e.building_obstruction_percent", "DESC"],
   wildest: ["json_extract(e.view_components,'$.naturalness')", "DESC"], remotest: ["json_extract(e.view_components,'$.remoteness')", "DESC"],
