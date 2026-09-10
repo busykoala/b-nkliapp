@@ -262,7 +262,16 @@ are different quantities; this publication has no per-image probability.
 
 After an OSM refresh, run `reconcile-source-photos --database /data/benchly.sqlite` before
 knowledge pilots. This reuses stored predictions and hashes, recomputes unique current matches,
-withdraws obsolete photo projections and downloads no images. Physical estimates additionally
+withdraws obsolete photo projections and downloads no images. Photo fusion v6 requires an actual
+`outlook` photograph for seated water/distant-view estimates; source sight tags cannot override
+photograph perspective. Physical estimates additionally
 check current neighbours at publication preparation, so a newly mapped adjacent bench can make
 an old match ineligible. Terrain batches record missing-source attempts and advance to other
 spatial cells; incomplete cells retry weekly rather than blocking nationwide progress.
+
+The 100-location benchmark now includes the available production metadata: 29 locations in
+Genève, 62 in Valais and 9 in Bern; 4 stored elevations, 99 matched imagery distances and all
+provider/content-hash metadata. Orthophotos have an `overhead` distance band, not a ground-camera
+distance class. Visual quality and unavailable capture information remain unknown. This reveals
+limited geographic validation coverage; the scene benchmark does not validate physical features.
+Original human labels and image hashes are unchanged.

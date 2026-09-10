@@ -26,7 +26,9 @@
     "land_context": "Umgebung",
     "canopy_context": "Baumdach",
     "waterfront": "Am Wasser",
-    "presence": "Vorhandensein"
+    "presence": "Vorhandensein",
+    "image_water_type": "Wasser auf Fotos",
+    "image_long_view": "Geschätzte Weitsicht im Sitzen"
   },
   "sources": {
     "osm": "OpenStreetMap",

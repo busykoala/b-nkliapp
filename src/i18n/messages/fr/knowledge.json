@@ -26,7 +26,9 @@
     "land_context": "Environs",
     "canopy_context": "Canopée",
     "waterfront": "Au bord de l’eau",
-    "presence": "Présence"
+    "presence": "Présence",
+    "image_water_type": "Eau sur les photos",
+    "image_long_view": "Vue lointaine estimée depuis le siège"
   },
   "sources": {
     "osm": "OpenStreetMap",

@@ -38,6 +38,15 @@ def test_photo_fusion_respects_perspective_and_conflicting_evidence():
     toward = observation(2, perspective="toward_bench", long_view_probability=.99, mountain_probability=.99)
     signals = photo_signals([toward])
     assert not signals["water_type"] and not signals["long_view"] and not signals["mountain"]
+    # A source description cannot turn a photograph of the seat or its
+    # surroundings into evidence of what a seated visitor can see.
+    for perspective in ("toward_bench", "surroundings", "closeup"):
+        tagged = {**observation(6, perspective=perspective, water_confidence=.99,
+                    long_view_probability=.99, mountain_probability=.99),
+                  "source_metadata": '{"sight":["WATER","LONG","BROAD","PANORAMA"]}'}
+        tagged_signals = photo_signals([tagged])
+        assert not any(tagged_signals[key] for key in ("water_type", "long_view", "mountain"))
+        assert tagged_signals["visible_water_type"] == (None if perspective == "closeup" else "lake")
     assert project_photo_signals(base, signals)["land_context"] == "forest"
     conflict = photo_signals([observation(3), observation(4, water_type="river")])
     assert conflict["water_type"] is None and conflict["water_conflict"]
@@ -113,7 +122,7 @@ def test_photo_import_is_reversible_and_survives_later_measurements(tmp_path):
     upsert_enrichment(production, {"bench_row_id": 1, "elevation_meters": 500})
     assert "Weitsicht" not in production.execute("SELECT view_labels FROM bench_enrichments").fetchone()[0]
     evidence = production.execute("SELECT rule_version,signals FROM bank_photo_evidence").fetchone()
-    assert evidence[0] == "bank-photo-fusion-v5" and not json.loads(evidence[1])["long_view"]
+    assert evidence[0] == "bank-photo-fusion-v6" and not json.loads(evidence[1])["long_view"]
     import_photo_checkpoint(production, checkpoint, apply=True)
     upsert_enrichment(production, {"bench_row_id": 1, "land_context": "forest", "view_labels": '["Hügelblick"]'})
     assert "Weitsicht" in production.execute("SELECT view_labels FROM bench_enrichments").fetchone()[0]

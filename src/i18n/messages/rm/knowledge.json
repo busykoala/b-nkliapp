@@ -26,7 +26,9 @@
     "land_context": "Conturns",
     "canopy_context": "Tetg da plantas",
     "waterfront": "Sper l’aua",
-    "presence": "Preschientscha"
+    "presence": "Preschientscha",
+    "image_water_type": "Aua sin fotografias",
+    "image_long_view": "Vista lontana stimada da seser"
   },
   "sources": {
     "osm": "OpenStreetMap",

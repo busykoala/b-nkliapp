@@ -5,7 +5,7 @@ import json
 from benchly.benches.domain import score_view
 from benchly.imagery.photo_prediction import BenchPhotoPrediction
 
-PHOTO_RULE_VERSION = "bank-photo-fusion-v5"
+PHOTO_RULE_VERSION = "bank-photo-fusion-v6"
 PROJECTED_FIELDS = ("land_context", "view_labels", "view_components", "view_score", "view_confidence")
 
 
@@ -14,9 +14,9 @@ def photo_signals(observations, *, location_conflicts=None, view_reviews=None):
 
     Multiple pictures can face different directions. A place-wide disagreement
     therefore leaves the geometric land/water classification in charge.
-    Source tags can corroborate the seating view, but never create it alone.
+    Source tags cannot establish the direction seen from the seat.
     """
-    land, water = set(), set()
+    land, water, visible_water = set(), set(), set()
     long_view = mountain = False
     refs = []
     excluded = {}
@@ -29,8 +29,6 @@ def photo_signals(observations, *, location_conflicts=None, view_reviews=None):
         prediction = BenchPhotoPrediction.model_validate_json(observation["prediction"])
         if not prediction.usable or prediction.perspective == "closeup":
             continue
-        metadata = json.loads(observation["source_metadata"])
-        sight = set(metadata.get("sight") or [])
         outlook = prediction.perspective == "outlook"
         refs.append({"source_id": observation["source_id"], "image_id": observation["image_id"]})
         if prediction.land_confidence >= .85 and prediction.land_context != "unknown":
@@ -40,18 +38,22 @@ def photo_signals(observations, *, location_conflicts=None, view_reviews=None):
             reviewed[image_hash] = review
             continue
         if prediction.water_type in {"lake", "river"}:
-            if (outlook and prediction.water_confidence >= .95) or ("WATER" in sight and prediction.water_confidence >= .85):
+            if prediction.water_confidence >= .95:
+                visible_water.add(prediction.water_type)
+            if outlook and prediction.water_confidence >= .95:
                 water.add(prediction.water_type)
         # A reviewed tree-gap scene received 0.9 for long view and 0.95 for
         # mountains. Source tags also claimed LONG/BROAD, so corroboration alone
         # did not reject it. Keep weaker observations without promoting them.
         if prediction.long_view_probability >= .95 and prediction.limited_view_probability < .3:
-            long_view |= outlook or bool(sight & {"LONG", "BROAD", "PANORAMA"})
+            long_view |= outlook
         if prediction.mountain_probability >= .98:
             mountain |= outlook
     return {
         "land_context": next(iter(land)) if len(land) == 1 else None,
         "water_type": next(iter(water)) if len(water) == 1 else None,
+        "visible_water_type": next(iter(visible_water)) if len(visible_water) == 1 else None,
+        "visible_water_conflict": len(visible_water) > 1,
         "long_view": long_view, "mountain": mountain, "photos": refs,
         "land_conflict": len(land) > 1, "water_conflict": len(water) > 1,
         "location_conflicts": [excluded[key] for key in sorted(excluded)],

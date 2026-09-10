@@ -10,7 +10,7 @@ from benchly.knowledge.models import AttributeState, Completeness
 from benchly.knowledge.repository import compact, record_evidence, upsert
 from benchly.runtime import now_iso
 
-METHOD = "attribute-resolution-2"
+METHOD = "attribute-resolution-3"
 PHYSICAL = ("backrest", "armrest", "covered", "wheelchair", "seats", "material", "direction")
 CATEGORIES = {
     "physical": PHYSICAL,
@@ -137,7 +137,7 @@ def collect_existing(database, bench):
     if photo:
         signals = json.loads(photo["signals"])
         for attr, value in {"imagery_available": True if signals.get("photos") else None, "land_context": signals.get("land_context"),
-                            "image_water_type": signals.get("water_type"),
+                            "image_water_type": signals.get("visible_water_type", signals.get("water_type")),
                             "image_long_view": True if signals.get("long_view") else None,
                             "image_mountain_view": True if signals.get("mountain") else None}.items():
             record_evidence(database, row_id, attr, value, "imagery", "matched-photo-set", confidence=.4,

@@ -184,7 +184,7 @@ def build_parser() -> argparse.ArgumentParser:
     _database_argument(osm_import)
     osm_import.add_argument("--pbf", help="Use an existing Switzerland .osm.pbf instead of downloading")
     osm_import.add_argument("--pbf-url", default=DEFAULT_OSM_PBF_URL)
-    osm_import.add_argument("--work-dir", help="Keep downloads in this directory; otherwise temporary files are deleted")
+    osm_import.add_argument("--work-dir", help="Persistent download/staging directory; defaults to sources/osm beside the database")
     osm_import.set_defaults(function=import_osm_job, uses_lock=True)
 
     official = subparsers.add_parser(
@@ -212,7 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     enrich = subparsers.add_parser("enrich-batch", help="Enrich one resumable spatial cell with bounded downloads")
     _database_argument(enrich)
-    enrich.add_argument("--work-dir", help="Keep downloads in this directory; otherwise temporary files are deleted")
+    enrich.add_argument("--work-dir", help="Shared 160 GiB raster cache; defaults to terrain-cache-v1 beside the database")
     enrich.add_argument("--cell-degrees", type=float, default=0.05)
     enrich.add_argument("--limit", type=int, default=1000)
     enrich.add_argument("--max-geodata-tiles", type=int, default=3000)

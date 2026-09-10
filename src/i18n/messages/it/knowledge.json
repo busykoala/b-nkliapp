@@ -26,7 +26,9 @@
     "land_context": "Dintorni",
     "canopy_context": "Chiome degli alberi",
     "waterfront": "Sull’acqua",
-    "presence": "Presenza"
+    "presence": "Presenza",
+    "image_water_type": "Acqua nelle foto",
+    "image_long_view": "Vista lontana stimata da seduti"
   },
   "sources": {
     "osm": "OpenStreetMap",

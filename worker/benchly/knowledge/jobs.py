@@ -208,7 +208,7 @@ def prepare_benchmark(args):
                 from benchly.geo import distance_meters
                 record["imagery_distance_meters"] = round(distance_meters(image["latitude"], image["longitude"], record["latitude"], record["longitude"]), 1)
                 record["capture_date"] = image["captured_at"] or "unknown"
-            elif first.get("provider") == "SWISSIMAGE":
+            if first.get("provider") == "SWISSIMAGE":
                 record["distance_band"] = "overhead"  # map-centred orthophoto, not a ground camera at zero metres
             # Available quality metadata describes integrity, not invented visual labels.
             record["image_integrity"] = "hash_recorded" if first.get("sha256") else "unknown"
