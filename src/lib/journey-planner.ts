@@ -1,3 +1,4 @@
+import type { Translator } from "@/i18n/types";
 import { journeyMinutes, type JourneyLeg, type JourneyOption, type JourneyQuery } from "./journey";
 
 export const PREFERENCES_KEY = "benchly-journey-preferences";
@@ -37,10 +38,10 @@ export function journeyBounds(legs: JourneyLeg[]): [[number, number], [number, n
   return west === Infinity ? null : [[west, south], [east, north]];
 }
 
-export function tightestTransfer(option: JourneyOption) {
+export function tightestTransfer(option: JourneyOption, t: Translator) {
   const transfers = option.legs.flatMap((leg) => leg.transfer ? [leg.transfer] : []);
-  if (!transfers.length) return "Ohne Umsteigen";
-  if (transfers.some((transfer) => transfer.slackSeconds === null)) return "Umstiegszeit noch unsicher";
+  if (!transfers.length) return t("routing.transfer.none");
+  if (transfers.some((transfer) => transfer.slackSeconds === null)) return t("routing.transfer.unknown");
   const tightest = Math.min(...transfers.map((transfer) => transfer.slackSeconds!));
-  return `Engster Umstieg: ${journeyMinutes(tightest)} Luft · gewünscht +${transfers[0].bufferMinutes} min`;
+  return t("routing.transfer.tightest", {duration: journeyMinutes(tightest), buffer: transfers[0].bufferMinutes});
 }

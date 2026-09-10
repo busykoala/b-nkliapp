@@ -1,0 +1,25 @@
+{
+  "title": "Moderazione Bänkli App",
+  "signIn": {
+    "description": "Accedi con la password di amministrazione configurata.",
+    "local": "In locale senza configurazione: {password}"
+  },
+  "result": {
+    "passwordInvalid": "La password non è corretta.",
+    "signedIn": "Accesso effettuato.",
+    "unauthorized": "Non autorizzato."
+  },
+  "contributions": "Contributi",
+  "reports": "Segnalazioni",
+  "empty": "Ancora nessun contributo.",
+  "kinds": {
+    "rating": "Valutazione",
+    "correction": "Correzione"
+  },
+  "hidden": "Nascosto",
+  "hide": "Nascondi",
+  "show": "Mostra",
+  "block": "Blocca il browser",
+  "reportCount": "{count, plural, one {# segnalazione} other {# segnalazioni}}",
+  "rating": "Generale {overall}/5 · Vista {view}/5 · Comfort {comfort}/5 · Quiete {quiet}/5"
+}

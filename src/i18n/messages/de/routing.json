@@ -1,0 +1,93 @@
+{
+  "pace": {
+    "leisurely": "Gemütlich",
+    "normal": "Normal",
+    "brisk": "Zügig"
+  },
+  "transfer": {
+    "tones": {
+      "plenty": "Viel Luft",
+      "fits": "Passend",
+      "tight": "Knapp",
+      "insufficient": "Nicht ausreichend",
+      "unknown": "Nicht sicher einschätzbar"
+    },
+    "evidence": {
+      "official": "Offizielle GTFS-Mindestumsteigezeit",
+      "walk": "Fussweg-Schätzung",
+      "unknown": "Keine verlässliche Weg- oder Mindestzeit"
+    },
+    "none": "Ohne Umsteigen",
+    "unknown": "Umstiegszeit noch unsicher",
+    "tightest": "Engster Umstieg: {duration} Luft · gewünscht +{buffer} min"
+  },
+  "warnings": {
+    "start": "Start: {distance} m bis zum kartierten Weg. Zugang vor Ort prüfen.",
+    "end": "Ziel: {distance} m bis zum kartierten Weg. Zugang vor Ort prüfen.",
+    "via": "Zwischenhalt: {distance} m bis zum kartierten Weg. Zugang vor Ort prüfen.",
+    "walkUnverified": "Fussweg und Gehzeit nicht verifiziert.",
+    "connectionUnverified": "Verbindungsweg zwischen diesen Haltestellen nicht verifiziert.",
+    "departurePlatform": "Abfahrt: Gleis/Haltekante {actual} statt {scheduled} (Prognose).",
+    "arrivalPlatform": "Ankunft: Gleis/Haltekante {actual} statt {scheduled} (Prognose)."
+  },
+  "instructions": {
+    "continue": "Geradeaus weitergehen",
+    "left": "Links abbiegen",
+    "right": "Rechts abbiegen",
+    "slightLeft": "Leicht links halten",
+    "slightRight": "Leicht rechts halten",
+    "sharpLeft": "Scharf links abbiegen",
+    "sharpRight": "Scharf rechts abbiegen",
+    "keepLeft": "Links halten",
+    "keepRight": "Rechts halten",
+    "uTurn": "Umkehren",
+    "arrive": "Ziel erreicht",
+    "via": "Zwischenhalt erreicht",
+    "roundaboutEnter": "In den Kreisverkehr gehen",
+    "roundaboutExit": "Kreisverkehr verlassen",
+    "roundaboutNumber": "Im Kreisverkehr Ausgang {exit} nehmen",
+    "ferry": "Fähre nehmen",
+    "leaveFerry": "Fähre verlassen · {instruction}",
+    "unknown": "Dem eingezeichneten Weg folgen",
+    "street": "{instruction} · {street}",
+    "towards": "{instruction} · Richtung {destination}"
+  },
+  "controls": {
+    "options": "Optionen",
+    "pace": "Dein Schritttempo",
+    "any": "Egal",
+    "minutes": "ca. {minutes} min",
+    "easy": "Leichte Wege",
+    "t2": "Bergwege bis T2",
+    "difficulty": "Schwierigkeit",
+    "time": "Startzeit (Schweiz; leer = jetzt)",
+    "goodToKnow": "Gut zu wissen",
+    "directions": "Wegbeschreibung"
+  },
+  "errors": {
+    "time": "Diese Schweizer Uhrzeit existiert nicht. Bitte prüfen."
+  },
+  "labels": {
+    "start": "Start",
+    "startReturn": "Start & Rückkehr",
+    "transit": "ÖV",
+    "waypoint": "Wegpunkt"
+  },
+  "origin": {
+    "title": "Wo startest du?",
+    "change": "Ändern",
+    "input": "Start: Adresse oder Haltestelle",
+    "placeholder": "Adresse oder Haltestelle",
+    "results": "Startpunkte",
+    "station": "Haltestelle",
+    "address": "Adresse",
+    "current": "Mein Standort",
+    "mapHint": "Oder eine Haltestelle auf der Karte antippen.",
+    "pending": "Startpunkte werden gesucht …",
+    "searchFailed": "Suche gerade nicht verfügbar.",
+    "locating": "Standort wird gesucht …",
+    "choose": "Bitte eine Adresse oder Haltestelle wählen.",
+    "unavailable": "Standort nicht verfügbar. Wähle eine Adresse oder Haltestelle.",
+    "accuracy": "Standort nur auf etwa {meters} m genau. Bitte prüfen."
+  }
+}

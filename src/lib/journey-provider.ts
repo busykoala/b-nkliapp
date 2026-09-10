@@ -1,4 +1,5 @@
 import "server-only";
+import { message } from "@/i18n/message";
 import { z } from "zod";
 import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { assessTransfer, distanceMeters, summarizeJourney, swissWallTime, type JourneyLeg, type JourneyOption, type JourneyPoint, type JourneyQuery, type JourneyResult } from "./journey";
@@ -140,7 +141,7 @@ async function buildConnection(raw: Connection, query: JourneyQuery, destination
         transferWalkKnown = (!transferHasWalk || transferWalkKnown) && !path.warnings.length;
       } catch {
         transferWalkKnown = false;
-        legs.push({ id: `${id}-${index}`, mode: "walk", from, to, departure, arrival, predicted: false, durationSeconds: 0, geometry: [], geometryQuality: "missing", warnings: ["Fussweg und Gehzeit nicht verifiziert."] });
+        legs.push({ id: `${id}-${index}`, mode: "walk", from, to, departure, arrival, predicted: false, durationSeconds: 0, geometry: [], geometryQuality: "missing", warnings: [message("routing.warnings.walkUnverified")] });
       }
       transferHasWalk = true;
       continue;
@@ -148,13 +149,13 @@ async function buildConnection(raw: Connection, query: JourneyQuery, destination
     const scheduledDeparture = iso(s.departure.departure), scheduledArrival = iso(s.arrival.arrival);
     const leg: JourneyLeg = { id: `${id}-${index}`, from, to, departure, arrival, scheduledDeparture, scheduledArrival,
       predicted: departure !== scheduledDeparture || arrival !== scheduledArrival || Boolean(s.departure.prognosis?.departure || s.arrival.prognosis?.arrival),
-      mode: vehicleMode(s.journey.category ?? ""), line: `${s.journey.category ?? "ÖV"} ${s.journey.number ?? ""}`.trim(), direction: s.journey.to ?? undefined,
+      mode: vehicleMode(s.journey.category ?? ""), line: `${s.journey.category ?? ""} ${s.journey.number ?? ""}`.trim(), direction: s.journey.to ?? undefined,
       durationSeconds: Math.max(0, (Date.parse(arrival) - Date.parse(departure)) / 1000), geometryQuality: "schematic",
       geometry: [[from.longitude, from.latitude], ...(s.journey.passList ?? []).flatMap((p): [number, number][] => p.station.coordinate ? [[p.station.coordinate.y, p.station.coordinate.x]] : []), [to.longitude, to.latitude]], warnings: [] };
-    for (const [checkpoint, label] of [[s.departure, "Abfahrt"], [s.arrival, "Ankunft"]] as const) {
+    for (const [checkpoint, label] of [[s.departure, "routing.warnings.departurePlatform"], [s.arrival, "routing.warnings.arrivalPlatform"]] as const) {
       if (checkpoint.platform != null && checkpoint.prognosis?.platform != null && String(checkpoint.platform) !== String(checkpoint.prognosis.platform)) {
         leg.platformChanges ??= [];
-        leg.platformChanges.push(`${label}: Gleis/Haltekante ${checkpoint.prognosis.platform} statt ${checkpoint.platform} (Prognose).`);
+        leg.platformChanges.push(message(label, {actual: String(checkpoint.prognosis.platform), scheduled: String(checkpoint.platform)}));
       }
     }
     if (previousVehicle) {
@@ -166,7 +167,7 @@ async function buildConnection(raw: Connection, query: JourneyQuery, destination
           legs.push(walk);
           transferWalkSeconds = walk.durationSeconds; transferWalkKnown = !path.warnings.length;
         } catch {
-          legs.push({ id: `${id}-transfer-${index}`, mode: "walk", from: previousVehicle.to, to: from, departure: previousVehicle.arrival, arrival: departure, predicted: false, durationSeconds: 0, geometry: [], geometryQuality: "missing", warnings: ["Verbindungsweg zwischen diesen Haltestellen nicht verifiziert."] });
+          legs.push({ id: `${id}-transfer-${index}`, mode: "walk", from: previousVehicle.to, to: from, departure: previousVehicle.arrival, arrival: departure, predicted: false, durationSeconds: 0, geometry: [], geometryQuality: "missing", warnings: [message("routing.warnings.connectionUnverified")] });
         }
       }
       leg.transfer = assessTransfer((Date.parse(departure) - Date.parse(previousVehicle.arrival)) / 1000, transferWalkKnown ? transferWalkSeconds : null, rule, query.bufferMinutes);
@@ -186,7 +187,7 @@ export async function planJourney(query: JourneyQuery, destination: JourneyPoint
   let partial = false;
   const result = (): JourneyResult => ({ options: options.sort((a, b) => Number(b.complete && b.feasible) - Number(a.complete && a.feasible) || (query.arriveBy ? Date.parse(b.departure) - Date.parse(a.departure) : Date.parse(a.arrival) - Date.parse(b.arrival))).slice(0, 3), partial,
     fetchedAt: new Date().toISOString(), feedUpdatedAt: transitFeedDate(),
-    ...(!options.length ? { message: "Keine passende Verbindung gefunden. Bitte später/früher suchen oder den Start ändern." } : partial ? { message: "Einige Wege fehlen noch. Unsichere Abschnitte sind gekennzeichnet." } : {}) });
+    ...(!options.length ? { message: message("journey.result.empty") } : partial ? { message: message("journey.result.partial") } : {}) });
   try {
     if (query.mode === "walk") {
       const path = await walkPath(query.origin, destination, signal, query.origin.kind !== "station" || Boolean(query.destination));
@@ -229,6 +230,6 @@ export async function planJourney(query: JourneyQuery, destination: JourneyPoint
       } catch { partial = true; }
     })));
     return result();
-  } catch { partial = true; return { ...result(), message: "Routenservice gerade nicht verfügbar. Die Karte bleibt bedienbar. Bitte erneut versuchen." }; }
+  } catch { partial = true; return { ...result(), message: message("journey.result.unavailable") }; }
   finally { clearTimeout(timer); }
 }

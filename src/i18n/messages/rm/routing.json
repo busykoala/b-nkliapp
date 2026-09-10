@@ -1,0 +1,93 @@
+{
+  "pace": {
+    "leisurely": "Pazient",
+    "normal": "Normal",
+    "brisk": "Svelt"
+  },
+  "transfer": {
+    "tones": {
+      "plenty": "Bler temp",
+      "fits": "Adattà",
+      "tight": "Stretg",
+      "insufficient": "Betg suffizient",
+      "unknown": "Betg stimabel cun segirezza"
+    },
+    "evidence": {
+      "official": "Temp minimal uffizial da midar GTFS",
+      "walk": "Stimaziun da la via a pe",
+      "unknown": "Nagin temp da via u temp minimal fidà"
+    },
+    "none": "Senza midar",
+    "unknown": "Temp da midar anc malsegir",
+    "tightest": "Midada la pli stretga: {duration} temp liber · giavischà +{buffer} min"
+  },
+  "warnings": {
+    "start": "Partenza: {distance} m fin a la via registrada. Controllar l’access al lieu.",
+    "end": "Arrivada: {distance} m fin a la via registrada. Controllar l’access al lieu.",
+    "via": "Fermada: {distance} m fin a la via registrada. Controllar l’access al lieu.",
+    "walkUnverified": "Via a pe e temp da viandar betg verifitgads.",
+    "connectionUnverified": "Via da colliaziun tranter questas fermadas betg verifitgada.",
+    "departurePlatform": "Partenza: binari/perrun {actual} enstagl da {scheduled} (prognosa).",
+    "arrivalPlatform": "Arrivada: binari/perrun {actual} enstagl da {scheduled} (prognosa)."
+  },
+  "instructions": {
+    "continue": "Ir vinavant a dretg or",
+    "left": "Volver a sanestra",
+    "right": "Volver a dretga",
+    "slightLeft": "Tegnair levamain a sanestra",
+    "slightRight": "Tegnair levamain a dretga",
+    "sharpLeft": "Volver ferm a sanestra",
+    "sharpRight": "Volver ferm a dretga",
+    "keepLeft": "Tegnair a sanestra",
+    "keepRight": "Tegnair a dretga",
+    "uTurn": "Sa volver",
+    "arrive": "Arrivà a la destinaziun",
+    "via": "Fermada cuntanschida",
+    "roundaboutEnter": "Entrar en il giratori",
+    "roundaboutExit": "Bandunar il giratori",
+    "roundaboutNumber": "En il giratori prender la sortida {exit}",
+    "ferry": "Prender il traghet",
+    "leaveFerry": "Bandunar il traghet · {instruction}",
+    "unknown": "Suandar la via inditgada sin la carta",
+    "street": "{instruction} · {street}",
+    "towards": "{instruction} · direcziun {destination}"
+  },
+  "controls": {
+    "options": "Opziuns",
+    "pace": "Tes tempo da viandar",
+    "any": "Tuttina",
+    "minutes": "ca. {minutes} min",
+    "easy": "Vias levas",
+    "t2": "Sendas da muntogna fin T2",
+    "difficulty": "Difficultad",
+    "time": "Temp da partenza (Svizra; vid = ussa)",
+    "goodToKnow": "Bun da savair",
+    "directions": "Descripziun da la via"
+  },
+  "errors": {
+    "time": "Quest temp svizzer n’exista betg. Controllar per plaschair."
+  },
+  "labels": {
+    "start": "Partenza",
+    "startReturn": "Partenza e return",
+    "transit": "Traffic public",
+    "waypoint": "Punct da passadi"
+  },
+  "origin": {
+    "title": "Nua partas ti?",
+    "change": "Midar",
+    "input": "Partenza: adressa u fermada",
+    "placeholder": "Adressa u fermada",
+    "results": "Puncts da partenza",
+    "station": "Fermada",
+    "address": "Adressa",
+    "current": "Mia posiziun",
+    "mapHint": "U tutgar ina fermada sin la carta.",
+    "pending": "Puncts da partenza vegnan tschertgads …",
+    "searchFailed": "Tschertga actualmain betg disponibla.",
+    "locating": "La posiziun vegn tschertgada …",
+    "choose": "Tscherner in’adressa u ina fermada.",
+    "unavailable": "Posiziun betg disponibla. Tscherner in’adressa u ina fermada.",
+    "accuracy": "Posiziun precisa mo sin circa {meters} m. Controllar per plaschair."
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "title": "Tge che nus savain — e tge ch’è anc avert",
+  "categories": {
+    "physical": "Equipament",
+    "location": "Lieu",
+    "accessibility": "Via d’access",
+    "imagery": "Maletgs",
+    "surroundings": "Conturns",
+    "amenities": "Infrastructura",
+    "environment": "Datas da l’ambient",
+    "recent_verification": "Observaziun actuala"
+  },
+  "amenities": {
+    "toilets": "Tualetta",
+    "drinking_water": "Aua da baiver",
+    "fountain": "Bigl",
+    "shelter": "Suttetg",
+    "picnic_table": "Maisa da picnic",
+    "playground": "Plazza da giugar",
+    "waste_basket": "Recipient da rument",
+    "fireplace": "Fieu da grillar"
+  },
+  "attributes": {
+    "covered": "Tetg",
+    "wheelchair": "Utilisaziun cun sutga cun rodas",
+    "land_context": "Conturns",
+    "canopy_context": "Tetg da plantas",
+    "waterfront": "Sper l’aua",
+    "presence": "Preschientscha"
+  },
+  "sources": {
+    "osm": "OpenStreetMap",
+    "gis": "Geometria",
+    "imagery": "Model da maletgs",
+    "official": "Datas uffizialas",
+    "community": "Communitad"
+  },
+  "confidence": {
+    "unknown": "avert",
+    "low": "malsegir",
+    "medium": "sustegnì",
+    "high": "bain sustegnì"
+  },
+  "nearby": {
+    "title": "En vischinanza",
+    "distance": "ca. {distance} m",
+    "explanation": "Distanza en lingia directa tar infrastructura registrada entaifer 500 m. In bigl na furnescha betg automaticamain aua da baiver."
+  },
+  "approach": {
+    "title": "L’ultim toc da via",
+    "length": "Via considerada",
+    "steps": "Stgalas sin questa via",
+    "stepFree": "Pussaivladad senza stgalims",
+    "open": "Avert",
+    "recorded": "Registradas",
+    "noneRecorded": "Naginas registradas",
+    "evidence": "Indizis avant maun",
+    "obstacle": "Obstachel registrà",
+    "maxSlope": "Pendenza maximala stimada",
+    "meanSlope": "Pendenza absoluta media",
+    "ascent": "Ascensiun al banc",
+    "surface": "Cuverta tenor la carta",
+    "smoothness": "Stadi tenor la carta",
+    "width": "Ladezza minimala registrada",
+    "explanation": "{confidence} · Mo in access local, nagina controlla da l’entir viadi. Obstachels che mancan sin la carta na garanteschan betg in access senza barrieras.",
+    "empty": "Anc nagina senda da peduns avunda datiers attribuida."
+  },
+  "noise": {
+    "title": "Canera dal traffic en il model",
+    "rail": "Viafier",
+    "road": "Via",
+    "day": "Di",
+    "night": "Notg",
+    "empty": "Nagina cuverta dal raster",
+    "explanation": "Livels da valitaziun uffizials, nagina mesiraziun directa. Stadi da las funtaunas: {version}."
+  },
+  "evidence": {
+    "title": "Indizis per caracteristica",
+    "conflicting": "Indizis cuntradictorics"
+  },
+  "completeness": {
+    "title": "Quant cumplet èn las datas da quest lieu?",
+    "count": "{known} da {total} indicaziuns",
+    "uncertain": " · {count} malsegiras",
+    "explanation": "Mintga sectur stat per sasez. Ina valur che manca vala sco averta e na di nagut negativ davart il banc."
+  },
+  "verification": {
+    "label": "Ina curta dumonda al lieu",
+    "intro": "Sche ti es gist qua",
+    "unknown": "Jau na sai betg",
+    "failed": "La resposta n’ha betg pudì vegnir memorisada. Emprova anc ina giada.",
+    "questions": {
+      "backrest": "Ha quest banc in spundal?",
+      "armrest": "Ha quest banc posabratscha?",
+      "covered": "Ha quest banc in tetg fix?",
+      "approach_steps": "Avevi stgalas sin tes ultim toc da via fin qua?"
+    },
+    "reasons": {
+      "conflicting": "Qua sa cuntradin ils indizis.",
+      "missing": "Questa indicaziun manca anc.",
+      "stale": "In’observaziun actuala gida."
+    },
+    "result": {
+      "invalid": "Questa resposta n’ha betg pudì vegnir memorisada.",
+      "saved": "Grazia! Tia indicaziun cumplettescha las observaziuns existentas.",
+      "failed": "La resposta fa gist pausa."
+    }
+  },
+  "surfaces": {
+    "asphalt": "Asfalt",
+    "paved": "Fortifitgà",
+    "unpaved": "Betg fortifitgà",
+    "concrete": "Betun",
+    "paving_stones": "Crappa da sulada",
+    "cobblestone": "Sulada da crappa",
+    "sett": "Sulada da crap natiral",
+    "gravel": "Glera",
+    "fine_gravel": "Glera fina",
+    "compacted": "Cumpactà",
+    "ground": "Terren natiral",
+    "dirt": "Terra",
+    "earth": "Terra",
+    "grass": "Pastg",
+    "sand": "Sabla",
+    "wood": "Lain",
+    "rock": "Grip",
+    "pebblestone": "Crappella",
+    "mud": "Glitta"
+  },
+  "smoothness": {
+    "excellent": "Fitg planiv",
+    "good": "Planiv",
+    "intermediate": "Levmain malguliv",
+    "bad": "Malguliv",
+    "very_bad": "Fitg malguliv",
+    "horrible": "Fermamain donnegià",
+    "very_horrible": "Extremamain donnegià",
+    "impassable": "Betg passabel"
+  }
+}

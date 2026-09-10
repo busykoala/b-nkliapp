@@ -1,0 +1,153 @@
+{
+  "navigation": {
+    "feed": "Retour aux actualités"
+  },
+  "intro": {
+    "own": "Ton carnet de balade",
+    "public": "En chemin avec",
+    "since": "En chemin depuis {date}"
+  },
+  "activity": {
+    "eyebrow": "Participation",
+    "title": "De petits gestes utiles",
+    "recent": "Contributions récentes",
+    "contributed": "Tes contributions"
+  },
+  "pending": {
+    "eyebrow": "Tes ajouts",
+    "title": "En attente de confirmation",
+    "remaining": "Encore {count, plural, one {une confirmation} other {# confirmations}}",
+    "complete": "Tous les bancs que tu as ajoutés sont confirmés.",
+    "empty": "Tu n’as pas encore ajouté de banc."
+  },
+  "trail": {
+    "eyebrow": "Ta trace",
+    "places": "{count, plural, one {Un lieu particulier} other {# lieux particuliers}}",
+    "complete": "Ta carte est pleine d’histoires — et reste ouverte aux nouvelles.",
+    "remaining": "Encore {count, plural, one {un lieu} other {# lieux}} jusqu’à la prochaine étape.",
+    "progress": "Progression sur ton chemin",
+    "next": "Prochaine petite excursion"
+  },
+  "collection": {
+    "landscapes": "Paysages",
+    "found": "Tes découvertes",
+    "waiting": "T’attend encore",
+    "seasons": "Saisons",
+    "year": "Ton année dehors"
+  },
+  "badges": {
+    "title": "Carnet d’insignes",
+    "collected": "{count, plural, one {Un souvenir recueilli} other {# souvenirs recueillis}}",
+    "firstPage": "La première page est encore libre",
+    "empty": "Le premier petit souvenir d’un lieu partagé attend ici.",
+    "more": "Découvrir {count} autres insignes",
+    "progress": "{progress} sur {target}",
+    "catalog": {
+      "erstes-plaetzli": {
+        "name": "Explorateur·rice des bancs",
+        "hint": "Un banc ajouté"
+      },
+      "baenkli-scout": {
+        "name": "Pionnier·ère des bancs",
+        "hint": "3 bancs ajoutés et confirmés"
+      },
+      "spaehnase": {
+        "name": "Fin limier des bancs",
+        "hint": "10 bancs ajoutés"
+      },
+      "verifizierli": {
+        "name": "Vérificateur·rice des bancs",
+        "hint": "5 bancs confirmés"
+      },
+      "holzauge": {
+        "name": "Détective des bancs",
+        "hint": "3 absences de bancs confirmées"
+      },
+      "pausenpoet": {
+        "name": "Poète des pauses",
+        "hint": "5 avis rédigés"
+      },
+      "baenkli-buenzli": {
+        "name": "Connaisseur·se des bancs",
+        "hint": "25 contributions utiles"
+      },
+      "bankdirektor": {
+        "name": "Gourou des bancs",
+        "hint": "75 contributions utiles"
+      },
+      "sitzungspraesident": {
+        "name": "Légende des bancs",
+        "hint": "200 contributions utiles"
+      }
+    }
+  },
+  "moments": {
+    "added": "<bench>{name}</bench> ajouté à la carte.",
+    "rated": "Un avis laissé pour <bench>{name}</bench>.",
+    "confirmed": "<bench>{name}</bench> confirmé sur place.",
+    "missing": "<bench>{name}</bench> signalé absent.",
+    "edited": "Un détail ajouté à <bench>{name}</bench>."
+  },
+  "time": {
+    "today": "aujourd’hui",
+    "yesterday": "hier",
+    "daysAgo": "il y a {days} jours"
+  },
+  "stages": {
+    "first": "La première trace",
+    "paths": "Sur les chemins paisibles",
+    "forest": "À travers bois et prés",
+    "hills": "Par-delà les collines",
+    "horizon": "Le regard au loin",
+    "keeper": "Gardien·ne des bancs"
+  },
+  "landscapes": {
+    "forest": {
+      "name": "Lumière forestière",
+      "hint": "Un lieu entre les arbres"
+    },
+    "water": {
+      "name": "Au bord de l’eau",
+      "hint": "Lac ou rivière à proximité"
+    },
+    "mountain": {
+      "name": "Air des montagnes",
+      "hint": "Un lieu avec vue sur les montagnes"
+    },
+    "hill": {
+      "name": "Chemin des collines",
+      "hint": "De douces hauteurs en vue"
+    },
+    "open": {
+      "name": "Grand espace",
+      "hint": "Un horizon ouvert"
+    },
+    "city": {
+      "name": "Pause en ville",
+      "hint": "Un coin paisible en localité"
+    }
+  },
+  "prompts": {
+    "add": {
+      "title": "Laisse ta première trace",
+      "copy": "Connais-tu un banc qui manque encore sur la carte ?"
+    },
+    "rate": {
+      "title": "Raconte une pause",
+      "copy": "Un avis sincère facilite la prochaine découverte."
+    },
+    "confirm": {
+      "title": "Regarde de plus près",
+      "copy": "Les nouveaux bancs apprécient une confirmation sur place."
+    },
+    "landscape": "Découvrir : {landscape}",
+    "discover": {
+      "title": "Suis ta curiosité",
+      "copy": "Peut-être qu’un lieu particulier t’attend au coin de la rue."
+    }
+  },
+  "metadata": {
+    "description": "Le carnet de balade de {username} dans Bänkli App.",
+    "notFound": "Profil introuvable"
+  }
+}

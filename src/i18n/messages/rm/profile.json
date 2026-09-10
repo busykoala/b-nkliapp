@@ -1,0 +1,153 @@
+{
+  "navigation": {
+    "feed": "A las novitads dals bancs"
+  },
+  "intro": {
+    "own": "Tes cudesch da viandar",
+    "public": "Sin via cun",
+    "since": "Sin via dapi {date}"
+  },
+  "activity": {
+    "eyebrow": "Participaziun",
+    "title": "Pitschnas chaussas che gidan",
+    "recent": "Ultimas contribuziuns",
+    "contributed": "Tias contribuziuns"
+  },
+  "pending": {
+    "eyebrow": "Tias endataziuns",
+    "title": "Spetgar sin conferma",
+    "remaining": "Anc {count, plural, one {ina conferma} other {# confermas}}",
+    "complete": "Tut ils bancs che ti has registrà èn confermads.",
+    "empty": "Ti n’has anc registrà nagin banc."
+  },
+  "trail": {
+    "eyebrow": "Tia fastiza",
+    "places": "{count, plural, one {In lieu spezial} other {# lieus spezials}}",
+    "complete": "Tia carta è plaina d’istorgias — e resta averta per novas.",
+    "remaining": "Anc {count, plural, one {in lieu} other {# lieus}} fin al proxim toc da via.",
+    "progress": "Progress sin tia via",
+    "next": "Proxim pitschen viadi"
+  },
+  "collection": {
+    "landscapes": "Cuntradas",
+    "found": "Tge che ti has gia chattà",
+    "waiting": "Spetga anc sin tai",
+    "seasons": "Stagiuns",
+    "year": "Tes onn en il liber"
+  },
+  "badges": {
+    "title": "Cudesch d’insignias",
+    "collected": "{count, plural, one {Ina regurdientscha rimnada} other {# regurdientschas rimnadas}}",
+    "firstPage": "L’emprima pagina è anc libra",
+    "empty": "Qua spetga l’emprima pitschna regurdientscha d’in lieu cuminaivel.",
+    "more": "Scuvrir {count} ulteriuras insignias",
+    "progress": "{progress} da {target}",
+    "catalog": {
+      "erstes-plaetzli": {
+        "name": "Scuvrider da bancs",
+        "hint": "In banc registrà"
+      },
+      "baenkli-scout": {
+        "name": "Pionier dals bancs",
+        "hint": "3 agens bancs confermads"
+      },
+      "spaehnase": {
+        "name": "Detectiv dals bancs",
+        "hint": "10 bancs registrads"
+      },
+      "verifizierli": {
+        "name": "Examinader da bancs",
+        "hint": "5 bancs confermads"
+      },
+      "holzauge": {
+        "name": "Investigader da bancs",
+        "hint": "3 bancs mancants confermads"
+      },
+      "pausenpoet": {
+        "name": "Poet da pausas",
+        "hint": "5 valitaziuns scrittas"
+      },
+      "baenkli-buenzli": {
+        "name": "Enconuschider da bancs",
+        "hint": "25 contribuziuns utilas"
+      },
+      "bankdirektor": {
+        "name": "Guru dals bancs",
+        "hint": "75 contribuziuns utilas"
+      },
+      "sitzungspraesident": {
+        "name": "Legenda dals bancs",
+        "hint": "200 contribuziuns utilas"
+      }
+    }
+  },
+  "moments": {
+    "added": "<bench>{name}</bench> mess sin la carta.",
+    "rated": "Ina vusch laschada per <bench>{name}</bench>.",
+    "confirmed": "<bench>{name}</bench> confermà al lieu.",
+    "missing": "<bench>{name}</bench> annunzià sco absent.",
+    "edited": "In detagl agiunt a <bench>{name}</bench>."
+  },
+  "time": {
+    "today": "oz",
+    "yesterday": "ier",
+    "daysAgo": "avant {days} dis"
+  },
+  "stages": {
+    "first": "L’emprima fastiza",
+    "paths": "Sin sendas quietas",
+    "forest": "Tras guauds e prads",
+    "hills": "Sur las collinas",
+    "horizon": "Cun vasta vista",
+    "keeper": "Pertgirader dals bancs"
+  },
+  "landscapes": {
+    "forest": {
+      "name": "Glisch dal guaud",
+      "hint": "In lieu tranter plantas"
+    },
+    "water": {
+      "name": "Sper l’aua",
+      "hint": "Lai u flum en vischinanza"
+    },
+    "mountain": {
+      "name": "Aria da muntogna",
+      "hint": "In lieu cun vista sin las muntognas"
+    },
+    "hill": {
+      "name": "Via da collinas",
+      "hint": "Miaivlas autezzas en vista"
+    },
+    "open": {
+      "name": "Vastezza",
+      "hint": "In orizont avert"
+    },
+    "city": {
+      "name": "Pausa en citad",
+      "hint": "In lieu quiet en il vitg"
+    }
+  },
+  "prompts": {
+    "add": {
+      "title": "Lascha tia emprima fastiza",
+      "copy": "Enconuschas ti in banc che manca anc sin la carta?"
+    },
+    "rate": {
+      "title": "Raquinta d’ina pausa",
+      "copy": "Ina vusch sincera facilitescha la proxima scuverta."
+    },
+    "confirm": {
+      "title": "Guarda ina giada pli precis",
+      "copy": "Novs bancs sa legran d’ina conferma al lieu."
+    },
+    "landscape": "Scuvrir: {landscape}",
+    "discover": {
+      "title": "Suonda tia mirveglias",
+      "copy": "Forsa spetga gist enturn il chantun in lieu spezial."
+    }
+  },
+  "metadata": {
+    "description": "Il cudesch da viandar da {username} en Bänkli App.",
+    "notFound": "Profil betg chattà"
+  }
+}

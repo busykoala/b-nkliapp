@@ -10,7 +10,7 @@ export type SkyTrackPoint = {
 
 export type LikelyTrait = {
   kind: "land" | "canopy" | "lake" | "mountain" | "open" | "limited" | "buildings" | "roadRail";
-  label: string;
+  value: string;
   probability: number;
   confidence: "high" | "medium" | "low";
   evidenceCount: number;
@@ -205,7 +205,7 @@ export type BenchDetail = {
   };
   nearOpenness: number | null;
   viewConfidence: Confidence;
-  viewExplanation: string[];
+  viewExplanation: Array<"openness" | "relief" | "water" | "naturalness" | "community" | "model">;
   photoEvidence?: { observationCount: number } | null;
   sunrise: string;
   sunset: string;

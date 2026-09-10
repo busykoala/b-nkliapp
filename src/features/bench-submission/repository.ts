@@ -9,7 +9,7 @@ export function readNearbyBenches(latitude: number, longitude: number): NearbyBe
   const latitudeDelta = radius / 110_000;
   const longitudeDelta = latitudeDelta / Math.cos(latitude * Math.PI / 180);
   const rows = sqlite.prepare(`
-    SELECT b.id,coalesce(nullif(b.name,''),nullif(b.description,''),'Bänkli') title,b.latitude,b.longitude
+    SELECT b.id,coalesce(nullif(b.name,''),nullif(nullif(b.description,'Sitzbank'),''),'') title,b.latitude,b.longitude
     FROM bench_spatial_index s JOIN benches b ON b.row_id=s.row_id
     WHERE s.min_longitude BETWEEN ? AND ? AND s.min_latitude BETWEEN ? AND ? AND b.active=1
   `).all(longitude - longitudeDelta, longitude + longitudeDelta, latitude - latitudeDelta, latitude + latitudeDelta) as Omit<NearbyBench, "distanceMeters">[];

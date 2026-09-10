@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "title": "À propos de Bänkli App",
+    "description": "Comment les données ouvertes aident à trouver un lieu de pause. Personnes, méthodes et confidentialité."
+  },
+  "hero": {
+    "eyebrow": "Beaucoup de technique. Pour ne rien faire.",
+    "title": "Un bel endroit<br></br>pour une pause.",
+    "description": "Bänkli App réunit des cartes ouvertes, un peu d’IA et les gens sur place. Pour trouver où t’asseoir la prochaine fois."
+  },
+  "navigation": {
+    "label": "Sur cette page",
+    "methods": "Comment ça marche",
+    "sources": "Sources de données",
+    "privacy": "Tes données",
+    "contribute": "Participer"
+  },
+  "methods": {
+    "title": "De la carte à la pause",
+    "introduction": "Mesurer, estimer, demander. Nous distinguons ces trois choses.",
+    "position": {
+      "title": "Où se trouve le banc ?",
+      "description": "Les cartes et inventaires ouverts fournissent la position et les équipements. Les limites communales aident à les situer. Deux bancs proches ne sont fusionnés que si les indices sont clairs."
+    },
+    "sun": {
+      "title": "Quand y a-t-il du soleil ici ?",
+      "description": "Nous suivons la position du soleil au fil de la journée. Montagnes, bâtiments et cimes des arbres forment un horizon. Si le soleil passe derrière, nous prévoyons de l’ombre. Nuages et feuillage variable ajoutent de l’incertitude."
+    },
+    "view": {
+      "title": "Que pourrais-je voir ?",
+      "description": "Le relief et les environs donnent de premiers indices. L’IA examine des photos pertinentes et ajoute des éléments visibles. De l’eau à proximité ou une seule image ne suffisent pas à garantir une vue sur le lac."
+    },
+    "evidence": {
+      "title": "Et est-ce juste ?",
+      "description": "Ton observation sur place aide. Nous conservons l’origine, l’âge et les indices contradictoires. Une donnée absente reste inconnue. Les modèles donnent des estimations ; ta vue préférée reste la tienne."
+    }
+  },
+  "sources": {
+    "eyebrow": "En toute transparence",
+    "title": "Ce que nous faisons avec les données",
+    "introduction": "Un aperçu de chaque source. Les détails d’un banc indiquent les informations disponibles pour ce lieu.",
+    "link": "Voir la source ↗",
+    "entries": {
+      "openstreetmap": {
+        "summary": "Bancs et chemins",
+        "description": "Les positions, équipements, chemins, fontaines et toilettes viennent notamment d’ici. Une donnée absente reste inconnue. L’âge d’une entrée OSM est conservé séparément de la date de notre import."
+      },
+      "geofabrik": {
+        "summary": "Extrait OSM de la Suisse",
+        "description": "Geofabrik fournit l’extrait suisse d’OpenStreetMap. Nous le traitons en bloc pour éviter une nouvelle requête pour chaque caractéristique à l’ouverture d’un banc."
+      },
+      "swisstopo-map": {
+        "summary": "Fond de carte et recherche d’adresses",
+        "description": "Le fond de carte montre chemins, relief et noms de lieux. La recherche d’adresses utilise aussi GeoAdmin. Les tuiles cartographiques sont chargées directement auprès de swisstopo."
+      },
+      "swisstlm3d": {
+        "summary": "Forêts, eau et surfaces du paysage",
+        "description": "Des surfaces et lignes précises décrivent notamment forêts et eaux. Nous analysons la géométrie autour du banc : de l’eau à proximité ne prouve pas qu’elle est visible depuis le siège."
+      },
+      "swissbuildings3d": {
+        "summary": "Forme des bâtiments et hauteur des toits",
+        "description": "La forme, la hauteur et la distance d’un bâtiment déterminent sa hauteur apparente à l’horizon du banc. Si le soleil passe derrière, nous prévoyons de l’ombre. Hauteurs manquantes et positions imprécises rendent l’estimation moins sûre."
+      },
+      "swissalti3d": {
+        "summary": "Altitude, horizon et pente",
+        "description": "Le modèle de terrain fournit altitude et horizon naturel dans de nombreuses directions. Pour les accès locaux, nous comparons les hauteurs le long du chemin : 1 mètre de dénivelé sur 20 mètres horizontaux correspond à une pente de 5 %."
+      },
+      "swisssurface3d": {
+        "summary": "Surface avec bâtiments et végétation",
+        "description": "Ce modèle de surface comprend bâtiments et végétation. La comparaison avec le terrain nu aide à repérer obstacles et cimes. Une canopée mesurée ne révèle toutefois pas la densité actuelle des feuilles."
+      },
+      "meteoswiss": {
+        "summary": "Modèles météo et radar",
+        "description": "Température, vent, nuages et précipitations viennent de modèles météo et du radar. Les nuages sont traités séparément de l’ombre géométrique : un rayon libre dans le modèle ne garantit pas un ciel sans nuages."
+      },
+      "transport-api": {
+        "summary": "Arrêts et correspondances",
+        "description": "La recherche d’arrêts et de connexions complète le trajet. Les termes recherchés ou les coordonnées nécessaires sont envoyés à transport.opendata.ch."
+      },
+      "swiss-gtfs": {
+        "summary": "Horaires et règles de correspondance",
+        "description": "L’horaire public est importé localement pour trouver les arrêts et les correspondances possibles d’un trajet vers un banc. Un horaire ne garantit pas la ponctualité d’un véhicule."
+      },
+      "graphhopper": {
+        "summary": "Itinéraires à pied sur le réseau",
+        "description": "Notre propre service calcule les chemins à pied sur le réseau. Durée, pente et pauses aident à planifier ; un itinéraire calculé ne constitue pas une accessibilité vérifiée sur place."
+      },
+      "wikimedia-commons": {
+        "summary": "Images ouvertes du lieu et des environs",
+        "description": "Les images ouvertes donnent une idée du lieu ou des environs. Distance, licence et attribution restent visibles avec l’image. Une photo des environs n’est pas nécessairement une photo de ce banc précis."
+      },
+      "panoramax": {
+        "summary": "Images de rue géoréférencées",
+        "description": "Les images de rue géoréférencées peuvent renseigner sur les environs. Nous tenons compte de la distance, de la direction et de la série de prises de vue pour éviter de compter plusieurs photos d’un même passage comme des confirmations indépendantes."
+      },
+      "kartaview": {
+        "summary": "Autres images de rue",
+        "description": "Ces images ouvertes complètent aussi les indices sur les environs. Une image floue ou inadaptée ne compte pas comme preuve. Même proches, la photo et le banc peuvent regarder dans des directions différentes."
+      },
+      "swissimage": {
+        "summary": "Images aériennes",
+        "description": "Les images aériennes aident à situer surfaces et végétation. Elles montrent le lieu d’en haut ; on ne peut pas en déduire directement la vue d’une personne assise."
+      },
+      "zurich-benches": {
+        "summary": "Inventaire officiel des bancs de Zurich",
+        "description": "L’inventaire municipal comprend les bancs de Grün Stadt Zürich et du Tiefbauamt. Nous conservons leur identifiant officiel et comparons prudemment les entrées OSM proches. Plusieurs voisins possibles restent séparés pour vérification. Les bancs privés et forestiers ne sont pas tous inclus."
+      },
+      "zurich-trees": {
+        "summary": "Cadastre des arbres de Zurich",
+        "description": "Le cadastre municipal ajoute des emplacements d’arbres connus. Quand les caractéristiques sont disponibles, il aide à estimer l’ombre possible et la végétation."
+      },
+      "basel-trees": {
+        "summary": "Cadastre des arbres de Bâle",
+        "description": "Le cadastre bâlois ajoute aussi des arbres qui peuvent manquer sur d’autres cartes. Un arbre répertorié ne remplace pas une mesure actuelle de sa couronne."
+      },
+      "sonbase": {
+        "summary": "Modélisation du bruit à long terme",
+        "description": "Les grilles officielles donnent des niveaux de bruit modélisés en dB(A). Route et rail, jour et nuit restent séparés. Ce sont des valeurs à long terme, pas un enregistrement du bruit lors de ta prochaine pause."
+      },
+      "swissnames3d": {
+        "summary": "Noms de lieux et repères",
+        "description": "Les noms de lieux et de quartiers sont recherchés autour du banc et pondérés selon leur proximité et leur type. Un nom proche sert de repère ; la commune politique est déterminée séparément par ses limites."
+      },
+      "swissboundaries3d": {
+        "summary": "Limites des communes, districts et cantons",
+        "description": "La position du banc est croisée avec les surfaces réelles des communes, districts et cantons. Le numéro OFS assure une attribution unique. Sur une frontière incertaine, l’attribution reste ouverte."
+      },
+      "qwen3-vl-benchly": {
+        "summary": "Indices de l’IA sur les images des environs",
+        "description": "Le modèle d’image exploité localement cherche des indices de forêt, d’eau, de montagnes et de vue dégagée. Ses estimations restent séparées des mesures. Une comparaison contrôlée avec des images annotées par des humains vérifie erreurs et différences régionales."
+      },
+      "qwen35-bank-photos": {
+        "summary": "Environs visibles sur les photos des bancs",
+        "description": "Le modèle d’image plus grand ajoute perspective et environs visibles à partir de photos correctement associées aux bancs. Une montagne visible peut appuyer une vue ; son absence ne la réfute pas. Les autoévaluations du modèle ne sont pas des probabilités mesurées."
+      },
+      "benchly-community": {
+        "summary": "Observations des personnes sur place",
+        "description": "Les personnes sur place confirment les bancs, complètent les équipements et partagent leurs impressions. Plusieurs observations indépendantes et récentes renforcent une information. Les contradictions sont conservées et peuvent mener à une courte question."
+      }
+    }
+  },
+  "privacy": {
+    "eyebrow": "Sans labyrinthe de petites lignes",
+    "title": "Où vont tes données ?",
+    "description": "Choisis une activité dans l’app. Le parcours ci-dessous montre ce qui se passe.",
+    "link": "Confidentialité et contact"
+  },
+  "contribute": {
+    "eyebrow": "Il reste de la place sur le banc",
+    "title": "Apporte ta touche",
+    "description": "Un problème ou une idée ? Le code et les discussions sont publics. Même les petites améliorations comptent.",
+    "code": "Code et contributions ↗",
+    "issues": "Signaler un problème ou une idée ↗"
+  },
+  "reuse": {
+    "title": "Emporter les données ? Avec plaisir.",
+    "invitation": "Collecter, étudier, créer : nos données publiques sur les bancs sont réutilisables. Au rythme de la promenade, s’il te plaît : le serveur est un banc de parc, pas un TGV.",
+    "pace": "Une requête par seconde, l’une après l’autre, avec mise en cache et une pause en cas d’erreur ou de réponse 429.",
+    "rights": "Les licences des sources restent applicables, comme l’ODbL d’OpenStreetMap et l’attribution de swisstopo. Photos, textes et contributions appartiennent à leurs auteurs ; nous ne pouvons pas en autoriser globalement la réutilisation. Les données privées des comptes ne sont pas ouvertes."
+  },
+  "people": {
+    "eyebrow": "Les personnes derrière le projet",
+    "title": "Merci pour les bancs.",
+    "description": "À Stephan pour l’idée, Matthias pour la réalisation technique, Jonas pour son regard attentif. Et à toutes les personnes qui s’assoient dehors, découvrent et partagent leur savoir."
+  },
+  "links": {
+    "imprint": "Contact et mentions légales",
+    "privacy": "Confidentialité",
+    "project": "Vers le projet"
+  }
+}

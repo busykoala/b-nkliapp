@@ -1,0 +1,200 @@
+{
+  "light": {
+    "moon": {
+      "v1": "Glisch da la glina ruaussa sin il banc",
+      "v2": "Glisch d’argient stritga il lieu quiet",
+      "v3": "La glina dissegnia quiets conturs",
+      "v4": "Miaivla glisch da glina chatta il banc",
+      "v5": "La notg metta argient sin il lieu",
+      "v6": "Glisch da glina sa rimna sper la via",
+      "v7": "Ina clera glina surveglia il lieu",
+      "v8": "Il banc siemia en la glisch da la glina"
+    },
+    "night": {
+      "v1": "Il lieu ruaussa sut las stailas",
+      "v2": "La notg quieta enzuglia il banc",
+      "v3": "La stgiradetgna fa quest lieu tut quiet",
+      "v4": "Sut il vast tschiel da notg spetga il banc",
+      "v5": "La notg sa ferma qua in mument",
+      "v6": "In lieu quiet dorma sut il tschiel stgir"
+    },
+    "unknown": {
+      "v1": "Glisch e sumbriva raquintan qua anc in misteri",
+      "v2": "Il lieu spetga anc sin sia fastiza da glisch",
+      "v3": "La glisch da quest lieu vegn anc explorada",
+      "v4": "Sulegl e sumbriva èn qua anc sin viadi da scuverta"
+    },
+    "sun": {
+      "v1": "Chalur dal sulegl giascha sin il banc",
+      "v2": "Glisch dad aur envida da restar",
+      "v3": "Il sulegl stgauda quest lieu quiet",
+      "v4": "Clera glisch sauta sur il lieu",
+      "v5": "In chaud tac da sulegl spetga qua",
+      "v6": "Il banc tschiffa la glisch dal di",
+      "v7": "Il sulegl dissegnia chalur sin la via",
+      "v8": "Il di glischa sin quest banc"
+    },
+    "building": {
+      "v1": "Ina chasa regala al banc frestga sumbriva",
+      "v2": "Sumbriva protegida giascha sin il lieu",
+      "v3": "Las chasas fan daventar la glisch miaivla",
+      "v4": "Tranter mirs ruaussa in mument frestg",
+      "v5": "Ina quieta sumbriva d’edifizi envida da far pausa"
+    },
+    "vegetation": {
+      "v1": "Feglia malegia sumbrivas sin il banc",
+      "v2": "Verda sumbriva sa ballantscha sur il lieu",
+      "v3": "Glisch scutina tras la feglia",
+      "v4": "Sut la feglia vegn il mund quiet",
+      "v5": "Sumbrivas che sautan ruaussan sin il lieu",
+      "v6": "In tetg da feglia crivla la glisch dal sulegl"
+    },
+    "terrain": {
+      "v1": "La spunda tegn anc enavos il sulegl",
+      "v2": "Il terren regala al lieu frestga sumbriva",
+      "v3": "Davos las autezzas spetga la glisch",
+      "v4": "L’orizont pertgira ina quieta sumbriva"
+    },
+    "roof": {
+      "v1": "In pitschen tetg protegia quest lieu quiet",
+      "v2": "Protegì dal tschiel spetga il banc",
+      "v3": "Sut in tetg chatta il di ruaus",
+      "v4": "Il banc giascha protegì sut ses tetg"
+    },
+    "shade": {
+      "v1": "Quieta sumbriva envida da restar",
+      "v2": "La glisch vegn qua tut quieta",
+      "v3": "In frestg mument spetga",
+      "v4": "Miaivla sumbriva embratscha il lieu",
+      "v5": "Qua respira il di in pau",
+      "v6": "Il banc ruaussa davent da la clera glisch"
+    }
+  },
+  "weather": {
+    "snow": {
+      "v1": "Flocs fan il mund miaivel",
+      "v2": "Naiv croda senza tun tras l’aria",
+      "v3": "Alv d’enviern sa rimna sper la via",
+      "v4": "Quiets flocs tschertgan il terren",
+      "v5": "Naiv mitigescha mintga pass"
+    },
+    "rain": {
+      "v1": "Plievgia dissegnia rudels en la quietezza",
+      "v2": "Guttins raquintan dal tschiel",
+      "v3": "La plievgia lascha glischar quiet il lieu",
+      "v4": "Glischur bletscha giascha sur la via",
+      "v5": "Guttins tiran fastizs d’argient"
+    },
+    "mixed": {
+      "v1": "Plievgia e flocs s’inscuntran",
+      "v2": "Il tschiel mida tranter aua ed alv",
+      "v3": "Naiv bletscha passa quiet sperasvi",
+      "v4": "Flocs lieuan sin la via quieta"
+    },
+    "overcast": {
+      "v1": "Nivels portan il tschiel tut datiers",
+      "v2": "In miaivel tschiel da nivels sa stenda sur il lieu",
+      "v3": "La glisch viagia quiet tras spess nivels",
+      "v4": "Nivels fan il di miaivel e quiet"
+    },
+    "cloudy": {
+      "v1": "Nivels passan plaun tras la glisch",
+      "v2": "Sulegl e nivels sa barattan quietamain",
+      "v3": "Intgins nivels viagian sur il lieu",
+      "v4": "Inslas da glisch passan sur la cuntrada"
+    },
+    "wind": {
+      "v1": "Il vent porta vinavant il mument",
+      "v2": "Ina frestga brisa stritga il lieu",
+      "v3": "Vent muventa la cuntrada en quietas undas",
+      "v4": "L’aria è sveglia ed en moviment"
+    }
+  },
+  "view": {
+    "mountains": {
+      "v1": "Muntognas veglian en la lontananza",
+      "v2": "Pizs portan la vista a l’orizont",
+      "v3": "Las Alps avran ina vasta lontananza",
+      "v4": "Lingias da muntognas sgolan sur la terra",
+      "v5": "La vista sa drizza ensi vers ils pizs",
+      "v6": "Muntognas lontanas dattan vastezza al lieu",
+      "v7": "A l’orizont stattan las muntognas quietas",
+      "v8": "Ils pizs tegnan la vista per in mument"
+    },
+    "hills": {
+      "v1": "Miaivlas collinas portan la vista",
+      "v2": "Verdas autezzas circumdeschan la lontananza",
+      "v3": "L’orizont sa muventa en miaivlas lingias",
+      "v4": "Collinas sa rodlan quiet davent",
+      "v5": "Miaivlas autezzas enraman quest lieu",
+      "v6": "La vista suonda las quietas collinas"
+    },
+    "water": {
+      "v1": "L’aua porta davent la vista",
+      "v2": "A la riva vegn il temp vast",
+      "v3": "Glisch viagia sur l’aua",
+      "v4": "L’aua regala ruaus a la vista",
+      "v5": "Aua e tschiel daventan in",
+      "v6": "La riva lascha flotar il mument",
+      "v7": "Sur l’aua s’avra la lontananza"
+    },
+    "forest": {
+      "v1": "Il guaud scutina enturn enturn",
+      "v2": "Tranter plantas abitescha il ruaus",
+      "v3": "Il verd tegna davent il mund per in mument",
+      "v4": "Feglia enrama quest lieu quiet",
+      "v5": "Il guaud respira tut datiers",
+      "v6": "Tranter bists sa perda il temp"
+    },
+    "open": {
+      "v1": "Il tschiel fa vasta la vista",
+      "v2": "Vastezza giascha quieta davant ils egls",
+      "v3": "L’orizont dastga restar avert",
+      "v4": "La vista chatta spazi liber",
+      "v5": "Qua vegn il tschiel in pau pli grond",
+      "v6": "La cuntrada s’avra tut quiet"
+    },
+    "limited": {
+      "v1": "La vischinanza fa quest lieu protegì",
+      "v2": "La vista resta datiers ed il mument tut qua",
+      "v3": "Protegì da la lontananza daventi quiet",
+      "v4": "Quest pitschen chantun tegna il mund tar sai",
+      "v5": "Datiers da la via chatta la vista ruaus"
+    },
+    "quiet": {
+      "v1": "Ina quieta via passa sperasvi",
+      "v2": "Il mund vegn quiet per in mument",
+      "v3": "Qua dastga il mument restar",
+      "v4": "In pitschen lieu per respirar",
+      "v5": "Il temp passa qua in pau pli plaun",
+      "v6": "Il lieu spetga senza prescha"
+    }
+  },
+  "seat": {
+    "roof": {
+      "v1": "Sut ses tetg dastga la pausa durar pli ditg",
+      "v2": "In pitschen tetg protegia il lieu",
+      "v3": "Protegì spetga il banc sin ina pausa",
+      "v4": "Qua ins sesa in pau pli protegì"
+    },
+    "support": {
+      "v1": "Il banc retschaiva spatlas stanclas cun bratscha averta",
+      "v2": "Qua dastgan dies e mauns vegnir a ruaus",
+      "v3": "Il banc è pront per ina lunga pausa",
+      "v4": "Il mument sa metta cumadaivlamain enavos"
+    },
+    "backrest": {
+      "v1": "Qua dastga era il dies ruaussar",
+      "v2": "Il spundal envida da restar pli ditg",
+      "v3": "Sa pusond daventa in ferm ina pausa",
+      "v4": "Il banc regala ruaus al dies",
+      "v5": "Qua ins sesa schluccà vers la lontananza"
+    },
+    "wood": {
+      "v1": "Chaud lain spetga sin ina pitschna pausa",
+      "v2": "Il lain porta fastizs da blers quiets muments",
+      "v3": "In simpel banc da lain envida da restar",
+      "v4": "Lain fa quest ferm in pau pli chaud"
+    }
+  }
+}

@@ -1,0 +1,363 @@
+{
+  "hub": {
+    "eyebrow": "Regarder de plus près, ensemble",
+    "title": "Contribuer à ce banc",
+    "close": "Fermer les contributions"
+  },
+  "chapters": {
+    "rating": {
+      "title": "Comment était ta pause ?",
+      "summary": "Ton avis",
+      "prompt": "Évaluer le confort, le calme et la vue",
+      "mine": "Ton avis : {rating}/5"
+    },
+    "presence": {
+      "title": "Confirmer le banc",
+      "summary": "L’as-tu vu sur place ?"
+    },
+    "features": {
+      "title": "Décrire le banc",
+      "summary": "Nom, équipement et direction du regard"
+    },
+    "light": {
+      "title": "La lumière en ce moment",
+      "recorded": "Ton observation est enregistrée",
+      "summary": "Soleil, ombre ou variable",
+      "night": "Cette question apparaît à la lumière du jour, quand l’observation est pertinente."
+    },
+    "view": {
+      "title": "Vue et environs",
+      "recorded": "Ton impression est enregistrée",
+      "summary": "Confirmer ou nuancer l’estimation"
+    },
+    "photo": {
+      "title": "Photo de ce lieu",
+      "summary": "Prendre une photo ou choisir dans la photothèque"
+    },
+    "moment": {
+      "title": "Laisser un moment",
+      "summary": "Souvenir, conseil, poème ou savoir local"
+    },
+    "care": {
+      "title": "Prendre soin du banc",
+      "summary": "De petits gestes d’entretien visibles",
+      "mine": "{count, plural, one {# geste de ta part aujourd’hui} other {# gestes de ta part aujourd’hui}}"
+    },
+    "correction": {
+      "title": "Quelque chose ne va pas",
+      "summary": "Signaler la position, l’état ou les environs"
+    }
+  },
+  "theme": {
+    "month": "Thème commun · ce mois-ci",
+    "monthly": {
+      "winter": {
+        "title": "Lumière d’hiver",
+        "prompt": "Montre-nous un banc dans la lumière paisible de l’hiver."
+      },
+      "company": {
+        "title": "Une personne chère",
+        "prompt": "Quelle pause aimerais-tu partager avec quelqu’un ?"
+      },
+      "green": {
+        "title": "Première verdure",
+        "prompt": "Découvre les premiers signes du printemps autour du banc."
+      },
+      "history": {
+        "title": "Un banc avec une histoire",
+        "prompt": "Quel souvenir ou quelle histoire locale appartient à ce lieu ?"
+      },
+      "morning": {
+        "title": "Calme du matin",
+        "prompt": "Quelle impression donne ce lieu tôt le matin ?"
+      },
+      "shade": {
+        "title": "Un coin d’ombre",
+        "prompt": "Quels bancs offrent de l’ombre les jours chauds ?"
+      },
+      "water": {
+        "title": "De l’eau en vue",
+        "prompt": "Partage une impression sincère de l’eau — ou de son absence."
+      },
+      "grandparents": {
+        "title": "Le favori des grands-parents",
+        "prompt": "Quel lieu conviendrait à une pause ensemble ?"
+      },
+      "evening": {
+        "title": "L’or du soir",
+        "prompt": "Saisis l’ambiance d’une fin de journée d’été."
+      },
+      "care": {
+        "title": "Un petit geste de soin",
+        "prompt": "Un lieu propre est un effort collectif discret."
+      },
+      "fog": {
+        "title": "Brouillard et proximité",
+        "prompt": "Qu’est-ce qui reste beau quand la vue lointaine fait une pause ?"
+      },
+      "thought": {
+        "title": "Une pensée chaleureuse",
+        "prompt": "Laisse un petit poème ou une recommandation."
+      }
+    }
+  },
+  "overview": {
+    "features": "{count, plural, one {# indication} other {# indications}}",
+    "moments": "{count, plural, one {# moment} other {# moments}}",
+    "mine": "Tes contributions ici :",
+    "empty": "Tu n’as pas encore contribué ici. Choisis ce que tu sais avec certitude.",
+    "rating": "Avis"
+  },
+  "metadata": {
+    "placeholder": "Quel est le nom de ce banc ?",
+    "dedicationHint": "(ce qui est inscrit sur le banc)",
+    "save": "Enregistrer les indications"
+  },
+  "moments": {
+    "kinds": {
+      "memory": "Souvenir",
+      "recommendation": "Conseil",
+      "poem": "Poème",
+      "local_fact": "Savoir local",
+      "photo": "Moment en image"
+    },
+    "choose": "Que souhaites-tu partager ?",
+    "label": "Ton moment sur le banc",
+    "poemPlaceholder": "Quelques lignes pour ce lieu…",
+    "placeholder": "Que devraient savoir les autres sur ce lieu ?",
+    "publish": "Publier le moment"
+  },
+  "care": {
+    "actions": {
+      "cleaned": "Un petit nettoyage",
+      "good": "En bon état",
+      "repair": "À réparer",
+      "beautiful": "Particulièrement beau aujourd’hui"
+    },
+    "description": "Pas de points ni de classement, juste un signe que quelqu’un y a prêté attention.",
+    "mine": "{label} · par toi",
+    "events": {
+      "cleaned": "nettoyé",
+      "good": "vu en bon état",
+      "repair": "signalé à réparer",
+      "beautiful": "trouvé particulièrement beau aujourd’hui"
+    }
+  },
+  "presence": {
+    "signIn": "Se connecter pour participer",
+    "confirmedToday": "Confirmé par toi aujourd’hui",
+    "confirm": "Toujours là",
+    "question": "Est-il toujours là ?",
+    "missingCount": "{count}/{threshold} personnes signalent l’absence de ce banc.",
+    "reportedMissing": "Absence signalée par toi",
+    "confirmMissing": "Confirmer l’absence",
+    "reportMissing": "Le banc n’est plus là"
+  },
+  "errors": {
+    "save": "L’action n’a pas pu être enregistrée. Réessaie."
+  },
+  "rating": {
+    "eyebrow": "Ton impression",
+    "existing": "Ton avis précédent est prérempli, tu peux le modifier.",
+    "intro": "Quatre petites impressions aident les autres à choisir.",
+    "fields": {
+      "overall": "Ensemble",
+      "view": "Vue",
+      "comfort": "Confort",
+      "quiet": "Calme"
+    },
+    "note": "Une pensée à partager",
+    "optional": "(facultatif)",
+    "placeholder": "Qu’as-tu apprécié ici ?",
+    "update": "Actualiser l’avis",
+    "publish": "Publier l’avis",
+    "stars": "{count, plural, one {# étoile} other {# étoiles}}"
+  },
+  "correction": {
+    "eyebrow": "Un petit signalement",
+    "title": "Quelque chose ne va pas ?",
+    "intro": "Uniquement ce que tu viens de constater sur place.",
+    "field": "Qu’est-ce qui ne va pas ?",
+    "choose": "Choisir",
+    "options": {
+      "removed": "Le banc a disparu ou a été retiré",
+      "location": "La position est imprécise",
+      "properties": "L’équipement est incorrect",
+      "condition": "Endommagé ou difficile à utiliser",
+      "environment": "Les environs, la vue ou la lumière ne correspondent pas"
+    },
+    "observation": "Qu’as-tu vu ?",
+    "placeholder": "Par exemple : le dossier manque",
+    "publish": "Publier le signalement",
+    "fields": {
+      "properties": "Équipement",
+      "condition": "État",
+      "location": "Position",
+      "removed": "N’existe plus",
+      "environment": "Environs, vue ou lumière"
+    }
+  },
+  "place": {
+    "eyebrow": "Les gens de ce lieu",
+    "title": "Moments sur un banc",
+    "share": "Partager le moment",
+    "shareText": "Un moment sur un banc près de {bench}",
+    "copied": "Lien copié, prêt à partager, aussi sur Instagram.",
+    "shareUnavailable": "Le partage n’est pas disponible dans ce navigateur pour le moment.",
+    "operator": "Entretenu sur place",
+    "favourite": "Lieu favori",
+    "save": "Garder ce banc",
+    "following": "Tu suis {place}",
+    "follow": "Suivre {place}",
+    "favourites": "Tous les lieux favoris",
+    "recent": "ces 90 derniers jours",
+    "deleteOwn": "Supprimer mon moment",
+    "empty": "Pas encore d’histoire ici. Le banc attend patiemment."
+  },
+  "features": {
+    "progress": "{known}/{total} indications connues · Appuie pour compléter",
+    "mine": "de toi"
+  },
+  "observations": {
+    "light": {
+      "label": "Signaler la lumière sur place",
+      "title": "Est-ce le cas en ce moment ?",
+      "intro": "Une brève impression sur place",
+      "mine": "Ton observation : {choice}",
+      "choices": {
+        "sun": "Soleil",
+        "shade": "Ombre",
+        "mixed": "Variable"
+      },
+      "trend": "Communauté : surtout {choice} · {count, plural, one {une personne} other {# personnes}}"
+    },
+    "view": {
+      "label": "Décrire la vue sur place",
+      "title": "Quelle impression te fait ce lieu ?",
+      "agreed": "Confirmé à peu près par toi",
+      "mine": "Ton impression a été enregistrée",
+      "intro": "Ton impression aide à améliorer l’estimation",
+      "agree": "Ça correspond à peu près",
+      "edit": "Vécu autrement",
+      "step": "Étape {current} sur {total}",
+      "steps": "Étapes",
+      "back": "Retour",
+      "next": "Suivant",
+      "save": "Enregistrer"
+    },
+    "steps": {
+      "openness": "Le lieu paraît-il ouvert ?",
+      "landscape": "Qu’est-ce qui marque le paysage ?",
+      "horizon": "Que voit-on à l’horizon ?",
+      "surroundings": "Quelle impression donnent les environs ?"
+    },
+    "fields": {
+      "openness": "Vue dégagée",
+      "sky": "Ciel",
+      "relief": "Terrain",
+      "water": "Eau",
+      "horizon": "Horizon",
+      "naturalness": "Environs",
+      "disturbance": "Perturbations"
+    },
+    "choices": {
+      "openness": {
+        "wide": "Presque partout",
+        "partial": "Dans certaines directions",
+        "enclosed": "Plutôt fermé"
+      },
+      "sky": {
+        "open": "Ouvert",
+        "partial": "Partiellement",
+        "closed": "Fermé"
+      },
+      "relief": {
+        "flat": "Plat",
+        "gentle": "Doux",
+        "strong": "Relief marqué"
+      },
+      "water": {
+        "clear": "Clairement visible",
+        "some": "Un peu visible",
+        "none": "Invisible"
+      },
+      "horizon": {
+        "open": "Principalement dégagé",
+        "trees": "Arbres",
+        "buildings": "Bâtiments",
+        "mixed": "Mixte"
+      },
+      "naturalness": {
+        "natural": "Naturel",
+        "mixed": "Mixte",
+        "built": "Bâti"
+      },
+      "disturbance": {
+        "quiet": "Calme",
+        "some": "Un peu",
+        "strong": "Beaucoup"
+      }
+    },
+    "trend": {
+      "openness": "plutôt ouvert",
+      "naturalness": "naturel",
+      "quiet": "calme",
+      "description": "Communauté : {qualities}",
+      "empty": "Impression de la communauté",
+      "summary": "{description} · {count, plural, one {une personne} other {# personnes}} · {confidence}"
+    },
+    "undo": "Annuler"
+  },
+  "reviews": {
+    "eyebrow": "Par des personnes sur place",
+    "title": "Comment était la pause ?",
+    "edit": "Modifier ma contribution",
+    "add": "Partager une impression",
+    "signIn": "Connecte-toi pour participer",
+    "reportedRating": "Avis signalé",
+    "reportRating": "Signaler l’avis",
+    "notes": "Remarques",
+    "reportedCorrection": "Correction signalée",
+    "reportCorrection": "Signaler la correction"
+  },
+  "result": {
+    "ratingSaved": "Merci, ton avis est visible.",
+    "ratingFailed": "L’avis n’a pas pu être enregistré.",
+    "correctionSaved": "Merci, ta remarque a été publiée.",
+    "correctionFailed": "La remarque n’a pas pu être enregistrée.",
+    "invalidContribution": "Contribution invalide.",
+    "reported": "La contribution a été signalée.",
+    "reportFailed": "Le signalement a échoué.",
+    "momentInvalid": "Décris ce lieu en quelques mots.",
+    "momentSaved": "Ton moment est maintenant visible sur ce lieu.",
+    "momentFailed": "Le moment n’a pas pu être enregistré.",
+    "invalidMoment": "Moment invalide.",
+    "notYourMoment": "Ce moment n’appartient pas à ton compte.",
+    "momentDeleted": "Ton moment a été supprimé.",
+    "momentDeleteFailed": "Le moment n’a pas pu être supprimé.",
+    "careInvalid": "Action d’entretien inconnue.",
+    "careSaved": "Merci d’en prendre soin.",
+    "careAlreadySaved": "Tu l’as déjà noté aujourd’hui.",
+    "careFailed": "L’entretien n’a pas pu être enregistré.",
+    "unfavourited": "Retiré de tes lieux favoris.",
+    "favourited": "Ce banc fait maintenant partie de tes lieux favoris.",
+    "placeUnnamed": "Ce lieu n’a pas encore de nom.",
+    "placeUnfollowed": "Tu ne suis plus {place}.",
+    "placeFollowed": "Les nouveaux moments de {place} apparaîtront chez toi.",
+    "followFailed": "Le choix n’a pas pu être enregistré.",
+    "lightInvalid": "Choisis soleil, ombre ou variable.",
+    "lightNight": "Tu pourras signaler la lumière ici quand il fera jour.",
+    "lightSaved": "Merci, ton observation de lumière est enregistrée.",
+    "lightFailed": "L’observation de lumière n’a pas pu être enregistrée.",
+    "observationUndone": "Ton observation a été retirée.",
+    "undoFailed": "L’observation n’a pas pu être retirée.",
+    "observationConfirmed": "Merci, ta confirmation aide à interpréter les données.",
+    "observationConfirmFailed": "La confirmation n’a pas pu être enregistrée.",
+    "viewInvalid": "Complète ton observation.",
+    "viewSaved": "Merci, ton observation est enregistrée.",
+    "viewFailed": "L’observation n’a pas pu être enregistrée.",
+    "observationInvalid": "Observation inconnue.",
+    "observationDeleted": "Ton observation a été supprimée.",
+    "observationDeleteFailed": "L’observation n’a pas pu être supprimée."
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "light": {
+    "moon": {
+      "v1": "La luce lunare riposa sulla panchina",
+      "v2": "Una luce d’argento sfiora questo luogo quieto",
+      "v3": "La luna disegna contorni silenziosi",
+      "v4": "Un dolce chiaro di luna trova la panchina",
+      "v5": "La notte posa argento su questo luogo",
+      "v6": "La luce lunare si raccoglie lungo il sentiero",
+      "v7": "Una luna luminosa veglia su questo luogo",
+      "v8": "La panchina sogna nella luce della luna"
+    },
+    "night": {
+      "v1": "Il luogo riposa sotto le stelle",
+      "v2": "La notte silenziosa avvolge la panchina",
+      "v3": "Il buio rende questo luogo tutto quieto",
+      "v4": "La panchina aspetta sotto il vasto cielo notturno",
+      "v5": "La notte si ferma qui per un momento",
+      "v6": "Un luogo quieto dorme sotto il cielo scuro"
+    },
+    "unknown": {
+      "v1": "Luce e ombra custodiscono ancora un segreto qui",
+      "v2": "Il luogo aspetta ancora la sua traccia di luce",
+      "v3": "La luce di questo luogo è ancora da esplorare",
+      "v4": "Sole e ombra sono ancora in esplorazione qui"
+    },
+    "sun": {
+      "v1": "Il calore del sole riposa sulla panchina",
+      "v2": "Una luce dorata invita a restare",
+      "v3": "Il sole riscalda questo luogo quieto",
+      "v4": "Una luce chiara danza su questo luogo",
+      "v5": "Un angolo caldo di sole aspetta qui",
+      "v6": "La panchina raccoglie la luce del giorno",
+      "v7": "Il sole disegna calore sul sentiero",
+      "v8": "Il giorno risplende su questa panchina"
+    },
+    "building": {
+      "v1": "Una casa regala ombra fresca alla panchina",
+      "v2": "Un’ombra riparata riposa su questo luogo",
+      "v3": "Le case rendono qui la luce più morbida",
+      "v4": "Tra i muri riposa un momento fresco",
+      "v5": "L’ombra quieta di un edificio invita a una pausa"
+    },
+    "vegetation": {
+      "v1": "Le foglie dipingono ombre sulla panchina",
+      "v2": "Un’ombra verde dondola su questo luogo",
+      "v3": "La luce sussurra tra le foglie",
+      "v4": "Sotto le foglie il mondo si fa silenzioso",
+      "v5": "Ombre danzanti riposano su questo luogo",
+      "v6": "Un tetto di foglie filtra il sole"
+    },
+    "terrain": {
+      "v1": "Il pendio trattiene ancora il sole",
+      "v2": "Il terreno regala un’ombra fresca a questo luogo",
+      "v3": "Dietro le alture aspetta la luce",
+      "v4": "L’orizzonte custodisce un’ombra quieta"
+    },
+    "roof": {
+      "v1": "Un piccolo tetto protegge questo luogo quieto",
+      "v2": "Riparata dal cielo, la panchina aspetta",
+      "v3": "Sotto un tetto il giorno trova riposo",
+      "v4": "La panchina riposa protetta sotto il suo tetto"
+    },
+    "shade": {
+      "v1": "Un’ombra quieta invita a fermarsi",
+      "v2": "La luce diventa qui tutta silenziosa",
+      "v3": "Aspetta un momento di freschezza",
+      "v4": "Un’ombra dolce abbraccia questo luogo",
+      "v5": "Qui il giorno tira un piccolo respiro",
+      "v6": "La panchina riposa lontana dalla luce forte"
+    }
+  },
+  "weather": {
+    "snow": {
+      "v1": "I fiocchi rendono morbido il mondo",
+      "v2": "La neve cade silenziosa nell’aria",
+      "v3": "Il bianco d’inverno si raccoglie sul sentiero",
+      "v4": "Fiocchi quieti cercano il suolo",
+      "v5": "La neve attutisce ogni passo"
+    },
+    "rain": {
+      "v1": "La pioggia disegna cerchi nel silenzio",
+      "v2": "Le gocce raccontano il cielo",
+      "v3": "La pioggia fa brillare piano questo luogo",
+      "v4": "Un lucido bagnato si posa sul sentiero",
+      "v5": "Le gocce tracciano scie d’argento"
+    },
+    "mixed": {
+      "v1": "Pioggia e fiocchi si incontrano",
+      "v2": "Il cielo alterna acqua e bianco",
+      "v3": "La neve bagnata passa silenziosa",
+      "v4": "I fiocchi si sciolgono sul sentiero quieto"
+    },
+    "overcast": {
+      "v1": "Le nuvole portano il cielo vicino",
+      "v2": "Un soffice cielo nuvoloso si stende sopra",
+      "v3": "La luce attraversa quieta le nuvole fitte",
+      "v4": "Le nuvole rendono il giorno dolce e quieto"
+    },
+    "cloudy": {
+      "v1": "Le nuvole passano lente nella luce",
+      "v2": "Sole e nuvole si alternano piano",
+      "v3": "Qualche nuvola passa sopra questo luogo",
+      "v4": "Isole di luce attraversano il paesaggio"
+    },
+    "wind": {
+      "v1": "Il vento porta avanti il momento",
+      "v2": "Una brezza fresca sfiora questo luogo",
+      "v3": "Il vento muove il paesaggio in onde quiete",
+      "v4": "L’aria è sveglia e in movimento"
+    }
+  },
+  "view": {
+    "mountains": {
+      "v1": "Le montagne vegliano in lontananza",
+      "v2": "Le cime portano lo sguardo all’orizzonte",
+      "v3": "Le Alpi aprono una vasta lontananza",
+      "v4": "Linee di montagna fluttuano sopra il paesaggio",
+      "v5": "Lo sguardo sale verso le cime",
+      "v6": "Le montagne lontane danno spazio a questo luogo",
+      "v7": "Le montagne stanno ferme all’orizzonte",
+      "v8": "Le cime trattengono lo sguardo per un momento"
+    },
+    "hills": {
+      "v1": "Dolci colline portano lo sguardo",
+      "v2": "Alture verdi incorniciano la lontananza",
+      "v3": "L’orizzonte ondeggia in linee morbide",
+      "v4": "Le colline rotolano quiete lontano",
+      "v5": "Morbide alture incorniciano questo luogo",
+      "v6": "Lo sguardo segue le colline tranquille"
+    },
+    "water": {
+      "v1": "L’acqua porta via lo sguardo",
+      "v2": "Sulla riva il tempo si allarga",
+      "v3": "La luce viaggia sull’acqua",
+      "v4": "L’acqua regala riposo allo sguardo",
+      "v5": "Acqua e cielo diventano tutt’uno",
+      "v6": "La riva lascia galleggiare il momento",
+      "v7": "Sopra l’acqua si apre la lontananza"
+    },
+    "forest": {
+      "v1": "Il bosco sussurra tutt’intorno",
+      "v2": "La quiete abita tra gli alberi",
+      "v3": "Il verde tiene lontano il mondo per un momento",
+      "v4": "Le foglie incorniciano questo luogo quieto",
+      "v5": "Il bosco respira molto vicino",
+      "v6": "Tra i tronchi il tempo si perde"
+    },
+    "open": {
+      "v1": "Il cielo allarga lo sguardo",
+      "v2": "La vastità riposa davanti agli occhi",
+      "v3": "L’orizzonte può restare aperto",
+      "v4": "Lo sguardo trova spazio libero",
+      "v5": "Qui il cielo diventa un po’ più grande",
+      "v6": "Il paesaggio si apre piano"
+    },
+    "limited": {
+      "v1": "La vicinanza rende questo luogo accogliente",
+      "v2": "Lo sguardo resta vicino e il momento proprio qui",
+      "v3": "Al riparo dalla lontananza arriva il silenzio",
+      "v4": "Questo piccolo angolo tiene il mondo vicino",
+      "v5": "Vicino al sentiero lo sguardo trova riposo"
+    },
+    "quiet": {
+      "v1": "Un sentiero quieto passa accanto",
+      "v2": "Il mondo si fa silenzioso per un momento",
+      "v3": "Qui il momento può restare",
+      "v4": "Un piccolo luogo per respirare",
+      "v5": "Il tempo passa qui un po’ più piano",
+      "v6": "Il luogo aspetta senza fretta"
+    }
+  },
+  "seat": {
+    "roof": {
+      "v1": "Sotto il suo tetto la pausa può durare di più",
+      "v2": "Un piccolo tetto protegge questo luogo",
+      "v3": "Riparata, la panchina aspetta una pausa",
+      "v4": "Qui ci si siede un po’ più protetti"
+    },
+    "support": {
+      "v1": "La panchina accoglie spalle stanche a braccia aperte",
+      "v2": "Qui schiena e mani possono riposare",
+      "v3": "La panchina è pronta per una lunga pausa",
+      "v4": "Il momento si appoggia comodamente"
+    },
+    "backrest": {
+      "v1": "Qui anche la schiena può riposare",
+      "v2": "Lo schienale invita a restare più a lungo",
+      "v3": "Appoggiandosi, una sosta diventa una pausa",
+      "v4": "La panchina regala riposo alla schiena",
+      "v5": "Qui ci si siede rilassati verso la lontananza"
+    },
+    "wood": {
+      "v1": "Il legno caldo aspetta una piccola pausa",
+      "v2": "Il legno porta tracce di tanti momenti quieti",
+      "v3": "Una semplice panchina di legno invita a restare",
+      "v4": "Il legno rende questa sosta un po’ più calda"
+    }
+  }
+}

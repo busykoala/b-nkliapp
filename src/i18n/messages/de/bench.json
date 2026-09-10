@@ -1,0 +1,356 @@
+{
+  "attributes": {
+    "backrest": "Rückenlehne",
+    "armrest": "Armlehnen",
+    "covered": "Überdacht",
+    "wheelchair": "Mit Rollstuhl nutzbar",
+    "fireplaceNearby": "Feuerstelle nahebei",
+    "wasteBasketNearby": "Abfalleimer nahebei",
+    "material": "Material",
+    "seats": "Sitzplätze",
+    "direction": "Blickrichtung"
+  },
+  "materials": {
+    "wood": "Holz",
+    "metal": "Metall",
+    "stone": "Stein",
+    "concrete": "Beton",
+    "plastic": "Kunststoff",
+    "mixed": "Gemischt"
+  },
+  "sheet": {
+    "resize": "Detailhöhe ändern",
+    "close": "Bank schliessen",
+    "loading": "Der Platz wird erkundet",
+    "loadingAccessible": "Bank wird geladen",
+    "unavailable": "Dieser Platz versteckt sich gerade.",
+    "retry": "Noch einmal schauen",
+    "label": "Bankdetails"
+  },
+  "directions": {
+    "n": "N",
+    "ne": "NO",
+    "e": "O",
+    "se": "SO",
+    "s": "S",
+    "sw": "SW",
+    "w": "W",
+    "nw": "NW"
+  },
+  "details": {
+    "title": "Details",
+    "bench": "Bank",
+    "light": "Licht",
+    "view": "Aussicht",
+    "weather": "Wetter",
+    "unknownFeatures": "Ausstattung noch offen",
+    "night": "Jetzt ist Nacht",
+    "unknownLight": "Lichtlage noch offen",
+    "sunEstimate": "Sonne · geschätzt",
+    "shadeEstimate": "Schatten · geschätzt",
+    "unknownView": "Der Blick wird noch erkundet",
+    "forecast": "{temperature} °C · Prognose",
+    "unknownWeather": "Wetterdaten noch offen"
+  },
+  "panel": {
+    "eyebrow": "So sitzt es sich hier",
+    "title": "Was die Bank mitbringt",
+    "unknown": "Die Bank wird noch erkundet",
+    "missing": "{count, plural, one {Ein Merkmal wurde noch nicht erfasst.} other {# Merkmale wurden noch nicht erfasst.}}",
+    "directionUnknown": "Die Landschaft wird deshalb rundum betrachtet.",
+    "directionKnown": "Die Aussicht wird in dieser Richtung gewichtet."
+  },
+  "location": {
+    "title": "Ort & Lage",
+    "elevation": "Höhe",
+    "metresAboveSea": "{value} m ü. M.",
+    "place": "Ort",
+    "municipality": "Politische Gemeinde",
+    "municipalityValue": "{name} · BFS {id}",
+    "canton": "Kanton",
+    "district": "Bezirk",
+    "nearbyName": "Ortsname in der Nähe",
+    "sourceUpdated": "Quelleneintrag geändert",
+    "imported": "Bei uns eingelesen",
+    "osmVersion": "OSM-Version",
+    "coordinates": "Koordinaten"
+  },
+  "summary": {
+    "title": "Auf einen Blick",
+    "unconfirmed": "Noch keine Sichtung bestätigt",
+    "today": "Heute bestätigt",
+    "yesterday": "Gestern bestätigt",
+    "daysAgo": "Bestätigt vor {days, plural, one {einem Tag} other {# Tagen}}",
+    "noBackrest": "Ohne Rückenlehne",
+    "unknownBackrest": "Rückenlehne offen",
+    "night": "Nacht",
+    "unknownLight": "Licht unbekannt",
+    "sun": "Sonne geschätzt",
+    "shade": "Schatten geschätzt",
+    "lowConfidence": "Geringe Sicherheit der Lichtschätzung",
+    "lightMethod": "Aus Gelände und Umgebung berechnet; Wolken können das Licht ändern",
+    "uncertain": " · unsicher",
+    "noWheelchair": "Mit Rollstuhl nicht nutzbar",
+    "unknownWheelchair": "Rollstuhlnutzung offen",
+    "quiet": "Ruhe {score}/5",
+    "unknownQuiet": "Ruhe unbewertet",
+    "accessNote": "Zugangsweg: nicht auf Rollstuhltauglichkeit geprüft.",
+    "confirming": "Wird bestätigt …",
+    "mine": "Heute von dir bestätigt",
+    "confirmFailed": "Bestätigung konnte nicht gespeichert werden. Bitte erneut versuchen."
+  },
+  "horizon": {
+    "label": "Horizont: {open} Prozent frei, {buildings} Prozent Gebäude, {plants} Prozent Vegetation",
+    "title": "Was den Horizont prägt",
+    "open": "frei",
+    "openView": "Freier Blick",
+    "buildings": "Gebäude",
+    "trees": "Bäume"
+  },
+  "views": {
+    "mountains": "Bergblick",
+    "hills": "Hügelblick",
+    "water": "Wasserblick",
+    "forest": "Waldblick",
+    "panorama": "Weitsicht",
+    "limited": "Eingeschränkte Sicht",
+    "lake": "Seeblick",
+    "woodland": "Waldumgebung",
+    "ordinary": "Keine besondere Aussicht",
+    "nearbyWater": "Wasser im Umfeld",
+    "unknown": "Aussicht noch offen"
+  },
+  "light": {
+    "estimatedSun": "Geschätzte Sonne",
+    "directSun": "Direkte Sonne",
+    "today": "Licht heute",
+    "estimatedWindows": "Geschätzte Sonnenfenster",
+    "sunWindows": "Sonnenfenster",
+    "noSun": "Heute keine direkte Sonne berechnet",
+    "shadeWindows": "Schattenfenster",
+    "noShade": "Heute kein Schattenfenster berechnet",
+    "durationSeasons": "Dauer & Jahreszeiten",
+    "detailsSummary": "Summen, Hindernisse und Himmelswerte",
+    "balance": "{sun} direkte Sonne und {shade} Schatten bei Tageslicht",
+    "shade": "Schatten",
+    "skyValues": "Himmelswerte",
+    "sunrise": "Sonnenaufgang",
+    "sunset": "Sonnenuntergang",
+    "directFrom": "Direkte Sonne ab",
+    "directUntil": "Direkte Sonne bis",
+    "noDirect": "Keine direkte Sonne",
+    "altitude": "Sonnenhöhe",
+    "azimuth": "Sonnenrichtung",
+    "moonlight": "Mondlicht",
+    "moonrise": "Mondaufgang",
+    "moonset": "Monduntergang",
+    "timeline": "Sonnenaufgang {sunrise}, Sonnenuntergang {sunset}. Mondaufgang {moonrise}, Monduntergang {moonset}.",
+    "seasons": {
+      "spring": "Frühling",
+      "summer": "Sommer",
+      "autumn": "Herbst",
+      "winter": "Winter",
+      "label": "Typische direkte Sonnendauer nach Jahreszeit"
+    },
+    "state": {
+      "moon": "Mondlicht über dem Platz",
+      "night": "Nacht über dem Platz",
+      "unknown": "Die Lichtlage wird noch erkundet",
+      "sun": "Die Bank liegt in direkter Sonne",
+      "shade": "Die Bank liegt im Schatten"
+    },
+    "explanation": {
+      "nightEstimate": "Im Modell waren {duration} direkte Sonne möglich.",
+      "night": "Heute waren {duration} direkte Sonne möglich.",
+      "unknown": "Für eine sichere Aussage fehlen noch einzelne Umgebungsdaten.",
+      "clouds": "Geometrisch frei, doch Wolken dämpfen das Licht.",
+      "sun": "Der Sonnenstrahl erreicht den Platz."
+    },
+    "causes": {
+      "frei": "Der Himmel ist frei; die Ursache des Schattens bleibt unklar.",
+      "nacht": "Es ist Nacht.",
+      "überdacht": "Der Schatten kommt wahrscheinlich durch die Überdachung.",
+      "gebäude": "Der Schatten kommt wahrscheinlich durch ein Gebäude.",
+      "vegetation": "Der Schatten kommt wahrscheinlich durch Bäume und Vegetation.",
+      "gelände": "Der Schatten kommt wahrscheinlich durch das Gelände.",
+      "unbekannt": "Die Ursache des Schattens ist noch unbekannt."
+    },
+    "confidence": {
+      "hoch": "Aus Gelände, Gebäuden und Bewuchs berechnet · Wolken separat betrachtet.",
+      "mittel": "Gut angenäherte geometrische Lichtlage · Wolken separat betrachtet.",
+      "niedrig": "Vorläufige Schätzung · einzelne Umgebungsdaten fehlen noch."
+    }
+  },
+  "weather": {
+    "title": "Wetter & Ruhe",
+    "temperatureAt": "{temperature}° bei {location}",
+    "unknown": "Der Himmel bleibt noch verborgen",
+    "rain": "Niederschlag",
+    "wind": "Wind",
+    "humidity": "Feuchte",
+    "snow": "Schnee",
+    "updated": "Stand {date}",
+    "empty": "Sobald Wetterdaten verfügbar sind, erscheinen Temperatur, Wolken und Niederschlag hier.",
+    "layers": {
+      "high": "hoch",
+      "mid": "mittel",
+      "low": "tief",
+      "total": "gesamt"
+    },
+    "cloudCover": "Wolkendecke {percent} Prozent",
+    "quiet": {
+      "title": "Ruhe vor Ort",
+      "empty": "Noch keine Stimmen",
+      "unknown": "Die Ruhe an diesem Platz wurde noch nicht erkundet.",
+      "community": "Ruhe laut Menschen vor Ort",
+      "score": "{score} von 5",
+      "explanation": "Subjektive Bewertung, getrennt von Verkehrsdaten."
+    },
+    "precipitation": {
+      "none": "trocken",
+      "rain": "Regen",
+      "snow": "Schnee",
+      "mixed": "Schneeregen",
+      "unknown": "Niederschlag noch unklar"
+    },
+    "clouds": {
+      "overcast": "Bedeckt",
+      "mostly": "Stark bewölkt",
+      "cloudy": "Wolkig",
+      "few": "Leicht bewölkt",
+      "clear": "Klar"
+    },
+    "temperatureHere": "{temperature}° bei diesem Bänkli"
+  },
+  "view": {
+    "title": "Aussicht & Umgebung",
+    "impression": "Eindruck",
+    "empty": "Die Aussicht wird noch erkundet.",
+    "confidence": {
+      "hoch": "Hohe Sicherheit",
+      "mittel": "Mittlere Sicherheit",
+      "niedrig": "Niedrige Sicherheit"
+    },
+    "community": "{count, plural, one {Ein Eindruck von einem Menschen vor Ort} other {# Eindrücke von Menschen vor Ort}} · {confidence}",
+    "communityConfidence": {
+      "high": "gut gestützt",
+      "medium": "vorsichtig gestützt",
+      "low": "erste Tendenz"
+    },
+    "details": "Aussicht im Detail",
+    "detailsSummary": "Messwerte, Horizont und Umgebung",
+    "metrics": {
+      "directions": "Freie Blickrichtungen",
+      "sky": "Himmelsoffenheit",
+      "relief": "Geländerelief",
+      "water": "Wasser im Blick",
+      "naturalness": "Natürliche Umgebung",
+      "remoteness": "Abstand zu Störungen",
+      "empty": "Für die Aussicht fehlen noch genügend Messpunkte.",
+      "label": "Bestandteile der Aussichtswertung"
+    },
+    "water": "Wasser",
+    "path": "Weg",
+    "inForest": "Im Wald",
+    "outsideForest": "Ausserhalb des Waldes",
+    "photos": "Mit Fotos ergänzt",
+    "coverage": {
+      "title": "Analysebereich",
+      "terrain": "Nahbereich und Gelände bis 20 km",
+      "near": "Nahbereich"
+    },
+    "buildingHorizon": "Gebäude am Horizont",
+    "vegetationHorizon": "Vegetation am Horizont",
+    "buildingCount": "Gebäude in 100 m",
+    "canopyCover": "Baumdeckung",
+    "medianVegetation": "Mittlere Vegetationshöhe",
+    "maxVegetation": "Höchste Vegetation",
+    "imageHints": "Hinweise aus Bildern der Umgebung",
+    "imageConfidence": {
+      "low": "schwacher Hinweis",
+      "medium": "gestützter Hinweis",
+      "high": "mehrfach gestützt"
+    },
+    "imageExplanation": "Modellhinweise, keine Messungen. Die Rohwerte des Bildmodells sind keine kalibrierten Wahrscheinlichkeiten.",
+    "score": "Aussicht {score} von 5",
+    "outOfFive": "von 5",
+    "directly": "direkt",
+    "canopy": {
+      "label": "Baumdeckung im Nahbereich",
+      "title": "Baumdach rund um die Bank",
+      "none": "Freier Himmel",
+      "partial": "Unter einzelnen Bäumen",
+      "dense": "Dichtes Blätterdach",
+      "unknown": "Baumbestand noch unklar"
+    },
+    "headline": {
+      "mountains": "Berge öffnen den Horizont",
+      "hills": "Hügel zeichnen die Ferne",
+      "water": "Wasser liegt im Blick",
+      "limited": "Der Blick bleibt im Nahraum",
+      "open": "So weit öffnet sich der Blick"
+    },
+    "land": {
+      "waterfront": "Direkt am Wasser",
+      "forest": "Wald",
+      "forest_edge": "Waldrand",
+      "park": "Park",
+      "open": "Offenes Gelände",
+      "urban": "Im Ort",
+      "mixed": "Gemischte Landschaft",
+      "unknown": "Umgebung noch unklar"
+    },
+    "explanation": {
+      "openness": "Weiter, wenig verdeckter Horizont",
+      "relief": "Ausgeprägtes Berg- oder Hügelrelief",
+      "water": "Freie Sichtachse zu einer Wasserfläche",
+      "naturalness": "Überwiegend natürliche Umgebung",
+      "community": "Community-Eindrücke von {count, plural, one {einer Person sind} other {# Personen sind}} vorsichtig eingeflossen.",
+      "model": "Aus Gelände, Landbedeckung und Umgebung berechnet"
+    },
+    "traits": {
+      "buildings": "Gebäude im Umfeld",
+      "roadRail": "Strasse oder Bahn im Umfeld"
+    }
+  },
+  "story": {
+    "reportFailed": "Meldung fehlgeschlagen. Bitte erneut versuchen.",
+    "back": "Zum Platz",
+    "created": "Bänkli eingetragen",
+    "remaining": " · noch {count, plural, one {eine Bestätigung} other {# Bestätigungen}}",
+    "confirmed": " · bestätigt",
+    "unverified": "Neu entdeckt · noch unbestätigt",
+    "directions": "Weg hierher",
+    "contribute": "Beitragen",
+    "join": "Mitmachen",
+    "ratings": "Bewertungen ansehen",
+    "nextTitle": "Was kannst du noch ergänzen?",
+    "nextDescription": "Diese Angaben helfen bei der nächsten Pause.",
+    "rateIntent": "Bewertung abgeben",
+    "confirmIntent": "Bänkli bestätigen",
+    "contributeIntent": "Zum Bänkli beitragen",
+    "quietPlace": "Ein stiller Platz",
+    "ratingMine": "Deine Bewertung ist {score} von 5. Bewertung bearbeiten",
+    "ratingEmpty": "Noch unbewertet. Erste Bewertung abgeben",
+    "ratingSummary": "Bewertung {score} von 5 bei {count, plural, one {einer Stimme} other {# Stimmen}}. Selbst bewerten"
+  },
+  "landscape": {
+    "sun": "Die Bank liegt in der Sonne",
+    "snowfall": "Schneefall",
+    "lake": "mit Seeblick",
+    "river": "mit Flussblick",
+    "mountains": "mit Bergblick",
+    "hills": "mit Hügelblick",
+    "forest": "im Wald",
+    "backrest": "mit Rückenlehne",
+    "noBackrest": "ohne Rückenlehne",
+    "weather": "{temperature} Grad Celsius, {precipitation}, MeteoSchweiz",
+    "moon": "Mond {percent} Prozent beleuchtet"
+  },
+  "page": {
+    "description": "Sitzbank mit Sonnen- und Umgebungsanalyse in der Bänkli App.",
+    "ratedDescription": "Sitzbank mit Aussicht {score}/5 in der Bänkli App.",
+    "backToFeed": "Zurück zum Bänkli-Feed",
+    "onMap": "Auf der Karte"
+  }
+}

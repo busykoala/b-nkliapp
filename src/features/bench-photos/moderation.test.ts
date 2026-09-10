@@ -18,13 +18,13 @@ describe("bench photo people check", () => {
   it("rejects people with an understandable message", async () => {
     process.env.INFERENCE_API_KEY = "test";
     vi.stubGlobal("fetch", vi.fn(async () => response({ people_detected: true, confidence: .98 })));
-    await expect(ensurePeopleFreePhoto(new Uint8Array([1]), "image/webp")).rejects.toThrow("allein posieren");
+    await expect(ensurePeopleFreePhoto(new Uint8Array([1]), "image/webp")).rejects.toThrow("photos.server.people");
   });
 
   it("fails closed when the result is uncertain or the key is unavailable", async () => {
-    await expect(ensurePeopleFreePhoto(new Uint8Array([1]), "image/webp")).rejects.toThrow("Bildprüfung");
+    await expect(ensurePeopleFreePhoto(new Uint8Array([1]), "image/webp")).rejects.toThrow("photos.server.checkUnavailable");
     process.env.INFERENCE_API_KEY = "test";
     vi.stubGlobal("fetch", vi.fn(async () => response({ people_detected: false, confidence: .5 })));
-    await expect(ensurePeopleFreePhoto(new Uint8Array([1]), "image/webp")).rejects.toThrow("geheimnisvoll");
+    await expect(ensurePeopleFreePhoto(new Uint8Array([1]), "image/webp")).rejects.toThrow("photos.server.uncertain");
   });
 });

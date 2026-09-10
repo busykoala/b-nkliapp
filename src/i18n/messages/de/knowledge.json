@@ -1,0 +1,140 @@
+{
+  "title": "Was wir wissen – und was noch offen ist",
+  "categories": {
+    "physical": "Ausstattung",
+    "location": "Ort",
+    "accessibility": "Zugangsweg",
+    "imagery": "Bilder",
+    "surroundings": "Umgebung",
+    "amenities": "Einrichtungen",
+    "environment": "Umweltdaten",
+    "recent_verification": "Aktuelle Sichtung"
+  },
+  "amenities": {
+    "toilets": "Toilette",
+    "drinking_water": "Trinkwasser",
+    "fountain": "Brunnen",
+    "shelter": "Unterstand",
+    "picnic_table": "Picknicktisch",
+    "playground": "Spielplatz",
+    "waste_basket": "Abfalleimer",
+    "fireplace": "Feuerstelle"
+  },
+  "attributes": {
+    "covered": "Überdachung",
+    "wheelchair": "Rollstuhlnutzung",
+    "land_context": "Umgebung",
+    "canopy_context": "Baumdach",
+    "waterfront": "Am Wasser",
+    "presence": "Vorhandensein"
+  },
+  "sources": {
+    "osm": "OpenStreetMap",
+    "gis": "Geometrie",
+    "imagery": "Bildmodell",
+    "official": "Amtliche Daten",
+    "community": "Community"
+  },
+  "confidence": {
+    "unknown": "offen",
+    "low": "unsicher",
+    "medium": "gestützt",
+    "high": "gut gestützt"
+  },
+  "nearby": {
+    "title": "In der Nähe",
+    "distance": "ca. {distance} m",
+    "explanation": "Abstand in Luftlinie zu erfassten Einrichtungen innerhalb von 500 m. Ein Brunnen ist nicht automatisch Trinkwasser."
+  },
+  "approach": {
+    "title": "Das letzte Wegstück",
+    "length": "Betrachteter Weg",
+    "steps": "Treppen auf diesem Weg",
+    "stepFree": "Stufenfreie Möglichkeit",
+    "open": "Offen",
+    "recorded": "Erfasst",
+    "noneRecorded": "Keine erfasst",
+    "evidence": "Hinweise vorhanden",
+    "obstacle": "Hindernis erfasst",
+    "maxSlope": "Stärkste geschätzte Steigung",
+    "meanSlope": "Mittlere absolute Steigung",
+    "ascent": "Aufstieg zur Bank",
+    "surface": "Belag laut Karte",
+    "smoothness": "Beschaffenheit laut Karte",
+    "width": "Schmalste erfasste Breite",
+    "explanation": "{confidence} · Nur ein lokaler Zugang, keine Prüfung der gesamten Anreise. Fehlende Hindernisse in der Karte sind keine Zusage zur Barrierefreiheit.",
+    "empty": "Noch kein ausreichend naher Fussweg zugeordnet."
+  },
+  "noise": {
+    "title": "Verkehrslärm im Modell",
+    "rail": "Bahn",
+    "road": "Strasse",
+    "day": "Tag",
+    "night": "Nacht",
+    "empty": "Keine Rasterabdeckung",
+    "explanation": "Amtliche Beurteilungspegel, keine Live-Messung. Quellenstand: {version}."
+  },
+  "evidence": {
+    "title": "Hinweise je Merkmal",
+    "conflicting": "Widersprüchliche Hinweise"
+  },
+  "completeness": {
+    "title": "Wie vollständig ist dieser Platz?",
+    "count": "{known} von {total} Angaben",
+    "uncertain": " · {count} unsicher",
+    "explanation": "Jeder Bereich steht für sich. Ein fehlender Wert zählt als offen und sagt nichts Schlechtes über die Bank aus."
+  },
+  "verification": {
+    "label": "Eine kurze Frage vor Ort",
+    "intro": "Wenn du gerade hier bist",
+    "unknown": "Weiss ich nicht",
+    "failed": "Die Antwort konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
+    "questions": {
+      "backrest": "Hat dieses Bänkli eine Rückenlehne?",
+      "armrest": "Hat dieses Bänkli Armlehnen?",
+      "covered": "Hat dieses Bänkli ein festes Dach?",
+      "approach_steps": "Gab es auf deinem letzten Wegstück hierher Treppen?"
+    },
+    "reasons": {
+      "conflicting": "Hier widersprechen sich die Hinweise.",
+      "missing": "Diese Angabe fehlt noch.",
+      "stale": "Eine aktuelle Sichtung hilft."
+    },
+    "result": {
+      "invalid": "Diese Antwort konnte nicht gespeichert werden.",
+      "saved": "Danke! Dein Hinweis ergänzt die vorhandenen Beobachtungen.",
+      "failed": "Die Antwort macht gerade Pause."
+    }
+  },
+  "surfaces": {
+    "asphalt": "Asphalt",
+    "paved": "Befestigt",
+    "unpaved": "Unbefestigt",
+    "concrete": "Beton",
+    "paving_stones": "Pflastersteine",
+    "cobblestone": "Kopfsteinpflaster",
+    "sett": "Natursteinpflaster",
+    "gravel": "Kies",
+    "fine_gravel": "Feiner Kies",
+    "compacted": "Verdichtet",
+    "ground": "Naturboden",
+    "dirt": "Erde",
+    "earth": "Erde",
+    "grass": "Gras",
+    "sand": "Sand",
+    "wood": "Holz",
+    "rock": "Fels",
+    "pebblestone": "Kieselsteine",
+    "mud": "Schlamm"
+  },
+  "smoothness": {
+    "excellent": "Sehr eben",
+    "good": "Eben",
+    "intermediate": "Leicht uneben",
+    "bad": "Uneben",
+    "very_bad": "Sehr uneben",
+    "horrible": "Stark beschädigt",
+    "very_horrible": "Extrem beschädigt",
+    "impassable": "Unpassierbar"
+  }
+}

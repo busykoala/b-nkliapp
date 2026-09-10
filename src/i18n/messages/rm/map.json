@@ -1,0 +1,76 @@
+{
+  "canvas": {
+    "label": "Carta dals bancs svizzers",
+    "loading": "La carta vegn dissegnada …",
+    "failed": "Ils bancs n’han betg pudì vegnir chargiads.",
+    "removed": "Igl è vegnì confermà che quest banc n’exista betg pli.",
+    "saved": "La nova indicaziun è memorisada. La vista vegn actualisada la proxima giada.",
+    "attribution": "Mussar las funtaunas da la charta",
+    "interactive": "Charta interactiva"
+  },
+  "location": {
+    "unsupported": "Tes navigatur na sustegna betg la localisaziun.",
+    "searching": "La posiziun vegn tschertgada …",
+    "unavailable": "Posiziun betg disponibla. Ti pos utilisar vinavant la carta.",
+    "show": "Mussar mia posiziun",
+    "use": "Utilisar mia posiziun",
+    "accuracy": "Posiziun precisa fin a circa {meters} m."
+  },
+  "search": {
+    "label": "Tschertgar in lieu",
+    "placeholder": "Tschertgar in lieu u in banc",
+    "clear": "Svidar la tschertga",
+    "results": "Resultats da tschertga",
+    "pending": "Tschertga …",
+    "empty": "Anc nagin lieu adattà chattà.",
+    "failed": "La tschertga fa gist pausa. Emprova anc ina giada.",
+    "kinds": {
+      "bench": "Banc",
+      "address": "Adressa",
+      "station": "Fermada",
+      "place": "Lieu"
+    }
+  },
+  "filters": {
+    "open": "Avrir ils filters",
+    "button": "Filters",
+    "active": "Filters activs",
+    "eyebrow": "Tscherner in banc",
+    "title": "Tge dovras ti?",
+    "count": "{count, plural, one {# filter activ} other {# filters activs}}",
+    "close": "Serrar ils filters",
+    "intro": "Equipament tenor las indicaziuns registradas. La glisch vegn stimada tenor il terren ed ils conturns.",
+    "pause": "Per tia pausa",
+    "fireplace": "Fieu",
+    "bin": "Recipient da rument",
+    "light": "Glisch actuala · stimada",
+    "sun": "Sulegl",
+    "shade": "Sumbriva",
+    "more": "Ulteriurs giavischs",
+    "access": "Access e confort",
+    "accessNote": "Questa indicaziun pertutga il banc. La via d’access n’è anc betg verifitgada.",
+    "anyMaterial": "Na fa nagina differenza",
+    "roomFor": "Plaz per",
+    "anySeats": "In dumber n’emporta betg",
+    "minimumSeats": "almain {count} persunas",
+    "rated": "Valità da persunas",
+    "fourStars": "A partir da 4 stailas",
+    "clear": "Stizzar la selecziun",
+    "done": "Guardar la carta",
+    "remove": "Allontanar {label}",
+    "sunEstimate": "Sulegl stimà",
+    "shadeEstimate": "Sumbriva stimada",
+    "seatsFrom": "A partir da {count} plazs da seser",
+    "starsFrom": "A partir da {count} stailas",
+    "without": "Senza {label}"
+  },
+  "placement": {
+    "title": "Tscherner la posiziun",
+    "instructions": "Spusta la carta fin che la crusch sa chatta sin il banc.",
+    "confirm": "Registrar qua"
+  },
+  "loading": {
+    "walk": "Il diari da spassegiadas vegn avert …",
+    "journey": "Tes diari da viadi vegn avert …"
+  }
+}

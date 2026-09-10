@@ -1,4 +1,7 @@
 "use client";
+import { pointLabel } from "@/i18n/point-label";
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import { getWalkSuggestions } from "@/app/actions/walks";
@@ -19,6 +22,7 @@ export function walkLegs(s: WalkSuggestion, query: WalkQuery): JourneyLeg[] {
   return query.shape === "loop" ? [make("bench", 0, s.benchIndex, query.origin, s.bench), make("return", s.benchIndex, last, s.bench, query.origin)] : [make("bench", 0, last, query.origin, s.bench)];
 }
 export function useWalkPlanner(getMap: () => MapLibreMap | null) {
+  const t = useTranslations();
   const [origin, setOrigin] = useState<JourneyOrigin | null>(null);
   const [settings, setSettings] = useState(() => {
     let speed: WalkQuery["speed"] = 4.2;
@@ -44,26 +48,26 @@ export function useWalkPlanner(getMap: () => MapLibreMap | null) {
     const paint = () => {
       if (painted || !map.isStyleLoaded()) return;
       painted = paintJourney(map, result.suggestions.map((s) => summarizeJourney(s.id, walkLegs(s, result.query))), selected, active);
-      const data: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: extras || chosen.rest ? chosen.extraBenches.map((b) => ({ type: "Feature", properties: { title: b.label }, geometry: { type: "Point", coordinates: [b.longitude, b.latitude] } })) : [] };
+      const data: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: extras || chosen.rest ? chosen.extraBenches.map((b) => ({ type: "Feature", properties: { title: pointLabel(b, t) }, geometry: { type: "Point", coordinates: [b.longitude, b.latitude] } })) : [] };
       if (map.getSource("walk-extra-benches")) (map.getSource("walk-extra-benches") as GeoJSONSource).setData(data);
       else { map.addSource("walk-extra-benches", { type: "geojson", data }); map.addLayer({ id: "walk-extra-benches", type: "circle", source: "walk-extra-benches", paint: { "circle-radius": 15, "circle-color": "#71855b", "circle-opacity": .45, "circle-blur": .5 } }); }
-      const labels: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [{ type: "Feature", properties: { label: result.query.shape === "loop" ? "Start & Rückkehr" : "Start" }, geometry: { type: "Point", coordinates: [result.query.origin.longitude, result.query.origin.latitude] } }, { type: "Feature", properties: { label: chosen.bench.label }, geometry: { type: "Point", coordinates: [chosen.bench.longitude, chosen.bench.latitude] } }] };
+      const labels: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [{ type: "Feature", properties: { label: result.query.shape === "loop" ? t("routing.labels.startReturn") : t("routing.labels.start") }, geometry: { type: "Point", coordinates: [result.query.origin.longitude, result.query.origin.latitude] } }, { type: "Feature", properties: { label: pointLabel(chosen.bench, t) }, geometry: { type: "Point", coordinates: [chosen.bench.longitude, chosen.bench.latitude] } }] };
       if (map.getSource("walk-labels")) (map.getSource("walk-labels") as GeoJSONSource).setData(labels);
       else { map.addSource("walk-labels", { type: "geojson", data: labels }); map.addLayer({ id: "walk-labels", type: "symbol", source: "walk-labels", layout: { "text-field": ["get", "label"], "text-size": 13, "text-offset": [0, 1.6] }, paint: { "text-color": "#345947", "text-halo-color": "#fff5de", "text-halo-width": 2 } }); }
     };
     const reload = () => { painted = false; paint(); };
     paint(); map.on("idle", paint); map.on("style.load", reload);
     return () => { map.off("idle", paint); map.off("style.load", reload); };
-  }, [getMap, result, chosen, selected, active, extras]);
+  }, [getMap, result, chosen, selected, active, extras, t]);
   const submit = () => {
     if (!origin) return;
     const time = settings.time ? swissWallTimeToIso(settings.time) : new Date().toISOString();
-    if (!time) { setError("Diese Schweizer Uhrzeit existiert nicht. Bitte prüfen."); return; }
+    if (!time) { setError(t("routing.errors.time")); return; }
     const token = ++sequence.current; setError("");
     try { const prefs = parsePreferences(localStorage.getItem(PREFERENCES_KEY)); localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ ...prefs, speed: settings.speed })); } catch {}
     startTransition(async () => {
       try { const next = await getWalkSuggestions({ ...settings, origin, time }); if (sequence.current !== token) return; setResult(next); setSelected(next.suggestions[0]?.id ?? ""); setDirty(false); setExtras(false); setActive(null); if (next.suggestions[0]) focus(walkLegs(next.suggestions[0], next.query)); }
-      catch { if (sequence.current === token) setError("Spaziergang gerade nicht verfügbar. Bitte kurz warten oder den Start ändern."); }
+      catch { if (sequence.current === token) setError(t("walks.planner.failed")); }
     });
   };
   return { origin, chooseOrigin, settings, change, result, chosen, error, dirty, pending, submit, extras, toggleExtras: () => setExtras(!extras),

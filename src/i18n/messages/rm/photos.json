@@ -1,0 +1,59 @@
+{
+  "gallery": {
+    "view": "Guardar la fotografia",
+    "enlarge": "Guardar pli grond: {caption}",
+    "close": "Serrar las fotografias",
+    "unavailable": "Il maletg fa gist pausa.",
+    "retry": "Chargiar danovamain",
+    "loading": "Il maletg vegn chargià …",
+    "source": "Funtauna e licenza ↗",
+    "label": "Fotografias",
+    "previous": "Fotografia precedenta",
+    "next": "Proxima fotografia",
+    "by": "Fotografia dal banc da {username}",
+    "exact": "Quest banc",
+    "nearby": "Dals conturns"
+  },
+  "capture": {
+    "title": "Fotografar il banc",
+    "intro": "Tscherna ina fotografia da la mediateca, da la camera u da las datotecas, il meglier senza persunas sin il maletg. La controlla e la memorisaziun succedan sin noss agen server.",
+    "select": "Tscherner ina fotografia dal banc",
+    "preview": "Prevista da tia fotografia dal banc",
+    "change": "In’autra fotografia",
+    "choose": "Far u tscherner ina fotografia",
+    "caption": "Insaquants pleds",
+    "captionPlaceholder": "Tge ves’ins da quest banc?",
+    "checking": "La fotografia vegn controllada …",
+    "publish": "Publitgar la fotografia"
+  },
+  "errors": {
+    "prepare": "La fotografia n’ha betg pudì vegnir preparada.",
+    "originalTooLarge": "La fotografia originala è memia gronda. Tscherna in maletg da maximalmain 24 MB.",
+    "decode": "La fotografia n’ha betg pudì vegnir legida.",
+    "tooDetailed": "La fotografia cuntegna memia blers detagls. Tscherna in tagl in pau pli pitschen.",
+    "read": "La fotografia n’ha betg pudì vegnir legida.",
+    "upload": "La fotografia n’ha betg pudì vegnir transmessa. Emprova anc ina giada."
+  },
+  "story": {
+    "nearby": "Dals conturns · betg exnum quest banc",
+    "place": "Quest lieu",
+    "license": "Licenza tar la funtauna",
+    "title": "In’egliada en vischinanza",
+    "external": "Infurmaziun externa davart il lieu ↗",
+    "defaultCaption": "Ina vista da quest banc."
+  },
+  "server": {
+    "notFound": "Maletg betg chattà.",
+    "unavailable": "Maletg actualmain betg disponibel.",
+    "choose": "Tscherna ina fotografia clera da maximal 1,8 MB.",
+    "saved": "Fotografia arrivada: il banc ha ussa ses purtret.",
+    "saveFailed": "La fotografia n’ha betg pudì vegnir memorisada.",
+    "checkUnavailable": "La controlla da maletgs guarda gist insanua auter. Emprova pli tard.",
+    "checkBusy": "La controlla da maletgs dovra ina curta pausa. Emprova pli tard.",
+    "people": "Il banc dastga posar in mument sulet: fotografia el anc ina giada senza persunas.",
+    "uncertain": "Il maletg è in pau memia misterius per la controlla. Fotografia il banc anc ina giada cleramain e senza persunas.",
+    "storageUnavailable": "La memoria da fotos fa gist pausa.",
+    "format": "Dovra ina fotografia JPEG, PNG u WebP.",
+    "formatMismatch": "Il format na correspunda betg a la fotografia. Tscherna il maletg anc ina giada."
+  }
+}

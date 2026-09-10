@@ -1,5 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import type { Translator } from "@/i18n/types";
+import { communityConfidence } from "@/features/bench-detail/view-panel";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Check, ChevronLeft, ChevronRight, Eye, RotateCcw, SunMedium, Trash2 } from "lucide-react";
 import type { BenchObservationSummary, LightObservationChoice, ViewObservationChoice } from "@/lib/types";
@@ -11,7 +14,7 @@ import {
   undoLightObservation,
 } from "./actions";
 
-const lightLabels: Record<LightObservationChoice, string> = { sun: "Sonne", shade: "Schatten", mixed: "Wechselhaft" };
+const lightChoices: LightObservationChoice[] = ["sun", "shade", "mixed"];
 type Refresh = () => void | Promise<void>;
 
 export function LightObservationPrompt({ benchId, observations, onChanged }: {
@@ -19,6 +22,7 @@ export function LightObservationPrompt({ benchId, observations, onChanged }: {
   observations: BenchObservationSummary["light"];
   onChanged?: Refresh;
 }) {
+  const t = useTranslations();
   const [mine, setMine] = useState(observations.mine);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -36,20 +40,20 @@ export function LightObservationPrompt({ benchId, observations, onChanged }: {
     setMine(null);
     if (onChanged) await onChanged();
   });
-  return <aside className="observation-prompt" aria-label="Licht vor Ort melden">
-    <header><SunMedium size={17} aria-hidden="true" /><div><strong>Stimmt das gerade?</strong><small>{mine ? `Deine Beobachtung: ${lightLabels[mine.choice]}` : "Ein kurzer Eindruck von vor Ort"}</small></div></header>
+  return <aside className="observation-prompt" aria-label={t("community.observations.light.label")}>
+    <header><SunMedium size={17} aria-hidden="true" /><div><strong>{t("community.observations.light.title")}</strong><small>{mine ? t("community.observations.light.mine", {choice: t(`community.observations.light.choices.${mine.choice}`)}) : t("community.observations.light.intro")}</small></div></header>
     <div className="observation-choices is-light">
-      {(Object.keys(lightLabels) as LightObservationChoice[]).map((choice) => <button
+      {lightChoices.map((choice) => <button
         type="button" key={choice} disabled={pending} aria-pressed={mine?.choice === choice} onClick={() => choose(choice)}
-      >{mine?.choice === choice && <Check size={14} />}{lightLabels[choice]}</button>)}
+      >{mine?.choice === choice && <Check size={14} />}{t(`community.observations.light.choices.${choice}`)}</button>)}
     </div>
-    <ObservationFootnote message={message} publicText={lightTrendText(observations.publicTrend)} onUndo={mine ? undo : undefined} pending={pending} />
+    <ObservationFootnote message={message} publicText={lightTrendText(observations.publicTrend, t)} onUndo={mine ? undo : undefined} pending={pending} />
   </aside>;
 }
 
-function lightTrendText(trend: BenchObservationSummary["light"]["publicTrend"]) {
+function lightTrendText(trend: BenchObservationSummary["light"]["publicTrend"], t: Translator) {
   if (!trend) return null;
-  return `Community: meist ${lightLabels[trend.choice].toLocaleLowerCase("de-CH")} · ${trend.contributors} Personen`;
+  return t("community.observations.light.trend", {choice: t(`community.observations.light.choices.${trend.choice}`), count: trend.contributors});
 }
 
 const initialView: ViewObservationChoice = {
@@ -57,41 +61,41 @@ const initialView: ViewObservationChoice = {
   horizon: "mixed", naturalness: "mixed", disturbance: "some",
 };
 
-const steps = [
-  {
-    title: "Wie offen fühlt es sich an?",
-    fields: [
-      { key: "openness", label: "Freie Sicht", choices: [["wide", "Fast rundum"], ["partial", "Einige Richtungen"], ["enclosed", "Eher eng"]] },
-      { key: "sky", label: "Himmel", choices: [["open", "Offen"], ["partial", "Teilweise"], ["closed", "Geschlossen"]] },
-    ],
-  },
-  {
-    title: "Was prägt die Landschaft?",
-    fields: [
-      { key: "relief", label: "Gelände", choices: [["flat", "Flach"], ["gentle", "Sanft"], ["strong", "Starkes Relief"]] },
-      { key: "water", label: "Wasser", choices: [["clear", "Klar sichtbar"], ["some", "Etwas sichtbar"], ["none", "Nicht sichtbar"]] },
-    ],
-  },
-  {
-    title: "Was steht am Horizont?",
-    fields: [
-      { key: "horizon", label: "Horizont", choices: [["open", "Überwiegend frei"], ["trees", "Bäume"], ["buildings", "Gebäude"], ["mixed", "Gemischt"]] },
-    ],
-  },
-  {
-    title: "Wie wirkt die Umgebung?",
-    fields: [
-      { key: "naturalness", label: "Umgebung", choices: [["natural", "Natürlich"], ["mixed", "Gemischt"], ["built", "Bebaut"]] },
-      { key: "disturbance", label: "Störungen", choices: [["quiet", "Ruhig"], ["some", "Etwas"], ["strong", "Stark"]] },
-    ],
-  },
-] as const;
-
 export function ViewObservationPrompt({ benchId, observations, onChanged }: {
   benchId: string;
   observations: BenchObservationSummary["view"];
   onChanged?: Refresh;
 }) {
+  const t = useTranslations();
+  const steps = [
+  {
+    title: t("community.observations.steps.openness"),
+    fields: [
+      { key: "openness", label: t("community.observations.fields.openness"), choices: [["wide", t("community.observations.choices.openness.wide")], ["partial", t("community.observations.choices.openness.partial")], ["enclosed", t("community.observations.choices.openness.enclosed")]] },
+      { key: "sky", label: t("community.observations.fields.sky"), choices: [["open", t("community.observations.choices.sky.open")], ["partial", t("community.observations.choices.sky.partial")], ["closed", t("community.observations.choices.sky.closed")]] },
+    ],
+  },
+  {
+    title: t("community.observations.steps.landscape"),
+    fields: [
+      { key: "relief", label: t("community.observations.fields.relief"), choices: [["flat", t("community.observations.choices.relief.flat")], ["gentle", t("community.observations.choices.relief.gentle")], ["strong", t("community.observations.choices.relief.strong")]] },
+      { key: "water", label: t("community.observations.fields.water"), choices: [["clear", t("community.observations.choices.water.clear")], ["some", t("community.observations.choices.water.some")], ["none", t("community.observations.choices.water.none")]] },
+    ],
+  },
+  {
+    title: t("community.observations.steps.horizon"),
+    fields: [
+      { key: "horizon", label: t("community.observations.fields.horizon"), choices: [["open", t("community.observations.choices.horizon.open")], ["trees", t("community.observations.choices.horizon.trees")], ["buildings", t("community.observations.choices.horizon.buildings")], ["mixed", t("community.observations.choices.naturalness.mixed")]] },
+    ],
+  },
+  {
+    title: t("community.observations.steps.surroundings"),
+    fields: [
+      { key: "naturalness", label: t("community.observations.fields.naturalness"), choices: [["natural", t("community.observations.choices.naturalness.natural")], ["mixed", t("community.observations.choices.naturalness.mixed")], ["built", t("community.observations.choices.naturalness.built")]] },
+      { key: "disturbance", label: t("community.observations.fields.disturbance"), choices: [["quiet", t("community.observations.choices.disturbance.quiet")], ["some", t("community.observations.choices.disturbance.some")], ["strong", t("community.observations.choices.disturbance.strong")]] },
+    ],
+  },
+] as const;
   const promptRef = useRef<HTMLElement>(null);
   const stepHeadingRef = useRef<HTMLDivElement>(null);
   const [mine, setMine] = useState(observations.mine);
@@ -135,14 +139,14 @@ export function ViewObservationPrompt({ benchId, observations, onChanged }: {
     return () => cancelAnimationFrame(frame);
   }, [editing, step]);
   const current = steps[step];
-  return <aside ref={promptRef} className="observation-prompt is-view" aria-label="Aussicht vor Ort einordnen">
-    <header><Eye size={17} aria-hidden="true" /><div><strong>Wie wirkt der Platz für dich?</strong><small>{mine ? mine.kind === "agreement" ? "Von dir ungefähr bestätigt" : "Dein eigener Eindruck ist eingetragen" : "Dein Eindruck hilft, die Schätzung zu verbessern"}</small></div></header>
+  return <aside ref={promptRef} className="observation-prompt is-view" aria-label={t("community.observations.view.label")}>
+    <header><Eye size={17} aria-hidden="true" /><div><strong>{t("community.observations.view.title")}</strong><small>{mine ? mine.kind === "agreement" ? t("community.observations.view.agreed") : t("community.observations.view.mine") : t("community.observations.view.intro")}</small></div></header>
     {!editing && <div className="observation-choices">
-      <button type="button" disabled={pending} aria-pressed={mine?.kind === "agreement"} onClick={agree}><Check size={14} />Passt ungefähr</button>
-      <button type="button" disabled={pending} aria-expanded={editing} onClick={() => setEditing(true)}>Anders erlebt</button>
+      <button type="button" disabled={pending} aria-pressed={mine?.kind === "agreement"} onClick={agree}><Check size={14} />{t("community.observations.view.agree")}</button>
+      <button type="button" disabled={pending} aria-expanded={editing} onClick={() => setEditing(true)}>{t("community.observations.view.edit")}</button>
     </div>}
     {editing && <div className="view-observation-editor">
-      <div ref={stepHeadingRef} className="view-step-heading" tabIndex={-1}><small>Schritt {step + 1} von {steps.length}</small><strong>{current.title}</strong></div>
+      <div ref={stepHeadingRef} className="view-step-heading" tabIndex={-1}><small>{t("community.observations.view.step", {current: step + 1, total: steps.length})}</small><strong>{current.title}</strong></div>
       {current.fields.map((field) => <fieldset key={field.key}>
         <legend>{field.label}</legend>
         <div>{field.choices.map(([value, label]) => <button type="button" key={value} disabled={pending}
@@ -150,26 +154,26 @@ export function ViewObservationPrompt({ benchId, observations, onChanged }: {
           onClick={() => setDraft((currentDraft) => ({ ...currentDraft, [field.key]: value }))}
         >{draft[field.key] === value && <Check size={13} />}{label}</button>)}</div>
       </fieldset>)}
-      <nav aria-label="Schritte">
-        <button type="button" disabled={pending} onClick={() => step === 0 ? setEditing(false) : setStep(step - 1)}><ChevronLeft size={15} />{step === 0 ? "Abbrechen" : "Zurück"}</button>
+      <nav aria-label={t("community.observations.view.steps")}>
+        <button type="button" disabled={pending} onClick={() => step === 0 ? setEditing(false) : setStep(step - 1)}><ChevronLeft size={15} />{step === 0 ? t("common.actions.cancel") : t("community.observations.view.back")}</button>
         {step < steps.length - 1
-          ? <button type="button" disabled={pending} onClick={() => setStep(step + 1)}>Weiter<ChevronRight size={15} /></button>
-          : <button type="button" disabled={pending} onClick={save}><Check size={15} />Eintragen</button>}
+          ? <button type="button" disabled={pending} onClick={() => setStep(step + 1)}>{t("community.observations.view.next")}<ChevronRight size={15} /></button>
+          : <button type="button" disabled={pending} onClick={save}><Check size={15} />{t("community.observations.view.save")}</button>}
       </nav>
     </div>}
-    <ObservationFootnote message={message} publicText={viewTrendText(observations.publicEstimate)} onDelete={mine ? remove : undefined} pending={pending} />
+    <ObservationFootnote message={message} publicText={viewTrendText(observations.publicEstimate, t)} onDelete={mine ? remove : undefined} pending={pending} />
   </aside>;
 }
 
-function viewTrendText(estimate: BenchObservationSummary["view"]["publicEstimate"]) {
+function viewTrendText(estimate: BenchObservationSummary["view"]["publicEstimate"], t: Translator) {
   if (!estimate) return null;
   const parts = [
-    estimate.components.openness !== null && estimate.components.openness >= .7 ? "eher offen" : null,
-    estimate.components.naturalness !== null && estimate.components.naturalness >= .7 ? "natürlich" : null,
-    estimate.components.remoteness !== null && estimate.components.remoteness >= .7 ? "ruhig" : null,
+    estimate.components.openness !== null && estimate.components.openness >= .7 ? t("community.observations.trend.openness") : null,
+    estimate.components.naturalness !== null && estimate.components.naturalness >= .7 ? t("community.observations.trend.naturalness") : null,
+    estimate.components.remoteness !== null && estimate.components.remoteness >= .7 ? t("community.observations.trend.quiet") : null,
   ].filter(Boolean);
-  const confidence = estimate.confidence >= .7 ? "gut gestützt" : estimate.confidence >= .5 ? "vorsichtig gestützt" : "erste Tendenz";
-  return `Community${parts.length ? `: ${parts.join(" · ")}` : "-Eindruck"} · ${estimate.contributors} Personen · ${confidence}`;
+  const confidence = communityConfidence(estimate.confidence, t);
+  return t("community.observations.trend.summary", {description: parts.length ? t("community.observations.trend.description", {qualities: parts.join(" · ")}) : t("community.observations.trend.empty"), count: estimate.contributors, confidence});
 }
 
 function ObservationFootnote({ message, publicText, onUndo, onDelete, pending }: {
@@ -179,10 +183,11 @@ function ObservationFootnote({ message, publicText, onUndo, onDelete, pending }:
   onDelete?: () => void;
   pending: boolean;
 }) {
+  const t = useTranslations();
   if (!message && !publicText && !onUndo && !onDelete) return null;
   return <footer>
     <span role="status">{message ?? publicText}</span>
-    {onUndo && <button type="button" disabled={pending} onClick={onUndo}><RotateCcw size={13} />Rückgängig</button>}
-    {onDelete && <button type="button" disabled={pending} onClick={onDelete}><Trash2 size={13} />Löschen</button>}
+    {onUndo && <button type="button" disabled={pending} onClick={onUndo}><RotateCcw size={13} />{t("community.observations.undo")}</button>}
+    {onDelete && <button type="button" disabled={pending} onClick={onDelete}><Trash2 size={13} />{t("common.actions.delete")}</button>}
   </footer>;
 }

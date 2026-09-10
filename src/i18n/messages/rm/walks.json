@@ -1,0 +1,88 @@
+{
+  "result": {
+    "noBenches": "Per quest temp da viandar n’è anc vegnì chattà nagin banc adattà. Emprova ina runda pli lunga u in’autra partenza.",
+    "noRestRoute": "Nagina via verifitgada cun maximalmain {minutes} minutas tranter pussaivladads da seser chattada. Midar partenza, durada u interval da pausas.",
+    "unavailable": "Anc nagina spassegiada verifitgada disponibla. Midar partenza u temp da viandar. Noss servetsch da rutas sto esser pront.",
+    "nearest": "Il temp da viandar giavischà na correspunda qua betg precis. Quai è la proposta verifitgada la pli datiers; la durada effectiva è inditgada."
+  },
+  "evidence": {
+    "water": "Blera via en vischinanza da l’aua",
+    "quiet": "Paucas vias principalas en ils conturns",
+    "nature": "Blers conturns natirals",
+    "open": "Terren avert per lung da la via",
+    "incomplete": "Datas da la cuntrada anc incumplettas; la varianta la pli bella na po betg vegnir stimada cun segirezza.",
+    "lightUnknown": "Sulegl e sumbriva per lung da questa via na pon anc betg vegnir stimads fidada­main."
+  },
+  "planner": {
+    "title": "Scuvrir ina spassegiada",
+    "resize": "Engrondir u empitschnir la spassegiada",
+    "close": "Serrar la spassegiada",
+    "eyebrow": "Temp per in banc",
+    "intro": "Ina bella via. In banc per sa fermar in mument.",
+    "label": "Planisar ina spassegiada",
+    "duration": "Quant ditg vuls ti viandar?",
+    "route": "Tia via",
+    "loop": "Via radunda",
+    "oneWay": "Via simpla",
+    "outAndBack": "Via d’ir e da turnar",
+    "light": "Sulegl u sumbriva?",
+    "sun": "Pli gugent sulegl",
+    "shade": "Pli gugent sumbriva",
+    "pending": "Tia excursiun prenda furma …",
+    "update": "Actualisar las spassegiadas",
+    "submit": "Chattar ina spassegiada cun banc",
+    "loading": "La carta resta movibla. La tschertga dura maximalmain 15 secundas.",
+    "dirty": "Tscherna midada — la via mussada vala anc per ils parameters precedents.",
+    "failed": "Spassegiada actualmain betg disponibla. Spetgar in mument u midar la partenza."
+  },
+  "rest": {
+    "option": " · in banc almain mintga {minutes} min",
+    "legend": "Al pli tard mintga … in banc",
+    "explanation": "L’entira via vegn controllada cun tes tempo, era l’emprim e l’ultim toc. Ils temps restan stimaziuns.",
+    "title": "Pausas da seser sin via",
+    "maximum": "Maximalmain ca. {minutes} min a pe en ina giada · inclus partenza e destinaziun",
+    "after": "suenter ca. {minutes} min",
+    "minutes": "{minutes} min"
+  },
+  "results": {
+    "title": "Tia spassegiada",
+    "choice": "{count, plural, one {Ina spassegiada da tscherner} other {# spassegiadas da tscherner}}",
+    "recommended": "Recumandà",
+    "variant": "Varianta {number}",
+    "eyebrow": "Tia excursiun als bancs",
+    "summary": "ca. {duration} · ↑ {ascent} m",
+    "routeSummary": "ca. {duration} · {shape} · ↑ {ascent} m",
+    "t2": "Sendas fin T2: pass segir necessari.",
+    "start": "Qua cumenza tia excursiun",
+    "return": "Enavos al punct da partenza",
+    "why": "Pertge questa proposta?",
+    "explanation": "Nus cumparegliain quietezza, natira, vista, vischinanza da l’aua ed il banc per lung da la via effectiva. Quai è ina stimaziun basada sin datas, nagina garanzia da bellezza.",
+    "updated": "Datas da la cuntrada dals {date}.",
+    "noData": "Datas da la cuntrada mancan anc.",
+    "extrasNote": "Bancs supplementars confermads han in curt access a pe verifitgà; bancs betg verifitgads na vegnan betg quintads.",
+    "planReturn": "Planisar la via da return"
+  },
+  "information": {
+    "estimates": "Temps da viandar e glisch èn stimaziuns. Nagina garanzia davart access senza barrieras, serradas actualas, naiv u segirezza en muntogna.",
+    "privacy": "Posiziun mo sin giavisch. Endataziuns e coordinatas vegnan transmessas al servetsch da cartas necessari; las rutas a pe vegnan calculadas sin noss server. Rutas persunalas restan maximalmain tschintg minutas en la memoria da lavur, senza cronologia."
+  },
+  "story": {
+    "loop": {
+      "named": "Ina runda al banc «{name}»",
+      "water": "Ina runda al banc sper la riva",
+      "bench": "Ina runda al banc"
+    },
+    "oneWay": {
+      "named": "Ina spassegiada al banc «{name}»",
+      "water": "Ina spassegiada al banc sper la riva",
+      "bench": "Ina spassegiada al banc"
+    },
+    "pause": {
+      "many": "Cun {count} bancs per sa fermar in mument",
+      "named": "Cun il banc «{name}» per sa fermar in mument",
+      "water": "Cun in banc sper l’aua per sa fermar in mument",
+      "bench": "Cun in banc per sa fermar in mument"
+    },
+    "extras": "{count, plural, one {E sin via anc in ulteriur banc da scuvrir.} other {E sin via anc # ulteriurs bancs da scuvrir.}}"
+  }
+}

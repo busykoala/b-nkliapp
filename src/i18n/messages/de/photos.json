@@ -1,0 +1,59 @@
+{
+  "gallery": {
+    "view": "Foto ansehen",
+    "enlarge": "{caption} gross ansehen",
+    "close": "Fotos schliessen",
+    "unavailable": "Das Bild macht gerade Pause.",
+    "retry": "Erneut laden",
+    "loading": "Bild wird geladen …",
+    "source": "Quelle & Lizenz ↗",
+    "label": "Fotos",
+    "previous": "Vorheriges Foto",
+    "next": "Nächstes Foto",
+    "by": "Bänkli-Foto von {username}",
+    "exact": "Dieses Bänkli",
+    "nearby": "Aus der Umgebung"
+  },
+  "capture": {
+    "title": "Das Bänkli ins Bild setzen",
+    "intro": "Aus Fotomediathek, Kamera oder Dateien wählen – am besten ohne Menschen im Bild. Prüfung und Ablage laufen auf unserem eigenen Server.",
+    "select": "Bänkli-Foto auswählen",
+    "preview": "Vorschau deines Bänkli-Fotos",
+    "change": "Anderes Foto",
+    "choose": "Foto aufnehmen oder wählen",
+    "caption": "Ein Satz dazu",
+    "captionPlaceholder": "Was sieht man von diesem Bänkli?",
+    "checking": "Foto wird geprüft …",
+    "publish": "Foto veröffentlichen"
+  },
+  "errors": {
+    "prepare": "Das Foto liess sich nicht vorbereiten.",
+    "originalTooLarge": "Das Originalfoto ist zu gross. Bitte wähle ein Bild bis 24 MB.",
+    "decode": "Das Foto liess sich nicht lesen.",
+    "tooDetailed": "Das Foto enthält zu viele Details. Bitte wähle einen etwas kleineren Bildausschnitt.",
+    "read": "Foto konnte nicht gelesen werden.",
+    "upload": "Das Foto konnte nicht übertragen werden. Bitte versuche es nochmals."
+  },
+  "story": {
+    "nearby": "Aus der Umgebung · nicht zwingend diese Bank",
+    "place": "Dieser Platz",
+    "license": "Lizenz bei Quelle",
+    "title": "Ein Blick in die Nähe",
+    "external": "Externer Hinweis zum Platz ↗",
+    "defaultCaption": "Ein Blick von diesem Bänkli."
+  },
+  "server": {
+    "notFound": "Bild nicht gefunden.",
+    "unavailable": "Bild gerade nicht verfügbar.",
+    "choose": "Bitte wähle ein klares Foto bis 1,8 MB.",
+    "saved": "Foto angekommen – das Bänkli hat jetzt sein Porträt.",
+    "saveFailed": "Das Foto konnte nicht gespeichert werden.",
+    "checkUnavailable": "Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.",
+    "checkBusy": "Die Bildprüfung braucht kurz eine Verschnaufpause. Bitte später nochmals versuchen.",
+    "people": "Das Bänkli darf fürs Foto kurz allein posieren – bitte nochmals ohne Personen.",
+    "uncertain": "Das Bild ist der Prüfung etwas zu geheimnisvoll. Bitte fotografiere das Bänkli nochmals klar und ohne Personen.",
+    "storageUnavailable": "Der Foto-Speicher macht gerade Pause.",
+    "format": "Bitte verwende ein JPEG-, PNG- oder WebP-Foto.",
+    "formatMismatch": "Das Bildformat passt nicht zum Foto. Bitte wähle das Bild nochmals."
+  }
+}

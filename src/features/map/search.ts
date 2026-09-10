@@ -1,4 +1,5 @@
 import "server-only";
+import { getTranslations } from "next-intl/server";
 
 import { z } from "zod";
 import { sqlite } from "@/db/client";
@@ -23,11 +24,12 @@ type PlaceSearchRow = {
 };
 
 export async function searchMapPlaces(input: string): Promise<PlaceResult[]> {
+  const t = await getTranslations();
   const query = z.string().trim().min(2).max(80).parse(input);
   const normalized = normalizeLocationKey(query);
   const text = `%${query.toLocaleLowerCase("de-CH")}%`;
   const benches = sqlite.prepare(`
-    SELECT id,coalesce(name,description,'Sitzbank') label,latitude,longitude,location_name,location_canton
+    SELECT id,coalesce(nullif(name,''),nullif(nullif(description,'Sitzbank'),''),'') label,latitude,longitude,location_name,location_canton
     FROM benches
     WHERE active=1 AND (lower(coalesce(name,'')) LIKE ? OR lower(coalesce(description,'')) LIKE ?)
     ORDER BY name IS NOT NULL DESC,verification_status='verified' DESC,source_updated_at DESC LIMIT 6
@@ -41,7 +43,7 @@ export async function searchMapPlaces(input: string): Promise<PlaceResult[]> {
   const results: PlaceResult[] = [
     ...benches.map((bench) => ({
       id: `bench-${bench.id}`,
-      label: [bench.label, bench.location_name, bench.location_canton].filter(Boolean).join(" · "),
+      label: [bench.label || t("common.values.bench"), bench.location_name, bench.location_canton].filter(Boolean).join(" · "),
       latitude: bench.latitude,
       longitude: bench.longitude,
       kind: "bench" as const,

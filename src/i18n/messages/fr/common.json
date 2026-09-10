@@ -1,0 +1,93 @@
+{
+  "language": {
+    "label": "Langue",
+    "failed": "Impossible de changer la langue. Réessaie."
+  },
+  "metadata": {
+    "title": "Bänkli App – Les bancs de Suisse",
+    "description": "Trouve des bancs en Suisse avec du soleil, une belle vue et les avis de la communauté."
+  },
+  "navigation": {
+    "open": "Ouvrir le menu",
+    "close": "Fermer le menu",
+    "label": "Navigation principale",
+    "addBench": "Ajouter un banc",
+    "walk": "Balade",
+    "feed": "Actualités des bancs",
+    "favourites": "Mes lieux favoris",
+    "profile": "Mon profil",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "about": "À propos de Bänkli App",
+    "map": "Retour à la carte",
+    "privacy": "Protection des données",
+    "imprint": "Contact et mentions légales"
+  },
+  "install": {
+    "button": "Installer l’app",
+    "ios": "Dans Safari, choisis « Partager », puis « Sur l’écran d’accueil »."
+  },
+  "actions": {
+    "close": "fermer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "remove": "Retirer",
+    "delete": "Supprimer",
+    "retry": "Réessayer",
+    "closeTitle": "Fermer"
+  },
+  "values": {
+    "yes": "Oui",
+    "no": "Non",
+    "unknown": "Inconnu",
+    "open": "À préciser",
+    "notRecorded": "Pas encore renseigné",
+    "bench": "Banc",
+    "community": "Communauté"
+  },
+  "fields": {
+    "name": "Nom",
+    "optional": "(facultatif)"
+  },
+  "errors": {
+    "signIn": "Connecte-toi d’abord.",
+    "blocked": "Les contributions de ce navigateur ont été bloquées.",
+    "rateLimit": "Trop de contributions. Réessaie plus tard.",
+    "benchNotFound": "Ce banc est introuvable.",
+    "invalid": "Vérifie tes informations.",
+    "unavailable": "Cela n’a pas fonctionné. Réessaie."
+  },
+  "notFound": {
+    "title": "Banc introuvable",
+    "description": "Il a peut-être été retiré des données sources."
+  },
+  "update": {
+    "ready": "Une carte plus fraîche est prête.",
+    "reload": "Recharger",
+    "dismiss": "Fermer l’avis de mise à jour"
+  },
+  "calendar": {
+    "patterns": {
+      "numeric": "{day}.{month}.{year}",
+      "long": "{day} {month} {year}",
+      "monthYear": "{month} {year}",
+      "dayMonth": "{day} {month}",
+      "dateTime": "{date}, {time}"
+    },
+    "months": {
+      "january": "janvier",
+      "february": "février",
+      "march": "mars",
+      "april": "avril",
+      "may": "mai",
+      "june": "juin",
+      "july": "juillet",
+      "august": "août",
+      "september": "septembre",
+      "october": "octobre",
+      "november": "novembre",
+      "december": "décembre"
+    }
+  }
+}

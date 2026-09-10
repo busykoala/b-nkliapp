@@ -1,0 +1,38 @@
+{
+  "page": {
+    "map": "Torna alla mappa",
+    "following": "Dai tuoi luoghi preferiti",
+    "all": "La vita attorno alle panchine",
+    "title": "Momenti sulle panchine",
+    "followingIntro": "Storie e piccoli gesti di cura dai luoghi che segui.",
+    "intro": "Storie, pause e piccole scoperte, raggruppate per panchina e giorno.",
+    "weekly": "Panchina della settimana",
+    "theme": "Tema comune",
+    "news": "Novità",
+    "filters": "Filtri delle novità",
+    "allPosts": "Tutti i contributi",
+    "favourites": "Luoghi preferiti"
+  },
+  "events": {
+    "added": "scoperta",
+    "rated": "valutata",
+    "confirmed": "confermata",
+    "missing": "segnalata assente",
+    "edited": "completata",
+    "moment": "momenti",
+    "care": "gesti di cura"
+  },
+  "stream": {
+    "loaded": "{count, plural, one {Un altro contributo caricato.} other {# altri contributi caricati.}}",
+    "failed": "Le novità si prendono una pausa. Riprova.",
+    "openBench": "Apri {name}",
+    "morePeople": " e altre {count}",
+    "posts": "Vedi i contributi ({count})",
+    "emptyFollowing": "Non ci sono ancora contributi nei tuoi luoghi preferiti.",
+    "empty": "Ancora nessun nuovo contributo.",
+    "allPosts": "Vedi tutti i contributi",
+    "loading": "Caricamento…",
+    "more": "Carica altri contributi",
+    "end": "Qui inizia la storia. Hai visto tutti i contributi."
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "pace": {
+    "leisurely": "Tranquillo",
+    "normal": "Normale",
+    "brisk": "Svelto"
+  },
+  "transfer": {
+    "tones": {
+      "plenty": "Ampio margine",
+      "fits": "Adeguato",
+      "tight": "Stretto",
+      "insufficient": "Insufficiente",
+      "unknown": "Non stimabile con certezza"
+    },
+    "evidence": {
+      "official": "Tempo minimo ufficiale di cambio GTFS",
+      "walk": "Stima del percorso a piedi",
+      "unknown": "Nessun tempo di cammino o minimo affidabile"
+    },
+    "none": "Senza cambi",
+    "unknown": "Tempo di cambio ancora incerto",
+    "tightest": "Cambio più stretto: {duration} di margine · desiderato +{buffer} min"
+  },
+  "warnings": {
+    "start": "Partenza: {distance} m dal sentiero mappato. Verifica l’accesso sul posto.",
+    "end": "Arrivo: {distance} m dal sentiero mappato. Verifica l’accesso sul posto.",
+    "via": "Tappa: {distance} m dal sentiero mappato. Verifica l’accesso sul posto.",
+    "walkUnverified": "Percorso a piedi e durata non verificati.",
+    "connectionUnverified": "Collegamento tra queste fermate non verificato.",
+    "departurePlatform": "Partenza: binario/marciapiede {actual} anziché {scheduled} (previsione).",
+    "arrivalPlatform": "Arrivo: binario/marciapiede {actual} anziché {scheduled} (previsione)."
+  },
+  "instructions": {
+    "continue": "Prosegui dritto",
+    "left": "Gira a sinistra",
+    "right": "Gira a destra",
+    "slightLeft": "Tieni leggermente a sinistra",
+    "slightRight": "Tieni leggermente a destra",
+    "sharpLeft": "Gira nettamente a sinistra",
+    "sharpRight": "Gira nettamente a destra",
+    "keepLeft": "Tieni la sinistra",
+    "keepRight": "Tieni la destra",
+    "uTurn": "Fai inversione",
+    "arrive": "Destinazione raggiunta",
+    "via": "Tappa raggiunta",
+    "roundaboutEnter": "Entra nella rotonda",
+    "roundaboutExit": "Esci dalla rotonda",
+    "roundaboutNumber": "Nella rotonda prendi l’uscita {exit}",
+    "ferry": "Prendi il traghetto",
+    "leaveFerry": "Scendi dal traghetto · {instruction}",
+    "unknown": "Segui il percorso indicato sulla mappa",
+    "street": "{instruction} · {street}",
+    "towards": "{instruction} · direzione {destination}"
+  },
+  "controls": {
+    "options": "Opzioni",
+    "pace": "Il tuo passo",
+    "any": "Indifferente",
+    "minutes": "circa {minutes} min",
+    "easy": "Sentieri facili",
+    "t2": "Sentieri di montagna fino a T2",
+    "difficulty": "Difficoltà",
+    "time": "Partenza (ora svizzera; vuoto = adesso)",
+    "goodToKnow": "Da sapere",
+    "directions": "Indicazioni"
+  },
+  "errors": {
+    "time": "Quest’ora svizzera non esiste. Controlla."
+  },
+  "labels": {
+    "start": "Partenza",
+    "startReturn": "Partenza e ritorno",
+    "transit": "Trasporti pubblici",
+    "waypoint": "Punto di passaggio"
+  },
+  "origin": {
+    "title": "Da dove parti?",
+    "change": "Modifica",
+    "input": "Partenza: indirizzo o fermata",
+    "placeholder": "Indirizzo o fermata",
+    "results": "Punti di partenza",
+    "station": "Fermata",
+    "address": "Indirizzo",
+    "current": "La mia posizione",
+    "mapHint": "Oppure tocca una fermata sulla mappa.",
+    "pending": "Ricerca dei punti di partenza…",
+    "searchFailed": "Ricerca momentaneamente non disponibile.",
+    "locating": "Ricerca della posizione…",
+    "choose": "Scegli un indirizzo o una fermata.",
+    "unavailable": "Posizione non disponibile. Scegli un indirizzo o una fermata.",
+    "accuracy": "Posizione precisa solo a circa {meters} m. Controlla."
+  }
+}

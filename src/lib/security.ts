@@ -1,3 +1,4 @@
+import { UserFacingError } from "@/i18n/action-error";
 import { cookies, headers } from "next/headers";
 import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { sqlite } from "@/db/client";
@@ -54,7 +55,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
 export async function requireUser() {
   const user = await getCurrentUser();
-  if (!user) throw new Error("Bitte melde dich zuerst an.");
+  if (!user) throw new UserFacingError("common.errors.signIn");
   return user;
 }
 
@@ -107,7 +108,7 @@ export async function getContributorIdentity() {
 
 export function assertContributorAllowed(contributorHash: string) {
   const blocked = sqlite.prepare("SELECT 1 FROM blocked_contributors WHERE contributor_hash = ?").get(contributorHash);
-  if (blocked) throw new Error("Beiträge von diesem Browser wurden gesperrt.");
+  if (blocked) throw new UserFacingError("common.errors.blocked");
 }
 
 export function consumeRateLimit(keyHash: string, action: string, limit: number, windowSeconds: number) {
@@ -118,7 +119,7 @@ export function consumeRateLimit(keyHash: string, action: string, limit: number,
     ON CONFLICT(key_hash, action, window_start) DO UPDATE SET count = count + 1
     RETURNING count
   `).get(keyHash, action, windowStart) as { count: number };
-  if (update.count > limit) throw new Error("Zu viele Beiträge. Bitte versuche es später erneut.");
+  if (update.count > limit) throw new UserFacingError("common.errors.rateLimit");
 }
 
 export function verifyAdminPassword(password: string) {

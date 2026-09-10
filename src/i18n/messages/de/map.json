@@ -1,0 +1,76 @@
+{
+  "canvas": {
+    "label": "Karte der Schweizer Sitzbänke",
+    "loading": "Karte wird gemalt …",
+    "failed": "Bänke konnten nicht geladen werden.",
+    "removed": "Dieses Bänkli wurde als nicht mehr vorhanden bestätigt.",
+    "saved": "Die neue Angabe ist gespeichert. Die Ansicht aktualisiert sich beim nächsten Öffnen.",
+    "attribution": "Kartenquellen anzeigen",
+    "interactive": "Interaktive Karte"
+  },
+  "location": {
+    "unsupported": "Dein Browser unterstützt die Standortsuche nicht.",
+    "searching": "Standort wird gesucht …",
+    "unavailable": "Standort nicht verfügbar. Du kannst die Karte weiterhin verwenden.",
+    "show": "Meinen Standort anzeigen",
+    "use": "Meinen Standort verwenden",
+    "accuracy": "Standort auf etwa {meters} m genau."
+  },
+  "search": {
+    "label": "Ort suchen",
+    "placeholder": "Ort oder Bänkli suchen",
+    "clear": "Suche leeren",
+    "results": "Suchergebnisse",
+    "pending": "Suche …",
+    "empty": "Hier versteckt sich noch kein passender Ort.",
+    "failed": "Die Suche macht gerade Pause. Versuch es nochmals.",
+    "kinds": {
+      "bench": "Bänkli",
+      "address": "Adresse",
+      "station": "Haltestelle",
+      "place": "Ort"
+    }
+  },
+  "filters": {
+    "open": "Filter öffnen",
+    "button": "Filter",
+    "active": "Aktive Filter",
+    "eyebrow": "Bänkli auswählen",
+    "title": "Was brauchst du?",
+    "count": "{count, plural, one {# Filter aktiv} other {# Filter aktiv}}",
+    "close": "Filter schliessen",
+    "intro": "Ausstattung nach erfassten Angaben. Licht wird aus Gelände und Umgebung geschätzt.",
+    "pause": "Für deine Pause",
+    "fireplace": "Feuerstelle",
+    "bin": "Abfalleimer",
+    "light": "Licht jetzt · geschätzt",
+    "sun": "Sonne",
+    "shade": "Schatten",
+    "more": "Mehr Wünsche",
+    "access": "Zugang & Komfort",
+    "accessNote": "Diese Angabe betrifft das Bänkli. Der Zugangsweg ist damit noch nicht geprüft.",
+    "anyMaterial": "Ganz egal",
+    "roomFor": "Platz für",
+    "anySeats": "Egal wie viele",
+    "minimumSeats": "mind. {count} Personen",
+    "rated": "Von Menschen bewertet",
+    "fourStars": "Ab 4 Sternen",
+    "clear": "Auswahl löschen",
+    "done": "Karte ansehen",
+    "remove": "{label} entfernen",
+    "sunEstimate": "Sonne geschätzt",
+    "shadeEstimate": "Schatten geschätzt",
+    "seatsFrom": "Ab {count} Sitzplätzen",
+    "starsFrom": "Ab {count} Sternen",
+    "without": "Ohne {label}"
+  },
+  "placement": {
+    "title": "Position wählen",
+    "instructions": "Verschiebe die Karte, bis das Fadenkreuz auf dem Bänkli liegt.",
+    "confirm": "Hier eintragen"
+  },
+  "loading": {
+    "walk": "Dein Spaziergangsjournal wird geöffnet …",
+    "journey": "Dein Reisejournal wird geöffnet …"
+  }
+}

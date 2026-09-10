@@ -10,8 +10,8 @@ describe("bench photo files", () => {
 
   it("does not trust a browser-provided MIME type", () => {
     expect(() => validateBenchPhoto(new TextEncoder().encode("not really an image"), "image/webp"))
-      .toThrow("Bildformat");
+      .toThrow("photos.server.formatMismatch");
     expect(() => validateBenchPhoto(new Uint8Array([0xff, 0xd8, 0xff]), "image/gif"))
-      .toThrow("JPEG-, PNG- oder WebP");
+      .toThrow("photos.server.format");
   });
 });

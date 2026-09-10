@@ -1,24 +1,29 @@
+import { formatDate } from "@/i18n/date";
+import { useFormatter, useTranslations } from "next-intl";
+import type { Translator } from "@/i18n/types";
 import type { ReactNode } from "react";
 import { CloudRain, CloudSun, Droplets, MessageCircleHeart, Snowflake, Wind } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { PanelHeading } from "./panel-ui";
 
 export function WeatherPanel({ bench }: { bench: BenchDetail }) {
+  const t = useTranslations();
+  const format = useFormatter();
   const weather = bench.weather;
   return <section className="detail-panel detail-panel-weather">
-    <PanelHeading eyebrow="Wetter & Ruhe" title={weather ? `${Math.round(weather.temperatureC)}° bei ${weather.location}` : "Der Himmel bleibt noch verborgen"}>
-      {weather && <p>{cloudDescription(weather.cloudCover)} · {precipitation(weather.precipitationType)}</p>}
+    <PanelHeading eyebrow={t("bench.weather.title")} title={weather ? weather.location === "diesem Bänkli" ? t("bench.weather.temperatureHere", { temperature: Math.round(weather.temperatureC) }) : t("bench.weather.temperatureAt", {temperature: Math.round(weather.temperatureC), location: weather.location}) : t("bench.weather.unknown")}>
+      {weather && <p>{cloudDescription(weather.cloudCover, t)} · {t(`bench.weather.precipitation.${weather.precipitationType}`)}</p>}
     </PanelHeading>
     {weather ? <>
       <WeatherSketch weather={weather} />
       <div className="weather-measures">
-        <WeatherMeasure icon={<CloudRain size={18} />} label="Niederschlag" value={weather.precipitationRateMmH === null ? null : `${weather.precipitationRateMmH.toFixed(1)} mm/h`} />
-        <WeatherMeasure icon={<Wind size={18} />} label="Wind" value={weather.windKmh === null ? null : `${Math.round(weather.windKmh)} km/h`} />
-        <WeatherMeasure icon={<Droplets size={18} />} label="Feuchte" value={weather.humidityPercent === null ? null : `${Math.round(weather.humidityPercent)}%`} />
-        <WeatherMeasure icon={<Snowflake size={18} />} label="Schnee" value={weather.snowDepthCm === null ? null : `${Math.round(weather.snowDepthCm)} cm`} />
+        <WeatherMeasure icon={<CloudRain size={18} />} label={t("bench.weather.rain")} value={weather.precipitationRateMmH === null ? null : `${format.number(weather.precipitationRateMmH, {minimumFractionDigits: 1, maximumFractionDigits: 1})} mm/h`} />
+        <WeatherMeasure icon={<Wind size={18} />} label={t("bench.weather.wind")} value={weather.windKmh === null ? null : `${Math.round(weather.windKmh)} km/h`} />
+        <WeatherMeasure icon={<Droplets size={18} />} label={t("bench.weather.humidity")} value={weather.humidityPercent === null ? null : `${Math.round(weather.humidityPercent)}%`} />
+        <WeatherMeasure icon={<Snowflake size={18} />} label={t("bench.weather.precipitation.snow")} value={weather.snowDepthCm === null ? null : `${Math.round(weather.snowDepthCm)} cm`} />
       </div>
-      <p className="weather-time">Stand {readableDate(weather.observedAt)}</p>
-    </> : <p className="calm-empty">Sobald Wetterdaten verfügbar sind, erscheinen Temperatur, Wolken und Niederschlag hier.</p>}
+      <p className="weather-time">{t("bench.weather.updated", {date: readableDate(weather.observedAt, t)})}</p>
+    </> : <p className="calm-empty">{t("bench.weather.empty")}</p>}
     <CommunityQuiet bench={bench} />
   </section>;
 }
@@ -29,9 +34,10 @@ function WeatherMeasure({ icon, label, value }: { icon: ReactNode; label: string
 }
 
 function WeatherSketch({ weather }: { weather: NonNullable<BenchDetail["weather"]> }) {
-  const detailedLayers: Array<[string, number | null]> = [["hoch", weather.cloudHigh], ["mittel", weather.cloudMid], ["tief", weather.cloudLow]];
-  const layers: Array<[string, number | null]> = [["gesamt", weather.cloudCover], ...detailedLayers.filter(([, value]) => value !== null)];
-  return <div className="weather-sketch" aria-label={`Wolkendecke ${Math.round(weather.cloudCover * 100)} Prozent`}>
+  const t = useTranslations();
+  const detailedLayers: Array<[string, number | null]> = [[t("bench.weather.layers.high"), weather.cloudHigh], [t("bench.weather.layers.mid"), weather.cloudMid], [t("bench.weather.layers.low"), weather.cloudLow]];
+  const layers: Array<[string, number | null]> = [[t("bench.weather.layers.total"), weather.cloudCover], ...detailedLayers.filter(([, value]) => value !== null)];
+  return <div className="weather-sketch" aria-label={t("bench.weather.cloudCover", {percent: Math.round(weather.cloudCover * 100)})}>
     <div className="weather-sky-mark">{weather.precipitationType === "snow" ? <Snowflake /> : weather.precipitationType === "rain" || weather.precipitationType === "mixed" ? <CloudRain /> : <CloudSun />}</div>
     <div className="cloud-layers">{layers.map(([label, raw]) => {
       const value = raw ?? 0;
@@ -41,27 +47,22 @@ function WeatherSketch({ weather }: { weather: NonNullable<BenchDetail["weather"
 }
 
 function CommunityQuiet({ bench }: { bench: BenchDetail }) {
-  if (!bench.ratingBreakdown) return <div className="community-quiet is-empty"><MessageCircleHeart size={21} /><div><small>Ruhe vor Ort</small><strong>Noch keine Stimmen</strong><p>Die Ruhe an diesem Platz wurde noch nicht erkundet.</p></div></div>;
+  const t = useTranslations();
+  const format = useFormatter();
+  if (!bench.ratingBreakdown) return <div className="community-quiet is-empty"><MessageCircleHeart size={21} /><div><small>{t("bench.weather.quiet.title")}</small><strong>{t("bench.weather.quiet.empty")}</strong><p>{t("bench.weather.quiet.unknown")}</p></div></div>;
   const quiet = bench.ratingBreakdown.quiet;
   return <div className="community-quiet">
     <MessageCircleHeart size={21} />
-    <div><small>Ruhe laut Menschen vor Ort</small><strong>{quiet.toFixed(1)} von 5</strong><i><b style={{ width: `${quiet / 5 * 100}%` }} /></i><p>Subjektive Bewertung, getrennt von Verkehrsdaten.</p></div>
+    <div><small>{t("bench.weather.quiet.community")}</small><strong>{t("bench.weather.quiet.score", {score: format.number(quiet, {minimumFractionDigits: 1, maximumFractionDigits: 1})})}</strong><i><b style={{ width: `${quiet / 5 * 100}%` }} /></i><p>{t("bench.weather.quiet.explanation")}</p></div>
   </div>;
 }
 
-function precipitation(value: NonNullable<BenchDetail["weather"]>["precipitationType"]) {
-  return ({ none: "trocken", rain: "Regen", snow: "Schnee", mixed: "Schneeregen", unknown: "Niederschlag noch unklar" } as const)[value];
+function cloudDescription(value: number, t: Translator) {
+  const cloud = value >= .88 ? "overcast" : value >= .62 ? "mostly" : value >= .28 ? "cloudy" : value >= .1 ? "few" : "clear";
+  return t(`bench.weather.clouds.${cloud}`);
 }
 
-function cloudDescription(value: number) {
-  if (value >= .88) return "Bedeckt";
-  if (value >= .62) return "Stark bewölkt";
-  if (value >= .28) return "Wolkig";
-  if (value >= .1) return "Leicht bewölkt";
-  return "Klar";
-}
-
-function readableDate(value: string) {
+function readableDate(value: string, t: Translator) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Nicht bekannt" : new Intl.DateTimeFormat("de-CH", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zurich" }).format(date);
+  return Number.isNaN(date.getTime()) ? t("common.values.unknown") : formatDate(date, t, "dateTime");
 }

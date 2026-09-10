@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "title": "Davart Bänkli App",
+    "description": "Co che datas avertas gidan a chattar in lieu per ina pausa. Persunas, metodas e protecziun da datas."
+  },
+  "hero": {
+    "eyebrow": "Blera tecnica. Per far pauc.",
+    "title": "In bel lieu<br></br>per ina pausa.",
+    "description": "Bänkli App collia chartas avertas, in pau IA e persunas al lieu. Per chattar nua che ti vuls seser la proxima giada."
+  },
+  "navigation": {
+    "label": "Sin questa pagina",
+    "methods": "Co che quai funcziuna",
+    "sources": "Funtaunas da datas",
+    "privacy": "Tias datas",
+    "contribute": "Ta participescha"
+  },
+  "methods": {
+    "title": "Da la charta a la pausa",
+    "introduction": "Mesirar, stimar, dumandar. Nus distinguan questas trais chaussas.",
+    "position": {
+      "title": "Nua sa chatta il banc?",
+      "description": "Chartas ed inventaris averts furneschan posiziun ed equipament. Ils cunfins communals gidan ad attribuir ils bancs. Nus unain bancs vischins mo cun indizis clers."
+    },
+    "sun": {
+      "title": "Cura datti sulegl qua?",
+      "description": "Nus suandain la posiziun dal sulegl durant il di. Muntognas, edifizis e tschimas da plantas furman in orizont. Sch’il sulegl è davos, spetgain nus sumbriva. Nivels e feglia variabla portan ulteriuras intschertezzas."
+    },
+    "view": {
+      "title": "Tge pudess jau vesair?",
+      "description": "Il terren e l’ambient dattan emprims indizis. L’IA examinescha fotos adattadas ed agiunta caracteristicas visiblas. Aua en la vischinanza u ina suletta fotografia na bastan betg per garantir ina vista sin il lai."
+    },
+    "evidence": {
+      "title": "E constat quai era?",
+      "description": "Tia observaziun al lieu gida. Nus conservain derivanza, vegliadetgna ed indizis contradictorics. Datas mancantas restan nunenconuschentas. Valurs da models restan stimaziuns; tia vista preferida resta tia."
+    }
+  },
+  "sources": {
+    "eyebrow": "En tutta transparenza",
+    "title": "Co che nus duvrain las datas",
+    "introduction": "In sguard sin mintga funtauna. Ils detagls d’in banc mussan las infurmaziuns disponiblas per quel lieu.",
+    "link": "A la funtauna ↗",
+    "entries": {
+      "openstreetmap": {
+        "summary": "Bancs e vias",
+        "description": "Da qua derivan posiziuns, equipaments, vias, bigls e tualettas. Ina indicaziun mancanta resta nunenconuschenta. La vegliadetgna d’ina endataziun OSM è separada da la data da noss import."
+      },
+      "geofabrik": {
+        "summary": "Extract OSM da la Svizra",
+        "description": "Geofabrik furnescha l’extract svizzer dad OpenStreetMap. Nus al elavurain en bloc per evitar ina nova dumonda per mintga caracteristica cura che ti avras in banc."
+      },
+      "swisstopo-map": {
+        "summary": "Charta da basa e tschertga d’adressas",
+        "description": "La charta da basa mussa vias, terren e nums da lieus. Era la tschertga d’adressas dovra GeoAdmin. Las quadrellas da la charta vegnan chargiadas directamain da swisstopo."
+      },
+      "swisstlm3d": {
+        "summary": "Guaud, aua e surfatschas da la cuntrada",
+        "description": "Surfatschas e lingias precisas descrivan tranter auter guauds ed auas. Nus analisain la geometria enturn il banc: aua en la vischinanza na cumprova betg ch’ins la vesa dal sez."
+      },
+      "swissbuildings3d": {
+        "summary": "Furma dals edifizis ed autezza dals tetgs",
+        "description": "Furma, autezza e distanza d’in edifizi determineschan sia autezza apparenta a l’orizont dal banc. Sch’il sulegl passa davos, spetgain nus sumbriva. Autezzas mancantas e posiziuns nunprecisas fan la stimaziun main segira."
+      },
+      "swissalti3d": {
+        "summary": "Autezza dal terren, orizont e pendenza",
+        "description": "Il model dal terren furnescha autezza ed orizont natiral en bleras direcziuns. Per access locals cumparegliain nus las autezzas per lung da la via: 1 meter differenza sin 20 meters orizontals correspunda ad ina pendenza da 5 %."
+      },
+      "swisssurface3d": {
+        "summary": "Surfatscha cun edifizis e vegetaziun",
+        "description": "Quest model da surfatscha cuntegna edifizis e vegetaziun. La cumparegliaziun cun il terren blut gida a chattar obstachels e tschimas. Ina cuverta da plantas mesirada na mussa dentant betg quant spessa che la feglia è oz."
+      },
+      "meteoswiss": {
+        "summary": "Models da l’aura e radar",
+        "description": "Temperatura, vent, nivels e precipitaziuns derivan da models da l’aura e dal radar. Ils nivels vegnan tractads separadamain da la sumbriva geometrica: in radi liber en il model na garantescha betg in tschiel senza nivels."
+      },
+      "transport-api": {
+        "summary": "Fermadas e colliaziuns",
+        "description": "La tschertga da fermadas e colliaziuns cumplettescha il viadi. Ils pleds tschertgads u las coordinatas necessarias vegnan tramess a transport.opendata.ch."
+      },
+      "swiss-gtfs": {
+        "summary": "Urari e reglas da midada",
+        "description": "L’urari public vegn importà localmain per chattar fermadas e midadas pussaivlas d’in viadi tar in banc. In urari na garantescha betg ch’in vehichel arriva punctualmain."
+      },
+      "graphhopper": {
+        "summary": "Vias a pe sin la rait",
+        "description": "Noss agen servetsch calculescha vias a pe sin la rait. Durada, pendenza e pausas gidan a planisar; ina via calculada n’è nagina garanzia d’accessibilitad verifitgada al lieu."
+      },
+      "wikimedia-commons": {
+        "summary": "Maletgs averts dal lieu e da l’ambient",
+        "description": "Maletgs averts dattan in’impressiun dal lieu u da l’ambient. Distanza, licenza ed attribuziun restan visiblas tar il maletg. Ina fotografia da l’ambient n’è betg necessariamain ina fotografia da gist quest banc."
+      },
+      "panoramax": {
+        "summary": "Maletgs georeferenziads da vias",
+        "description": "Maletgs georeferenziads da vias pon dar indizis davart l’ambient. Nus resguardain distanza, direcziun e seria da fotografias per betg quintar pliras fotos dal medem viadi sco confermas independentas."
+      },
+      "kartaview": {
+        "summary": "Ulteriurs maletgs da vias",
+        "description": "Era quests maletgs averts cumpletteschan ils indizis davart l’ambient. In maletg nunscharf u nunadattà na vala betg sco cumprova. Era tar ina pitschna distanza pon fotografia e banc guardar en direcziuns differentas."
+      },
+      "swissimage": {
+        "summary": "Fotografias or da l’aria",
+        "description": "Fotografias or da l’aria gidan a classifitgar surfatschas e vegetaziun. Ellas mussan il lieu da surengiu; la vista d’ina persuna che sesa na sa lascha betg deducir directamain."
+      },
+      "zurich-benches": {
+        "summary": "Inventari uffizial dals bancs da Turitg",
+        "description": "L’inventari da la citad cuntegna bancs da Grün Stadt Zürich e dal Tiefbauamt. Nus conservain l’identificatur uffizial e cumparegliain cun precauziun endataziuns OSM vischinas. Plirs bancs vischins pussaivels restan separads per controlla. Bancs privats e da guaud n’èn betg cuntegnids cumplainamain."
+      },
+      "zurich-trees": {
+        "summary": "Cataster da plantas da Turitg",
+        "description": "Il cataster da la citad agiunta lieus enconuschents da plantas. Sche las caracteristicas adattadas èn disponiblas, gida el a stimar la sumbriva pussaivla e la vegetaziun."
+      },
+      "basel-trees": {
+        "summary": "Cataster da plantas da Basilea",
+        "description": "Il cataster da Basilea agiunta era plantas che pon mancar sin autras chartas. Ina planta registrada na remplazza betg ina mesiraziun actuala da sia tschima."
+      },
+      "sonbase": {
+        "summary": "Models da canera a lunga vista",
+        "description": "Las griglias uffizialas furneschan nivels da canera modellads en dB(A). Via e viafier sco era di e notg restan separads. Quai èn valurs a lunga vista, nagina registraziun da la canera durant tia proxima pausa."
+      },
+      "swissnames3d": {
+        "summary": "Nums da lieus ed orientaziun",
+        "description": "Nums da lieus e quartiers vegnan tschertgads enturn il banc e valitads tenor vischinanza e tip. In num vischin gida ad orientar; la vischnanca politica vegn determinada separadamain cun ses cunfins."
+      },
+      "swissboundaries3d": {
+        "summary": "Cunfins da vischnancas, districts e chantuns",
+        "description": "La posiziun dal banc vegn intersectada cun las surfatschas realas da vischnancas, districts e chantuns. Il numer UST procura per in’attribuziun univoca. Sin in cunfin malsegir resta l’attribuziun averta."
+      },
+      "qwen3-vl-benchly": {
+        "summary": "Indizis da l’IA or da maletgs da l’ambient",
+        "description": "Il model da maletgs manà localmain tschertga indizis da guaud, aua, muntognas e vista averta. Sias stimaziuns restan separadas da mesiraziuns. Ina cumparegliaziun controllada cun maletgs annotads da persunas examinescha sbagls e differenzas regiunalas."
+      },
+      "qwen35-bank-photos": {
+        "summary": "Ambient visibel sin fotos dals bancs",
+        "description": "Il model da maletgs pli grond agiunta perspectiva ed ambient visibel or da fotos attribuidas correctamain als bancs. Ina muntogna visibla po sustegnair ina vista; sia absenza na la refutescha betg. Autovalitaziuns dal model n’èn betg probabilitads mesiradas."
+      },
+      "benchly-community": {
+        "summary": "Observaziuns da persunas al lieu",
+        "description": "Persunas al lieu conferman bancs, cumpletteschan equipaments e partan impressiuns. Pliras observaziuns independentas ed actualas sustegnan in’indicaziun. Cuntradicziuns restan conservadas e pon manar ad ina curta dumonda."
+      }
+    }
+  },
+  "privacy": {
+    "eyebrow": "Senza labirint da letras pitschnas",
+    "title": "Nua van tias datas?",
+    "description": "Tscherna in’activitad en l’app. Il percurs sutvart mussa tge che capita.",
+    "link": "Protecziun da datas e contact"
+  },
+  "contribute": {
+    "eyebrow": "Sin il banc hai plaz",
+    "title": "Porta tias ideas",
+    "description": "Chattà in sbagl u ina idea? Il code e las discussiuns èn publics. Era pitschnas meglieraziuns gidan.",
+    "code": "Code e contribuziuns ↗",
+    "issues": "Annunziar in sbagl u in’idea ↗"
+  },
+  "reuse": {
+    "title": "Prender cun las datas? Gugent.",
+    "invitation": "Rimnar, perscrutar, crear: nossas datas publicas davart bancs dastgan vegnir reutilisadas. Per plaschair en tempo da spassegiada: il server è in banc da parc, nagin tren ad auta sveltezza.",
+    "pace": "Ina dumonda per secunda, ina suenter l’autra, cun memoria intermediara ed ina pausa tar sbagls u ina resposta 429.",
+    "rights": "Las licenzas da las funtaunas restan valaivlas, sco l’ODbL dad OpenStreetMap e l’indicaziun da funtauna da swisstopo. Fotos, texts e contribuziuns appartegnan a lur auturas ed auturs; nus na pudain betg dar ina permissiun generala per lur reutilisaziun. Datas privatas dals contos n’èn betg datas avertas."
+  },
+  "people": {
+    "eyebrow": "Las persunas davos il project",
+    "title": "Grazia per ils bancs.",
+    "description": "A Stephan per l’idea, Matthias per la realisaziun tecnica, Jonas per il sguard attentiv. Ed a tut las persunas che sesan dadoura, scuvran e partan lur savida."
+  },
+  "links": {
+    "imprint": "Contact ed impressum",
+    "privacy": "Protecziun da datas",
+    "project": "A la pagina dal project"
+  }
+}

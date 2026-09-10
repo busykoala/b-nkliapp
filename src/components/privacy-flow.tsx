@@ -1,30 +1,31 @@
 "use client";
+
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowDown, Camera, Map, UserRound } from "lucide-react";
+import type { MessageKey } from "@/i18n/types";
 
 const journeys = [
-  { key: "map", label: "Karte anschauen", icon: Map, steps: [
-    ["Dein Gerät", "Die Standortfreigabe ist freiwillig. Einstellungen wie dein Gehtempo bleiben im Browser."],
-    ["Karte & Wegsuche", "Kartenkacheln gehen direkt an swisstopo. Ein geplanter Weg sendet Start und Ziel an unseren Server; Adress- und Haltestellensuche nutzen zusätzlich GeoAdmin und die Transport API."],
-    ["Kurze Pause im Speicher", "Routen mit persönlichen Endpunkten bleiben höchstens fünf Minuten im Arbeitsspeicher. Die App führt kein persönliches Bewegungsprotokoll."],
-  ] },
-  { key: "account", label: "Mit Konto", icon: UserRound, steps: [
-    ["Dein gewählter Name", "Für ein Konto brauchst du einen Benutzernamen und ein Passwort. Das Passwort wird als gesalzener Hash gespeichert."],
-    ["Dein Wanderbuch", "Beiträge und der Benutzername sind öffentlich. Gemerkte Bänkli und gefolgte Orte personalisieren deine Ansicht; deine Favoritenliste bleibt privat."],
-    ["Wiederkommen", "Ein notwendiges Anmelde-Cookie hält dich bis zu 30 Tage angemeldet. Abmelden beendet diese Sitzung."],
-  ] },
-  { key: "photo", label: "Foto beitragen", icon: Camera, steps: [
-    ["Ein Bänkli, bitte ohne Menschen", "Das Foto wird im Browser verkleinert und neu gespeichert. Dabei werden ursprüngliche EXIF-Metadaten nicht übernommen."],
-    ["Bildprüfung auf unserem Modellserver", "Die KI prüft, ob Personen zu sehen sind. Unsichere Bilder werden abgelehnt. Diese Prüfung kann Fehler machen."],
-    ["Dein Bild am Platz", "Freigegebene Fotos, Bildtexte und dein Benutzername sind öffentlich. Eigene Bildmomente kannst du am Bänkli wieder löschen."],
-  ] },
+  { key: "map", icon: Map, steps: ["device", "providers", "memory"] },
+  { key: "account", icon: UserRound, steps: ["credentials", "profile", "session"] },
+  { key: "photo", icon: Camera, steps: ["device", "check", "publication"] },
 ] as const;
+type StepKey = Extract<MessageKey, `privacy.flow.${string}.${string}.${"title" | "description"}`>;
 
 export function PrivacyFlow() {
+  const t = useTranslations();
   const [selected, setSelected] = useState(0);
+  const journey = journeys[selected];
   return <div className="privacy-flow">
-    <div className="privacy-paths" aria-label="Datenweg auswählen">{journeys.map(({ key, label, icon: Icon }, index) => <button className="ui-button" key={key} aria-pressed={selected === index} onClick={() => setSelected(index)}><Icon size={17} />{label}</button>)}</div>
-    <ol aria-label={`Datenweg: ${journeys[selected].label}`} aria-live="polite">{journeys[selected].steps.map(([title, description], index) => <li key={title}>{index > 0 && <ArrowDown className="flow-arrow" aria-hidden="true" size={23} />}<div><span aria-hidden="true">{index + 1}</span><h3>{title}</h3><p>{description}</p></div></li>)}</ol>
-    <p className="privacy-flow-footnote">Bei jedem Seitenaufruf fallen technische Verbindungsdaten an, etwa eine IP-Adresse. Für Auslieferung und Schutz der Seite wird auch Cloudflare eingesetzt. Die App speichert für Missbrauchsschutz abgeleitete Kennungen statt roher IP-Adressen.</p>
+    <div className="privacy-paths" aria-label={t("privacy.flow.choose")}>
+      {journeys.map(({ key, icon: Icon }, index) => <button className="ui-button" key={key} aria-pressed={selected === index} onClick={() => setSelected(index)}><Icon size={17} />{t(`privacy.flow.${key}.label`)}</button>)}
+    </div>
+    <ol aria-label={t("privacy.flow.path", { label: t(`privacy.flow.${journey.key}.label`) })} aria-live="polite">
+      {journey.steps.map((step, index) => <li key={step}>
+        {index > 0 && <ArrowDown className="flow-arrow" aria-hidden="true" size={23} />}
+        <div><span aria-hidden="true">{index + 1}</span><h3>{t(`privacy.flow.${journey.key}.${step}.title` as StepKey)}</h3><p>{t(`privacy.flow.${journey.key}.${step}.description` as StepKey)}</p></div>
+      </li>)}
+    </ol>
+    <p className="privacy-flow-footnote">{t("privacy.flow.footnote")}</p>
   </div>;
 }

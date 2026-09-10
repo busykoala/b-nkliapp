@@ -1,4 +1,5 @@
 import "server-only";
+import { message } from "@/i18n/message";
 import { sqlite } from "@/db/client";
 import { distanceMeters } from "../journey";
 import { routeWalk, type WalkRequest } from "../walking-provider";
@@ -14,7 +15,7 @@ function nearbyBenches(query: WalkQuery): WalkBench[] {
     FROM bench_spatial_index s JOIN benches b ON b.row_id=s.row_id LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
     WHERE s.min_latitude<=? AND s.max_latitude>=? AND s.min_longitude<=? AND s.max_longitude>=? AND b.active=1
     ORDER BY abs(b.latitude-?)+abs(b.longitude-?)*.68 LIMIT 5000`).all(query.origin.latitude + lat, query.origin.latitude - lat, query.origin.longitude + lon, query.origin.longitude - lon, query.origin.latitude, query.origin.longitude) as { id: string; name: string | null; latitude: number; longitude: number; waterfront: number | null; view_score: number | null; view_confidence: string | null }[];
-  return rows.filter((b) => distanceMeters({ ...b, label: "" }, query.origin) <= radius).map((b) => ({ id: b.id, label: b.name ?? "Bänkli", name: b.name, latitude: b.latitude, longitude: b.longitude, waterfront: b.waterfront === 1, quality: b.view_confidence && b.view_confidence !== "niedrig" && b.view_score !== null ? Math.max(0, Math.min(1, b.view_score / 100)) : null }));
+  return rows.filter((b) => distanceMeters({ ...b, label: "" }, query.origin) <= radius).map((b) => ({ id: b.id, label: b.name || "bench", ...(!b.name ? { labelKind: "bench" as const } : {}), name: b.name, latitude: b.latitude, longitude: b.longitude, waterfront: b.waterfront === 1, quality: b.view_confidence && b.view_confidence !== "niedrig" && b.view_score !== null ? Math.max(0, Math.min(1, b.view_score / 100)) : null }));
 }
 
 function bearingDegrees(origin: WalkQuery["origin"], bench: WalkBench) {
@@ -40,11 +41,11 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
     return routeWalk({ ...request, difficulty: query.difficulty, scenic: true }, signal, true);
   };
   const benches = nearbyBenches(query);
-  if (!benches.length) return { ...result, message: "In dieser Gehzeit wurde noch kein passendes Bänkli gefunden. Versuche eine längere Runde oder einen anderen Start." };
+  if (!benches.length) return { ...result, message: message("walks.result.noBenches") };
   const add = (path: WalkPath, bench: WalkBench) => {
     // Keep a visible gap at the user's origin (e.g. inside a building), without
     // drawing a made-up connecting line. The planned bench itself must be reached.
-    const unverifiedBench = path.warnings.some((warning) => !warning.startsWith("Start:") && !(query.shape === "loop" && warning.startsWith("Ziel:")));
+    const unverifiedBench = path.warnings.some((warning) => warning.key !== "routing.warnings.start" && !(query.shape === "loop" && warning.key === "routing.warnings.end"));
     if (unverifiedBench || path.distance < 100) return;
     const evidence = evaluateRoute(path, query), durationSeconds = pathSeconds(path, query.speed);
     const cells = routeCells(path), repeated = cells.size * 25 / Math.max(1, path.distance) < .6;
@@ -153,8 +154,8 @@ export async function discoverWalks(query: WalkQuery): Promise<WalkResult> {
     }
   } catch { result.partial = true; }
   if (query.maxRestMinutes) result.suggestions = result.suggestions.filter((suggestion) => suggestion.rest && suggestion.rest.maxGapSeconds <= query.maxRestMinutes! * 60 + .001);
-  if (query.maxRestMinutes && !result.suggestions.length) result.message = `Kein geprüfter Weg mit höchstens ${query.maxRestMinutes} Minuten zwischen Sitzgelegenheiten gefunden. Bitte Start, Dauer oder Pausenabstand ändern.`;
-  else if (!result.suggestions.length) result.message = "Noch kein geprüfter Spaziergang verfügbar. Bitte Start oder Gehzeit ändern. Der eigene Routenservice muss bereit sein.";
-  else if (!result.suggestions[0].withinBudget) result.message = "Die gewünschte Gehzeit passt hier nicht genau. Dies ist der nächstliegende geprüfte Vorschlag; die tatsächliche Dauer steht dabei.";
+  if (query.maxRestMinutes && !result.suggestions.length) result.message = message("walks.result.noRestRoute", {minutes: query.maxRestMinutes});
+  else if (!result.suggestions.length) result.message = message("walks.result.unavailable");
+  else if (!result.suggestions[0].withinBudget) result.message = message("walks.result.nearest");
   return result;
 }

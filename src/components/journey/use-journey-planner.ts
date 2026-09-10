@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
@@ -9,6 +10,7 @@ import { journeyBounds, parsePreferences, PREFERENCES_KEY, type JourneySettings 
 
 // Owns requests and map effects; the journal component owns rendering and focus.
 export function useJourneyPlanner(benchId: string, getMap: () => MapLibreMap | null, initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string }) {
+  const t = useTranslations();
   const [origin, setOrigin] = useState<JourneyOrigin | null>(initial?.origin ?? null);
   const [settings, setSettings] = useState<JourneySettings>(() => ({
     ...readPreferences(), mode: "transit", timeMode: initial ? "departure" : "now", time: initial?.time ?? swissWallTime(new Date().toISOString()),
@@ -48,9 +50,9 @@ export function useJourneyPlanner(benchId: string, getMap: () => MapLibreMap | n
     getMap()?.fitBounds(bounds, { padding: { top: 90, left: 35, right: desktop ? 485 : 35, bottom: desktop ? 45 : window.innerHeight * .48 }, maxZoom: 17, duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450 });
   };
   const submit = (offset = 0) => {
-    if (!origin) { setError("Bitte einen Start auswählen."); return; }
+    if (!origin) { setError(t("journey.planner.chooseStart")); return; }
     const chosenTime = timeMode === "now" ? new Date().toISOString() : swissWallTimeToIso(time);
-    if (!chosenTime) { setError("Diese Schweizer Uhrzeit existiert nicht. Bitte das Datum prüfen."); return; }
+    if (!chosenTime) { setError(t("journey.planner.invalidTime")); return; }
     const at = new Date(Date.parse(chosenTime) + offset * 60000).toISOString();
     if (offset) setSettings({ ...settings, timeMode: timeMode === "arrival" ? "arrival" : "departure", time: swissWallTime(at) });
     const token = ++sequence.current; setError("");
@@ -61,7 +63,7 @@ export function useJourneyPlanner(benchId: string, getMap: () => MapLibreMap | n
         if (sequence.current !== token) return;
         setResult(next); setDirty(false); setSelected(next.options[0]?.id ?? ""); setActiveLeg(null);
         if (next.options[0]) focus(next.options[0].legs);
-      } catch { if (sequence.current === token) setError("Reiseplanung gerade nicht verfügbar oder zu viele Anfragen. Bitte kurz warten und erneut versuchen."); }
+      } catch { if (sequence.current === token) setError(t("journey.planner.failed")); }
     });
   };
   const selectOption = (option: JourneyOption) => { setSelected(option.id); setActiveLeg(null); focus(option.legs); };

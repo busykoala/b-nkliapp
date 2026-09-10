@@ -1,6 +1,8 @@
 "use client";
+import { pointLabel } from "@/i18n/point-label";
+import { useTranslations } from "next-intl";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import { Crosshair, Footprints, Info, SlidersHorizontal, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
@@ -19,12 +21,22 @@ import { AccountDialog } from "./account-controls";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/lib/watercolor-map";
 import { featureCollection, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/lib/map-renderer";
 
-const WalkPlanner = dynamic(() => import("./walks/walk-planner").then((m) => m.WalkPlanner), { ssr: false, loading: () => <aside className="journey-panel storybook-panel" role="status">Dein Spaziergangsjournal wird geöffnet …</aside> });
+const WalkPlanner = dynamic(() => import("./walks/walk-planner").then((m) => m.WalkPlanner), { ssr: false, loading: WalkLoading });
 const JourneyPlanner = dynamic(() => import("./journey/journey-planner").then((m) => m.JourneyPlanner), {
-  ssr: false, loading: () => <aside className="journey-panel storybook-panel" role="status">Dein Reisejournal wird geöffnet …</aside>,
+  ssr: false, loading: JourneyLoading,
 });
 
+function WalkLoading() {
+  const t = useTranslations("map.loading");
+  return <aside className="journey-panel storybook-panel" role="status">{t("walk")}</aside>;
+}
+function JourneyLoading() {
+  const t = useTranslations("map.loading");
+  return <aside className="journey-panel storybook-panel" role="status">{t("journey")}</aside>;
+}
+
 export function MapExplorer({ user }: { user: CurrentUser | null }) {
+  const t = useTranslations();
   const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -67,10 +79,10 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         featuresRef.current = result;
         setFeatures(result);
         (map.getSource("benchly") as GeoJSONSource | undefined)?.setData(featureCollection(result));
-        setMessage((current) => current === "Bänke konnten nicht geladen werden." ? null : current);
+        setMessage((current) => current === "map.canvas.failed" ? null : current);
       }
     } catch {
-      if (sequence === querySequence.current) setMessage("Bänke konnten nicht geladen werden.");
+      if (sequence === querySequence.current) setMessage("map.canvas.failed");
     } finally { if (sequence === querySequence.current) setMapLoading(false); }
   }, []);
 
@@ -110,12 +122,12 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature(detail ?? undefined));
         if (!detail) setSelectedId(null);
         if (mapRef.current) await loadVisible(mapRef.current, filtersRef.current);
-        if (!detail) setMessage("Dieses Bänkli wurde als nicht mehr vorhanden bestätigt.");
+        if (!detail) setMessage(t("map.canvas.removed"));
       }
     } catch {
-      setMessage("Die neue Angabe ist gespeichert. Die Ansicht aktualisiert sich beim nächsten Öffnen.");
+      setMessage(t("map.canvas.saved"));
     }
-  }, [selectedId, loadVisible]);
+  }, [selectedId, loadVisible, t]);
 
   const beginPlacement = useCallback((latitude: number, longitude: number) => {
     placingRef.current = true;
@@ -138,8 +150,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   }, [beginPlacement]);
 
   const locate = (onFound?: (position: UserPosition) => void) => {
-    if (!navigator.geolocation) { setMessage("Dein Browser unterstützt die Standortsuche nicht."); return; }
-    setMessage("Standort wird gesucht …");
+    if (!navigator.geolocation) { setMessage(t("map.location.unsupported")); return; }
+    setMessage(t("map.location.searching"));
     navigator.geolocation.getCurrentPosition((position) => {
       const { longitude, latitude, accuracy } = position.coords;
       const nextPosition = { longitude, latitude, accuracy };
@@ -147,11 +159,11 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       if (!map || !showUserPosition(map, nextPosition)) pendingPosition.current = nextPosition;
       if (typeof onFound === "function") onFound(nextPosition);
       window.localStorage.setItem("benchly_location_enabled", "1");
-      setMessage(`Standort auf etwa ${Math.round(accuracy)} m genau.`);
+      setMessage(t("map.location.accuracy", { meters: Math.round(accuracy) }));
       window.setTimeout(() => setMessage(null), 3500);
     }, () => {
       window.localStorage.removeItem("benchly_location_enabled");
-      setMessage("Standort nicht verfügbar. Du kannst die Karte weiterhin verwenden.");
+      setMessage(t("map.location.unavailable"));
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
   };
 
@@ -182,6 +194,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         maxZoom: 19,
         maxBounds: [[5.45, 45.55], [10.9, 48.05]],
         attributionControl: false,
+        locale: { "Map.Title": t("map.canvas.interactive"), "AttributionControl.ToggleAttribution": t("map.canvas.attribution") },
         style: MINIMAL_MAP_STYLE,
       });
       map.addControl(new AttributionControl({
@@ -346,6 +359,17 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   }, [features]);
 
   useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    // MapLibre has no runtime locale setter. Its existing public DOM remains
+    // in place while we update the two built-in controls used by this app.
+    map.getCanvas().setAttribute("aria-label", t("map.canvas.interactive"));
+    const attribution = map.getContainer().querySelector(".maplibregl-ctrl-attrib-button");
+    attribution?.setAttribute("aria-label", t("map.canvas.attribution"));
+    attribution?.setAttribute("title", t("map.canvas.attribution"));
+  }, [mapReady, t]);
+
+  useEffect(() => {
     const requestedBench = searchParams.get("bank");
     if (!mapReady || !requestedBench || openedFromUrl.current === requestedBench) return;
     openedFromUrl.current = requestedBench;
@@ -358,13 +382,14 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     if (map?.isStyleLoaded()) loadVisible(map, filters);
   }, [filters, loadVisible]);
 
+  const autoLocate = useEffectEvent(() => locate());
   useEffect(() => {
     if (!navigator.geolocation) return;
     if (window.localStorage.getItem("benchly_location_enabled") === "1") {
-      const timer = window.setTimeout(() => locate(), 0);
+      const timer = window.setTimeout(() => autoLocate(), 0);
       return () => window.clearTimeout(timer);
     }
-    navigator.permissions?.query({ name: "geolocation" }).then((permission) => { if (permission.state === "granted") locate(); }).catch(() => undefined);
+    navigator.permissions?.query({ name: "geolocation" }).then((permission) => { if (permission.state === "granted") autoLocate(); }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -396,29 +421,29 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const activeFilterCount = activeMapFilterCount(filters);
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-base-200">
-      <div ref={containerRef} className="benchly-map absolute inset-0" aria-label="Karte der Schweizer Sitzbänke" aria-busy={mapLoading} />
+      <div ref={containerRef} className="benchly-map absolute inset-0" aria-label={t("map.canvas.label")} aria-busy={mapLoading} />
       <header className="map-topbar safe-top pointer-events-none absolute inset-x-0 top-0 z-20 px-3 md:max-w-xl md:px-4">
         <div className="pointer-events-auto flex items-center gap-2">
           <SearchBox onSelect={choosePlace} onLocate={locate} />
-          <button aria-label="Filter öffnen" aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>Filter</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
+          <button id="map-filter-toggle" aria-label={t("map.filters.open")} aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>{t("map.filters.button")}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
           <AppMenu user={user} onAdd={openAdd} onWalk={() => setWalkOpen(true)} />
         </div>
-        {activeFilterCount > 0 && <div className="active-filter-chips pointer-events-auto" aria-label="Aktive Filter">{activeMapFilters(filters).map(({ key, label }) => <button key={key} type="button" aria-label={`${label} entfernen`} onClick={() => setFilters((current) => ({ ...current, [key]: undefined }))}>{label}<X size={14} /></button>)}</div>}
+        {activeFilterCount > 0 && <div className="active-filter-chips pointer-events-auto" aria-label={t("map.filters.active")}>{activeMapFilters(filters, t).map(({ key, label }) => <button key={key} type="button" aria-label={t("map.filters.remove", { label })} onClick={() => setFilters((current) => ({ ...current, [key]: undefined }))}>{label}<X size={14} /></button>)}</div>}
       </header>
       {addStage === "position" && <>
         <div className="placement-crosshair" aria-hidden="true"><Crosshair size={38} /></div>
-        <section className="placement-controls" aria-label="Position wählen"><h2>Position wählen</h2><p>Verschiebe die Karte, bis das Fadenkreuz auf dem Bänkli liegt.</p><button type="button" onClick={() => locate((point) => beginPlacement(point.latitude, point.longitude))}><Crosshair size={18} /> Meinen Standort verwenden</button><div><button type="button" onClick={closeAdd}>Abbrechen</button><button type="button" className="btn btn-primary" onClick={() => { const map = mapRef.current; if (!map) return; map.stop(); const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); setAddStage("details"); }}>Hier eintragen</button></div></section>
+        <section className="placement-controls" aria-label={t("map.placement.title")}><h2>{t("map.placement.title")}</h2><p>{t("map.placement.instructions")}</p><button type="button" onClick={() => locate((point) => beginPlacement(point.latitude, point.longitude))}><Crosshair size={18} /> {t("map.location.use")}</button><div><button type="button" onClick={closeAdd}>{t("common.actions.cancel")}</button><button type="button" className="btn btn-primary" onClick={() => { const map = mapRef.current; if (!map) return; map.stop(); const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); setAddStage("details"); }}>{t("map.placement.confirm")}</button></div></section>
       </>}
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
-      {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>Karte wird gemalt …</span></div></div>}
-      {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message}</span></div></div>}
-      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && <button className="walk-entry" onClick={() => setWalkOpen(true)}><Footprints size={20} /> Spaziergang entdecken</button>}
+      {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
+      {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && <button className="walk-entry" onClick={() => setWalkOpen(true)}><Footprints size={20} /> {t("walks.planner.title")}</button>}
       {walkOpen && <WalkPlanner getMap={getJourneyMap} onClose={() => setWalkOpen(false)} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} />}
-      {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: returnJourney.destination.label }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
+      {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
       {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
       {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
       {addStage === "details" && <AddBenchDialog coordinates={addCoordinates} onChoosePosition={() => setAddStage("position")} onClose={closeAdd} onExisting={(id) => { closeAdd(); void selectBench(id, true); }} onCreated={(id) => { closeAdd(); setCreatedBenchId(id); void selectBench(id, true); if (mapRef.current) void loadVisible(mapRef.current, filtersRef.current); }} />}
-      <AccountDialog dialogRef={addAccount} intent="Bänkli eintragen" onAuthenticated={() => { canAdd.current = true; const point = pendingAdd.current; pendingAdd.current = null; if (point) beginPlacement(point.latitude, point.longitude); }} />
+      <AccountDialog dialogRef={addAccount} intent={t("common.navigation.addBench")} onAuthenticated={() => { canAdd.current = true; const point = pendingAdd.current; pendingAdd.current = null; if (point) beginPlacement(point.latitude, point.longitude); }} />
     </main>
   );
 }

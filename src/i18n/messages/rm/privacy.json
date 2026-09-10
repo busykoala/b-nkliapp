@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "title": "Protecziun da datas · Bänkli App"
+  },
+  "title": "Tias datas na van betg a spass senza motiv.",
+  "updated": "Stadi: settember 2026. Qua declerain nus tge datas che Bänkli App elavura per sias funcziuns.",
+  "purposes": {
+    "title": "Pertge che nus duvrain datas",
+    "map": "Per la charta e la planisaziun da vias elavurain nus la regiun tschernida, ils pleds da tschertga ed ils puncts da partenza e destinaziun dumandads. Cundivider la posiziun è voluntari. Nus na memorisain nagina cronologia persunala da tias vias.",
+    "account": "In conto memorisescha num d’utilisader, hash dal pled-clav, avatar, sessiuns e bancs e lieus memorisads. Tes num, profil e contribuziuns publitgadas èn publics. La glista dals favurits è accessibla mo cun tes conto.",
+    "contributions": "Fotos e texts vegnan publitgads sche ti als contribueschas. Las fotos passan avant ina controlla automatica da persunas sin il server dal model. La protecziun cunter abus dovra identificaturs deducids, annunzias e decisiuns da moderaziun."
+  },
+  "providers": {
+    "title": "Tgi che gida",
+    "own": "L’app, la memoria da fotos e la controlla da maletgs funcziunan sin nossa atgna infrastructura.",
+    "country": "Lieu: {country}.",
+    "external": "Cloudflare gida a furnir e proteger la pagina ed elavura datas tecnicas da connexiun. GeoAdmin/swisstopo survegnan dumondas da chartas e tschertgas; transport.opendata.ch survegn dumondas da fermadas e colliaziuns. Maletgs externs vegnan chargiads da lur funtaunas, che survegnan tranter auter tia adressa IP e l’adressa dal maletg dumandà.",
+    "policies": "Infurmaziuns da quests purschiders:",
+    "abroad": "Cloudflare è in’interpresa americana cun ina rait mundiala; datas da connexiun pon era vegnir elavuradas a l’exteriur."
+  },
+  "storage": {
+    "title": "Cookies, memoria e conservaziun",
+    "cookies": "Il cookie d’annunzia vala fin a 30 dis. In cookie necessari per contribuziuns po durar in onn. Sortir terminescha la sessiun actuala. Tempo da chaminar e regurdientscha da la permissiun da posiziun èn memorisads en il navigatur e svaneschan sche ti stizzas las datas da la pagina.",
+    "language": "Tia lingua tschernida vegn memorisada en in cookie per in onn. Senza tscherna explicita duvrain nus ina lingua sustegnida dal navigatur u tudestg.",
+    "retention": "Rutas persunalas restan maximal tschintg minutas en la memoria da lavur. Datas dal conto e contribuziuns restan memorisadas per las funcziuns fin ch’ellas vegnan stizzadas u n’èn betg pli necessarias. Ti pos allontanar directamain tes muments e tias fotos. Protocolls da segirezza e d’infrastructura sco era copias da segirezza pon avair auters termins da conservaziun.",
+    "noTracking": "L’app na dovra nagins cookies da reclama u d’analisa."
+  },
+  "rights": {
+    "title": "Ti restas al timun",
+    "description": "Ti pos dumandar infurmaziuns davart tias datas, lur correctura u lur stizzada. Per dumondas davart il conto u la protecziun da datas dovra il contact sutvart. Indicaziuns persunalas na tutgan betg en ina dumonda publica sin GitHub."
+  },
+  "flow": {
+    "choose": "Tscherner il percurs da datas",
+    "path": "Percurs da datas: {label}",
+    "map": {
+      "label": "Guardar la charta",
+      "device": {
+        "title": "Tes apparat",
+        "description": "Cundivider la posiziun è voluntari. Preferenzas sco tes tempo da chaminar restan en il navigatur."
+      },
+      "providers": {
+        "title": "Charta e tschertga da vias",
+        "description": "Las dumondas da quadrellas van directamain a swisstopo. Ina ruta trametta partenza e destinaziun a noss server; tschertgas d’adressas e fermadas dovran era GeoAdmin e la Transport API."
+      },
+      "memory": {
+        "title": "Ina curta pausa en la memoria",
+        "description": "Rutas cun puncts finals persunals restan maximal tschintg minutas en la memoria da lavur. L’app na maina nagin protocol persunal da moviments."
+      }
+    },
+    "account": {
+      "label": "Cun in conto",
+      "credentials": {
+        "title": "Tes num tschernì",
+        "description": "Per in conto dovras ti in num d’utilisader ed in pled-clav. Il pled-clav vegn memorisà sco hash cun salt."
+      },
+      "profile": {
+        "title": "Tes diari da spassegiadas",
+        "description": "Contribuziuns ed il num d’utilisader èn publics. Bancs memorisads e lieus suandads persunalisassan tia vista; tia glista da favurits resta privata."
+      },
+      "session": {
+        "title": "Turnar",
+        "description": "In cookie d’annunzia necessari mantegna tia sessiun fin a 30 dis. Sortir terminescha questa sessiun."
+      }
+    },
+    "photo": {
+      "label": "Contribuir ina fotografia",
+      "device": {
+        "title": "In banc, per plaschair senza persunas",
+        "description": "La fotografia vegn reducida e memorisada da nov en il navigatur. Las metadatas EXIF originalas na vegnan betg conservadas."
+      },
+      "check": {
+        "title": "Controlla sin noss server dal model",
+        "description": "L’IA controllescha sche persunas èn visiblas. Maletgs malsegirs vegnan refusads. Questa controlla po far sbagls."
+      },
+      "publication": {
+        "title": "Tes maletg al lieu",
+        "description": "Fotos approvadas, descripziuns e tes num d’utilisader èn publics. Ti pos stizzar tes agens muments fotografics tar il banc."
+      }
+    },
+    "footnote": "Mintga visita producescha datas tecnicas da connexiun, sco in’adressa IP. Cloudflare gida a furnir e proteger la pagina. Per impedir abus memorisescha l’app identificaturs deducids enstag d’adressas IP brutas."
+  }
+}

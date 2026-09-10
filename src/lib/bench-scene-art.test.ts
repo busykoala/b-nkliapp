@@ -2,7 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderTranslated } from "@/test/render";
 import { BenchLandscape } from "../components/bench-landscape";
 import type { BenchDetail } from "./types";
 import { benchSceneComposition, benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "./bench-scene-art";
@@ -63,7 +63,7 @@ describe("bench scene artwork", () => {
       sunAltitudeDegrees: 30, sunAzimuthDegrees: 180, moonIllumination: 0,
       moonPhase: 0, properties: [], viewLabels, viewComponents: { water },
     } as unknown as BenchDetail;
-    const markup = renderToStaticMarkup(createElement(BenchLandscape, { bench }));
+    const markup = renderTranslated(createElement(BenchLandscape, { bench }));
     expect(markup).toContain("scene-city");
     expect(markup).toContain(expected);
     // Keep the treatment on the native SVG path for Safari, preserve solid

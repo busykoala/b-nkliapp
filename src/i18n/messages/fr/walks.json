@@ -1,0 +1,88 @@
+{
+  "result": {
+    "noBenches": "Aucun banc adapté n’a été trouvé pour cette durée de marche. Essaie une balade plus longue ou un autre départ.",
+    "noRestRoute": "Aucun chemin vérifié avec au plus {minutes} minutes entre les sièges. Modifie le départ, la durée ou l’intervalle entre les pauses.",
+    "unavailable": "Aucune balade vérifiée disponible pour le moment. Modifie le départ ou la durée. Notre service d’itinéraires doit être disponible.",
+    "nearest": "La durée souhaitée ne correspond pas exactement ici. Voici la proposition vérifiée la plus proche ; sa durée réelle est indiquée."
+  },
+  "evidence": {
+    "water": "Une bonne partie du chemin près de l’eau",
+    "quiet": "Peu de routes principales aux alentours",
+    "nature": "Beaucoup d’environs naturels",
+    "open": "Terrain ouvert le long du chemin",
+    "incomplete": "Les données du paysage sont incomplètes ; la plus belle variante ne peut pas être estimée avec certitude.",
+    "lightUnknown": "Le soleil et l’ombre le long de ce chemin ne peuvent pas encore être estimés de manière fiable."
+  },
+  "planner": {
+    "title": "Découvrir une balade",
+    "resize": "Agrandir ou réduire la balade",
+    "close": "Fermer la balade",
+    "eyebrow": "Le temps d’un banc",
+    "intro": "Un joli chemin. Un banc pour s’arrêter un instant.",
+    "label": "Planifier une balade",
+    "duration": "Combien de temps souhaites-tu marcher ?",
+    "route": "Ton chemin",
+    "loop": "Boucle",
+    "oneWay": "Aller simple",
+    "outAndBack": "Aller-retour",
+    "light": "Soleil ou ombre ?",
+    "sun": "Plutôt au soleil",
+    "shade": "Plutôt à l’ombre",
+    "pending": "Ton excursion prend forme…",
+    "update": "Actualiser les balades",
+    "submit": "Trouver une balade avec un banc",
+    "loading": "La carte reste mobile. La recherche dure au maximum 15 secondes.",
+    "dirty": "Choix modifié — le chemin affiché correspond encore aux réglages précédents.",
+    "failed": "La balade est momentanément indisponible. Patiente un peu ou change le départ."
+  },
+  "rest": {
+    "option": " · un banc au moins toutes les {minutes} min",
+    "legend": "Un banc au moins toutes les…",
+    "explanation": "Tout le chemin est vérifié à ton rythme, y compris le premier et le dernier tronçon. Les durées restent des estimations.",
+    "title": "Pauses assises en chemin",
+    "maximum": "Au plus env. {minutes} min de marche d’affilée · départ et arrivée inclus",
+    "after": "après env. {minutes} min",
+    "minutes": "{minutes} min"
+  },
+  "results": {
+    "title": "Ta balade",
+    "choice": "{count, plural, one {Une balade au choix} other {# balades au choix}}",
+    "recommended": "Recommandé",
+    "variant": "Variante {number}",
+    "eyebrow": "Ton excursion aux bancs",
+    "summary": "env. {duration} · ↑ {ascent} m",
+    "routeSummary": "env. {duration} · {shape} · ↑ {ascent} m",
+    "t2": "Sentiers jusqu’à T2 : un pied sûr est nécessaire.",
+    "start": "Ton excursion commence ici",
+    "return": "Retour au point de départ",
+    "why": "Pourquoi cette proposition ?",
+    "explanation": "Nous comparons le calme, la nature, la vue, la proximité de l’eau et le banc le long du chemin réel. C’est une estimation fondée sur des données, pas une garantie de beauté.",
+    "updated": "Données du paysage du {date}.",
+    "noData": "Les données du paysage manquent encore.",
+    "extrasNote": "Les bancs supplémentaires confirmés ont un court accès à pied vérifié ; ceux non vérifiés ne sont pas comptés.",
+    "planReturn": "Planifier le retour"
+  },
+  "information": {
+    "estimates": "Durées de marche et lumière sont des estimations. Aucune garantie sur l’accessibilité, les fermetures actuelles, la neige ou la sécurité en montagne.",
+    "privacy": "Position uniquement sur demande. Les saisies et coordonnées sont envoyées au service cartographique nécessaire ; le calcul à pied se fait sur notre serveur. Les itinéraires personnels restent au maximum cinq minutes en mémoire, sans historique."
+  },
+  "story": {
+    "loop": {
+      "named": "Une boucle vers le banc « {name} »",
+      "water": "Une boucle vers un banc au bord de l’eau",
+      "bench": "Une boucle vers un banc"
+    },
+    "oneWay": {
+      "named": "Une balade vers le banc « {name} »",
+      "water": "Une balade vers un banc au bord de l’eau",
+      "bench": "Une balade vers un banc"
+    },
+    "pause": {
+      "many": "Avec {count} bancs pour s’arrêter un instant",
+      "named": "Avec le banc « {name} » pour s’arrêter un instant",
+      "water": "Avec un banc au bord de l’eau pour s’arrêter un instant",
+      "bench": "Avec un banc pour s’arrêter un instant"
+    },
+    "extras": "{count, plural, one {Et encore un autre banc à découvrir en chemin.} other {Et encore # autres bancs à découvrir en chemin.}}"
+  }
+}

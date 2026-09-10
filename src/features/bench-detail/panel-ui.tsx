@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode } from "react";
 import { Eye } from "lucide-react";
 
@@ -12,6 +13,7 @@ export function DetailRows({ title, rows }: { title: string; rows: Array<[string
 }
 
 export function ObstructionSketch({ building, vegetation }: { building: number | null; vegetation: number | null }) {
+  const t = useTranslations();
   if (building === null && vegetation === null) return null;
   const buildings = Math.max(0, Math.min(100, building ?? 0));
   const plants = Math.max(0, Math.min(100 - buildings, vegetation ?? 0));
@@ -20,14 +22,14 @@ export function ObstructionSketch({ building, vegetation }: { building: number |
     "--open-angle": `${open * 3.6}deg`,
     "--building-angle": `${(open + buildings) * 3.6}deg`,
   } as CSSProperties;
-  return <div className="horizon-sketch" aria-label={`Horizont: ${Math.round(open)} Prozent frei, ${Math.round(buildings)} Prozent Gebäude, ${Math.round(plants)} Prozent Vegetation`}>
-    <header><Eye size={17} /><span>Was den Horizont prägt</span></header>
+  return <div className="horizon-sketch" aria-label={t("bench.horizon.label", {open: Math.round(open), buildings: Math.round(buildings), plants: Math.round(plants)})}>
+    <header><Eye size={17} /><span>{t("bench.horizon.title")}</span></header>
     <div className="horizon-chart">
-      <div className="horizon-ring" style={chartStyle} aria-hidden="true"><span><strong>{Math.round(open)}%</strong><small>frei</small></span></div>
+      <div className="horizon-ring" style={chartStyle} aria-hidden="true"><span><strong>{Math.round(open)}%</strong><small>{t("bench.horizon.open")}</small></span></div>
       <div className="horizon-legend" aria-hidden="true">
-        <div><i className="is-open" /><span>Freier Blick</span><strong>{Math.round(open)}%</strong></div>
-        <div><i className="is-building" /><span>Gebäude</span><strong>{Math.round(buildings)}%</strong></div>
-        <div><i className="is-vegetation" /><span>Bäume</span><strong>{Math.round(plants)}%</strong></div>
+        <div><i className="is-open" /><span>{t("bench.horizon.openView")}</span><strong>{Math.round(open)}%</strong></div>
+        <div><i className="is-building" /><span>{t("bench.horizon.buildings")}</span><strong>{Math.round(buildings)}%</strong></div>
+        <div><i className="is-vegetation" /><span>{t("bench.horizon.trees")}</span><strong>{Math.round(plants)}%</strong></div>
       </div>
     </div>
   </div>;

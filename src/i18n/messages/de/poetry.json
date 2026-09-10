@@ -1,0 +1,200 @@
+{
+  "light": {
+    "moon": {
+      "v1": "Mondlicht ruht auf der Bank",
+      "v2": "Silberlicht streift den stillen Platz",
+      "v3": "Der Mond zeichnet leise Konturen",
+      "v4": "Sanfter Mondschein findet die Bank",
+      "v5": "Die Nacht legt Silber auf den Platz",
+      "v6": "Mondlicht sammelt sich am Weg",
+      "v7": "Ein heller Mond bewacht den Platz",
+      "v8": "Die Bank träumt im Licht des Mondes"
+    },
+    "night": {
+      "v1": "Der Platz ruht unter Sternen",
+      "v2": "Stille Nacht umhüllt die Bank",
+      "v3": "Die Dunkelheit macht diesen Ort ganz leise",
+      "v4": "Unter weitem Nachthimmel wartet die Bank",
+      "v5": "Die Nacht hält hier für einen Moment inne",
+      "v6": "Ein stiller Platz schläft unter dunklem Himmel"
+    },
+    "unknown": {
+      "v1": "Licht und Schatten erzählen hier noch ein Geheimnis",
+      "v2": "Der Platz wartet noch auf seine Lichtspur",
+      "v3": "Das Licht dieses Ortes wird noch erkundet",
+      "v4": "Sonne und Schatten sind hier noch auf Entdeckungsreise"
+    },
+    "sun": {
+      "v1": "Sonnenwärme liegt auf der Bank",
+      "v2": "Goldenes Licht lädt zum Bleiben",
+      "v3": "Die Sonne wärmt diesen stillen Platz",
+      "v4": "Helles Licht tanzt über den Platz",
+      "v5": "Ein warmer Sonnenfleck wartet hier",
+      "v6": "Die Bank fängt das Licht des Tages ein",
+      "v7": "Sonne zeichnet Wärme auf den Weg",
+      "v8": "Der Tag leuchtet auf dieser Bank"
+    },
+    "building": {
+      "v1": "Ein Haus schenkt der Bank kühlen Schatten",
+      "v2": "Geborgener Schatten liegt auf dem Platz",
+      "v3": "Die Häuser lassen das Licht hier weich werden",
+      "v4": "Zwischen Mauern ruht ein kühler Augenblick",
+      "v5": "Ein stiller Gebäudeschatten lädt zur Pause"
+    },
+    "vegetation": {
+      "v1": "Blätter malen Schatten auf die Bank",
+      "v2": "Grüner Schatten wiegt sich über dem Platz",
+      "v3": "Licht flüstert durch die Blätter",
+      "v4": "Unter Blättern wird die Welt leise",
+      "v5": "Tanzende Schatten ruhen auf dem Platz",
+      "v6": "Ein Blätterdach siebt das Sonnenlicht"
+    },
+    "terrain": {
+      "v1": "Der Hang hält die Sonne noch zurück",
+      "v2": "Das Gelände schenkt dem Platz kühlen Schatten",
+      "v3": "Hinter den Höhen wartet das Licht",
+      "v4": "Der Horizont hütet einen stillen Schatten"
+    },
+    "roof": {
+      "v1": "Ein kleines Dach bewahrt diesen stillen Platz",
+      "v2": "Geschützt vor dem Himmel wartet die Bank",
+      "v3": "Unter einem Dach findet der Tag Ruhe",
+      "v4": "Geborgen liegt die Bank unter ihrem Dach"
+    },
+    "shade": {
+      "v1": "Stiller Schatten lädt zum Verweilen",
+      "v2": "Das Licht wird hier ganz leise",
+      "v3": "Ein kühler Augenblick wartet",
+      "v4": "Sanfter Schatten umarmt den Platz",
+      "v5": "Hier atmet der Tag ein wenig aus",
+      "v6": "Die Bank ruht abseits des hellen Lichts"
+    }
+  },
+  "weather": {
+    "snow": {
+      "v1": "Flocken machen die Welt weich",
+      "v2": "Schnee fällt lautlos durch die Luft",
+      "v3": "Winterweiss sammelt sich am Weg",
+      "v4": "Leise Flocken suchen den Boden",
+      "v5": "Schnee dämpft jeden Schritt"
+    },
+    "rain": {
+      "v1": "Regen zeichnet Kreise in die Stille",
+      "v2": "Tropfen erzählen vom Himmel",
+      "v3": "Der Regen lässt den Ort leise glänzen",
+      "v4": "Nasser Glanz liegt über dem Weg",
+      "v5": "Tropfen ziehen silberne Spuren"
+    },
+    "mixed": {
+      "v1": "Regen und Flocken begegnen sich",
+      "v2": "Der Himmel wechselt zwischen Wasser und Weiss",
+      "v3": "Nasser Schnee zieht leise vorüber",
+      "v4": "Flocken schmelzen auf dem stillen Weg"
+    },
+    "overcast": {
+      "v1": "Wolken tragen den Himmel ganz nah",
+      "v2": "Ein weicher Wolkenhimmel spannt sich darüber",
+      "v3": "Das Licht wandert still durch dichte Wolken",
+      "v4": "Wolken machen den Tag sanft und leise"
+    },
+    "cloudy": {
+      "v1": "Wolken ziehen langsam durch das Licht",
+      "v2": "Sonne und Wolken wechseln sich leise ab",
+      "v3": "Ein paar Wolken wandern über den Platz",
+      "v4": "Lichtinseln ziehen über die Landschaft"
+    },
+    "wind": {
+      "v1": "Der Wind trägt den Augenblick weiter",
+      "v2": "Eine frische Brise streicht über den Platz",
+      "v3": "Wind bewegt die Landschaft in leisen Wellen",
+      "v4": "Die Luft ist wach und in Bewegung"
+    }
+  },
+  "view": {
+    "mountains": {
+      "v1": "Berge wachen in der Ferne",
+      "v2": "Gipfel tragen den Blick zum Horizont",
+      "v3": "Die Alpen öffnen eine weite Ferne",
+      "v4": "Berglinien schweben über dem Land",
+      "v5": "Der Blick steigt hinauf zu den Gipfeln",
+      "v6": "Ferne Berge geben dem Ort Weite",
+      "v7": "Am Horizont stehen die Berge still",
+      "v8": "Die Gipfel halten den Blick für einen Moment"
+    },
+    "hills": {
+      "v1": "Sanfte Hügel tragen den Blick",
+      "v2": "Grüne Höhen säumen die Ferne",
+      "v3": "Der Horizont schwingt in weichen Linien",
+      "v4": "Hügel rollen leise davon",
+      "v5": "Weiche Höhen rahmen diesen Ort",
+      "v6": "Der Blick folgt den ruhigen Hügeln"
+    },
+    "water": {
+      "v1": "Das Wasser trägt den Blick davon",
+      "v2": "Am Ufer wird die Zeit weit",
+      "v3": "Licht wandert über das Wasser",
+      "v4": "Der See schenkt dem Blick Ruhe",
+      "v5": "Wasser und Himmel werden eins",
+      "v6": "Das Ufer lässt den Augenblick treiben",
+      "v7": "Über dem Wasser öffnet sich die Ferne"
+    },
+    "forest": {
+      "v1": "Der Wald flüstert ringsum",
+      "v2": "Zwischen Bäumen wohnt die Ruhe",
+      "v3": "Das Grün hält die Welt für einen Moment fern",
+      "v4": "Blätter rahmen diesen stillen Ort",
+      "v5": "Der Wald atmet ganz in der Nähe",
+      "v6": "Zwischen Stämmen verliert sich die Zeit"
+    },
+    "open": {
+      "v1": "Der Himmel macht den Blick weit",
+      "v2": "Weite liegt still vor den Augen",
+      "v3": "Der Horizont darf offen bleiben",
+      "v4": "Der Blick findet freien Raum",
+      "v5": "Hier wird der Himmel ein wenig grösser",
+      "v6": "Die Landschaft öffnet sich ganz leise"
+    },
+    "limited": {
+      "v1": "Die Nähe macht diesen Platz geborgen",
+      "v2": "Der Blick bleibt nah und der Moment ganz hier",
+      "v3": "Geschützt vor der Ferne wird es still",
+      "v4": "Dieser kleine Winkel behält die Welt bei sich",
+      "v5": "Nah am Weg findet der Blick Ruhe"
+    },
+    "quiet": {
+      "v1": "Ein stiller Weg zieht vorbei",
+      "v2": "Die Welt wird für einen Moment leise",
+      "v3": "Hier darf der Augenblick bleiben",
+      "v4": "Ein kleiner Ort zum Durchatmen",
+      "v5": "Die Zeit geht hier etwas langsamer",
+      "v6": "Der Platz wartet ohne Eile"
+    }
+  },
+  "seat": {
+    "roof": {
+      "v1": "Unter ihrem Dach darf die Pause länger dauern",
+      "v2": "Ein kleines Dach hält den Platz geborgen",
+      "v3": "Geschützt wartet die Bank auf eine Pause",
+      "v4": "Hier sitzt man ein wenig behüteter"
+    },
+    "support": {
+      "v1": "Die Bank empfängt müde Schultern mit offenen Armen",
+      "v2": "Hier dürfen Rücken und Hände zur Ruhe kommen",
+      "v3": "Die Bank ist bereit für eine lange Pause",
+      "v4": "Bequem lehnt sich der Augenblick zurück"
+    },
+    "backrest": {
+      "v1": "Hier darf sich auch der Rücken ausruhen",
+      "v2": "Die Lehne lädt zum längeren Bleiben",
+      "v3": "Angelehnt wird aus einem Halt eine Pause",
+      "v4": "Die Bank schenkt dem Rücken Ruhe",
+      "v5": "Hier sitzt es sich entspannt in die Ferne"
+    },
+    "wood": {
+      "v1": "Warmes Holz wartet auf eine kleine Pause",
+      "v2": "Das Holz trägt Spuren vieler stiller Momente",
+      "v3": "Eine schlichte Holzbank lädt zum Bleiben",
+      "v4": "Holz macht diesen Halt ein wenig wärmer"
+    }
+  }
+}

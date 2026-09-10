@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 import { Check, Hammer, HeartHandshake, MessageCircleHeart, Send, Sparkles, Sun, X } from "lucide-react";
@@ -15,9 +16,10 @@ import { CorrectionForm, RatingForm } from "./contribution-forms";
 type Refresh = () => void | Promise<void>;
 
 export function BenchContributionHub({ bench, open, onClose, onChanged, initialChapter = "all" }: { initialChapter?: "all" | "rating" | "presence"; bench: BenchDetail; open: boolean; onClose: () => void; onChanged?: Refresh }) {
+  const t = useTranslations();
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
-  const theme = communityTheme();
+  const theme = communityTheme(t);
   useEffect(() => {
     if (open && !dialog.current?.open) dialog.current?.showModal();
     if (!open && dialog.current?.open) dialog.current.close();
@@ -25,59 +27,59 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
   return <dialog ref={dialog} onCancel={onClose} onClose={onClose} aria-labelledby={titleId} className="modal modal-bottom sm:modal-middle contribution-dialog">
     <div className="modal-box storybook-sheet contribution-sheet">
       <header className="contribution-sheet-header">
-        <div><small>Gemeinsam genauer hinschauen</small><h2 id={titleId}>Zum Bänkli beitragen</h2></div>
-        <button type="button" className="btn btn-circle btn-ghost" onClick={onClose} aria-label="Beiträge schliessen"><X size={19} /></button>
+        <div><small>{t("community.hub.eyebrow")}</small><h2 id={titleId}>{t("community.hub.title")}</h2></div>
+        <button type="button" className="btn btn-circle btn-ghost" onClick={onClose} aria-label={t("community.hub.close")}><X size={19} /></button>
       </header>
       <ContributionOverview bench={bench} />
-      {initialChapter === "rating" && <ContributionChapter open title="Wie war deine Pause?" summary="Deine Bewertung"><RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} /></ContributionChapter>}
-      {initialChapter === "presence" && <ContributionChapter open title="Bänkli bestätigen" summary="Hast du es vor Ort gesehen?"><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></ContributionChapter>}
+      {initialChapter === "rating" && <ContributionChapter open title={t("community.chapters.rating.title")} summary={t("community.chapters.rating.summary")}><RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} /></ContributionChapter>}
+      {initialChapter === "presence" && <ContributionChapter open title={t("community.chapters.presence.title")} summary={t("community.chapters.presence.summary")}><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></ContributionChapter>}
 
-
-      <ContributionChapter title="Bänkli beschreiben" summary="Name, Ausstattung und Blickrichtung">
+      <ContributionChapter title={t("community.chapters.features.title")} summary={t("community.chapters.features.summary")}>
         <MetadataEditor bench={bench} onChanged={onChanged} />
         <BenchFeatureEditor bench={bench} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title="Licht gerade jetzt" summary={bench.observations.light.mine ? "Deine Beobachtung ist eingetragen" : "Sonne, Schatten oder wechselhaft"}>
+      <ContributionChapter title={t("community.chapters.light.title")} summary={bench.observations.light.mine ? t("community.chapters.light.recorded") : t("community.chapters.light.summary")}>
         {bench.dayPhase === "night"
-          ? <p className="observation-night-note"><Sun size={15} />Diese Frage erscheint bei Tageslicht – dann ist die Beobachtung sinnvoll.</p>
+          ? <p className="observation-night-note"><Sun size={15} />{t("community.chapters.light.night")}</p>
           : <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onChanged} />}
       </ContributionChapter>
-      <ContributionChapter title="Aussicht & Umgebung" summary={bench.observations.view.mine ? "Dein Eindruck ist eingetragen" : "Schätzung bestätigen oder anders einordnen"}>
+      <ContributionChapter title={t("community.chapters.view.title")} summary={bench.observations.view.mine ? t("community.chapters.view.recorded") : t("community.chapters.view.summary")}>
         <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title="Foto von diesem Platz" summary="Aufnehmen oder aus der Mediathek wählen">
+      <ContributionChapter title={t("community.chapters.photo.title")} summary={t("community.chapters.photo.summary")}>
         <BenchPhotoCapture benchId={bench.id} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title="Einen Moment hinterlassen" summary="Erinnerung, Tipp, Gedicht oder Ortswissen">
-        <aside className="community-theme"><Sparkles size={17} aria-hidden="true" /><div><small>Gemeinsames Thema · diesen Monat</small><strong>{theme.title}</strong><p>{theme.prompt}</p></div></aside>
+      <ContributionChapter title={t("community.chapters.moment.title")} summary={t("community.chapters.moment.summary")}>
+        <aside className="community-theme"><Sparkles size={17} aria-hidden="true" /><div><small>{t("community.theme.month")}</small><strong>{theme.title}</strong><p>{theme.prompt}</p></div></aside>
         <MomentForm bench={bench} onChanged={onChanged} />
       </ContributionChapter>
-      {initialChapter !== "rating" && <ContributionChapter title="Wie war deine Pause?" summary={bench.myRating ? `Deine Bewertung: ${bench.myRating.overall}/5` : "Komfort, Ruhe und Aussicht bewerten"}>
+      {initialChapter !== "rating" && <ContributionChapter title={t("community.chapters.rating.title")} summary={bench.myRating ? t("community.chapters.rating.mine", { rating: bench.myRating.overall }) : t("community.chapters.rating.prompt")}>
         <RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} />
       </ContributionChapter>}
-      <ContributionChapter open={initialChapter === "presence"} title="Sich ums Bänkli kümmern" summary={bench.care.mine.length ? `${bench.care.mine.length} heutige ${bench.care.mine.length === 1 ? "Aktion" : "Aktionen"} von dir` : "Kleine, sichtbare Pflegeaktionen"}>
+      <ContributionChapter open={initialChapter === "presence"} title={t("community.chapters.care.title")} summary={bench.care.mine.length ? t("community.chapters.care.mine", { count: bench.care.mine.length }) : t("community.chapters.care.summary")}>
         <CareActions bench={bench} onChanged={onChanged} />
         {initialChapter !== "presence" && <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />}
       </ContributionChapter>
-      <ContributionChapter title="Etwas stimmt nicht" summary="Position, Zustand oder Umgebung melden">
+      <ContributionChapter title={t("community.chapters.correction.title")} summary={t("community.chapters.correction.summary")}>
         <CorrectionForm benchId={bench.id} onChanged={onChanged} />
       </ContributionChapter>
     </div>
-    <form method="dialog" className="modal-backdrop"><button onClick={onClose}>schliessen</button></form>
+    <form method="dialog" className="modal-backdrop"><button onClick={onClose}>{t("common.actions.close")}</button></form>
   </dialog>;
 }
 
 function ContributionOverview({ bench }: { bench: BenchDetail }) {
+  const t = useTranslations();
   const featureCount = bench.properties.filter((item) => item.contributedByMe).length + (bench.directionContributedByMe ? 1 : 0);
   const moments = bench.moments.filter((item) => item.mine).length;
   const entries = [
-    featureCount ? `${featureCount} ${featureCount === 1 ? "Angabe" : "Angaben"}` : null,
-    bench.observations.light.mine ? "Licht" : null,
-    bench.observations.view.mine ? "Aussicht" : null,
-    bench.myRating ? "Bewertung" : null,
-    moments ? `${moments} ${moments === 1 ? "Moment" : "Momente"}` : null,
+    featureCount ? t("community.overview.features", { count: featureCount }) : null,
+    bench.observations.light.mine ? t("bench.details.light") : null,
+    bench.observations.view.mine ? t("bench.details.view") : null,
+    bench.myRating ? t("community.overview.rating") : null,
+    moments ? t("community.overview.moments", { count: moments }) : null,
   ].filter(Boolean);
-  return <div className="contribution-overview"><Check size={17} aria-hidden="true" /><p>{entries.length ? <>Von dir hier: <strong>{entries.join(" · ")}</strong></> : "Hier ist noch kein Beitrag von dir – wähle einfach, was du gerade sicher weisst."}</p></div>;
+  return <div className="contribution-overview"><Check size={17} aria-hidden="true" /><p>{entries.length ? <>{t("community.overview.mine")} <strong>{entries.join(" · ")}</strong></> : t("community.overview.empty")}</p></div>;
 }
 
 function ContributionChapter({ title, summary, open, children }: { title: string; summary: string; open?: boolean; children: React.ReactNode }) {
@@ -85,6 +87,7 @@ function ContributionChapter({ title, summary, open, children }: { title: string
 }
 
 function MetadataEditor({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {
+  const t = useTranslations();
   const save = async (_previous: ActionResult | null, formData: FormData) => {
     const result = await editBenchMetadata(bench.id, null, formData);
     if (result.ok && onChanged) await onChanged();
@@ -92,19 +95,18 @@ function MetadataEditor({ bench, onChanged }: { bench: BenchDetail; onChanged?: 
   };
   const [state, action, pending] = useActionState(save, null);
   return <form action={action} className="contribution-metadata-form">
-    <label><span>Name <small>(optional)</small></span><input name="name" maxLength={80} defaultValue={bench.name ?? ""} placeholder="Wie heisst dieses Bänkli?" /></label>
-    <label><span>Widmung <small>(was auf der Bank steht)</small></span><textarea name="dedication" maxLength={180} defaultValue={bench.dedication ?? ""} /></label>
-    <button disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Check size={15} />} Angaben speichern</button>
+    <label><span>{t("common.fields.name")} <small>{t("common.fields.optional")}</small></span><input name="name" maxLength={80} defaultValue={bench.name ?? ""} placeholder={t("community.metadata.placeholder")} /></label>
+    <label><span>{t("submission.fields.dedication")} <small>{t("community.metadata.dedicationHint")}</small></span><textarea name="dedication" maxLength={180} defaultValue={bench.dedication ?? ""} /></label>
+    <button disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Check size={15} />}  {t("community.metadata.save")}</button>
     {state && <p role="status" className={state.ok ? "is-success" : "is-error"}>{state.message}</p>}
   </form>;
 }
 
-const momentKinds = [
-  ["memory", "Erinnerung"], ["recommendation", "Empfehlung"], ["poem", "Gedicht"], ["local_fact", "Ortswissen"],
-] as const;
+const momentKinds = ["memory", "recommendation", "poem", "local_fact"] as const;
 
 function MomentForm({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {
-  const [kind, setKind] = useState<(typeof momentKinds)[number][0]>("memory");
+  const t = useTranslations();
+  const [kind, setKind] = useState<(typeof momentKinds)[number]>("memory");
   const save = async (_previous: ActionResult | null, formData: FormData) => {
     const result = await submitBenchMoment(bench.id, null, formData);
     if (result.ok && onChanged) await onChanged();
@@ -112,23 +114,24 @@ function MomentForm({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refr
   };
   const [state, action, pending] = useActionState(save, null);
   return <form action={action} className="moment-form">
-    <fieldset><legend>Was möchtest du teilen?</legend><div>{momentKinds.map(([value, label]) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)}>{label}</button>)}</div></fieldset>
+    <fieldset><legend>{t("community.moments.choose")}</legend><div>{momentKinds.map((value) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)}>{t(`community.moments.kinds.${value}`)}</button>)}</div></fieldset>
     <input type="hidden" name="kind" value={kind} />
-    <label><span>Dein Bänkli-Moment</span><textarea required name="body" minLength={2} maxLength={500} placeholder={kind === "poem" ? "Ein paar Zeilen für diesen Platz …" : "Was sollten andere über diesen Platz wissen?"} /></label>
+    <label><span>{t("community.moments.label")}</span><textarea required name="body" minLength={2} maxLength={500} placeholder={kind === "poem" ? t("community.moments.poemPlaceholder") : t("community.moments.placeholder")} /></label>
     <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-    <button disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Send size={15} />} Moment veröffentlichen</button>
+    <button disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Send size={15} />}  {t("community.moments.publish")}</button>
     {state && <p role="status" className={state.ok ? "is-success" : "is-error"}>{state.message}</p>}
   </form>;
 }
 
-const careActions: Array<[BenchCareKind, string, React.ReactNode]> = [
-  ["cleaned", "Kurz gereinigt", <Sparkles key="cleaned" />],
-  ["good", "In gutem Zustand", <Check key="good" />],
-  ["repair", "Braucht Reparatur", <Hammer key="repair" />],
-  ["beautiful", "Heute besonders schön", <MessageCircleHeart key="beautiful" />],
+const careActions: Array<[BenchCareKind, React.ReactNode]> = [
+  ["cleaned", <Sparkles key="cleaned" />],
+  ["good", <Check key="good" />],
+  ["repair", <Hammer key="repair" />],
+  ["beautiful", <MessageCircleHeart key="beautiful" />],
 ];
 
 function CareActions({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {
+  const t = useTranslations();
   const [mine, setMine] = useState(new Set(bench.care.mine));
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -139,5 +142,5 @@ function CareActions({ bench, onChanged }: { bench: BenchDetail; onChanged?: Ref
     setMine((current) => new Set(current).add(kind));
     if (onChanged) await onChanged();
   });
-  return <div className="care-actions"><p><HeartHandshake size={17} /> Keine Punkte, keine Rangliste – einfach ein Zeichen, dass jemand geschaut hat.</p><div>{careActions.map(([kind, label, icon]) => <button type="button" key={kind} disabled={pending || mine.has(kind)} onClick={() => submit(kind)}>{icon}<span>{mine.has(kind) ? `${label} · von dir` : label}</span></button>)}</div>{message && <p role="status">{message}</p>}</div>;
+  return <div className="care-actions"><p><HeartHandshake size={17} /> {t("community.care.description")}</p><div>{careActions.map(([kind, icon]) => <button type="button" key={kind} disabled={pending || mine.has(kind)} onClick={() => submit(kind)}>{icon}<span>{mine.has(kind) ? t("community.care.mine", { label: t(`community.care.actions.${kind}`) }) : t(`community.care.actions.${kind}`)}</span></button>)}</div>{message && <p role="status">{message}</p>}</div>;
 }

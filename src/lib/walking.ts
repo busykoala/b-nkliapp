@@ -1,10 +1,15 @@
+import type { UiMessage } from "@/i18n/message";
 import { distanceMeters, type JourneyPoint } from "./journey";
 
 export type WalkPath = {
   geometry: [number, number][]; distance: number; ascent: number;
   /** GraphHopper's slope-aware time at the profile's reference pace of 5 km/h. */
-  referenceSeconds: number; warnings: string[];
-  instructions: { text: string; distance: number; interval: [number, number] }[];
+  referenceSeconds: number; warnings: UiMessage[];
+  instructions: {
+    sign?: number; street_name?: string; street_ref?: string; street_destination?: string;
+    street_destination_ref?: string; exit_number?: number; ferry?: string;
+    distance: number; interval: [number, number];
+  }[];
   details: Record<string, [number, number, string | number | null][]>;
 };
 export function pathSeconds(path: WalkPath, speed: number) { return Math.ceil(path.referenceSeconds * 5 / speed - 1e-9); }
@@ -26,7 +31,7 @@ export function pathTimes(path: WalkPath, speed: number): number[] {
   return cumulative;
 }
 export function routePoint(coordinate: number[]): JourneyPoint {
-  return { label: "Wegpunkt", longitude: coordinate[0], latitude: coordinate[1] };
+  return { label: "waypoint", labelKind: "waypoint", longitude: coordinate[0], latitude: coordinate[1] };
 }
 export function nearestRoutePoint(path: WalkPath, point: JourneyPoint) {
   let index = 0, distance = Infinity;

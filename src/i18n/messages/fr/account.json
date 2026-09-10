@@ -1,0 +1,35 @@
+{
+  "dialog": {
+    "invitation": "Participe",
+    "welcome": "Heureux de te revoir",
+    "createTitle": "Ton compte Bänkli",
+    "description": "Un nom d’utilisateur et un mot de passe suffisent. Sans adresse e-mail.",
+    "privacy": "Ce qui arrive à tes données ↗",
+    "intent": "Ensuite, tu pourras : {intent}.",
+    "register": "Nouveau ici ? Créer un compte",
+    "login": "J’ai déjà un compte"
+  },
+  "fields": {
+    "username": "Nom d’utilisateur",
+    "password": "Mot de passe"
+  },
+  "form": {
+    "signingIn": "Connexion…",
+    "registering": "Création du compte…",
+    "register": "Créer un compte"
+  },
+  "validation": {
+    "usernameCharacters": "Uniquement lettres, chiffres, point, _ et -",
+    "usernameShort": "Au moins 3 caractères",
+    "usernameLong": "Au maximum 24 caractères",
+    "passwordShort": "Au moins 8 caractères",
+    "passwordLong": "Au maximum 128 caractères"
+  },
+  "result": {
+    "welcome": "Bienvenue sur Bänkli App !",
+    "usernameTaken": "Ce nom d’utilisateur est déjà pris.",
+    "registerFailed": "Le compte n’a pas pu être créé.",
+    "credentialsInvalid": "Le nom d’utilisateur ou le mot de passe est incorrect.",
+    "welcomeBack": "Content de te revoir !"
+  }
+}

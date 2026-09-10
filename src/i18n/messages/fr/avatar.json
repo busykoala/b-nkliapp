@@ -1,0 +1,82 @@
+{
+  "editor": {
+    "title": "Créer ton avatar",
+    "mixture": "Ton mélange",
+    "description": "Chaque choix est composé de couches d’aquarelle individuelles.",
+    "random": "Surprends-moi",
+    "pending": "En cours de peinture…",
+    "save": "Enregistrer l’avatar"
+  },
+  "description": "{hair}, {coat}, arrière-plan {background}",
+  "groups": {
+    "skin": "Teint",
+    "hairStyle": "Coiffure",
+    "hair": "Couleur des cheveux",
+    "coat": "Veste",
+    "accent": "Écharpe",
+    "hat": "Couvre-chef",
+    "background": "Paysage favori",
+    "companion": "Compagnie"
+  },
+  "options": {
+    "skin": {
+      "porcelain": "Clair",
+      "sunlit": "Doré",
+      "warm": "Chaud",
+      "brown": "Brun",
+      "deep": "Foncé"
+    },
+    "hair": {
+      "charcoal": "Charbon",
+      "chestnut": "Châtain",
+      "copper": "Cuivré",
+      "blond": "Doré",
+      "silver": "Argenté"
+    },
+    "hairStyle": {
+      "short": "Courts",
+      "waves": "Ondulations",
+      "bob": "Carré",
+      "bun": "Chignon",
+      "curls": "Boucles"
+    },
+    "coat": {
+      "pine": "Sapin",
+      "lake": "Lac",
+      "rust": "Rouille",
+      "moss": "Mousse",
+      "plum": "Prune"
+    },
+    "accent": {
+      "gold": "Or",
+      "coral": "Corail",
+      "sage": "Sauge",
+      "cream": "Crème",
+      "none": "Sans"
+    },
+    "hat": {
+      "none": "Sans",
+      "beanie": "Bonnet",
+      "brim": "Chapeau",
+      "cap": "Casquette"
+    },
+    "background": {
+      "mountain": "Montagnes",
+      "lake": "Lac",
+      "forest": "Forêt",
+      "city": "Ville",
+      "meadow": "Prairie"
+    },
+    "companion": {
+      "none": "Seul",
+      "bird": "Oiseau",
+      "cat": "Chat",
+      "fox": "Renard"
+    }
+  },
+  "label": "Portrait à l’aquarelle de {username} : {description}",
+  "result": {
+    "invalid": "Cette combinaison n’a pas pu être enregistrée.",
+    "saved": "Ton avatar aquarelle est enregistré."
+  }
+}

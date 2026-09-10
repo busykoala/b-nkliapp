@@ -8,16 +8,16 @@ describe("journey timing and evidence", () => {
     expect(assessTransfer(800, walkingSeconds(700, 3), null, 0).tone).toBe("insufficient");
   });
   it("does not double-count the official minimum and walking time", () => {
-    const rule = { type: 2, minimumSeconds: 240, source: "GTFS" };
+    const rule = { type: 2, minimumSeconds: 240, source: "official" as const };
     expect(assessTransfer(480, 180, rule, 3)).toMatchObject({ requiredSeconds: 240, slackSeconds: 240, tone: "fits" });
     expect(assessTransfer(480, 180, rule, 6).tone).toBe("tight");
     expect(assessTransfer(900, 180, rule, 3).tone).toBe("plenty");
   });
   it("never turns guaranteed transfers or unknown walking times into zero-minute walks", () => {
-    expect(assessTransfer(120, 180, { type: 1, minimumSeconds: null, source: "GTFS" }, 0)).toMatchObject({ guaranteed: true, requiredSeconds: 180, tone: "insufficient" });
+    expect(assessTransfer(120, 180, { type: 1, minimumSeconds: null, source: "official" as const }, 0)).toMatchObject({ guaranteed: true, requiredSeconds: 180, tone: "insufficient" });
     expect(assessTransfer(600, null, null, 3).tone).toBe("unknown");
-    expect(assessTransfer(600, 0, { type: 3, minimumSeconds: null, source: "GTFS" }, 0).tone).toBe("insufficient");
-    expect(assessTransfer(0, null, { type: 4, minimumSeconds: null, source: "exact trip" }, 10)).toMatchObject({ staySeated: true, requiredSeconds: 0, tone: "fits" });
+    expect(assessTransfer(600, 0, { type: 3, minimumSeconds: null, source: "official" as const }, 0).tone).toBe("insufficient");
+    expect(assessTransfer(0, null, { type: 4, minimumSeconds: null, source: "official" as const }, 10)).toMatchObject({ staySeated: true, requiredSeconds: 0, tone: "fits" });
   });
   it("handles Swiss dates independent of browser timezone, rejects spring gaps", () => {
     expect(swissWallTimeToIso("2026-03-29T02:30")).toBeNull();

@@ -1,19 +1,28 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { OperatorContact } from "@/components/operator-contact";
 import { PrivacyFlow } from "@/components/privacy-flow";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Datenschutz · Bänkli App" };
-export default function PrivacyPage() {
+export async function generateMetadata() {
+  const t = await getTranslations("privacy");
+  return { title: t("metadata.title") };
+}
+
+export default async function PrivacyPage() {
+  const t = await getTranslations();
   return <main className="thanks-page legal-page min-h-dvh safe-bottom">
-    <nav className="thanks-nav safe-top"><Link className="calm-menu-button" href="/danke" aria-label="Über die Bänkli App"><ArrowLeft size={19} /></Link></nav>
-    <div className="about-section"><h1>Deine Daten machen keinen Spaziergang ohne Grund.</h1><p>Stand: September 2026. Hier erklären wir, welche Daten die Bänkli App für ihre Funktionen bearbeitet.</p><PrivacyFlow />
-      <section><h2>Wofür wir Daten brauchen</h2><p>Für Karte und Wegplanung verarbeiten wir die gewählte Kartenregion, Suchbegriffe und angefragte Start- und Zielpunkte. Standortfreigabe ist freiwillig. Wir speichern keinen persönlichen Verlauf deiner Wege.</p><p>Ein Konto speichert Benutzername, Passwort-Hash, Avatar, Sitzungen und die von dir gemerkten Bänkli und Orte. Dein Name, Profil und veröffentlichte Beiträge sind öffentlich. Die Favoritenliste ist nur für dein Konto zugänglich.</p><p>Fotos und Texte werden veröffentlicht, wenn du sie beiträgst. Fotos durchlaufen vorher eine automatische Personenprüfung auf dem Modellserver. Missbrauchsschutz verwendet abgeleitete Kennungen sowie Meldungen und Moderationsentscheidungen.</p></section>
-      <section><h2>Wer dabei mithilft</h2><p>Die App, der Fotospeicher und die Bildprüfung laufen auf unserer eigenen Infrastruktur.{process.env.BENCHLY_HOSTING_COUNTRY && ` Standort: ${process.env.BENCHLY_HOSTING_COUNTRY}.`}</p><p>Cloudflare unterstützt die Auslieferung und den Schutz der Website und verarbeitet dabei technische Verbindungsdaten. GeoAdmin/swisstopo erhalten Karten- und Suchanfragen; transport.opendata.ch erhält Anfragen für Haltestellen und Verbindungen. Externe Bilder werden bei der jeweiligen Bildquelle geladen. Dabei erhält der Anbieter unter anderem deine IP-Adresse und die angefragte Bildadresse.</p>{process.env.BENCHLY_PRIVACY_INFRASTRUCTURE && <p>{process.env.BENCHLY_PRIVACY_INFRASTRUCTURE}</p>}<p>Informationen dieser Anbieter: <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer">Cloudflare</a>, <a href="https://www.swisstopo.admin.ch/de/rechtliches" target="_blank" rel="noreferrer">swisstopo</a>, <a href="https://transport.opendata.ch/" target="_blank" rel="noreferrer">Transport API</a>. Cloudflare ist ein US-Unternehmen und betreibt ein weltweites Netz; Verbindungsdaten können auch im Ausland bearbeitet werden.</p></section>
-      <section><h2>Cookies, Speicher & Aufbewahrung</h2><p>Das Anmelde-Cookie gilt bis zu 30 Tage. Für Beiträge kann ein notwendiges Browser-Cookie bis zu einem Jahr bestehen. Abmelden beendet die aktuelle Sitzung. Gehtempo und die Erinnerung an deine Standortfreigabe liegen im lokalen Browserspeicher und verschwinden, wenn du die Website-Daten löschst.</p><p>Persönliche Routen bleiben höchstens fünf Minuten im Arbeitsspeicher. Kontodaten und Beiträge bleiben für den Betrieb der Funktionen gespeichert, bis sie gelöscht werden oder nicht mehr benötigt werden. Eigene Momente und Fotos kannst du direkt entfernen. Sicherheits- und Infrastrukturprotokolle sowie Sicherungskopien können anderen Aufbewahrungsfristen unterliegen.{process.env.BENCHLY_PRIVACY_RETENTION ? ` ${process.env.BENCHLY_PRIVACY_RETENTION}` : ""}</p><p>Die App setzt keine Werbe- oder Analyse-Cookies ein.</p></section>
-      <section><h2>Du bleibst nicht sitzen</h2><p>Du kannst Auskunft über deine Daten sowie die Berichtigung oder Löschung verlangen. Für Konto- oder Datenschutzanfragen nutze bitte den Kontakt unten. Persönliche Angaben gehören dabei nicht in ein öffentliches GitHub-Issue.</p></section>
-      <OperatorContact /><p><Link href="/impressum">Kontakt & Impressum</Link> · <Link href="/danke">Zur Projektseite</Link></p>
+    <nav className="thanks-nav safe-top"><Link className="calm-menu-button" href="/danke" aria-label={t("about.metadata.title")}><ArrowLeft size={19} /></Link></nav>
+    <div className="about-section"><h1>{t("privacy.title")}</h1><p>{t("privacy.updated")}</p><PrivacyFlow />
+      <section><h2>{t("privacy.purposes.title")}</h2>{(["map", "account", "contributions"] as const).map((key) => <p key={key}>{t(`privacy.purposes.${key}`)}</p>)}</section>
+      <section><h2>{t("privacy.providers.title")}</h2><p>{t("privacy.providers.own")}{process.env.BENCHLY_HOSTING_COUNTRY && <> {t("privacy.providers.country", { country: process.env.BENCHLY_HOSTING_COUNTRY })}</>}</p><p>{t("privacy.providers.external")}</p>
+        {process.env.BENCHLY_PRIVACY_INFRASTRUCTURE && <p>{process.env.BENCHLY_PRIVACY_INFRASTRUCTURE}</p>}
+        <p>{t("privacy.providers.policies")} <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer">Cloudflare</a>, <a href="https://www.swisstopo.admin.ch/de/rechtliches" target="_blank" rel="noreferrer">swisstopo</a>, <a href="https://transport.opendata.ch/" target="_blank" rel="noreferrer">Transport API</a>. {t("privacy.providers.abroad")}</p>
+      </section>
+      <section><h2>{t("privacy.storage.title")}</h2><p>{t("privacy.storage.cookies")}</p><p>{t("privacy.storage.language")}</p><p>{t("privacy.storage.retention")}{process.env.BENCHLY_PRIVACY_RETENTION && <> {process.env.BENCHLY_PRIVACY_RETENTION}</>}</p><p>{t("privacy.storage.noTracking")}</p></section>
+      <section><h2>{t("privacy.rights.title")}</h2><p>{t("privacy.rights.description")}</p></section>
+      <OperatorContact /><p><Link href="/impressum">{t("about.links.imprint")}</Link> · <Link href="/danke">{t("about.links.project")}</Link></p>
     </div>
   </main>;
 }

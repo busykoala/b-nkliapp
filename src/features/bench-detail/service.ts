@@ -129,14 +129,14 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
   }) : null;
   const rawViewScore = communityViewScore ?? (hasTerrainModel && row.view_score !== null ? Number(row.view_score) : null);
   const viewScore = rawViewScore === null ? null : Math.max(1, Math.min(5, Math.round(rawViewScore / 20)));
-  const explanation: string[] = [];
+  const explanation: BenchDetail["viewExplanation"] = [];
   const viewLabels = parseArray<string>(row.view_labels);
-  if ((components.openness ?? 0) > 0.8) explanation.push("Weiter, wenig verdeckter Horizont");
-  if ((components.relief ?? 0) > 0.8) explanation.push("Ausgeprägtes Berg- oder Hügelrelief");
-  if ((components.water ?? 0) > 0.75) explanation.push("Freie Sichtachse zu einer Wasserfläche");
-  if ((components.naturalness ?? 0) > 0.8) explanation.push("Überwiegend natürliche Umgebung");
-  if (observations.view.publicEstimate) explanation.push(`Community-Eindrücke von ${observations.view.publicEstimate.contributors} Personen sind vorsichtig eingeflossen.`);
-  if (explanation.length === 0) explanation.push("Aus Gelände, Landbedeckung und Umgebung berechnet");
+  if ((components.openness ?? 0) > 0.8) explanation.push("openness");
+  if ((components.relief ?? 0) > 0.8) explanation.push("relief");
+  if ((components.water ?? 0) > 0.75) explanation.push("water");
+  if ((components.naturalness ?? 0) > 0.8) explanation.push("naturalness");
+  if (observations.view.publicEstimate) explanation.push("community");
+  if (explanation.length === 0) explanation.push("model");
 
   const likelyConfidence = String(row.likely_confidence ?? "low") as "high" | "medium" | "low";
   const likelyEvidenceCount = Number(row.likely_evidence_group_count ?? 0);
@@ -149,14 +149,14 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     updatedAt: likelyUpdatedAt,
     modelVersion: row.likely_model_version ? String(row.likely_model_version) : null,
     traits: [
-      row.likely_land_context && row.likely_land_probability !== null ? { kind: "land" as const, label: landContextLabel(String(row.likely_land_context)), probability: Number(row.likely_land_probability) } : null,
-      row.likely_canopy_context && row.likely_canopy_probability !== null ? { kind: "canopy" as const, label: canopyContextLabel(String(row.likely_canopy_context)), probability: Number(row.likely_canopy_probability) } : null,
-      likelyTrait("lake", "Seeblick", row.likely_lake_view_probability),
-      likelyTrait("mountain", "Bergblick", row.likely_mountain_view_probability),
-      likelyTrait("open", "Weite Aussicht", row.likely_open_view_probability),
-      likelyTrait("limited", "Eingeschränkte Aussicht", row.likely_limited_view_probability),
-      likelyTrait("buildings", "Gebäude im Umfeld", row.likely_buildings_probability),
-      likelyTrait("roadRail", "Strasse oder Bahn im Umfeld", row.likely_road_rail_probability),
+      row.likely_land_context && row.likely_land_probability !== null ? { kind: "land" as const, value: String(row.likely_land_context), probability: Number(row.likely_land_probability) } : null,
+      row.likely_canopy_context && row.likely_canopy_probability !== null ? { kind: "canopy" as const, value: String(row.likely_canopy_context), probability: Number(row.likely_canopy_probability) } : null,
+      likelyTrait("lake", row.likely_lake_view_probability),
+      likelyTrait("mountain", row.likely_mountain_view_probability),
+      likelyTrait("open", row.likely_open_view_probability),
+      likelyTrait("limited", row.likely_limited_view_probability),
+      likelyTrait("buildings", row.likely_buildings_probability),
+      likelyTrait("roadRail", row.likely_road_rail_probability),
     ].filter((trait): trait is NonNullable<typeof trait> => trait !== null && trait.probability >= .5)
       .map((trait) => {
         const isView = ["lake", "mountain", "open", "limited"].includes(trait.kind);
@@ -189,7 +189,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
   });
   return {
     id: String(row.id), osmType: String(row.osm_type), osmId: Number(row.osm_id),
-    latitude, longitude, title: String(row.name || row.description || "Sitzbank"),
+    latitude, longitude, title: String(row.name || (row.description === "Sitzbank" ? "" : row.description) || ""),
     name: row.name === null ? null : String(row.name),
     dedication: row.dedication === null ? null : String(row.dedication),
     locationName: row.location_name === null ? null : String(row.location_name),
@@ -263,20 +263,12 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
   };
 }
 
-function likelyTrait(kind: "lake" | "mountain" | "open" | "limited" | "buildings" | "roadRail", label: string, value: string | number | null) {
-  return value === null ? null : { kind, label, probability: Number(value) };
+function likelyTrait(kind: "lake" | "mountain" | "open" | "limited" | "buildings" | "roadRail", value: string | number | null) {
+  return value === null ? null : { kind, value: kind, probability: Number(value) };
 }
 
 function traitConfidence(probability: number, evidenceCount: number): "high" | "medium" | "low" {
   if (probability >= .85 && evidenceCount >= 2) return "high";
   if (probability >= .65 && evidenceCount >= 1) return "medium";
   return "low";
-}
-
-function landContextLabel(value: string) {
-  return ({ forest: "Wald", forest_edge: "Am Waldrand", park: "Park", open: "Offenes Gelände", urban: "Im Ort", mixed: "Abwechslungsreiche Umgebung", unknown: "Umgebung noch unklar" } as Record<string, string>)[value] ?? value;
-}
-
-function canopyContextLabel(value: string) {
-  return ({ none: "Freier Himmel", partial: "Unter einzelnen Bäumen", dense: "Dichtes Blätterdach", unknown: "Baumbestand noch unklar" } as Record<string, string>)[value] ?? value;
 }

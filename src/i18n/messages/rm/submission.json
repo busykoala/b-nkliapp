@@ -1,0 +1,56 @@
+{
+  "location": {
+    "searching": "Il lieu vegn tschertgà …",
+    "onSave": "Il lieu vegn cumplettà cun memorisar",
+    "change": "Midar la posiziun",
+    "details": "Detagls da la posiziun"
+  },
+  "nearby": {
+    "title": "Bancs en la vischinanza",
+    "failed": "La tschertga en la vischinanza n’è betg reussida.",
+    "retry": "Verifitgar danovamain",
+    "checking": "Ils bancs existents en la vischinanza vegnan verifitgads …",
+    "count": "{count, plural, one {# banc entaifer 25 m} other {# bancs entaifer 25 m}}",
+    "question": "È tes banc gia registrà?",
+    "open": "{meters} m · Guardar il banc",
+    "empty": "Nagin banc registrà chattà entaifer 25 m.",
+    "confirm": "Verifitgà: mes banc è in ulteriur banc."
+  },
+  "fields": {
+    "namePlaceholder": "Mes banc preferì",
+    "dedication": "Dedicaziun",
+    "features": "Cumplettar l’equipament (facultativ)",
+    "observation": "Tge vesas ti vi dal banc?",
+    "accessNote": "Giuditgescha separadamain l’utilisaziun dal banc cun sutga cun rodas e la via d’access."
+  },
+  "form": {
+    "pending": "Vegn registrà …",
+    "submit": "Registrar"
+  },
+  "result": {
+    "locationInvalid": "Controllescha la posiziun.",
+    "reviewNearby": "Controllescha l’emprim ils bancs vischins. È tes gia registrà?",
+    "added": "Banc registrà · {count, plural, one {anc # conferma} other {anc # confermas}}.",
+    "addFailed": "Il banc n’ha betg pudì vegnir memorisà.",
+    "alreadyConfirmed": "Gia confermà da tai oz.",
+    "presenceConfirmed": "Grazia: oz confermà sco anc avant maun.",
+    "verified": "Quest banc è ussa confermà!",
+    "confirmationsNeeded": "{count, plural, one {Anc # conferma.} other {Anc # confermas.}}",
+    "confirmFailed": "Conferma betg reussida.",
+    "alreadyMissing": "Ti has gia confermà ch’el manca.",
+    "removed": "Confermà sco betg pli avant maun.",
+    "removalVotes": "Indicaziun memorisada: {count, plural, one {anc # vusch} other {anc # vuschs}}.",
+    "removalFailed": "Indicaziun betg reussida.",
+    "metadataInvalid": "Controllescha las indicaziuns.",
+    "metadataUpdated": "Indicaziuns actualisadas.",
+    "metadataFailed": "Midada betg reussida.",
+    "fieldInvalid": "Controllescha questa indicaziun.",
+    "chooseBoolean": "Tscherna gea u na.",
+    "chooseMaterial": "Tscherna in material.",
+    "chooseSeats": "Tscherna tranter 1 e 20 sezs.",
+    "chooseDirection": "Tscherna ina direcziun da vista.",
+    "unchanged": "È gia registrà uschia.",
+    "fieldSaved": "Grazia, è registrà.",
+    "fieldFailed": "L’indicaziun n’ha betg pudì vegnir memorisada."
+  }
+}

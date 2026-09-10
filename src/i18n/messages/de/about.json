@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "title": "Über die Bänkli App",
+    "description": "Wie aus offenen Daten ein guter Platz für eine Pause wird. Menschen, Methoden und Datenschutz."
+  },
+  "hero": {
+    "eyebrow": "Viel Technik. Zum wenig Tun.",
+    "title": "Ein guter Platz<br></br>für eine Pause.",
+    "description": "Die Bänkli App verbindet offene Karten, ein bisschen KI und Menschen vor Ort. Damit du weisst, wo du dich als Nächstes hinsetzen möchtest."
+  },
+  "navigation": {
+    "label": "Auf dieser Seite",
+    "methods": "So funktioniert’s",
+    "sources": "Datenquellen",
+    "privacy": "Deine Daten",
+    "contribute": "Mitmachen"
+  },
+  "methods": {
+    "title": "Von der Karte zur Pause",
+    "introduction": "Messen, schätzen, nachfragen. Die drei Dinge halten wir auseinander.",
+    "position": {
+      "title": "Wo steht das Bänkli?",
+      "description": "Offene Karten und Inventare liefern Position und Ausstattung. Gemeindegrenzen helfen bei der Zuordnung. Ähnliche Bänkli in enger Nachbarschaft werden nur bei eindeutigen Hinweisen zusammengeführt."
+    },
+    "sun": {
+      "title": "Wann ist hier Sonne?",
+      "description": "Wir folgen dem Sonnenstand über den Tag. Berge, Gebäude und Baumkronen bilden den Horizont davor. Liegt die Sonne dahinter, erwarten wir Schatten. Wolken und wechselndes Laub bleiben zusätzliche Unsicherheiten."
+    },
+    "view": {
+      "title": "Was könnte ich sehen?",
+      "description": "Gelände und Umgebung geben erste Hinweise. Die KI betrachtet passende Fotos und ergänzt sichtbare Merkmale. Eine nahe Wasserfläche oder ein einzelnes Bild genügt allein nicht für einen sicheren Seeblick."
+    },
+    "evidence": {
+      "title": "Und stimmt das auch?",
+      "description": "Deine Beobachtung vor Ort hilft. Wir bewahren Herkunft, Alter und widersprüchliche Hinweise. Wo Daten fehlen, steht offen statt nein. Modellwerte bleiben Schätzungen – dein Lieblingsblick gehört weiterhin dir."
+    }
+  },
+  "sources": {
+    "eyebrow": "Offen gelegt",
+    "title": "Was wir womit machen",
+    "introduction": "Ein kurzer Blick hinter jede Quelle. Welche Angaben an einer einzelnen Bank vorhanden sind, siehst du in ihren Details.",
+    "link": "Zur Quelle ↗",
+    "entries": {
+      "openstreetmap": {
+        "summary": "Bänkli und Wege",
+        "description": "Hierher kommen Bänkli-Positionen, Ausstattung, Wege und Einrichtungen wie Brunnen oder Toiletten. Eine fehlende Angabe bedeutet unbekannt. Das Alter eines OSM-Eintrags und der Zeitpunkt unseres Imports werden getrennt geführt."
+      },
+      "geofabrik": {
+        "summary": "Schweizer OSM-Datenausschnitt",
+        "description": "Geofabrik stellt den Schweizer OpenStreetMap-Ausschnitt zum Herunterladen bereit. Wir verarbeiten ihn gesammelt, damit beim Öffnen einer Bank keine neue Abfrage für jedes einzelne Merkmal nötig ist."
+      },
+      "swisstopo-map": {
+        "summary": "Hintergrundkarte und Adresssuche",
+        "description": "Die Hintergrundkarte zeigt Wege, Gelände und Ortsnamen. Auch die Adresssuche verwendet GeoAdmin. Kartenkacheln werden direkt von swisstopo geladen."
+      },
+      "swisstlm3d": {
+        "summary": "Wald, Wasser und Landschaftsflächen",
+        "description": "Genaue Flächen und Linien beschreiben unter anderem Wälder und Gewässer. Wir prüfen die Geometrie rund um eine Bank: Ein nahe gelegenes Gewässer ist noch kein Beweis dafür, dass man es vom Sitzplatz aus sieht."
+      },
+      "swissbuildings3d": {
+        "summary": "Gebäudeform und Dachhöhe",
+        "description": "Aus Gebäudeform, Höhe und Abstand wird berechnet, wie hoch das Gebäude am Horizont der Bank erscheint. Steht die Sonne dahinter, erwarten wir Gebäudeschatten. Fehlende Höhen und ungenaue Positionen machen die Schätzung unsicherer."
+      },
+      "swissalti3d": {
+        "summary": "Geländehöhe, Horizont und Steigung",
+        "description": "Das Geländemodell liefert die Höhe und den natürlichen Horizont in vielen Blickrichtungen. Für lokale Zugangswege werden Höhen entlang des Weges verglichen: 1 Meter Höhenunterschied auf 20 Meter waagrechte Strecke entspricht 5 Prozent Steigung."
+      },
+      "swisssurface3d": {
+        "summary": "Oberfläche mit Gebäuden und Bewuchs",
+        "description": "Dieses Oberflächenmodell enthält zusätzlich Gebäude und Bewuchs. Der Vergleich mit dem nackten Gelände hilft, Hindernisse und Baumkronen zu erkennen. Ein gemessenes Baumdach verrät allerdings nicht, wie dicht die Blätter heute sind."
+      },
+      "meteoswiss": {
+        "summary": "Wettermodelle und Radar",
+        "description": "Temperatur, Wind, Wolken und Niederschlag kommen aus Wettermodellen und Radar. Die Wolken werden getrennt vom geometrischen Schatten betrachtet: Ein freier Sonnenstrahl im Modell garantiert keinen wolkenlosen Himmel."
+      },
+      "transport-api": {
+        "summary": "Haltestellen und Verbindungen",
+        "description": "Die Suche nach Haltestellen und Verbindungen ergänzt die Anreise. Dabei werden Suchbegriffe oder die für die Suche nötigen Koordinaten an transport.opendata.ch gesendet."
+      },
+      "swiss-gtfs": {
+        "summary": "Fahrplan und Umsteigeregeln",
+        "description": "Der öffentliche Fahrplan wird lokal eingelesen. So können wir Haltestellen und mögliche Umstiege für eine Bänkli-Reise finden. Fahrpläne sind keine Garantie, dass ein Fahrzeug pünktlich fährt."
+      },
+      "graphhopper": {
+        "summary": "Fusswege auf dem Wegenetz",
+        "description": "Unser eigener Routingdienst berechnet Fusswege auf dem Wegenetz. Gehzeit, Steigung und Ruhepausen helfen beim Planen; ein berechneter Weg ist keine vor Ort geprüfte Zusage zur Zugänglichkeit."
+      },
+      "wikimedia-commons": {
+        "summary": "Offene Bilder des Ortes und der Umgebung",
+        "description": "Offene Bilder geben einen Eindruck des Platzes oder seiner Umgebung. Abstand, Lizenz und Zuordnung bleiben am Bild sichtbar. Umgebung ist ausdrücklich nicht dasselbe wie ein Foto genau dieser Bank."
+      },
+      "panoramax": {
+        "summary": "Georeferenzierte Strassenbilder",
+        "description": "Georeferenzierte Strassenbilder können zusätzliche Hinweise auf die Umgebung geben. Wir beachten Abstand, Blickrichtung und Aufnahmegruppe, damit mehrere Fotos derselben Fahrt nicht wie unabhängige Bestätigungen zählen."
+      },
+      "kartaview": {
+        "summary": "Zusätzliche Strassenbilder",
+        "description": "Auch diese offenen Strassenbilder ergänzen die Umgebungsevidenz. Ein unscharfes oder unpassendes Bild zählt nicht als Beleg. Bild und Bank können trotz kurzer Distanz verschiedene Blickrichtungen haben."
+      },
+      "swissimage": {
+        "summary": "Luftbilder",
+        "description": "Das Luftbild ergänzt die Einordnung von Flächen und Bewuchs. Es zeigt den Blick von oben; daraus lässt sich die Aussicht einer sitzenden Person nicht direkt ablesen."
+      },
+      "zurich-benches": {
+        "summary": "Amtliches Zürcher Bankinventar",
+        "description": "Das städtische Inventar enthält Bänke von Grün Stadt Zürich und dem Tiefbauamt. Wir behalten die amtliche Kennung und vergleichen nahe OSM-Einträge vorsichtig. Mehrere mögliche Nachbarbänke bleiben zur Prüfung getrennt. Private Bänke und Waldbänke sind nicht vollständig enthalten."
+      },
+      "zurich-trees": {
+        "summary": "Zürcher Baumkataster",
+        "description": "Der städtische Baumkataster ergänzt bekannte Baumstandorte. Er hilft bei der Einordnung des möglichen Schattens und des Bewuchses, soweit passende Merkmale vorhanden sind."
+      },
+      "basel-trees": {
+        "summary": "Basler Baumkataster",
+        "description": "Auch der Basler Baumkataster ergänzt einzelne Bäume, die in anderen Karten fehlen können. Ein eingetragener Baum ersetzt keine aktuelle Messung seiner Krone."
+      },
+      "sonbase": {
+        "summary": "Langfristige Lärmmodellierung",
+        "description": "Amtliche Lärmraster liefern modellierte Beurteilungspegel in dB(A). Strasse und Bahn sowie Tag und Nacht bleiben getrennt. Das sind langfristige Modellwerte, keine Aufnahme des Geräuschs bei deiner nächsten Pause."
+      },
+      "swissnames3d": {
+        "summary": "Ortsnamen und Orientierung",
+        "description": "Orts- und Quartiernamen werden räumlich zur Bank gesucht und nach Nähe und Art gewichtet. Ein naher Ortsname ist eine Orientierungshilfe; die politische Gemeinde wird separat über ihre Grenze bestimmt."
+      },
+      "swissboundaries3d": {
+        "summary": "Gemeinde-, Bezirks- und Kantonsgrenzen",
+        "description": "Die Bank wird mit den tatsächlichen Gemeinde-, Bezirks- und Kantonsflächen verschnitten. Die BFS-Nummer hält die Zuordnung eindeutig. Auf einer unklaren Grenzlinie lassen wir die Zuordnung offen."
+      },
+      "qwen3-vl-benchly": {
+        "summary": "KI-Hinweise aus Umgebungsbildern",
+        "description": "Das lokal betriebene Bildmodell sucht Hinweise auf Wald, Wasser, Berge und einen offenen Blick. Seine Einschätzung bleibt von Messdaten getrennt. Ein kontrollierter Vergleich mit menschlich beschrifteten Bildern prüft Fehler und Unterschiede zwischen Regionen."
+      },
+      "qwen35-bank-photos": {
+        "summary": "Sichtbare Umgebung aus Bankfotos",
+        "description": "Das grössere Bildmodell ergänzt Perspektive und sichtbare Umgebung aus passend zugeordneten Bankfotos. Ein Berg im Foto kann einen Blick stützen; ein fehlender Berg widerlegt ihn nicht. Modell-Selbsteinschätzungen sind keine gemessenen Wahrscheinlichkeiten."
+      },
+      "benchly-community": {
+        "summary": "Beobachtungen von Menschen vor Ort",
+        "description": "Menschen vor Ort bestätigen Bänkli, ergänzen Ausstattung und teilen Eindrücke. Mehrere unabhängige, aktuelle Beobachtungen stützen eine Aussage. Widersprüche bleiben erhalten und können zu einer kurzen Rückfrage führen."
+      }
+    }
+  },
+  "privacy": {
+    "eyebrow": "Kein Kleingedruckt-Labyrinth",
+    "title": "Wohin gehen deine Daten?",
+    "description": "Wähle, was du in der App machst. Der Weg darunter zeigt, was dabei passiert.",
+    "link": "Datenschutz & Kontakt"
+  },
+  "contribute": {
+    "eyebrow": "Die Bank ist lang genug",
+    "title": "Mach’s dir zu eigen",
+    "description": "Fehler gefunden oder eine Idee? Code und Diskussionen sind öffentlich. Auch kleine Verbesserungen helfen.",
+    "code": "Code & Beiträge ↗",
+    "issues": "Fehler oder Idee melden ↗"
+  },
+  "reuse": {
+    "title": "Daten mitnehmen? Sehr gern.",
+    "invitation": "Scrapen, forschen, neu bauen: Unsere öffentlichen Bänkli-Daten dürfen weiterverwendet werden. Bitte im Spaziergangstempo – der Server ist eine Parkbank, kein Hochgeschwindigkeitszug.",
+    "pace": "Eine Anfrage pro Sekunde, eine nach der anderen, zwischenspeichern und bei Fehlern oder einer 429-Antwort pausieren.",
+    "rights": "Die Lizenzen der Quellen reisen mit: etwa die ODbL bei OpenStreetMap und die Quellenangabe bei swisstopo. Fotos, Texte und Community-Beiträge gehören ihren Urheberinnen und Urhebern; eine pauschale Freigabe dafür können wir nicht erteilen. Private Kontodaten sind kein offener Datensatz."
+  },
+  "people": {
+    "eyebrow": "Die Menschen dahinter",
+    "title": "Danke fürs Bänkli.",
+    "description": "Stephan für die Idee, Matthias für die technische Umsetzung, Jonas fürs genaue Hinschauen. Und allen, die draussen sitzen, etwas entdecken und ihr Wissen teilen."
+  },
+  "links": {
+    "imprint": "Kontakt & Impressum",
+    "privacy": "Datenschutz",
+    "project": "Zur Projektseite"
+  }
+}

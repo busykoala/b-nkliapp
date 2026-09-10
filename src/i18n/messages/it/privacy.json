@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "title": "Privacy · Bänkli App"
+  },
+  "title": "I tuoi dati non vanno a spasso senza motivo.",
+  "updated": "Aggiornato a settembre 2026. Ecco i dati che Bänkli App tratta per le sue funzioni.",
+  "purposes": {
+    "title": "Perché usiamo i dati",
+    "map": "Per mappa e percorsi trattiamo la regione visualizzata, i termini di ricerca e i punti di partenza e arrivo richiesti. Condividere la posizione è facoltativo. Non conserviamo una cronologia personale dei tuoi percorsi.",
+    "account": "Un account conserva nome utente, hash della password, avatar, sessioni, panchine e luoghi salvati. Nome, profilo e contributi pubblicati sono pubblici. La lista dei preferiti è accessibile solo dal tuo account.",
+    "contributions": "Le foto e i testi che contribuisci vengono pubblicati. Le foto passano prima un controllo automatico delle persone sul server del modello. La protezione dagli abusi usa identificativi derivati, segnalazioni e decisioni di moderazione."
+  },
+  "providers": {
+    "title": "Chi ci aiuta",
+    "own": "L’app, l’archivio fotografico e il controllo delle immagini funzionano sulla nostra infrastruttura.",
+    "country": "Ubicazione: {country}.",
+    "external": "Cloudflare aiuta a distribuire e proteggere il sito e tratta dati tecnici di connessione. GeoAdmin/swisstopo ricevono richieste di mappe e ricerche; transport.opendata.ch riceve richieste di fermate e collegamenti. Le immagini esterne sono caricate dalle rispettive fonti, che ricevono tra l’altro il tuo indirizzo IP e l’indirizzo dell’immagine richiesta.",
+    "policies": "Informazioni di questi fornitori:",
+    "abroad": "Cloudflare è un’azienda statunitense con una rete mondiale; i dati di connessione possono essere trattati anche all’estero."
+  },
+  "storage": {
+    "title": "Cookie, memoria e conservazione",
+    "cookies": "Il cookie di accesso dura fino a 30 giorni. Un cookie necessario ai contributi può durare un anno. Uscire termina la sessione corrente. Ritmo di cammino e promemoria della condivisione della posizione restano nel browser e spariscono cancellando i dati del sito.",
+    "language": "La lingua scelta viene salvata in un cookie per un anno. Senza scelta esplicita usiamo una lingua supportata del browser oppure il tedesco.",
+    "retention": "I percorsi personali restano al massimo cinque minuti in memoria. Dati dell’account e contributi sono conservati per le funzioni fino alla cancellazione o finché necessari. Puoi rimuovere direttamente i tuoi momenti e foto. Registri di sicurezza e infrastruttura e copie di backup possono avere altri tempi di conservazione.",
+    "noTracking": "L’app non usa cookie pubblicitari o di analisi."
+  },
+  "rights": {
+    "title": "Resti tu al comando",
+    "description": "Puoi chiedere accesso ai tuoi dati, rettifica o cancellazione. Per richieste sull’account o sulla privacy usa il contatto qui sotto. I dati personali non vanno inseriti in una issue pubblica su GitHub."
+  },
+  "flow": {
+    "choose": "Scegli il percorso dei dati",
+    "path": "Percorso dei dati: {label}",
+    "map": {
+      "label": "Guardare la mappa",
+      "device": {
+        "title": "Il tuo dispositivo",
+        "description": "Condividere la posizione è facoltativo. Le preferenze come il ritmo di cammino restano nel browser."
+      },
+      "providers": {
+        "title": "Mappa e percorsi",
+        "description": "Le richieste delle tessere vanno direttamente a swisstopo. Un percorso invia partenza e arrivo al nostro server; le ricerche di indirizzi e fermate usano anche GeoAdmin e la Transport API."
+      },
+      "memory": {
+        "title": "Una breve pausa in memoria",
+        "description": "I percorsi con estremi personali restano al massimo cinque minuti in memoria. L’app non tiene un registro personale degli spostamenti."
+      }
+    },
+    "account": {
+      "label": "Con un account",
+      "credentials": {
+        "title": "Il nome che scegli",
+        "description": "Per un account servono nome utente e password. La password è conservata come hash con salt."
+      },
+      "profile": {
+        "title": "Il tuo diario delle passeggiate",
+        "description": "Contributi e nome utente sono pubblici. Panchine salvate e luoghi seguiti personalizzano la tua vista; la lista dei preferiti resta privata."
+      },
+      "session": {
+        "title": "Tornare",
+        "description": "Un cookie di accesso necessario mantiene la sessione fino a 30 giorni. Uscire termina questa sessione."
+      }
+    },
+    "photo": {
+      "label": "Contribuire una foto",
+      "device": {
+        "title": "Una panchina, senza persone per favore",
+        "description": "La foto viene ridotta e salvata nuovamente nel browser. I metadati EXIF originali non vengono conservati."
+      },
+      "check": {
+        "title": "Controllo sul nostro server del modello",
+        "description": "L’IA verifica se sono visibili persone. Le immagini incerte vengono rifiutate. Questo controllo può sbagliare."
+      },
+      "publication": {
+        "title": "La tua immagine nel luogo",
+        "description": "Foto approvate, didascalie e nome utente sono pubblici. Puoi cancellare i tuoi momenti fotografici dalla panchina."
+      }
+    },
+    "footnote": "Ogni visita produce dati tecnici di connessione, come un indirizzo IP. Cloudflare partecipa alla distribuzione e protezione del sito. Per prevenire abusi l’app conserva identificativi derivati anziché indirizzi IP grezzi."
+  }
+}

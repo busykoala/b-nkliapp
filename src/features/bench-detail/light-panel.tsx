@@ -1,46 +1,52 @@
+import { useFormatter, useTranslations } from "next-intl";
+import type { Translator } from "@/i18n/types";
+import { compassDirection } from "@/i18n/bench-labels";
 import type { ReactNode } from "react";
 import { ChevronDown, CloudSun, Moon, Sun } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { DetailRows, ObstructionSketch, PanelHeading } from "./panel-ui";
 
 export function LightPanel({ bench }: { bench: BenchDetail }) {
+  const t = useTranslations();
+  const format = useFormatter();
   const sunPercent = bench.daylightMinutesToday > 0 ? Math.round(bench.sunMinutesToday / bench.daylightMinutesToday * 100) : 0;
-  const sunLabel = bench.sunConfidence === "niedrig" ? "Geschätzte Sonne" : "Direkte Sonne";
+  const sunLabel = bench.sunConfidence === "niedrig" ? t("bench.light.estimatedSun") : t("bench.light.directSun");
   return <section className="detail-panel detail-panel-light">
-    <PanelHeading eyebrow="Licht heute" title={currentLight(bench)}><p>{lightSentence(bench)}</p></PanelHeading>
+    <PanelHeading eyebrow={t("bench.light.today")} title={currentLight(bench, t)}><p>{lightSentence(bench, t)}</p></PanelHeading>
     <SunPath bench={bench} />
     <div className="light-windows is-primary">
-      <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? "Geschätzte Sonnenfenster" : "Sonnenfenster"} windows={bench.sunWindows} empty="Heute keine direkte Sonne berechnet" />
-      <IntervalStory icon={<CloudSun size={17} />} label="Schattenfenster" windows={bench.shadeWindows} empty="Heute kein Schattenfenster berechnet" />
+      <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? t("bench.light.estimatedWindows") : t("bench.light.sunWindows")} windows={bench.sunWindows} empty={t("bench.light.noSun")} />
+      <IntervalStory icon={<CloudSun size={17} />} label={t("bench.light.shadeWindows")} windows={bench.shadeWindows} empty={t("bench.light.noShade")} />
     </div>
-    <p className="confidence-line">{lightConfidenceLine(bench.sunConfidence)}</p>
+    <p className="confidence-line">{t(`bench.light.confidence.${bench.sunConfidence}`)}</p>
     <details className="technical-fold">
-      <summary><span><strong>Dauer & Jahreszeiten</strong><small>Summen, Hindernisse und Himmelswerte</small></span><ChevronDown size={16} /></summary>
-      <div className="light-balance" aria-label={`${sunDuration(bench.sunMinutesToday)} direkte Sonne und ${sunDuration(bench.shadeMinutesToday)} Schatten bei Tageslicht`}>
+      <summary><span><strong>{t("bench.light.durationSeasons")}</strong><small>{t("bench.light.detailsSummary")}</small></span><ChevronDown size={16} /></summary>
+      <div className="light-balance" aria-label={t("bench.light.balance", {sun: sunDuration(bench.sunMinutesToday), shade: sunDuration(bench.shadeMinutesToday)})}>
         <div><span className="is-sun"><Sun size={18} /></span><small>{sunLabel}</small><strong>{sunDuration(bench.sunMinutesToday)}</strong></div>
-        <div><span className="is-shade"><CloudSun size={18} /></span><small>Schatten</small><strong>{sunDuration(bench.shadeMinutesToday)}</strong></div>
+        <div><span className="is-shade"><CloudSun size={18} /></span><small>{t("bench.light.shade")}</small><strong>{sunDuration(bench.shadeMinutesToday)}</strong></div>
         <i><b style={{ width: `${sunPercent}%` }} /></i>
       </div>
       <ObstructionSketch building={bench.buildingObstructionPercent} vegetation={bench.vegetationObstructionPercent} />
       <SeasonalLight bench={bench} />
-      <DetailRows title="Himmelswerte" rows={[
-        ["Sonnenaufgang", bench.sunrise],
-        ["Sonnenuntergang", bench.sunset],
-        ["Direkte Sonne ab", bench.directSunrise],
-        ["Direkte Sonne bis", bench.directSunset],
-        ["Sonnenhöhe", angle(bench.sunAltitudeDegrees)],
-        ["Sonnenrichtung", direction(bench.sunAzimuthDegrees)],
-        ["Mondlicht", `${Math.round(bench.moonIllumination * 100)}%`],
-        ["Mondaufgang", bench.moonrise],
-        ["Monduntergang", bench.moonset],
+      <DetailRows title={t("bench.light.skyValues")} rows={[
+        [t("bench.light.sunrise"), bench.sunrise],
+        [t("bench.light.sunset"), bench.sunset],
+        [t("bench.light.directFrom"), bench.sunWindows.length ? bench.directSunrise : t("bench.light.noDirect")],
+        [t("bench.light.directUntil"), bench.sunWindows.length ? bench.directSunset : t("bench.light.noDirect")],
+        [t("bench.light.altitude"), `${format.number(bench.sunAltitudeDegrees, {maximumFractionDigits: 1})}°`],
+        [t("bench.light.azimuth"), compassDirection(bench.sunAzimuthDegrees, t)],
+        [t("bench.light.moonlight"), `${Math.round(bench.moonIllumination * 100)}%`],
+        [t("bench.light.moonrise"), bench.moonrise],
+        [t("bench.light.moonset"), bench.moonset],
       ]} />
     </details>
   </section>;
 }
 
 function SunPath({ bench }: { bench: BenchDetail }) {
+  const t = useTranslations();
   const nowX = timelineX(bench.localMinutesNow);
-  return <section className="daylight-story" aria-label={`Sonnenaufgang ${bench.sunrise}, Sonnenuntergang ${bench.sunset}. Mondaufgang ${bench.moonrise}, Monduntergang ${bench.moonset}.`}>
+  return <section className="daylight-story" aria-label={t("bench.light.timeline", {sunrise: bench.sunrise, sunset: bench.sunset, moonrise: bench.moonrise, moonset: bench.moonset})}>
     <div className="sky-legend"><span className="sun-time"><Sun size={15} />{bench.sunrise}–{bench.sunset}</span><span className="moon-time"><Moon size={15} />{bench.moonrise}–{bench.moonset}</span></div>
     <svg className="sky-arc" viewBox="0 0 360 96" aria-hidden="true">
       <path className="sky-horizon" d="M8 75H352" />
@@ -65,14 +71,15 @@ function IntervalStory({ icon, label, windows, empty }: { icon: ReactNode; label
 }
 
 function SeasonalLight({ bench }: { bench: BenchDetail }) {
+  const t = useTranslations();
   const values: Array<[string, number | null]> = [
-    ["Frühling", bench.sunMinutesSpring], ["Sommer", bench.sunMinutesSummer],
-    ["Herbst", bench.sunMinutesAutumn], ["Winter", bench.sunMinutesWinter],
+    [t("bench.light.seasons.spring"), bench.sunMinutesSpring], [t("bench.light.seasons.summer"), bench.sunMinutesSummer],
+    [t("bench.light.seasons.autumn"), bench.sunMinutesAutumn], [t("bench.light.seasons.winter"), bench.sunMinutesWinter],
   ];
   const available = values.filter((item): item is [string, number] => item[1] !== null);
   if (!available.length) return null;
   const maximum = Math.max(...available.map((item) => item[1]), 1);
-  return <div className="season-light" aria-label="Typische direkte Sonnendauer nach Jahreszeit">
+  return <div className="season-light" aria-label={t("bench.light.seasons.label")}>
     {available.map(([label, value]) => <div key={label}><span>{label}</span><i><b style={{ width: `${value / maximum * 100}%` }} /></i><strong>{sunDuration(value)}</strong></div>)}
   </div>;
 }
@@ -85,7 +92,6 @@ function clockMinutes(clock: string) {
 function timelineX(minutes: number) { return 8 + Math.max(0, Math.min(1440, minutes)) / 1440 * 344; }
 function trackY(altitude: number) { return 75 - Math.max(0, Math.min(62, altitude * .9)); }
 function sunDuration(value: number) { const hours = Math.floor(value / 60); const minutes = value % 60; return hours ? `${hours} h${minutes ? ` ${minutes} min` : ""}` : `${minutes} min`; }
-function angle(value: number) { return `${Number(value.toFixed(1))}°`; }
 
 function trackPaths(points: BenchDetail["skyTrack"]["sun"]) {
   const paths: string[] = [];
@@ -102,27 +108,15 @@ function trackPaths(points: BenchDetail["skyTrack"]["sun"]) {
   return paths;
 }
 
-function direction(value: number) {
-  const names = ["N", "NO", "O", "SO", "S", "SW", "W", "NW"];
-  return `${names[Math.round(value / 45) % 8]} · ${Math.round(value)}°`;
+function currentLight(bench: BenchDetail, t: Translator) {
+  if (bench.shadeCause === "nacht") return t(bench.moonVisible ? "bench.light.state.moon" : "bench.light.state.night");
+  if (bench.sunnyNow === null) return t("bench.light.state.unknown");
+  return t(bench.sunnyNow ? "bench.light.state.sun" : "bench.light.state.shade");
 }
 
-function currentLight(bench: BenchDetail) {
-  if (bench.shadeCause === "nacht") return bench.moonVisible ? "Mondlicht über dem Platz" : "Nacht über dem Platz";
-  if (bench.sunnyNow === null) return "Die Lichtlage wird noch erkundet";
-  return bench.sunnyNow ? "Die Bank liegt in direkter Sonne" : "Die Bank liegt im Schatten";
-}
-
-function lightSentence(bench: BenchDetail) {
-  if (bench.shadeCause === "nacht") return `${bench.sunConfidence === "niedrig" ? "Im Modell waren" : "Heute waren"} ${sunDuration(bench.sunMinutesToday)} direkte Sonne möglich.`;
-  if (bench.sunnyNow === null) return "Für eine sichere Aussage fehlen noch einzelne Umgebungsdaten.";
-  if (bench.sunnyNow) return bench.weather && bench.weather.cloudCover > .65 ? "Geometrisch frei, doch Wolken dämpfen das Licht." : "Der Sonnenstrahl erreicht den Platz.";
-  const causes = { frei: "freier Himmel", nacht: "die Nacht", überdacht: "die Überdachung", gebäude: "ein Gebäude", vegetation: "Bäume und Vegetation", gelände: "das Gelände", unbekannt: "eine noch unbekannte Ursache" } as const;
-  return `Der Schatten kommt wahrscheinlich durch ${causes[bench.shadeCause]}.`;
-}
-
-function lightConfidenceLine(value: BenchDetail["sunConfidence"]) {
-  if (value === "hoch") return "Aus Gelände, Gebäuden und Bewuchs berechnet · Wolken separat betrachtet.";
-  if (value === "mittel") return "Gut angenäherte geometrische Lichtlage · Wolken separat betrachtet.";
-  return "Vorläufige Schätzung · einzelne Umgebungsdaten fehlen noch.";
+function lightSentence(bench: BenchDetail, t: Translator) {
+  if (bench.shadeCause === "nacht") return t(bench.sunConfidence === "niedrig" ? "bench.light.explanation.nightEstimate" : "bench.light.explanation.night", {duration: sunDuration(bench.sunMinutesToday)});
+  if (bench.sunnyNow === null) return t("bench.light.explanation.unknown");
+  if (bench.sunnyNow) return t(bench.weather && bench.weather.cloudCover > .65 ? "bench.light.explanation.clouds" : "bench.light.explanation.sun");
+  return t(`bench.light.causes.${bench.shadeCause}`);
 }

@@ -1,0 +1,82 @@
+{
+  "editor": {
+    "title": "Crea il tuo avatar",
+    "mixture": "La tua combinazione",
+    "description": "Ogni scelta è composta da singoli livelli ad acquerello.",
+    "random": "Sorprendimi",
+    "pending": "Pittura in corso…",
+    "save": "Salva l’avatar"
+  },
+  "description": "{hair}, {coat}, sfondo {background}",
+  "groups": {
+    "skin": "Carnagione",
+    "hairStyle": "Acconciatura",
+    "hair": "Colore dei capelli",
+    "coat": "Giacca",
+    "accent": "Sciarpa",
+    "hat": "Copricapo",
+    "background": "Paesaggio preferito",
+    "companion": "Compagnia"
+  },
+  "options": {
+    "skin": {
+      "porcelain": "Chiara",
+      "sunlit": "Dorata",
+      "warm": "Calda",
+      "brown": "Bruna",
+      "deep": "Scura"
+    },
+    "hair": {
+      "charcoal": "Carbone",
+      "chestnut": "Castano",
+      "copper": "Rame",
+      "blond": "Oro",
+      "silver": "Argento"
+    },
+    "hairStyle": {
+      "short": "Corti",
+      "waves": "Onde",
+      "bob": "Caschetto",
+      "bun": "Chignon",
+      "curls": "Ricci"
+    },
+    "coat": {
+      "pine": "Abete",
+      "lake": "Lago",
+      "rust": "Ruggine",
+      "moss": "Muschio",
+      "plum": "Prugna"
+    },
+    "accent": {
+      "gold": "Oro",
+      "coral": "Corallo",
+      "sage": "Salvia",
+      "cream": "Crema",
+      "none": "Senza"
+    },
+    "hat": {
+      "none": "Senza",
+      "beanie": "Berretto",
+      "brim": "Cappello",
+      "cap": "Cappellino"
+    },
+    "background": {
+      "mountain": "Montagne",
+      "lake": "Lago",
+      "forest": "Bosco",
+      "city": "Città",
+      "meadow": "Prato"
+    },
+    "companion": {
+      "none": "Da solo",
+      "bird": "Uccello",
+      "cat": "Gatto",
+      "fox": "Volpe"
+    }
+  },
+  "label": "Ritratto ad acquerello di {username}: {description}",
+  "result": {
+    "invalid": "Impossibile salvare questa combinazione.",
+    "saved": "Il tuo avatar ad acquerello è salvato."
+  }
+}

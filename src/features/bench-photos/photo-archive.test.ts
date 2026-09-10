@@ -37,20 +37,20 @@ describe("local photo archive", () => {
   });
 
   it("rejects traversal and symlinks outside the archive", async () => {
-    await expect(readBenchPhoto("garage:../../secret.jpg")).rejects.toThrow("Bild nicht gefunden");
+    await expect(readBenchPhoto("garage:../../secret.jpg")).rejects.toThrow("photos.server.notFound");
     const outside = await mkdtemp(join(tmpdir(), "benchly-photo-outside-"));
     try {
       await writeFile(join(outside, "photo.jpg"), jpeg);
       const file = await save();
       await rm(file); await symlink(join(outside, "photo.jpg"), file);
-      await expect(readBenchPhoto(`garage:${key}`)).rejects.toThrow("Bild nicht gefunden");
+      await expect(readBenchPhoto(`garage:${key}`)).rejects.toThrow("photos.server.notFound");
     } finally { await rm(outside, { recursive: true, force: true }); }
   });
 
   it("rejects corrupted files and never falls back to production for a missing object", async () => {
     await expect(readBenchPhoto(`garage:${key}`)).rejects.toThrow();
     await save(new Uint8Array([1, 2, 3]));
-    await expect(readBenchPhoto(`garage:${key}`)).rejects.toThrow("Bildformat");
+    await expect(readBenchPhoto(`garage:${key}`)).rejects.toThrow("photos.server.formatMismatch");
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -66,8 +66,8 @@ describe("local photo archive", () => {
   });
 
   it("prevents archived snapshots from writing to the production bucket", async () => {
-    await expect(storeBenchPhoto(key, jpeg, "image/jpeg")).rejects.toThrow("Pause");
-    await expect(deleteBenchPhoto(`garage:${key}`)).rejects.toThrow("Pause");
+    await expect(storeBenchPhoto(key, jpeg, "image/jpeg")).rejects.toThrow("photos.server.storageUnavailable");
+    await expect(deleteBenchPhoto(`garage:${key}`)).rejects.toThrow("photos.server.storageUnavailable");
     expect(send).not.toHaveBeenCalled();
   });
 });

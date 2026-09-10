@@ -1,0 +1,93 @@
+{
+  "language": {
+    "label": "Lingua",
+    "failed": "Impossibile cambiare lingua. Riprova."
+  },
+  "metadata": {
+    "title": "Bänkli App – Le panchine della Svizzera",
+    "description": "Trova panchine in Svizzera con sole, panorama e recensioni della comunità."
+  },
+  "navigation": {
+    "open": "Apri il menu",
+    "close": "Chiudi il menu",
+    "label": "Navigazione principale",
+    "addBench": "Aggiungi una panchina",
+    "walk": "Passeggiata",
+    "feed": "Novità delle panchine",
+    "favourites": "I miei luoghi preferiti",
+    "profile": "Il mio profilo",
+    "signIn": "Accedi",
+    "signOut": "Esci",
+    "about": "Informazioni su Bänkli App",
+    "map": "Torna alla mappa",
+    "privacy": "Protezione dei dati",
+    "imprint": "Contatti e note legali"
+  },
+  "install": {
+    "button": "Installa l’app",
+    "ios": "In Safari, scegli «Condividi» e poi «Aggiungi alla schermata Home»."
+  },
+  "actions": {
+    "close": "chiudi",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "saving": "Salvataggio…",
+    "remove": "Rimuovi",
+    "delete": "Elimina",
+    "retry": "Riprova",
+    "closeTitle": "Chiudi"
+  },
+  "values": {
+    "yes": "Sì",
+    "no": "No",
+    "unknown": "Sconosciuto",
+    "open": "Da precisare",
+    "notRecorded": "Non ancora registrato",
+    "bench": "Panchina",
+    "community": "Comunità"
+  },
+  "fields": {
+    "name": "Nome",
+    "optional": "(facoltativo)"
+  },
+  "errors": {
+    "signIn": "Accedi prima.",
+    "blocked": "I contributi da questo browser sono stati bloccati.",
+    "rateLimit": "Troppi contributi. Riprova più tardi.",
+    "benchNotFound": "Questa panchina non è stata trovata.",
+    "invalid": "Controlla i tuoi dati.",
+    "unavailable": "Non ha funzionato. Riprova."
+  },
+  "notFound": {
+    "title": "Panchina non trovata",
+    "description": "Potrebbe essere stata rimossa dai dati di origine."
+  },
+  "update": {
+    "ready": "È pronta una mappa più fresca.",
+    "reload": "Ricarica",
+    "dismiss": "Chiudi l’avviso di aggiornamento"
+  },
+  "calendar": {
+    "patterns": {
+      "numeric": "{day}.{month}.{year}",
+      "long": "{day} {month} {year}",
+      "monthYear": "{month} {year}",
+      "dayMonth": "{day} {month}",
+      "dateTime": "{date}, {time}"
+    },
+    "months": {
+      "january": "gennaio",
+      "february": "febbraio",
+      "march": "marzo",
+      "april": "aprile",
+      "may": "maggio",
+      "june": "giugno",
+      "july": "luglio",
+      "august": "agosto",
+      "september": "settembre",
+      "october": "ottobre",
+      "november": "novembre",
+      "december": "dicembre"
+    }
+  }
+}

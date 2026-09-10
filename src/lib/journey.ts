@@ -1,5 +1,6 @@
+import type { UiMessage } from "@/i18n/message";
 /** Serializable journey model and pure calculations. No provider or database imports. */
-export type JourneyPoint = { label: string; latitude: number; longitude: number; stationId?: string; platform?: string };
+export type JourneyPoint = { label: string; labelKind?: "location" | "station" | "bench" | "waypoint"; latitude: number; longitude: number; stationId?: string; platform?: string };
 export type JourneyOrigin = JourneyPoint & { kind: "location" | "address" | "station" };
 export type ReturnJourney = { origin: JourneyOrigin; destination: JourneyPoint; time: string };
 export type JourneyQuery = {
@@ -10,7 +11,7 @@ export type TransferTone = "plenty" | "fits" | "tight" | "insufficient" | "unkno
 export type TransferAssessment = {
   availableSeconds: number; requiredSeconds: number | null; slackSeconds: number | null;
   walkingSeconds: number | null; officialMinimumSeconds: number | null;
-  bufferMinutes: number; tone: TransferTone; evidence: string; guaranteed: boolean; staySeated: boolean;
+  bufferMinutes: number; tone: TransferTone; evidence: "official" | "walk" | "unknown"; guaranteed: boolean; staySeated: boolean;
 };
 export type JourneyLeg = {
   id: string; mode: "walk" | "rail" | "bus" | "tram" | "metro" | "ferry" | "funicular" | "cable-car";
@@ -18,16 +19,15 @@ export type JourneyLeg = {
   scheduledDeparture?: string; scheduledArrival?: string; predicted: boolean;
   line?: string; direction?: string; distanceMeters?: number; durationSeconds: number;
   geometry: [number, number][]; geometryQuality: "routed" | "schematic" | "missing";
-  warnings: string[]; platformChanges?: string[]; transfer?: TransferAssessment;
+  warnings: UiMessage[]; platformChanges?: UiMessage[]; transfer?: TransferAssessment;
 };
 export type JourneyOption = {
   id: string; legs: JourneyLeg[]; departure: string; arrival: string; durationSeconds: number;
-  walkingSeconds: number; changes: number; complete: boolean; feasible: boolean; warnings: string[];
+  walkingSeconds: number; changes: number; complete: boolean; feasible: boolean; warnings: UiMessage[];
 };
-export type JourneyResult = { options: JourneyOption[]; fetchedAt: string; feedUpdatedAt: string | null; message?: string; partial: boolean };
-export type TransferRule = { type: number; minimumSeconds: number | null; source: string };
-export const PACE_OPTIONS = [{ speed: 3, label: "Gemütlich" }, { speed: 4.2, label: "Normal" }, { speed: 5.4, label: "Zügig" }] as const;
-export const TRANSFER_LABELS: Record<TransferTone, string> = { plenty: "Viel Luft", fits: "Passend", tight: "Knapp", insufficient: "Nicht ausreichend", unknown: "Nicht sicher einschätzbar" };
+export type JourneyResult = { options: JourneyOption[]; fetchedAt: string; feedUpdatedAt: string | null; message?: UiMessage; partial: boolean };
+export type TransferRule = { type: number; minimumSeconds: number | null; source: "official" };
+export const PACE_OPTIONS = [{ speed: 3, key: "leisurely" }, { speed: 4.2, key: "normal" }, { speed: 5.4, key: "brisk" }] as const;
 
 export function walkingSeconds(meters: number, speedKmh: number) { return Math.ceil(meters * 3.6 / speedKmh - 1e-9); }
 export function distanceMeters(a: JourneyPoint, b: JourneyPoint) {
@@ -44,10 +44,10 @@ export function assessTransfer(availableSeconds: number, walkSeconds: number | n
   const extra = (slackSeconds ?? 0) - (staySeated ? 0 : bufferMinutes * 60);
   const tone: TransferTone = rule?.type === 3 ? "insufficient" : slackSeconds === null ? "unknown" : slackSeconds < 0 ? "insufficient" : extra < 0 ? "tight" : extra >= 300 ? "plenty" : "fits";
   return { availableSeconds, requiredSeconds, slackSeconds, walkingSeconds: walkSeconds, officialMinimumSeconds: minimum, bufferMinutes, tone,
-    evidence: rule?.source ?? (walkSeconds !== null ? "Fussweg-Schätzung" : "Keine verlässliche Weg- oder Mindestzeit"),
+    evidence: rule?.source ?? (walkSeconds !== null ? "walk" : "unknown"),
     guaranteed: rule?.type === 1, staySeated };
 }
-export function summarizeJourney(id: string, legs: JourneyLeg[], warnings: string[] = []): JourneyOption {
+export function summarizeJourney(id: string, legs: JourneyLeg[], warnings: UiMessage[] = []): JourneyOption {
   const departure = legs[0]?.departure ?? "";
   const arrival = legs.at(-1)?.arrival ?? "";
   const vehicles = legs.filter((leg) => leg.mode !== "walk");

@@ -1,9 +1,14 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
+
+import { actionError, UserFacingError } from "@/i18n/action-error";
+
 import { revalidatePath } from "next/cache";
 import { sqlite } from "@/db/client";
 import { refreshUserBadges } from "@/lib/badges";
 import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
+import type { Translator } from "@/i18n/types";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 
@@ -32,17 +37,18 @@ const correctionValues = {
 
 function benchRowId(benchId: string) {
   const row = sqlite.prepare("SELECT row_id FROM benches WHERE id=? AND active=1").get(benchId) as { row_id: number } | undefined;
-  if (!row) throw new Error("Bank wurde nicht gefunden.");
+  if (!row) throw new UserFacingError("common.errors.benchNotFound");
   return row.row_id;
 }
 
-function validationFailure(error: z.ZodError): ActionResult {
-  return { ok: false, message: "Bitte prüfe deine Angaben.", errors: error.flatten().fieldErrors as Record<string, string[]> };
+function validationFailure(error: z.ZodError, t: Translator): ActionResult {
+  return { ok: false, message: t("common.errors.invalid"), errors: Object.fromEntries(error.issues.map((issue) => [String(issue.path[0]), [t("common.errors.invalid")]])) };
 }
 
 export async function submitRating(benchId: string, _previous: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const t = await getTranslations();
   const parsed = ratingSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return validationFailure(parsed.error);
+  if (!parsed.success) return validationFailure(parsed.error, t);
   try {
     const user = await requireUser();
     const identity = await getContributorIdentity();
@@ -61,15 +67,16 @@ export async function submitRating(benchId: string, _previous: ActionResult | nu
     refreshUserBadges(user.id);
     revalidatePath("/");
     revalidatePath(`/bank/${benchId}`);
-    return { ok: true, message: "Danke – deine Bewertung ist sichtbar." };
+    return { ok: true, message: t("community.result.ratingSaved") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Bewertung konnte nicht gespeichert werden." };
+    return { ok: false, message: actionError(t, error, "community.result.ratingFailed") };
   }
 }
 
 export async function submitCorrection(benchId: string, _previous: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const t = await getTranslations();
   const parsed = correctionSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return validationFailure(parsed.error);
+  if (!parsed.success) return validationFailure(parsed.error, t);
   try {
     const user = await requireUser();
     const identity = await getContributorIdentity();
@@ -85,14 +92,15 @@ export async function submitCorrection(benchId: string, _previous: ActionResult 
     refreshUserBadges(user.id);
     revalidatePath("/");
     revalidatePath(`/bank/${benchId}`);
-    return { ok: true, message: "Danke – dein Hinweis wurde veröffentlicht." };
+    return { ok: true, message: t("community.result.correctionSaved") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Hinweis konnte nicht gespeichert werden." };
+    return { ok: false, message: actionError(t, error, "community.result.correctionFailed") };
   }
 }
 
 export async function reportContribution(targetType: "rating" | "correction", targetId: number): Promise<ActionResult> {
-  if (!Number.isInteger(targetId) || targetId < 1) return { ok: false, message: "Ungültiger Beitrag." };
+  const t = await getTranslations();
+  if (!Number.isInteger(targetId) || targetId < 1) return { ok: false, message: t("community.result.invalidContribution") };
   try {
     const user = await requireUser();
     const identity = await getContributorIdentity();
@@ -101,8 +109,8 @@ export async function reportContribution(targetType: "rating" | "correction", ta
     consumeRateLimit(identity.ipHash, "report-ip-day", 60, 86400);
     sqlite.prepare("INSERT OR IGNORE INTO reports (target_type, target_id, contributor_hash, reason, created_at, user_id) VALUES (?, ?, ?, 'Unangemessener Inhalt', ?, ?)")
       .run(targetType, targetId, contributorHash, new Date().toISOString(), user.id);
-    return { ok: true, message: "Beitrag wurde gemeldet." };
+    return { ok: true, message: t("community.result.reported") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Meldung fehlgeschlagen." };
+    return { ok: false, message: actionError(t, error, "community.result.reportFailed") };
   }
 }

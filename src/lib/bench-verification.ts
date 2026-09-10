@@ -1,3 +1,4 @@
+import { UserFacingError } from "@/i18n/action-error";
 import type Database from "better-sqlite3";
 
 export function resolveVerificationThreshold(value = process.env.BENCH_VERIFICATION_THRESHOLD) {
@@ -7,7 +8,7 @@ export function resolveVerificationThreshold(value = process.env.BENCH_VERIFICAT
 export function recordBenchConfirmation(database: Database.Database, benchRowId: number, userId: number, threshold: number, now: string) {
   return database.transaction(() => {
     const bench = database.prepare("SELECT active,verification_status,created_by_user_id FROM benches WHERE row_id=?").get(benchRowId) as { active: number; verification_status: string; created_by_user_id: number | null } | undefined;
-    if (!bench || !bench.active) throw new Error("Dieses Bänkli wurde nicht gefunden.");
+    if (!bench || !bench.active) throw new UserFacingError("common.errors.benchNotFound");
     if (bench.verification_status === "verified") {
       const count = (database.prepare("SELECT count(*) count FROM bench_confirmations WHERE bench_row_id=?").get(benchRowId) as { count: number }).count;
       return { added: false, count, verified: true, alreadyVerified: true, creatorUserId: bench.created_by_user_id };
@@ -37,7 +38,7 @@ export function recordBenchPresence(database: Database.Database, benchRowId: num
 export function recordRemovalConfirmation(database: Database.Database, benchRowId: number, userId: number, threshold: number, now: string) {
   return database.transaction(() => {
     const bench = database.prepare("SELECT active FROM benches WHERE row_id=?").get(benchRowId) as { active: number } | undefined;
-    if (!bench || !bench.active) throw new Error("Dieses Bänkli wurde nicht gefunden.");
+    if (!bench || !bench.active) throw new UserFacingError("common.errors.benchNotFound");
     let request = database.prepare("SELECT id FROM bench_removal_requests WHERE bench_row_id=? AND status='pending'").get(benchRowId) as { id: number } | undefined;
     if (!request) {
       const inserted = database.prepare("INSERT INTO bench_removal_requests(bench_row_id,created_by_user_id,created_at) VALUES(?,?,?)").run(benchRowId, userId, now);

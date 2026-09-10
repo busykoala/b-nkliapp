@@ -1,4 +1,5 @@
 import "server-only";
+import { message } from "@/i18n/message";
 import Database from "better-sqlite3";
 import { join, dirname } from "node:path";
 import * as SunCalc from "suncalc";
@@ -55,14 +56,14 @@ export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
     if (viewKnown / Math.max(1, total) >= .8) result.view = view / viewKnown;
     if (query.light !== "any" && result.lightCoverage >= .8) result.light = lit / Math.max(total, 1);
     result.sources = ["OpenStreetMap", "swissTLM3D", ...(noiseKnown / Math.max(1, total) >= .8 ? ["BAFU sonBASE"] : [])];
-    if ((result.water ?? 0) >= .55) result.reasons.push("Viel Weg in Wassernähe");
-    if ((result.quiet ?? 0) >= .75) result.reasons.push("Wenig Hauptstrasse im Umfeld");
-    if ((result.nature ?? 0) >= .55) result.reasons.push("Viel natürliche Umgebung");
-    if ((result.view ?? 0) >= .65) result.reasons.push("Offenes Gelände entlang des Wegs");
+    if ((result.water ?? 0) >= .55) result.reasons.push(message("walks.evidence.water"));
+    if ((result.quiet ?? 0) >= .75) result.reasons.push(message("walks.evidence.quiet"));
+    if ((result.nature ?? 0) >= .55) result.reasons.push(message("walks.evidence.nature"));
+    if ((result.view ?? 0) >= .65) result.reasons.push(message("walks.evidence.open"));
   } catch { /* Plain routing still works without the offline landscape artifact. */ }
   finally { db?.close(); }
-  if (result.coverage < .8) result.warnings.push("Landschaftsdaten noch unvollständig; die schönste Variante ist nicht sicher einschätzbar.");
-  if (query.light !== "any" && result.lightCoverage < .8) result.warnings.push("Sonne und Schatten entlang dieses Wegs sind noch nicht verlässlich einschätzbar.");
+  if (result.coverage < .8) result.warnings.push(message("walks.evidence.incomplete"));
+  if (query.light !== "any" && result.lightCoverage < .8) result.warnings.push(message("walks.evidence.lightUnknown"));
   result.reasons = result.reasons.slice(0, 2);
   return result;
 }

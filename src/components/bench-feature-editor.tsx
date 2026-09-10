@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import { compassDirection, propertyLabel, propertyValue } from "@/i18n/bench-labels";
 import { Check, ChevronDown } from "lucide-react";
 import { useState, useTransition } from "react";
 import { editBenchField } from "@/app/actions/benches";
@@ -8,35 +10,19 @@ import type { BenchDetail, BenchProperty } from "@/lib/types";
 type Field = BenchProperty["key"] | "direction";
 type Choice = { value: string; label: string; display?: string };
 
-const yesNo: Choice[] = [{ value: "yes", label: "Ja" }, { value: "no", label: "Nein" }];
-const choices: Record<Field, Choice[]> = {
-  backrest: yesNo,
-  armrest: yesNo,
-  covered: yesNo,
-  wheelchair: yesNo,
-  fireplaceNearby: yesNo,
-  wasteBasketNearby: yesNo,
-  material: [
-    { value: "wood", label: "Holz" }, { value: "metal", label: "Metall" }, { value: "stone", label: "Stein" },
-    { value: "concrete", label: "Beton" }, { value: "plastic", label: "Kunststoff" }, { value: "mixed", label: "Gemischt" },
-  ],
-  seats: Array.from({ length: 12 }, (_, index) => ({ value: String(index + 1), label: String(index + 1) })),
-  direction: [
-    ["0", "N", "N · 0°"], ["45", "NO", "NO · 45°"], ["90", "O", "O · 90°"], ["135", "SO", "SO · 135°"],
-    ["180", "S", "S · 180°"], ["225", "SW", "SW · 225°"], ["270", "W", "W · 270°"], ["315", "NW", "NW · 315°"],
-  ].map(([value, label, display]) => ({ value, label, display })),
-};
-
-function direction(value: number | null) {
-  if (value === null) return "Noch offen";
-  return `${["N", "NO", "O", "SO", "S", "SW", "W", "NW"][Math.round(value / 45) % 8]} · ${Math.round(value)}°`;
-}
-
 export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: BenchDetail; onlyFields?: Field[]; onChanged?: () => void | Promise<void> }) {
+  const t = useTranslations();
+  const yesNo: Choice[] = [{value: "yes", label: t("common.values.yes")}, {value: "no", label: t("common.values.no")}];
+  const choices: Record<Field, Choice[]> = {
+    backrest: yesNo, armrest: yesNo, covered: yesNo, wheelchair: yesNo, fireplaceNearby: yesNo, wasteBasketNearby: yesNo,
+    material: (["wood", "metal", "stone", "concrete", "plastic", "mixed"] as const).map(value => ({value, label: t(`bench.materials.${value}`)})),
+    seats: Array.from({length: 12}, (_, i) => ({value: String(i + 1), label: String(i + 1)})),
+    direction: [0, 45, 90, 135, 180, 225, 270, 315].map(degrees => ({value: String(degrees), label: compassDirection(degrees, t), display: compassDirection(degrees, t)})),
+  };
   const [active, setActive] = useState<Field | null>(null);
   const sourceValues: Record<string, string> = Object.fromEntries([
-    ...bench.properties.map((item) => [item.key, item.value]),
-    ["direction", direction(bench.directionDegrees)],
+    ...bench.properties.map((item) => [item.key, propertyValue(item, t)]),
+    ["direction", bench.directionDegrees === null ? t("common.values.open") : compassDirection(bench.directionDegrees, t)],
   ]);
   const [overrides, setOverrides] = useState<Record<string, { base: string; value: string }>>({});
   const values = Object.fromEntries(Object.entries(sourceValues).map(([field, value]) => [field, overrides[field]?.base === value ? overrides[field].value : value]));
@@ -47,8 +33,8 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fields = [
-    ...bench.properties.map((property) => ({ field: property.key as Field, label: property.label })),
-    { field: "direction" as const, label: "Blickrichtung" },
+    ...bench.properties.map((property) => ({ field: property.key as Field, label: propertyLabel(property, t) })),
+    { field: "direction" as const, label: t("bench.attributes.direction") },
   ];
   const choose = (field: Field, choice: Choice) => startTransition(async () => {
     setMessage(null);
@@ -60,13 +46,13 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
     setActive(null);
     if (onChanged) await onChanged();
   });
-  const known = Object.values(values).filter((value) => value && !/^(Unbekannt|Noch offen)$/i.test(value)).length;
+  const known = Object.values(values).filter((value) => value && value !== t("common.values.unknown") && value !== t("common.values.open")).length;
   return <div className="contribution-feature-list">
-    <p className="feature-progress" role="status">{known}/{fields.length} Angaben bekannt · Zum Ergänzen antippen</p>
+    <p className="feature-progress" role="status">{t("community.features.progress", {known, total: fields.length})}</p>
     {fields.filter(({ field }) => !onlyFields || onlyFields.includes(field)).map(({ field, label }) => <section key={field} className={active === field ? "is-open" : undefined}>
       <button type="button" aria-expanded={active === field} onClick={() => setActive(active === field ? null : field)}>
-        <span><small>{label}</small><strong>{values[field] === "Unbekannt" ? "Noch offen" : values[field]}</strong></span>
-        {mine.has(field) && <em><Check size={12} /> von dir</em>}
+        <span><small>{label}</small><strong>{values[field] === t("common.values.unknown") ? t("common.values.open") : values[field]}</strong></span>
+        {mine.has(field) && <em><Check size={12} /> {t("community.features.mine")}</em>}
         <ChevronDown size={16} aria-hidden="true" />
       </button>
       {active === field && <div className={`field-choice-grid is-${field}`}>

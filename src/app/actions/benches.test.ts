@@ -36,8 +36,9 @@ it("requires a review of nearby benches, returns the new ID, and detects a stale
 });
 it("does not save anonymously or accept an invalid location", async () => {
   const { addBench } = await import("./benches");
-  auth.requireUser.mockRejectedValue(new Error("Bitte anmelden."));
-  expect(await addBench(null, form())).toMatchObject({ ok: false, message: "Bitte anmelden." });
+  const { UserFacingError } = await import("@/i18n/action-error");
+  auth.requireUser.mockRejectedValue(new UserFacingError("common.errors.signIn"));
+  expect(await addBench(null, form())).toMatchObject({ ok: false, message: "Bitte melde dich zuerst an." });
   const outside = form(); outside.set("latitude", "51");
   expect(await addBench(null, outside)).toMatchObject({ ok: false });
   expect(database.prepare("SELECT count(*) n FROM benches WHERE name='Neues Bänkli'").get()).toEqual({ n: 0 });
@@ -49,4 +50,16 @@ it("excludes inactive benches and points outside the true 25 metre circle", asyn
   database.prepare("UPDATE benches SET active=1 WHERE id='osm-node-101'").run();
   // About 22 m north and 22 m east: inside the index square, outside the circle.
   expect(await getNearbyBenches(47.376938, 8.542122)).not.toEqual(expect.arrayContaining([expect.objectContaining({ id: "osm-node-101" })]));
+});
+
+it("isolates simultaneous request languages and translates validation without writing data", async () => {
+  const { addBench } = await import("./benches");
+  const { withTestLanguage } = await import("@/test/next-intl-server");
+  const invalid = form(); invalid.set("latitude", "51");
+  const languages = ["fr", "it", "rm", "de"] as const;
+  const results = await Promise.all(languages.map((language) => withTestLanguage(language, () => addBench(null, invalid))));
+  expect(results.map((result) => result.message)).toEqual([
+    "Vérifie la position.", "Controlla la posizione.", "Controllescha la posiziun.", "Bitte Standort prüfen.",
+  ]);
+  expect(database.prepare("SELECT count(*) n FROM benches WHERE name='Neues Bänkli'").get()).toEqual({ n: 0 });
 });

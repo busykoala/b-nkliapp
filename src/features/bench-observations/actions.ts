@@ -1,5 +1,9 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
+
+import { actionError, UserFacingError } from "@/i18n/action-error";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sqlite } from "@/db/client";
@@ -25,7 +29,7 @@ type BenchRow = { row_id: number; latitude: number; longitude: number };
 
 function benchRow(benchId: string) {
   const row = sqlite.prepare("SELECT row_id,latitude,longitude FROM benches WHERE id=? AND active=1").get(benchId) as BenchRow | undefined;
-  if (!row) throw new Error("Dieses Bänkli wurde nicht gefunden.");
+  if (!row) throw new UserFacingError("common.errors.benchNotFound");
   return row;
 }
 
@@ -45,14 +49,15 @@ function refresh(benchId: string) {
 }
 
 export async function submitLightObservation(benchId: string, choiceInput: unknown): Promise<ActionResult> {
+  const t = await getTranslations();
   const choice = lightSchema.safeParse(choiceInput);
-  if (!choice.success) return { ok: false, message: "Bitte wähle Sonne, Schatten oder Wechselhaft." };
+  if (!choice.success) return { ok: false, message: t("community.result.lightInvalid") };
   try {
     const user = await actor("light-observation", 12);
     const bench = benchRow(benchId);
     const now = benchObservationNow();
     const context = lightObservationContext(now, bench.latitude, bench.longitude);
-    if (!context) return { ok: false, message: "Lichteindrücke kannst du hier erst wieder bei Tageslicht melden." };
+    if (!context) return { ok: false, message: t("community.result.lightNight") };
     const { season, dayPhase } = context;
     const { easting, northing } = wgs84ToLv95(bench.latitude, bench.longitude);
     const cloudCover = readWeatherSample("CLCT", easting, northing)?.value ?? null;
@@ -68,13 +73,14 @@ export async function submitLightObservation(benchId: string, choiceInput: unkno
         VALUES(?,?,?,?,?,?,?,?)`).run(bench.row_id, user.id, choice.data, now.toISOString(), season, dayPhase, cloudCover, now.toISOString());
     }
     refresh(benchId);
-    return { ok: true, message: "Danke – dein Lichteindruck ist eingetragen." };
+    return { ok: true, message: t("community.result.lightSaved") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Der Lichteindruck konnte nicht gespeichert werden." };
+    return { ok: false, message: actionError(t, error, "community.result.lightFailed") };
   }
 }
 
 export async function undoLightObservation(benchId: string): Promise<ActionResult> {
+  const t = await getTranslations();
   try {
     const user = await requireUser();
     const bench = benchRow(benchId);
@@ -82,9 +88,9 @@ export async function undoLightObservation(benchId: string): Promise<ActionResul
       SELECT id FROM bench_light_observations WHERE bench_row_id=? AND user_id=? AND retracted_at IS NULL ORDER BY observed_at DESC LIMIT 1
     )`).run(benchObservationNow().toISOString(), bench.row_id, user.id);
     refresh(benchId);
-    return { ok: true, message: "Deine Beobachtung wurde zurückgenommen." };
+    return { ok: true, message: t("community.result.observationUndone") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Die Beobachtung konnte nicht zurückgenommen werden." };
+    return { ok: false, message: actionError(t, error, "community.result.undoFailed") };
   }
 }
 
@@ -107,34 +113,37 @@ function replaceViewObservation(benchRowId: number, userId: number, kind: "agree
 }
 
 export async function submitViewAgreement(benchId: string): Promise<ActionResult> {
+  const t = await getTranslations();
   try {
     const user = await actor("view-observation", 8);
     const bench = benchRow(benchId);
     replaceViewObservation(bench.row_id, user.id, "agreement", null);
     refresh(benchId);
-    return { ok: true, message: "Danke – deine Bestätigung hilft bei der Einordnung." };
+    return { ok: true, message: t("community.result.observationConfirmed") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Die Bestätigung konnte nicht gespeichert werden." };
+    return { ok: false, message: actionError(t, error, "community.result.observationConfirmFailed") };
   }
 }
 
 export async function submitViewObservation(benchId: string, input: unknown): Promise<ActionResult> {
+  const t = await getTranslations();
   const values = viewSchema.safeParse(input);
-  if (!values.success) return { ok: false, message: "Bitte vervollständige deinen Eindruck." };
+  if (!values.success) return { ok: false, message: t("community.result.viewInvalid") };
   try {
     const user = await actor("view-observation", 8);
     const bench = benchRow(benchId);
     replaceViewObservation(bench.row_id, user.id, "correction", values.data);
     refresh(benchId);
-    return { ok: true, message: "Danke – dein Eindruck ist eingetragen." };
+    return { ok: true, message: t("community.result.viewSaved") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Der Eindruck konnte nicht gespeichert werden." };
+    return { ok: false, message: actionError(t, error, "community.result.viewFailed") };
   }
 }
 
 export async function deleteOwnObservation(benchId: string, kindInput: unknown): Promise<ActionResult> {
+  const t = await getTranslations();
   const kind = z.enum(["light", "view"]).safeParse(kindInput);
-  if (!kind.success) return { ok: false, message: "Unbekannte Beobachtung." };
+  if (!kind.success) return { ok: false, message: t("community.result.observationInvalid") };
   try {
     const user = await requireUser();
     const bench = benchRow(benchId);
@@ -148,8 +157,8 @@ export async function deleteOwnObservation(benchId: string, kindInput: unknown):
       refreshEnvironmentEstimate(sqlite, bench.row_id);
     }
     refresh(benchId);
-    return { ok: true, message: "Deine Beobachtung wurde gelöscht." };
+    return { ok: true, message: t("community.result.observationDeleted") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Die Beobachtung konnte nicht gelöscht werden." };
+    return { ok: false, message: actionError(t, error, "community.result.observationDeleteFailed") };
   }
 }

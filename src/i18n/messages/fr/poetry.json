@@ -1,0 +1,200 @@
+{
+  "light": {
+    "moon": {
+      "v1": "Le clair de lune repose sur le banc",
+      "v2": "Une lumière argentée effleure ce lieu paisible",
+      "v3": "La lune dessine de discrets contours",
+      "v4": "Un doux clair de lune trouve le banc",
+      "v5": "La nuit dépose de l’argent sur ce lieu",
+      "v6": "Le clair de lune se rassemble au bord du chemin",
+      "v7": "Une lune claire veille sur ce lieu",
+      "v8": "Le banc rêve dans la lumière de la lune"
+    },
+    "night": {
+      "v1": "Ce lieu repose sous les étoiles",
+      "v2": "La nuit paisible enveloppe le banc",
+      "v3": "L’obscurité rend ce lieu tout silencieux",
+      "v4": "Le banc attend sous le vaste ciel nocturne",
+      "v5": "La nuit s’arrête ici un instant",
+      "v6": "Un lieu paisible dort sous le ciel sombre"
+    },
+    "unknown": {
+      "v1": "La lumière et l’ombre gardent encore ici un secret",
+      "v2": "Ce lieu attend encore sa trace de lumière",
+      "v3": "La lumière de ce lieu reste à explorer",
+      "v4": "Soleil et ombre sont encore en découverte ici"
+    },
+    "sun": {
+      "v1": "La chaleur du soleil repose sur le banc",
+      "v2": "Une lumière dorée invite à rester",
+      "v3": "Le soleil réchauffe ce lieu paisible",
+      "v4": "Une lumière claire danse sur ce lieu",
+      "v5": "Un coin de soleil chaud attend ici",
+      "v6": "Le banc recueille la lumière du jour",
+      "v7": "Le soleil dessine de la chaleur sur le chemin",
+      "v8": "Le jour brille sur ce banc"
+    },
+    "building": {
+      "v1": "Une maison offre une ombre fraîche au banc",
+      "v2": "Une ombre protectrice repose sur ce lieu",
+      "v3": "Les maisons rendent ici la lumière plus douce",
+      "v4": "Entre les murs repose un instant de fraîcheur",
+      "v5": "L’ombre paisible d’un bâtiment invite à la pause"
+    },
+    "vegetation": {
+      "v1": "Les feuilles peignent des ombres sur le banc",
+      "v2": "Une ombre verte se balance sur ce lieu",
+      "v3": "La lumière murmure à travers les feuilles",
+      "v4": "Sous les feuilles, le monde devient silencieux",
+      "v5": "Des ombres dansantes reposent sur ce lieu",
+      "v6": "Une voûte de feuilles tamise le soleil"
+    },
+    "terrain": {
+      "v1": "La pente retient encore le soleil",
+      "v2": "Le terrain offre une ombre fraîche à ce lieu",
+      "v3": "Derrière les hauteurs, la lumière attend",
+      "v4": "L’horizon garde une ombre paisible"
+    },
+    "roof": {
+      "v1": "Un petit toit protège ce lieu paisible",
+      "v2": "À l’abri du ciel, le banc attend",
+      "v3": "Sous un toit, le jour trouve le repos",
+      "v4": "Le banc repose à l’abri de son toit"
+    },
+    "shade": {
+      "v1": "Une ombre paisible invite à s’attarder",
+      "v2": "La lumière devient ici toute discrète",
+      "v3": "Un instant de fraîcheur attend",
+      "v4": "Une ombre douce enlace ce lieu",
+      "v5": "Ici, le jour souffle un peu",
+      "v6": "Le banc repose à l’écart de la lumière vive"
+    }
+  },
+  "weather": {
+    "snow": {
+      "v1": "Les flocons adoucissent le monde",
+      "v2": "La neige tombe sans bruit",
+      "v3": "Le blanc de l’hiver se rassemble au bord du chemin",
+      "v4": "De discrets flocons cherchent le sol",
+      "v5": "La neige assourdit chaque pas"
+    },
+    "rain": {
+      "v1": "La pluie dessine des cercles dans le silence",
+      "v2": "Les gouttes racontent le ciel",
+      "v3": "La pluie fait doucement briller ce lieu",
+      "v4": "Un éclat humide repose sur le chemin",
+      "v5": "Les gouttes tracent des lignes argentées"
+    },
+    "mixed": {
+      "v1": "La pluie et les flocons se rencontrent",
+      "v2": "Le ciel alterne entre eau et blanc",
+      "v3": "La neige mouillée passe doucement",
+      "v4": "Les flocons fondent sur le chemin paisible"
+    },
+    "overcast": {
+      "v1": "Les nuages rapprochent le ciel",
+      "v2": "Un doux ciel nuageux s’étend au-dessus",
+      "v3": "La lumière traverse doucement les nuages épais",
+      "v4": "Les nuages rendent le jour doux et paisible"
+    },
+    "cloudy": {
+      "v1": "Les nuages passent lentement dans la lumière",
+      "v2": "Le soleil et les nuages se relaient doucement",
+      "v3": "Quelques nuages traversent ce lieu",
+      "v4": "Des îlots de lumière parcourent le paysage"
+    },
+    "wind": {
+      "v1": "Le vent emporte l’instant",
+      "v2": "Une brise fraîche caresse ce lieu",
+      "v3": "Le vent fait onduler doucement le paysage",
+      "v4": "L’air est éveillé et en mouvement"
+    }
+  },
+  "view": {
+    "mountains": {
+      "v1": "Les montagnes veillent au loin",
+      "v2": "Les sommets portent le regard vers l’horizon",
+      "v3": "Les Alpes ouvrent une vaste perspective",
+      "v4": "Les lignes des montagnes flottent au-dessus du pays",
+      "v5": "Le regard monte vers les sommets",
+      "v6": "Les montagnes lointaines donnent de l’espace à ce lieu",
+      "v7": "Les montagnes restent immobiles à l’horizon",
+      "v8": "Les sommets retiennent le regard un instant"
+    },
+    "hills": {
+      "v1": "De douces collines portent le regard",
+      "v2": "Des hauteurs vertes bordent le lointain",
+      "v3": "L’horizon ondule en lignes douces",
+      "v4": "Les collines roulent doucement au loin",
+      "v5": "De douces hauteurs encadrent ce lieu",
+      "v6": "Le regard suit les collines paisibles"
+    },
+    "water": {
+      "v1": "L’eau emporte le regard",
+      "v2": "Au bord de l’eau, le temps s’élargit",
+      "v3": "La lumière voyage sur l’eau",
+      "v4": "L’eau offre du repos au regard",
+      "v5": "L’eau et le ciel ne font plus qu’un",
+      "v6": "La rive laisse dériver l’instant",
+      "v7": "Au-dessus de l’eau, le lointain s’ouvre"
+    },
+    "forest": {
+      "v1": "La forêt murmure tout autour",
+      "v2": "Le calme habite entre les arbres",
+      "v3": "La verdure tient le monde à distance un instant",
+      "v4": "Les feuilles encadrent ce lieu paisible",
+      "v5": "La forêt respire tout près",
+      "v6": "Entre les troncs, le temps s’oublie"
+    },
+    "open": {
+      "v1": "Le ciel élargit le regard",
+      "v2": "L’étendue repose devant les yeux",
+      "v3": "L’horizon peut rester ouvert",
+      "v4": "Le regard trouve de l’espace libre",
+      "v5": "Ici, le ciel devient un peu plus grand",
+      "v6": "Le paysage s’ouvre tout doucement"
+    },
+    "limited": {
+      "v1": "La proximité rend ce lieu accueillant",
+      "v2": "Le regard reste proche et l’instant bien ici",
+      "v3": "À l’abri du lointain, le calme s’installe",
+      "v4": "Ce petit recoin garde le monde tout près",
+      "v5": "Près du chemin, le regard trouve le repos"
+    },
+    "quiet": {
+      "v1": "Un chemin paisible passe à côté",
+      "v2": "Le monde devient silencieux un instant",
+      "v3": "Ici, l’instant peut rester",
+      "v4": "Un petit lieu pour reprendre souffle",
+      "v5": "Le temps passe ici un peu plus lentement",
+      "v6": "Ce lieu attend sans se presser"
+    }
+  },
+  "seat": {
+    "roof": {
+      "v1": "Sous son toit, la pause peut durer plus longtemps",
+      "v2": "Un petit toit protège ce lieu",
+      "v3": "À l’abri, le banc attend une pause",
+      "v4": "On s’assied ici un peu mieux protégé"
+    },
+    "support": {
+      "v1": "Le banc accueille les épaules fatiguées à bras ouverts",
+      "v2": "Ici, le dos et les mains peuvent se reposer",
+      "v3": "Le banc est prêt pour une longue pause",
+      "v4": "L’instant s’adosse confortablement"
+    },
+    "backrest": {
+      "v1": "Ici, le dos aussi peut se reposer",
+      "v2": "Le dossier invite à rester plus longtemps",
+      "v3": "Adossé, un arrêt devient une pause",
+      "v4": "Le banc offre du repos au dos",
+      "v5": "On contemple ici le lointain en toute détente"
+    },
+    "wood": {
+      "v1": "Du bois chaleureux attend une petite pause",
+      "v2": "Le bois porte les traces de nombreux instants paisibles",
+      "v3": "Un simple banc de bois invite à rester",
+      "v4": "Le bois rend cet arrêt un peu plus chaleureux"
+    }
+  }
+}

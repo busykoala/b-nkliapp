@@ -1,0 +1,12 @@
+{
+  "metadata": "I miei luoghi preferiti · Bänkli App",
+  "eyebrow": "Per la prossima pausa",
+  "title": "I miei luoghi preferiti",
+  "intro": "Tutte le panchine che hai salvato. Questa lista è visibile solo a te.",
+  "label": "Panchine salvate",
+  "removed": "{place} · non più presente",
+  "place": "Un luogo sulla mappa",
+  "end": "Nessun altro luogo preferito.",
+  "empty": "Ancora nessun luogo preferito? Apri una panchina sulla mappa e tocca «{action}».",
+  "more": "Altri luoghi preferiti"
+}

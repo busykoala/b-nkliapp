@@ -8,7 +8,7 @@ export type DetailRow = Record<string, string | number | null>;
 
 export function readDetailMetadata(benchId: string) {
   return sqlite.prepare(`
-    SELECT coalesce(b.name,b.description,'Sitzbank') title,
+    SELECT coalesce(nullif(b.name,''),nullif(b.description,'Sitzbank'),'') title,
       CASE WHEN json_array_length(e.terrain_horizon_profile)=72 THEN e.view_score ELSE NULL END view_score
     FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
     WHERE b.id=? AND b.active=1

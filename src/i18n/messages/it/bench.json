@@ -1,0 +1,356 @@
+{
+  "attributes": {
+    "backrest": "Schienale",
+    "armrest": "Braccioli",
+    "covered": "Coperta",
+    "wheelchair": "Utilizzabile in sedia a rotelle",
+    "fireplaceNearby": "Focolare vicino",
+    "wasteBasketNearby": "Cestino nelle vicinanze",
+    "material": "Materiale",
+    "seats": "Posti a sedere",
+    "direction": "Direzione dello sguardo"
+  },
+  "materials": {
+    "wood": "Legno",
+    "metal": "Metallo",
+    "stone": "Pietra",
+    "concrete": "Calcestruzzo",
+    "plastic": "Plastica",
+    "mixed": "Misto"
+  },
+  "sheet": {
+    "resize": "Espandi o riduci i dettagli",
+    "close": "Chiudi la panchina",
+    "loading": "Esplorazione del luogo",
+    "loadingAccessible": "Caricamento della panchina",
+    "unavailable": "Questo luogo si nasconde per un momento.",
+    "retry": "Guarda di nuovo",
+    "label": "Dettagli della panchina"
+  },
+  "directions": {
+    "n": "N",
+    "ne": "NE",
+    "e": "E",
+    "se": "SE",
+    "s": "S",
+    "sw": "SO",
+    "w": "O",
+    "nw": "NO"
+  },
+  "details": {
+    "title": "Dettagli",
+    "bench": "Panchina",
+    "light": "Luce",
+    "view": "Vista",
+    "weather": "Meteo",
+    "unknownFeatures": "Dotazioni ancora sconosciute",
+    "night": "Ora è notte",
+    "unknownLight": "Luce ancora da determinare",
+    "sunEstimate": "Sole · stima",
+    "shadeEstimate": "Ombra · stima",
+    "unknownView": "La vista è ancora da esplorare",
+    "forecast": "{temperature} °C · previsione",
+    "unknownWeather": "Dati meteo non ancora disponibili"
+  },
+  "panel": {
+    "eyebrow": "Sedersi qui",
+    "title": "Cosa offre la panchina",
+    "unknown": "Questa panchina è ancora da esplorare",
+    "missing": "{count, plural, one {Una caratteristica non è ancora stata registrata.} other {# caratteristiche non sono ancora state registrate.}}",
+    "directionUnknown": "Il paesaggio viene quindi valutato in tutte le direzioni.",
+    "directionKnown": "La vista viene ponderata in questa direzione."
+  },
+  "location": {
+    "title": "Luogo e posizione",
+    "elevation": "Altitudine",
+    "metresAboveSea": "{value} m s.l.m.",
+    "place": "Località",
+    "municipality": "Comune politico",
+    "municipalityValue": "{name} · UST {id}",
+    "canton": "Cantone",
+    "district": "Distretto",
+    "nearbyName": "Toponimo nelle vicinanze",
+    "sourceUpdated": "Fonte aggiornata",
+    "imported": "Importato da noi",
+    "osmVersion": "Versione OSM",
+    "coordinates": "Coordinate"
+  },
+  "summary": {
+    "title": "A colpo d’occhio",
+    "unconfirmed": "Presenza non ancora confermata",
+    "today": "Confermata oggi",
+    "yesterday": "Confermata ieri",
+    "daysAgo": "Confermata {days, plural, one {un giorno fa} other {# giorni fa}}",
+    "noBackrest": "Senza schienale",
+    "unknownBackrest": "Schienale sconosciuto",
+    "night": "Notte",
+    "unknownLight": "Luce sconosciuta",
+    "sun": "Sole stimato",
+    "shade": "Ombra stimata",
+    "lowConfidence": "Bassa affidabilità della stima della luce",
+    "lightMethod": "Calcolato dal terreno e dai dintorni; le nuvole possono cambiare la luce",
+    "uncertain": " · incerto",
+    "noWheelchair": "Non utilizzabile in sedia a rotelle",
+    "unknownWheelchair": "Uso in sedia a rotelle sconosciuto",
+    "quiet": "Tranquillità {score}/5",
+    "unknownQuiet": "Tranquillità non valutata",
+    "accessNote": "Accesso: idoneità per sedie a rotelle non verificata.",
+    "confirming": "Conferma …",
+    "mine": "Confermata da te oggi",
+    "confirmFailed": "Impossibile salvare la conferma. Riprova."
+  },
+  "horizon": {
+    "label": "Orizzonte: {open} per cento libero, {buildings} per cento edifici, {plants} per cento vegetazione",
+    "title": "Cosa caratterizza l’orizzonte",
+    "open": "libero",
+    "openView": "Vista libera",
+    "buildings": "Edifici",
+    "trees": "Alberi"
+  },
+  "views": {
+    "mountains": "Vista sulle montagne",
+    "hills": "Vista sulle colline",
+    "water": "Vista sull’acqua",
+    "forest": "Vista sul bosco",
+    "panorama": "Vista panoramica",
+    "limited": "Vista limitata",
+    "lake": "Vista sul lago",
+    "woodland": "Ambiente boschivo",
+    "ordinary": "Nessuna vista particolare",
+    "nearbyWater": "Acqua nei dintorni",
+    "unknown": "Vista ancora sconosciuta"
+  },
+  "light": {
+    "estimatedSun": "Sole stimato",
+    "directSun": "Sole diretto",
+    "today": "Luce oggi",
+    "estimatedWindows": "Fasce di sole stimate",
+    "sunWindows": "Fasce di sole",
+    "noSun": "Nessun sole diretto calcolato oggi",
+    "shadeWindows": "Fasce d’ombra",
+    "noShade": "Nessuna fascia d’ombra calcolata oggi",
+    "durationSeasons": "Durata e stagioni",
+    "detailsSummary": "Totali, ostacoli e dati del cielo",
+    "balance": "{sun} di sole diretto e {shade} d’ombra durante il giorno",
+    "shade": "Ombra",
+    "skyValues": "Dati del cielo",
+    "sunrise": "Alba",
+    "sunset": "Tramonto",
+    "directFrom": "Sole diretto dalle",
+    "directUntil": "Sole diretto fino alle",
+    "noDirect": "Nessun sole diretto",
+    "altitude": "Altezza del sole",
+    "azimuth": "Direzione del sole",
+    "moonlight": "Luce lunare",
+    "moonrise": "Sorgere della luna",
+    "moonset": "Tramonto della luna",
+    "timeline": "Alba {sunrise}, tramonto {sunset}. Sorgere della luna {moonrise}, tramonto {moonset}.",
+    "seasons": {
+      "spring": "Primavera",
+      "summer": "Estate",
+      "autumn": "Autunno",
+      "winter": "Inverno",
+      "label": "Durata tipica del sole diretto per stagione"
+    },
+    "state": {
+      "moon": "Chiaro di luna su questo luogo",
+      "night": "La notte su questo luogo",
+      "unknown": "La luce è ancora da esplorare",
+      "sun": "La panchina è al sole diretto",
+      "shade": "La panchina è all’ombra"
+    },
+    "explanation": {
+      "nightEstimate": "Il modello indicava {duration} di sole diretto possibile.",
+      "night": "Oggi erano possibili {duration} di sole diretto.",
+      "unknown": "Mancano alcuni dati sui dintorni per una conclusione affidabile.",
+      "clouds": "Geometricamente libero, ma le nuvole attenuano la luce.",
+      "sun": "I raggi del sole raggiungono questo luogo."
+    },
+    "causes": {
+      "frei": "Il cielo è libero; l’origine dell’ombra resta incerta.",
+      "nacht": "È notte.",
+      "überdacht": "L’ombra proviene probabilmente dalla copertura.",
+      "gebäude": "L’ombra proviene probabilmente da un edificio.",
+      "vegetation": "L’ombra proviene probabilmente da alberi e vegetazione.",
+      "gelände": "L’ombra proviene probabilmente dal terreno.",
+      "unbekannt": "L’origine dell’ombra è ancora sconosciuta."
+    },
+    "confidence": {
+      "hoch": "Calcolato da terreno, edifici e vegetazione · nuvole considerate separatamente.",
+      "mittel": "Buona approssimazione geometrica della luce · nuvole considerate separatamente.",
+      "niedrig": "Stima provvisoria · mancano ancora alcuni dati sui dintorni."
+    }
+  },
+  "weather": {
+    "title": "Meteo e tranquillità",
+    "temperatureAt": "{temperature}° a {location}",
+    "unknown": "Il cielo resta da scoprire",
+    "rain": "Precipitazioni",
+    "wind": "Vento",
+    "humidity": "Umidità",
+    "snow": "Neve",
+    "updated": "Aggiornato: {date}",
+    "empty": "Temperatura, nuvole e precipitazioni appariranno qui quando i dati saranno disponibili.",
+    "layers": {
+      "high": "alte",
+      "mid": "medie",
+      "low": "basse",
+      "total": "totale"
+    },
+    "cloudCover": "Copertura nuvolosa: {percent} per cento",
+    "quiet": {
+      "title": "Tranquillità sul posto",
+      "empty": "Ancora nessun parere",
+      "unknown": "La tranquillità di questo luogo non è ancora stata valutata.",
+      "community": "Tranquillità secondo chi c’è stato",
+      "score": "{score} su 5",
+      "explanation": "Valutazione soggettiva, separata dai dati sul traffico."
+    },
+    "precipitation": {
+      "none": "asciutto",
+      "rain": "Pioggia",
+      "snow": "Neve",
+      "mixed": "Pioggia mista a neve",
+      "unknown": "Precipitazioni ancora incerte"
+    },
+    "clouds": {
+      "overcast": "Coperto",
+      "mostly": "Molto nuvoloso",
+      "cloudy": "Nuvoloso",
+      "few": "Poco nuvoloso",
+      "clear": "Sereno"
+    },
+    "temperatureHere": "{temperature}° presso questa panchina"
+  },
+  "view": {
+    "title": "Vista e dintorni",
+    "impression": "Impressione",
+    "empty": "La vista è ancora da esplorare.",
+    "confidence": {
+      "hoch": "Alta affidabilità",
+      "mittel": "Affidabilità media",
+      "niedrig": "Bassa affidabilità"
+    },
+    "community": "{count, plural, one {Un’impressione di una persona sul posto} other {# impressioni di persone sul posto}} · {confidence}",
+    "communityConfidence": {
+      "high": "ben supportato",
+      "medium": "supportato con cautela",
+      "low": "prima tendenza"
+    },
+    "details": "La vista in dettaglio",
+    "detailsSummary": "Misure, orizzonte e dintorni",
+    "metrics": {
+      "directions": "Direzioni libere",
+      "sky": "Apertura del cielo",
+      "relief": "Rilievo del terreno",
+      "water": "Acqua visibile",
+      "naturalness": "Ambiente naturale",
+      "remoteness": "Distanza dai disturbi",
+      "empty": "Mancano ancora punti di misura sufficienti per la vista.",
+      "label": "Componenti della valutazione della vista"
+    },
+    "water": "Acqua",
+    "path": "Sentiero",
+    "inForest": "Nel bosco",
+    "outsideForest": "Fuori dal bosco",
+    "photos": "Integrato con foto",
+    "coverage": {
+      "title": "Area di analisi",
+      "terrain": "Dintorni e terreno fino a 20 km",
+      "near": "Dintorni"
+    },
+    "buildingHorizon": "Edifici all’orizzonte",
+    "vegetationHorizon": "Vegetazione all’orizzonte",
+    "buildingCount": "Edifici entro 100 m",
+    "canopyCover": "Copertura arborea",
+    "medianVegetation": "Altezza mediana della vegetazione",
+    "maxVegetation": "Vegetazione più alta",
+    "imageHints": "Indizi dalle immagini dei dintorni",
+    "imageConfidence": {
+      "low": "indizio debole",
+      "medium": "indizio supportato",
+      "high": "supportato più volte"
+    },
+    "imageExplanation": "Indizi del modello, non misurazioni. I valori grezzi del modello visivo non sono probabilità calibrate.",
+    "score": "Vista: {score} su 5",
+    "outOfFive": "su 5",
+    "directly": "direttamente",
+    "canopy": {
+      "label": "Copertura arborea nei dintorni",
+      "title": "Chiome attorno alla panchina",
+      "none": "Cielo libero",
+      "partial": "Sotto singoli alberi",
+      "dense": "Chiome fitte",
+      "unknown": "Presenza di alberi ancora incerta"
+    },
+    "headline": {
+      "mountains": "Le montagne aprono l’orizzonte",
+      "hills": "Le colline disegnano la lontananza",
+      "water": "L’acqua si offre alla vista",
+      "limited": "Lo sguardo resta nei dintorni",
+      "open": "Fin dove si apre lo sguardo"
+    },
+    "land": {
+      "waterfront": "Direttamente sull’acqua",
+      "forest": "Bosco",
+      "forest_edge": "Margine del bosco",
+      "park": "Parco",
+      "open": "Terreno aperto",
+      "urban": "In paese",
+      "mixed": "Paesaggio misto",
+      "unknown": "Dintorni ancora incerti"
+    },
+    "explanation": {
+      "openness": "Orizzonte ampio e poco ostruito",
+      "relief": "Rilievo marcato di montagne o colline",
+      "water": "Visuale libera verso uno specchio d’acqua",
+      "naturalness": "Ambiente prevalentemente naturale",
+      "community": "Le impressioni di {count, plural, one {una persona sono} other {# persone sono}} state integrate con cautela.",
+      "model": "Calcolato da terreno, copertura del suolo e dintorni"
+    },
+    "traits": {
+      "buildings": "Edifici nei dintorni",
+      "roadRail": "Strada o ferrovia nei dintorni"
+    }
+  },
+  "story": {
+    "reportFailed": "Segnalazione non riuscita. Riprova.",
+    "back": "Torna al luogo",
+    "created": "Panchina aggiunta",
+    "remaining": " · ancora {count, plural, one {una conferma} other {# conferme}}",
+    "confirmed": " · confermata",
+    "unverified": "Appena scoperta · non ancora confermata",
+    "directions": "Percorso per arrivare qui",
+    "contribute": "Contribuisci",
+    "join": "Partecipa",
+    "ratings": "Vedi le recensioni",
+    "nextTitle": "Cosa puoi ancora aggiungere?",
+    "nextDescription": "Questi dati aiutano per la prossima pausa.",
+    "rateIntent": "Lasciare una recensione",
+    "confirmIntent": "Confermare la panchina",
+    "contributeIntent": "Contribuire alla panchina",
+    "quietPlace": "Un luogo quieto",
+    "ratingMine": "La tua valutazione è {score} su 5. Modifica la recensione",
+    "ratingEmpty": "Non ancora valutata. Lascia la prima recensione",
+    "ratingSummary": "Valutazione {score} su 5 con {count, plural, one {un voto} other {# voti}}. Lascia la tua valutazione"
+  },
+  "landscape": {
+    "sun": "La panchina è al sole",
+    "snowfall": "Nevicata",
+    "lake": "con vista sul lago",
+    "river": "con vista sul fiume",
+    "mountains": "con vista sulle montagne",
+    "hills": "con vista sulle colline",
+    "forest": "nel bosco",
+    "backrest": "con schienale",
+    "noBackrest": "senza schienale",
+    "weather": "{temperature} gradi Celsius, {precipitation}, MeteoSvizzera",
+    "moon": "Luna illuminata al {percent} per cento"
+  },
+  "page": {
+    "description": "Panchina con analisi del sole e dei dintorni in Bänkli App.",
+    "ratedDescription": "Panchina con vista valutata {score}/5 in Bänkli App.",
+    "backToFeed": "Torna al feed delle panchine",
+    "onMap": "Sulla mappa"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "pace": {
+    "leisurely": "Tranquille",
+    "normal": "Normal",
+    "brisk": "Soutenu"
+  },
+  "transfer": {
+    "tones": {
+      "plenty": "Bonne marge",
+      "fits": "Adapté",
+      "tight": "Serré",
+      "insufficient": "Insuffisant",
+      "unknown": "Difficile à estimer"
+    },
+    "evidence": {
+      "official": "Temps minimal de correspondance officiel GTFS",
+      "walk": "Estimation du trajet à pied",
+      "unknown": "Pas de durée de marche ni de temps minimal fiable"
+    },
+    "none": "Sans changement",
+    "unknown": "Temps de correspondance encore incertain",
+    "tightest": "Correspondance la plus serrée : {duration} de marge · souhaité +{buffer} min"
+  },
+  "warnings": {
+    "start": "Départ : {distance} m jusqu’au chemin cartographié. Vérifie l’accès sur place.",
+    "end": "Arrivée : {distance} m jusqu’au chemin cartographié. Vérifie l’accès sur place.",
+    "via": "Étape : {distance} m jusqu’au chemin cartographié. Vérifie l’accès sur place.",
+    "walkUnverified": "Trajet à pied et durée non vérifiés.",
+    "connectionUnverified": "Chemin entre ces arrêts non vérifié.",
+    "departurePlatform": "Départ : voie/quai {actual} au lieu de {scheduled} (prévision).",
+    "arrivalPlatform": "Arrivée : voie/quai {actual} au lieu de {scheduled} (prévision)."
+  },
+  "instructions": {
+    "continue": "Continuer tout droit",
+    "left": "Tourner à gauche",
+    "right": "Tourner à droite",
+    "slightLeft": "Prendre légèrement à gauche",
+    "slightRight": "Prendre légèrement à droite",
+    "sharpLeft": "Tourner franchement à gauche",
+    "sharpRight": "Tourner franchement à droite",
+    "keepLeft": "Rester à gauche",
+    "keepRight": "Rester à droite",
+    "uTurn": "Faire demi-tour",
+    "arrive": "Destination atteinte",
+    "via": "Étape atteinte",
+    "roundaboutEnter": "Entrer dans le giratoire",
+    "roundaboutExit": "Quitter le giratoire",
+    "roundaboutNumber": "Dans le giratoire, prendre la sortie {exit}",
+    "ferry": "Prendre le ferry",
+    "leaveFerry": "Quitter le ferry · {instruction}",
+    "unknown": "Suivre le chemin indiqué sur la carte",
+    "street": "{instruction} · {street}",
+    "towards": "{instruction} · direction {destination}"
+  },
+  "controls": {
+    "options": "Options",
+    "pace": "Ton rythme de marche",
+    "any": "Peu importe",
+    "minutes": "env. {minutes} min",
+    "easy": "Chemins faciles",
+    "t2": "Sentiers de montagne jusqu’à T2",
+    "difficulty": "Difficulté",
+    "time": "Départ (heure suisse ; vide = maintenant)",
+    "goodToKnow": "Bon à savoir",
+    "directions": "Description du chemin"
+  },
+  "errors": {
+    "time": "Cette heure suisse n’existe pas. Vérifie-la."
+  },
+  "labels": {
+    "start": "Départ",
+    "startReturn": "Départ et retour",
+    "transit": "Transports publics",
+    "waypoint": "Point de passage"
+  },
+  "origin": {
+    "title": "D’où pars-tu ?",
+    "change": "Modifier",
+    "input": "Départ : adresse ou arrêt",
+    "placeholder": "Adresse ou arrêt",
+    "results": "Points de départ",
+    "station": "Arrêt",
+    "address": "Adresse",
+    "current": "Ma position",
+    "mapHint": "Ou touche un arrêt sur la carte.",
+    "pending": "Recherche de points de départ…",
+    "searchFailed": "Recherche momentanément indisponible.",
+    "locating": "Recherche de la position…",
+    "choose": "Choisis une adresse ou un arrêt.",
+    "unavailable": "Position indisponible. Choisis une adresse ou un arrêt.",
+    "accuracy": "Position précise à environ {meters} m seulement. Vérifie-la."
+  }
+}

@@ -1,5 +1,9 @@
 "use client";
 
+import { formatDate } from "@/i18n/date";
+import { useFormatter, useTranslations } from "next-intl";
+
+import type { MessageKey, Translator } from "@/i18n/types";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Flag, MessageCircleHeart, Star } from "lucide-react";
@@ -18,15 +22,16 @@ import { PhotoGallery } from "./photo-gallery";
 import { galleryImageUrl } from "@/features/bench-photos/media-source";
 import { BenchPlaceCommunity } from "./bench-place-community";
 
-const correctionLabels: Record<string, string> = {
-  properties: "Ausstattung",
-  condition: "Zustand",
-  location: "Position",
-  removed: "Nicht mehr vorhanden",
-  environment: "Umgebung, Aussicht oder Licht",
+const correctionLabels: Record<string, MessageKey> = {
+  properties: "community.correction.fields.properties",
+  condition: "community.correction.fields.condition",
+  location: "community.correction.fields.location",
+  removed: "community.correction.fields.removed",
+  environment: "community.correction.fields.environment",
 };
 
 export function BenchDetailContent({ bench, user, onBenchChange, onJourney, created = false }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; created?: boolean }) {
+  const t = useTranslations();
   const router = useRouter();
   const [community, setCommunity] = useState(false);
   const [contributeOpen, setContributeOpen] = useState(false);
@@ -49,7 +54,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
       const result = await reportContribution(type, id);
       setStatus(result.message);
       if (result.ok) setReported((current) => new Set(current).add(`${type}-${id}`));
-    } catch { setStatus("Meldung fehlgeschlagen. Bitte erneut versuchen."); }
+    } catch { setStatus(t("bench.story.reportFailed")); }
   });
   useEffect(() => {
     if (community) detailRef.current?.parentElement?.scrollTo({ top: 0, behavior: "smooth" });
@@ -57,30 +62,30 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
   useEffect(() => {
     if (created) detailRef.current?.querySelector(".bench-created-status")?.scrollIntoView({ block: "start" });
   }, [created]);
-  const poem = scenePoem(bench);
+  const poem = scenePoem(bench, t);
   const missingFields = bench.properties.filter((item) => /^(Unbekannt|Noch offen)$/i.test(item.value)).slice(0, 3).map((item) => item.key);
   return <div ref={detailRef} className="calm-detail pb-8">
     {community ? <>
-      <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> Zum Platz</button>
+      <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> {t("bench.story.back")}</button>
       <Community bench={bench} report={report} reported={reported} user={user} onContribute={() => contribute("rating")} />
     </> : <>
       <section className="bench-story-card">
         <BenchLandscape bench={bench}><RatingEntry bench={bench} onOpen={() => contribute("rating")} /></BenchLandscape>
         <header className="calm-title">
-          {created ? <p role="status" className="bench-created-status">Bänkli eingetragen{bench.verificationStatus === "unverified" ? ` · noch ${Math.max(0, bench.verificationThreshold - bench.confirmationCount)} Bestätigungen` : " · bestätigt"}</p>
-            : bench.verificationStatus === "unverified" && <p className="unverified-note">Neu entdeckt · noch unbestätigt</p>}
-          <div className="calm-title-row"><h2>{bench.title}</h2></div>
-          <div className="calm-title-meta"><p>{placeLine(bench)}</p></div>
+          {created ? <p role="status" className="bench-created-status">{t("bench.story.created")}{bench.verificationStatus === "unverified" ? t("bench.story.remaining", {count: Math.max(0, bench.verificationThreshold - bench.confirmationCount)}) : t("bench.story.confirmed")}</p>
+            : bench.verificationStatus === "unverified" && <p className="unverified-note">{t("bench.story.unverified")}</p>}
+          <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2></div>
+          <div className="calm-title-meta"><p>{placeLine(bench, t)}</p></div>
           <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} />
           <div className="bench-primary-actions">
-            {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span> Weg hierher</button>}
-            <button className="contribution-entry" onClick={() => contribute()}><MessageCircleHeart size={17} /> {signedIn ? "Beitragen" : "Mitmachen"}</button>
-            <button className="contribution-entry" onClick={() => setCommunity(true)}>Bewertungen ansehen</button>
+            {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span>  {t("bench.story.directions")}</button>}
+            <button className="contribution-entry" onClick={() => contribute()}><MessageCircleHeart size={17} /> {signedIn ? t("bench.story.contribute") : t("bench.story.join")}</button>
+            <button className="contribution-entry" onClick={() => setCommunity(true)}>{t("bench.story.ratings")}</button>
           </div>
         </header>
       </section>
       <div className="calm-story-body">
-        {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>Was kannst du noch ergänzen?</h3><p>Diese Angaben helfen bei der nächsten Pause.</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
+        {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>{t("bench.story.nextTitle")}</h3><p>{t("bench.story.nextDescription")}</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
         <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
         {signedIn && bench.knowledge?.question && <VerificationQuestion benchId={bench.id} question={bench.knowledge.question} onChanged={refreshBench} />}
         <BenchDetails bench={bench} signedIn={signedIn} onChanged={refreshBench} />
@@ -90,53 +95,58 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
     </>}
     {status && <p role="status" className="contribution-inline-status">{status}</p>}
     {signedIn && contributeOpen && <BenchContributionHub key={`${bench.id}-${contributionMode}`} bench={bench} open initialChapter={contributionMode} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
-    <AccountDialog dialogRef={accountDialog} intent={contributionMode === "rating" ? "Bewertung abgeben" : contributionMode === "presence" ? "Bänkli bestätigen" : "Zum Bänkli beitragen"} onAuthenticated={() => { setAuthenticated(true); setContributeOpen(true); void refreshBench(); }} />
+    <AccountDialog dialogRef={accountDialog} intent={contributionMode === "rating" ? t("bench.story.rateIntent") : contributionMode === "presence" ? t("community.chapters.presence.title") : t("community.hub.title")} onAuthenticated={() => { setAuthenticated(true); setContributeOpen(true); void refreshBench(); }} />
   </div>;
 }
 
 function RatingEntry({ bench, onOpen }: { bench: BenchDetail; onOpen: () => void }) {
+  const t = useTranslations();
+  const format = useFormatter();
   const rounded = bench.ratingAverage === null ? 0 : Math.max(1, Math.min(5, Math.round(bench.ratingAverage)));
   const label = bench.myRating
-    ? `Deine Bewertung ist ${bench.myRating.overall} von 5. Bewertung bearbeiten`
+    ? t("bench.story.ratingMine", {score: bench.myRating.overall})
     : bench.ratingAverage === null
-      ? "Noch unbewertet. Erste Bewertung abgeben"
-      : `Bewertung ${bench.ratingAverage.toFixed(1)} von 5 bei ${bench.ratingCount} ${bench.ratingCount === 1 ? "Stimme" : "Stimmen"}. Selbst bewerten`;
+      ? t("bench.story.ratingEmpty")
+      : t("bench.story.ratingSummary", {score: format.number(bench.ratingAverage, {minimumFractionDigits: 1, maximumFractionDigits: 1}), count: bench.ratingCount});
 
   return <button type="button" className={`landscape-rating-action${rounded === 0 ? " is-empty" : ""}`} aria-label={label} title={label} onClick={onOpen}>
     <span className="landscape-rating-stars" aria-hidden="true">
       {Array.from({ length: 5 }, (_, index) => <Star key={index} className={index < rounded ? "is-filled" : undefined} />)}
     </span>
-    {bench.ratingAverage !== null && <strong>{bench.ratingAverage.toFixed(1)}</strong>}
+    {bench.ratingAverage !== null && <strong>{format.number(bench.ratingAverage, {minimumFractionDigits: 1, maximumFractionDigits: 1})}</strong>}
   </button>;
 }
 
 function PhotoStory({ bench }: { bench: BenchDetail }) {
+  const t = useTranslations();
   const media = [...bench.media.filter((item) => item.relation === "exact"), ...bench.media.filter((item) => item.relation === "nearby")];
   if (!media.length) return null;
   const photos = media.flatMap((item) => {
     const src = galleryImageUrl(item.thumbnailUrl);
-    return src ? [{ id: String(item.id), src, caption: item.relation === "nearby" ? "Aus der Umgebung · nicht zwingend diese Bank" : item.title ?? "Dieser Platz", credit: `${item.author ?? item.provider} · ${item.license ?? "Lizenz bei Quelle"}`, sourceUrl: item.sourceUrl }] : [];
+    return src ? [{ id: String(item.id), src, caption: item.relation === "nearby" ? t("photos.story.nearby") : item.title ?? t("photos.story.place"), credit: `${item.author ?? item.provider} · ${item.license ?? t("photos.story.license")}`, sourceUrl: item.sourceUrl }] : [];
   });
   const links = media.filter((item) => !galleryImageUrl(item.thumbnailUrl) && /^https?:\/\//.test(item.sourceUrl));
   return <section className="photo-story">
-    <h3>Ein Blick in die Nähe</h3>
+    <h3>{t("photos.story.title")}</h3>
     {photos.length > 0 && <PhotoGallery photos={photos} />}
-    {links.map((item) => <p key={item.id}><a href={item.sourceUrl} target="_blank" rel="noreferrer">Externer Hinweis zum Platz ↗</a></p>)}
+    {links.map((item) => <p key={item.id}><a href={item.sourceUrl} target="_blank" rel="noreferrer">{t("photos.story.external")}</a></p>)}
   </section>;
 }
 
 function Community({ bench, report, reported, user, onContribute }: { bench: BenchDetail; reported: Set<string>; report: (type: "rating" | "correction", id: number) => void; user: CurrentUser | null; onContribute: () => void }) {
+  const t = useTranslations();
+  const format = useFormatter();
   return <div className="community-page">
-    <header><small>Von Menschen vor Ort</small><h3>Wie war die Pause?</h3></header>
-    {bench.ratingBreakdown && <div className="rating-line">{Object.entries({ Gesamt: bench.ratingBreakdown.overall, Aussicht: bench.ratingBreakdown.view, Komfort: bench.ratingBreakdown.comfort, Ruhe: bench.ratingBreakdown.quiet }).map(([label, value]) => <span key={label}><strong>{value}</strong><small>{label}</small></span>)}</div>}
+    <header><small>{t("community.reviews.eyebrow")}</small><h3>{t("community.reviews.title")}</h3></header>
+    {bench.ratingBreakdown && <div className="rating-line">{Object.entries({ [t("community.rating.fields.overall")]: bench.ratingBreakdown.overall, [t("community.rating.fields.view")]: bench.ratingBreakdown.view, [t("community.rating.fields.comfort")]: bench.ratingBreakdown.comfort, [t("community.rating.fields.quiet")]: bench.ratingBreakdown.quiet }).map(([label, value]) => <span key={label}><strong>{format.number(value, {maximumFractionDigits: 1})}</strong><small>{label}</small></span>)}</div>}
     {user
-      ? <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {bench.myRating ? "Meinen Beitrag bearbeiten" : "Einen Eindruck beitragen"}</button>
-      : <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> Zum Mitmachen kurz anmelden</button>}
-    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{new Date(rating.createdAt).toLocaleDateString("de-CH")}</time><button disabled={reported.has(`rating-${rating.id}`)} aria-label={reported.has(`rating-${rating.id}`) ? "Bewertung gemeldet" : "Bewertung melden"} onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
-    {bench.corrections.length > 0 && <section className="community-notes"><h3>Hinweise</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ?? item.field}</small><button disabled={reported.has(`correction-${item.id}`)} aria-label={reported.has(`correction-${item.id}`) ? "Korrektur gemeldet" : "Korrektur melden"} onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
+      ? <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {bench.myRating ? t("community.reviews.edit") : t("community.reviews.add")}</button>
+      : <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {t("community.reviews.signIn")}</button>}
+    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{formatDate(rating.createdAt, t)}</time><button disabled={reported.has(`rating-${rating.id}`)} aria-label={reported.has(`rating-${rating.id}`) ? t("community.reviews.reportedRating") : t("community.reviews.reportRating")} onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
+    {bench.corrections.length > 0 && <section className="community-notes"><h3>{t("community.reviews.notes")}</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ? t(correctionLabels[item.field]) : item.field}</small><button disabled={reported.has(`correction-${item.id}`)} aria-label={reported.has(`correction-${item.id}`) ? t("community.reviews.reportedCorrection") : t("community.reviews.reportCorrection")} onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
   </div>;
 }
 
-function placeLine(bench: BenchDetail) {
-  return [bench.elevationMeters !== null ? `${Math.round(bench.elevationMeters)} m ü. M.` : null, bench.locationName].filter(Boolean).join(" · ") || "Ein stiller Platz";
+function placeLine(bench: BenchDetail, t: Translator) {
+  return [bench.elevationMeters !== null ? t("bench.location.metresAboveSea", {value: Math.round(bench.elevationMeters)}) : null, bench.locationName].filter(Boolean).join(" · ") || t("bench.story.quietPlace");
 }

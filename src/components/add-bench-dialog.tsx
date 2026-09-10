@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { MapPin, Plus, X } from "lucide-react";
@@ -14,8 +15,11 @@ type Props = {
 };
 
 export function AddBenchDialog({ coordinates, onChoosePosition, onClose, onCreated, onExisting }: Props) {
+  const t = useTranslations();
+  const yesNoOptions = [["yes", t("common.values.yes")], ["no", t("common.values.no")]];
+  const materialOptions = (["wood", "metal", "stone", "concrete", "plastic", "mixed"] as const).map((value) => [value, t(`bench.materials.${value}`)]);
   const ref = useRef<HTMLDialogElement>(null);
-  const [place, setPlace] = useState("Ort wird gesucht …");
+  const [place, setPlace] = useState(t("submission.location.searching"));
   const [nearby, setNearby] = useState<NearbyBench[] | null>(null);
   const [lookupError, setLookupError] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -30,51 +34,50 @@ export function AddBenchDialog({ coordinates, onChoosePosition, onClose, onCreat
   useEffect(() => {
     let current = true;
     void resolveBenchLocation(coordinates.latitude, coordinates.longitude).then((location) => {
-      if (current) setPlace(location ? [location.name, location.postcode].filter(Boolean).join(" · ") : "Ort wird beim Speichern ergänzt");
-    }).catch(() => { if (current) setPlace("Ort wird beim Speichern ergänzt"); });
+      if (current) setPlace(location ? [location.name, location.postcode].filter(Boolean).join(" · ") : t("submission.location.onSave"));
+    }).catch(() => { if (current) setPlace(t("submission.location.onSave")); });
     void getNearbyBenches(coordinates.latitude, coordinates.longitude).then((benches) => {
       if (current) { setNearby(benches); setLookupError(false); }
     }).catch(() => { if (current) setLookupError(true); });
     return () => { current = false; };
-  }, [coordinates.latitude, coordinates.longitude, retry]);
+  }, [coordinates.latitude, coordinates.longitude, retry, t]);
   return <dialog ref={ref} onCancel={onClose} aria-labelledby="add-bench-title" className="modal modal-bottom sm:modal-middle">
     <div className="modal-box utility-sheet max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <button type="button" aria-label="Schliessen" className="btn btn-circle btn-ghost absolute right-3 top-3" onClick={onClose}><X size={19} /></button>
-      <h2 id="add-bench-title" className="text-2xl font-black">Bänkli eintragen</h2>
+      <button type="button" aria-label={t("common.actions.closeTitle")} className="btn btn-circle btn-ghost absolute right-3 top-3" onClick={onClose}><X size={19} /></button>
+      <h2 id="add-bench-title" className="text-2xl font-black">{t("common.navigation.addBench")}</h2>
       <p className="add-location"><MapPin size={18} /> {place}</p>
-      <button type="button" className="btn btn-ghost min-h-11" onClick={onChoosePosition}>Position ändern</button>
-      <details className="technical-fold"><summary>Details zur Position</summary><p>{coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}</p></details>
-      <section className="nearby-benches" aria-label="Bänkli in der Nähe">
-        {lookupError ? <p role="alert">Die Suche in der Nähe ist fehlgeschlagen. <button type="button" onClick={() => setRetry((value) => value + 1)}>Erneut prüfen</button></p>
-          : nearby === null ? <p role="status">Bestehende Bänkli in der Nähe werden geprüft …</p>
-            : nearby.length > 0 ? <><h3>{nearby.length} Bänkli innerhalb von 25 m</h3><p>Ist deines schon dabei?</p><ul>{nearby.map((bench) => <li key={bench.id}><button type="button" onClick={() => onExisting(bench.id)}><strong>{bench.title}</strong><span>{Math.round(bench.distanceMeters)} m · Bänkli ansehen</span></button></li>)}</ul></>
-              : <p>Kein eingetragenes Bänkli innerhalb von 25 m gefunden.</p>}
+      <button type="button" className="btn btn-ghost min-h-11" onClick={onChoosePosition}>{t("submission.location.change")}</button>
+      <details className="technical-fold"><summary>{t("submission.location.details")}</summary><p>{coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}</p></details>
+      <section className="nearby-benches" aria-label={t("submission.nearby.title")}>
+        {lookupError ? <p role="alert">{t("submission.nearby.failed")} <button type="button" onClick={() => setRetry((value) => value + 1)}>{t("submission.nearby.retry")}</button></p>
+          : nearby === null ? <p role="status">{t("submission.nearby.checking")}</p>
+            : nearby.length > 0 ? <><h3>{t("submission.nearby.count", { count: nearby.length })}</h3><p>{t("submission.nearby.question")}</p><ul>{nearby.map((bench) => <li key={bench.id}><button type="button" onClick={() => onExisting(bench.id)}><strong>{bench.title || t("common.values.bench")}</strong><span>{t("submission.nearby.open", { meters: Math.round(bench.distanceMeters) })}</span></button></li>)}</ul></>
+              : <p>{t("submission.nearby.empty")}</p>}
       </section>
       <form action={formAction} className="mt-4 space-y-3" aria-busy={pending}>
         <input type="hidden" name="latitude" value={coordinates.latitude} /><input type="hidden" name="longitude" value={coordinates.longitude} />
         <input type="hidden" name="nearbyIds" value={JSON.stringify((nearby ?? []).map((bench) => bench.id).sort())} />
-        {!!nearby?.length && <label className="nearby-confirm"><input type="checkbox" name="nearbyReviewed" value="yes" required checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} /><span>Geprüft: Meins ist ein weiteres Bänkli.</span></label>}
-        <label className="form-control"><span className="label text-sm font-bold">Name <span className="font-normal">(optional)</span></span><input name="name" maxLength={80} className="input min-h-12 w-full" placeholder="Lieblingsbänkli" /></label>
-        <label className="form-control"><span className="label text-sm font-bold">Widmung <span className="font-normal">(optional)</span></span><textarea name="dedication" maxLength={180} className="textarea min-h-20 w-full" /></label>
-        <details className="new-bench-features"><summary>Ausstattung ergänzen (freiwillig)</summary><fieldset><legend className="sr-only">Was siehst du am Bänkli?</legend><div>
-          <BenchSelect name="backrest" label="Rückenlehne" options={yesNoOptions} />
-          <BenchSelect name="armrest" label="Armlehnen" options={yesNoOptions} />
-          <BenchSelect name="covered" label="Überdacht" options={yesNoOptions} />
-          <BenchSelect name="wheelchair" label="Mit Rollstuhl nutzbar" options={yesNoOptions} />
-          <BenchSelect name="fireplaceNearby" label="Feuerstelle nahebei" options={yesNoOptions} />
-          <BenchSelect name="wasteBasketNearby" label="Abfalleimer nahebei" options={yesNoOptions} />
-          <BenchSelect name="material" label="Material" options={materialOptions} />
-          <BenchSelect name="seats" label="Sitzplätze" options={Array.from({ length: 12 }, (_, index) => [String(index + 1), String(index + 1)])} />
-          <BenchSelect name="direction" label="Blickrichtung" options={[["0","N"],["45","NO"],["90","O"],["135","SO"],["180","S"],["225","SW"],["270","W"],["315","NW"]]} />
-        </div></fieldset><p>Rollstuhlnutzung am Bänkli und Zugangsweg bitte getrennt beurteilen.</p></details>
-        <button disabled={pending || nearby === null || lookupError || (!!nearby.length && !reviewed)} className="btn btn-primary min-h-12 w-full"><Plus size={18} /> {pending ? "Wird eingetragen …" : "Eintragen"}</button>
+        {!!nearby?.length && <label className="nearby-confirm"><input type="checkbox" name="nearbyReviewed" value="yes" required checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} /><span>{t("submission.nearby.confirm")}</span></label>}
+        <label className="form-control"><span className="label text-sm font-bold">{t("common.fields.name")} <span className="font-normal">{t("common.fields.optional")}</span></span><input name="name" maxLength={80} className="input min-h-12 w-full" placeholder={t("submission.fields.namePlaceholder")} /></label>
+        <label className="form-control"><span className="label text-sm font-bold">{t("submission.fields.dedication")} <span className="font-normal">{t("common.fields.optional")}</span></span><textarea name="dedication" maxLength={180} className="textarea min-h-20 w-full" /></label>
+        <details className="new-bench-features"><summary>{t("submission.fields.features")}</summary><fieldset><legend className="sr-only">{t("submission.fields.observation")}</legend><div>
+          <BenchSelect name="backrest" label={t("bench.attributes.backrest")} options={yesNoOptions} />
+          <BenchSelect name="armrest" label={t("bench.attributes.armrest")} options={yesNoOptions} />
+          <BenchSelect name="covered" label={t("bench.attributes.covered")} options={yesNoOptions} />
+          <BenchSelect name="wheelchair" label={t("bench.attributes.wheelchair")} options={yesNoOptions} />
+          <BenchSelect name="fireplaceNearby" label={t("bench.attributes.fireplaceNearby")} options={yesNoOptions} />
+          <BenchSelect name="wasteBasketNearby" label={t("bench.attributes.wasteBasketNearby")} options={yesNoOptions} />
+          <BenchSelect name="material" label={t("bench.attributes.material")} options={materialOptions} />
+          <BenchSelect name="seats" label={t("bench.attributes.seats")} options={Array.from({ length: 12 }, (_, index) => [String(index + 1), String(index + 1)])} />
+          <BenchSelect name="direction" label={t("bench.attributes.direction")} options={[["0",t("bench.directions.n")],["45",t("bench.directions.ne")],["90",t("bench.directions.e")],["135",t("bench.directions.se")],["180",t("bench.directions.s")],["225",t("bench.directions.sw")],["270",t("bench.directions.w")],["315",t("bench.directions.nw")]]} />
+        </div></fieldset><p>{t("submission.fields.accessNote")}</p></details>
+        <button disabled={pending || nearby === null || lookupError || (!!nearby.length && !reviewed)} className="btn btn-primary min-h-12 w-full"><Plus size={18} /> {pending ? t("submission.form.pending") : t("submission.form.submit")}</button>
       </form>
       {state && <p role={state.ok ? "status" : "alert"} className="contribution-inline-status">{state.message}</p>}
-    </div><form method="dialog" className="modal-backdrop"><button onClick={onClose}>schliessen</button></form>
+    </div><form method="dialog" className="modal-backdrop"><button onClick={onClose}>{t("common.actions.close")}</button></form>
   </dialog>;
 }
-const yesNoOptions = [["yes", "Ja"], ["no", "Nein"]];
-const materialOptions = [["wood", "Holz"], ["metal", "Metall"], ["stone", "Stein"], ["concrete", "Beton"], ["plastic", "Kunststoff"], ["mixed", "Gemischt"]];
 function BenchSelect({ name, label, options }: { name: string; label: string; options: string[][] }) {
-  return <label><span>{label}</span><select name={name} defaultValue=""><option value="">Noch offen</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>;
+  const t = useTranslations();
+  return <label><span>{label}</span><select name={name} defaultValue=""><option value="">{t("common.values.open")}</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>;
 }

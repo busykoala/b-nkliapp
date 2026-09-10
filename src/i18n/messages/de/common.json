@@ -1,0 +1,93 @@
+{
+  "language": {
+    "label": "Sprache",
+    "failed": "Die Sprache konnte nicht geändert werden. Bitte erneut versuchen."
+  },
+  "metadata": {
+    "title": "Bänkli App – Schweizer Sitzbänke",
+    "description": "Finde Schweizer Sitzbänke mit Sonne, Aussicht und Community-Bewertungen."
+  },
+  "navigation": {
+    "open": "Menü öffnen",
+    "close": "Menü schliessen",
+    "label": "Hauptnavigation",
+    "addBench": "Bänkli eintragen",
+    "walk": "Spaziergang",
+    "feed": "Bänkli-Feed",
+    "favourites": "Meine Lieblingsplätze",
+    "profile": "Mein Profil",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "about": "Über die Bänkli App",
+    "map": "Zur Karte",
+    "privacy": "Datenschutz",
+    "imprint": "Kontakt & Impressum"
+  },
+  "install": {
+    "button": "App installieren",
+    "ios": "In Safari „Teilen“ und danach „Zum Home-Bildschirm“ wählen."
+  },
+  "actions": {
+    "close": "schliessen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saving": "Wird gespeichert …",
+    "remove": "Entfernen",
+    "delete": "Löschen",
+    "retry": "Erneut versuchen",
+    "closeTitle": "Schliessen"
+  },
+  "values": {
+    "yes": "Ja",
+    "no": "Nein",
+    "unknown": "Unbekannt",
+    "open": "Noch offen",
+    "notRecorded": "Noch nicht erfasst",
+    "bench": "Sitzbank",
+    "community": "Community"
+  },
+  "fields": {
+    "name": "Name",
+    "optional": "(optional)"
+  },
+  "errors": {
+    "signIn": "Bitte melde dich zuerst an.",
+    "blocked": "Beiträge von diesem Browser wurden gesperrt.",
+    "rateLimit": "Zu viele Beiträge. Bitte versuche es später erneut.",
+    "benchNotFound": "Dieses Bänkli wurde nicht gefunden.",
+    "invalid": "Bitte prüfe deine Angaben.",
+    "unavailable": "Das hat gerade nicht geklappt. Bitte versuche es erneut."
+  },
+  "notFound": {
+    "title": "Bank nicht gefunden",
+    "description": "Sie wurde vielleicht aus den Quelldaten entfernt."
+  },
+  "update": {
+    "ready": "Eine frischere Karte ist bereit.",
+    "reload": "Neu laden",
+    "dismiss": "Update-Hinweis schliessen"
+  },
+  "calendar": {
+    "patterns": {
+      "numeric": "{day}.{month}.{year}",
+      "long": "{day}. {month} {year}",
+      "monthYear": "{month} {year}",
+      "dayMonth": "{day}. {month}",
+      "dateTime": "{date}, {time}"
+    },
+    "months": {
+      "january": "Januar",
+      "february": "Februar",
+      "march": "März",
+      "april": "April",
+      "may": "Mai",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "August",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Dezember"
+    }
+  }
+}

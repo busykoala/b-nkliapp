@@ -1,0 +1,56 @@
+{
+  "location": {
+    "searching": "Recherche du lieu…",
+    "onSave": "Le lieu sera ajouté lors de l’enregistrement",
+    "change": "Modifier la position",
+    "details": "Détails de la position"
+  },
+  "nearby": {
+    "title": "Bancs à proximité",
+    "failed": "La recherche à proximité a échoué.",
+    "retry": "Vérifier à nouveau",
+    "checking": "Vérification des bancs déjà présents à proximité…",
+    "count": "{count, plural, one {# banc dans un rayon de 25 m} other {# bancs dans un rayon de 25 m}}",
+    "question": "Le vôtre est-il déjà là ?",
+    "open": "{meters} m · Voir le banc",
+    "empty": "Aucun banc enregistré dans un rayon de 25 m.",
+    "confirm": "Vérifié : mon banc est un autre banc."
+  },
+  "fields": {
+    "namePlaceholder": "Mon banc préféré",
+    "dedication": "Dédicace",
+    "features": "Ajouter l’équipement (facultatif)",
+    "observation": "Que vois-tu sur ce banc ?",
+    "accessNote": "Évalue séparément l’utilisation du banc en fauteuil roulant et son chemin d’accès."
+  },
+  "form": {
+    "pending": "Ajout en cours…",
+    "submit": "Ajouter"
+  },
+  "result": {
+    "locationInvalid": "Vérifie la position.",
+    "reviewNearby": "Vérifie d’abord les bancs voisins. Le tien est-il déjà répertorié ?",
+    "added": "Banc ajouté · {count, plural, one {encore # confirmation} other {encore # confirmations}}.",
+    "addFailed": "Le banc n’a pas pu être enregistré.",
+    "alreadyConfirmed": "Tu l’as déjà confirmé aujourd’hui.",
+    "presenceConfirmed": "Merci : sa présence a été confirmée aujourd’hui.",
+    "verified": "Ce banc est maintenant confirmé !",
+    "confirmationsNeeded": "{count, plural, one {Encore # confirmation.} other {Encore # confirmations.}}",
+    "confirmFailed": "La confirmation a échoué.",
+    "alreadyMissing": "Tu as déjà confirmé son absence.",
+    "removed": "Confirmé comme disparu.",
+    "removalVotes": "Signalement enregistré : {count, plural, one {encore # vote} other {encore # votes}}.",
+    "removalFailed": "Le signalement a échoué.",
+    "metadataInvalid": "Vérifie les informations.",
+    "metadataUpdated": "Informations mises à jour.",
+    "metadataFailed": "La modification a échoué.",
+    "fieldInvalid": "Vérifie cette information.",
+    "chooseBoolean": "Choisis oui ou non.",
+    "chooseMaterial": "Choisis un matériau.",
+    "chooseSeats": "Choisis entre 1 et 20 places.",
+    "chooseDirection": "Choisis une orientation.",
+    "unchanged": "C’est déjà enregistré ainsi.",
+    "fieldSaved": "Merci, c’est enregistré.",
+    "fieldFailed": "L’information n’a pas pu être enregistrée."
+  }
+}

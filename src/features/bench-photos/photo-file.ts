@@ -1,3 +1,4 @@
+import { UserFacingError } from "@/i18n/action-error";
 const formats = {
   "image/webp": { extension: "webp", matches: (bytes: Uint8Array) => ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 12) === "WEBP" },
   "image/jpeg": { extension: "jpg", matches: (bytes: Uint8Array) => bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff },
@@ -11,8 +12,8 @@ function ascii(bytes: Uint8Array, start: number, end: number) {
 export type BenchPhotoType = keyof typeof formats;
 
 export function validateBenchPhoto(bytes: Uint8Array, declaredType: string) {
-  if (!(declaredType in formats)) throw new Error("Bitte verwende ein JPEG-, PNG- oder WebP-Foto.");
+  if (!(declaredType in formats)) throw new UserFacingError("photos.server.format");
   const type = declaredType as BenchPhotoType;
-  if (!formats[type].matches(bytes)) throw new Error("Das Bildformat passt nicht zum Foto. Bitte wähle das Bild nochmals.");
+  if (!formats[type].matches(bytes)) throw new UserFacingError("photos.server.formatMismatch");
   return { type, extension: formats[type].extension };
 }

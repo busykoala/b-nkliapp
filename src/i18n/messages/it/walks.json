@@ -1,0 +1,88 @@
+{
+  "result": {
+    "noBenches": "Non è stata trovata una panchina adatta per questa durata. Prova un giro più lungo o un’altra partenza.",
+    "noRestRoute": "Nessun percorso verificato con al massimo {minutes} minuti tra i posti a sedere. Modifica partenza, durata o intervallo tra le pause.",
+    "unavailable": "Nessuna passeggiata verificata disponibile al momento. Modifica partenza o durata. Il nostro servizio di percorsi deve essere pronto.",
+    "nearest": "La durata desiderata non corrisponde esattamente qui. Questa è la proposta verificata più vicina; la durata effettiva è indicata."
+  },
+  "evidence": {
+    "water": "Buona parte del percorso vicino all’acqua",
+    "quiet": "Poche strade principali nei dintorni",
+    "nature": "Molti dintorni naturali",
+    "open": "Terreno aperto lungo il percorso",
+    "incomplete": "Dati del paesaggio ancora incompleti; la variante più bella non può essere stimata con certezza.",
+    "lightUnknown": "Sole e ombra lungo questo percorso non sono ancora stimabili in modo affidabile."
+  },
+  "planner": {
+    "title": "Scopri una passeggiata",
+    "resize": "Ingrandisci o riduci la passeggiata",
+    "close": "Chiudi la passeggiata",
+    "eyebrow": "Tempo per una panchina",
+    "intro": "Un bel sentiero. Una panchina per fermarsi un momento.",
+    "label": "Pianifica una passeggiata",
+    "duration": "Quanto tempo vuoi camminare?",
+    "route": "Il tuo percorso",
+    "loop": "Giro ad anello",
+    "oneWay": "Solo andata",
+    "outAndBack": "Andata e ritorno",
+    "light": "Sole o ombra?",
+    "sun": "Preferisco il sole",
+    "shade": "Preferisco l’ombra",
+    "pending": "La tua gita prende forma…",
+    "update": "Aggiorna le passeggiate",
+    "submit": "Trova una passeggiata con panchina",
+    "loading": "La mappa resta mobile. La ricerca dura al massimo 15 secondi.",
+    "dirty": "Scelta modificata: il percorso mostrato usa ancora le impostazioni precedenti.",
+    "failed": "Passeggiata momentaneamente non disponibile. Attendi un momento o cambia la partenza."
+  },
+  "rest": {
+    "option": " · una panchina almeno ogni {minutes} min",
+    "legend": "Una panchina almeno ogni…",
+    "explanation": "L’intero percorso viene verificato al tuo passo, compresi il primo e l’ultimo tratto. I tempi restano stime.",
+    "title": "Pause sedute lungo il percorso",
+    "maximum": "Al massimo circa {minutes} min a piedi di seguito · incluse partenza e destinazione",
+    "after": "dopo circa {minutes} min",
+    "minutes": "{minutes} min"
+  },
+  "results": {
+    "title": "La tua passeggiata",
+    "choice": "{count, plural, one {Una passeggiata da scegliere} other {# passeggiate da scegliere}}",
+    "recommended": "Consigliata",
+    "variant": "Variante {number}",
+    "eyebrow": "La tua gita alle panchine",
+    "summary": "circa {duration} · ↑ {ascent} m",
+    "routeSummary": "circa {duration} · {shape} · ↑ {ascent} m",
+    "t2": "Sentieri fino a T2: passo sicuro richiesto.",
+    "start": "La tua gita inizia qui",
+    "return": "Ritorno al punto di partenza",
+    "why": "Perché questa proposta?",
+    "explanation": "Confrontiamo tranquillità, natura, vista, vicinanza all’acqua e panchina lungo il percorso reale. È una stima basata sui dati, non una garanzia di bellezza.",
+    "updated": "Dati del paesaggio del {date}.",
+    "noData": "Mancano ancora i dati del paesaggio.",
+    "extrasNote": "Le panchine aggiuntive confermate hanno un breve accesso a piedi verificato; quelle non verificate non vengono contate.",
+    "planReturn": "Pianifica il ritorno"
+  },
+  "information": {
+    "estimates": "Tempi di cammino e luce sono stime. Nessuna garanzia su accessibilità, chiusure attuali, neve o sicurezza in montagna.",
+    "privacy": "Posizione solo su richiesta. Dati inseriti e coordinate vengono inviati al servizio cartografico necessario; i percorsi a piedi sono calcolati sul nostro server. Le rotte personali restano in memoria al massimo cinque minuti, senza cronologia."
+  },
+  "story": {
+    "loop": {
+      "named": "Un giro alla panchina «{name}»",
+      "water": "Un giro alla panchina sulla riva",
+      "bench": "Un giro alla panchina"
+    },
+    "oneWay": {
+      "named": "Una passeggiata alla panchina «{name}»",
+      "water": "Una passeggiata alla panchina sulla riva",
+      "bench": "Una passeggiata alla panchina"
+    },
+    "pause": {
+      "many": "Con {count} panchine per fermarsi un momento",
+      "named": "Con la panchina «{name}» per fermarsi un momento",
+      "water": "Con una panchina sull’acqua per fermarsi un momento",
+      "bench": "Con una panchina per fermarsi un momento"
+    },
+    "extras": "{count, plural, one {E lungo il percorso ancora un’altra panchina da scoprire.} other {E lungo il percorso ancora # altre panchine da scoprire.}}"
+  }
+}

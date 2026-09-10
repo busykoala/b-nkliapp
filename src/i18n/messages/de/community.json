@@ -1,0 +1,363 @@
+{
+  "hub": {
+    "eyebrow": "Gemeinsam genauer hinschauen",
+    "title": "Zum Bänkli beitragen",
+    "close": "Beiträge schliessen"
+  },
+  "chapters": {
+    "rating": {
+      "title": "Wie war deine Pause?",
+      "summary": "Deine Bewertung",
+      "prompt": "Komfort, Ruhe und Aussicht bewerten",
+      "mine": "Deine Bewertung: {rating}/5"
+    },
+    "presence": {
+      "title": "Bänkli bestätigen",
+      "summary": "Hast du es vor Ort gesehen?"
+    },
+    "features": {
+      "title": "Bänkli beschreiben",
+      "summary": "Name, Ausstattung und Blickrichtung"
+    },
+    "light": {
+      "title": "Licht gerade jetzt",
+      "recorded": "Deine Beobachtung ist eingetragen",
+      "summary": "Sonne, Schatten oder wechselhaft",
+      "night": "Diese Frage erscheint bei Tageslicht – dann ist die Beobachtung sinnvoll."
+    },
+    "view": {
+      "title": "Aussicht & Umgebung",
+      "recorded": "Dein Eindruck ist eingetragen",
+      "summary": "Schätzung bestätigen oder anders einordnen"
+    },
+    "photo": {
+      "title": "Foto von diesem Platz",
+      "summary": "Aufnehmen oder aus der Mediathek wählen"
+    },
+    "moment": {
+      "title": "Einen Moment hinterlassen",
+      "summary": "Erinnerung, Tipp, Gedicht oder Ortswissen"
+    },
+    "care": {
+      "title": "Sich ums Bänkli kümmern",
+      "summary": "Kleine, sichtbare Pflegeaktionen",
+      "mine": "{count, plural, one {# heutige Aktion von dir} other {# heutige Aktionen von dir}}"
+    },
+    "correction": {
+      "title": "Etwas stimmt nicht",
+      "summary": "Position, Zustand oder Umgebung melden"
+    }
+  },
+  "theme": {
+    "month": "Gemeinsames Thema · diesen Monat",
+    "monthly": {
+      "winter": {
+        "title": "Winterlicht",
+        "prompt": "Zeig uns ein Bänkli im stillen Winterlicht."
+      },
+      "company": {
+        "title": "Lieblingsmensch",
+        "prompt": "Welche Pause würdest du mit jemandem teilen?"
+      },
+      "green": {
+        "title": "Erstes Grün",
+        "prompt": "Entdecke die ersten Frühlingszeichen rund ums Bänkli."
+      },
+      "history": {
+        "title": "Bänkli mit Geschichte",
+        "prompt": "Welche Erinnerung oder lokale Geschichte gehört hierher?"
+      },
+      "morning": {
+        "title": "Morgenruhe",
+        "prompt": "Wie fühlt sich dieser Platz früh am Tag an?"
+      },
+      "shade": {
+        "title": "Schattenplatz",
+        "prompt": "Welche Bänkli schenken an warmen Tagen Schatten?"
+      },
+      "water": {
+        "title": "Wasser in Sicht",
+        "prompt": "Teile einen ehrlichen Eindruck vom Wasser – oder seinem Fehlen."
+      },
+      "grandparents": {
+        "title": "Grosselterns Liebling",
+        "prompt": "Welcher Platz wäre gut für eine gemeinsame Pause?"
+      },
+      "evening": {
+        "title": "Abendgold",
+        "prompt": "Fang die Stimmung eines späten Sommertags ein."
+      },
+      "care": {
+        "title": "Kleine Pflege",
+        "prompt": "Ein sauberer Platz ist eine leise Gemeinschaftsleistung."
+      },
+      "fog": {
+        "title": "Nebel & Nähe",
+        "prompt": "Was bleibt schön, wenn die Fernsicht Pause macht?"
+      },
+      "thought": {
+        "title": "Ein warmer Gedanke",
+        "prompt": "Hinterlasse ein kurzes Gedicht oder eine Empfehlung."
+      }
+    }
+  },
+  "overview": {
+    "features": "{count, plural, one {# Angabe} other {# Angaben}}",
+    "moments": "{count, plural, one {# Moment} other {# Momente}}",
+    "mine": "Von dir hier:",
+    "empty": "Hier ist noch kein Beitrag von dir – wähle einfach, was du gerade sicher weisst.",
+    "rating": "Bewertung"
+  },
+  "metadata": {
+    "placeholder": "Wie heisst dieses Bänkli?",
+    "dedicationHint": "(was auf der Bank steht)",
+    "save": "Angaben speichern"
+  },
+  "moments": {
+    "kinds": {
+      "memory": "Erinnerung",
+      "recommendation": "Empfehlung",
+      "poem": "Gedicht",
+      "local_fact": "Ortswissen",
+      "photo": "Bildmoment"
+    },
+    "choose": "Was möchtest du teilen?",
+    "label": "Dein Bänkli-Moment",
+    "poemPlaceholder": "Ein paar Zeilen für diesen Platz …",
+    "placeholder": "Was sollten andere über diesen Platz wissen?",
+    "publish": "Moment veröffentlichen"
+  },
+  "care": {
+    "actions": {
+      "cleaned": "Kurz gereinigt",
+      "good": "In gutem Zustand",
+      "repair": "Braucht Reparatur",
+      "beautiful": "Heute besonders schön"
+    },
+    "description": "Keine Punkte, keine Rangliste – einfach ein Zeichen, dass jemand geschaut hat.",
+    "mine": "{label} · von dir",
+    "events": {
+      "cleaned": "gereinigt",
+      "good": "in gutem Zustand gesehen",
+      "repair": "mit Reparaturbedarf gemeldet",
+      "beautiful": "heute besonders schön gefunden"
+    }
+  },
+  "presence": {
+    "signIn": "Zum Mitmachen anmelden",
+    "confirmedToday": "Heute von dir bestätigt",
+    "confirm": "Ist noch da",
+    "question": "Ist es noch da?",
+    "missingCount": "{count}/{threshold} Personen vermissen dieses Bänkli.",
+    "reportedMissing": "Fehlen von dir gemeldet",
+    "confirmMissing": "Fehlen bestätigen",
+    "reportMissing": "Bänkli ist nicht mehr da"
+  },
+  "errors": {
+    "save": "Aktion konnte nicht gespeichert werden. Bitte erneut versuchen."
+  },
+  "rating": {
+    "eyebrow": "Dein Eindruck",
+    "existing": "Deine frühere Bewertung ist vorausgefüllt – du kannst sie ändern.",
+    "intro": "Vier kleine Eindrücke helfen anderen bei der Wahl.",
+    "fields": {
+      "overall": "Gesamt",
+      "view": "Aussicht",
+      "comfort": "Komfort",
+      "quiet": "Ruhe"
+    },
+    "note": "Ein Gedanke dazu",
+    "optional": "(freiwillig)",
+    "placeholder": "Was hat dir hier gefallen?",
+    "update": "Bewertung aktualisieren",
+    "publish": "Bewertung veröffentlichen",
+    "stars": "{count, plural, one {# Stern} other {# Sterne}}"
+  },
+  "correction": {
+    "eyebrow": "Kurz Bescheid geben",
+    "title": "Etwas stimmt nicht?",
+    "intro": "Nur für Dinge, die du gerade vor Ort gesehen hast.",
+    "field": "Was stimmt nicht?",
+    "choose": "Auswählen",
+    "options": {
+      "removed": "Bank fehlt oder wurde entfernt",
+      "location": "Position ist ungenau",
+      "properties": "Ausstattung stimmt nicht",
+      "condition": "Beschädigt oder schlecht nutzbar",
+      "environment": "Umgebung, Aussicht oder Licht stimmt nicht"
+    },
+    "observation": "Was hast du gesehen?",
+    "placeholder": "Zum Beispiel: Die Rückenlehne fehlt",
+    "publish": "Hinweis veröffentlichen",
+    "fields": {
+      "properties": "Ausstattung",
+      "condition": "Zustand",
+      "location": "Position",
+      "removed": "Nicht mehr vorhanden",
+      "environment": "Umgebung, Aussicht oder Licht"
+    }
+  },
+  "place": {
+    "eyebrow": "Menschen an diesem Platz",
+    "title": "Bänkli-Momente",
+    "share": "Moment teilen",
+    "shareText": "Ein Bänkli-Moment bei {bench}",
+    "copied": "Link kopiert – bereit fürs Teilen, auch auf Instagram.",
+    "shareUnavailable": "Teilen ist in diesem Browser gerade nicht verfügbar.",
+    "operator": "Betreut vor Ort",
+    "favourite": "Lieblingsplatz",
+    "save": "Bänkli merken",
+    "following": "{place} abonniert",
+    "follow": "{place} folgen",
+    "favourites": "Alle Lieblingsplätze",
+    "recent": "in den letzten 90 Tagen",
+    "deleteOwn": "Eigenen Moment löschen",
+    "empty": "Noch keine Geschichte hier. Das Bänkli wartet geduldig."
+  },
+  "features": {
+    "progress": "{known}/{total} Angaben bekannt · Zum Ergänzen antippen",
+    "mine": "von dir"
+  },
+  "observations": {
+    "light": {
+      "label": "Licht vor Ort melden",
+      "title": "Stimmt das gerade?",
+      "intro": "Ein kurzer Eindruck von vor Ort",
+      "mine": "Deine Beobachtung: {choice}",
+      "choices": {
+        "sun": "Sonne",
+        "shade": "Schatten",
+        "mixed": "Wechselhaft"
+      },
+      "trend": "Community: meist {choice} · {count, plural, one {eine Person} other {# Personen}}"
+    },
+    "view": {
+      "label": "Aussicht vor Ort einordnen",
+      "title": "Wie wirkt der Platz für dich?",
+      "agreed": "Von dir ungefähr bestätigt",
+      "mine": "Dein eigener Eindruck ist eingetragen",
+      "intro": "Dein Eindruck hilft, die Schätzung zu verbessern",
+      "agree": "Passt ungefähr",
+      "edit": "Anders erlebt",
+      "step": "Schritt {current} von {total}",
+      "steps": "Schritte",
+      "back": "Zurück",
+      "next": "Weiter",
+      "save": "Eintragen"
+    },
+    "steps": {
+      "openness": "Wie offen fühlt es sich an?",
+      "landscape": "Was prägt die Landschaft?",
+      "horizon": "Was steht am Horizont?",
+      "surroundings": "Wie wirkt die Umgebung?"
+    },
+    "fields": {
+      "openness": "Freie Sicht",
+      "sky": "Himmel",
+      "relief": "Gelände",
+      "water": "Wasser",
+      "horizon": "Horizont",
+      "naturalness": "Umgebung",
+      "disturbance": "Störungen"
+    },
+    "choices": {
+      "openness": {
+        "wide": "Fast rundum",
+        "partial": "Einige Richtungen",
+        "enclosed": "Eher eng"
+      },
+      "sky": {
+        "open": "Offen",
+        "partial": "Teilweise",
+        "closed": "Geschlossen"
+      },
+      "relief": {
+        "flat": "Flach",
+        "gentle": "Sanft",
+        "strong": "Starkes Relief"
+      },
+      "water": {
+        "clear": "Klar sichtbar",
+        "some": "Etwas sichtbar",
+        "none": "Nicht sichtbar"
+      },
+      "horizon": {
+        "open": "Überwiegend frei",
+        "trees": "Bäume",
+        "buildings": "Gebäude",
+        "mixed": "Gemischt"
+      },
+      "naturalness": {
+        "natural": "Natürlich",
+        "mixed": "Gemischt",
+        "built": "Bebaut"
+      },
+      "disturbance": {
+        "quiet": "Ruhig",
+        "some": "Etwas",
+        "strong": "Stark"
+      }
+    },
+    "trend": {
+      "openness": "eher offen",
+      "naturalness": "natürlich",
+      "quiet": "ruhig",
+      "description": "Community: {qualities}",
+      "empty": "Community-Eindruck",
+      "summary": "{description} · {count, plural, one {eine Person} other {# Personen}} · {confidence}"
+    },
+    "undo": "Rückgängig"
+  },
+  "reviews": {
+    "eyebrow": "Von Menschen vor Ort",
+    "title": "Wie war die Pause?",
+    "edit": "Meinen Beitrag bearbeiten",
+    "add": "Einen Eindruck beitragen",
+    "signIn": "Zum Mitmachen kurz anmelden",
+    "reportedRating": "Bewertung gemeldet",
+    "reportRating": "Bewertung melden",
+    "notes": "Hinweise",
+    "reportedCorrection": "Korrektur gemeldet",
+    "reportCorrection": "Korrektur melden"
+  },
+  "result": {
+    "ratingSaved": "Danke – deine Bewertung ist sichtbar.",
+    "ratingFailed": "Bewertung konnte nicht gespeichert werden.",
+    "correctionSaved": "Danke – dein Hinweis wurde veröffentlicht.",
+    "correctionFailed": "Hinweis konnte nicht gespeichert werden.",
+    "invalidContribution": "Ungültiger Beitrag.",
+    "reported": "Beitrag wurde gemeldet.",
+    "reportFailed": "Meldung fehlgeschlagen.",
+    "momentInvalid": "Bitte erzähle in ein paar Worten von diesem Platz.",
+    "momentSaved": "Dein Bänkli-Moment ist jetzt am Platz zu lesen.",
+    "momentFailed": "Moment konnte nicht gespeichert werden.",
+    "invalidMoment": "Ungültiger Moment.",
+    "notYourMoment": "Dieser Moment gehört nicht zu deinem Konto.",
+    "momentDeleted": "Dein Moment wurde entfernt.",
+    "momentDeleteFailed": "Moment konnte nicht entfernt werden.",
+    "careInvalid": "Unbekannte Pflegeaktion.",
+    "careSaved": "Danke fürs Kümmern.",
+    "careAlreadySaved": "Das hast du heute schon festgehalten.",
+    "careFailed": "Pflegeaktion konnte nicht gespeichert werden.",
+    "unfavourited": "Aus deinen Lieblingsplätzen entfernt.",
+    "favourited": "Dieses Bänkli gehört jetzt zu deinen Lieblingsplätzen.",
+    "placeUnnamed": "Für diesen Platz fehlt noch ein Ortsname.",
+    "placeUnfollowed": "{place} wird nicht mehr gefolgt.",
+    "placeFollowed": "Neue Bänkli-Momente aus {place} erscheinen jetzt bei dir.",
+    "followFailed": "Auswahl konnte nicht gespeichert werden.",
+    "lightInvalid": "Bitte wähle Sonne, Schatten oder Wechselhaft.",
+    "lightNight": "Lichteindrücke kannst du hier erst wieder bei Tageslicht melden.",
+    "lightSaved": "Danke – dein Lichteindruck ist eingetragen.",
+    "lightFailed": "Der Lichteindruck konnte nicht gespeichert werden.",
+    "observationUndone": "Deine Beobachtung wurde zurückgenommen.",
+    "undoFailed": "Die Beobachtung konnte nicht zurückgenommen werden.",
+    "observationConfirmed": "Danke – deine Bestätigung hilft bei der Einordnung.",
+    "observationConfirmFailed": "Die Bestätigung konnte nicht gespeichert werden.",
+    "viewInvalid": "Bitte vervollständige deinen Eindruck.",
+    "viewSaved": "Danke – dein Eindruck ist eingetragen.",
+    "viewFailed": "Der Eindruck konnte nicht gespeichert werden.",
+    "observationInvalid": "Unbekannte Beobachtung.",
+    "observationDeleted": "Deine Beobachtung wurde gelöscht.",
+    "observationDeleteFailed": "Die Beobachtung konnte nicht gelöscht werden."
+  }
+}

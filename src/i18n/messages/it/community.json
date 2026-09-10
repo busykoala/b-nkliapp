@@ -1,0 +1,363 @@
+{
+  "hub": {
+    "eyebrow": "Osserviamo meglio, insieme",
+    "title": "Contribuisci alla panchina",
+    "close": "Chiudi i contributi"
+  },
+  "chapters": {
+    "rating": {
+      "title": "Com’è stata la tua pausa?",
+      "summary": "La tua valutazione",
+      "prompt": "Valuta comfort, tranquillità e panorama",
+      "mine": "La tua valutazione: {rating}/5"
+    },
+    "presence": {
+      "title": "Conferma la panchina",
+      "summary": "L’hai vista sul posto?"
+    },
+    "features": {
+      "title": "Descrivi la panchina",
+      "summary": "Nome, dotazioni e direzione dello sguardo"
+    },
+    "light": {
+      "title": "La luce in questo momento",
+      "recorded": "La tua osservazione è registrata",
+      "summary": "Sole, ombra o variabile",
+      "night": "Questa domanda appare di giorno, quando l’osservazione è utile."
+    },
+    "view": {
+      "title": "Panorama e dintorni",
+      "recorded": "La tua impressione è registrata",
+      "summary": "Conferma o precisa la stima"
+    },
+    "photo": {
+      "title": "Foto di questo luogo",
+      "summary": "Scatta o scegli dalla galleria"
+    },
+    "moment": {
+      "title": "Lascia un momento",
+      "summary": "Ricordo, consiglio, poesia o curiosità locale"
+    },
+    "care": {
+      "title": "Prenditi cura della panchina",
+      "summary": "Piccoli gesti di cura visibili",
+      "mine": "{count, plural, one {# tua azione oggi} other {# tue azioni oggi}}"
+    },
+    "correction": {
+      "title": "Qualcosa non va",
+      "summary": "Segnala posizione, condizioni o dintorni"
+    }
+  },
+  "theme": {
+    "month": "Tema comune · questo mese",
+    "monthly": {
+      "winter": {
+        "title": "Luce d’inverno",
+        "prompt": "Mostraci una panchina nella quieta luce d’inverno."
+      },
+      "company": {
+        "title": "Una persona cara",
+        "prompt": "Quale pausa condivideresti con qualcuno?"
+      },
+      "green": {
+        "title": "Primo verde",
+        "prompt": "Scopri i primi segni di primavera attorno alla panchina."
+      },
+      "history": {
+        "title": "Una panchina con una storia",
+        "prompt": "Quale ricordo o storia locale appartiene a questo luogo?"
+      },
+      "morning": {
+        "title": "Quiete del mattino",
+        "prompt": "Che sensazione dà questo luogo al mattino presto?"
+      },
+      "shade": {
+        "title": "Un posto all’ombra",
+        "prompt": "Quali panchine regalano ombra nei giorni caldi?"
+      },
+      "water": {
+        "title": "Acqua in vista",
+        "prompt": "Condividi un’impressione sincera dell’acqua, o della sua assenza."
+      },
+      "grandparents": {
+        "title": "Il preferito dei nonni",
+        "prompt": "Quale luogo sarebbe adatto a una pausa insieme?"
+      },
+      "evening": {
+        "title": "Oro della sera",
+        "prompt": "Cattura l’atmosfera di una tarda giornata estiva."
+      },
+      "care": {
+        "title": "Una piccola cura",
+        "prompt": "Un luogo pulito è un piccolo risultato della comunità."
+      },
+      "fog": {
+        "title": "Nebbia e vicinanza",
+        "prompt": "Cosa resta bello quando la vista lontana si prende una pausa?"
+      },
+      "thought": {
+        "title": "Un pensiero caldo",
+        "prompt": "Lascia una breve poesia o un consiglio."
+      }
+    }
+  },
+  "overview": {
+    "features": "{count, plural, one {# indicazione} other {# indicazioni}}",
+    "moments": "{count, plural, one {# momento} other {# momenti}}",
+    "mine": "I tuoi contributi qui:",
+    "empty": "Non hai ancora contribuito qui. Scegli ciò che sai con certezza.",
+    "rating": "Valutazione"
+  },
+  "metadata": {
+    "placeholder": "Come si chiama questa panchina?",
+    "dedicationHint": "(ciò che è scritto sulla panchina)",
+    "save": "Salva le indicazioni"
+  },
+  "moments": {
+    "kinds": {
+      "memory": "Ricordo",
+      "recommendation": "Consiglio",
+      "poem": "Poesia",
+      "local_fact": "Curiosità locale",
+      "photo": "Momento in foto"
+    },
+    "choose": "Cosa vuoi condividere?",
+    "label": "Il tuo momento sulla panchina",
+    "poemPlaceholder": "Qualche verso per questo luogo…",
+    "placeholder": "Cosa dovrebbero sapere gli altri su questo luogo?",
+    "publish": "Pubblica il momento"
+  },
+  "care": {
+    "actions": {
+      "cleaned": "Pulita un po’",
+      "good": "In buone condizioni",
+      "repair": "Da riparare",
+      "beautiful": "Oggi particolarmente bella"
+    },
+    "description": "Niente punti o classifiche, solo un segno che qualcuno se n’è occupato.",
+    "mine": "{label} · da te",
+    "events": {
+      "cleaned": "pulita",
+      "good": "trovata in buone condizioni",
+      "repair": "segnalata da riparare",
+      "beautiful": "trovata particolarmente bella oggi"
+    }
+  },
+  "presence": {
+    "signIn": "Accedi per partecipare",
+    "confirmedToday": "Confermata da te oggi",
+    "confirm": "C’è ancora",
+    "question": "C’è ancora?",
+    "missingCount": "{count}/{threshold} persone segnalano l’assenza di questa panchina.",
+    "reportedMissing": "Assenza segnalata da te",
+    "confirmMissing": "Conferma l’assenza",
+    "reportMissing": "La panchina non c’è più"
+  },
+  "errors": {
+    "save": "Impossibile salvare l’azione. Riprova."
+  },
+  "rating": {
+    "eyebrow": "La tua impressione",
+    "existing": "La tua valutazione precedente è già inserita: puoi modificarla.",
+    "intro": "Quattro piccole impressioni aiutano gli altri a scegliere.",
+    "fields": {
+      "overall": "Complessiva",
+      "view": "Panorama",
+      "comfort": "Comfort",
+      "quiet": "Tranquillità"
+    },
+    "note": "Un pensiero",
+    "optional": "(facoltativo)",
+    "placeholder": "Cosa ti è piaciuto qui?",
+    "update": "Aggiorna la valutazione",
+    "publish": "Pubblica la valutazione",
+    "stars": "{count, plural, one {# stella} other {# stelle}}"
+  },
+  "correction": {
+    "eyebrow": "Una breve segnalazione",
+    "title": "Qualcosa non va?",
+    "intro": "Solo ciò che hai appena osservato sul posto.",
+    "field": "Cosa non va?",
+    "choose": "Scegli",
+    "options": {
+      "removed": "La panchina manca o è stata rimossa",
+      "location": "La posizione è imprecisa",
+      "properties": "Le dotazioni non corrispondono",
+      "condition": "Danneggiata o difficile da usare",
+      "environment": "Dintorni, panorama o luce non corrispondono"
+    },
+    "observation": "Cosa hai visto?",
+    "placeholder": "Per esempio: manca lo schienale",
+    "publish": "Pubblica la segnalazione",
+    "fields": {
+      "properties": "Dotazioni",
+      "condition": "Stato",
+      "location": "Posizione",
+      "removed": "Non più presente",
+      "environment": "Dintorni, vista o luce"
+    }
+  },
+  "place": {
+    "eyebrow": "Le persone di questo luogo",
+    "title": "Momenti sulla panchina",
+    "share": "Condividi il momento",
+    "shareText": "Un momento sulla panchina presso {bench}",
+    "copied": "Link copiato, pronto da condividere, anche su Instagram.",
+    "shareUnavailable": "La condivisione non è disponibile in questo browser al momento.",
+    "operator": "Curata sul posto",
+    "favourite": "Luogo preferito",
+    "save": "Salva la panchina",
+    "following": "Segui {place}",
+    "follow": "Segui {place}",
+    "favourites": "Tutti i luoghi preferiti",
+    "recent": "negli ultimi 90 giorni",
+    "deleteOwn": "Elimina il mio momento",
+    "empty": "Ancora nessuna storia qui. La panchina aspetta pazientemente."
+  },
+  "features": {
+    "progress": "{known}/{total} dati noti · Tocca per completare",
+    "mine": "da te"
+  },
+  "observations": {
+    "light": {
+      "label": "Segnalare la luce sul posto",
+      "title": "È così in questo momento?",
+      "intro": "Una breve impressione dal posto",
+      "mine": "La tua osservazione: {choice}",
+      "choices": {
+        "sun": "Sole",
+        "shade": "Ombra",
+        "mixed": "Variabile"
+      },
+      "trend": "Comunità: soprattutto {choice} · {count, plural, one {una persona} other {# persone}}"
+    },
+    "view": {
+      "label": "Descrivere la vista sul posto",
+      "title": "Che impressione ti fa questo luogo?",
+      "agreed": "Confermata all’incirca da te",
+      "mine": "La tua impressione è stata registrata",
+      "intro": "La tua impressione aiuta a migliorare la stima",
+      "agree": "Corrisponde all’incirca",
+      "edit": "Vissuta diversamente",
+      "step": "Passo {current} di {total}",
+      "steps": "Passi",
+      "back": "Indietro",
+      "next": "Avanti",
+      "save": "Registrare"
+    },
+    "steps": {
+      "openness": "Quanto sembra aperto il luogo?",
+      "landscape": "Cosa caratterizza il paesaggio?",
+      "horizon": "Cosa c’è all’orizzonte?",
+      "surroundings": "Che impressione danno i dintorni?"
+    },
+    "fields": {
+      "openness": "Vista libera",
+      "sky": "Cielo",
+      "relief": "Terreno",
+      "water": "Acqua",
+      "horizon": "Orizzonte",
+      "naturalness": "Dintorni",
+      "disturbance": "Disturbi"
+    },
+    "choices": {
+      "openness": {
+        "wide": "Quasi tutt’intorno",
+        "partial": "In alcune direzioni",
+        "enclosed": "Piuttosto chiuso"
+      },
+      "sky": {
+        "open": "Aperto",
+        "partial": "Parzialmente",
+        "closed": "Chiuso"
+      },
+      "relief": {
+        "flat": "Pianeggiante",
+        "gentle": "Dolce",
+        "strong": "Rilievo marcato"
+      },
+      "water": {
+        "clear": "Chiaramente visibile",
+        "some": "Un po’ visibile",
+        "none": "Non visibile"
+      },
+      "horizon": {
+        "open": "Prevalentemente libero",
+        "trees": "Alberi",
+        "buildings": "Edifici",
+        "mixed": "Misto"
+      },
+      "naturalness": {
+        "natural": "Naturale",
+        "mixed": "Misto",
+        "built": "Edificato"
+      },
+      "disturbance": {
+        "quiet": "Tranquillo",
+        "some": "Un po’",
+        "strong": "Molto"
+      }
+    },
+    "trend": {
+      "openness": "piuttosto aperto",
+      "naturalness": "naturale",
+      "quiet": "tranquillo",
+      "description": "Comunità: {qualities}",
+      "empty": "Impressione della comunità",
+      "summary": "{description} · {count, plural, one {una persona} other {# persone}} · {confidence}"
+    },
+    "undo": "Annulla"
+  },
+  "reviews": {
+    "eyebrow": "Da persone sul posto",
+    "title": "Com’è stata la pausa?",
+    "edit": "Modifica il mio contributo",
+    "add": "Condividi un’impressione",
+    "signIn": "Accedi per partecipare",
+    "reportedRating": "Recensione segnalata",
+    "reportRating": "Segnala la recensione",
+    "notes": "Segnalazioni",
+    "reportedCorrection": "Correzione segnalata",
+    "reportCorrection": "Segnala la correzione"
+  },
+  "result": {
+    "ratingSaved": "Grazie, la tua valutazione è visibile.",
+    "ratingFailed": "Impossibile salvare la valutazione.",
+    "correctionSaved": "Grazie, la tua segnalazione è stata pubblicata.",
+    "correctionFailed": "Impossibile salvare la segnalazione.",
+    "invalidContribution": "Contributo non valido.",
+    "reported": "Il contributo è stato segnalato.",
+    "reportFailed": "Segnalazione non riuscita.",
+    "momentInvalid": "Racconta questo luogo in poche parole.",
+    "momentSaved": "Il tuo momento è ora visibile in questo luogo.",
+    "momentFailed": "Impossibile salvare il momento.",
+    "invalidMoment": "Momento non valido.",
+    "notYourMoment": "Questo momento non appartiene al tuo account.",
+    "momentDeleted": "Il tuo momento è stato rimosso.",
+    "momentDeleteFailed": "Impossibile rimuovere il momento.",
+    "careInvalid": "Intervento di cura sconosciuto.",
+    "careSaved": "Grazie per la cura.",
+    "careAlreadySaved": "Lo hai già annotato oggi.",
+    "careFailed": "Impossibile salvare l’intervento.",
+    "unfavourited": "Rimosso dai tuoi luoghi preferiti.",
+    "favourited": "Questa panchina è ora tra i tuoi luoghi preferiti.",
+    "placeUnnamed": "Questo luogo non ha ancora un nome.",
+    "placeUnfollowed": "Non segui più {place}.",
+    "placeFollowed": "I nuovi momenti di {place} appariranno nella tua vista.",
+    "followFailed": "Impossibile salvare la scelta.",
+    "lightInvalid": "Scegli sole, ombra o variabile.",
+    "lightNight": "Potrai segnalare la luce qui quando sarà giorno.",
+    "lightSaved": "Grazie, la tua osservazione sulla luce è registrata.",
+    "lightFailed": "Impossibile salvare l’osservazione sulla luce.",
+    "observationUndone": "La tua osservazione è stata ritirata.",
+    "undoFailed": "Impossibile ritirare l’osservazione.",
+    "observationConfirmed": "Grazie, la tua conferma aiuta a interpretare i dati.",
+    "observationConfirmFailed": "Impossibile salvare la conferma.",
+    "viewInvalid": "Completa la tua osservazione.",
+    "viewSaved": "Grazie, la tua osservazione è registrata.",
+    "viewFailed": "Impossibile salvare l’osservazione.",
+    "observationInvalid": "Osservazione sconosciuta.",
+    "observationDeleted": "La tua osservazione è stata cancellata.",
+    "observationDeleteFailed": "Impossibile cancellare l’osservazione."
+  }
+}

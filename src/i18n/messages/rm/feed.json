@@ -1,0 +1,38 @@
+{
+  "page": {
+    "map": "A la carta",
+    "following": "Da tes lieus preferids",
+    "all": "Tge che capita sper ils bancs",
+    "title": "Muments sin ils bancs",
+    "followingIntro": "Istorgias e pitschens segns da tgira da lieus che ti suondas.",
+    "intro": "Istorgias, pausas e pitschnas scuvertas — resumadas per banc e di.",
+    "weekly": "Banc da questa emna",
+    "theme": "Tema cuminaivel",
+    "news": "Novitads",
+    "filters": "Filters da las novitads",
+    "allPosts": "Tut las contribuziuns",
+    "favourites": "Lieus preferids"
+  },
+  "events": {
+    "added": "scuvrì",
+    "rated": "valità",
+    "confirmed": "confermà",
+    "missing": "annunzià sco absent",
+    "edited": "cumplettà",
+    "moment": "muments",
+    "care": "segns da tgira"
+  },
+  "stream": {
+    "loaded": "{count, plural, one {In’ulteriura contribuziun chargiada.} other {# ulteriuras contribuziuns chargiadas.}}",
+    "failed": "Las novitads fan gist pausa. Emprova anc ina giada.",
+    "openBench": "Avrir {name}",
+    "morePeople": " ed anc {count} ulteriuras",
+    "posts": "Guardar las contribuziuns ({count})",
+    "emptyFollowing": "Tar tes lieus preferids na datti anc naginas contribuziuns.",
+    "empty": "Anc nagina nova contribuziun.",
+    "allPosts": "Guardar tut las contribuziuns",
+    "loading": "Vegn chargià …",
+    "more": "Chargiar dapli contribuziuns",
+    "end": "Qua cumenza l’istorgia. Ti has vis tut las contribuziuns."
+  }
+}

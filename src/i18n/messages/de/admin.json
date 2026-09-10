@@ -1,0 +1,25 @@
+{
+  "title": "Bänkli App Moderation",
+  "signIn": {
+    "description": "Melde dich mit dem konfigurierten Admin-Passwort an.",
+    "local": "Lokal ohne Konfiguration: {password}"
+  },
+  "result": {
+    "passwordInvalid": "Passwort ist nicht korrekt.",
+    "signedIn": "Angemeldet.",
+    "unauthorized": "Nicht autorisiert."
+  },
+  "contributions": "Beiträge",
+  "reports": "Meldungen",
+  "empty": "Noch keine Community-Beiträge.",
+  "kinds": {
+    "rating": "Bewertung",
+    "correction": "Korrektur"
+  },
+  "hidden": "Verborgen",
+  "hide": "Verbergen",
+  "show": "Zeigen",
+  "block": "Browser sperren",
+  "reportCount": "{count, plural, one {# Meldung} other {# Meldungen}}",
+  "rating": "Gesamt {overall}/5 · Aussicht {view}/5 · Komfort {comfort}/5 · Ruhe {quiet}/5"
+}

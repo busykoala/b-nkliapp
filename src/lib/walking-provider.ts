@@ -1,4 +1,5 @@
 import "server-only";
+import { message } from "@/i18n/message";
 import { z } from "zod";
 import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { distanceMeters, type JourneyPoint } from "./journey";
@@ -9,7 +10,10 @@ const line = z.object({ coordinates: z.array(coordinate).min(1).max(100000) });
 const responseSchema = z.object({ paths: z.array(z.object({
   distance: z.number().nonnegative().max(300000), time: z.number().nonnegative().max(7 * 86400000), ascend: z.number().nonnegative(),
   points: line, snapped_waypoints: line,
-  instructions: z.array(z.object({ text: z.string().max(1000), distance: z.number().nonnegative(), interval: z.tuple([z.number().int().nonnegative(), z.number().int().nonnegative()]) })).max(10000).default([]),
+  instructions: z.array(z.object({ sign: z.number().int().optional(), street_name: z.string().max(1000).optional(),
+    street_ref: z.string().max(1000).optional(), street_destination: z.string().max(1000).optional(),
+    street_destination_ref: z.string().max(1000).optional(), exit_number: z.number().int().nonnegative().optional(),
+    ferry: z.string().max(80).optional(), distance: z.number().nonnegative(), interval: z.tuple([z.number().int().nonnegative(), z.number().int().nonnegative()]) })).max(10000).default([]),
   details: z.record(z.string(), z.array(z.tuple([z.number().int().nonnegative(), z.number().int().nonnegative(), z.union([z.string(), z.number(), z.null()])]))).default({}),
 })).min(1).max(3) });
 type Entry = { paths: WalkPath[]; expiry: number; bytes: number; timer: ReturnType<typeof setTimeout> };
@@ -24,7 +28,7 @@ export async function routeWalk(request: WalkRequest, signal: AbortSignal, perso
   if (!["http:", "https:"].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error("Invalid router configuration");
   const body = {
     profile: request.difficulty === "t2" ? "walk_t2" : "walk", points: request.points.map((p) => [p.longitude, p.latitude]),
-    points_encoded: false, elevation: true, instructions: true, locale: "de", "ch.disable": true, timeout_ms: 10000,
+    points_encoded: false, elevation: true, instructions: true, "ch.disable": true, timeout_ms: 10000,
     details: ["road_class", "road_environment", "hike_rating", "surface", "time", "edge_id"],
     ...(request.scenic ? { custom_model: { priority: [{ if: "road_class == PRIMARY || road_class == SECONDARY", multiply_by: .15 }, { if: "road_class == TERTIARY", multiply_by: .5 }] } } : {}),
     ...(request.roundTrip ? { algorithm: "round_trip", "round_trip.distance": request.roundTrip.meters, "round_trip.seed": request.roundTrip.seed } : request.alternatives ? { algorithm: "alternative_route", "alternative_route.max_paths": 2 } : {}),
@@ -59,7 +63,7 @@ export async function routeWalk(request: WalkRequest, signal: AbortSignal, perso
       if (p.points.coordinates.length < 2 || snapped.length !== requested.length || (request.roundTrip && p.snapped_waypoints.coordinates.length < 2)) throw new Error("Incomplete path");
       const warnings = snapped.flatMap((c, i) => {
         const gap = distanceMeters(routePoint([c[0], c[1]]), requested[i]);
-        return gap > 15 ? [`${i === 0 ? "Start" : i === requested.length - 1 ? "Ziel" : "Zwischenhalt"}: ${Math.round(gap)} m bis zum kartierten Weg. Zugang vor Ort prüfen.`] : [];
+        return gap > 15 ? [message(i === 0 ? "routing.warnings.start" : i === requested.length - 1 ? "routing.warnings.end" : "routing.warnings.via", {distance: Math.round(gap)})] : [];
       });
       return { geometry: p.points.coordinates.map(([lon, lat]) => [lon, lat]), distance: p.distance, ascent: p.ascend, referenceSeconds: p.time / 1000, instructions: p.instructions, details: p.details, warnings };
     });

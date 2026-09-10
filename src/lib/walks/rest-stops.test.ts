@@ -1,3 +1,4 @@
+import { message } from "@/i18n/message";
 import { describe, expect, it } from "vitest";
 import { benchVisits, restCoverage, restWaypoints } from "./rest-stops";
 import type { WalkBench, WalkQuery } from "./model";
@@ -18,7 +19,7 @@ describe("maximum gap between actual rest opportunities", () => {
     expect(restCoverage(path, benches.slice(1), query)).toBeNull();
     expect(restCoverage(path, benches.slice(0, 3), query)).toBeNull();
     expect(restCoverage(path, benches.map((b) => ({ ...b, latitude: 47.0001 })), query)).toBeNull();
-    expect(restCoverage({ ...path, warnings: ["Zwischenhalt: Zugang prüfen"] }, benches, query)).toBeNull();
+    expect(restCoverage({ ...path, warnings: [message("routing.warnings.via", {distance: 30})] }, benches, query)).toBeNull();
   });
   it("uses the chosen pace and slope-aware intervals", () => {
     expect(restCoverage(path, benches, { ...query, speed: 3 })).toBeNull();

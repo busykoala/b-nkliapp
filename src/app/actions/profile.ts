@@ -1,5 +1,8 @@
 "use server";
 
+import { actionError } from "@/i18n/action-error";
+import { getTranslations } from "next-intl/server";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sqlite } from "@/db/client";
@@ -20,13 +23,18 @@ const avatarSchema = z.object({
 export type AvatarActionState = { ok: boolean; message: string };
 
 export async function saveAvatarAppearance(_previous: AvatarActionState, formData: FormData): Promise<AvatarActionState> {
-  const user = await requireUser();
-  const parsed = avatarSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, message: "Diese Kombination konnte nicht gespeichert werden." };
-  sqlite.prepare("UPDATE users SET avatar_seed=? WHERE id=?")
-    .run(serializeAvatarAppearance(parsed.data as AvatarAppearance), user.id);
-  revalidatePath("/profil", "layout");
-  revalidatePath(`/profil/${encodeURIComponent(user.username)}`);
-  revalidatePath("/feed");
-  return { ok: true, message: "Dein Aquarell-Avatar ist gespeichert." };
+  const t = await getTranslations();
+  try {
+    const user = await requireUser();
+    const parsed = avatarSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) return { ok: false, message: t("avatar.result.invalid") };
+    sqlite.prepare("UPDATE users SET avatar_seed=? WHERE id=?")
+      .run(serializeAvatarAppearance(parsed.data as AvatarAppearance), user.id);
+    revalidatePath("/profil", "layout");
+    revalidatePath(`/profil/${encodeURIComponent(user.username)}`);
+    revalidatePath("/feed");
+    return { ok: true, message: t("avatar.result.saved") };
+  } catch (error) {
+    return { ok: false, message: actionError(t, error, "avatar.result.invalid") };
+  }
 }

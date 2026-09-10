@@ -42,7 +42,7 @@ export function lookupTransfer(from: JourneyPoint, to: JourneyPoint, serviceDate
       if (!rules.length) continue;
       if (rules.some((r) => r.type !== rules[0].type || r.minimum !== rules[0].minimum)) return null;
       if (rules[0].type === 4 || rules[0].type === 5) return null;
-      return { type: rules[0].type, minimumSeconds: rules[0].minimum, source: "Offizielle GTFS-Mindestumsteigezeit" };
+      return { type: rules[0].type, minimumSeconds: rules[0].minimum, source: "official" };
     }
     return null;
   } catch { return null; } finally { db.close(); }

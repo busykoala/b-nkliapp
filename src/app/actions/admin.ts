@@ -1,5 +1,7 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { sqlite } from "@/db/client";
@@ -7,10 +9,11 @@ import { createAdminSession, destroyAdminSession, isAdmin, verifyAdminPassword }
 import type { ActionResult } from "@/lib/types";
 
 export async function adminLogin(_previous: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const t = await getTranslations();
   const password = String(formData.get("password") ?? "");
-  if (!verifyAdminPassword(password)) return { ok: false, message: "Passwort ist nicht korrekt." };
+  if (!verifyAdminPassword(password)) return { ok: false, message: t("admin.result.passwordInvalid") };
   await createAdminSession();
-  return { ok: true, message: "Angemeldet." };
+  return { ok: true, message: t("admin.result.signedIn") };
 }
 
 export async function adminLogout() {
@@ -19,7 +22,7 @@ export async function adminLogout() {
 }
 
 export async function setContributionVisibility(type: "rating" | "correction", id: number, visible: boolean) {
-  if (!(await isAdmin())) throw new Error("Nicht autorisiert.");
+  if (!(await isAdmin())) throw new Error("Unauthorized");
   const table = type === "rating" ? "ratings" : "corrections";
   sqlite.transaction(() => {
     sqlite.prepare(`UPDATE ${table} SET visible=? WHERE id=?`).run(visible ? 1 : 0, id);
@@ -31,7 +34,7 @@ export async function setContributionVisibility(type: "rating" | "correction", i
 }
 
 export async function blockContributor(type: "rating" | "correction", id: number) {
-  if (!(await isAdmin())) throw new Error("Nicht autorisiert.");
+  if (!(await isAdmin())) throw new Error("Unauthorized");
   const table = type === "rating" ? "ratings" : "corrections";
   const target = sqlite.prepare(`SELECT contributor_hash FROM ${table} WHERE id=?`).get(id) as { contributor_hash: string } | undefined;
   if (!target) return;

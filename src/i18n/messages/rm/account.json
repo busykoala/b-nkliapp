@@ -1,0 +1,35 @@
+{
+  "dialog": {
+    "invitation": "Fa part",
+    "welcome": "Bainvegni enavos",
+    "createTitle": "Tes conto Bänkli",
+    "description": "Mo in num d’utilisader ed in pled-clav. Senza e-mail.",
+    "privacy": "Tge che succeda cun tias datas ↗",
+    "intent": "Suenter pos ti cuntinuar: {intent}.",
+    "register": "Nov qua? Crear in conto",
+    "login": "Jau hai gia in conto"
+  },
+  "fields": {
+    "username": "Num d’utilisader",
+    "password": "Pled-clav"
+  },
+  "form": {
+    "signingIn": "Annunzia en curs …",
+    "registering": "Il conto vegn creà …",
+    "register": "Crear in conto"
+  },
+  "validation": {
+    "usernameCharacters": "Mo bustabs, cifras, punct, _ e -",
+    "usernameShort": "Almain 3 caracters",
+    "usernameLong": "Maximal 24 caracters",
+    "passwordShort": "Almain 8 caracters",
+    "passwordLong": "Maximal 128 caracters"
+  },
+  "result": {
+    "welcome": "Bainvegni tar Bänkli App!",
+    "usernameTaken": "Quest num d’utilisader è gia occupà.",
+    "registerFailed": "Il conto n’ha betg pudì vegnir creà.",
+    "credentialsInvalid": "Num d’utilisader u pled-clav nunvalid.",
+    "welcomeBack": "Bel che ti es puspè qua!"
+  }
+}

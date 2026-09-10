@@ -4,12 +4,12 @@ export type FeedEntry = {
   username: string;
   avatarSeed: string;
   benchId: string;
-  benchName: string;
+  benchName: string | null;
   createdAt: string;
   detail: string | null;
 };
 
-export type WeeklyBench = { id: string; name: string; place: string | null };
+export type WeeklyBench = { id: string; name: string | null; place: string | null };
 export type FeedCursor = { createdAt: string; id: string };
 export type FeedScope = "all" | "following";
 export type FeedPage = { entries: FeedEntry[]; personalized: boolean; nextCursor: FeedCursor | null };
@@ -31,7 +31,7 @@ export function groupFeed(entries: FeedEntry[], now = Date.now()) {
 
 /** Coalesce all activity at a bench on the same Swiss calendar day, including page boundaries. */
 export function groupBenchActivity(entries: FeedEntry[]) {
-  const groups = new Map<string, { key: string; benchId: string; benchName: string; date: string; entries: FeedEntry[] }>();
+  const groups = new Map<string, { key: string; benchId: string; benchName: string | null; date: string; entries: FeedEntry[] }>();
   const seen = new Set<string>();
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich", year: "numeric", month: "2-digit", day: "2-digit" });
   for (const entry of entries) {

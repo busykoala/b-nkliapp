@@ -1,0 +1,38 @@
+{
+  "page": {
+    "map": "Retour à la carte",
+    "following": "De tes lieux favoris",
+    "all": "La vie autour des bancs",
+    "title": "Instants sur les bancs",
+    "followingIntro": "Histoires et petits gestes de soin des lieux que tu suis.",
+    "intro": "Histoires, pauses et petites découvertes — regroupées par banc et par jour.",
+    "weekly": "Banc de la semaine",
+    "theme": "Thème commun",
+    "news": "Actualités",
+    "filters": "Filtres des actualités",
+    "allPosts": "Toutes les contributions",
+    "favourites": "Lieux favoris"
+  },
+  "events": {
+    "added": "découvert",
+    "rated": "évalué",
+    "confirmed": "confirmé",
+    "missing": "signalé absent",
+    "edited": "complété",
+    "moment": "instants",
+    "care": "gestes de soin"
+  },
+  "stream": {
+    "loaded": "{count, plural, one {Une contribution supplémentaire chargée.} other {# contributions supplémentaires chargées.}}",
+    "failed": "Les actualités font une pause. Réessaie.",
+    "openBench": "Ouvrir {name}",
+    "morePeople": " et {count} autres",
+    "posts": "Voir les contributions ({count})",
+    "emptyFollowing": "Il n’y a pas encore de contributions à tes lieux favoris.",
+    "empty": "Aucune nouvelle contribution pour l’instant.",
+    "allPosts": "Voir toutes les contributions",
+    "loading": "Chargement…",
+    "more": "Charger plus de contributions",
+    "end": "L’histoire commence ici. Tu as vu toutes les contributions."
+  }
+}

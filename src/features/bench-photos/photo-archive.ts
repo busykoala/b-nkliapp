@@ -1,5 +1,7 @@
 import "server-only";
 
+import { UserFacingError } from "@/i18n/action-error";
+
 import { readFile, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { validateBenchPhoto } from "./photo-file";
@@ -9,12 +11,12 @@ const contentTypes = { webp: "image/webp", jpg: "image/jpeg", png: "image/png" }
 
 export async function readArchivedBenchPhoto(root: string, key: string) {
   const match = photoKey.exec(key);
-  if (!match) throw new Error("Bild nicht gefunden.");
+  if (!match) throw new UserFacingError("photos.server.notFound");
   const archive = await realpath(root);
   const file = await realpath(resolve(archive, key));
   const location = relative(archive, file);
   if (isAbsolute(location) || location === ".." || location.startsWith(`..${sep}`)) {
-    throw new Error("Bild nicht gefunden.");
+    throw new UserFacingError("photos.server.notFound");
   }
   const bytes = await readFile(file);
   const contentType = contentTypes[match[1] as keyof typeof contentTypes];

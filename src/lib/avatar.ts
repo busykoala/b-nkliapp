@@ -13,19 +13,6 @@ export type AvatarAppearance = {
   [Key in keyof typeof avatarOptionValues]: (typeof avatarOptionValues)[Key][number];
 };
 
-export const avatarOptionLabels: {
-  [Key in keyof typeof avatarOptionValues]: Record<AvatarAppearance[Key], string>;
-} = {
-  skin: { porcelain: "Hell", sunlit: "Sonnig", warm: "Warm", brown: "Braun", deep: "Dunkel" },
-  hair: { charcoal: "Kohle", chestnut: "Kastanie", copper: "Kupfer", blond: "Gold", silver: "Silber" },
-  hairStyle: { short: "Kurz", waves: "Wellen", bob: "Bob", bun: "Dutt", curls: "Locken" },
-  coat: { pine: "Tanne", lake: "See", rust: "Rost", moss: "Moos", plum: "Pflaume" },
-  accent: { gold: "Gold", coral: "Koralle", sage: "Salbei", cream: "Creme", none: "Ohne" },
-  hat: { none: "Ohne", beanie: "Mütze", brim: "Hut", cap: "Cap" },
-  background: { mountain: "Berge", lake: "See", forest: "Wald", city: "Stadt", meadow: "Wiese" },
-  companion: { none: "Allein", bird: "Vogel", cat: "Katze", fox: "Fuchs" },
-};
-
 const avatarKeys = Object.keys(avatarOptionValues) as Array<keyof AvatarAppearance>;
 const prefix = "avatar-v1";
 

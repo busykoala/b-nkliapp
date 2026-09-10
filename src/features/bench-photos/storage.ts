@@ -1,16 +1,18 @@
 import "server-only";
 
+import { UserFacingError } from "@/i18n/action-error";
+
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { readArchivedBenchPhoto } from "./photo-archive";
 
 function config() {
   // A local production snapshot must never write back to its original bucket.
-  if (process.env.BENCHLY_PHOTO_ARCHIVE_PATH) throw new Error("Der Foto-Speicher macht gerade Pause.");
+  if (process.env.BENCHLY_PHOTO_ARCHIVE_PATH) throw new UserFacingError("photos.server.storageUnavailable");
   const endpoint = process.env.BENCHLY_PHOTO_S3_ENDPOINT;
   const bucket = process.env.BENCHLY_PHOTO_BUCKET;
   const accessKeyId = process.env.BENCHLY_PHOTO_ACCESS_KEY;
   const secretAccessKey = process.env.BENCHLY_PHOTO_SECRET_KEY;
-  if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) throw new Error("Der Foto-Speicher macht gerade Pause.");
+  if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) throw new UserFacingError("photos.server.storageUnavailable");
   return { endpoint, bucket, accessKeyId, secretAccessKey };
 }
 

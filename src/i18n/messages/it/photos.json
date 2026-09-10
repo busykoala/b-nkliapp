@@ -1,0 +1,59 @@
+{
+  "gallery": {
+    "view": "Vedi la foto",
+    "enlarge": "Ingrandisci: {caption}",
+    "close": "Chiudi le foto",
+    "unavailable": "L’immagine fa una pausa.",
+    "retry": "Ricarica",
+    "loading": "Caricamento dell’immagine…",
+    "source": "Fonte e licenza ↗",
+    "label": "Foto",
+    "previous": "Foto precedente",
+    "next": "Foto successiva",
+    "by": "Foto della panchina di {username}",
+    "exact": "Questa panchina",
+    "nearby": "Nei dintorni"
+  },
+  "capture": {
+    "title": "Metti la panchina in foto",
+    "intro": "Scegli dalla galleria, dalla fotocamera o dai file, preferibilmente senza persone nell’immagine. Verifica e archiviazione avvengono sul nostro server.",
+    "select": "Scegli una foto della panchina",
+    "preview": "Anteprima della foto della panchina",
+    "change": "Un’altra foto",
+    "choose": "Scatta o scegli una foto",
+    "caption": "Qualche parola",
+    "captionPlaceholder": "Cosa si vede da questa panchina?",
+    "checking": "Verifica della foto…",
+    "publish": "Pubblica la foto"
+  },
+  "errors": {
+    "prepare": "Impossibile preparare la foto.",
+    "originalTooLarge": "La foto originale è troppo grande. Scegli un’immagine fino a 24 MB.",
+    "decode": "Impossibile leggere la foto.",
+    "tooDetailed": "La foto contiene troppi dettagli. Scegli un’inquadratura un po’ più piccola.",
+    "read": "Impossibile leggere la foto.",
+    "upload": "Impossibile inviare la foto. Riprova."
+  },
+  "story": {
+    "nearby": "Nei dintorni · non necessariamente questa panchina",
+    "place": "Questo luogo",
+    "license": "Licenza alla fonte",
+    "title": "Uno sguardo nei dintorni",
+    "external": "Informazione esterna sul luogo ↗",
+    "defaultCaption": "Una vista da questa panchina."
+  },
+  "server": {
+    "notFound": "Immagine non trovata.",
+    "unavailable": "Immagine al momento non disponibile.",
+    "choose": "Scegli una foto nitida fino a 1,8 MB.",
+    "saved": "Foto ricevuta: la panchina ha il suo ritratto.",
+    "saveFailed": "Impossibile salvare la foto.",
+    "checkUnavailable": "Il controllo delle immagini guarda altrove. Riprova più tardi.",
+    "checkBusy": "Il controllo delle immagini riprende fiato. Riprova più tardi.",
+    "people": "La panchina può posare da sola per un momento: riprova senza persone.",
+    "uncertain": "L’immagine è un po’ troppo misteriosa per il controllo. Fotografa di nuovo la panchina in modo nitido e senza persone.",
+    "storageUnavailable": "L’archivio fotografico fa una pausa.",
+    "format": "Usa una foto JPEG, PNG o WebP.",
+    "formatMismatch": "Il formato non corrisponde alla foto. Seleziona di nuovo l’immagine."
+  }
+}

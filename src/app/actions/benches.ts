@@ -1,5 +1,9 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
+
+import { actionError, UserFacingError } from "@/i18n/action-error";
+
 import { randomInt, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { sqlite } from "@/db/client";
@@ -39,7 +43,7 @@ const materialValueSchema = z.enum(["wood", "metal", "stone", "concrete", "plast
 
 function rowFor(id: string) {
   const row = sqlite.prepare("SELECT row_id FROM benches WHERE id=? AND active=1").get(id) as { row_id: number } | undefined;
-  if (!row) throw new Error("Dieses Bänkli wurde nicht gefunden.");
+  if (!row) throw new UserFacingError("common.errors.benchNotFound");
   return row.row_id;
 }
 function refresh(id: string) { revalidatePath("/"); revalidatePath(`/bank/${id}`); }
@@ -79,8 +83,9 @@ export async function getNearbyBenches(latitude: number, longitude: number): Pro
 }
 
 export async function addBench(_previous: AddBenchResult | null, formData: FormData): Promise<AddBenchResult> {
+  const t = await getTranslations();
   const parsed = addSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, message: "Bitte Standort prüfen." };
+  if (!parsed.success) return { ok: false, message: t("submission.result.locationInvalid") };
   try {
     const user = await writeActor("add-bench", 10, 25);
     const location = await locationFor(parsed.data.latitude, parsed.data.longitude);
@@ -90,7 +95,7 @@ export async function addBench(_previous: AddBenchResult | null, formData: FormD
     const transaction = sqlite.transaction((): AddBenchResult => {
       const nearby = readNearbyBenches(parsed.data.latitude, parsed.data.longitude);
       if (nearby.length && (parsed.data.nearbyReviewed !== "yes" || parsed.data.nearbyIds !== JSON.stringify(nearby.map((bench) => bench.id).sort()))) {
-        return { ok: false, message: "Bitte prüfe zuerst die Bänkli in der Nähe. Ist deines schon eingetragen?", nearby };
+        return { ok: false, message: t("submission.result.reviewNearby"), nearby };
       }
       const result = sqlite.prepare(`INSERT INTO benches(
         id,osm_type,osm_id,latitude,longitude,backrest,armrest,covered,wheelchair,fireplace_nearby,waste_basket_nearby,seats,material,direction_degrees,
@@ -103,7 +108,7 @@ export async function addBench(_previous: AddBenchResult | null, formData: FormD
         wheelchair: bool(parsed.data.wheelchair), seats: parsed.data.seats === "" ? null : parsed.data.seats ?? null,
         fireplaceNearby: bool(parsed.data.fireplaceNearby), wasteBasketNearby: bool(parsed.data.wasteBasketNearby),
         material: parsed.data.material || null, direction: parsed.data.direction === "" ? null : parsed.data.direction ?? null,
-        description: parsed.data.name || "Sitzbank", now, name: parsed.data.name || null, dedication: parsed.data.dedication || null,
+        description: parsed.data.name || t("common.values.bench"), now, name: parsed.data.name || null, dedication: parsed.data.dedication || null,
         locationName: location.name, locationKey: normalizeLocationKey(location.name), postcode: location.postcode,
         canton: location.canton, userId: user.id,
       });
@@ -118,17 +123,18 @@ export async function addBench(_previous: AddBenchResult | null, formData: FormD
       ].filter((entry) => entry[1] !== undefined && entry[1] !== "");
       const insertEdit = sqlite.prepare("INSERT INTO bench_metadata_edits(bench_row_id,user_id,field,old_value,new_value,created_at) VALUES(?,?,?,?,?,?)");
       for (const [field, value] of edits) insertEdit.run(rowId, user.id, field, null, String(value), now);
-      return { ok: true, benchId: id, message: `Bänkli eingetragen · noch ${threshold - 1} Bestätigung${threshold - 1 === 1 ? "" : "en"}.` };
+      return { ok: true, benchId: id, message: t("submission.result.added", { count: threshold - 1 }) };
     });
     const result = transaction.immediate();
     if (!result.ok) return result;
     refreshUserBadges(user.id);
     refresh(id);
     return result;
-  } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Bänkli konnte nicht gespeichert werden." }; }
+  } catch (error) { return { ok: false, message: actionError(t, error, "submission.result.addFailed") }; }
 }
 
 export async function confirmBench(benchId: string): Promise<ActionResult> {
+  const t = await getTranslations();
   try {
     const user = await writeActor("confirm-bench", 100, 300);
     const rowId = rowFor(benchId);
@@ -137,26 +143,28 @@ export async function confirmBench(benchId: string): Promise<ActionResult> {
     if (result.added) refreshUserBadges(user.id);
     if (result.verified && result.creatorUserId) refreshUserBadges(result.creatorUserId);
     refresh(benchId);
-    if (!result.refreshed) return { ok: true, message: "Heute bereits von dir bestätigt." };
-    if (result.alreadyVerified) return { ok: true, message: "Danke – heute als noch vorhanden bestätigt." };
-    return { ok: true, message: result.verified ? "Dieses Bänkli ist jetzt bestätigt!" : `Noch ${threshold - result.count} Bestätigung${threshold - result.count === 1 ? "" : "en"}.` };
-  } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Bestätigung fehlgeschlagen." }; }
+    if (!result.refreshed) return { ok: true, message: t("submission.result.alreadyConfirmed") };
+    if (result.alreadyVerified) return { ok: true, message: t("submission.result.presenceConfirmed") };
+    return { ok: true, message: result.verified ? t("submission.result.verified") : t("submission.result.confirmationsNeeded", { count: threshold - result.count }) };
+  } catch (error) { return { ok: false, message: actionError(t, error, "submission.result.confirmFailed") }; }
 }
 
 export async function requestBenchRemoval(benchId: string): Promise<ActionResult> {
+  const t = await getTranslations();
   try {
     const user = await writeActor("remove-bench", 30, 100); const rowId = rowFor(benchId); const now = new Date().toISOString();
     const result = recordRemovalConfirmation(sqlite, rowId, user.id, threshold, now);
     if (result.added) refreshUserBadges(user.id);
     refresh(benchId);
-    if (!result.added) return { ok: false, message: "Du hast das Fehlen schon bestätigt." };
-    return { ok: true, message: result.removed ? "Als nicht mehr vorhanden bestätigt." : `Hinweis gespeichert – noch ${threshold - result.count} Stimme${threshold - result.count === 1 ? "" : "n"}.` };
-  } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Hinweis fehlgeschlagen." }; }
+    if (!result.added) return { ok: false, message: t("submission.result.alreadyMissing") };
+    return { ok: true, message: result.removed ? t("submission.result.removed") : t("submission.result.removalVotes", { count: threshold - result.count }) };
+  } catch (error) { return { ok: false, message: actionError(t, error, "submission.result.removalFailed") }; }
 }
 
 export async function editBenchMetadata(benchId: string, _previous: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const t = await getTranslations();
   const parsed = editSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, message: "Bitte Angaben prüfen." };
+  if (!parsed.success) return { ok: false, message: t("submission.result.metadataInvalid") };
   try {
     const user = await writeActor("edit-bench", 30, 100); const rowId = rowFor(benchId); const now = new Date().toISOString();
     const old = sqlite.prepare("SELECT name,dedication FROM benches WHERE row_id=?").get(rowId) as Record<string, string | null>;
@@ -170,34 +178,35 @@ export async function editBenchMetadata(benchId: string, _previous: ActionResult
       }
     });
     transaction(); refreshUserBadges(user.id); refresh(benchId);
-    return { ok: true, message: "Angaben aktualisiert." };
-  } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Änderung fehlgeschlagen." }; }
+    return { ok: true, message: t("submission.result.metadataUpdated") };
+  } catch (error) { return { ok: false, message: actionError(t, error, "submission.result.metadataFailed") }; }
 }
 
 export async function editBenchField(benchId: string, fieldInput: unknown, valueInput: unknown): Promise<ActionResult> {
+  const t = await getTranslations();
   const field = editableFieldSchema.safeParse(fieldInput);
-  if (!field.success || typeof valueInput !== "string") return { ok: false, message: "Bitte Angabe prüfen." };
+  if (!field.success || typeof valueInput !== "string") return { ok: false, message: t("submission.result.fieldInvalid") };
 
   let value: string | number;
   let column: "backrest" | "armrest" | "covered" | "wheelchair" | "fireplace_nearby" | "waste_basket_nearby" | "material" | "seats" | "direction_degrees";
   if (["backrest", "armrest", "covered", "wheelchair", "fireplaceNearby", "wasteBasketNearby"].includes(field.data)) {
     const parsed = booleanValueSchema.safeParse(valueInput);
-    if (!parsed.success) return { ok: false, message: "Bitte Ja oder Nein wählen." };
+    if (!parsed.success) return { ok: false, message: t("submission.result.chooseBoolean") };
     value = parsed.data === "yes" ? 1 : 0;
     column = field.data === "fireplaceNearby" ? "fireplace_nearby" : field.data === "wasteBasketNearby" ? "waste_basket_nearby" : field.data as typeof column;
   } else if (field.data === "material") {
     const parsed = materialValueSchema.safeParse(valueInput);
-    if (!parsed.success) return { ok: false, message: "Bitte Material wählen." };
+    if (!parsed.success) return { ok: false, message: t("submission.result.chooseMaterial") };
     value = parsed.data;
     column = "material";
   } else if (field.data === "seats") {
     const parsed = z.coerce.number().int().min(1).max(20).safeParse(valueInput);
-    if (!parsed.success) return { ok: false, message: "Bitte Sitzplätze zwischen 1 und 20 wählen." };
+    if (!parsed.success) return { ok: false, message: t("submission.result.chooseSeats") };
     value = parsed.data;
     column = "seats";
   } else {
     const parsed = z.coerce.number().int().min(0).max(359).refine((degrees) => degrees % 45 === 0).safeParse(valueInput);
-    if (!parsed.success) return { ok: false, message: "Bitte Blickrichtung wählen." };
+    if (!parsed.success) return { ok: false, message: t("submission.result.chooseDirection") };
     value = parsed.data;
     column = "direction_degrees";
   }
@@ -206,7 +215,7 @@ export async function editBenchField(benchId: string, fieldInput: unknown, value
     const user = await writeActor("edit-bench-field", 60, 180);
     const rowId = rowFor(benchId);
     const previous = sqlite.prepare(`SELECT ${column} AS value FROM benches WHERE row_id=?`).get(rowId) as { value: string | number | null };
-    if (String(previous.value ?? "") === String(value)) return { ok: true, message: "Ist bereits so eingetragen." };
+    if (String(previous.value ?? "") === String(value)) return { ok: true, message: t("submission.result.unchanged") };
     const now = new Date().toISOString();
     const transaction = sqlite.transaction(() => {
       sqlite.prepare(`UPDATE benches SET ${column}=? WHERE row_id=?`).run(value, rowId);
@@ -216,8 +225,8 @@ export async function editBenchField(benchId: string, fieldInput: unknown, value
     transaction();
     refreshUserBadges(user.id);
     refresh(benchId);
-    return { ok: true, message: "Danke – ist eingetragen." };
+    return { ok: true, message: t("submission.result.fieldSaved") };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "Angabe konnte nicht gespeichert werden." };
+    return { ok: false, message: actionError(t, error, "submission.result.fieldFailed") };
   }
 }

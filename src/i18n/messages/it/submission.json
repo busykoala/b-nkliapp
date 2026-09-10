@@ -1,0 +1,56 @@
+{
+  "location": {
+    "searching": "Ricerca del luogo…",
+    "onSave": "Il luogo sarà aggiunto al salvataggio",
+    "change": "Modifica la posizione",
+    "details": "Dettagli della posizione"
+  },
+  "nearby": {
+    "title": "Panchine nelle vicinanze",
+    "failed": "La ricerca nelle vicinanze non è riuscita.",
+    "retry": "Verifica di nuovo",
+    "checking": "Verifica delle panchine già presenti nelle vicinanze…",
+    "count": "{count, plural, one {# panchina entro 25 m} other {# panchine entro 25 m}}",
+    "question": "La tua è già presente?",
+    "open": "{meters} m · Vedi la panchina",
+    "empty": "Nessuna panchina registrata entro 25 m.",
+    "confirm": "Verificato: la mia è un’altra panchina."
+  },
+  "fields": {
+    "namePlaceholder": "La mia panchina preferita",
+    "dedication": "Dedica",
+    "features": "Aggiungi le dotazioni (facoltativo)",
+    "observation": "Cosa vedi sulla panchina?",
+    "accessNote": "Valuta separatamente l’utilizzo della panchina in sedia a rotelle e il percorso di accesso."
+  },
+  "form": {
+    "pending": "Registrazione…",
+    "submit": "Aggiungi"
+  },
+  "result": {
+    "locationInvalid": "Controlla la posizione.",
+    "reviewNearby": "Controlla prima le panchine vicine. La tua è già registrata?",
+    "added": "Panchina aggiunta · {count, plural, one {manca # conferma} other {mancano # conferme}}.",
+    "addFailed": "Impossibile salvare la panchina.",
+    "alreadyConfirmed": "Hai già confermato oggi.",
+    "presenceConfirmed": "Grazie: presenza confermata oggi.",
+    "verified": "Questa panchina è ora confermata!",
+    "confirmationsNeeded": "{count, plural, one {Manca # conferma.} other {Mancano # conferme.}}",
+    "confirmFailed": "Conferma non riuscita.",
+    "alreadyMissing": "Hai già confermato l’assenza.",
+    "removed": "Confermato come non più presente.",
+    "removalVotes": "Segnalazione salvata: {count, plural, one {manca # voto} other {mancano # voti}}.",
+    "removalFailed": "Segnalazione non riuscita.",
+    "metadataInvalid": "Controlla le informazioni.",
+    "metadataUpdated": "Informazioni aggiornate.",
+    "metadataFailed": "Modifica non riuscita.",
+    "fieldInvalid": "Controlla questa informazione.",
+    "chooseBoolean": "Scegli sì o no.",
+    "chooseMaterial": "Scegli un materiale.",
+    "chooseSeats": "Scegli tra 1 e 20 posti.",
+    "chooseDirection": "Scegli una direzione.",
+    "unchanged": "È già registrato così.",
+    "fieldSaved": "Grazie, è registrato.",
+    "fieldFailed": "Impossibile salvare l’informazione."
+  }
+}

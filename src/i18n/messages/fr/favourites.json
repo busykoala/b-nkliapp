@@ -1,0 +1,12 @@
+{
+  "metadata": "Mes lieux favoris · Bänkli App",
+  "eyebrow": "Pour la prochaine pause",
+  "title": "Mes lieux favoris",
+  "intro": "Tous les bancs que tu as enregistrés. Cette liste est visible uniquement par toi.",
+  "label": "Bancs enregistrés",
+  "removed": "{place} · n’existe plus",
+  "place": "Un lieu sur la carte",
+  "end": "Pas d’autres lieux favoris.",
+  "empty": "Pas encore de lieu favori ? Ouvre un banc sur la carte et touche « {action} ».",
+  "more": "Plus de lieux favoris"
+}

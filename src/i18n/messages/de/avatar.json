@@ -1,0 +1,82 @@
+{
+  "editor": {
+    "title": "Avatar gestalten",
+    "mixture": "Deine Mischung",
+    "description": "Jede Auswahl wird aus einzelnen Aquarell-Ebenen zusammengesetzt.",
+    "random": "Überrasche mich",
+    "pending": "Wird gemalt …",
+    "save": "Avatar speichern"
+  },
+  "description": "{hair}, {coat}, Hintergrund {background}",
+  "groups": {
+    "skin": "Hautton",
+    "hairStyle": "Frisur",
+    "hair": "Haarfarbe",
+    "coat": "Jacke",
+    "accent": "Schal",
+    "hat": "Kopfbedeckung",
+    "background": "Lieblingslandschaft",
+    "companion": "Begleitung"
+  },
+  "options": {
+    "skin": {
+      "porcelain": "Hell",
+      "sunlit": "Sonnig",
+      "warm": "Warm",
+      "brown": "Braun",
+      "deep": "Dunkel"
+    },
+    "hair": {
+      "charcoal": "Kohle",
+      "chestnut": "Kastanie",
+      "copper": "Kupfer",
+      "blond": "Gold",
+      "silver": "Silber"
+    },
+    "hairStyle": {
+      "short": "Kurz",
+      "waves": "Wellen",
+      "bob": "Bob",
+      "bun": "Dutt",
+      "curls": "Locken"
+    },
+    "coat": {
+      "pine": "Tanne",
+      "lake": "See",
+      "rust": "Rost",
+      "moss": "Moos",
+      "plum": "Pflaume"
+    },
+    "accent": {
+      "gold": "Gold",
+      "coral": "Koralle",
+      "sage": "Salbei",
+      "cream": "Creme",
+      "none": "Ohne"
+    },
+    "hat": {
+      "none": "Ohne",
+      "beanie": "Mütze",
+      "brim": "Hut",
+      "cap": "Cap"
+    },
+    "background": {
+      "mountain": "Berge",
+      "lake": "See",
+      "forest": "Wald",
+      "city": "Stadt",
+      "meadow": "Wiese"
+    },
+    "companion": {
+      "none": "Allein",
+      "bird": "Vogel",
+      "cat": "Katze",
+      "fox": "Fuchs"
+    }
+  },
+  "label": "Aquarell-Profilbild von {username}: {description}",
+  "result": {
+    "invalid": "Diese Kombination konnte nicht gespeichert werden.",
+    "saved": "Dein Aquarell-Avatar ist gespeichert."
+  }
+}

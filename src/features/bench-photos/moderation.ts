@@ -1,4 +1,6 @@
 import "server-only";
+
+import { UserFacingError } from "@/i18n/action-error";
 import { z } from "zod";
 import { DATA_PROVIDERS } from "@/data/runtime.generated";
 
@@ -7,7 +9,7 @@ const verdictSchema = z.object({ people_detected: z.boolean(), confidence: z.num
 export async function ensurePeopleFreePhoto(bytes: Uint8Array, contentType: string) {
   const base = process.env.INFERENCE_BASE_URL ?? DATA_PROVIDERS.inferenceDefaultUrl;
   const key = process.env.INFERENCE_API_KEY;
-  if (!key) throw new Error("Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.");
+  if (!key) throw new UserFacingError("photos.server.checkUnavailable");
   const response = await fetch(`${base.replace(/\/$/, "")}/v1/chat/completions`, {
     method: "POST", signal: AbortSignal.timeout(12_000),
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -22,12 +24,12 @@ export async function ensurePeopleFreePhoto(bytes: Uint8Array, contentType: stri
       } } },
     }),
   });
-  if (!response.ok) throw new Error("Die Bildprüfung braucht kurz eine Verschnaufpause. Bitte später nochmals versuchen.");
+  if (!response.ok) throw new UserFacingError("photos.server.checkBusy");
   const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
   const verdict = verdictSchema.parse(JSON.parse(payload.choices?.[0]?.message?.content ?? "{}"));
   if (verdict.people_detected || verdict.confidence < .72) {
-    throw new Error(verdict.people_detected
-      ? "Das Bänkli darf fürs Foto kurz allein posieren – bitte nochmals ohne Personen."
-      : "Das Bild ist der Prüfung etwas zu geheimnisvoll. Bitte fotografiere das Bänkli nochmals klar und ohne Personen.");
+    throw new UserFacingError(verdict.people_detected
+      ? "photos.server.people"
+      : "photos.server.uncertain");
   }
 }

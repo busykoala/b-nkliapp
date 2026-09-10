@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "title": "Contact ed impressum · Bänkli App"
+  },
+  "introduction": "In project avert per pausas sin bancs svizzers.",
+  "reliability": {
+    "title": "In banc n’è nagina empermischun",
+    "description": "Indicaziuns pon mancar u esser antiquadas. Sulegl, vista, vias e duradas èn per part calculads. Resguarda las cundiziuns e la signalisaziun al lieu."
+  },
+  "rights": {
+    "title": "Datas avertas, agens dretgs",
+    "description": "Ils dretgs da las singulas funtaunas da datas e maletgs restan valaivels. Nossas indicaziuns davart la reutilisaziun e tut las funtaunas chattas ti <project>sin la pagina dal project</project>."
+  },
+  "privacyLink": "Co che nus tractain tias datas",
+  "contact": {
+    "title": "Responsabladad e contact",
+    "technical": "Dumondas tecnicas e contribuziuns: <project>Bänkli App sin GitHub ↗</project>."
+  }
+}

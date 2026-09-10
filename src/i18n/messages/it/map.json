@@ -1,0 +1,76 @@
+{
+  "canvas": {
+    "label": "Mappa delle panchine svizzere",
+    "loading": "La mappa prende forma…",
+    "failed": "Impossibile caricare le panchine.",
+    "removed": "È stato confermato che questa panchina non esiste più.",
+    "saved": "La modifica è salvata. Sarà visibile alla prossima apertura.",
+    "attribution": "Mostra le fonti della mappa",
+    "interactive": "Mappa interattiva"
+  },
+  "location": {
+    "unsupported": "Il browser non supporta la geolocalizzazione.",
+    "searching": "Ricerca della posizione…",
+    "unavailable": "Posizione non disponibile. Puoi continuare a usare la mappa.",
+    "show": "Mostra la mia posizione",
+    "use": "Usa la mia posizione",
+    "accuracy": "Posizione precisa a circa {meters} m."
+  },
+  "search": {
+    "label": "Cerca un luogo",
+    "placeholder": "Cerca un luogo o una panchina",
+    "clear": "Cancella la ricerca",
+    "results": "Risultati della ricerca",
+    "pending": "Ricerca…",
+    "empty": "Nessun luogo corrispondente per ora.",
+    "failed": "La ricerca fa una pausa. Riprova.",
+    "kinds": {
+      "bench": "Panchina",
+      "address": "Indirizzo",
+      "station": "Fermata",
+      "place": "Luogo"
+    }
+  },
+  "filters": {
+    "open": "Apri i filtri",
+    "button": "Filtri",
+    "active": "Filtri attivi",
+    "eyebrow": "Scegli una panchina",
+    "title": "Di cosa hai bisogno?",
+    "count": "{count, plural, one {# filtro attivo} other {# filtri attivi}}",
+    "close": "Chiudi i filtri",
+    "intro": "Dotazioni secondo i dati disponibili. Luce stimata in base al terreno e ai dintorni.",
+    "pause": "Per la tua pausa",
+    "fireplace": "Focolare",
+    "bin": "Cestino",
+    "light": "Luce attuale · stimata",
+    "sun": "Sole",
+    "shade": "Ombra",
+    "more": "Altre preferenze",
+    "access": "Accesso e comfort",
+    "accessNote": "Questa indicazione riguarda la panchina. Il percorso di accesso resta da verificare.",
+    "anyMaterial": "Indifferente",
+    "roomFor": "Posto per",
+    "anySeats": "Qualsiasi numero",
+    "minimumSeats": "almeno {count} persone",
+    "rated": "Valutata dalla comunità",
+    "fourStars": "Da 4 stelle",
+    "clear": "Cancella la selezione",
+    "done": "Vedi la mappa",
+    "remove": "Rimuovi {label}",
+    "sunEstimate": "Sole stimato",
+    "shadeEstimate": "Ombra stimata",
+    "seatsFrom": "Da {count} posti a sedere",
+    "starsFrom": "Da {count} stelle",
+    "without": "Senza {label}"
+  },
+  "placement": {
+    "title": "Scegli la posizione",
+    "instructions": "Sposta la mappa finché il mirino si trova sulla panchina.",
+    "confirm": "Aggiungi qui"
+  },
+  "loading": {
+    "walk": "Apertura del diario della passeggiata…",
+    "journey": "Apertura del diario di viaggio…"
+  }
+}

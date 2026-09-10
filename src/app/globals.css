@@ -385,6 +385,12 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .app-menu-sheet > header h2 { font: inherit; }
 .app-menu-sheet > header button { display: grid; min-width: 2.75rem; min-height: 2.75rem; place-items: center; border-radius: 999px; }
 .app-menu-sheet nav { padding: .25rem .6rem; }
+.language-preference { margin: .3rem .75rem .75rem; border-top: 1px solid rgb(65 69 54 / 12%); padding-top: .6rem; }
+.language-switcher { display: flex; min-height: 2.75rem; align-items: center; gap: .6rem; color: #30483f; }
+.language-switcher svg { flex-shrink: 0; }
+.language-switcher select { min-width: 0; min-height: 2.75rem; flex: 1; border: 1px solid rgb(65 69 54 / 20%); border-radius: .65rem; background: #fffbf0; padding: .4rem .5rem; font: inherit; }
+.language-switcher select:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }
+.language-preference > p { margin-top: .5rem; font-size: .875rem; line-height: 1.4; }
 .app-menu-row { display: flex; width: 100%; min-height: 3.35rem; align-items: center; gap: .8rem; border-top: 1px solid rgb(65 69 54 / 9%); padding: .65rem .65rem; color: #30483f; text-align: left; }
 .app-menu-row.is-current { border-radius: .9rem; background: rgb(74 111 86 / 9%); }
 .app-menu-row small { margin-left: auto; min-width: 1.45rem; border-radius: 999px; background: #e6d6ab; padding: .1rem .35rem; text-align: center; }

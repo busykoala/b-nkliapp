@@ -2,17 +2,18 @@ import { sqlite } from "@/db/client";
 import type Database from "better-sqlite3";
 
 export const badgeCatalog = [
-  { key: "erstes-plaetzli", name: "Bänkli-Entdecker:in", art: "discoverer", hint: "Ein Bänkli eingetragen", metric: "added", target: 1 },
-  { key: "baenkli-scout", name: "Bänkli-Pionier:in", art: "pioneer", hint: "3 eigene Bänkli bestätigt", metric: "verifiedAdded", target: 3 },
-  { key: "spaehnase", name: "Bänkli-Spürnase", art: "scout", hint: "10 Bänkli eingetragen", metric: "added", target: 10 },
-  { key: "verifizierli", name: "Bänkli-Prüfer:in", art: "checker", hint: "5 Bänkli bestätigt", metric: "confirmed", target: 5 },
-  { key: "holzauge", name: "Bänkli-Detektiv:in", art: "detective", hint: "3 fehlende Bänkli bestätigt", metric: "removed", target: 3 },
-  { key: "pausenpoet", name: "Pausenpoet:in", art: "poet", hint: "5 Bewertungen geschrieben", metric: "rated", target: 5 },
-  { key: "baenkli-buenzli", name: "Bänkli-Kenner:in", art: "expert", hint: "25 hilfreiche Beiträge", metric: "total", target: 25 },
-  { key: "bankdirektor", name: "Bänkli-Guru", art: "guru", hint: "75 hilfreiche Beiträge", metric: "total", target: 75 },
-  { key: "sitzungspraesident", name: "Bänkli-Legende", art: "legend", hint: "200 hilfreiche Beiträge", metric: "total", target: 200 },
+  { key: "erstes-plaetzli", art: "discoverer", metric: "added", target: 1 },
+  { key: "baenkli-scout", art: "pioneer", metric: "verifiedAdded", target: 3 },
+  { key: "spaehnase", art: "scout", metric: "added", target: 10 },
+  { key: "verifizierli", art: "checker", metric: "confirmed", target: 5 },
+  { key: "holzauge", art: "detective", metric: "removed", target: 3 },
+  { key: "pausenpoet", art: "poet", metric: "rated", target: 5 },
+  { key: "baenkli-buenzli", art: "expert", metric: "total", target: 25 },
+  { key: "bankdirektor", art: "guru", metric: "total", target: 75 },
+  { key: "sitzungspraesident", art: "legend", metric: "total", target: 200 },
 ] as const;
 
+export type BadgeKey = typeof badgeCatalog[number]["key"];
 export type BadgeMetric = typeof badgeCatalog[number]["metric"];
 
 export function getUserActivity(userId: number, database: Database.Database = sqlite) {

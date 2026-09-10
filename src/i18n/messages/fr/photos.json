@@ -1,0 +1,59 @@
+{
+  "gallery": {
+    "view": "Voir la photo",
+    "enlarge": "Agrandir : {caption}",
+    "close": "Fermer les photos",
+    "unavailable": "L’image fait une pause.",
+    "retry": "Recharger",
+    "loading": "Chargement de l’image…",
+    "source": "Source et licence ↗",
+    "label": "Photos",
+    "previous": "Photo précédente",
+    "next": "Photo suivante",
+    "by": "Photo du banc par {username}",
+    "exact": "Ce banc",
+    "nearby": "Dans les environs"
+  },
+  "capture": {
+    "title": "Mettre le banc à l’image",
+    "intro": "Choisis une photo dans ta photothèque, avec l’appareil photo ou dans tes fichiers, de préférence sans personnes. La vérification et le stockage se font sur notre propre serveur.",
+    "select": "Choisir une photo du banc",
+    "preview": "Aperçu de ta photo du banc",
+    "change": "Autre photo",
+    "choose": "Prendre ou choisir une photo",
+    "caption": "Quelques mots",
+    "captionPlaceholder": "Que voit-on depuis ce banc ?",
+    "checking": "Vérification de la photo…",
+    "publish": "Publier la photo"
+  },
+  "errors": {
+    "prepare": "La photo n’a pas pu être préparée.",
+    "originalTooLarge": "La photo originale est trop volumineuse. Choisis une image de 24 Mo maximum.",
+    "decode": "La photo n’a pas pu être lue.",
+    "tooDetailed": "La photo contient trop de détails. Choisis un cadrage un peu plus petit.",
+    "read": "Impossible de lire la photo.",
+    "upload": "La photo n’a pas pu être envoyée. Réessaie."
+  },
+  "story": {
+    "nearby": "Dans les environs · pas forcément ce banc",
+    "place": "Ce lieu",
+    "license": "Licence auprès de la source",
+    "title": "Un regard aux alentours",
+    "external": "Information externe sur ce lieu ↗",
+    "defaultCaption": "Une vue depuis ce banc."
+  },
+  "server": {
+    "notFound": "Image introuvable.",
+    "unavailable": "Image indisponible pour le moment.",
+    "choose": "Choisis une photo nette de 1,8 Mo maximum.",
+    "saved": "Photo reçue : le banc a maintenant son portrait.",
+    "saveFailed": "La photo n’a pas pu être enregistrée.",
+    "checkUnavailable": "Le contrôle des images regarde ailleurs. Réessaie plus tard.",
+    "checkBusy": "Le contrôle des images reprend son souffle. Réessaie plus tard.",
+    "people": "Le banc peut poser seul un instant : reprends la photo sans personnes.",
+    "uncertain": "Cette image est un peu trop mystérieuse pour le contrôle. Reprends une photo nette du banc, sans personnes.",
+    "storageUnavailable": "Le stockage des photos fait une pause.",
+    "format": "Utilise une photo JPEG, PNG ou WebP.",
+    "formatMismatch": "Le format ne correspond pas à la photo. Sélectionne l’image à nouveau."
+  }
+}

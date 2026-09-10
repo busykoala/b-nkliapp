@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { Armchair, House, LocateFixed, MapPin, Search, TrainFront, X } from "lucide-react";
@@ -6,6 +7,7 @@ import { searchPlaces } from "@/app/actions/map";
 import type { PlaceResult } from "@/lib/types";
 
 export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResult) => void; onLocate: () => void }) {
+  const t = useTranslations();
   const listId = useId();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceResult[]>([]);
@@ -60,14 +62,14 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
       <div className="relative flex-1">
         <Search className="pointer-events-none absolute left-3.5 top-3.5 z-10 text-primary/65" size={18} />
         <input
-          aria-label="Ort suchen"
+          aria-label={t("map.search.label")}
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={open}
           aria-controls={listId}
           aria-activedescendant={highlighted >= 0 ? `${listId}-${highlighted}` : undefined}
           className="input calm-search min-h-12 w-full border-0 pl-10 pr-[4.8rem] text-sm placeholder:text-base-content/55"
-          placeholder="Ort oder Bänkli suchen"
+          placeholder={t("map.search.placeholder")}
           value={query}
           onChange={(event) => {
             const next = event.target.value;
@@ -92,17 +94,17 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
             }
           }}
         />
-        {query && <button type="button" aria-label="Suche leeren" className="btn btn-circle btn-ghost btn-sm absolute right-11 top-0.5 z-10" onClick={clear}><X size={17} /></button>}
-        <button aria-label="Meinen Standort anzeigen" className="btn btn-circle btn-ghost absolute right-0.5 top-0.5 z-10 min-h-11 min-w-11 text-primary" onClick={() => onLocate()}><LocateFixed size={19} /></button>
+        {query && <button type="button" aria-label={t("map.search.clear")} className="btn btn-circle btn-ghost btn-sm absolute right-11 top-0.5 z-10" onClick={clear}><X size={17} /></button>}
+        <button aria-label={t("map.location.show")} className="btn btn-circle btn-ghost absolute right-0.5 top-0.5 z-10 min-h-11 min-w-11 text-primary" onClick={() => onLocate()}><LocateFixed size={19} /></button>
         {open && (
-          <ul id={listId} role="listbox" aria-label="Suchergebnisse" className="map-search-results storybook-panel absolute left-0 right-0 top-14 rounded-[1.25rem] p-2">
-            {pending && results.length === 0 && <li className="map-search-feedback" role="status">Suche …</li>}
-            {!pending && feedback === "empty" && <li className="map-search-feedback" role="status">Hier versteckt sich noch kein passender Ort.</li>}
-            {!pending && feedback === "error" && <li className="map-search-feedback is-error" role="status">Die Suche macht gerade Pause. Versuch es nochmals.</li>}
+          <ul id={listId} role="listbox" aria-label={t("map.search.results")} className="map-search-results storybook-panel absolute left-0 right-0 top-14 rounded-[1.25rem] p-2">
+            {pending && results.length === 0 && <li className="map-search-feedback" role="status">{t("map.search.pending")}</li>}
+            {!pending && feedback === "empty" && <li className="map-search-feedback" role="status">{t("map.search.empty")}</li>}
+            {!pending && feedback === "error" && <li className="map-search-feedback is-error" role="status">{t("map.search.failed")}</li>}
             {results.map((place, index) => <li id={`${listId}-${index}`} key={place.id} role="option" aria-selected={index === highlighted}>
               <button type="button" tabIndex={-1} onClick={() => choose(place)}>
                 <SearchResultIcon place={place} />
-                <span><strong>{place.label}</strong><small>{placeKind(place.kind)}</small></span>
+                <span><strong>{place.label}</strong><small>{t(`map.search.kinds.${place.kind}`)}</small></span>
               </button>
             </li>)}
           </ul>
@@ -117,8 +119,4 @@ function SearchResultIcon({ place }: { place: PlaceResult }) {
   if (place.kind === "address") return <House size={18} aria-hidden="true" />;
   if (place.kind === "station") return <TrainFront size={18} aria-hidden="true" />;
   return <MapPin size={18} aria-hidden="true" />;
-}
-
-function placeKind(kind: PlaceResult["kind"]) {
-  return ({ bench: "Bänkli", address: "Adresse", station: "Haltestelle", place: "Ort" } as const)[kind];
 }

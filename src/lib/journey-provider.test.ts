@@ -36,7 +36,7 @@ describe("journey providers", () => {
     expect(result.options).toHaveLength(count);
     if (count) {
       expect(result.options[0].legs[2].transfer).toMatchObject({ tone: "fits", requiredSeconds: 360, availableSeconds: 600 });
-      expect(result.options[0].legs[2].platformChanges?.[0]).toContain("B statt A");
+      expect(result.options[0].legs[2].platformChanges?.[0]).toEqual({key: "routing.warnings.departurePlatform", values: {actual: "B", scheduled: "A"}});
     }
   });
   it("routes the Spiez station-to-harbour walk even when the timetable says duration zero", async () => {
@@ -75,7 +75,7 @@ describe("journey providers", () => {
     const { planJourney } = await import("./journey-provider");
     const result = await planJourney(query, destination);
     expect(result.options[0].complete).toBe(false);
-    expect(result.options[0].legs[0].warnings[0]).toContain("80 m");
+    expect(result.options[0].legs[0].warnings[0]).toMatchObject({key: "routing.warnings.end", values: {distance: 80}});
   });
   it("fails softly without inventing a walking line", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({ code: "NoRoute" })));

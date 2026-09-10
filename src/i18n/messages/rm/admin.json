@@ -1,0 +1,25 @@
+{
+  "title": "Moderaziun Bänkli App",
+  "signIn": {
+    "description": "T’annunzia cun il pled-clav d’administraziun configurà.",
+    "local": "Localmain senza configuraziun: {password}"
+  },
+  "result": {
+    "passwordInvalid": "Il pled-clav n’è betg correct.",
+    "signedIn": "Annunzià.",
+    "unauthorized": "Betg autorisà."
+  },
+  "contributions": "Contribuziuns",
+  "reports": "Annunzias",
+  "empty": "Anc naginas contribuziuns.",
+  "kinds": {
+    "rating": "Valitaziun",
+    "correction": "Correctura"
+  },
+  "hidden": "Zuppà",
+  "hide": "Zuppentar",
+  "show": "Mussar",
+  "block": "Bloccar il navigatur",
+  "reportCount": "{count, plural, one {# annunzia} other {# annunzias}}",
+  "rating": "Total {overall}/5 · Vista {view}/5 · Confort {comfort}/5 · Ruaus {quiet}/5"
+}

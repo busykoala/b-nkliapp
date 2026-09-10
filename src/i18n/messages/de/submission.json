@@ -1,0 +1,56 @@
+{
+  "location": {
+    "searching": "Ort wird gesucht …",
+    "onSave": "Ort wird beim Speichern ergänzt",
+    "change": "Position ändern",
+    "details": "Details zur Position"
+  },
+  "nearby": {
+    "title": "Bänkli in der Nähe",
+    "failed": "Die Suche in der Nähe ist fehlgeschlagen.",
+    "retry": "Erneut prüfen",
+    "checking": "Bestehende Bänkli in der Nähe werden geprüft …",
+    "count": "{count, plural, one {# Bänkli innerhalb von 25 m} other {# Bänkli innerhalb von 25 m}}",
+    "question": "Ist deines schon dabei?",
+    "open": "{meters} m · Bänkli ansehen",
+    "empty": "Kein eingetragenes Bänkli innerhalb von 25 m gefunden.",
+    "confirm": "Geprüft: Meins ist ein weiteres Bänkli."
+  },
+  "fields": {
+    "namePlaceholder": "Lieblingsbänkli",
+    "dedication": "Widmung",
+    "features": "Ausstattung ergänzen (freiwillig)",
+    "observation": "Was siehst du am Bänkli?",
+    "accessNote": "Rollstuhlnutzung am Bänkli und Zugangsweg bitte getrennt beurteilen."
+  },
+  "form": {
+    "pending": "Wird eingetragen …",
+    "submit": "Eintragen"
+  },
+  "result": {
+    "locationInvalid": "Bitte Standort prüfen.",
+    "reviewNearby": "Bitte prüfe zuerst die Bänkli in der Nähe. Ist deines schon eingetragen?",
+    "added": "Bänkli eingetragen · {count, plural, one {noch # Bestätigung} other {noch # Bestätigungen}}.",
+    "addFailed": "Bänkli konnte nicht gespeichert werden.",
+    "alreadyConfirmed": "Heute bereits von dir bestätigt.",
+    "presenceConfirmed": "Danke – heute als noch vorhanden bestätigt.",
+    "verified": "Dieses Bänkli ist jetzt bestätigt!",
+    "confirmationsNeeded": "{count, plural, one {Noch # Bestätigung.} other {Noch # Bestätigungen.}}",
+    "confirmFailed": "Bestätigung fehlgeschlagen.",
+    "alreadyMissing": "Du hast das Fehlen schon bestätigt.",
+    "removed": "Als nicht mehr vorhanden bestätigt.",
+    "removalVotes": "Hinweis gespeichert – {count, plural, one {noch # Stimme} other {noch # Stimmen}}.",
+    "removalFailed": "Hinweis fehlgeschlagen.",
+    "metadataInvalid": "Bitte Angaben prüfen.",
+    "metadataUpdated": "Angaben aktualisiert.",
+    "metadataFailed": "Änderung fehlgeschlagen.",
+    "fieldInvalid": "Bitte Angabe prüfen.",
+    "chooseBoolean": "Bitte Ja oder Nein wählen.",
+    "chooseMaterial": "Bitte Material wählen.",
+    "chooseSeats": "Bitte Sitzplätze zwischen 1 und 20 wählen.",
+    "chooseDirection": "Bitte Blickrichtung wählen.",
+    "unchanged": "Ist bereits so eingetragen.",
+    "fieldSaved": "Danke – ist eingetragen.",
+    "fieldFailed": "Angabe konnte nicht gespeichert werden."
+  }
+}

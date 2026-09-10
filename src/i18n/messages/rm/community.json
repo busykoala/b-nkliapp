@@ -1,0 +1,363 @@
+{
+  "hub": {
+    "eyebrow": "Guardar pli exactamain ensemen",
+    "title": "Contribuir al banc",
+    "close": "Serrar las contribuziuns"
+  },
+  "chapters": {
+    "rating": {
+      "title": "Co è stada tia pausa?",
+      "summary": "Tia valitaziun",
+      "prompt": "Valitar confort, ruaus e vista",
+      "mine": "Tia valitaziun: {rating}/5"
+    },
+    "presence": {
+      "title": "Confermar il banc",
+      "summary": "Has ti vis el al lieu?"
+    },
+    "features": {
+      "title": "Descriver il banc",
+      "summary": "Num, equipament e direcziun da la vista"
+    },
+    "light": {
+      "title": "La glisch gist ussa",
+      "recorded": "Tia observaziun è registrada",
+      "summary": "Sulegl, sumbriva u variabel",
+      "night": "Questa dumonda cumpara da cler, cura che l’observaziun fa senn."
+    },
+    "view": {
+      "title": "Vista e conturns",
+      "recorded": "Tia impressiun è registrada",
+      "summary": "Confermar u precisar la stimaziun"
+    },
+    "photo": {
+      "title": "Fotografia da quest lieu",
+      "summary": "Fotografar u tscherner da la mediateca"
+    },
+    "moment": {
+      "title": "Laschar in mument",
+      "summary": "Regurdientscha, tip, poesia u savida locala"
+    },
+    "care": {
+      "title": "Avair quità dal banc",
+      "summary": "Pitschnas acziuns da tgira visiblas",
+      "mine": "{count, plural, one {# acziun da tai oz} other {# acziuns da tai oz}}"
+    },
+    "correction": {
+      "title": "Insatge na constat betg",
+      "summary": "Annunziar posiziun, stadi u conturns"
+    }
+  },
+  "theme": {
+    "month": "Tema cuminaivel · quest mais",
+    "monthly": {
+      "winter": {
+        "title": "Glisch d’enviern",
+        "prompt": "Mussa a nus in banc en la quieta glisch d’enviern."
+      },
+      "company": {
+        "title": "Ina persuna chara",
+        "prompt": "Tge pausa vulessas ti parter cun insatgi?"
+      },
+      "green": {
+        "title": "Emprim verd",
+        "prompt": "Scuvra ils emprims segns da primavaira enturn il banc."
+      },
+      "history": {
+        "title": "In banc cun istorgia",
+        "prompt": "Tge regurdientscha u istorgia locala tutga a quest lieu?"
+      },
+      "morning": {
+        "title": "Quietezza da la damaun",
+        "prompt": "Co para quest lieu baud la damaun?"
+      },
+      "shade": {
+        "title": "In lieu en la sumbriva",
+        "prompt": "Tge bancs porschan sumbriva ils dis chauds?"
+      },
+      "water": {
+        "title": "Aua en vista",
+        "prompt": "Parta in’impressiun sincera da l’aua — u da sia absenza."
+      },
+      "grandparents": {
+        "title": "Il lieu preferì dals tats e da las tattas",
+        "prompt": "Tge lieu fiss bun per ina pausa cuminaivla?"
+      },
+      "evening": {
+        "title": "Aur da la saira",
+        "prompt": "Tschiffa l’atmosfera d’in tard di da stad."
+      },
+      "care": {
+        "title": "Pitschen mantegniment",
+        "prompt": "In lieu net è ina quieta prestaziun da la communitad."
+      },
+      "fog": {
+        "title": "Tschajera e vischinanza",
+        "prompt": "Tge resta bel sche la vista lontana fa pausa?"
+      },
+      "thought": {
+        "title": "In chaud patratg",
+        "prompt": "Lascha ina curta poesia u ina recumandaziun."
+      }
+    }
+  },
+  "overview": {
+    "features": "{count, plural, one {# indicaziun} other {# indicaziuns}}",
+    "moments": "{count, plural, one {# mument} other {# muments}}",
+    "mine": "Tias contribuziuns qua:",
+    "empty": "Qua n’hai anc nagina contribuziun da tai. Tscherna quai che ti sas cun segirezza.",
+    "rating": "Valitaziun"
+  },
+  "metadata": {
+    "placeholder": "Co sa numna quest banc?",
+    "dedicationHint": "(quai che stat sin il banc)",
+    "save": "Memorisar las indicaziuns"
+  },
+  "moments": {
+    "kinds": {
+      "memory": "Regurdientscha",
+      "recommendation": "Recumandaziun",
+      "poem": "Poesia",
+      "local_fact": "Savida locala",
+      "photo": "Mument fotografic"
+    },
+    "choose": "Tge vuls ti cundivider?",
+    "label": "Tes mument sin il banc",
+    "poemPlaceholder": "Insaquantas lingias per quest lieu …",
+    "placeholder": "Tge duessan auters savair da quest lieu?",
+    "publish": "Publitgar il mument"
+  },
+  "care": {
+    "actions": {
+      "cleaned": "Pulì in pau",
+      "good": "En in bun stadi",
+      "repair": "Dovra ina reparatura",
+      "beautiful": "Oz spezialmain bel"
+    },
+    "description": "Nagins puncts, nagina glista da rangaziun, simplamain in segn ch’insatgi ha guardà.",
+    "mine": "{label} · da tai",
+    "events": {
+      "cleaned": "pulì",
+      "good": "vis en in bun stadi",
+      "repair": "annunzià per ina reparatura",
+      "beautiful": "chattà spezialmain bel oz"
+    }
+  },
+  "presence": {
+    "signIn": "S’annunziar per far part",
+    "confirmedToday": "Confermà da tai oz",
+    "confirm": "È anc qua",
+    "question": "È el anc qua?",
+    "missingCount": "{count}/{threshold} persunas na chattan betg pli quest banc.",
+    "reportedMissing": "Absenzia annunziada da tai",
+    "confirmMissing": "Confermar l’absenzia",
+    "reportMissing": "Il banc n’è betg pli qua"
+  },
+  "errors": {
+    "save": "L’acziun n’ha betg pudì vegnir memorisada. Emprova anc ina giada."
+  },
+  "rating": {
+    "eyebrow": "Tia impressiun",
+    "existing": "Tia valitaziun precedenta è gia inditgada. Ti pos la midar.",
+    "intro": "Quatter pitschnas impressiuns gidan auters a tscherner.",
+    "fields": {
+      "overall": "En general",
+      "view": "Vista",
+      "comfort": "Confort",
+      "quiet": "Ruaus"
+    },
+    "note": "In patratg",
+    "optional": "(facultativ)",
+    "placeholder": "Tge t’ha plaschì qua?",
+    "update": "Actualisar la valitaziun",
+    "publish": "Publitgar la valitaziun",
+    "stars": "{count, plural, one {# staila} other {# stailas}}"
+  },
+  "correction": {
+    "eyebrow": "Annunziar curtamain",
+    "title": "Insatge na constat betg?",
+    "intro": "Mo per chaussas che ti has gist vis al lieu.",
+    "field": "Tge na constat betg?",
+    "choose": "Tscherner",
+    "options": {
+      "removed": "Il banc manca u è vegnì allontanà",
+      "location": "La posiziun è nunprecisa",
+      "properties": "L’equipament na constat betg",
+      "condition": "Donnegià u grev d’utilisar",
+      "environment": "Conturns, vista u glisch na constattan betg"
+    },
+    "observation": "Tge has ti vis?",
+    "placeholder": "Per exempel: il spundal manca",
+    "publish": "Publitgar l’indicaziun",
+    "fields": {
+      "properties": "Equipament",
+      "condition": "Stadi",
+      "location": "Posiziun",
+      "removed": "Betg pli avant maun",
+      "environment": "Conturns, vista u glisch"
+    }
+  },
+  "place": {
+    "eyebrow": "Persunas en quest lieu",
+    "title": "Muments sin il banc",
+    "share": "Cundivider il mument",
+    "shareText": "In mument sin il banc tar {bench}",
+    "copied": "Colliaziun copiada, pronta per cundivider, er sin Instagram.",
+    "shareUnavailable": "Cundivider n’è gist betg disponibel en quest navigatur.",
+    "operator": "Tgira al lieu",
+    "favourite": "Lieu preferì",
+    "save": "Memorisar il banc",
+    "following": "Ti suondas {place}",
+    "follow": "Suandar {place}",
+    "favourites": "Tut ils lieus preferids",
+    "recent": "ils ultims 90 dis",
+    "deleteOwn": "Stizzar l’agen mument",
+    "empty": "Anc nagina istorgia qua. Il banc spetga cun pazienza."
+  },
+  "features": {
+    "progress": "{known}/{total} indicaziuns enconuschentas · Tutga per cumplettar",
+    "mine": "da tai"
+  },
+  "observations": {
+    "light": {
+      "label": "Annunziar la glisch al lieu",
+      "title": "Constat quai gist ussa?",
+      "intro": "Ina curta impressiun dal lieu",
+      "mine": "Tia observaziun: {choice}",
+      "choices": {
+        "sun": "Sulegl",
+        "shade": "Sumbriva",
+        "mixed": "Variabel"
+      },
+      "trend": "Communitad: per il solit {choice} · {count, plural, one {ina persuna} other {# persunas}}"
+    },
+    "view": {
+      "label": "Valitar la vista al lieu",
+      "title": "Co para il lieu per tai?",
+      "agreed": "Confermà circa da tai",
+      "mine": "Tia atgna impressiun è registrada",
+      "intro": "Tia impressiun gida a meglierar la stimaziun",
+      "agree": "Constat circa",
+      "edit": "Percepì auter",
+      "step": "Pass {current} da {total}",
+      "steps": "Pass",
+      "back": "Enavos",
+      "next": "Enavant",
+      "save": "Registrar"
+    },
+    "steps": {
+      "openness": "Quant avert para il lieu?",
+      "landscape": "Tge che caracterisescha la cuntrada?",
+      "horizon": "Tge stat a l’orizont?",
+      "surroundings": "Co paran ils conturns?"
+    },
+    "fields": {
+      "openness": "Vista libra",
+      "sky": "Tschiel",
+      "relief": "Terren",
+      "water": "Aua",
+      "horizon": "Orizont",
+      "naturalness": "Conturns",
+      "disturbance": "Disturbis"
+    },
+    "choices": {
+      "openness": {
+        "wide": "Quasi enturn enturn",
+        "partial": "En intginas direcziuns",
+        "enclosed": "Plitost stretg"
+      },
+      "sky": {
+        "open": "Avert",
+        "partial": "Parzialmain",
+        "closed": "Serrà"
+      },
+      "relief": {
+        "flat": "Plat",
+        "gentle": "Miaivel",
+        "strong": "Reliev marcant"
+      },
+      "water": {
+        "clear": "Cleramain visibel",
+        "some": "In pau visibel",
+        "none": "Betg visibel"
+      },
+      "horizon": {
+        "open": "Per gronda part liber",
+        "trees": "Plantas",
+        "buildings": "Edifizis",
+        "mixed": "Maschadà"
+      },
+      "naturalness": {
+        "natural": "Natiral",
+        "mixed": "Maschadà",
+        "built": "Surdà"
+      },
+      "disturbance": {
+        "quiet": "Quiet",
+        "some": "In pau",
+        "strong": "Ferm"
+      }
+    },
+    "trend": {
+      "openness": "plitost avert",
+      "naturalness": "natiral",
+      "quiet": "quiet",
+      "description": "Communitad: {qualities}",
+      "empty": "Impressiun da la communitad",
+      "summary": "{description} · {count, plural, one {ina persuna} other {# persunas}} · {confidence}"
+    },
+    "undo": "Revocar"
+  },
+  "reviews": {
+    "eyebrow": "Da persunas al lieu",
+    "title": "Co era la pausa?",
+    "edit": "Modifitgar mia contribuziun",
+    "add": "Contribuir in’impressiun",
+    "signIn": "S’annunziar per sa participar",
+    "reportedRating": "Valitaziun annunziada",
+    "reportRating": "Annunziar la valitaziun",
+    "notes": "Indicaziuns",
+    "reportedCorrection": "Correctura annunziada",
+    "reportCorrection": "Annunziar la correctura"
+  },
+  "result": {
+    "ratingSaved": "Grazia, tia valitaziun è visibla.",
+    "ratingFailed": "La valitaziun n’ha betg pudì vegnir memorisada.",
+    "correctionSaved": "Grazia, tia indicaziun è vegnida publitgada.",
+    "correctionFailed": "L’indicaziun n’ha betg pudì vegnir memorisada.",
+    "invalidContribution": "Contribuziun nunvalida.",
+    "reported": "La contribuziun è vegnida annunziada.",
+    "reportFailed": "Annunzia betg reussida.",
+    "momentInvalid": "Descriva quest lieu cun in pèr pleds.",
+    "momentSaved": "Tes mument è ussa da leger tar quest lieu.",
+    "momentFailed": "Il mument n’ha betg pudì vegnir memorisà.",
+    "invalidMoment": "Mument nunvalid.",
+    "notYourMoment": "Quest mument na tutga betg a tes conto.",
+    "momentDeleted": "Tes mument è vegnì allontanà.",
+    "momentDeleteFailed": "Il mument n’ha betg pudì vegnir allontanà.",
+    "careInvalid": "Acziun da tgira nunenconuschenta.",
+    "careSaved": "Grazia per la tgira.",
+    "careAlreadySaved": "Quai has ti gia nudà oz.",
+    "careFailed": "L’acziun da tgira n’ha betg pudì vegnir memorisada.",
+    "unfavourited": "Allontanà da tes lieus preferids.",
+    "favourited": "Quest banc tutga ussa a tes lieus preferids.",
+    "placeUnnamed": "Per quest lieu manca anc in num.",
+    "placeUnfollowed": "Ti na suondas betg pli {place}.",
+    "placeFollowed": "Novs muments da {place} cumparan ussa tar tai.",
+    "followFailed": "La tscherna n’ha betg pudì vegnir memorisada.",
+    "lightInvalid": "Tscherna sulegl, sumbriva u variabel.",
+    "lightNight": "Ti pos annunziar impressiuns da glisch qua puspè cura ch’igl è di.",
+    "lightSaved": "Grazia, tia impressiun da glisch è registrada.",
+    "lightFailed": "L’impressiun da glisch n’ha betg pudì vegnir memorisada.",
+    "observationUndone": "Tia observaziun è vegnida retratga.",
+    "undoFailed": "L’observaziun n’ha betg pudì vegnir retratga.",
+    "observationConfirmed": "Grazia, tia conferma gida a classifitgar las datas.",
+    "observationConfirmFailed": "La conferma n’ha betg pudì vegnir memorisada.",
+    "viewInvalid": "Cumplettescha tia impressiun.",
+    "viewSaved": "Grazia, tia impressiun è registrada.",
+    "viewFailed": "L’impressiun n’ha betg pudì vegnir memorisada.",
+    "observationInvalid": "Observaziun nunenconuschenta.",
+    "observationDeleted": "Tia observaziun è vegnida stizzada.",
+    "observationDeleteFailed": "L’observaziun n’ha betg pudì vegnir stizzada."
+  }
+}

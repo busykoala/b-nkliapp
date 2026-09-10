@@ -1,4 +1,8 @@
 "use server";
+
+import { actionError } from "@/i18n/action-error";
+
+import { getTranslations } from "next-intl/server";
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -8,8 +12,9 @@ import type { ActionResult } from "@/lib/types";
 
 const answerSchema = z.object({ benchId: z.string().min(1).max(100), attribute: z.enum(["backrest", "armrest", "covered", "approach_steps"]), value: z.union([z.literal(0), z.literal(1), z.null()]) });
 export async function answerBenchQuestion(input: unknown): Promise<ActionResult> {
+  const t = await getTranslations();
   const parsed = answerSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, message: "Diese Antwort konnte nicht gespeichert werden." };
+  if (!parsed.success) return { ok: false, message: t("knowledge.verification.result.invalid") };
   try {
     const user = await requireUser();
     const contributor = contributorHashForUser(user.id);
@@ -19,7 +24,7 @@ export async function answerBenchQuestion(input: unknown): Promise<ActionResult>
     consumeRateLimit(identity.ipHash, "verification-ip-day", 180, 86400);
     const { benchId, attribute, value } = parsed.data;
     const bench = sqlite.prepare("SELECT row_id FROM benches WHERE id=? AND active=1").get(benchId) as { row_id: number } | undefined;
-    if (!bench) return { ok: false, message: "Dieses Bänkli wurde nicht gefunden." };
+    if (!bench) return { ok: false, message: t("common.errors.benchNotFound") };
     const now = new Date().toISOString();
     const sourceId = `user:${user.id}`;
     const key = createHash("sha256").update(JSON.stringify([bench.row_id, attribute, sourceId, value, now])).digest("hex");
@@ -30,6 +35,6 @@ export async function answerBenchQuestion(input: unknown): Promise<ActionResult>
         VALUES(?,?,?,'community',?,?,?,.9,'verification-1','{}',?)`).run(bench.row_id, attribute, JSON.stringify(value), sourceId, now, now, key);
     })();
     revalidatePath(`/bank/${benchId}`);
-    return { ok: true, message: "Danke! Dein Hinweis ergänzt die vorhandenen Beobachtungen." };
-  } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "Die Antwort macht gerade Pause." }; }
+    return { ok: true, message: t("knowledge.verification.result.saved") };
+  } catch (error) { return { ok: false, message: actionError(t, error, "knowledge.verification.result.failed") }; }
 }

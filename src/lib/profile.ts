@@ -10,7 +10,7 @@ export type ProfileMoment = {
   id: string;
   kind: "added" | "rated" | "confirmed" | "missing" | "edited" | "corrected";
   benchId: string;
-  benchName: string;
+  benchName: string | null;
   createdAt: string;
 };
 
@@ -30,16 +30,16 @@ export type TrailProfile = {
   };
   uniquePlaces: number;
   journey: {
-    title: string;
+    key: "first" | "paths" | "forest" | "hills" | "horizon" | "keeper";
     currentFloor: number;
     nextTarget: number | null;
     progress: number;
   };
-  landscapes: Array<{ key: LandscapeKey; name: string; hint: string; found: boolean; benchId: string | null }>;
-  seasons: Array<{ key: SeasonKey; name: string; found: boolean }>;
+  landscapes: Array<{ key: LandscapeKey; found: boolean; benchId: string | null }>;
+  seasons: Array<{ key: SeasonKey; found: boolean }>;
   recent: ProfileMoment[];
-  awaitingConfirmation: Array<{ id: string; title: string; remaining: number }>;
-  nextPrompt: { title: string; copy: string };
+  awaitingConfirmation: Array<{ id: string; title: string | null; remaining: number }>;
+  nextPrompt: {kind: "add" | "rate" | "confirm" | "discover"} | {kind: "landscape"; landscape: LandscapeKey};
 };
 
 const rawInteractions = `
@@ -61,21 +61,8 @@ const rawInteractions = `
   SELECT bench_row_id, created_at, 'corrected' FROM corrections WHERE user_id=@userId AND visible=1
 `;
 
-const landscapeCatalog: Array<{ key: LandscapeKey; name: string; hint: string }> = [
-  { key: "forest", name: "Waldlicht", hint: "Ein Platz zwischen Bäumen" },
-  { key: "water", name: "Am Wasser", hint: "See oder Fluss in der Nähe" },
-  { key: "mountain", name: "Bergluft", hint: "Ein Platz mit Bergblick" },
-  { key: "hill", name: "Hügelweg", hint: "Sanfte Höhen im Blick" },
-  { key: "open", name: "Weite", hint: "Ein offener Horizont" },
-  { key: "city", name: "Stadtpause", hint: "Ein stiller Fleck im Ort" },
-];
-
-const seasonCatalog: Array<{ key: SeasonKey; name: string }> = [
-  { key: "spring", name: "Frühling" },
-  { key: "summer", name: "Sommer" },
-  { key: "autumn", name: "Herbst" },
-  { key: "winter", name: "Winter" },
-];
+const landscapeCatalog: Array<{key: LandscapeKey}> = ["forest", "water", "mountain", "hill", "open", "city"].map(key => ({key: key as LandscapeKey}));
+const seasonCatalog: Array<{key: SeasonKey}> = ["spring", "summer", "autumn", "winter"].map(key => ({key: key as SeasonKey}));
 
 function seasonFor(value: string): SeasonKey {
   const month = new Date(value).getUTCMonth() + 1;
@@ -87,25 +74,24 @@ function seasonFor(value: string): SeasonKey {
 
 function journeyFor(places: number) {
   const stages = [
-    { floor: 0, target: 1, title: "Die erste Spur" },
-    { floor: 1, target: 5, title: "Auf leisen Pfaden" },
-    { floor: 5, target: 15, title: "Durch Wald und Wiesen" },
-    { floor: 15, target: 40, title: "Über den Hügeln" },
-    { floor: 40, target: 100, title: "Mit weitem Blick" },
-    { floor: 100, target: null, title: "Hüter:in der Bänkli" },
-  ];
+    { floor: 0, target: 1, key: "first" },
+    { floor: 1, target: 5, key: "paths" },
+    { floor: 5, target: 15, key: "forest" },
+    { floor: 15, target: 40, key: "hills" },
+    { floor: 40, target: 100, key: "horizon" },
+    { floor: 100, target: null, key: "keeper" },
+  ] as const;
   const stage = [...stages].reverse().find((item) => places >= item.floor) ?? stages[0];
   const progress = stage.target === null ? 100 : Math.max(0, Math.min(100, ((places - stage.floor) / (stage.target - stage.floor)) * 100));
-  return { title: stage.title, currentFloor: stage.floor, nextTarget: stage.target, progress };
+  return { key: stage.key, currentFloor: stage.floor, nextTarget: stage.target, progress };
 }
 
-function nextPrompt(activity: TrailProfile["activity"], landscapes: TrailProfile["landscapes"]) {
-  if (activity.added === 0) return { title: "Setz deine erste Spur", copy: "Kennst du ein Bänkli, das auf der Karte noch fehlt?" };
-  if (activity.rated === 0) return { title: "Erzähl von einer Pause", copy: "Eine ehrliche Stimme macht den nächsten Fund leichter." };
-  if (activity.confirmed === 0) return { title: "Schau einmal genauer hin", copy: "Neue Bänkli freuen sich über eine Bestätigung vor Ort." };
-  const missing = landscapes.find((item) => !item.found);
-  if (missing) return { title: `${missing.name} entdecken`, copy: missing.hint };
-  return { title: "Folge deiner Neugier", copy: "Vielleicht wartet gleich um die Ecke ein besonderer Platz." };
+function nextPrompt(activity: TrailProfile["activity"], landscapes: TrailProfile["landscapes"]): TrailProfile["nextPrompt"] {
+  if (activity.added === 0) return {kind: "add"};
+  if (activity.rated === 0) return {kind: "rate"};
+  if (activity.confirmed === 0) return {kind: "confirm"};
+  const missing = landscapes.find(item => !item.found);
+  return missing ? {kind: "landscape", landscape: missing.key} : {kind: "discover"};
 }
 
 type LandscapeRow = {
@@ -161,12 +147,12 @@ export function getTrailProfile(userId: number, database: Database.Database = sq
       SELECT bench_row_id,kind,max(created_at) created_at FROM raw GROUP BY bench_row_id,kind
     )
     SELECT latest.kind || '-' || b.row_id || '-' || latest.created_at id,latest.kind,b.id bench_id,
-      coalesce(nullif(b.name,''),nullif(b.location_name,''),'Sitzbank') bench_name,latest.created_at
+      coalesce(nullif(b.name,''),nullif(b.location_name,'')) bench_name,latest.created_at
     FROM latest JOIN benches b ON b.row_id=latest.bench_row_id
     ORDER BY latest.created_at DESC LIMIT 6
   `).all({ userId }).map((row) => {
     const item = row as Record<string, unknown>;
-    return { id: String(item.id), kind: String(item.kind) as ProfileMoment["kind"], benchId: String(item.bench_id), benchName: String(item.bench_name), createdAt: String(item.created_at) };
+    return { id: String(item.id), kind: String(item.kind) as ProfileMoment["kind"], benchId: String(item.bench_id), benchName: item.bench_name == null ? null : String(item.bench_name), createdAt: String(item.created_at) };
   });
 
   return {
@@ -180,7 +166,7 @@ export function getTrailProfile(userId: number, database: Database.Database = sq
     landscapes,
     seasons,
     recent,
-    awaitingConfirmation: (database.prepare(`SELECT b.id,coalesce(b.name,b.description,'Bänkli') title,
+    awaitingConfirmation: (database.prepare(`SELECT b.id,coalesce(nullif(b.name,''),nullif(nullif(b.description,'Sitzbank'),'')) title,
       max(0,?-(SELECT count(*) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id)) remaining
       FROM benches b WHERE b.created_by_user_id=? AND b.active=1 AND b.verification_status='unverified'
       ORDER BY b.imported_at DESC LIMIT 20`).all(Math.max(2, Math.min(10, Number(process.env.BENCH_VERIFICATION_THRESHOLD ?? 3) || 3)), userId) as TrailProfile["awaitingConfirmation"]),

@@ -1,0 +1,88 @@
+{
+  "result": {
+    "noBenches": "In dieser Gehzeit wurde noch kein passendes Bänkli gefunden. Versuche eine längere Runde oder einen anderen Start.",
+    "noRestRoute": "Kein geprüfter Weg mit höchstens {minutes} Minuten zwischen Sitzgelegenheiten gefunden. Bitte Start, Dauer oder Pausenabstand ändern.",
+    "unavailable": "Noch kein geprüfter Spaziergang verfügbar. Bitte Start oder Gehzeit ändern. Der eigene Routenservice muss bereit sein.",
+    "nearest": "Die gewünschte Gehzeit passt hier nicht genau. Dies ist der nächstliegende geprüfte Vorschlag; die tatsächliche Dauer steht dabei."
+  },
+  "evidence": {
+    "water": "Viel Weg in Wassernähe",
+    "quiet": "Wenig Hauptstrasse im Umfeld",
+    "nature": "Viel natürliche Umgebung",
+    "open": "Offenes Gelände entlang des Wegs",
+    "incomplete": "Landschaftsdaten noch unvollständig; die schönste Variante ist nicht sicher einschätzbar.",
+    "lightUnknown": "Sonne und Schatten entlang dieses Wegs sind noch nicht verlässlich einschätzbar."
+  },
+  "planner": {
+    "title": "Spaziergang entdecken",
+    "resize": "Spaziergang vergrössern oder verkleinern",
+    "close": "Spaziergang schliessen",
+    "eyebrow": "Zeit für ein Bänkli",
+    "intro": "Ein schöner Weg. Ein Bänkli zum Innehalten.",
+    "label": "Spaziergang planen",
+    "duration": "Wie lange möchtest du gehen?",
+    "route": "Dein Weg",
+    "loop": "Rundweg",
+    "oneWay": "Einfache Strecke",
+    "outAndBack": "Hin- und Rückweg",
+    "light": "Sonne oder Schatten?",
+    "sun": "Lieber Sonne",
+    "shade": "Lieber Schatten",
+    "pending": "Dein Ausflug entsteht …",
+    "update": "Spaziergänge aktualisieren",
+    "submit": "Bänkli-Spaziergang finden",
+    "loading": "Die Karte bleibt beweglich. Die Suche dauert höchstens 15 Sekunden.",
+    "dirty": "Auswahl geändert — der gezeigte Weg gilt noch für die vorherigen Einstellungen.",
+    "failed": "Spaziergang gerade nicht verfügbar. Bitte kurz warten oder den Start ändern."
+  },
+  "rest": {
+    "option": " · Bänkli spätestens alle {minutes} min",
+    "legend": "Spätestens alle … ein Bänkli",
+    "explanation": "Der gesamte Weg wird mit deinem Gehtempo geprüft, auch der erste und letzte Abschnitt. Gehzeiten bleiben Schätzungen.",
+    "title": "Sitzpausen unterwegs",
+    "maximum": "Höchstens ca. {minutes} Min. am Stück zu Fuss · inklusive Start und Ziel",
+    "after": "nach ca. {minutes} Min.",
+    "minutes": "{minutes} Min."
+  },
+  "results": {
+    "title": "Dein Spaziergang",
+    "choice": "{count, plural, one {Ein Spaziergang zur Auswahl} other {# Spaziergänge zur Auswahl}}",
+    "recommended": "Empfohlen",
+    "variant": "Variante {number}",
+    "eyebrow": "Dein Bänkli-Ausflug",
+    "summary": "ca. {duration} · ↑ {ascent} m",
+    "routeSummary": "ca. {duration} · {shape} · ↑ {ascent} m",
+    "t2": "Bergwege bis T2: Trittsicherheit erforderlich.",
+    "start": "Hier beginnt dein Ausflug",
+    "return": "Zurück zum Ausgangspunkt",
+    "why": "Warum dieser Vorschlag?",
+    "explanation": "Wir vergleichen Ruhe, Natur, Aussicht, Wassernähe und das Bänkli entlang des tatsächlichen Wegs. Das ist eine datengestützte Einschätzung, keine Schönheitsgarantie.",
+    "updated": "Landschaftsdaten vom {date}.",
+    "noData": "Landschaftsdaten fehlen noch.",
+    "extrasNote": "Bestätigte zusätzliche Bänkli haben einen kurzen geprüften Fusszugang; nicht geprüfte werden nicht gezählt.",
+    "planReturn": "Rückweg planen"
+  },
+  "information": {
+    "estimates": "Gehzeiten und Licht sind Schätzungen. Keine Zusage zu Barrierefreiheit, aktuellen Sperren, Schnee oder Bergsicherheit.",
+    "privacy": "Standort nur auf Wunsch. Für die Suche werden Eingaben und Koordinaten an den benötigten Kartendienst übermittelt; Fussrouting läuft auf unserem Server. Persönliche Routen bleiben höchstens fünf Minuten im Arbeitsspeicher, ohne Verlauf."
+  },
+  "story": {
+    "loop": {
+      "named": "Eine Runde zum Bänkli «{name}»",
+      "water": "Eine Runde zum Uferbänkli",
+      "bench": "Eine Runde zum Bänkli"
+    },
+    "oneWay": {
+      "named": "Ein Spaziergang zum Bänkli «{name}»",
+      "water": "Ein Spaziergang zum Uferbänkli",
+      "bench": "Ein Spaziergang zum Bänkli"
+    },
+    "pause": {
+      "many": "Mit {count} Bänkli zum Innehalten",
+      "named": "Mit dem Bänkli «{name}» zum Innehalten",
+      "water": "Mit einem Bänkli am Wasser zum Innehalten",
+      "bench": "Mit einem Bänkli zum Innehalten"
+    },
+    "extras": "{count, plural, one {Und unterwegs noch ein weiteres Bänkli zum Entdecken.} other {Und unterwegs noch # weitere Bänkli zum Entdecken.}}"
+  }
+}

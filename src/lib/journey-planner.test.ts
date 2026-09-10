@@ -1,3 +1,4 @@
+import { testTranslator } from "@/test/translations";
 import { describe, expect, it } from "vitest";
 import { assessTransfer, summarizeJourney, type JourneyLeg } from "@/lib/journey";
 import { journeyBounds, parsePreferences, tightestTransfer } from "./journey-planner";
@@ -43,9 +44,9 @@ describe("journey map bounds", () => {
 
 describe("journey transfer summaries", () => {
   it("does not claim a safe transfer when evidence is missing", () => {
-    expect(tightestTransfer(summarizeJourney("direct", [leg]))).toBe("Ohne Umsteigen");
+    expect(tightestTransfer(summarizeJourney("direct", [leg]), testTranslator())).toBe("Ohne Umsteigen");
     const transfer = assessTransfer(600, null, null, 3);
-    expect(tightestTransfer(summarizeJourney("unknown", [{ ...leg, transfer }]))).toBe("Umstiegszeit noch unsicher");
+    expect(tightestTransfer(summarizeJourney("unknown", [{ ...leg, transfer }]), testTranslator())).toBe("Umstiegszeit noch unsicher");
   });
 
   it("reports the smallest breathing room separately from the requested buffer", () => {
@@ -53,6 +54,6 @@ describe("journey transfer summaries", () => {
       { ...leg, transfer: assessTransfer(900, 120, null, 3) },
       { ...leg, id: "second", transfer: assessTransfer(300, 180, null, 3) },
     ]);
-    expect(tightestTransfer(option)).toBe("Engster Umstieg: 2 min Luft · gewünscht +3 min");
+    expect(tightestTransfer(option, testTranslator())).toBe("Engster Umstieg: 2 min Luft · gewünscht +3 min");
   });
 });

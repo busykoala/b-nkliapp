@@ -1,0 +1,93 @@
+{
+  "language": {
+    "label": "Lingua",
+    "failed": "La lingua n’ha betg pudì vegnir midada. Emprova anc ina giada."
+  },
+  "metadata": {
+    "title": "Bänkli App – Bancs en Svizra",
+    "description": "Chatta bancs en Svizra cun sulegl, bella vista e valitaziuns da la cuminanza."
+  },
+  "navigation": {
+    "open": "Avrir il menu",
+    "close": "Serrar il menu",
+    "label": "Navigaziun principala",
+    "addBench": "Agiuntar in banc",
+    "walk": "Spassegiada",
+    "feed": "Novitads dals bancs",
+    "favourites": "Mes lieus preferids",
+    "profile": "Mes profil",
+    "signIn": "S’annunziar",
+    "signOut": "Sa deconnectar",
+    "about": "Davart Bänkli App",
+    "map": "Enavos a la carta",
+    "privacy": "Protecziun da datas",
+    "imprint": "Contact ed impressum"
+  },
+  "install": {
+    "button": "Installar l’app",
+    "ios": "En Safari, tscherna «Cundivider» e lura «Agiuntar al visur da partenza»."
+  },
+  "actions": {
+    "close": "serrar",
+    "cancel": "Interrumper",
+    "save": "Memorisar",
+    "saving": "Vegn memorisà …",
+    "remove": "Allontanar",
+    "delete": "Stizzar",
+    "retry": "Empruvar anc ina giada",
+    "closeTitle": "Serrar"
+  },
+  "values": {
+    "yes": "Gea",
+    "no": "Na",
+    "unknown": "Nunenconuschent",
+    "open": "Anc avert",
+    "notRecorded": "Anc betg registrà",
+    "bench": "Banc",
+    "community": "Cuminanza"
+  },
+  "fields": {
+    "name": "Num",
+    "optional": "(facultativ)"
+  },
+  "errors": {
+    "signIn": "T’annunzia l’emprim.",
+    "blocked": "Contribuziuns da quest navigatur èn vegnidas bloccadas.",
+    "rateLimit": "Memia bleras contribuziuns. Emprova pli tard.",
+    "benchNotFound": "Quest banc n’è betg vegnì chattà.",
+    "invalid": "Controllescha tias indicaziuns.",
+    "unavailable": "Quai n’ha betg funcziunà. Emprova anc ina giada."
+  },
+  "notFound": {
+    "title": "Banc betg chattà",
+    "description": "Forsa è el vegnì allontanà da las datas da funtauna."
+  },
+  "update": {
+    "ready": "Ina charta pli frestga è pronta.",
+    "reload": "Chargiar da nov",
+    "dismiss": "Serrar l’avis d’actualisaziun"
+  },
+  "calendar": {
+    "patterns": {
+      "numeric": "{day}-{month}-{year}",
+      "long": "{day} da {month} {year}",
+      "monthYear": "{month} {year}",
+      "dayMonth": "{day} da {month}",
+      "dateTime": "{date}, {time}"
+    },
+    "months": {
+      "january": "schaner",
+      "february": "favrer",
+      "march": "mars",
+      "april": "avrigl",
+      "may": "matg",
+      "june": "zercladur",
+      "july": "fanadur",
+      "august": "avust",
+      "september": "settember",
+      "october": "october",
+      "november": "november",
+      "december": "december"
+    }
+  }
+}

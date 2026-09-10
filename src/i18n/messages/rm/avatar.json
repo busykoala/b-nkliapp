@@ -1,0 +1,82 @@
+{
+  "editor": {
+    "title": "Crear tes avatar",
+    "mixture": "Tia maschaida",
+    "description": "Mintga tscherna vegn cumponida da singulas stresas d’aquarel.",
+    "random": "Surprenda mai",
+    "pending": "Vegn malegià …",
+    "save": "Memorisar l’avatar"
+  },
+  "description": "{hair}, {coat}, fund {background}",
+  "groups": {
+    "skin": "Tun da la pel",
+    "hairStyle": "Frisura",
+    "hair": "Colur dals chavels",
+    "coat": "Giacca",
+    "accent": "Schal",
+    "hat": "Chapè",
+    "background": "Cuntrada preferida",
+    "companion": "Accumpagnament"
+  },
+  "options": {
+    "skin": {
+      "porcelain": "Cler",
+      "sunlit": "Sulegliv",
+      "warm": "Chaud",
+      "brown": "Brin",
+      "deep": "Stgir"
+    },
+    "hair": {
+      "charcoal": "Charvun",
+      "chestnut": "Chastogna",
+      "copper": "Arom",
+      "blond": "Aur",
+      "silver": "Argient"
+    },
+    "hairStyle": {
+      "short": "Curt",
+      "waves": "Undas",
+      "bob": "Bob",
+      "bun": "Cuc da chavels",
+      "curls": "Ritschlas"
+    },
+    "coat": {
+      "pine": "Aviez",
+      "lake": "Lai",
+      "rust": "Ruina",
+      "moss": "Mistgel",
+      "plum": "Primbla"
+    },
+    "accent": {
+      "gold": "Aur",
+      "coral": "Curalla",
+      "sage": "Salvgia",
+      "cream": "Crema",
+      "none": "Senza"
+    },
+    "hat": {
+      "none": "Senza",
+      "beanie": "Chapitscha",
+      "brim": "Chapè",
+      "cap": "Chapitscha cun piz"
+    },
+    "background": {
+      "mountain": "Muntognas",
+      "lake": "Lai",
+      "forest": "Guaud",
+      "city": "Citad",
+      "meadow": "Prà"
+    },
+    "companion": {
+      "none": "Sulet",
+      "bird": "Utschè",
+      "cat": "Giat",
+      "fox": "Vulp"
+    }
+  },
+  "label": "Maletg da profil d’aquarel da {username}: {description}",
+  "result": {
+    "invalid": "Questa cumbinaziun n’ha betg pudì vegnir memorisada.",
+    "saved": "Tes avatar d’aquarel è memorisà."
+  }
+}

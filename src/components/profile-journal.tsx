@@ -1,3 +1,7 @@
+import { formatDate } from "@/i18n/date";
+import { useTranslations } from "next-intl";
+import type { Translator } from "@/i18n/types";
+import type { BadgeKey } from "@/lib/badges";
 import Link from "next/link";
 import { ArrowLeft, Armchair, Bookmark, Check, Footprints, Map, MapPinPlus, Pencil, Search, Sparkles, Star } from "lucide-react";
 import type { CurrentUser } from "@/lib/security";
@@ -8,16 +12,18 @@ import { BadgeIllustration, type BadgeArt } from "@/components/badge-illustratio
 import { TrailAvatar } from "@/components/trail-avatar";
 import { LandscapeStamp, SeasonStamp } from "@/components/profile-stamps";
 
-type Badge = { key: string; name: string; art: string; hint: string; target: number; progress: number; earned: boolean };
+type Badge = { key: BadgeKey; art: string; target: number; progress: number; earned: boolean };
 
 export function ProfileJournal({ profile, badges, viewer, own }: { profile: TrailProfile; badges: Badge[]; viewer: CurrentUser | null; own: boolean }) {
+  const t = useTranslations();
+  const next = profile.nextPrompt;
   const earnedBadges = badges.filter((badge) => badge.earned);
   const lockedBadges = badges.filter((badge) => !badge.earned);
   const shownBadges = own ? [...earnedBadges, ...lockedBadges.slice(0, Math.max(0, 4 - earnedBadges.length))] : earnedBadges;
   const hiddenBadges = own ? lockedBadges.slice(Math.max(0, 4 - earnedBadges.length)) : [];
   return <main className="profile-page min-h-dvh safe-bottom">
     <header className="profile-nav safe-top">
-      <Link href={own ? "/" : "/feed"} aria-label={own ? "Zur Karte" : "Zum Bänkli-Feed"} className="calm-menu-button"><ArrowLeft size={19} /></Link>
+      <Link href={own ? "/" : "/feed"} aria-label={own ? t("feed.page.map") : t("profile.navigation.feed")} className="calm-menu-button"><ArrowLeft size={19} /></Link>
       <div className="profile-nav-actions">
         <AppMenu user={viewer} />
       </div>
@@ -29,43 +35,43 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
           <TrailAvatar seed={profile.avatarSeed} username={profile.username} progress={profile.uniquePlaces} />
         </div>
         <div className="profile-intro">
-          <span><Sparkles size={13} /> {own ? "Dein Wanderbuch" : "Unterwegs mit"}</span>
+          <span><Sparkles size={13} /> {own ? t("profile.intro.own") : t("profile.intro.public")}</span>
           <h1>{profile.username}</h1>
-          <p>{profile.journey.title}</p>
-          <small>Seit {new Intl.DateTimeFormat("de-CH", { month: "long", year: "numeric" }).format(new Date(profile.joinedAt))} unterwegs</small>
+          <p>{t(`profile.stages.${profile.journey.key}`)}</p>
+          <small>{t("profile.intro.since", {date: formatDate(profile.joinedAt, t, "monthYear")})}</small>
         </div>
       </section>
-      {own && <Link href="/lieblingsplaetze" className="ui-button profile-favourites"><Bookmark size={18} /> Meine Lieblingsplätze</Link>}
+      {own && <Link href="/lieblingsplaetze" className="ui-button profile-favourites"><Bookmark size={18} /> {t("favourites.title")}</Link>}
       <section className="profile-section profile-numbers">
-        <header><div><small>Mitgemacht</small><h2>Kleine Dinge, die helfen</h2></div></header>
-        <div><ProfileNumber value={profile.activity.added} label="entdeckt" icon={<MapPinPlus />} /><ProfileNumber value={profile.activity.rated} label="bewertet" icon={<Star />} /><ProfileNumber value={profile.activity.confirmed} label="bestätigt" icon={<Check />} /><ProfileNumber value={profile.activity.edited + profile.activity.corrected} label="ergänzt" icon={<Pencil />} /></div>
+        <header><div><small>{t("profile.activity.eyebrow")}</small><h2>{t("profile.activity.title")}</h2></div></header>
+        <div><ProfileNumber value={profile.activity.added} label={t("feed.events.added")} icon={<MapPinPlus />} /><ProfileNumber value={profile.activity.rated} label={t("feed.events.rated")} icon={<Star />} /><ProfileNumber value={profile.activity.confirmed} label={t("feed.events.confirmed")} icon={<Check />} /><ProfileNumber value={profile.activity.edited + profile.activity.corrected} label={t("feed.events.edited")} icon={<Pencil />} /></div>
       </section>
 
       {profile.recent.length > 0 && <section className="profile-section profile-moments">
-        <header><div><small>Letzte Beiträge</small><h2>Was du beigetragen hast</h2></div></header>
-        <div>{profile.recent.map((moment) => <Link key={moment.id} href={`/bank/${moment.benchId}`}><MomentIcon kind={moment.kind} /><p>{momentSentence(moment)}</p><time>{relativeTime(moment.createdAt)}</time></Link>)}</div>
+        <header><div><small>{t("profile.activity.recent")}</small><h2>{t("profile.activity.contributed")}</h2></div></header>
+        <div>{profile.recent.map((moment) => <Link key={moment.id} href={`/bank/${moment.benchId}`}><MomentIcon kind={moment.kind} /><p>{momentSentence(moment, t)}</p><time>{relativeTime(moment.createdAt, t)}</time></Link>)}</div>
       </section>}
 
-      {own && <section className="profile-section profile-pending"><header><div><small>Deine Einträge</small><h2>Warten auf Bestätigung</h2></div></header>{profile.awaitingConfirmation.length ? <ul>{profile.awaitingConfirmation.map((bench) => <li key={bench.id}><Link href={`/bank/${bench.id}`}><strong>{bench.title}</strong><span>Noch {bench.remaining} Bestätigungen</span></Link></li>)}</ul> : <p>{profile.activity.added ? "Alle deine eingetragenen Bänkli sind bestätigt." : "Du hast noch kein Bänkli eingetragen."}</p>}</section>}
+      {own && <section className="profile-section profile-pending"><header><div><small>{t("profile.pending.eyebrow")}</small><h2>{t("profile.pending.title")}</h2></div></header>{profile.awaitingConfirmation.length ? <ul>{profile.awaitingConfirmation.map((bench) => <li key={bench.id}><Link href={`/bank/${bench.id}`}><strong>{bench.title ?? t("common.values.bench")}</strong><span>{t("profile.pending.remaining", {count: bench.remaining})}</span></Link></li>)}</ul> : <p>{profile.activity.added ? t("profile.pending.complete") : t("profile.pending.empty")}</p>}</section>}
 
       {own && <AvatarCustomizer seed={profile.avatarSeed} username={profile.username} progress={profile.uniquePlaces} />}
 
       <section className="profile-section trail-progress-card">
-        <header><div><small>Deine Spur</small><h2>{profile.uniquePlaces === 1 ? "Ein besonderer Platz" : `${profile.uniquePlaces} besondere Plätze`}</h2></div><Footprints size={22} /></header>
+        <header><div><small>{t("profile.trail.eyebrow")}</small><h2>{t("profile.trail.places", {count: profile.uniquePlaces})}</h2></div><Footprints size={22} /></header>
         <TrailPath journey={profile.journey} places={profile.uniquePlaces} />
         <p>{profile.journey.nextTarget === null
-          ? "Deine Karte ist voller Geschichten – und bleibt offen für neue."
-          : `Noch ${profile.journey.nextTarget - profile.uniquePlaces} ${profile.journey.nextTarget - profile.uniquePlaces === 1 ? "Platz" : "Plätze"} bis zum nächsten Wegstück.`}</p>
+          ? t("profile.trail.complete")
+          : t("profile.trail.remaining", {count: profile.journey.nextTarget - profile.uniquePlaces})}</p>
       </section>
 
       {own && <Link href="/" className="next-trail-card">
-        <span><Map size={19} /></span><div><small>Nächste kleine Reise</small><strong>{profile.nextPrompt.title}</strong><p>{profile.nextPrompt.copy}</p></div><b aria-hidden>→</b>
+        <span><Map size={19} /></span><div><small>{t("profile.trail.next")}</small><strong>{next.kind === "landscape" ? t("profile.prompts.landscape", {landscape: t(`profile.landscapes.${next.landscape}.name`)}) : t(`profile.prompts.${next.kind}.title`)}</strong><p>{next.kind === "landscape" ? t(`profile.landscapes.${next.landscape}.hint`) : t(`profile.prompts.${next.kind}.copy`)}</p></div><b aria-hidden>→</b>
       </Link>}
 
       <section className="profile-section collection-section">
-        <header><div><small>Landschaften</small><h2>Was du schon gefunden hast</h2></div><span>{profile.landscapes.filter((item) => item.found).length}/{profile.landscapes.length}</span></header>
+        <header><div><small>{t("profile.collection.landscapes")}</small><h2>{t("profile.collection.found")}</h2></div><span>{profile.landscapes.filter((item) => item.found).length}/{profile.landscapes.length}</span></header>
         <div className="landscape-collection">{profile.landscapes.map((item) => {
-          const picture = <><LandscapeStamp kind={item.key} found={item.found} /><div><strong>{item.name}</strong><small>{item.found ? item.hint : "Wartet noch auf dich"}</small></div></>;
+          const picture = <><LandscapeStamp kind={item.key} found={item.found} /><div><strong>{t(`profile.landscapes.${item.key}.name`)}</strong><small>{item.found ? t(`profile.landscapes.${item.key}.hint`) : t("profile.collection.waiting")}</small></div></>;
           return item.found && item.benchId
             ? <Link key={item.key} href={`/bank/${item.benchId}`} className="landscape-token is-found">{picture}</Link>
             : <div key={item.key} className="landscape-token is-locked">{picture}</div>;
@@ -73,23 +79,24 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
       </section>
 
       <section className="profile-section season-section">
-        <header><div><small>Jahreszeiten</small><h2>Dein Jahr draussen</h2></div></header>
-        <div className="season-collection">{profile.seasons.map((season) => <SeasonStamp key={season.key} season={season.key} name={season.name} found={season.found} />)}</div>
+        <header><div><small>{t("profile.collection.seasons")}</small><h2>{t("profile.collection.year")}</h2></div></header>
+        <div className="season-collection">{profile.seasons.map((season) => <SeasonStamp key={season.key} season={season.key} name={t(`bench.light.seasons.${season.key}`)} found={season.found} />)}</div>
       </section>
 
       <section className="profile-section badge-book">
-        <header><div><small>Abzeichenbuch</small><h2>{earnedBadges.length ? `${earnedBadges.length} ${earnedBadges.length === 1 ? "Erinnerung" : "Erinnerungen"} gesammelt` : "Die erste Seite ist noch frei"}</h2></div><Armchair size={21} /></header>
-        {shownBadges.length > 0 ? <BadgeGrid badges={shownBadges} /> : <p className="badge-empty">Hier wartet die erste kleine Erinnerung an einen gemeinsamen Platz.</p>}
-        {hiddenBadges.length > 0 && <details className="more-badges"><summary>{hiddenBadges.length} weitere Abzeichen entdecken <span aria-hidden>＋</span></summary><BadgeGrid badges={hiddenBadges} /></details>}
+        <header><div><small>{t("profile.badges.title")}</small><h2>{earnedBadges.length ? t("profile.badges.collected", {count: earnedBadges.length}) : t("profile.badges.firstPage")}</h2></div><Armchair size={21} /></header>
+        {shownBadges.length > 0 ? <BadgeGrid badges={shownBadges} /> : <p className="badge-empty">{t("profile.badges.empty")}</p>}
+        {hiddenBadges.length > 0 && <details className="more-badges"><summary>{t("profile.badges.more", {count: hiddenBadges.length})} <span aria-hidden>＋</span></summary><BadgeGrid badges={hiddenBadges} /></details>}
       </section>
     </div>
   </main>;
 }
 
 function TrailPath({ journey, places }: { journey: TrailProfile["journey"]; places: number }) {
+  const t = useTranslations();
   const milestones = [1, 5, 15, 40, 100];
   const pathProgress = trailPosition(places);
-  return <div className="trail-path" role="progressbar" aria-label="Fortschritt auf deinem Weg" aria-valuemin={journey.currentFloor} aria-valuemax={journey.nextTarget ?? 100} aria-valuenow={places}>
+  return <div className="trail-path" role="progressbar" aria-label={t("profile.trail.progress")} aria-valuemin={journey.currentFloor} aria-valuemax={journey.nextTarget ?? 100} aria-valuenow={places}>
     <svg viewBox="0 0 420 94" aria-hidden="true"><path className="trail-path-paper" d="M7 72C65 10 109 91 165 45S272 13 315 53s70 25 98-20" pathLength="100" /><path className="trail-path-ink" d="M7 72C65 10 109 91 165 45S272 13 315 53s70 25 98-20" pathLength="100" style={{ strokeDasharray: `${pathProgress} 100` }} />{milestones.map((target, index) => <g key={target} className={places >= target ? "is-reached" : undefined} transform={`translate(${[32, 117, 207, 302, 390][index]} ${[50, 60, 29, 46, 42][index]})`}><circle r="8" /><path d="m-3 0 2 3 5-6" /></g>)}</svg>
   </div>;
 }
@@ -103,7 +110,17 @@ function trailPosition(places: number) {
 }
 
 function BadgeGrid({ badges }: { badges: Badge[] }) {
-  return <div className="badge-album">{badges.map((badge) => <article key={badge.key} className={`story-card badge-card ${badge.earned ? "is-earned" : "is-locked"}`}><BadgeIllustration kind={badge.art as BadgeArt} label={badge.name} earned={badge.earned} /><div className="badge-copy"><h3>{badge.name}</h3><p>{badge.hint}</p><div className="badge-progress" aria-label={`${badge.progress} von ${badge.target}`}><i style={{ width: `${badge.progress / badge.target * 100}%` }} /></div><small>{badge.progress}/{badge.target}</small></div></article>)}</div>;
+  const t = useTranslations();
+  return <div className="badge-album">{badges.map(badge => {
+    const name = t(`profile.badges.catalog.${badge.key}.name`);
+    return <article key={badge.key} className={`story-card badge-card ${badge.earned ? "is-earned" : "is-locked"}`}>
+      <BadgeIllustration kind={badge.art as BadgeArt} label={name} earned={badge.earned} />
+      <div className="badge-copy"><h3>{name}</h3><p>{t(`profile.badges.catalog.${badge.key}.hint`)}</p>
+        <div className="badge-progress" aria-label={t("profile.badges.progress", {progress: badge.progress, target: badge.target})}><i style={{width: `${badge.progress / badge.target * 100}%`}} /></div>
+        <small>{badge.progress}/{badge.target}</small>
+      </div>
+    </article>;
+  })}</div>;
 }
 
 function ProfileNumber({ value, label, icon }: { value: number; label: string; icon: React.ReactNode }) {
@@ -115,18 +132,15 @@ function MomentIcon({ kind }: { kind: ProfileMoment["kind"] }) {
   return <span><Icon size={15} /></span>;
 }
 
-function momentSentence(moment: ProfileMoment) {
-  if (moment.kind === "added") return <><strong>{moment.benchName}</strong> auf die Karte gesetzt.</>;
-  if (moment.kind === "rated") return <><strong>{moment.benchName}</strong> eine Stimme dagelassen.</>;
-  if (moment.kind === "confirmed") return <><strong>{moment.benchName}</strong> vor Ort bestätigt.</>;
-  if (moment.kind === "missing") return <><strong>{moment.benchName}</strong> vermisst.</>;
-  return <><strong>{moment.benchName}</strong> ein Detail geschenkt.</>;
+function momentSentence(moment: ProfileMoment, t: Translator) {
+  const kind = moment.kind === "corrected" ? "edited" : moment.kind;
+  return t.rich(`profile.moments.${kind}`, {name: moment.benchName ?? t("common.values.bench"), bench: chunks => <strong>{chunks}</strong>});
 }
 
-function relativeTime(value: string) {
+function relativeTime(value: string, t: Translator) {
   const days = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000));
-  if (days === 0) return "heute";
-  if (days === 1) return "gestern";
-  if (days < 14) return `vor ${days} Tagen`;
-  return new Intl.DateTimeFormat("de-CH", { day: "numeric", month: "short" }).format(new Date(value));
+  if (days === 0) return t("profile.time.today");
+  if (days === 1) return t("profile.time.yesterday");
+  if (days < 14) return t("profile.time.daysAgo", {days});
+  return formatDate(value, t, "dayMonth");
 }

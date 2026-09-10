@@ -9,13 +9,13 @@ export type BenchKnowledge = {
   question: VerificationQuestion | null;
 };
 export const verificationQuestions = [
-  { attribute: "backrest", text: "Hat dieses Bänkli eine Rückenlehne?", value: 1, ease: 1 },
-  { attribute: "armrest", text: "Hat dieses Bänkli Armlehnen?", value: .8, ease: 1 },
-  { attribute: "covered", text: "Hat dieses Bänkli ein festes Dach?", value: .8, ease: 1 },
-  { attribute: "approach_steps", text: "Gab es auf deinem letzten Wegstück hierher Treppen?", value: 1, ease: .8 },
+  { attribute: "backrest", value: 1, ease: 1 },
+  { attribute: "armrest", value: .8, ease: 1 },
+  { attribute: "covered", value: .8, ease: 1 },
+  { attribute: "approach_steps", value: 1, ease: .8 },
 ] as const;
 export type VerificationAttribute = typeof verificationQuestions[number]["attribute"];
-export type VerificationQuestion = { attribute: VerificationAttribute; text: string; reason: string };
+export type VerificationQuestion = { attribute: VerificationAttribute; reason: "conflicting" | "missing" | "stale" };
 
 export function chooseVerificationQuestion(attributes: AttributeKnowledge[], answered: string[], now = Date.now()): VerificationQuestion | null {
   return verificationQuestions.filter((question) => !answered.includes(question.attribute)).map((question) => {
@@ -27,7 +27,7 @@ export function chooseVerificationQuestion(attributes: AttributeKnowledge[], ans
     const staleness = Math.min(2, (state?.conflicting ? 1 : .5) + age / 365);
     const usefulness = state?.conflicting ? 2 : unknown ? 1.2 : 1;
     const priority = question.value * uncertainty * staleness * usefulness * question.ease;
-    return { question, priority, reason: state?.conflicting ? "Hier widersprechen sich die Hinweise." : unknown ? "Diese Angabe fehlt noch." : "Eine aktuelle Sichtung hilft." };
+    return { question, priority, reason: state?.conflicting ? "conflicting" as const : unknown ? "missing" as const : "stale" as const };
   }).filter((item) => item.priority >= .3).sort((a, b) => b.priority - a.priority)
-    .map(({ question, reason }) => ({ attribute: question.attribute, text: question.text, reason }))[0] ?? null;
+    .map(({ question, reason }) => ({ attribute: question.attribute, reason }))[0] ?? null;
 }

@@ -1,0 +1,153 @@
+{
+  "navigation": {
+    "feed": "Zum Bänkli-Feed"
+  },
+  "intro": {
+    "own": "Dein Wanderbuch",
+    "public": "Unterwegs mit",
+    "since": "Seit {date} unterwegs"
+  },
+  "activity": {
+    "eyebrow": "Mitgemacht",
+    "title": "Kleine Dinge, die helfen",
+    "recent": "Letzte Beiträge",
+    "contributed": "Was du beigetragen hast"
+  },
+  "pending": {
+    "eyebrow": "Deine Einträge",
+    "title": "Warten auf Bestätigung",
+    "remaining": "Noch {count, plural, one {eine Bestätigung} other {# Bestätigungen}}",
+    "complete": "Alle deine eingetragenen Bänkli sind bestätigt.",
+    "empty": "Du hast noch kein Bänkli eingetragen."
+  },
+  "trail": {
+    "eyebrow": "Deine Spur",
+    "places": "{count, plural, one {Ein besonderer Platz} other {# besondere Plätze}}",
+    "complete": "Deine Karte ist voller Geschichten – und bleibt offen für neue.",
+    "remaining": "Noch {count, plural, one {ein Platz} other {# Plätze}} bis zum nächsten Wegstück.",
+    "progress": "Fortschritt auf deinem Weg",
+    "next": "Nächste kleine Reise"
+  },
+  "collection": {
+    "landscapes": "Landschaften",
+    "found": "Was du schon gefunden hast",
+    "waiting": "Wartet noch auf dich",
+    "seasons": "Jahreszeiten",
+    "year": "Dein Jahr draussen"
+  },
+  "badges": {
+    "title": "Abzeichenbuch",
+    "collected": "{count, plural, one {Eine Erinnerung gesammelt} other {# Erinnerungen gesammelt}}",
+    "firstPage": "Die erste Seite ist noch frei",
+    "empty": "Hier wartet die erste kleine Erinnerung an einen gemeinsamen Platz.",
+    "more": "{count} weitere Abzeichen entdecken",
+    "progress": "{progress} von {target}",
+    "catalog": {
+      "erstes-plaetzli": {
+        "name": "Bänkli-Entdecker:in",
+        "hint": "Ein Bänkli eingetragen"
+      },
+      "baenkli-scout": {
+        "name": "Bänkli-Pionier:in",
+        "hint": "3 eigene Bänkli bestätigt"
+      },
+      "spaehnase": {
+        "name": "Bänkli-Spürnase",
+        "hint": "10 Bänkli eingetragen"
+      },
+      "verifizierli": {
+        "name": "Bänkli-Prüfer:in",
+        "hint": "5 Bänkli bestätigt"
+      },
+      "holzauge": {
+        "name": "Bänkli-Detektiv:in",
+        "hint": "3 fehlende Bänkli bestätigt"
+      },
+      "pausenpoet": {
+        "name": "Pausenpoet:in",
+        "hint": "5 Bewertungen geschrieben"
+      },
+      "baenkli-buenzli": {
+        "name": "Bänkli-Kenner:in",
+        "hint": "25 hilfreiche Beiträge"
+      },
+      "bankdirektor": {
+        "name": "Bänkli-Guru",
+        "hint": "75 hilfreiche Beiträge"
+      },
+      "sitzungspraesident": {
+        "name": "Bänkli-Legende",
+        "hint": "200 hilfreiche Beiträge"
+      }
+    }
+  },
+  "moments": {
+    "added": "<bench>{name}</bench> auf die Karte gesetzt.",
+    "rated": "<bench>{name}</bench> eine Stimme dagelassen.",
+    "confirmed": "<bench>{name}</bench> vor Ort bestätigt.",
+    "missing": "<bench>{name}</bench> vermisst.",
+    "edited": "<bench>{name}</bench> ein Detail geschenkt."
+  },
+  "time": {
+    "today": "heute",
+    "yesterday": "gestern",
+    "daysAgo": "vor {days} Tagen"
+  },
+  "stages": {
+    "first": "Die erste Spur",
+    "paths": "Auf leisen Pfaden",
+    "forest": "Durch Wald und Wiesen",
+    "hills": "Über den Hügeln",
+    "horizon": "Mit weitem Blick",
+    "keeper": "Hüter:in der Bänkli"
+  },
+  "landscapes": {
+    "forest": {
+      "name": "Waldlicht",
+      "hint": "Ein Platz zwischen Bäumen"
+    },
+    "water": {
+      "name": "Am Wasser",
+      "hint": "See oder Fluss in der Nähe"
+    },
+    "mountain": {
+      "name": "Bergluft",
+      "hint": "Ein Platz mit Bergblick"
+    },
+    "hill": {
+      "name": "Hügelweg",
+      "hint": "Sanfte Höhen im Blick"
+    },
+    "open": {
+      "name": "Weite",
+      "hint": "Ein offener Horizont"
+    },
+    "city": {
+      "name": "Stadtpause",
+      "hint": "Ein stiller Fleck im Ort"
+    }
+  },
+  "prompts": {
+    "add": {
+      "title": "Setz deine erste Spur",
+      "copy": "Kennst du ein Bänkli, das auf der Karte noch fehlt?"
+    },
+    "rate": {
+      "title": "Erzähl von einer Pause",
+      "copy": "Eine ehrliche Stimme macht den nächsten Fund leichter."
+    },
+    "confirm": {
+      "title": "Schau einmal genauer hin",
+      "copy": "Neue Bänkli freuen sich über eine Bestätigung vor Ort."
+    },
+    "landscape": "{landscape} entdecken",
+    "discover": {
+      "title": "Folge deiner Neugier",
+      "copy": "Vielleicht wartet gleich um die Ecke ein besonderer Platz."
+    }
+  },
+  "metadata": {
+    "description": "{username}s Wanderbuch in der Bänkli App.",
+    "notFound": "Profil nicht gefunden"
+  }
+}

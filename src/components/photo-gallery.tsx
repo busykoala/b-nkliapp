@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 /* eslint-disable @next/next/no-img-element -- licensed remote images and local photo responses */
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -8,6 +10,7 @@ import { loadBenchPhoto } from "@/app/actions/bench-photos";
 export type GalleryPhoto = { id: string; src: string | null; caption: string; credit: string; sourceUrl?: string; momentId?: number };
 
 function PhotoThumbnail({ photo, src, remember }: { photo: GalleryPhoto; src: string | null; remember: (id: string, src: string) => void }) {
+  const t = useTranslations();
   const container = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (src || !photo.momentId || !container.current) return;
@@ -22,10 +25,11 @@ function PhotoThumbnail({ photo, src, remember }: { photo: GalleryPhoto; src: st
     observer.observe(container.current);
     return () => { cancelled = true; observer.disconnect(); };
   }, [photo.id, photo.momentId, src, remember]);
-  return <span ref={container} className="photo-thumbnail-image">{src ? <img src={src} alt={photo.caption} loading="lazy" decoding="async" /> : <span className="photo-placeholder">Foto ansehen</span>}</span>;
+  return <span ref={container} className="photo-thumbnail-image">{src ? <img src={src} alt={photo.caption} loading="lazy" decoding="async" /> : <span className="photo-placeholder">{t("photos.gallery.view")}</span>}</span>;
 }
 
 export function PhotoGallery({ photos, thumbnailIndex }: { photos: GalleryPhoto[]; thumbnailIndex?: number }) {
+  const t = useTranslations();
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLButtonElement | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
@@ -62,7 +66,7 @@ export function PhotoGallery({ photos, thumbnailIndex }: { photos: GalleryPhoto[
   const move = (step: number) => { if (selected !== null) show((selected + step + photos.length) % photos.length); };
   const thumbnails = thumbnailIndex === undefined ? photos.map((item, index) => ({ item, index })) : [{ item: photos[thumbnailIndex], index: thumbnailIndex }];
   return <>
-    <div className="photo-ribbon">{thumbnails.map(({ item, index }) => <button type="button" key={item.id} className="photo-thumbnail" onClick={(event) => { opener.current = event.currentTarget; show(index); }} aria-label={`${item.caption} gross ansehen`}>
+    <div className="photo-ribbon">{thumbnails.map(({ item, index }) => <button type="button" key={item.id} className="photo-thumbnail" onClick={(event) => { opener.current = event.currentTarget; show(index); }} aria-label={t("photos.gallery.enlarge", { caption: item.caption })}>
       <PhotoThumbnail photo={item} src={loaded[item.id] ?? item.src} remember={remember} />
       <span>{item.caption}</span><small>{item.credit}</small>
     </button>)}</div>
@@ -70,18 +74,18 @@ export function PhotoGallery({ photos, thumbnailIndex }: { photos: GalleryPhoto[
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); move(event.key === "ArrowLeft" ? -1 : 1); }
     }}>
       {photo && <div className="photo-viewer-content">
-        <header><span aria-live="polite">{selected! + 1} / {photos.length}</span><button className="photo-control" type="button" aria-label="Fotos schliessen" onClick={close} autoFocus><X size={24} /></button></header>
+        <header><span aria-live="polite">{selected! + 1} / {photos.length}</span><button className="photo-control" type="button" aria-label={t("photos.gallery.close")} onClick={close} autoFocus><X size={24} /></button></header>
         <div className="photo-stage" onTouchStart={(event) => { start.current = event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null; }} onTouchEnd={(event) => {
           if (!start.current) return;
           const dx = event.changedTouches[0].clientX - start.current.x, dy = event.changedTouches[0].clientY - start.current.y;
           if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && photos.length > 1) move(dx > 0 ? -1 : 1);
           start.current = null;
         }} onTouchCancel={() => { start.current = null; }}>
-          {error ? <div role="status"><p>Das Bild macht gerade Pause.</p><button className="photo-control" onClick={() => { setError(false); setRetry((value) => value + 1); }}>Erneut laden</button></div>
-            : src ? <img key={`${photo.id}-${retry}`} src={src} alt={photo.caption} onError={() => setError(true)} /> : <p role="status">Bild wird geladen …</p>}
+          {error ? <div role="status"><p>{t("photos.gallery.unavailable")}</p><button className="photo-control" onClick={() => { setError(false); setRetry((value) => value + 1); }}>{t("photos.gallery.retry")}</button></div>
+            : src ? <img key={`${photo.id}-${retry}`} src={src} alt={photo.caption} onError={() => setError(true)} /> : <p role="status">{t("photos.gallery.loading")}</p>}
         </div>
-        <footer><div><p id={label}>{photo.caption}</p><small>{photo.credit}</small>{photo.sourceUrl && <a href={photo.sourceUrl} target="_blank" rel="noreferrer">Quelle & Lizenz ↗</a>}</div>
-          {photos.length > 1 && <nav aria-label="Fotos"><button className="photo-control" aria-label="Vorheriges Foto" onClick={() => move(-1)}><ChevronLeft size={24} /></button><button className="photo-control" aria-label="Nächstes Foto" onClick={() => move(1)}><ChevronRight size={24} /></button></nav>}
+        <footer><div><p id={label}>{photo.caption}</p><small>{photo.credit}</small>{photo.sourceUrl && <a href={photo.sourceUrl} target="_blank" rel="noreferrer">{t("photos.gallery.source")}</a>}</div>
+          {photos.length > 1 && <nav aria-label={t("photos.gallery.label")}><button className="photo-control" aria-label={t("photos.gallery.previous")} onClick={() => move(-1)}><ChevronLeft size={24} /></button><button className="photo-control" aria-label={t("photos.gallery.next")} onClick={() => move(1)}><ChevronRight size={24} /></button></nav>}
         </footer>
       </div>}
     </dialog>

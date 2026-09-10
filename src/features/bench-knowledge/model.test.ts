@@ -11,5 +11,5 @@ it("does not repeat a person's recent answer or claim known facts are missing", 
   expect(chooseVerificationQuestion([state("backrest"), state("armrest"), state("covered"), state("approach_steps")], [], now)).toBeNull();
 });
 it("prioritizes an unresolved contradiction and retains explicit negative observations", () => {
-  expect(chooseVerificationQuestion([state("backrest", { value: 0, conflicting: true })], [], now)).toMatchObject({ attribute: "backrest", reason: "Hier widersprechen sich die Hinweise." });
+  expect(chooseVerificationQuestion([state("backrest", { value: 0, conflicting: true })], [], now)).toMatchObject({ attribute: "backrest", reason: "conflicting" });
 });

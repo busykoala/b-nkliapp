@@ -1,15 +1,17 @@
+import { useTranslations } from "next-intl";
 import { useId, type CSSProperties, type ReactNode } from "react";
 import type { BenchDetail } from "@/lib/types";
 import { benchSceneComposition, benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "@/lib/bench-scene-art";
 import { benchPlacement } from "@/lib/bench-placement";
 
-function knownProperty(bench: BenchDetail, label: string) {
-  return bench.properties.find((item) => item.label === label)?.value ?? "Unbekannt";
+function knownProperty(bench: BenchDetail, key: string) {
+  return bench.properties.find((item) => item.key === key)?.value ?? "Unbekannt";
 }
 
 /** Independent evidence layers form one generic scene; no single background
  * is allowed to turn proximity into a claimed view. */
 export function BenchLandscape({ bench, children }: { bench: BenchDetail; children?: ReactNode }) {
+  const t = useTranslations();
   const instance = useId().replaceAll(":", "");
   const id = `scene-${instance}`;
   const snowCover = bench.weather?.snowCoverPercent ?? (bench.weather?.precipitationType === "snow" ? 18 : 0);
@@ -24,11 +26,11 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
   });
   const sceneKind = scene.place;
   const composition = benchSceneComposition(scene);
-  const backrest = knownProperty(bench, "Rückenlehne") !== "Nein";
-  const armrests = knownProperty(bench, "Armlehnen") === "Ja";
-  const covered = knownProperty(bench, "Überdacht") === "Ja";
-  const asset = benchSpriteArt({ material: knownProperty(bench, "Material"), backrest, armrests });
-  const seats = Number.parseInt(knownProperty(bench, "Sitzplätze"), 10);
+  const backrest = knownProperty(bench, "backrest") !== "Nein";
+  const armrests = knownProperty(bench, "armrest") === "Ja";
+  const covered = knownProperty(bench, "covered") === "Ja";
+  const asset = benchSpriteArt({ material: knownProperty(bench, "material"), backrest, armrests });
+  const seats = Number.parseInt(knownProperty(bench, "seats"), 10);
   const placement = benchPlacement(sceneKind, asset, seats, composition.benchOffsetX);
   const weather = bench.weather;
   const cloudCover = weather?.cloudCover ?? 0;
@@ -52,12 +54,12 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
   const azimuth = sunVisible ? bench.sunAzimuthDegrees : bench.moonAzimuthDegrees;
   const skyX = 70 + Math.max(0, Math.min(1, azimuth / 360)) * 500;
   const skyY = Math.max(36, Math.min(128, 135 - altitude * 1.3));
-  const aria = [night ? "Nacht" : bench.sunnyNow === null ? "Lichtlage noch offen" : bench.sunnyNow ? "Die Bank liegt in der Sonne" : "Die Bank liegt im Schatten",
-    raining && snowing ? "Schneeregen" : raining ? "Regen" : snowing ? "Schneefall" : null,
-    scene.water === "lake" ? "mit Seeblick" : scene.water === "river" ? "mit Flussblick" : null,
-    scene.relief === "mountains" ? "mit Bergblick" : scene.relief === "hills" ? "mit Hügelblick" : null,
-    bench.inForest ? "im Wald" : null,
-    backrest ? "mit Rückenlehne" : "ohne Rückenlehne"].filter(Boolean).join(", ");
+  const aria = [night ? t("bench.summary.night") : bench.sunnyNow === null ? t("bench.details.unknownLight") : bench.sunnyNow ? t("bench.landscape.sun") : t("bench.light.state.shade"),
+    raining && snowing ? t("bench.weather.precipitation.mixed") : raining ? t("bench.weather.precipitation.rain") : snowing ? t("bench.landscape.snowfall") : null,
+    scene.water === "lake" ? t("bench.landscape.lake") : scene.water === "river" ? t("bench.landscape.river") : null,
+    scene.relief === "mountains" ? t("bench.landscape.mountains") : scene.relief === "hills" ? t("bench.landscape.hills") : null,
+    bench.inForest ? t("bench.landscape.forest") : null,
+    backrest ? t("bench.landscape.backrest") : t("bench.landscape.noBackrest")].filter(Boolean).join(", ");
   const style = { "--scene-sun-x": `${skyX / 6.4}%` } as CSSProperties;
 
   return <figure className={`bench-landscape painted-scene scene-${sceneKind} relief-${scene.relief} water-${scene.water} phase-${bench.dayPhase} season-${bench.season} ${bench.sunnyNow ? "light-sunny" : "light-shade"} ${raining ? "is-raining" : ""} ${windy ? "is-windy" : ""} ${scene.snowy ? "has-snow" : ""}`} style={style} aria-label={aria}>
@@ -142,8 +144,8 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
       {snowing && <g className="painting-snowfall">{Array.from({ length: 32 }, (_, i) => <circle key={i} cx={20 + (i * 113) % 600} cy={20 + (i * 73) % 420} r={.7 + (i % 3) * .45} />)}</g>}
       {windy && <g className="painting-wind" aria-hidden="true"><path d="M68 252q68-24 139 3t144-2" /><path d="M383 166q74-19 151 8" /><path d="M437 316q49-17 101 0" /></g>}
     </svg>
-    {weather && <span className="sr-only">{Math.round(weather.temperatureC)} Grad Celsius, {raining ? "Regen" : snowing ? "Schnee" : "trocken"}, MeteoSchweiz</span>}
-    {night && <span className="sr-only">Mond {Math.round(bench.moonIllumination * 100)} Prozent beleuchtet</span>}
+    {weather && <span className="sr-only">{t("bench.landscape.weather", {temperature: Math.round(weather.temperatureC), precipitation: t(`bench.weather.precipitation.${weather.precipitationType}`)})}</span>}
+    {night && <span className="sr-only">{t("bench.landscape.moon", {percent: Math.round(bench.moonIllumination * 100)})}</span>}
     {children}
   </figure>;
 }

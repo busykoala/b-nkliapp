@@ -1,0 +1,76 @@
+{
+  "canvas": {
+    "label": "Carte des bancs de Suisse",
+    "loading": "La carte prend forme…",
+    "failed": "Impossible de charger les bancs.",
+    "removed": "Ce banc a été confirmé comme disparu.",
+    "saved": "La modification est enregistrée. Elle apparaîtra à la prochaine ouverture.",
+    "attribution": "Afficher les sources de la carte",
+    "interactive": "Carte interactive"
+  },
+  "location": {
+    "unsupported": "Ton navigateur ne prend pas en charge la géolocalisation.",
+    "searching": "Recherche de ta position…",
+    "unavailable": "Position indisponible. Tu peux continuer à utiliser la carte.",
+    "show": "Afficher ma position",
+    "use": "Utiliser ma position",
+    "accuracy": "Position précise à environ {meters} m."
+  },
+  "search": {
+    "label": "Chercher un lieu",
+    "placeholder": "Chercher un lieu ou un banc",
+    "clear": "Effacer la recherche",
+    "results": "Résultats de recherche",
+    "pending": "Recherche…",
+    "empty": "Aucun lieu correspondant pour le moment.",
+    "failed": "La recherche fait une pause. Réessaie.",
+    "kinds": {
+      "bench": "Banc",
+      "address": "Adresse",
+      "station": "Arrêt",
+      "place": "Lieu"
+    }
+  },
+  "filters": {
+    "open": "Ouvrir les filtres",
+    "button": "Filtres",
+    "active": "Filtres actifs",
+    "eyebrow": "Choisir un banc",
+    "title": "De quoi as-tu envie ?",
+    "count": "{count, plural, one {# filtre actif} other {# filtres actifs}}",
+    "close": "Fermer les filtres",
+    "intro": "Équipement selon les données disponibles. Lumière estimée à partir du relief et des environs.",
+    "pause": "Pour ta pause",
+    "fireplace": "Foyer",
+    "bin": "Poubelle",
+    "light": "Lumière actuelle · estimée",
+    "sun": "Soleil",
+    "shade": "Ombre",
+    "more": "Autres envies",
+    "access": "Accès et confort",
+    "accessNote": "Cette indication concerne le banc. Le chemin d’accès reste à vérifier.",
+    "anyMaterial": "Peu importe",
+    "roomFor": "De la place pour",
+    "anySeats": "Peu importe le nombre",
+    "minimumSeats": "au moins {count} personnes",
+    "rated": "Les avis de la communauté",
+    "fourStars": "Dès 4 étoiles",
+    "clear": "Effacer la sélection",
+    "done": "Voir la carte",
+    "remove": "Retirer {label}",
+    "sunEstimate": "Soleil estimé",
+    "shadeEstimate": "Ombre estimée",
+    "seatsFrom": "Dès {count} places assises",
+    "starsFrom": "Dès {count} étoiles",
+    "without": "Sans {label}"
+  },
+  "placement": {
+    "title": "Choisir la position",
+    "instructions": "Déplacez la carte pour placer le repère sur le banc.",
+    "confirm": "Ajouter ici"
+  },
+  "loading": {
+    "walk": "Ouverture du carnet de balade…",
+    "journey": "Ouverture du carnet de voyage…"
+  }
+}

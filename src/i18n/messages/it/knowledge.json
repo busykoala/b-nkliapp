@@ -1,0 +1,140 @@
+{
+  "title": "Cosa sappiamo e cosa resta da scoprire",
+  "categories": {
+    "physical": "Dotazioni",
+    "location": "Luogo",
+    "accessibility": "Accesso",
+    "imagery": "Immagini",
+    "surroundings": "Dintorni",
+    "amenities": "Servizi vicini",
+    "environment": "Dati ambientali",
+    "recent_verification": "Avvistamento recente"
+  },
+  "amenities": {
+    "toilets": "Toilette",
+    "drinking_water": "Acqua potabile",
+    "fountain": "Fontana",
+    "shelter": "Riparo",
+    "picnic_table": "Tavolo da picnic",
+    "playground": "Parco giochi",
+    "waste_basket": "Cestino",
+    "fireplace": "Focolare"
+  },
+  "attributes": {
+    "covered": "Copertura",
+    "wheelchair": "Uso in sedia a rotelle",
+    "land_context": "Dintorni",
+    "canopy_context": "Chiome degli alberi",
+    "waterfront": "Sull’acqua",
+    "presence": "Presenza"
+  },
+  "sources": {
+    "osm": "OpenStreetMap",
+    "gis": "Geometria",
+    "imagery": "Modello visivo",
+    "official": "Dati ufficiali",
+    "community": "Comunità"
+  },
+  "confidence": {
+    "unknown": "sconosciuto",
+    "low": "incerto",
+    "medium": "supportato",
+    "high": "ben supportato"
+  },
+  "nearby": {
+    "title": "Nelle vicinanze",
+    "distance": "circa {distance} m",
+    "explanation": "Distanza in linea d’aria dai servizi registrati entro 500 m. Una fontana non fornisce necessariamente acqua potabile."
+  },
+  "approach": {
+    "title": "L’ultimo tratto di strada",
+    "length": "Tratto considerato",
+    "steps": "Scale su questo percorso",
+    "stepFree": "Possibilità senza gradini",
+    "open": "Sconosciuto",
+    "recorded": "Registrate",
+    "noneRecorded": "Nessuna registrata",
+    "evidence": "Indizi presenti",
+    "obstacle": "Ostacolo registrato",
+    "maxSlope": "Pendenza massima stimata",
+    "meanSlope": "Pendenza assoluta media",
+    "ascent": "Salita alla panchina",
+    "surface": "Superficie secondo la mappa",
+    "smoothness": "Condizioni secondo la mappa",
+    "width": "Larghezza minima registrata",
+    "explanation": "{confidence} · Solo un accesso locale, senza verifica dell’intero tragitto. L’assenza di ostacoli sulla mappa non garantisce l’accessibilità.",
+    "empty": "Non è ancora stato associato un sentiero pedonale sufficientemente vicino."
+  },
+  "noise": {
+    "title": "Rumore del traffico nel modello",
+    "rail": "Ferrovia",
+    "road": "Strada",
+    "day": "Giorno",
+    "night": "Notte",
+    "empty": "Nessuna copertura raster",
+    "explanation": "Livelli di valutazione ufficiali, non misurazioni in tempo reale. Versione delle fonti: {version}."
+  },
+  "evidence": {
+    "title": "Indizi per caratteristica",
+    "conflicting": "Indizi contraddittori"
+  },
+  "completeness": {
+    "title": "Quanto sappiamo di questo luogo?",
+    "count": "{known} dati su {total}",
+    "uncertain": " · {count} incerti",
+    "explanation": "Ogni ambito è indipendente. Un valore mancante resta sconosciuto e non dice nulla di negativo sulla panchina."
+  },
+  "verification": {
+    "label": "Una breve domanda sul posto",
+    "intro": "Se sei qui adesso",
+    "unknown": "Non lo so",
+    "failed": "Impossibile salvare la risposta. Riprova.",
+    "questions": {
+      "backrest": "Questa panchina ha uno schienale?",
+      "armrest": "Questa panchina ha i braccioli?",
+      "covered": "Questa panchina ha un tetto fisso?",
+      "approach_steps": "C’erano scale nell’ultimo tratto per arrivare qui?"
+    },
+    "reasons": {
+      "conflicting": "Qui gli indizi si contraddicono.",
+      "missing": "Questa informazione manca ancora.",
+      "stale": "Un avvistamento recente è utile."
+    },
+    "result": {
+      "invalid": "Impossibile salvare questa risposta.",
+      "saved": "Grazie! La tua indicazione completa le osservazioni esistenti.",
+      "failed": "La risposta fa una pausa."
+    }
+  },
+  "surfaces": {
+    "asphalt": "Asfalto",
+    "paved": "Pavimentato",
+    "unpaved": "Non pavimentato",
+    "concrete": "Calcestruzzo",
+    "paving_stones": "Masselli",
+    "cobblestone": "Ciottoli",
+    "sett": "Pietra squadrata",
+    "gravel": "Ghiaia",
+    "fine_gravel": "Ghiaia fine",
+    "compacted": "Compattato",
+    "ground": "Terreno naturale",
+    "dirt": "Terra",
+    "earth": "Terra",
+    "grass": "Erba",
+    "sand": "Sabbia",
+    "wood": "Legno",
+    "rock": "Roccia",
+    "pebblestone": "Sassolini",
+    "mud": "Fango"
+  },
+  "smoothness": {
+    "excellent": "Molto regolare",
+    "good": "Regolare",
+    "intermediate": "Leggermente irregolare",
+    "bad": "Irregolare",
+    "very_bad": "Molto irregolare",
+    "horrible": "Molto deteriorato",
+    "very_horrible": "Estremamente deteriorato",
+    "impassable": "Impraticabile"
+  }
+}

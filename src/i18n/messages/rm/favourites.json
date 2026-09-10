@@ -1,0 +1,12 @@
+{
+  "metadata": "Mes lieus preferids · Bänkli App",
+  "eyebrow": "Per la proxima pausa",
+  "title": "Mes lieus preferids",
+  "intro": "Tut ils bancs che ti has memorisà. Questa glista è visibla mo per tai.",
+  "label": "Bancs memorisads",
+  "removed": "{place} · betg pli avant maun",
+  "place": "In lieu sin la carta",
+  "end": "Nagins ulteriurs lieus preferids.",
+  "empty": "Anc nagin lieu preferì? Avra in banc sin la charta e tutga «{action}».",
+  "more": "Dapli lieus preferids"
+}

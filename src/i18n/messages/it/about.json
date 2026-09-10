@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "title": "Informazioni su Bänkli App",
+    "description": "Come i dati aperti aiutano a trovare un posto per una pausa. Persone, metodi e privacy."
+  },
+  "hero": {
+    "eyebrow": "Tanta tecnologia. Per fare poco.",
+    "title": "Un bel posto<br></br>per una pausa.",
+    "description": "Bänkli App unisce mappe aperte, un po’ di IA e le persone sul posto. Per trovare dove sederti la prossima volta."
+  },
+  "navigation": {
+    "label": "In questa pagina",
+    "methods": "Come funziona",
+    "sources": "Fonti dei dati",
+    "privacy": "I tuoi dati",
+    "contribute": "Partecipa"
+  },
+  "methods": {
+    "title": "Dalla mappa alla pausa",
+    "introduction": "Misurare, stimare, chiedere. Teniamo distinte queste tre cose.",
+    "position": {
+      "title": "Dove si trova la panchina?",
+      "description": "Mappe e inventari aperti forniscono posizione e dotazioni. I confini comunali aiutano ad attribuirli. Uniamo panchine vicine solo quando gli indizi sono chiari."
+    },
+    "sun": {
+      "title": "Quando c’è il sole qui?",
+      "description": "Seguiamo la posizione del sole durante il giorno. Montagne, edifici e chiome formano un orizzonte. Se il sole passa dietro, prevediamo ombra. Nuvole e fogliame variabile aggiungono incertezza."
+    },
+    "view": {
+      "title": "Che cosa potrei vedere?",
+      "description": "Terreno e dintorni danno i primi indizi. L’IA esamina foto pertinenti e aggiunge elementi visibili. Acqua nelle vicinanze o una sola immagine non bastano a garantire la vista sul lago."
+    },
+    "evidence": {
+      "title": "E corrisponde alla realtà?",
+      "description": "La tua osservazione sul posto aiuta. Conserviamo origine, età e indizi contrastanti. Un dato mancante resta sconosciuto. I modelli danno stime; la tua vista preferita resta tua."
+    }
+  },
+  "sources": {
+    "eyebrow": "In tutta trasparenza",
+    "title": "Come usiamo i dati",
+    "introduction": "Uno sguardo a ogni fonte. Nei dettagli di una panchina trovi le informazioni disponibili per quel luogo.",
+    "link": "Vai alla fonte ↗",
+    "entries": {
+      "openstreetmap": {
+        "summary": "Panchine e sentieri",
+        "description": "Da qui provengono posizioni, dotazioni, sentieri, fontane e servizi igienici. Un dato mancante resta sconosciuto. L’età di una voce OSM è distinta dalla data del nostro import."
+      },
+      "geofabrik": {
+        "summary": "Estratto OSM della Svizzera",
+        "description": "Geofabrik fornisce l’estratto svizzero di OpenStreetMap. Lo elaboriamo in blocco per evitare una nuova richiesta per ogni caratteristica quando apri una panchina."
+      },
+      "swisstopo-map": {
+        "summary": "Mappa di base e ricerca indirizzi",
+        "description": "La mappa di base mostra sentieri, terreno e nomi dei luoghi. Anche la ricerca di indirizzi usa GeoAdmin. Le tessere della mappa vengono caricate direttamente da swisstopo."
+      },
+      "swisstlm3d": {
+        "summary": "Boschi, acqua e superfici del paesaggio",
+        "description": "Superfici e linee precise descrivono boschi e acque. Analizziamo la geometria intorno alla panchina: l’acqua vicina non dimostra che sia visibile da seduti."
+      },
+      "swissbuildings3d": {
+        "summary": "Forma degli edifici e altezza dei tetti",
+        "description": "Forma, altezza e distanza di un edificio determinano la sua altezza apparente all’orizzonte della panchina. Se il sole passa dietro, prevediamo ombra. Altezze mancanti e posizioni imprecise rendono la stima meno sicura."
+      },
+      "swissalti3d": {
+        "summary": "Altitudine, orizzonte e pendenza",
+        "description": "Il modello del terreno fornisce altitudine e orizzonte naturale in molte direzioni. Per gli accessi locali confrontiamo le quote lungo il percorso: 1 metro di dislivello su 20 metri orizzontali equivale a una pendenza del 5%."
+      },
+      "swisssurface3d": {
+        "summary": "Superficie con edifici e vegetazione",
+        "description": "Questo modello di superficie comprende edifici e vegetazione. Il confronto con il terreno nudo aiuta a riconoscere ostacoli e chiome. Una chioma misurata non indica però la densità attuale delle foglie."
+      },
+      "meteoswiss": {
+        "summary": "Modelli meteo e radar",
+        "description": "Temperatura, vento, nuvole e precipitazioni provengono da modelli meteo e radar. Le nuvole sono considerate separatamente dall’ombra geometrica: un raggio libero nel modello non garantisce un cielo sereno."
+      },
+      "transport-api": {
+        "summary": "Fermate e collegamenti",
+        "description": "La ricerca di fermate e collegamenti completa il viaggio. I termini cercati o le coordinate necessarie vengono inviati a transport.opendata.ch."
+      },
+      "swiss-gtfs": {
+        "summary": "Orari e regole di cambio",
+        "description": "L’orario pubblico viene importato localmente per trovare fermate e cambi possibili di un viaggio verso una panchina. Un orario non garantisce la puntualità di un veicolo."
+      },
+      "graphhopper": {
+        "summary": "Percorsi a piedi sulla rete",
+        "description": "Il nostro servizio calcola percorsi a piedi sulla rete. Durata, pendenza e pause aiutano a pianificare; un percorso calcolato non è una garanzia di accessibilità verificata sul posto."
+      },
+      "wikimedia-commons": {
+        "summary": "Immagini aperte del luogo e dei dintorni",
+        "description": "Le immagini aperte danno un’idea del luogo o dei dintorni. Distanza, licenza e attribuzione restano visibili accanto all’immagine. Una foto dei dintorni non è necessariamente una foto di quella panchina."
+      },
+      "panoramax": {
+        "summary": "Immagini stradali georeferenziate",
+        "description": "Le immagini stradali georeferenziate possono dare indizi sui dintorni. Consideriamo distanza, direzione e serie di scatti per non contare più foto dello stesso passaggio come conferme indipendenti."
+      },
+      "kartaview": {
+        "summary": "Altre immagini stradali",
+        "description": "Anche queste immagini aperte completano gli indizi sui dintorni. Una foto sfocata o non pertinente non vale come prova. Anche se vicini, foto e panchina possono guardare in direzioni diverse."
+      },
+      "swissimage": {
+        "summary": "Immagini aeree",
+        "description": "Le immagini aeree aiutano a interpretare superfici e vegetazione. Mostrano il luogo dall’alto; non permettono di ricavare direttamente la vista di una persona seduta."
+      },
+      "zurich-benches": {
+        "summary": "Inventario ufficiale delle panchine di Zurigo",
+        "description": "L’inventario cittadino comprende le panchine di Grün Stadt Zürich e del Tiefbauamt. Conserviamo l’identificativo ufficiale e confrontiamo con cautela le voci OSM vicine. Più possibili panchine adiacenti restano separate per verifica. Panchine private e nel bosco non sono incluse completamente."
+      },
+      "zurich-trees": {
+        "summary": "Catasto degli alberi di Zurigo",
+        "description": "Il catasto cittadino aggiunge posizioni note degli alberi. Quando sono disponibili caratteristiche adeguate, aiuta a stimare l’ombra possibile e la vegetazione."
+      },
+      "basel-trees": {
+        "summary": "Catasto degli alberi di Basilea",
+        "description": "Il catasto di Basilea aggiunge alberi che possono mancare su altre mappe. Un albero registrato non sostituisce una misurazione attuale della sua chioma."
+      },
+      "sonbase": {
+        "summary": "Modelli del rumore a lungo termine",
+        "description": "Le griglie ufficiali forniscono livelli di rumore modellati in dB(A). Strada e ferrovia, giorno e notte restano separati. Sono valori a lungo termine, non una registrazione del rumore alla tua prossima pausa."
+      },
+      "swissnames3d": {
+        "summary": "Nomi dei luoghi e orientamento",
+        "description": "Cerchiamo nomi di luoghi e quartieri intorno alla panchina, ponderandoli per vicinanza e tipo. Un nome vicino aiuta a orientarsi; il comune politico è determinato separatamente dai suoi confini."
+      },
+      "swissboundaries3d": {
+        "summary": "Confini di comuni, distretti e cantoni",
+        "description": "La posizione della panchina viene incrociata con le superfici reali di comuni, distretti e cantoni. Il numero UST rende univoca l’attribuzione. Su un confine incerto, l’attribuzione resta aperta."
+      },
+      "qwen3-vl-benchly": {
+        "summary": "Indizi dell’IA dalle immagini dei dintorni",
+        "description": "Il modello d’immagine gestito localmente cerca indizi di bosco, acqua, montagne e vista aperta. Le sue stime restano separate dalle misure. Un confronto controllato con immagini annotate da persone verifica errori e differenze regionali."
+      },
+      "qwen35-bank-photos": {
+        "summary": "Dintorni visibili nelle foto delle panchine",
+        "description": "Il modello d’immagine più grande aggiunge prospettiva e dintorni visibili da foto correttamente associate alle panchine. Una montagna visibile può sostenere una vista; la sua assenza non la smentisce. Le autovalutazioni del modello non sono probabilità misurate."
+      },
+      "benchly-community": {
+        "summary": "Osservazioni delle persone sul posto",
+        "description": "Le persone sul posto confermano le panchine, completano le dotazioni e condividono impressioni. Più osservazioni indipendenti e recenti rafforzano un’informazione. Le contraddizioni restano visibili e possono portare a una breve domanda."
+      }
+    }
+  },
+  "privacy": {
+    "eyebrow": "Senza labirinti di clausole",
+    "title": "Dove vanno i tuoi dati?",
+    "description": "Scegli un’attività nell’app. Il percorso qui sotto mostra che cosa succede.",
+    "link": "Privacy e contatto"
+  },
+  "contribute": {
+    "eyebrow": "Sulla panchina c’è posto",
+    "title": "Metti del tuo",
+    "description": "Un problema o un’idea? Codice e discussioni sono pubblici. Anche i piccoli miglioramenti aiutano.",
+    "code": "Codice e contributi ↗",
+    "issues": "Segnala un problema o un’idea ↗"
+  },
+  "reuse": {
+    "title": "Portare via i dati? Volentieri.",
+    "invitation": "Raccogliere, studiare, creare: i nostri dati pubblici sulle panchine sono riutilizzabili. A passo di passeggiata, per favore: il server è una panchina, non un treno ad alta velocità.",
+    "pace": "Una richiesta al secondo, una dopo l’altra, usando la cache e facendo una pausa in caso di errori o risposta 429.",
+    "rights": "Restano valide le licenze delle fonti, come l’ODbL di OpenStreetMap e l’attribuzione di swisstopo. Foto, testi e contributi appartengono ai loro autori; non possiamo autorizzarne globalmente il riuso. I dati privati degli account non sono dati aperti."
+  },
+  "people": {
+    "eyebrow": "Le persone dietro il progetto",
+    "title": "Grazie per le panchine.",
+    "description": "A Stephan per l’idea, Matthias per la realizzazione tecnica, Jonas per lo sguardo attento. E a tutte le persone che si siedono fuori, scoprono e condividono ciò che sanno."
+  },
+  "links": {
+    "imprint": "Contatto e note legali",
+    "privacy": "Privacy",
+    "project": "Vai al progetto"
+  }
+}

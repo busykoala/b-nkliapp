@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "title": "Kontakt & Impressum · Bänkli App"
+  },
+  "introduction": "Ein offenes Projekt für Pausen auf Schweizer Bänkli.",
+  "reliability": {
+    "title": "Eine Bank ist kein Versprechen",
+    "description": "Angaben können fehlen oder veraltet sein. Sonne, Aussicht, Wege und Fahrzeiten sind teilweise berechnet. Bitte beachte die Lage und Beschilderung vor Ort."
+  },
+  "rights": {
+    "title": "Offene Daten, eigene Rechte",
+    "description": "Die Nutzungsrechte der einzelnen Daten- und Bildquellen gelten weiter. Unsere Hinweise zur Weiterverwendung und alle Quellen findest du <project>auf der Projektseite</project>."
+  },
+  "privacyLink": "So gehen wir mit deinen Daten um",
+  "contact": {
+    "title": "Verantwortlich & erreichbar",
+    "technical": "Technische Fragen und Beiträge: <project>Bänkli App auf GitHub ↗</project>."
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "page": {
+    "map": "Zur Karte",
+    "following": "Aus deinen Lieblingsorten",
+    "all": "Was sich an Bänkli bewegt",
+    "title": "Bänkli-Momente",
+    "followingIntro": "Geschichten und kleine Pflegezeichen von Plätzen, denen du folgst.",
+    "intro": "Geschichten, Pausen und kleine Entdeckungen – pro Bänkli und Tag zusammengefasst.",
+    "weekly": "Bänkli dieser Woche",
+    "theme": "Gemeinsames Thema",
+    "news": "Neuigkeiten",
+    "filters": "Feed-Filter",
+    "allPosts": "Alle Beiträge",
+    "favourites": "Lieblingsplätze"
+  },
+  "events": {
+    "added": "entdeckt",
+    "rated": "bewertet",
+    "confirmed": "bestätigt",
+    "missing": "vermisst",
+    "edited": "ergänzt",
+    "moment": "Momente",
+    "care": "Pflegezeichen"
+  },
+  "stream": {
+    "loaded": "{count, plural, one {Ein weiterer Beitrag geladen.} other {# weitere Beiträge geladen.}}",
+    "failed": "Der Feed macht gerade Pause. Bitte versuche es noch einmal.",
+    "openBench": "{name} öffnen",
+    "morePeople": " und {count} weitere",
+    "posts": "Beiträge ansehen ({count})",
+    "emptyFollowing": "An deinen Lieblingsplätzen gibt es noch keine Beiträge.",
+    "empty": "Noch weht kein neuer Eintrag herein.",
+    "allPosts": "Alle Beiträge ansehen",
+    "loading": "Wird geladen …",
+    "more": "Mehr Beiträge laden",
+    "end": "Hier beginnt die Geschichte. Du hast alle Beiträge gesehen."
+  }
+}

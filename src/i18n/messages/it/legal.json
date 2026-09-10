@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "title": "Contatto e note legali · Bänkli App"
+  },
+  "introduction": "Un progetto aperto per fare una pausa sulle panchine svizzere.",
+  "reliability": {
+    "title": "Una panchina non è una promessa",
+    "description": "Le informazioni possono mancare o essere superate. Sole, vista, percorsi e durate sono in parte calcolati. Considera le condizioni e la segnaletica sul posto."
+  },
+  "rights": {
+    "title": "Dati aperti, diritti degli autori",
+    "description": "Restano validi i diritti delle singole fonti di dati e immagini. Indicazioni sul riuso e tutte le fonti sono <project>nella pagina del progetto</project>."
+  },
+  "privacyLink": "Come trattiamo i tuoi dati",
+  "contact": {
+    "title": "Responsabilità e contatto",
+    "technical": "Domande tecniche e contributi: <project>Bänkli App su GitHub ↗</project>."
+  }
+}

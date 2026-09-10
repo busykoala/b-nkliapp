@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "title": "Confidentialité · Bänkli App"
+  },
+  "title": "Tes données ne se promènent pas sans raison.",
+  "updated": "État : septembre 2026. Voici les données que Bänkli App traite pour ses fonctions.",
+  "purposes": {
+    "title": "Pourquoi nous utilisons des données",
+    "map": "Pour la carte et les itinéraires, nous traitons la région affichée, les recherches et les points de départ et d’arrivée demandés. Le partage de position est facultatif. Nous ne conservons pas d’historique personnel de tes trajets.",
+    "account": "Un compte conserve nom d’utilisateur, empreinte du mot de passe, avatar, sessions et bancs et lieux enregistrés. Ton nom, ton profil et tes contributions publiées sont publics. La liste des favoris est accessible uniquement à ton compte.",
+    "contributions": "Les photos et textes que tu contribues sont publiés. Les photos passent d’abord par une détection automatique de personnes sur le serveur du modèle. La protection contre les abus utilise des identifiants dérivés, des signalements et des décisions de modération."
+  },
+  "providers": {
+    "title": "Qui nous aide",
+    "own": "L’app, le stockage des photos et leur contrôle fonctionnent sur notre propre infrastructure.",
+    "country": "Emplacement : {country}.",
+    "external": "Cloudflare aide à diffuser et protéger le site et traite des données techniques de connexion. GeoAdmin/swisstopo reçoivent les requêtes de carte et de recherche ; transport.opendata.ch reçoit celles des arrêts et connexions. Les images externes sont chargées auprès de leur source, qui reçoit notamment ton adresse IP et l’adresse de l’image demandée.",
+    "policies": "Informations de ces fournisseurs :",
+    "abroad": "Cloudflare est une entreprise américaine avec un réseau mondial ; les données de connexion peuvent aussi être traitées à l’étranger."
+  },
+  "storage": {
+    "title": "Cookies, stockage et conservation",
+    "cookies": "Le cookie de connexion dure jusqu’à 30 jours. Un cookie nécessaire aux contributions peut durer un an. Se déconnecter termine la session actuelle. Le rythme de marche et le rappel du partage de position sont stockés dans le navigateur et disparaissent si tu effaces les données du site.",
+    "language": "La langue choisie est enregistrée dans un cookie pendant un an. Sans choix explicite, nous utilisons une langue prise en charge du navigateur ou l’allemand.",
+    "retention": "Les itinéraires personnels restent au maximum cinq minutes en mémoire vive. Les données de compte et contributions sont conservées pour les fonctions jusqu’à leur suppression ou tant qu’elles sont nécessaires. Tu peux supprimer directement tes moments et photos. Les journaux de sécurité et d’infrastructure ainsi que les sauvegardes peuvent avoir d’autres durées de conservation.",
+    "noTracking": "L’app n’utilise pas de cookies publicitaires ou d’analyse."
+  },
+  "rights": {
+    "title": "Tu gardes la main",
+    "description": "Tu peux demander l’accès à tes données, leur correction ou leur suppression. Pour les demandes concernant ton compte ou la confidentialité, utilise le contact ci-dessous. Les informations personnelles n’ont pas leur place dans une issue GitHub publique."
+  },
+  "flow": {
+    "choose": "Choisir un parcours de données",
+    "path": "Parcours des données : {label}",
+    "map": {
+      "label": "Consulter la carte",
+      "device": {
+        "title": "Ton appareil",
+        "description": "Le partage de position est facultatif. Les préférences comme ton rythme de marche restent dans le navigateur."
+      },
+      "providers": {
+        "title": "Carte et itinéraires",
+        "description": "Les requêtes de tuiles vont directement à swisstopo. Un itinéraire envoie départ et arrivée à notre serveur ; les recherches d’adresses et d’arrêts utilisent aussi GeoAdmin et la Transport API."
+      },
+      "memory": {
+        "title": "Une courte pause en mémoire",
+        "description": "Les itinéraires aux extrémités personnelles restent au maximum cinq minutes en mémoire vive. L’app ne tient aucun journal personnel des déplacements."
+      }
+    },
+    "account": {
+      "label": "Avec un compte",
+      "credentials": {
+        "title": "Le nom que tu choisis",
+        "description": "Un compte nécessite un nom d’utilisateur et un mot de passe. Le mot de passe est conservé sous forme d’empreinte salée."
+      },
+      "profile": {
+        "title": "Ton carnet de balades",
+        "description": "Les contributions et le nom d’utilisateur sont publics. Les bancs enregistrés et lieux suivis personnalisent ton affichage ; ta liste de favoris reste privée."
+      },
+      "session": {
+        "title": "Revenir",
+        "description": "Un cookie de connexion nécessaire te garde connecté jusqu’à 30 jours. Se déconnecter termine cette session."
+      }
+    },
+    "photo": {
+      "label": "Contribuer une photo",
+      "device": {
+        "title": "Un banc, sans personnes s’il te plaît",
+        "description": "La photo est réduite et réenregistrée dans le navigateur. Les métadonnées EXIF d’origine ne sont pas conservées."
+      },
+      "check": {
+        "title": "Contrôle sur notre serveur de modèle",
+        "description": "L’IA vérifie si des personnes sont visibles. Les images incertaines sont refusées. Ce contrôle peut se tromper."
+      },
+      "publication": {
+        "title": "Ton image sur le lieu",
+        "description": "Les photos approuvées, légendes et ton nom d’utilisateur sont publics. Tu peux supprimer tes moments photo depuis le banc."
+      }
+    },
+    "footnote": "Chaque visite produit des données techniques de connexion, comme une adresse IP. Cloudflare participe à la diffusion et à la protection du site. Pour prévenir les abus, l’app conserve des identifiants dérivés plutôt que les adresses IP brutes."
+  }
+}

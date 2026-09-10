@@ -1,0 +1,153 @@
+{
+  "navigation": {
+    "feed": "Torna alle novità"
+  },
+  "intro": {
+    "own": "Il tuo diario di cammino",
+    "public": "In cammino con",
+    "since": "In cammino da {date}"
+  },
+  "activity": {
+    "eyebrow": "Partecipazione",
+    "title": "Piccole cose che aiutano",
+    "recent": "Contributi recenti",
+    "contributed": "I tuoi contributi"
+  },
+  "pending": {
+    "eyebrow": "Le tue aggiunte",
+    "title": "In attesa di conferma",
+    "remaining": "Ancora {count, plural, one {una conferma} other {# conferme}}",
+    "complete": "Tutte le panchine che hai aggiunto sono confermate.",
+    "empty": "Non hai ancora aggiunto una panchina."
+  },
+  "trail": {
+    "eyebrow": "La tua traccia",
+    "places": "{count, plural, one {Un luogo speciale} other {# luoghi speciali}}",
+    "complete": "La tua mappa è piena di storie e resta aperta a quelle nuove.",
+    "remaining": "Ancora {count, plural, one {un luogo} other {# luoghi}} fino alla prossima tappa.",
+    "progress": "Progresso nel tuo cammino",
+    "next": "Prossima piccola gita"
+  },
+  "collection": {
+    "landscapes": "Paesaggi",
+    "found": "Quello che hai già scoperto",
+    "waiting": "Ti aspetta ancora",
+    "seasons": "Stagioni",
+    "year": "Il tuo anno all’aperto"
+  },
+  "badges": {
+    "title": "Album dei distintivi",
+    "collected": "{count, plural, one {Un ricordo raccolto} other {# ricordi raccolti}}",
+    "firstPage": "La prima pagina è ancora vuota",
+    "empty": "Qui aspetta il primo piccolo ricordo di un luogo condiviso.",
+    "more": "Scopri altri {count} distintivi",
+    "progress": "{progress} su {target}",
+    "catalog": {
+      "erstes-plaetzli": {
+        "name": "Esploratore di panchine",
+        "hint": "Una panchina aggiunta"
+      },
+      "baenkli-scout": {
+        "name": "Pioniere delle panchine",
+        "hint": "3 proprie panchine confermate"
+      },
+      "spaehnase": {
+        "name": "Segugio delle panchine",
+        "hint": "10 panchine aggiunte"
+      },
+      "verifizierli": {
+        "name": "Verificatore di panchine",
+        "hint": "5 panchine confermate"
+      },
+      "holzauge": {
+        "name": "Detective delle panchine",
+        "hint": "3 panchine mancanti confermate"
+      },
+      "pausenpoet": {
+        "name": "Poeta delle pause",
+        "hint": "5 recensioni scritte"
+      },
+      "baenkli-buenzli": {
+        "name": "Conoscitore di panchine",
+        "hint": "25 contributi utili"
+      },
+      "bankdirektor": {
+        "name": "Guru delle panchine",
+        "hint": "75 contributi utili"
+      },
+      "sitzungspraesident": {
+        "name": "Leggenda delle panchine",
+        "hint": "200 contributi utili"
+      }
+    }
+  },
+  "moments": {
+    "added": "<bench>{name}</bench> aggiunta alla mappa.",
+    "rated": "Un voto lasciato per <bench>{name}</bench>.",
+    "confirmed": "<bench>{name}</bench> confermata sul posto.",
+    "missing": "<bench>{name}</bench> segnalata assente.",
+    "edited": "Un dettaglio aggiunto a <bench>{name}</bench>."
+  },
+  "time": {
+    "today": "oggi",
+    "yesterday": "ieri",
+    "daysAgo": "{days} giorni fa"
+  },
+  "stages": {
+    "first": "La prima traccia",
+    "paths": "Su sentieri quieti",
+    "forest": "Tra boschi e prati",
+    "hills": "Oltre le colline",
+    "horizon": "Con lo sguardo lontano",
+    "keeper": "Custode delle panchine"
+  },
+  "landscapes": {
+    "forest": {
+      "name": "Luce nel bosco",
+      "hint": "Un luogo tra gli alberi"
+    },
+    "water": {
+      "name": "Sull’acqua",
+      "hint": "Lago o fiume nelle vicinanze"
+    },
+    "mountain": {
+      "name": "Aria di montagna",
+      "hint": "Un luogo con vista sulle montagne"
+    },
+    "hill": {
+      "name": "Sentiero collinare",
+      "hint": "Dolci alture in vista"
+    },
+    "open": {
+      "name": "Vastità",
+      "hint": "Un orizzonte aperto"
+    },
+    "city": {
+      "name": "Pausa in città",
+      "hint": "Un angolo quieto in paese"
+    }
+  },
+  "prompts": {
+    "add": {
+      "title": "Lascia la tua prima traccia",
+      "copy": "Conosci una panchina che manca ancora sulla mappa?"
+    },
+    "rate": {
+      "title": "Racconta una pausa",
+      "copy": "Un parere sincero facilita la prossima scoperta."
+    },
+    "confirm": {
+      "title": "Guarda più da vicino",
+      "copy": "Le nuove panchine apprezzano una conferma sul posto."
+    },
+    "landscape": "Scopri: {landscape}",
+    "discover": {
+      "title": "Segui la tua curiosità",
+      "copy": "Forse un luogo speciale ti aspetta dietro l’angolo."
+    }
+  },
+  "metadata": {
+    "description": "Il diario di cammino di {username} in Bänkli App.",
+    "notFound": "Profilo non trovato"
+  }
+}

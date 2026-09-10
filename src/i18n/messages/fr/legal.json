@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "title": "Contact et mentions légales · Bänkli App"
+  },
+  "introduction": "Un projet ouvert pour faire une pause sur les bancs suisses.",
+  "reliability": {
+    "title": "Un banc n’est pas une promesse",
+    "description": "Des informations peuvent manquer ou être dépassées. Soleil, vue, chemins et durées sont en partie calculés. Tiens compte des conditions et de la signalisation sur place."
+  },
+  "rights": {
+    "title": "Données ouvertes, droits des auteurs",
+    "description": "Les droits des différentes sources de données et d’images restent applicables. Nos conseils de réutilisation et toutes les sources figurent <project>sur la page du projet</project>."
+  },
+  "privacyLink": "Comment nous traitons tes données",
+  "contact": {
+    "title": "Responsabilité et contact",
+    "technical": "Questions techniques et contributions : <project>Bänkli App sur GitHub ↗</project>."
+  }
+}

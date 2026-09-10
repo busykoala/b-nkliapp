@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -8,6 +9,7 @@ import type { CurrentUser } from "@/lib/security";
 import { logout } from "@/app/actions/account";
 import { AccountDialog } from "./account-controls";
 import { TrailAvatar } from "./trail-avatar";
+import { LanguageSwitcher } from "./language-switcher";
 
 type InstallEvent = Event & {
   prompt: () => Promise<void>;
@@ -15,6 +17,7 @@ type InstallEvent = Event & {
 };
 
 export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onAdd?: () => void; onWalk?: () => void; }) {
+  const t = useTranslations();
   const dialog = useRef<HTMLDialogElement>(null);
   const accountDialog = useRef<HTMLDialogElement>(null);
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
@@ -42,28 +45,29 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
   };
 
   return <>
-    <button aria-label="Menü öffnen" className="calm-menu-button" onClick={() => dialog.current?.showModal()}>
+    <button aria-label={t("common.navigation.open")} className="calm-menu-button" onClick={() => dialog.current?.showModal()}>
       <Menu size={20} />
     </button>
     <dialog ref={dialog} className="app-menu-dialog" aria-labelledby="app-menu-title">
       <div className="app-menu-sheet">
-        <header><h2 id="app-menu-title">Bänkli App</h2><button aria-label="Menü schliessen" onClick={close}><X size={19} /></button></header>
-        <nav aria-label="Hauptnavigation">
-          {onAdd ? <button aria-label="Bänkli eintragen" className="app-menu-row" onClick={() => { close(); window.setTimeout(onAdd, 0); }}><Plus size={19} /> Bänkli eintragen</button>
-            : <Link className="app-menu-row" href="/?action=add" onClick={close}><Plus size={19} /> Bänkli eintragen</Link>}
-          {onWalk ? <button className="app-menu-row" onClick={() => { close(); window.setTimeout(onWalk, 0); }}><Footprints size={19} /> Spaziergang</button>
-            : <Link className="app-menu-row" href="/?action=walk" onClick={close}><Footprints size={19} /> Spaziergang</Link>}
-          <Link aria-label="Bänkli-Feed" href="/feed" className={`app-menu-row ${pathname === "/feed" ? "is-current" : ""}`} onClick={close}><Rss size={19} /> Bänkli-Feed</Link>
-          {user && <Link href="/lieblingsplaetze" className="app-menu-row" onClick={close}><Bookmark size={19} /> Meine Lieblingsplätze</Link>}
-          {user ? <Link aria-label="Mein Profil" href="/profil" className="app-menu-row" onClick={close}><span className="app-menu-avatar"><TrailAvatar seed={user.avatarSeed} username={user.username} compact /></span> Mein Profil</Link>
-            : <button aria-label="Anmelden" className="app-menu-row" onClick={openAccount}><LogIn size={19} /> Anmelden</button>}
-          {user && <form action={logout}><button className="app-menu-row" onClick={close}><LogOut size={19} /> Abmelden</button></form>}
-          {(ios || installEvent) && <button className="app-menu-row" onClick={install}><Download size={19} /> App installieren</button>}
-          <Link aria-label="Über die Bänkli App" href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Info size={19} /> Über die Bänkli App</Link>
+        <header><h2 id="app-menu-title">Bänkli App</h2><button aria-label={t("common.navigation.close")} onClick={close}><X size={19} /></button></header>
+        <nav aria-label={t("common.navigation.label")}>
+          {onAdd ? <button aria-label={t("common.navigation.addBench")} className="app-menu-row" onClick={() => { close(); window.setTimeout(onAdd, 0); }}><Plus size={19} /> {t("common.navigation.addBench")}</button>
+            : <Link className="app-menu-row" href="/?action=add" onClick={close}><Plus size={19} /> {t("common.navigation.addBench")}</Link>}
+          {onWalk ? <button className="app-menu-row" onClick={() => { close(); window.setTimeout(onWalk, 0); }}><Footprints size={19} /> {t("common.navigation.walk")}</button>
+            : <Link className="app-menu-row" href="/?action=walk" onClick={close}><Footprints size={19} /> {t("common.navigation.walk")}</Link>}
+          <Link aria-label={t("common.navigation.feed")} href="/feed" className={`app-menu-row ${pathname === "/feed" ? "is-current" : ""}`} onClick={close}><Rss size={19} /> {t("common.navigation.feed")}</Link>
+          {user && <Link href="/lieblingsplaetze" className="app-menu-row" onClick={close}><Bookmark size={19} /> {t("common.navigation.favourites")}</Link>}
+          {user ? <Link aria-label={t("common.navigation.profile")} href="/profil" className="app-menu-row" onClick={close}><span className="app-menu-avatar"><TrailAvatar seed={user.avatarSeed} username={user.username} compact /></span>  {t("common.navigation.profile")}</Link>
+            : <button aria-label={t("common.navigation.signIn")} className="app-menu-row" onClick={openAccount}><LogIn size={19} /> {t("common.navigation.signIn")}</button>}
+          {user && <form action={logout}><button className="app-menu-row" onClick={close}><LogOut size={19} /> {t("common.navigation.signOut")}</button></form>}
+          {(ios || installEvent) && <button className="app-menu-row" onClick={install}><Download size={19} /> {t("common.install.button")}</button>}
+          <Link aria-label={t("common.navigation.about")} href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Info size={19} /> {t("common.navigation.about")}</Link>
         </nav>
-        {iosHelp && <p className="ios-help"><Share size={17} /> In Safari „Teilen“ und danach „Zum Home-Bildschirm“ wählen.</p>}
+        <LanguageSwitcher />
+        {iosHelp && <p className="ios-help"><Share size={17} /> {t("common.install.ios")}</p>}
       </div>
-      <form method="dialog" className="modal-backdrop"><button>schliessen</button></form>
+      <form method="dialog" className="modal-backdrop"><button>{t("common.actions.close")}</button></form>
     </dialog>
     <AccountDialog dialogRef={accountDialog} />
   </>;

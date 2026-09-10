@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "title": "Datenschutz · Bänkli App"
+  },
+  "title": "Deine Daten machen keinen Spaziergang ohne Grund.",
+  "updated": "Stand: September 2026. Hier erklären wir, welche Daten die Bänkli App für ihre Funktionen bearbeitet.",
+  "purposes": {
+    "title": "Wofür wir Daten brauchen",
+    "map": "Für Karte und Wegplanung verarbeiten wir die gewählte Kartenregion, Suchbegriffe und angefragte Start- und Zielpunkte. Standortfreigabe ist freiwillig. Wir speichern keinen persönlichen Verlauf deiner Wege.",
+    "account": "Ein Konto speichert Benutzername, Passwort-Hash, Avatar, Sitzungen und die von dir gemerkten Bänkli und Orte. Dein Name, Profil und veröffentlichte Beiträge sind öffentlich. Die Favoritenliste ist nur für dein Konto zugänglich.",
+    "contributions": "Fotos und Texte werden veröffentlicht, wenn du sie beiträgst. Fotos durchlaufen vorher eine automatische Personenprüfung auf dem Modellserver. Missbrauchsschutz verwendet abgeleitete Kennungen sowie Meldungen und Moderationsentscheidungen."
+  },
+  "providers": {
+    "title": "Wer dabei mithilft",
+    "own": "Die App, der Fotospeicher und die Bildprüfung laufen auf unserer eigenen Infrastruktur.",
+    "country": "Standort: {country}.",
+    "external": "Cloudflare unterstützt die Auslieferung und den Schutz der Website und verarbeitet dabei technische Verbindungsdaten. GeoAdmin/swisstopo erhalten Karten- und Suchanfragen; transport.opendata.ch erhält Anfragen für Haltestellen und Verbindungen. Externe Bilder werden bei der jeweiligen Bildquelle geladen. Dabei erhält der Anbieter unter anderem deine IP-Adresse und die angefragte Bildadresse.",
+    "policies": "Informationen dieser Anbieter:",
+    "abroad": "Cloudflare ist ein US-Unternehmen und betreibt ein weltweites Netz; Verbindungsdaten können auch im Ausland bearbeitet werden."
+  },
+  "storage": {
+    "title": "Cookies, Speicher & Aufbewahrung",
+    "cookies": "Das Anmelde-Cookie gilt bis zu 30 Tage. Für Beiträge kann ein notwendiges Browser-Cookie bis zu einem Jahr bestehen. Abmelden beendet die aktuelle Sitzung. Gehtempo und die Erinnerung an deine Standortfreigabe liegen im lokalen Browserspeicher und verschwinden, wenn du die Website-Daten löschst.",
+    "language": "Deine gewählte Sprache wird für ein Jahr in einem Cookie gespeichert. Ohne Auswahl verwenden wir eine unterstützte Browsersprache oder Deutsch.",
+    "retention": "Persönliche Routen bleiben höchstens fünf Minuten im Arbeitsspeicher. Kontodaten und Beiträge bleiben für den Betrieb der Funktionen gespeichert, bis sie gelöscht werden oder nicht mehr benötigt werden. Eigene Momente und Fotos kannst du direkt entfernen. Sicherheits- und Infrastrukturprotokolle sowie Sicherungskopien können anderen Aufbewahrungsfristen unterliegen.",
+    "noTracking": "Die App setzt keine Werbe- oder Analyse-Cookies ein."
+  },
+  "rights": {
+    "title": "Du bleibst nicht sitzen",
+    "description": "Du kannst Auskunft über deine Daten sowie die Berichtigung oder Löschung verlangen. Für Konto- oder Datenschutzanfragen nutze bitte den Kontakt unten. Persönliche Angaben gehören dabei nicht in ein öffentliches GitHub-Issue."
+  },
+  "flow": {
+    "choose": "Datenweg auswählen",
+    "path": "Datenweg: {label}",
+    "map": {
+      "label": "Karte anschauen",
+      "device": {
+        "title": "Dein Gerät",
+        "description": "Die Standortfreigabe ist freiwillig. Einstellungen wie dein Gehtempo bleiben im Browser."
+      },
+      "providers": {
+        "title": "Karte & Wegsuche",
+        "description": "Kartenkacheln gehen direkt an swisstopo. Ein geplanter Weg sendet Start und Ziel an unseren Server; Adress- und Haltestellensuche nutzen zusätzlich GeoAdmin und die Transport API."
+      },
+      "memory": {
+        "title": "Kurze Pause im Speicher",
+        "description": "Routen mit persönlichen Endpunkten bleiben höchstens fünf Minuten im Arbeitsspeicher. Die App führt kein persönliches Bewegungsprotokoll."
+      }
+    },
+    "account": {
+      "label": "Mit Konto",
+      "credentials": {
+        "title": "Dein gewählter Name",
+        "description": "Für ein Konto brauchst du einen Benutzernamen und ein Passwort. Das Passwort wird als gesalzener Hash gespeichert."
+      },
+      "profile": {
+        "title": "Dein Wanderbuch",
+        "description": "Beiträge und der Benutzername sind öffentlich. Gemerkte Bänkli und gefolgte Orte personalisieren deine Ansicht; deine Favoritenliste bleibt privat."
+      },
+      "session": {
+        "title": "Wiederkommen",
+        "description": "Ein notwendiges Anmelde-Cookie hält dich bis zu 30 Tage angemeldet. Abmelden beendet diese Sitzung."
+      }
+    },
+    "photo": {
+      "label": "Foto beitragen",
+      "device": {
+        "title": "Ein Bänkli, bitte ohne Menschen",
+        "description": "Das Foto wird im Browser verkleinert und neu gespeichert. Dabei werden ursprüngliche EXIF-Metadaten nicht übernommen."
+      },
+      "check": {
+        "title": "Bildprüfung auf unserem Modellserver",
+        "description": "Die KI prüft, ob Personen zu sehen sind. Unsichere Bilder werden abgelehnt. Diese Prüfung kann Fehler machen."
+      },
+      "publication": {
+        "title": "Dein Bild am Platz",
+        "description": "Freigegebene Fotos, Bildtexte und dein Benutzername sind öffentlich. Eigene Bildmomente kannst du am Bänkli wieder löschen."
+      }
+    },
+    "footnote": "Bei jedem Seitenaufruf fallen technische Verbindungsdaten an, etwa eine IP-Adresse. Für Auslieferung und Schutz der Seite wird auch Cloudflare eingesetzt. Die App speichert für Missbrauchsschutz abgeleitete Kennungen statt roher IP-Adressen."
+  }
+}

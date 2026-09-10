@@ -1,6 +1,8 @@
+import { useTranslations } from "next-intl";
+import { avatarOptionLabel } from "@/i18n/avatar-labels";
 import { useId } from "react";
 import { WatercolorPigment } from "@/components/watercolor-pigment";
-import { appearanceFromSeed, avatarOptionLabels, type AvatarAppearance } from "@/lib/avatar";
+import { appearanceFromSeed, type AvatarAppearance } from "@/lib/avatar";
 
 type TrailAvatarProps = {
   seed: string;
@@ -50,6 +52,7 @@ function AvatarHat({ kind, color }: { kind: AvatarAppearance["hat"]; color: stri
 }
 
 export function TrailAvatar({ seed, username, progress = 0, compact = false, appearance: selectedAppearance }: TrailAvatarProps) {
+  const t = useTranslations();
   const instance = useId().replaceAll(":", "");
   const appearance = selectedAppearance ?? appearanceFromSeed(seed);
   const skin = skinColors[appearance.skin];
@@ -61,9 +64,9 @@ export function TrailAvatar({ seed, username, progress = 0, compact = false, app
   const pigmentId = `avatar-pigment-${instance}`;
   const coatId = `avatar-coat-${instance}`;
   const clipId = `avatar-clip-${instance}`;
-  const description = `${avatarOptionLabels.hairStyle[appearance.hairStyle]}, ${avatarOptionLabels.coat[appearance.coat]}, Hintergrund ${avatarOptionLabels.background[appearance.background]}`;
+  const description = t("avatar.description", {hair: avatarOptionLabel("hairStyle", appearance.hairStyle, t), coat: avatarOptionLabel("coat", appearance.coat, t), background: avatarOptionLabel("background", appearance.background, t)});
 
-  return <svg className={`trail-avatar${compact ? " is-compact" : ""}`} viewBox="0 0 240 240" role="img" aria-label={`Aquarell-Profilbild von ${username}: ${description}`}>
+  return <svg className={`trail-avatar${compact ? " is-compact" : ""}`} viewBox="0 0 240 240" role="img" aria-label={t("avatar.label", {username, description})}>
     <defs>
       <WatercolorPigment id={pigmentId} />
       <linearGradient id={gradientId} x1=".08" y1="0" x2=".9" y2="1"><stop offset="0" stopColor="#f7f1e5" /><stop offset=".48" stopColor="#f4eddd" /><stop offset="1" stopColor="#ecdfbc" /></linearGradient>
