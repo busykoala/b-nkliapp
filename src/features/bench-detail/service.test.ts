@@ -46,4 +46,20 @@ describe("bench detail read model", () => {
     expect(bench?.id).toBe("osm-node-101");
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("reports the nearest mapped path or road", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "benchly-detail-road-"));
+    folders.push(folder);
+    vi.stubEnv("DATABASE_PATH", join(folder, "benchly.sqlite"));
+    vi.stubEnv("BENCHLY_SEED_DEMO", "true");
+    vi.resetModules();
+    const { sqlite } = await import("@/db/client");
+    const row = sqlite.prepare("SELECT row_id FROM benches WHERE id='osm-node-101'").get() as { row_id: number };
+    sqlite.prepare("UPDATE bench_enrichments SET distance_path_meters=314,distance_major_road_meters=1.4 WHERE bench_row_id=?").run(row.row_id);
+    sqlite.prepare(`INSERT INTO pipeline_runs(kind,status,pipeline_version,started_at,finished_at)
+      VALUES('import-osm','completed','4.7.0',?,?)`).run("2026-09-10T10:00:00Z", "2026-09-10T10:01:00Z");
+
+    const { readBenchDetail } = await import("./service");
+    expect(readBenchDetail("osm-node-101", null)?.distancePathMeters).toBe(1.4);
+  });
 });

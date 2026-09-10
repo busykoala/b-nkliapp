@@ -174,13 +174,15 @@ function record(database: Database.Database, expression: string, direction: "ASC
   return fact(row);
 }
 
+const distanceMappedWaySql = "CASE WHEN e.distance_path_meters IS NULL THEN e.distance_major_road_meters WHEN e.distance_major_road_meters IS NULL THEN e.distance_path_meters ELSE min(e.distance_path_meters,e.distance_major_road_meters) END";
+
 const recordDefinitions: Record<StatisticsRecordKey, [string, "ASC" | "DESC"]> = {
   highest: ["e.elevation_meters", "DESC"], lowest: ["e.elevation_meters", "ASC"],
   sunniestWinter: ["e.sun_minutes_winter", "DESC"], shadiestWinter: ["e.sun_minutes_winter", "ASC"],
   sunniestSummer: ["e.sun_minutes_summer", "DESC"], shadiestSummer: ["e.sun_minutes_summer", "ASC"],
   bestView: ["e.view_score", "DESC"], closestWater: ["e.distance_water_meters", "ASC"], furthestWater: ["e.distance_water_meters", "DESC"],
   densestCanopy: ["e.canopy_percent", "DESC"], clearestCanopy: ["e.canopy_percent", "ASC"],
-  closestPath: ["e.distance_path_meters", "ASC"], furthestPath: ["e.distance_path_meters", "DESC"],
+  closestPath: [distanceMappedWaySql, "ASC"], furthestPath: [distanceMappedWaySql, "DESC"],
   mostSeats: ["b.seats", "DESC"], mostBuildings: ["e.building_count_100m", "DESC"], fewestBuildings: ["e.building_count_100m", "ASC"],
   mostBlockedView: ["e.building_obstruction_percent", "DESC"],
   wildest: ["json_extract(e.view_components,'$.naturalness')", "DESC"], remotest: ["json_extract(e.view_components,'$.remoteness')", "DESC"],
@@ -204,7 +206,10 @@ export function statisticsDate(now = new Date(process.env.BENCHLY_E2E_NOW ?? Dat
 
 export function readStatisticsDashboard(date = statisticsDate(), database: Database.Database = sqlite, labMonth = Number(date.slice(5, 7))): StatisticsDashboard {
   const totals = database.prepare(`SELECT count(*) total,
-    sum(CASE WHEN e.bench_row_id IS NOT NULL THEN 1 ELSE 0 END) enriched,
+    sum(CASE WHEN e.pipeline_version IS NOT NULL
+      AND e.elevation_meters IS NOT NULL AND e.canopy_percent IS NOT NULL
+      AND e.sun_minutes_winter IS NOT NULL AND e.sun_minutes_summer IS NOT NULL
+      AND e.view_score IS NOT NULL THEN 1 ELSE 0 END) enriched,
     sum(CASE WHEN g.municipality_id IS NOT NULL THEN 1 ELSE 0 END) located,
     count(DISTINCT g.municipality_id) municipalities
     FROM benches b LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id

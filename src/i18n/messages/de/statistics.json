@@ -9,9 +9,9 @@
     "description": "Wir behandeln Schweizer Sitzgelegenheiten mit einem Ernst, um den sie nie gebeten haben. Alle Resultate stammen aus vorhandenen Bänkli-Daten – Lücken inklusive."
   },
   "totals": {
-    "benches": "bekannte Bänkli",
-    "enriched": "mit Landschaftsanalyse",
-    "located": "amtlich einer Gemeinde zugeordnet"
+    "benches": "aktive Bänkli-Einträge",
+    "enriched": "{count} vollständig landschaftlich analysiert",
+    "located": "{count} amtlich einer Gemeinde zugeordnet"
   },
   "units": {
     "hours": "{value} h"
@@ -56,8 +56,8 @@
     "furthestWater": "Am weitesten vom Wasser",
     "densestCanopy": "Dichtestes Blätterdach",
     "clearestCanopy": "Freiestes Blätterdach",
-    "closestPath": "Am nächsten am Weg",
-    "furthestPath": "Am weitesten vom Weg",
+    "closestPath": "Am nächsten an Weg oder Strasse",
+    "furthestPath": "Am weitesten von Weg oder Strasse",
     "mostSeats": "Meiste bekannte Sitzplätze",
     "mostBuildings": "Geselligstes Gebäudeumfeld",
     "fewestBuildings": "Wenigste Gebäude im Umkreis",

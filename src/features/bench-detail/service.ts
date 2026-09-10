@@ -92,7 +92,9 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
   const vegetationMedianHeight = row.vegetation_median_height === null ? null : Number(row.vegetation_median_height);
   const vegetationMaxHeight = row.vegetation_max_height === null ? null : Number(row.vegetation_max_height);
   const distanceWaterMeters = !exactLandEvidence || row.distance_water_meters === null ? null : Number(row.distance_water_meters);
-  const distancePathMeters = !exactOsmEvidence || row.distance_path_meters === null ? null : Number(row.distance_path_meters);
+  const mappedWayDistances = [row.distance_path_meters, row.distance_major_road_meters]
+    .flatMap((value) => value === null || value === undefined ? [] : [Number(value)]);
+  const distancePathMeters = !exactOsmEvidence || !mappedWayDistances.length ? null : Math.min(...mappedWayDistances);
   const sunInput = { latitude, longitude, horizonProfile: horizon, obstructionTypes, covered: Boolean(covered), canopyPercent };
   const now = benchObservationNow();
   const season = zurichSeason(now);

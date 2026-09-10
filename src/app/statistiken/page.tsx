@@ -26,6 +26,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
   const number = (value: number) => format.number(value, { maximumFractionDigits: 0 });
   const decimal = (value: number, digits = 1) => format.number(value, { minimumFractionDigits: digits, maximumFractionDigits: digits });
   const percent = (value: number | null) => value === null ? t("common.values.unknown") : format.number(value, { style: "percent", maximumFractionDigits: 0 });
+  const coveragePercent = (value: number | null) => value === null ? t("common.values.unknown") : format.number(value, { style: "percent", maximumFractionDigits: 1 });
   const correlation = data.correlation.coefficient;
   const explainedVariance = correlation === null ? null : correlation * correlation;
   const slope = data.correlation.trend?.slope ?? null;
@@ -56,8 +57,8 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
       <div className="statistics-seal" aria-hidden="true"><span>IB</span><small>CH · {date.slice(0, 4)}</small></div>
       <dl className="statistics-totals">
         <div><dt>{t("statistics.totals.benches")}</dt><dd>{number(data.totalBenches)}</dd></div>
-        <div><dt>{t("statistics.totals.enriched")}</dt><dd>{percent(data.totalBenches ? data.enrichedBenches / data.totalBenches : null)}</dd></div>
-        <div><dt>{t("statistics.totals.located")}</dt><dd>{percent(data.totalBenches ? data.locatedBenches / data.totalBenches : null)}</dd></div>
+        <div><dt>{t("statistics.totals.enriched", { count: number(data.enrichedBenches) })}</dt><dd>{coveragePercent(data.totalBenches ? data.enrichedBenches / data.totalBenches : null)}</dd></div>
+        <div><dt>{t("statistics.totals.located", { count: number(data.locatedBenches) })}</dt><dd>{coveragePercent(data.totalBenches ? data.locatedBenches / data.totalBenches : null)}</dd></div>
       </dl>
     </section>
 
@@ -92,7 +93,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
       {data.municipalities.length ? <div className="municipality-table" role="list">{data.municipalities.map((item, index) => <Link href={`/gemeinde/${item.id}`} key={item.id} role="listitem">
         <span className="municipality-rank">{String(index + 1).padStart(2, "0")}</span><span className="municipality-name"><strong>{item.name}</strong><small>{item.canton ?? t("statistics.values.somewhere")}</small></span><span className="municipality-density"><strong>{decimal(item.benchesPerThousand ?? 0)}</strong><small>{t("statistics.municipalities.perThousand")}</small><em>{t("statistics.municipalities.benchCount", { count: number(item.benchCount) })}</em></span><span className="municipality-pills"><i><Sun /> {percent(item.sunnyShare)}</i><i><Eye /> {percent(item.scenicShare)}</i></span><ArrowUpRight />
       </Link>)}</div> : <p className="empty-statistics">{t("statistics.municipalities.empty")}</p>}
-      <p className="method-note">{t("statistics.municipalities.note", { coverage: percent(data.totalBenches ? data.locatedBenches / data.totalBenches : null), year: data.populationYear })} <a href="https://www.pxweb.bfs.admin.ch/pxweb/de/px-x-0102010000_101/px-x-0102010000_101/px-x-0102010000_101.px/" target="_blank" rel="noreferrer">{t("statistics.municipalities.source")}</a></p>
+      <p className="method-note">{t("statistics.municipalities.note", { coverage: coveragePercent(data.totalBenches ? data.locatedBenches / data.totalBenches : null), year: data.populationYear })} <a href="https://www.pxweb.bfs.admin.ch/pxweb/de/px-x-0102010000_101/px-x-0102010000_101/px-x-0102010000_101.px/" target="_blank" rel="noreferrer">{t("statistics.municipalities.source")}</a></p>
     </section>
 
     <section className="statistics-section lab-section">

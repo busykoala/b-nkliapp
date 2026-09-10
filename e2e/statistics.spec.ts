@@ -4,6 +4,8 @@ test("discovers the rotating statistics and opens a municipality portrait", asyn
   await page.goto("/statistiken");
   await expect(page.getByRole("heading", { name: "Institut für angewandte Bänklilogie" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Bänkli des Tages" })).toBeVisible();
+  await expect(page.locator(".statistics-totals")).toContainText("12 vollständig landschaftlich analysiert");
+  await expect(page.locator(".statistics-totals")).toContainText("12 amtlich einer Gemeinde zugeordnet");
   await expect(page.locator(".record-grid article")).toHaveCount(4);
   await expect(page.locator(".lab-sticker")).toContainText("r =");
   await expect(page.locator(".lab-months a")).toHaveCount(12);
@@ -32,6 +34,6 @@ test("statistics stay readable at a narrow mobile viewport", async ({ page }) =>
   // horizontal content overflow (macOS uses overlay scrollbars and hid this).
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
-  const clippedLabels = await page.locator(".daily-bench-link strong, .daily-bench-link small, .municipality-table strong, .municipality-table small, .municipality-table em").evaluateAll((elements) => elements.filter((element) => element.scrollWidth > element.clientWidth + 1).map((element) => element.textContent));
+  const clippedLabels = await page.locator(".statistics-totals dt, .statistics-totals dd, .daily-bench-link strong, .daily-bench-link small, .municipality-table strong, .municipality-table small, .municipality-table em").evaluateAll((elements) => elements.filter((element) => element.scrollWidth > element.clientWidth + 1).map((element) => element.textContent));
   expect(clippedLabels).toEqual([]);
 });
