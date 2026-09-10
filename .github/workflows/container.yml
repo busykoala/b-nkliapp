@@ -47,36 +47,60 @@ jobs:
         include:
           - project: mobile-chrome
             browser: chromium
-            shard: 1/4
+            shard: 1/7
             part: 1
           - project: mobile-chrome
             browser: chromium
-            shard: 2/4
+            shard: 2/7
             part: 2
           - project: mobile-chrome
             browser: chromium
-            shard: 3/4
+            shard: 3/7
             part: 3
           - project: mobile-chrome
             browser: chromium
-            shard: 4/4
+            shard: 4/7
             part: 4
+          - project: mobile-chrome
+            browser: chromium
+            shard: 5/7
+            part: 5
+          - project: mobile-chrome
+            browser: chromium
+            shard: 6/7
+            part: 6
+          - project: mobile-chrome
+            browser: chromium
+            shard: 7/7
+            part: 7
           - project: mobile-safari
             browser: webkit
-            shard: 1/4
+            shard: 1/7
             part: 1
           - project: mobile-safari
             browser: webkit
-            shard: 2/4
+            shard: 2/7
             part: 2
           - project: mobile-safari
             browser: webkit
-            shard: 3/4
+            shard: 3/7
             part: 3
           - project: mobile-safari
             browser: webkit
-            shard: 4/4
+            shard: 4/7
             part: 4
+          - project: mobile-safari
+            browser: webkit
+            shard: 5/7
+            part: 5
+          - project: mobile-safari
+            browser: webkit
+            shard: 6/7
+            part: 6
+          - project: mobile-safari
+            browser: webkit
+            shard: 7/7
+            part: 7
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -84,9 +108,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
-      - name: Install ${{ matrix.browser }} test browser
-        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Build app and install ${{ matrix.browser }} in parallel
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build &
+          build_pid=$!
+          npx playwright install --with-deps "${{ matrix.browser }}"
+          wait "$build_pid"
       - name: Test production browser flows
         run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}
         env:
