@@ -50,64 +50,64 @@ jobs:
         include:
           - project: mobile-chrome
             browser: chromium
-            shard: 1/4
+            shard: 1/5
             part: 1
           - project: mobile-chrome
             browser: chromium
-            shard: 2/4
+            shard: 2/5
             part: 2
           - project: mobile-chrome
             browser: chromium
-            shard: 3/4
+            shard: 3/5
             part: 3
           - project: mobile-chrome
             browser: chromium
-            shard: 4/4
+            shard: 4/5
             part: 4
-          - project: mobile-safari
-            browser: webkit
-            shard: 1/11
-            part: 1
-          - project: mobile-safari
-            browser: webkit
-            shard: 2/11
-            part: 2
-          - project: mobile-safari
-            browser: webkit
-            shard: 3/11
-            part: 3
-          - project: mobile-safari
-            browser: webkit
-            shard: 4/11
-            part: 4
-          - project: mobile-safari
-            browser: webkit
-            shard: 5/11
+          - project: mobile-chrome
+            browser: chromium
+            shard: 5/5
             part: 5
           - project: mobile-safari
             browser: webkit
-            shard: 6/11
+            shard: 1/10
+            part: 1
+          - project: mobile-safari
+            browser: webkit
+            shard: 2/10
+            part: 2
+          - project: mobile-safari
+            browser: webkit
+            shard: 3/10
+            part: 3
+          - project: mobile-safari
+            browser: webkit
+            shard: 4/10
+            part: 4
+          - project: mobile-safari
+            browser: webkit
+            shard: 5/10
+            part: 5
+          - project: mobile-safari
+            browser: webkit
+            shard: 6/10
             part: 6
           - project: mobile-safari
             browser: webkit
-            shard: 7/11
+            shard: 7/10
             part: 7
           - project: mobile-safari
             browser: webkit
-            shard: 8/11
+            shard: 8/10
             part: 8
           - project: mobile-safari
             browser: webkit
-            shard: 9/11
+            shard: 9/10
             part: 9
           - project: mobile-safari
             browser: webkit
-            shard: 10/11
+            shard: 10/10
             part: 10
-          - project: mobile-safari
-            browser: webkit
-            shard: 11/11
-            part: 11
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
