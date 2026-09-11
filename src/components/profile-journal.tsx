@@ -41,8 +41,13 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
           <small>{t("profile.intro.since", {date: formatDate(profile.joinedAt, t, "monthYear")})}</small>
         </div>
       </section>
+      <nav className="profile-jump-links" aria-label={t("common.navigation.label")}>
+        <a href="#profile-activity">{t("profile.activity.eyebrow")}</a>
+        <a href="#profile-trail">{t("profile.trail.eyebrow")}</a>
+        <a href="#profile-collection">{t("profile.collection.landscapes")}</a>
+      </nav>
       {own && <Link href="/lieblingsplaetze" className="ui-button profile-favourites"><Bookmark size={18} /> {t("favourites.title")}</Link>}
-      <section className="profile-section profile-numbers">
+      <section id="profile-activity" className="profile-section profile-numbers">
         <header><div><small>{t("profile.activity.eyebrow")}</small><h2>{t("profile.activity.title")}</h2></div></header>
         <div><ProfileNumber value={profile.activity.added} label={t("feed.events.added")} icon={<MapPinPlus />} /><ProfileNumber value={profile.activity.rated} label={t("feed.events.rated")} icon={<Star />} /><ProfileNumber value={profile.activity.confirmed} label={t("feed.events.confirmed")} icon={<Check />} /><ProfileNumber value={profile.activity.edited + profile.activity.corrected} label={t("feed.events.edited")} icon={<Pencil />} /></div>
       </section>
@@ -56,7 +61,7 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
 
       {own && <AvatarCustomizer seed={profile.avatarSeed} username={profile.username} progress={profile.uniquePlaces} />}
 
-      <section className="profile-section trail-progress-card">
+      <section id="profile-trail" className="profile-section trail-progress-card">
         <header><div><small>{t("profile.trail.eyebrow")}</small><h2>{t("profile.trail.places", {count: profile.uniquePlaces})}</h2></div><Footprints size={22} /></header>
         <TrailPath journey={profile.journey} places={profile.uniquePlaces} />
         <p>{profile.journey.nextTarget === null
@@ -68,7 +73,7 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
         <span><Map size={19} /></span><div><small>{t("profile.trail.next")}</small><strong>{next.kind === "landscape" ? t("profile.prompts.landscape", {landscape: t(`profile.landscapes.${next.landscape}.name`)}) : t(`profile.prompts.${next.kind}.title`)}</strong><p>{next.kind === "landscape" ? t(`profile.landscapes.${next.landscape}.hint`) : t(`profile.prompts.${next.kind}.copy`)}</p></div><b aria-hidden>→</b>
       </Link>}
 
-      <section className="profile-section collection-section">
+      <section id="profile-collection" className="profile-section collection-section">
         <header><div><small>{t("profile.collection.landscapes")}</small><h2>{t("profile.collection.found")}</h2></div><span>{profile.landscapes.filter((item) => item.found).length}/{profile.landscapes.length}</span></header>
         <div className="landscape-collection">{profile.landscapes.map((item) => {
           const picture = <><LandscapeStamp kind={item.key} found={item.found} /><div><strong>{t(`profile.landscapes.${item.key}.name`)}</strong><small>{item.found ? t(`profile.landscapes.${item.key}.hint`) : t("profile.collection.waiting")}</small></div></>;

@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
-import { Check, Hammer, HeartHandshake, MessageCircleHeart, Send, Sparkles, Sun, X } from "lucide-react";
+import { AlertTriangle, Binoculars, Camera, Check, Hammer, HeartHandshake, ImagePlus, ListChecks, MessageCircleHeart, Send, Sparkles, Star, Sun, X } from "lucide-react";
 import { editBenchMetadata } from "@/app/actions/benches";
 import { submitBenchCare, submitBenchMoment } from "@/app/actions/bench-community";
 import { LightObservationPrompt, ViewObservationPrompt } from "@/features/bench-observations/bench-observation-prompts";
@@ -31,36 +31,36 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
         <button type="button" className="btn btn-circle btn-ghost" onClick={onClose} aria-label={t("community.hub.close")}><X size={19} /></button>
       </header>
       <ContributionOverview bench={bench} />
-      {initialChapter === "rating" && <ContributionChapter open title={t("community.chapters.rating.title")} summary={t("community.chapters.rating.summary")}><RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} /></ContributionChapter>}
-      {initialChapter === "presence" && <ContributionChapter open title={t("community.chapters.presence.title")} summary={t("community.chapters.presence.summary")}><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></ContributionChapter>}
+      {initialChapter === "rating" && <ContributionChapter open icon={<Star />} title={t("community.chapters.rating.title")} summary={t("community.chapters.rating.summary")}><RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} /></ContributionChapter>}
+      {initialChapter === "presence" && <ContributionChapter open icon={<Check />} title={t("community.chapters.presence.title")} summary={t("community.chapters.presence.summary")}><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></ContributionChapter>}
 
-      <ContributionChapter title={t("community.chapters.features.title")} summary={t("community.chapters.features.summary")}>
+      <ContributionChapter icon={<ListChecks />} title={t("community.chapters.features.title")} summary={t("community.chapters.features.summary")}>
         <MetadataEditor bench={bench} onChanged={onChanged} />
         <BenchFeatureEditor bench={bench} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title={t("community.chapters.light.title")} summary={bench.observations.light.mine ? t("community.chapters.light.recorded") : t("community.chapters.light.summary")}>
+      <ContributionChapter icon={<Sun />} title={t("community.chapters.light.title")} summary={bench.observations.light.mine ? t("community.chapters.light.recorded") : t("community.chapters.light.summary")}>
         {bench.dayPhase === "night"
           ? <p className="observation-night-note"><Sun size={15} />{t("community.chapters.light.night")}</p>
           : <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onChanged} />}
       </ContributionChapter>
-      <ContributionChapter title={t("community.chapters.view.title")} summary={bench.observations.view.mine ? t("community.chapters.view.recorded") : t("community.chapters.view.summary")}>
+      <ContributionChapter icon={<Binoculars />} title={t("community.chapters.view.title")} summary={bench.observations.view.mine ? t("community.chapters.view.recorded") : t("community.chapters.view.summary")}>
         <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title={t("community.chapters.photo.title")} summary={t("community.chapters.photo.summary")}>
+      <ContributionChapter icon={<Camera />} title={t("community.chapters.photo.title")} summary={t("community.chapters.photo.summary")}>
         <BenchPhotoCapture benchId={bench.id} onChanged={onChanged} />
       </ContributionChapter>
-      <ContributionChapter title={t("community.chapters.moment.title")} summary={t("community.chapters.moment.summary")}>
+      <ContributionChapter icon={<ImagePlus />} title={t("community.chapters.moment.title")} summary={t("community.chapters.moment.summary")}>
         <aside className="community-theme"><Sparkles size={17} aria-hidden="true" /><div><small>{t("community.theme.month")}</small><strong>{theme.title}</strong><p>{theme.prompt}</p></div></aside>
         <MomentForm bench={bench} onChanged={onChanged} />
       </ContributionChapter>
-      {initialChapter !== "rating" && <ContributionChapter title={t("community.chapters.rating.title")} summary={bench.myRating ? t("community.chapters.rating.mine", { rating: bench.myRating.overall }) : t("community.chapters.rating.prompt")}>
+      {initialChapter !== "rating" && <ContributionChapter icon={<Star />} title={t("community.chapters.rating.title")} summary={bench.myRating ? t("community.chapters.rating.mine", { rating: bench.myRating.overall }) : t("community.chapters.rating.prompt")}>
         <RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} />
       </ContributionChapter>}
-      <ContributionChapter open={initialChapter === "presence"} title={t("community.chapters.care.title")} summary={bench.care.mine.length ? t("community.chapters.care.mine", { count: bench.care.mine.length }) : t("community.chapters.care.summary")}>
+      <ContributionChapter open={initialChapter === "presence"} icon={<HeartHandshake />} title={t("community.chapters.care.title")} summary={bench.care.mine.length ? t("community.chapters.care.mine", { count: bench.care.mine.length }) : t("community.chapters.care.summary")}>
         <CareActions bench={bench} onChanged={onChanged} />
         {initialChapter !== "presence" && <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />}
       </ContributionChapter>
-      <ContributionChapter title={t("community.chapters.correction.title")} summary={t("community.chapters.correction.summary")}>
+      <ContributionChapter icon={<AlertTriangle />} title={t("community.chapters.correction.title")} summary={t("community.chapters.correction.summary")}>
         <CorrectionForm benchId={bench.id} onChanged={onChanged} />
       </ContributionChapter>
     </div>
@@ -82,8 +82,11 @@ function ContributionOverview({ bench }: { bench: BenchDetail }) {
   return <div className="contribution-overview"><Check size={17} aria-hidden="true" /><p>{entries.length ? <>{t("community.overview.mine")} <strong>{entries.join(" · ")}</strong></> : t("community.overview.empty")}</p></div>;
 }
 
-function ContributionChapter({ title, summary, open, children }: { title: string; summary: string; open?: boolean; children: React.ReactNode }) {
-  return <details className="contribution-chapter" open={open}><summary><span><strong>{title}</strong><small>{summary}</small></span><span aria-hidden="true">⌄</span></summary><div>{children}</div></details>;
+function ContributionChapter({ title, summary, icon, open, children }: { title: string; summary: string; icon: React.ReactNode; open?: boolean; children: React.ReactNode }) {
+  return <details className="contribution-chapter" name="bench-contribution" open={open} onToggle={(event) => {
+    const chapter = event.currentTarget;
+    if (chapter.open) requestAnimationFrame(() => chapter.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+  }}><summary><span className="contribution-chapter-icon" aria-hidden="true">{icon}</span><span><strong>{title}</strong><small>{summary}</small></span><span aria-hidden="true">⌄</span></summary><div>{children}</div></details>;
 }
 
 function MetadataEditor({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {

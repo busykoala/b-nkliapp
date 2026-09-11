@@ -20,6 +20,8 @@
   },
   "sheet": {
     "resize": "Detailhöhe ändern",
+    "showDetails": "Details zeigen",
+    "showMap": "Karte zeigen",
     "close": "Bank schliessen",
     "loading": "Der Platz wird erkundet",
     "loadingAccessible": "Bank wird geladen",

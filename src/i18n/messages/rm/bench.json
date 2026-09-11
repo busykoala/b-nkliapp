@@ -20,6 +20,8 @@
   },
   "sheet": {
     "resize": "Engrondir u reducir ils detagls",
+    "showDetails": "Mussar detagls",
+    "showMap": "Mussar carta",
     "close": "Serrar il banc",
     "loading": "Il lieu vegn explorà",
     "loadingAccessible": "Il banc vegn chargià",

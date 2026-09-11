@@ -1,4 +1,9 @@
 {
+  "steps": {
+    "label": "Bänkli eintragen",
+    "position": "Position",
+    "details": "Details"
+  },
   "location": {
     "searching": "Ort wird gesucht …",
     "onSave": "Ort wird beim Speichern ergänzt",

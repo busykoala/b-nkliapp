@@ -7,11 +7,14 @@
     "privacy": "Tge che succeda cun tias datas ↗",
     "intent": "Suenter pos ti cuntinuar: {intent}.",
     "register": "Nov qua? Crear in conto",
-    "login": "Jau hai gia in conto"
+    "login": "Jau hai gia in conto",
+    "registerTab": "Sa registrar"
   },
   "fields": {
     "username": "Num d’utilisader",
-    "password": "Pled-clav"
+    "password": "Pled-clav",
+    "showPassword": "Mussar il pled-clav",
+    "hidePassword": "Zuppentar il pled-clav"
   },
   "form": {
     "signingIn": "Annunzia en curs …",

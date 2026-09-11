@@ -73,5 +73,5 @@ function StarRating({ name, label, initialValue }: { name: string; label: string
   return <fieldset className="rating-control"><legend>{label}</legend><div>{[1, 2, 3, 4, 5].map((score) => <label key={score} className={score <= value ? "is-filled" : ""}>
     <input type="radio" name={name} value={score} required checked={value === score} onChange={() => setValue(score)} aria-label={t("community.rating.stars", { count: score })} />
     <Star size={25} aria-hidden="true" />
-  </label>)}</div></fieldset>;
+  </label>)}<output aria-live="polite">{value ? t("community.rating.stars", { count: value }) : "—"}</output></div></fieldset>;
 }

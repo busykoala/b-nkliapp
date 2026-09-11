@@ -29,6 +29,7 @@
     "ios": "In Safari „Teilen“ und danach „Zum Home-Bildschirm“ wählen."
   },
   "actions": {
+    "back": "Zurück",
     "close": "schliessen",
     "cancel": "Abbrechen",
     "save": "Speichern",

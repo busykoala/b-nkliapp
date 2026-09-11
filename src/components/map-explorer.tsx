@@ -503,7 +503,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && <div className="map-discovery-actions">
-        <button className="walk-entry" onClick={openWalk}><Footprints size={20} /> {t("walks.planner.title")}</button>
+        <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t("walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>
       </div>}
       {listOpen && !selectedId && <aside className="bench-list-panel storybook-panel" aria-label={t("map.list.title")}>

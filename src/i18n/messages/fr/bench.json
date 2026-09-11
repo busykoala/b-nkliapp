@@ -20,6 +20,8 @@
   },
   "sheet": {
     "resize": "Agrandir ou réduire les détails",
+    "showDetails": "Afficher les détails",
+    "showMap": "Afficher la carte",
     "close": "Fermer le banc",
     "loading": "Exploration du lieu",
     "loadingAccessible": "Chargement du banc",

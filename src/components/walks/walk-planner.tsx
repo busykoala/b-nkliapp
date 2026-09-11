@@ -25,7 +25,7 @@ export function WalkPlanner({ getMap, onClose, onReturn }: { getMap: () => MapLi
   const copy = p.chosen && p.result ? walkCopy([p.chosen.bench], p.result.query.shape, p.chosen.extraBenches.length, t) : null;
   return <aside className={`journey-panel storybook-panel ${expanded ? "is-expanded" : ""}`} aria-label={t("walks.planner.title")}>
     <div className="journey-chrome"><button className="overlay-resize" aria-label={t("walks.planner.resize")} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? <ChevronDown size={20} /> : <ChevronUp size={20} />}</button><button aria-label={t("walks.planner.close")} onClick={onClose}><X size={18} /></button></div>
-    <div className="journey-scroll"><header><span className="story-eyebrow">{t("walks.planner.eyebrow")}</span><h2 ref={title} tabIndex={-1}>{t("walks.planner.title")}</h2><p>{t("walks.planner.intro")}</p></header>
+    <div className="journey-scroll"><header><span className="story-eyebrow">{t("walks.planner.eyebrow")}</span><h2 className="programmatic-focus-heading" ref={title} tabIndex={-1}>{t("walks.planner.title")}</h2><p>{t("walks.planner.intro")}</p></header>
       <section className="journey-controls" aria-label={t("walks.planner.label")}>
         <StartPicker origin={p.origin} onChange={p.chooseOrigin} getMap={getMap} />
         <fieldset className="walk-options"><legend>{t("walks.planner.duration")}</legend><div>{([30, 50, 120] as const).map((minutes) => <button key={minutes} aria-pressed={s.minutes === minutes} onClick={() => p.change({ minutes })}>{t("routing.controls.minutes", {minutes})}</button>)}</div></fieldset>

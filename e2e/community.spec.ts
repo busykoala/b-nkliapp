@@ -4,7 +4,7 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.goto("/bank/osm-node-101");
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Anmelden").click();
-  await page.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
+  await page.getByRole("button", { name: "Registrieren" }).click();
   await page.getByLabel("Benutzername").fill(username);
   await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await page.getByRole("button", { name: "Konto erstellen" }).click();
@@ -51,8 +51,8 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await expect(page.getByText(/\d+× gereinigt/)).toBeVisible();
   await page.getByRole("link", { name: "Alle Lieblingsplätze" }).click();
   await expect(page.getByRole("heading", { name: "Meine Lieblingsplätze" })).toBeVisible();
-  await expect(page.locator(".saved-benches a[href='/bank/osm-node-101']")).toBeVisible();
-  await page.locator(".saved-benches a[href='/bank/osm-node-101']").click();
+  await expect(page.locator(".saved-benches a[href^='/bank/osm-node-101']")).toBeVisible();
+  await page.locator(".saved-benches a[href^='/bank/osm-node-101']").click();
   await expect(page.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
   await page.goto("/feed");
   const filters = page.getByRole("navigation", { name: "Feed-Filter" });
@@ -100,6 +100,7 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   });
   expect(originalBytes).toBeGreaterThan(2_000_000);
   await expect(dialog.getByAltText("Vorschau deines Bänkli-Fotos")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Entfernen" })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Foto veröffentlichen" })).toBeEnabled();
   await expect(dialog.getByLabel(/Ein Satz dazu/)).toHaveAttribute("placeholder", "Was sieht man von diesem Bänkli?");
   await dialog.getByRole("button", { name: "Foto veröffentlichen" }).click();

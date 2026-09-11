@@ -26,9 +26,9 @@ test("groups a busy bench across pages without mixing its neighbour", async ({ p
   await expect(groups).toHaveCount(1);
   await page.getByRole("button", { name: "Mehr Beiträge laden" }).click();
   await expect(groups).toHaveCount(2);
-  await expect(groups.filter({ has: page.locator("a[href='/bank/osm-node-101']") })).toHaveCount(1);
-  await expect(groups.filter({ has: page.locator("a[href='/bank/osm-node-101']") }).locator("summary")).toHaveText(/Beiträge ansehen \(54\)/);
-  await expect(groups.filter({ has: page.locator("a[href='/bank/osm-node-102']") }).locator("summary")).toHaveText(/Beiträge ansehen \(1\)/);
+  await expect(groups.filter({ has: page.locator("a[href^='/bank/osm-node-101']") })).toHaveCount(1);
+  await expect(groups.filter({ has: page.locator("a[href^='/bank/osm-node-101']") }).locator("summary")).toHaveText(/Beiträge ansehen \(54\)/);
+  await expect(groups.filter({ has: page.locator("a[href^='/bank/osm-node-102']") }).locator("summary")).toHaveText(/Beiträge ansehen \(1\)/);
   await page.screenshot({ path: info.outputPath("grouped-feed.png"), fullPage: true });
 });
 

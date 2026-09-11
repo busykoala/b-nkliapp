@@ -18,7 +18,7 @@
   },
   "search": {
     "label": "Cerca un luogo",
-    "placeholder": "Cerca un luogo o una panchina",
+    "placeholder": "Luogo o panchina",
     "clear": "Cancella la ricerca",
     "results": "Risultati della ricerca",
     "pending": "Ricerca…",

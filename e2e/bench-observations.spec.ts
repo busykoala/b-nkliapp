@@ -6,7 +6,7 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.goto(`/bank/${benchId}`);
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Anmelden").click();
-  await page.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
+  await page.getByRole("button", { name: "Registrieren" }).click();
   await page.getByLabel("Benutzername").fill(username);
   await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await page.getByRole("button", { name: "Konto erstellen" }).click();

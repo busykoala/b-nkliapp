@@ -20,6 +20,8 @@
   },
   "sheet": {
     "resize": "Espandi o riduci i dettagli",
+    "showDetails": "Mostra dettagli",
+    "showMap": "Mostra mappa",
     "close": "Chiudi la panchina",
     "loading": "Esplorazione del luogo",
     "loadingAccessible": "Caricamento della panchina",

@@ -68,7 +68,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
     <section className="statistics-section daily-and-roulette">
       <article className="daily-bench-card">
         <div className="section-heading"><div><small>{t("statistics.daily.eyebrow")}</small><h2>{t("statistics.daily.title")}</h2></div><span className="daily-date">{date}</span></div>
-        {data.benchOfTheDay ? <Link href={`/bank/${data.benchOfTheDay.id}`} className="daily-bench-link"><span className="daily-bench-illustration"><Trees /><span /></span><span><strong>{data.benchOfTheDay.title ?? t("common.values.bench")}</strong><small><MapPin size={14} /> {data.benchOfTheDay.place ?? t("statistics.values.somewhere")}</small></span><ArrowUpRight /></Link> : <p>{t("statistics.values.noData")}</p>}
+        {data.benchOfTheDay ? <Link href={`/bank/${data.benchOfTheDay.id}?from=statistics`} className="daily-bench-link"><span className="daily-bench-illustration"><Trees /><span /></span><span><strong>{data.benchOfTheDay.title ?? t("common.values.bench")}</strong><small><MapPin size={14} /> {data.benchOfTheDay.place ?? t("statistics.values.somewhere")}</small></span><ArrowUpRight /></Link> : <p>{t("statistics.values.noData")}</p>}
         <p className="card-note">{t("statistics.daily.note")}</p>
       </article>
       <article className="roulette-card">
@@ -84,7 +84,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
       <div className="section-heading"><div><small>{t("statistics.records.eyebrow")}</small><h2>{t("statistics.records.title")}</h2></div><BarChart3 /></div>
       <div className="record-grid">{data.records.map(({ key, fact: item }) => <article key={key}>
         <span className="record-icon">{recordPresentation[key].icon}</span><small>{t(`statistics.records.${key}`)}</small>
-        <><strong>{recordPresentation[key].value(item)}</strong><Link href={`/bank/${item.id}`}>{item.title ?? t("common.values.bench")} <ArrowUpRight size={15} /></Link><p>{item.place ?? t("statistics.values.somewhere")}</p></>
+        <><strong>{recordPresentation[key].value(item)}</strong><Link href={`/bank/${item.id}?from=statistics`}>{item.title ?? t("common.values.bench")} <ArrowUpRight size={15} /></Link><p>{item.place ?? t("statistics.values.somewhere")}</p></>
       </article>)}</div>
       <p className="record-scroll-cue"><ArrowRight /> {t("statistics.records.scrollCue")}</p>
       <p className="method-note">{t("statistics.records.note")}</p>

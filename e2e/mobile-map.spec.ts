@@ -4,7 +4,7 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.goto("/");
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Anmelden").click();
-  await page.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
+  await page.getByRole("button", { name: "Registrieren" }).click();
   await page.getByLabel("Benutzername").fill(username);
   await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await page.getByRole("button", { name: "Konto erstellen" }).click();
@@ -124,6 +124,68 @@ test("keeps core pages contained from tablet to large desktop", async ({ page },
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(1600);
   expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+});
+
+test("keeps primary map decisions usable on a narrow phone", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/");
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  await expect(page.getByRole("combobox", { name: "Ort suchen" })).toHaveAttribute("placeholder", "Ort oder Bänkli");
+  await expect(page.locator(".map-filter-button > span")).toBeHidden();
+  const walk = await page.getByRole("button", { name: "Spaziergang" }).boundingBox();
+  const list = await page.getByRole("button", { name: "Liste", exact: true }).boundingBox();
+  expect(walk).not.toBeNull();
+  expect(list).not.toBeNull();
+  expect(Math.abs(walk!.y - list!.y)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: testInfo.outputPath("narrow-map-actions.png") });
+
+  await page.getByLabel("Filter öffnen").click();
+  const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
+  await expect(filters.getByRole("button", { name: "Karte ansehen" })).toBeVisible();
+  await expect(page.locator(".filter-modal-backdrop")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("narrow-filter-actions.png") });
+  await page.locator(".filter-modal-backdrop").click({ position: { x: 2, y: 2 } });
+  await expect(filters).toHaveCount(0);
+});
+
+test("reveals a bench name and a clear sheet action on a short phone", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/?bank=osm-node-101");
+  const sheet = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator("h2").first()).toBeInViewport();
+  await expect(sheet.getByText("Details zeigen", { exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("short-phone-bench-sheet.png") });
+
+  await page.goto("/?action=walk");
+  const title = page.getByRole("heading", { name: "Spaziergang entdecken" });
+  await expect(title).toBeFocused();
+  expect(await title.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("none");
+  await page.screenshot({ path: testInfo.outputPath("walk-heading-focus.png") });
+});
+
+test("keeps long-page navigation available and returns to the calling section", async ({ page }, testInfo) => {
+  await page.goto("/danke");
+  const catalog = page.locator(".about-source-catalog");
+  await expect(catalog).not.toHaveAttribute("open", "");
+  await catalog.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("collapsed-source-catalog.png") });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.getByLabel("Menü öffnen").click();
+  await expect(page.getByRole("dialog", { name: "Bänkli App" }).getByRole("link", { name: "Zur Karte" })).toBeVisible();
+  await page.getByLabel("Menü schliessen").click();
+  await page.evaluate(() => window.scrollTo(0, 1_200));
+  const navBox = await page.locator(".thanks-nav").boundingBox();
+  expect(navBox?.y).toBeLessThanOrEqual(1);
+  await catalog.locator(":scope > summary").click();
+  await expect(catalog.getByText("OpenStreetMap", { exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("sticky-about-source-catalog.png") });
+
+  await page.goto("/statistiken");
+  await page.locator(".daily-bench-link").click();
+  await expect(page).toHaveURL(/\/bank\/[^?]+\?from=statistics$/);
+  await page.getByRole("link", { name: "Zurück", exact: true }).click();
+  await expect(page).toHaveURL(/\/statistiken$/);
 });
 
 test("activates the raster fallback when the vector style fails", async ({ page }) => {

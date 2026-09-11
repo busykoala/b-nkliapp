@@ -95,8 +95,12 @@ for (const language of ["de", "fr", "it", "rm"] as const) {
     await visit("/danke");
     await expect(page.locator("html")).toHaveAttribute("lang", `${language}-CH`);
     await expect(page.getByRole("heading", { name: t("about.methods.sun.title"), exact: true })).toBeVisible();
+    await page.locator(".about-source-catalog > summary").click();
     const source = page.locator(".about-sources details").filter({ hasText: "swissBUILDINGS3D" });
-    await source.locator("summary").click();
+    // The interaction itself is covered once in acknowledgements.spec. Here
+    // each locale only needs the translated disclosure content without eight
+    // expensive scrolls through the complete 24-source catalogue.
+    await source.evaluate((element) => { (element as HTMLDetailsElement).open = true; });
     await expect(source).toContainText(t("about.sources.entries.swissbuildings3d.description"));
     await page.getByRole("button", { name: t("privacy.flow.photo.label"), exact: true }).click();
     await expect(page.getByRole("heading", { name: t("privacy.flow.photo.check.title"), exact: true })).toBeVisible();

@@ -7,11 +7,14 @@
     "privacy": "Cosa succede ai tuoi dati ↗",
     "intent": "Dopo potrai continuare: {intent}.",
     "register": "Prima volta? Crea un account",
-    "login": "Ho già un account"
+    "login": "Ho già un account",
+    "registerTab": "Registrati"
   },
   "fields": {
     "username": "Nome utente",
-    "password": "Password"
+    "password": "Password",
+    "showPassword": "Mostra password",
+    "hidePassword": "Nascondi password"
   },
   "form": {
     "signingIn": "Accesso…",

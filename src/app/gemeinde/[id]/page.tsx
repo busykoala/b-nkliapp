@@ -55,7 +55,7 @@ export default async function MunicipalityPage({ params }: { params: Promise<{ i
 
     <section className="statistics-section municipal-records">
       <div className="section-heading"><div><small>{t("statistics.municipality.records.eyebrow")}</small><h2>{t("statistics.municipality.records.title")}</h2></div><MountainSnow /></div>
-      <div className="record-grid">{records.map(({ key, icon, fact: item, value }) => <article key={key}><span className="record-icon">{icon}</span><small>{t(`statistics.records.${key}`)}</small>{item ? <><strong>{value(item)}</strong><Link href={`/bank/${item.id}`}>{item.title ?? t("common.values.bench")} <ArrowUpRight size={15} /></Link></> : <strong>{t("statistics.values.noData")}</strong>}</article>)}</div>
+      <div className="record-grid">{records.map(({ key, icon, fact: item, value }) => <article key={key}><span className="record-icon">{icon}</span><small>{t(`statistics.records.${key}`)}</small>{item ? <><strong>{value(item)}</strong><Link href={`/bank/${item.id}?from=statistics`}>{item.title ?? t("common.values.bench")} <ArrowUpRight size={15} /></Link></> : <strong>{t("statistics.values.noData")}</strong>}</article>)}</div>
     </section>
 
     <section className="statistics-section audit-section">

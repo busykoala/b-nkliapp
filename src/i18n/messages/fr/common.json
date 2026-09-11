@@ -29,6 +29,7 @@
     "ios": "Dans Safari, choisis « Partager », puis « Sur l’écran d’accueil »."
   },
   "actions": {
+    "back": "Retour",
     "close": "fermer",
     "cancel": "Annuler",
     "save": "Enregistrer",

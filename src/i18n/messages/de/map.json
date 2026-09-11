@@ -18,7 +18,7 @@
   },
   "search": {
     "label": "Ort suchen",
-    "placeholder": "Ort oder Bänkli suchen",
+    "placeholder": "Ort oder Bänkli",
     "clear": "Suche leeren",
     "results": "Suchergebnisse",
     "pending": "Suche …",

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function registerInOpenDialog(page: Page, prefix: string) {
   const account = page.getByRole("dialog", { name: "Willkommen zurück" });
-  await account.getByRole("button", { name: "Neu hier? Konto erstellen" }).click();
+  await account.getByRole("button", { name: "Registrieren" }).click();
   const signup = page.getByRole("dialog", { name: "Dein Bänkli-Konto" });
   await signup.getByLabel("Benutzername").fill(`${prefix}-${Date.now().toString(36)}`);
   await signup.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");

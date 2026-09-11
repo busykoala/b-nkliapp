@@ -23,6 +23,10 @@ export function AvatarCustomizer({ seed, username, progress }: { seed: string; u
   return <details className="avatar-customizer">
     <summary><Palette size={16} /> {t("avatar.editor.title")} <span aria-hidden>＋</span></summary>
     <form action={formAction}>
+      <div className="avatar-customizer-actions">
+        <button className="avatar-save" type="submit" disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Check size={16} />}{pending ? t("avatar.editor.pending") : t("avatar.editor.save")}</button>
+        <p className={state.ok ? "is-success" : undefined} aria-live="polite">{state.message}</p>
+      </div>
       <div className="avatar-customizer-preview">
         <TrailAvatar seed={seed} username={username} progress={progress} appearance={appearance} />
         <div><small>{t("avatar.editor.mixture")}</small><strong>{avatarOptionLabel("background", appearance.background, t)} · {avatarOptionLabel("hairStyle", appearance.hairStyle, t)}</strong><p>{t("avatar.editor.description")}</p></div>
@@ -40,10 +44,6 @@ export function AvatarCustomizer({ seed, username, progress }: { seed: string; u
             </label>;
           })}</div>
         </fieldset>)}
-      </div>
-      <div className="avatar-customizer-actions">
-        <button className="avatar-save" type="submit" disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Check size={16} />}{pending ? t("avatar.editor.pending") : t("avatar.editor.save")}</button>
-        <p className={state.ok ? "is-success" : undefined} aria-live="polite">{state.message}</p>
       </div>
     </form>
   </details>;

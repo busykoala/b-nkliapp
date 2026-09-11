@@ -36,6 +36,8 @@
     }
   },
   "sources": {
+    "catalog": "Mussar tut las {count} funtaunas da datas",
+    "catalogOpen": "Zuppentar las funtaunas da datas",
     "eyebrow": "En tutta transparenza",
     "title": "Co che nus duvrain las datas",
     "introduction": "In sguard sin mintga funtauna. Ils detagls d’in banc mussan las infurmaziuns disponiblas per quel lieu.",

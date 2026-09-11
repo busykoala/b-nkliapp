@@ -13,7 +13,6 @@ export function BenchSheet({ created = false, bench, loading, error, onRetry, on
   const t = useTranslations();
   const [snap, setSnap] = useState<Snap>(created ? "full" : "half");
   const touchStart = useRef<number | null>(null);
-  const translate = snap === "peek" ? "translateY(76%)" : snap === "half" ? "translateY(42%)" : "translateY(0)";
   const finishDrag = (end: number) => {
     if (touchStart.current === null) return;
     const delta = end - touchStart.current;
@@ -22,9 +21,9 @@ export function BenchSheet({ created = false, bench, loading, error, onRetry, on
     touchStart.current = null;
   };
   return (
-    <aside aria-label={t("bench.sheet.label")} className="desktop-sheet storybook-sheet sheet-shadow fixed inset-x-0 bottom-0 z-40 h-[calc(100dvh-4.5rem)] overflow-hidden rounded-t-[2rem] transition-transform duration-300" style={{ transform: translate }}>
+    <aside aria-label={t("bench.sheet.label")} data-snap={snap} className="desktop-sheet storybook-sheet sheet-shadow fixed inset-x-0 bottom-0 z-40 h-[calc(100dvh-4.5rem)] overflow-hidden rounded-t-[2rem] transition-transform duration-300">
       <div className="sheet-chrome absolute inset-x-0 top-0 z-30 rounded-t-[2rem] px-4 pb-1 pt-2" onTouchStart={(e) => { touchStart.current = e.touches[0].clientY; }} onTouchEnd={(e) => finishDrag(e.changedTouches[0].clientY)}>
-        <button aria-label={t("bench.sheet.resize")} aria-expanded={snap === "full"} className="overlay-resize" onClick={() => setSnap(snap === "full" ? "half" : "full")}>{snap === "full" ? <ChevronDown size={20} /> : <ChevronUp size={20} />}</button>
+        <button aria-label={t("bench.sheet.resize")} aria-expanded={snap === "full"} className="overlay-resize" onClick={() => setSnap(snap === "full" ? "half" : "full")}>{snap === "full" ? <ChevronDown size={20} /> : <ChevronUp size={20} />}<span>{t(snap === "full" ? "bench.sheet.showMap" : "bench.sheet.showDetails")}</span></button>
         <div className="flex items-center justify-end">
           <button aria-label={t("bench.sheet.close")} className="sheet-close btn btn-circle btn-ghost btn-sm" onClick={onClose}><X size={19} /></button>
         </div>

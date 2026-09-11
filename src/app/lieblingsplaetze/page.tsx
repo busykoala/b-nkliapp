@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { ArrowLeft, Bookmark } from "lucide-react";
+import { ArrowLeft, Bookmark, Map } from "lucide-react";
 import { redirect } from "next/navigation";
 import { AppMenu } from "@/components/app-menu";
 import { sqlite } from "@/db/client";
@@ -24,10 +24,10 @@ export default async function FavouritesPage({ searchParams }: { searchParams: P
   const benches = rows.slice(0, 48);
   return <main className="feed-page min-h-dvh safe-bottom">
     <header className="feed-nav safe-top"><Link href="/" className="calm-menu-button" aria-label={t("feed.page.map")}><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
-    <section className="feed-intro"><span><Bookmark size={16} /> {t("favourites.eyebrow")}</span><h1>{t("favourites.title")}</h1><p>{t("favourites.intro")}</p></section>
+    <section className="feed-intro favourites-intro"><span><Bookmark size={16} /> {t("favourites.eyebrow")}</span><div><h1>{t("favourites.title")}</h1><b aria-label={`${benches.length} · ${t("favourites.label")}`}>{benches.length}</b></div><p>{t("favourites.intro")}</p></section>
     <section className="feed-scroll saved-benches" aria-label={t("favourites.label")}>
-      {benches.map((bench) => !bench.active ? <div className="saved-bench-unavailable" key={bench.id}><Bookmark size={20} /><span><strong>{bench.title ?? t("common.values.bench")}</strong><small>{t("favourites.removed", {place: bench.place ?? t("favourites.place")})}</small></span></div> : <Link key={bench.id} href={`/bank/${bench.id}`}><Bookmark size={20} /><span><strong>{bench.title ?? t("common.values.bench")}</strong><small>{bench.place ?? t("favourites.place")}</small></span><span aria-hidden="true">→</span></Link>)}
-      {!benches.length && <p>{before ? t("favourites.end") : t("favourites.empty", { action: t("community.place.save") })}</p>}
+      {benches.map((bench) => !bench.active ? <div className="saved-bench-unavailable" key={bench.id}><Bookmark size={20} /><span><strong>{bench.title ?? t("common.values.bench")}</strong><small>{t("favourites.removed", {place: bench.place ?? t("favourites.place")})}</small></span></div> : <Link key={bench.id} href={`/bank/${bench.id}?from=favourites`}><Bookmark size={20} /><span><strong>{bench.title ?? t("common.values.bench")}</strong><small>{bench.place ?? t("favourites.place")}</small></span><span aria-hidden="true">→</span></Link>)}
+      {!benches.length && (before ? <p>{t("favourites.end")}</p> : <div className="favourites-empty"><Bookmark size={28} aria-hidden="true" /><p>{t("favourites.empty", { action: t("community.place.save") })}</p><Link className="ui-button" href="/"><Map size={18} /> {t("common.navigation.map")}</Link></div>)}
       {rows.length > 48 && <Link className="ui-button" href={`/lieblingsplaetze?before=${benches.at(-1)!.row_id}`}>{t("favourites.more")}</Link>}
     </section>
   </main>;

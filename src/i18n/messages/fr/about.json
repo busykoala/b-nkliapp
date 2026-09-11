@@ -36,6 +36,8 @@
     }
   },
   "sources": {
+    "catalog": "Afficher les {count} sources de données",
+    "catalogOpen": "Replier les sources de données",
     "eyebrow": "En toute transparence",
     "title": "Ce que nous faisons avec les données",
     "introduction": "Un aperçu de chaque source. Les détails d’un banc indiquent les informations disponibles pour ce lieu.",

@@ -36,6 +36,8 @@
     }
   },
   "sources": {
+    "catalog": "Alle {count} Datenquellen anzeigen",
+    "catalogOpen": "Datenquellen einklappen",
     "eyebrow": "Offen gelegt",
     "title": "Was wir womit machen",
     "introduction": "Ein kurzer Blick hinter jede Quelle. Welche Angaben an einer einzelnen Bank vorhanden sind, siehst du in ihren Details.",

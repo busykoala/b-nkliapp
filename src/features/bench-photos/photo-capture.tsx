@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 /* eslint-disable @next/next/no-img-element -- local blob previews do not belong in Next Image */
 
-import { Camera, Check, ImagePlus, RotateCcw } from "lucide-react";
+import { Camera, Check, ImagePlus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { uploadBenchPhoto } from "@/app/actions/bench-photos";
 import type { ActionResult } from "@/lib/types";
@@ -87,6 +87,10 @@ export function BenchPhotoCapture({ benchId, onChanged }: { benchId: string; onC
       setPhoto(prepared); setPreview(URL.createObjectURL(prepared));
     } catch (error) { setState({ ok: false, message: error instanceof Error ? error.message : t("photos.errors.read") }); }
   };
+  const clear = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setPhoto(null); setPreview(null); setState(null);
+  };
   const submit = (form: HTMLFormElement) => startTransition(async () => {
     if (!photo) return;
     try {
@@ -100,7 +104,7 @@ export function BenchPhotoCapture({ benchId, onChanged }: { benchId: string; onC
   return <form className="bench-photo-capture" onSubmit={(event) => { event.preventDefault(); submit(event.currentTarget); }}>
     <div className="bench-photo-intro"><Camera aria-hidden="true" /><div><strong>{t("photos.capture.title")}</strong><p>{t("photos.capture.intro")}</p></div></div>
     <input ref={input} className="sr-only" type="file" aria-label={t("photos.capture.select")} accept="image/*" onChange={(event) => { void choose(event.target.files?.[0]); event.currentTarget.value = ""; }} />
-    {preview ? <div className="bench-photo-preview"><img src={preview} alt={t("photos.capture.preview")} /><button type="button" onClick={() => input.current?.click()}><RotateCcw size={16} /> {t("photos.capture.change")}</button></div>
+    {preview ? <div className="bench-photo-preview"><img src={preview} alt={t("photos.capture.preview")} /><div><button type="button" onClick={() => input.current?.click()}><RotateCcw size={16} /> {t("photos.capture.change")}</button><button type="button" onClick={clear}><Trash2 size={16} /> {t("common.actions.remove")}</button></div></div>
       : <button className="bench-photo-choose" type="button" onClick={() => input.current?.click()}><ImagePlus size={18} /> {t("photos.capture.choose")}</button>}
     {photo && <><label><span>{t("photos.capture.caption")} <small>{t("common.fields.optional")}</small></span><input name="caption" maxLength={180} placeholder={t("photos.capture.captionPlaceholder")} /></label><button className="bench-photo-submit" disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Check size={16} />}{pending ? t("photos.capture.checking") : t("photos.capture.publish")}</button></>}
     <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />

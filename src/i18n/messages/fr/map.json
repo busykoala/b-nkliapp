@@ -18,7 +18,7 @@
   },
   "search": {
     "label": "Chercher un lieu",
-    "placeholder": "Chercher un lieu ou un banc",
+    "placeholder": "Lieu ou banc",
     "clear": "Effacer la recherche",
     "results": "Résultats de recherche",
     "pending": "Recherche…",

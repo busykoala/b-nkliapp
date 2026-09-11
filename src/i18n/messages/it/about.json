@@ -36,6 +36,8 @@
     }
   },
   "sources": {
+    "catalog": "Mostra tutte le {count} fonti di dati",
+    "catalogOpen": "Comprimi le fonti di dati",
     "eyebrow": "In tutta trasparenza",
     "title": "Come usiamo i dati",
     "introduction": "Uno sguardo a ogni fonte. Nei dettagli di una panchina trovi le informazioni disponibili per quel luogo.",

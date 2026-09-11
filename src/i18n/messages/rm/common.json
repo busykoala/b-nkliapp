@@ -29,6 +29,7 @@
     "ios": "En Safari, tscherna «Cundivider» e lura «Agiuntar al visur da partenza»."
   },
   "actions": {
+    "back": "Enavos",
     "close": "serrar",
     "cancel": "Interrumper",
     "save": "Memorisar",

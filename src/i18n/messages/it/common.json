@@ -29,6 +29,7 @@
     "ios": "In Safari, scegli «Condividi» e poi «Aggiungi alla schermata Home»."
   },
   "actions": {
+    "back": "Indietro",
     "close": "chiudi",
     "cancel": "Annulla",
     "save": "Salva",

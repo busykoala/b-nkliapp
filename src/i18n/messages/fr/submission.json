@@ -1,4 +1,9 @@
 {
+  "steps": {
+    "label": "Ajouter un banc",
+    "position": "Position",
+    "details": "Détails"
+  },
   "location": {
     "searching": "Recherche du lieu…",
     "onSave": "Le lieu sera ajouté lors de l’enregistrement",

@@ -16,14 +16,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return bench ? { title: bench.title || t("common.values.bench"), description: bench.viewScore === null ? t("bench.page.description") : t("bench.page.ratedDescription", { score: bench.viewScore }) } : { title: t("common.notFound.title") };
 }
 
-export default async function BenchPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function BenchPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string | string[] }> }) {
   const t = await getTranslations();
   const user = await getCurrentUser();
   const bench = await readVerifiedBenchDetail((await params).id, user);
   if (!bench) notFound();
+  const source = (await searchParams).from;
+  const backHref = source === "feed" ? "/feed" : source === "statistics" ? "/statistiken" : source === "favourites" ? "/lieblingsplaetze" : "/";
   return <main className="standalone-bench min-h-dvh">
     <header className="safe-top sticky top-0 z-20 flex min-h-16 items-center justify-between px-3">
-      <Link href="/feed" aria-label={t("bench.page.backToFeed")} className="calm-menu-button"><ArrowLeft size={19} /></Link>
+      <Link href={backHref} aria-label={t("common.actions.back")} className="calm-menu-button"><ArrowLeft size={19} /></Link>
       <div className="flex items-center gap-2">
         <Link href={`/?bank=${bench.id}`} className="show-on-map"><MapPinned size={17} /> {t("bench.page.onMap")}</Link>
         <AppMenu user={user} />

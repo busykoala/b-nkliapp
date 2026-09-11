@@ -1,4 +1,9 @@
 {
+  "steps": {
+    "label": "Aggiungi una panchina",
+    "position": "Posizione",
+    "details": "Dettagli"
+  },
   "location": {
     "searching": "Ricerca del luogo…",
     "onSave": "Il luogo sarà aggiunto al salvataggio",

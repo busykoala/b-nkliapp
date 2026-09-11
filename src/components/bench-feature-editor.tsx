@@ -36,6 +36,10 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
     ...bench.properties.map((property) => ({ field: property.key as Field, label: propertyLabel(property, t) })),
     { field: "direction" as const, label: t("bench.attributes.direction") },
   ];
+  const unknownValues = new Set([t("common.values.unknown"), t("common.values.open"), ""]);
+  const visibleFields = fields
+    .filter(({ field }) => !onlyFields || onlyFields.includes(field))
+    .sort((left, right) => Number(!unknownValues.has(values[left.field])) - Number(!unknownValues.has(values[right.field])));
   const choose = (field: Field, choice: Choice) => startTransition(async () => {
     setMessage(null);
     const result = await editBenchField(bench.id, field, choice.value);
@@ -49,7 +53,7 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
   const known = Object.values(values).filter((value) => value && value !== t("common.values.unknown") && value !== t("common.values.open")).length;
   return <div className="contribution-feature-list">
     <p className="feature-progress" role="status">{t("community.features.progress", {known, total: fields.length})}</p>
-    {fields.filter(({ field }) => !onlyFields || onlyFields.includes(field)).map(({ field, label }) => <section key={field} className={active === field ? "is-open" : undefined}>
+    {visibleFields.map(({ field, label }) => <section key={field} className={active === field ? "is-open" : undefined}>
       <button type="button" aria-expanded={active === field} onClick={() => setActive(active === field ? null : field)}>
         <span><small>{label}</small><strong>{values[field] === t("common.values.unknown") ? t("common.values.open") : values[field]}</strong></span>
         {mine.has(field) && <em><Check size={12} /> {t("community.features.mine")}</em>}

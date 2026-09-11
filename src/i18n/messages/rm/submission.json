@@ -1,4 +1,9 @@
 {
+  "steps": {
+    "label": "Registrar in banc",
+    "position": "Posiziun",
+    "details": "Detagls"
+  },
   "location": {
     "searching": "Il lieu vegn tschertgà …",
     "onSave": "Il lieu vegn cumplettà cun memorisar",
