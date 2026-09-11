@@ -48,7 +48,8 @@ jobs:
     timeout-minutes: 4
     strategy:
       fail-fast: false
-      # Start 16 browser jobs beside the web/worker checks and two image builds.
+      # Start 15 broad browser jobs plus the dedicated release smoke job beside
+      # the web/worker checks and two image builds.
       # The worker-container check follows worker-checks, keeping the initial 20
       # hosted jobs at capacity. WebKit's slow map/auth/walk groups get their
       # own 16-way shard; quicker groups share a runner so coverage stays full
@@ -101,10 +102,6 @@ jobs:
             part: 6
           - project: mobile-safari
             browser: webkit
-            shards: 12/16
-            part: 7
-          - project: mobile-safari
-            browser: webkit
             shards: 13/16
             part: 8
           - project: mobile-safari
@@ -145,6 +142,29 @@ jobs:
           path: test-results
           retention-days: 7
 
+  browser-smoke:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --user 1001
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Test release-critical mobile flows
+        run: npx playwright test --project=mobile-safari --shard=12/16
+      - name: Preserve smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-diagnostics-release-smoke
+          path: test-results
+          retention-days: 7
+
   worker-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 4
@@ -162,7 +182,7 @@ jobs:
         run: uv run pytest
 
   worker-container-check:
-    # Start after the short worker suite so 16 browser shards plus the web and
+    # Start after the short worker suite so 16 browser jobs plus the web and
     # image builds occupy the hosted-runner allowance immediately.
     needs: worker-checks
     runs-on: ubuntu-latest
@@ -234,7 +254,10 @@ jobs:
 
   promote-moving-tags:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: [containers, web-checks, browser-checks, worker-checks, worker-container-check]
+    # Image promotion and the immutable rollout overlap the broad browser matrix
+    # after a Safari smoke shard has covered statistics, filters and map listing.
+    # The workflow itself remains green only when every browser shard also passes.
+    needs: [containers, web-checks, browser-smoke, worker-checks, worker-container-check]
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
@@ -251,7 +274,7 @@ jobs:
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: [containers, web-checks, browser-checks, worker-checks, worker-container-check]
+    needs: [containers, web-checks, browser-smoke, worker-checks, worker-container-check]
     runs-on: [self-hosted, linux, x64, benchly]
     timeout-minutes: 4
     environment: production
