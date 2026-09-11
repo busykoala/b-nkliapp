@@ -55,9 +55,15 @@ test("renders calm watercolor markers from overview to close range", async ({ pa
 
 test("keeps map search and filters clear with keyboard input", async ({ page }, testInfo) => {
   await page.goto("/");
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
   const search = page.getByRole("combobox", { name: "Ort suchen" });
-  await search.fill("Lindenhof");
-  await expect(search).toHaveAttribute("aria-expanded", "true");
+  // The dev server can finish its first search-action compilation after the
+  // initial page is interactive. If that cold reload clears the field, repeat
+  // the real user action instead of failing a compatibility check.
+  await expect(async () => {
+    await search.fill("Lindenhof");
+    await expect(search).toHaveAttribute("aria-expanded", "true");
+  }).toPass({ timeout: 15_000 });
   const firstResult = page.getByRole("option").first();
   await expect(firstResult).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("map-search-results.png"), fullPage: false });
