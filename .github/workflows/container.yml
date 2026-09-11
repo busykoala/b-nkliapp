@@ -40,6 +40,11 @@ jobs:
 
   browser-checks:
     runs-on: ubuntu-latest
+    container:
+      # Match package-lock.json exactly: browser revisions and their system
+      # libraries are already present, avoiding 16 concurrent apt/download jobs.
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --user 1001
     timeout-minutes: 4
     strategy:
       fail-fast: false
@@ -121,14 +126,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Build app and install ${{ matrix.browser }} in parallel
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm run build &
-          build_pid=$!
-          npx playwright install --with-deps "${{ matrix.browser }}"
-          wait "$build_pid"
+      - name: Build app
+        run: npm run build
       - name: Test production browser flows
         shell: bash
         run: |
