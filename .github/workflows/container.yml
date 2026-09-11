@@ -43,9 +43,10 @@ jobs:
     timeout-minutes: 4
     strategy:
       fail-fast: false
-      # Keep 15 browser jobs: together with the five non-browser jobs this
-      # saturates the hosted-runner allowance without queueing. WebKit receives
-      # smaller shards because its route/map journeys dominate the critical path.
+      # Start 16 browser jobs beside the web/worker checks and two image builds.
+      # The worker-container check follows worker-checks, keeping the initial 20
+      # hosted jobs at capacity. WebKit receives smaller shards because its
+      # route/map journeys dominate the critical path.
       matrix:
         include:
           - project: mobile-chrome
@@ -70,44 +71,48 @@ jobs:
             part: 5
           - project: mobile-safari
             browser: webkit
-            shard: 1/10
+            shard: 1/11
             part: 1
           - project: mobile-safari
             browser: webkit
-            shard: 2/10
+            shard: 2/11
             part: 2
           - project: mobile-safari
             browser: webkit
-            shard: 3/10
+            shard: 3/11
             part: 3
           - project: mobile-safari
             browser: webkit
-            shard: 4/10
+            shard: 4/11
             part: 4
           - project: mobile-safari
             browser: webkit
-            shard: 5/10
+            shard: 5/11
             part: 5
           - project: mobile-safari
             browser: webkit
-            shard: 6/10
+            shard: 6/11
             part: 6
           - project: mobile-safari
             browser: webkit
-            shard: 7/10
+            shard: 7/11
             part: 7
           - project: mobile-safari
             browser: webkit
-            shard: 8/10
+            shard: 8/11
             part: 8
           - project: mobile-safari
             browser: webkit
-            shard: 9/10
+            shard: 9/11
             part: 9
           - project: mobile-safari
             browser: webkit
-            shard: 10/10
+            shard: 10/11
             part: 10
+          - project: mobile-safari
+            browser: webkit
+            shard: 11/11
+            part: 11
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -152,6 +157,9 @@ jobs:
         run: uv run pytest
 
   worker-container-check:
+    # Start after the short worker suite so 16 browser shards plus the web and
+    # image builds occupy the hosted-runner allowance immediately.
+    needs: worker-checks
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
