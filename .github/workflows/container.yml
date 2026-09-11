@@ -58,24 +58,28 @@ jobs:
         include:
           - project: mobile-chrome
             browser: chromium
-            shards: 1/5
+            shards: 1/6
             part: 1
           - project: mobile-chrome
             browser: chromium
-            shards: 2/5
+            shards: 2/6
             part: 2
           - project: mobile-chrome
             browser: chromium
-            shards: 3/5
+            shards: 3/6
             part: 3
           - project: mobile-chrome
             browser: chromium
-            shards: 4/5
+            shards: 4/6
             part: 4
           - project: mobile-chrome
             browser: chromium
-            shards: 5/5
+            shards: 5/6
             part: 5
+          - project: mobile-chrome
+            browser: chromium
+            shards: 6/6
+            part: 6
           - project: mobile-safari
             browser: webkit
             shards: "1/16,2/16"
@@ -100,10 +104,6 @@ jobs:
             browser: webkit
             shards: 11/16
             part: 6
-          - project: mobile-safari
-            browser: webkit
-            shards: 13/16
-            part: 8
           - project: mobile-safari
             browser: webkit
             shards: 14/16
@@ -156,7 +156,11 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test release-critical mobile flows
-        run: npx playwright test --project=mobile-safari --shard=12/16
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx playwright test --project=mobile-safari --shard=12/16
+          npx playwright test --project=mobile-safari --shard=13/16
       - name: Preserve smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
