@@ -126,9 +126,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Build app
-        run: npm run build
-      - name: Test production browser flows
+      # The production build is already a required web-check and container step.
+      # Browser journeys use Next's local test server to avoid rebuilding the
+      # identical bundle on every shard.
+      - name: Test browser flows
         shell: bash
         run: |
           set -euo pipefail
@@ -136,8 +137,6 @@ jobs:
           for shard in "${shards[@]}"; do
             npx playwright test --project='${{ matrix.project }}' --shard="$shard"
           done
-        env:
-          PLAYWRIGHT_PRODUCTION: "1"
       - name: Preserve browser diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
