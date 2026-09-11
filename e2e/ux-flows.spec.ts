@@ -26,6 +26,25 @@ test("filters are beside search and removable after the panel closes", async ({ 
   expect(items.slice(0, 4).map((text) => text.trim())).toEqual(["Bänkli eintragen", "Spaziergang", "Bänkli-Feed", "Anmelden"]);
 });
 
+test("offers an accessible nearby list with zoom guidance and decision evidence", async ({ page }, info) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Liste", exact: true }).click();
+  const list = page.getByRole("complementary", { name: "Bänkli in diesem Ausschnitt" });
+  await expect(list.getByText(/Zoome näher heran/)).toBeVisible();
+  await list.getByRole("button", { name: "Bänkliliste schliessen" }).click();
+  const search = page.getByRole("combobox", { name: "Ort suchen" });
+  await search.fill("Lindenhof");
+  await page.locator(".map-search-results").getByRole("option").first().click();
+  await expect(page.getByRole("complementary", { name: "Bankdetails" })).toBeVisible();
+  await page.getByLabel("Bank schliessen").click();
+  await page.getByRole("button", { name: "Liste", exact: true }).click();
+  await expect(list.getByRole("button", { name: /Lindenhof/ })).toBeVisible();
+  await expect(list.getByText(/Rückenlehne/).first()).toBeVisible();
+  await expect(list.getByText(/Mit Rollstuhl nutzbar/).first()).toBeVisible();
+  await expect(list.getByText(/Luftlinie/)).toBeVisible();
+  await list.screenshot({ path: info.outputPath("nearby-bench-list.png") });
+});
+
 test("guest rating resumes directly into four tap controls after authentication", async ({ page }, info) => {
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
@@ -74,6 +93,23 @@ test("guest adding resumes into pin placement, catches neighbours and opens the 
   await expect(page.locator(".profile-pending").getByText(title)).toBeVisible();
 });
 
+test("a logged-out map long-press resumes at the same position after sign-in", async ({ page }, info) => {
+  await page.goto("/");
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  const canvas = page.locator(".maplibregl-canvas");
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(650);
+  await page.mouse.up();
+  await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
+  await registerInOpenDialog(page, `press-${info.project.name.slice(-3)}`);
+  await expect(page.getByRole("heading", { name: "Position wählen" })).toBeVisible();
+  await expect(page.locator(".placement-crosshair")).toBeVisible();
+});
+
 test("freshness can be renewed inline and account actions use conventional labels", async ({ page }, info) => {
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: "Mitmachen", exact: true }).click();
@@ -107,10 +143,19 @@ test("functional text is readable and utility controls keep the illustration sep
   await expect(page.locator(".detail-disclosures > details > summary")).toHaveCount(4);
   const order = await page.evaluate(() => document.querySelector(".bench-summary")!.compareDocumentPosition(document.querySelector(".detail-disclosures")!) & Node.DOCUMENT_POSITION_FOLLOWING);
   expect(order).toBeTruthy();
+  await expect(summary.getByText(/Für \d{2}:\d{2} Uhr geschätzt · aktualisiert sich automatisch/)).toBeVisible();
   await page.goto("/?action=walk");
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await expect(panel).toBeVisible();
   expect(await panel.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe("none");
+});
+
+test("refreshes time-sensitive map data when the app returns to the foreground", async ({ page }) => {
+  await page.goto("/");
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(map).toHaveAttribute("data-time-refresh", /T/);
 });
 
 test("a selected rest interval reaches the routing result", async ({ page }, info) => {

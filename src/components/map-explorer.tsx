@@ -1,16 +1,16 @@
 "use client";
 import { pointLabel } from "@/i18n/point-label";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Crosshair, Footprints, Info, SlidersHorizontal, X } from "lucide-react";
+import { Accessibility, Armchair, CloudSun, Crosshair, Footprints, Info, List, SlidersHorizontal, Star, Sun, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import { getBenchDetail, getMapFeatures } from "@/app/actions/map";
+import { getBenchDetail, getMapBenchList, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
-import type { BenchDetail, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
+import type { BenchDetail, MapBenchListResult, MapFeature, MapFilters, MapQuery, PlaceResult } from "@/lib/types";
 import { activeMapFilterCount, activeMapFilters } from "@/lib/map-filters";
 import { BenchSheet } from "./bench-sheet";
 import { FilterPanel } from "./filter-panel";
@@ -35,20 +35,32 @@ function JourneyLoading() {
   return <aside className="journey-panel storybook-panel" role="status">{t("journey")}</aside>;
 }
 
+function visibleMapQuery(map: MapLibreMap, filters: MapFilters): MapQuery {
+  const bounds = map.getBounds();
+  return { bounds: { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() }, zoom: map.getZoom(), filters };
+}
+
 export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const t = useTranslations();
+  const format = useFormatter();
   const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const querySequence = useRef(0);
+  const listSequence = useRef(0);
   const detailSequence = useRef(0);
   const featuresRef = useRef<MapFeature[]>([]);
   const pendingPosition = useRef<UserPosition | null>(null);
   const openedFromUrl = useRef<string | null>(null);
   const filtersRef = useRef<MapFilters>({});
+  const listOpenRef = useRef(false);
   const [features, setFeatures] = useState<MapFeature[]>([]);
   const [filters, setFilters] = useState<MapFilters>({});
   const [filterOpen, setFilterOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const [listResult, setListResult] = useState<MapBenchListResult>({ items: [], zoomRequired: true });
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bench, setBench] = useState<BenchDetail | null>(null);
   const [journeyOpen, setJourneyOpen] = useState(false);
@@ -72,9 +84,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
 
   const loadVisible = useCallback(async (map: MapLibreMap, nextFilters: MapFilters) => {
     const sequence = ++querySequence.current;
-    const bounds = map.getBounds();
     try {
-      const result = await getMapFeatures({ bounds: { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() }, zoom: map.getZoom(), filters: nextFilters });
+      const result = await getMapFeatures(visibleMapQuery(map, nextFilters));
       if (sequence === querySequence.current) {
         featuresRef.current = result;
         setFeatures(result);
@@ -84,6 +95,20 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     } catch {
       if (sequence === querySequence.current) setMessage("map.canvas.failed");
     } finally { if (sequence === querySequence.current) setMapLoading(false); }
+  }, []);
+
+  const loadBenchList = useCallback(async (map: MapLibreMap, nextFilters: MapFilters) => {
+    const sequence = ++listSequence.current;
+    setListLoading(true);
+    setListError(false);
+    try {
+      const result = await getMapBenchList(visibleMapQuery(map, nextFilters));
+      if (sequence === listSequence.current) setListResult(result);
+    } catch {
+      if (sequence === listSequence.current) setListError(true);
+    } finally {
+      if (sequence === listSequence.current) setListLoading(false);
+    }
   }, []);
 
   const selectBench = useCallback(async (id: string, focusOnMap = false) => {
@@ -171,7 +196,6 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     if (!containerRef.current || mapRef.current) return;
     let disposed = false;
     let moveTimeout: number | undefined;
-    let ambientTimer: number | undefined;
     let decorationIdle: number | undefined;
     let decorationTimer: number | undefined;
     let initialFeaturesRequest: Promise<void> | undefined;
@@ -211,7 +235,6 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         addPainterlyVectorLayers(map);
         addCoreMapLayers(map, featuresRef.current);
         applyMapAtmosphere(map);
-        ambientTimer = window.setInterval(() => applyMapAtmosphere(map), 5 * 60 * 1000);
         if (pendingPosition.current && showUserPosition(map, pendingPosition.current)) pendingPosition.current = null;
         const click = (event: MapLayerMouseEvent) => {
           if (placingRef.current) return;
@@ -334,6 +357,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         window.clearTimeout(moveTimeout);
         moveTimeout = window.setTimeout(() => {
           void loadVisible(map, filtersRef.current);
+          if (listOpenRef.current) void loadBenchList(map, filtersRef.current);
           applyMapAtmosphere(map);
         }, 220);
       });
@@ -344,7 +368,6 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       window.clearTimeout(decorationTimer);
       const browserWindow = window as Window & { cancelIdleCallback?: (handle: number) => void };
       if (decorationIdle !== undefined) browserWindow.cancelIdleCallback?.(decorationIdle);
-      window.clearInterval(ambientTimer);
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -381,8 +404,32 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     const map = mapRef.current;
     // Basemap tiles can still be loading after the interactive layers are ready.
     // Their loading state must never discard a bench-filter change.
-    if (mapReady && map) void loadVisible(map, filters);
-  }, [filters, mapReady, loadVisible]);
+    if (mapReady && map) {
+      void loadVisible(map, filters);
+      if (listOpenRef.current) void loadBenchList(map, filters);
+    }
+  }, [filters, mapReady, loadVisible, loadBenchList]);
+
+  const refreshTimeSensitiveMap = useEffectEvent(() => {
+    if (document.visibilityState === "hidden") return;
+    const map = mapRef.current;
+    if (!mapReady || !map?.getSource("benchly")) return;
+    map.getContainer().dataset.timeRefresh = new Date().toISOString();
+    applyMapAtmosphere(map);
+    void loadVisible(map, filtersRef.current);
+    if (listOpenRef.current) void loadBenchList(map, filtersRef.current);
+  });
+  useEffect(() => {
+    const refresh = () => refreshTimeSensitiveMap();
+    const timer = window.setInterval(refresh, 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
 
   const autoLocate = useEffectEvent(() => locate());
   useEffect(() => {
@@ -414,6 +461,22 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     const center = mapRef.current?.getCenter();
     if (center) openAddAt(center.lat, center.lng);
   };
+  const openWalk = () => {
+    listOpenRef.current = false;
+    setListOpen(false);
+    setWalkOpen(true);
+  };
+  const openList = () => {
+    listOpenRef.current = true;
+    setListOpen(true);
+    const map = mapRef.current;
+    if (map) void loadBenchList(map, filtersRef.current);
+  };
+  const closeList = () => {
+    listSequence.current += 1;
+    listOpenRef.current = false;
+    setListOpen(false);
+  };
   const closeAdd = () => {
     const source = mapRef.current?.getSource("add-position") as GeoJSONSource | undefined;
     source?.setData({ type: "FeatureCollection", features: [] });
@@ -428,7 +491,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         <div className="pointer-events-auto flex items-center gap-2">
           <SearchBox onSelect={choosePlace} onLocate={locate} />
           <button id="map-filter-toggle" aria-label={t("map.filters.open")} aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>{t("map.filters.button")}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
-          <AppMenu user={user} onAdd={openAdd} onWalk={() => setWalkOpen(true)} />
+          <AppMenu user={user} onAdd={openAdd} onWalk={openWalk} />
         </div>
         {activeFilterCount > 0 && <div className="active-filter-chips pointer-events-auto" aria-label={t("map.filters.active")}>{activeMapFilters(filters, t).map(({ key, label }) => <button key={key} type="button" aria-label={t("map.filters.remove", { label })} onClick={() => setFilters((current) => ({ ...current, [key]: undefined }))}>{label}<X size={14} /></button>)}</div>}
       </header>
@@ -439,7 +502,30 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
-      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && <button className="walk-entry" onClick={() => setWalkOpen(true)}><Footprints size={20} /> {t("walks.planner.title")}</button>}
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && <div className="map-discovery-actions">
+        <button className="walk-entry" onClick={openWalk}><Footprints size={20} /> {t("walks.planner.title")}</button>
+        <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>
+      </div>}
+      {listOpen && !selectedId && <aside className="bench-list-panel storybook-panel" aria-label={t("map.list.title")}>
+        <header><div><span className="story-eyebrow">{t("map.list.eyebrow")}</span><h2>{t("map.list.title")}</h2></div><button type="button" aria-label={t("map.list.close")} onClick={closeList}><X size={18} /></button></header>
+        <p>{activeFilterCount ? t("map.list.matches", {count: activeFilterCount}) : t("map.list.intro")}</p>
+        {listLoading && <p role="status">{t("map.list.loading")}</p>}
+        {!listLoading && listError && <p role="alert">{t("map.list.failed")} <button type="button" onClick={() => { const map = mapRef.current; if (map) void loadBenchList(map, filtersRef.current); }}>{t("map.list.retry")}</button></p>}
+        {!listLoading && !listError && listResult.zoomRequired && <div className="bench-list-empty"><p>{t("map.list.zoom")}</p><button type="button" onClick={() => mapRef.current?.zoomTo(14, {duration: 450})}>{t("map.list.zoomAction")}</button></div>}
+        {!listLoading && !listError && !listResult.zoomRequired && listResult.items.length === 0 && <p className="bench-list-empty">{t(activeFilterCount ? "map.list.emptyFiltered" : "map.list.empty")}</p>}
+        {!listError && !listResult.zoomRequired && listResult.items.length > 0 && <ol>{listResult.items.map((item) => <li key={item.id}><button type="button" onClick={() => { closeList(); void selectBench(item.id, true); }}>
+          <span className="bench-list-distance">{item.distanceMeters >= 1000 ? t("map.list.kilometres", {distance: format.number(item.distanceMeters / 1000, {maximumFractionDigits: 1})}) : t("map.list.metres", {distance: Math.round(item.distanceMeters)})}</span>
+          <strong>{item.title || t("common.values.bench")}</strong>
+          <span className="bench-list-evidence">
+            {item.backrest === true && <small><Armchair size={14} />{t("bench.attributes.backrest")}</small>}
+            {item.wheelchair === true && <small><Accessibility size={14} />{t("bench.attributes.wheelchair")}</small>}
+            {item.sunnyNow !== null && <small>{item.sunnyNow ? <Sun size={14} /> : <CloudSun size={14} />}{t(item.sunnyNow ? "bench.summary.sun" : "bench.summary.shade")}</small>}
+            {item.rating !== null && <small><Star size={14} />{t("map.list.rating", {rating: format.number(item.rating, {maximumFractionDigits: 1}), count: item.ratingCount})}</small>}
+            {item.verificationStatus === "unverified" && <small>{t("map.list.unverified")}</small>}
+          </span>
+        </button></li>)}</ol>}
+        <small className="bench-list-note">{t("map.list.distanceNote")}</small>
+      </aside>}
       {walkOpen && <WalkPlanner getMap={getJourneyMap} onClose={() => setWalkOpen(false)} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} />}
       {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
       {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}

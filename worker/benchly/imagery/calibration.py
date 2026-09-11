@@ -51,7 +51,11 @@ def split_groups(records):
     groups = defaultdict(list)
     for index, record in enumerate(records):
         groups[root(index)].append(record["id"])
-    labels = {key: "calibration" if int(hashlib.sha256(min(ids).encode()).hexdigest()[:8], 16) % 5 == 0 else "test" for key, ids in groups.items()}
+    # A 20% split left only 17 calibration locations in the checked-in
+    # 100-location grouped benchmark, below fit_platt's minimum of 30. Keep
+    # shared imagery and coordinate clusters together, but reserve roughly a
+    # third so calibration can be evaluated rather than silently skipped.
+    labels = {key: "calibration" if int(hashlib.sha256(min(ids).encode()).hexdigest()[:8], 16) % 3 == 0 else "test" for key, ids in groups.items()}
     return [labels[root(index)] for index in range(len(records))]
 
 
@@ -96,7 +100,7 @@ def calibrated_score(score, params):
 
 def evaluate_predictions(records, predictions):
     partitions = split_groups(records)
-    report = {"method": "held-out-platt-1", "coverage": benchmark_coverage(records), "labels": {}, "subgroups": {},
+    report = {"method": "held-out-platt-2", "coverage": benchmark_coverage(records), "labels": {}, "subgroups": {},
               "split": {part: sum(value == part for value in partitions) for part in ("calibration", "test")},
               "note": "Raw model scores are not calibrated probabilities; calibration is fitted only on the calibration partition."}
     for label in LABELS:
@@ -114,4 +118,7 @@ def evaluate_predictions(records, predictions):
                 name: {"raw": metrics([y for y, _ in pairs], [p for _, p in pairs]),
                        "calibrated": metrics([y for y, _ in pairs], [calibrated_score(p, params) for _, p in pairs]) if params else None}
                 for name, pairs in groups.items()}
+    report["calibration_ready"] = report["split"]["calibration"] >= 30 and all(
+        report["labels"][label]["calibration_parameters"] is not None for label in LABELS
+    )
     return report

@@ -101,11 +101,16 @@
   },
   "horizon": {
     "label": "Orizzonte: {open} per cento libero, {buildings} per cento edifici, {plants} per cento vegetazione",
+    "labelPartial": "Orizzonte: {measured} per cento misurato, {unknown} per cento non determinabile",
+    "labelInconsistent": "I dati dell’orizzonte si sovrappongono; la parte libera non viene calcolata",
     "title": "Cosa caratterizza l’orizzonte",
     "open": "libero",
+    "unknown": "sconosciuto",
     "openView": "Vista libera",
     "buildings": "Edifici",
-    "trees": "Alberi"
+    "trees": "Alberi",
+    "unknownRemainder": "Non determinabile",
+    "inconsistent": "Le misure si sovrappongono. Mostrare una parte libera sarebbe fuorviante."
   },
   "views": {
     "mountains": "Vista sulle montagne",
@@ -124,6 +129,7 @@
     "estimatedSun": "Sole stimato",
     "directSun": "Sole diretto",
     "today": "Luce oggi",
+    "calculatedFor": "Stima per le {time} · aggiornamento automatico",
     "estimatedWindows": "Fasce di sole stimate",
     "sunWindows": "Fasce di sole",
     "noSun": "Nessun sole diretto calcolato oggi",
@@ -156,8 +162,8 @@
       "moon": "Chiaro di luna su questo luogo",
       "night": "La notte su questo luogo",
       "unknown": "La luce è ancora da esplorare",
-      "sun": "La panchina è al sole diretto",
-      "shade": "La panchina è all’ombra"
+      "sun": "Il sole diretto è geometricamente possibile",
+      "shade": "Nel modello ambientale la panchina è all’ombra"
     },
     "explanation": {
       "nightEstimate": "Il modello indicava {duration} di sole diretto possibile.",

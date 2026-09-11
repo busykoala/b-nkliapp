@@ -129,14 +129,16 @@ def benchmark_models(dataset_path: Path, models: Sequence[str], allow_small: boo
         ordered = sorted(durations)
         p95 = ordered[min(len(ordered) - 1, math.ceil(len(ordered) * .95) - 1)] if ordered else math.inf
         macro_f1 = sum(f1_values) / len(f1_values) if f1_values else 0
+        validation = evaluate_predictions(records, predictions)
         results[model] = {
-            "validation": evaluate_predictions(records, predictions),
+            "validation": validation,
             "locations": len(records), "valid_json_rate": valid / len(records) if records else 0,
             "forest_false_positive_rate": forest_false_positive_rate,
             "high_confidence_forest_predictions": high_forest_predictions,
             "high_confidence_forest_precision": high_forest_true_positives / high_forest_predictions if high_forest_predictions else None,
             "macro_f1": macro_f1, "p95_seconds": p95,
-            "accepted": valid == len(records) and forest_false_positive_rate <= .02 and macro_f1 >= .85 and p95 <= 20,
+            "accepted": valid == len(records) and bool(validation["calibration_ready"])
+            and forest_false_positive_rate <= .02 and macro_f1 >= .85 and p95 <= 20,
         }
     accepted = [model for model in models if results[model]["accepted"]]
     recommended = None

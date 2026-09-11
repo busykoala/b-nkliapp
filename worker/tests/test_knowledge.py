@@ -204,6 +204,16 @@ def test_shared_images_never_cross_calibration_test_split():
     assert benchmark_coverage(records)["strata"]["image_quality"] == {"unknown": 2}
 
 
+def test_grouped_split_reserves_at_least_thirty_of_a_hundred_independent_locations_for_calibration():
+    records = [{"id": f"location-{index}", "bench_id": f"bench-{index}",
+                "latitude": 46 + (index % 50) * .01, "longitude": 7 + (index // 50) * .02,
+                "images": [{"url": f"https://example.test/{index}.jpg"}]}
+               for index in range(100)]
+    partitions = split_groups(records)
+    assert partitions.count("calibration") >= 30
+    assert partitions.count("test") > partitions.count("calibration")
+
+
 def test_path_junctions_use_shared_nodes_not_visual_crossings():
     b = bench()
     x, y = WGS84_TO_LV95.transform(b["longitude"], b["latitude"])

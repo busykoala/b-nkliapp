@@ -7,7 +7,7 @@ import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { benchObservationNow } from "@/features/bench-observations/context";
 import { matchesLightFilter } from "@/lib/map-filters";
 import { calculateSunState, type ObstructionType } from "@/lib/sun";
-import type { BenchViewType, MapFeature, MapFilters, MapQuery } from "@/lib/types";
+import type { BenchViewType, MapBenchListResult, MapFeature, MapFilters, MapQuery } from "@/lib/types";
 
 const boundsSchema = z.object({
   west: z.number().min(-180).max(180),
@@ -53,6 +53,11 @@ type MapRow = {
   obstruction_types: string | null;
   pipeline_version: string | null;
   verification_status: "verified" | "unverified";
+  name?: string | null;
+  location_name?: string | null;
+  backrest?: number | null;
+  wheelchair?: number | null;
+  rating_count?: number | null;
 };
 
 type LitBench = { row: MapRow; sunnyNow: boolean | null };
@@ -193,9 +198,12 @@ function readGroupedFeatures(query: MapQuery, where: string, parameters: Array<s
 
 function readIndividualFeatures(query: MapQuery, where: string, parameters: Array<string | number>) {
   const rows = sqlite.prepare(`
-    SELECT b.id,b.latitude,b.longitude,${attributeValueSql("covered")} covered,b.verification_status,e.canopy_percent,e.horizon_profile,
+    SELECT b.id,b.latitude,b.longitude,b.name,b.location_name,
+      ${attributeValueSql("backrest")} backrest,${attributeValueSql("wheelchair")} wheelchair,
+      ${attributeValueSql("covered")} covered,b.verification_status,e.canopy_percent,e.horizon_profile,
       e.obstruction_types,e.pipeline_version,e.view_score,e.view_labels,
-      (SELECT avg(r.overall) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_average
+      (SELECT avg(r.overall) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_average,
+      (SELECT count(*) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_count
     FROM bench_spatial_index s
     JOIN benches b ON b.row_id=s.row_id
     LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
@@ -246,4 +254,38 @@ export function readMapFeatures(input: MapQuery): MapFeature[] {
   return [...cells.entries()].slice(0, 2000).map(([key, items]) => items.length === 1
     ? benchFeature(items[0])
     : clusterFeature(`cluster-${query.zoom}-${key}`, items));
+}
+
+function straightLineMeters(latitude: number, longitude: number, centreLatitude: number, centreLongitude: number) {
+  const radians = Math.PI / 180;
+  const dLatitude = (latitude - centreLatitude) * radians;
+  const dLongitude = (longitude - centreLongitude) * radians;
+  const a = Math.sin(dLatitude / 2) ** 2
+    + Math.cos(centreLatitude * radians) * Math.cos(latitude * radians) * Math.sin(dLongitude / 2) ** 2;
+  return 6_371_000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function readMapBenchList(input: MapQuery): MapBenchListResult {
+  const query = querySchema.parse(input);
+  if (query.zoom < 13) return { items: [], zoomRequired: true };
+  const { west, south, east, north } = query.bounds;
+  const parameters: Array<string | number> = [west, east, south, north];
+  const where = filterSql(query.filters, parameters);
+  const benches = readIndividualFeatures(query, where, parameters);
+  const centreLatitude = (south + north) / 2;
+  const centreLongitude = (west + east) / 2;
+  const items = benches.map(({ row, sunnyNow }) => ({
+    id: row.id,
+    title: row.name?.trim() || row.location_name?.trim() || "",
+    latitude: row.latitude,
+    longitude: row.longitude,
+    distanceMeters: straightLineMeters(row.latitude, row.longitude, centreLatitude, centreLongitude),
+    backrest: row.backrest === null || row.backrest === undefined ? null : Boolean(row.backrest),
+    wheelchair: row.wheelchair === null || row.wheelchair === undefined ? null : Boolean(row.wheelchair),
+    sunnyNow,
+    rating: row.rating_average === null ? null : Number(row.rating_average.toFixed(1)),
+    ratingCount: Number(row.rating_count ?? 0),
+    verificationStatus: row.verification_status,
+  })).sort((a, b) => a.distanceMeters - b.distanceMeters || a.id.localeCompare(b.id)).slice(0, 12);
+  return { items, zoomRequired: false };
 }

@@ -31,6 +31,26 @@
       "place": "Lieu"
     }
   },
+  "list": {
+    "button": "Glista",
+    "eyebrow": "La charta sco glista",
+    "title": "Bancs en quest sectur",
+    "close": "Serrar la glista dals bancs",
+    "intro": "Ils bancs visibels ils pli datiers dal center da la charta.",
+    "matches": "Pertge adattà: {count, plural, one {# filter activ} other {# filters activs}}",
+    "loading": "La glista dals bancs vegn preparada …",
+    "failed": "La glista n’ha betg pudì vegnir chargiada.",
+    "retry": "Empruvar anc ina giada",
+    "zoom": "Engrondescha la charta per cumparegliar bancs singuls en moda raschunaivla.",
+    "zoomAction": "Engrondir",
+    "empty": "En quest sectur n’èn registrads nagins bancs.",
+    "emptyFiltered": "Qua n’èn enconuschents nagins bancs cun tut las caracteristicas tschernidas. Datas nunenconuschentas na valan betg sco resultat.",
+    "metres": "{distance} m",
+    "kilometres": "{distance} km",
+    "rating": "{rating}/5 · {count, plural, one {# valitaziun} other {# valitaziuns}}",
+    "unverified": "anc betg confermà",
+    "distanceNote": "Ordinà tenor distanza directa dal center da la charta; la via reala po esser pli lunga."
+  },
   "filters": {
     "open": "Avrir ils filters",
     "button": "Filters",

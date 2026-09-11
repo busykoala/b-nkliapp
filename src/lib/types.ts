@@ -82,6 +82,22 @@ export type ClusterMapFeature = {
 
 export type MapFeature = BenchMapFeature | ClusterMapFeature;
 
+export type MapBenchListItem = {
+  id: string;
+  title: string;
+  latitude: number;
+  longitude: number;
+  distanceMeters: number;
+  backrest: boolean | null;
+  wheelchair: boolean | null;
+  sunnyNow: boolean | null;
+  rating: number | null;
+  ratingCount: number;
+  verificationStatus: "verified" | "unverified";
+};
+
+export type MapBenchListResult = { items: MapBenchListItem[]; zoomRequired: boolean };
+
 export type BenchProperty = {
   key: "backrest" | "armrest" | "covered" | "wheelchair" | "fireplaceNearby" | "wasteBasketNearby" | "material" | "seats";
   label: string;

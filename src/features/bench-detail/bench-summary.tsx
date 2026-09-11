@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { confirmBench } from "@/app/actions/benches";
 import type { Translator } from "@/i18n/types";
 import type { BenchDetail } from "@/lib/types";
+import { minuteClock } from "./panel-ui";
 
 export function confirmationAge(value: string | null, t: Translator, now = Date.now()) {
   if (!value || !Number.isFinite(Date.parse(value))) return t("bench.summary.unconfirmed");
@@ -38,7 +39,7 @@ export function BenchSummary({ bench, signedIn, onSignIn, onChanged }: { bench: 
     <h3>{t("bench.summary.title")}</h3>
     <ul>
       <li><Armchair size={17} /><span>{backrest === "Ja" ? t("bench.attributes.backrest") : backrest === "Nein" ? t("bench.summary.noBackrest") : t("bench.summary.unknownBackrest")}</span></li>
-      <li title={bench.sunConfidence === "niedrig" ? t("bench.summary.lowConfidence") : t("bench.summary.lightMethod")}><Sun size={17} /><span>{light}{bench.sunConfidence === "niedrig" && bench.dayPhase !== "night" && bench.sunnyNow !== null ? t("bench.summary.uncertain") : ""}</span></li>
+      <li title={bench.sunConfidence === "niedrig" ? t("bench.summary.lowConfidence") : t("bench.summary.lightMethod")}><Sun size={17} /><span>{light}{bench.sunConfidence === "niedrig" && bench.dayPhase !== "night" && bench.sunnyNow !== null ? t("bench.summary.uncertain") : ""}<small className="summary-light-freshness">{t("bench.light.calculatedFor", {time: minuteClock(bench.localMinutesNow)})}</small></span></li>
       <li><Accessibility size={17} /><span>{wheelchair === "Ja" ? t("bench.attributes.wheelchair") : wheelchair === "Nein" ? t("bench.summary.noWheelchair") : t("bench.summary.unknownWheelchair")}</span></li>
       <li><Volume1 size={17} /><span>{bench.ratingBreakdown ? t("bench.summary.quiet", {score: format.number(bench.ratingBreakdown.quiet, {minimumFractionDigits: 1, maximumFractionDigits: 1})}) : t("bench.summary.unknownQuiet")}</span></li>
     </ul>

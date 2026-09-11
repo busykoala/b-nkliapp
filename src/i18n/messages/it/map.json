@@ -31,6 +31,26 @@
       "place": "Luogo"
     }
   },
+  "list": {
+    "button": "Elenco",
+    "eyebrow": "La mappa come elenco",
+    "title": "Panchine in quest’area",
+    "close": "Chiudi l’elenco delle panchine",
+    "intro": "Le panchine visibili più vicine al centro della mappa.",
+    "matches": "Perché corrispondono: {count, plural, one {# filtro attivo} other {# filtri attivi}}",
+    "loading": "Preparazione dell’elenco …",
+    "failed": "Impossibile caricare l’elenco.",
+    "retry": "Riprova",
+    "zoom": "Ingrandisci la mappa per confrontare utilmente le singole panchine.",
+    "zoomAction": "Ingrandisci",
+    "empty": "In quest’area non sono registrate panchine.",
+    "emptyFiltered": "Qui non sono note panchine con tutte le caratteristiche scelte. I dati sconosciuti non contano come risultato.",
+    "metres": "{distance} m",
+    "kilometres": "{distance} km",
+    "rating": "{rating}/5 · {count, plural, one {# recensione} other {# recensioni}}",
+    "unverified": "non ancora confermata",
+    "distanceNote": "Ordinato per distanza in linea d’aria dal centro della mappa; il percorso reale può essere più lungo."
+  },
   "filters": {
     "open": "Apri i filtri",
     "button": "Filtri",

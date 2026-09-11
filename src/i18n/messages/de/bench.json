@@ -101,11 +101,16 @@
   },
   "horizon": {
     "label": "Horizont: {open} Prozent frei, {buildings} Prozent Gebäude, {plants} Prozent Vegetation",
+    "labelPartial": "Horizont: {measured} Prozent gemessen, {unknown} Prozent nicht ableitbar",
+    "labelInconsistent": "Horizontdaten überschneiden sich; der freie Anteil wird nicht berechnet",
     "title": "Was den Horizont prägt",
     "open": "frei",
+    "unknown": "unbekannt",
     "openView": "Freier Blick",
     "buildings": "Gebäude",
-    "trees": "Bäume"
+    "trees": "Bäume",
+    "unknownRemainder": "Nicht ableitbar",
+    "inconsistent": "Die Messwerte überschneiden sich. Ein freier Anteil wäre deshalb irreführend."
   },
   "views": {
     "mountains": "Bergblick",
@@ -124,6 +129,7 @@
     "estimatedSun": "Geschätzte Sonne",
     "directSun": "Direkte Sonne",
     "today": "Licht heute",
+    "calculatedFor": "Für {time} Uhr geschätzt · aktualisiert sich automatisch",
     "estimatedWindows": "Geschätzte Sonnenfenster",
     "sunWindows": "Sonnenfenster",
     "noSun": "Heute keine direkte Sonne berechnet",
@@ -156,8 +162,8 @@
       "moon": "Mondlicht über dem Platz",
       "night": "Nacht über dem Platz",
       "unknown": "Die Lichtlage wird noch erkundet",
-      "sun": "Die Bank liegt in direkter Sonne",
-      "shade": "Die Bank liegt im Schatten"
+      "sun": "Direkte Sonne ist geometrisch möglich",
+      "shade": "Im Umgebungsmodell liegt die Bank im Schatten"
     },
     "explanation": {
       "nightEstimate": "Im Modell waren {duration} direkte Sonne möglich.",

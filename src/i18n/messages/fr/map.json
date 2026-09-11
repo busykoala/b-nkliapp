@@ -31,6 +31,26 @@
       "place": "Lieu"
     }
   },
+  "list": {
+    "button": "Liste",
+    "eyebrow": "La carte en liste",
+    "title": "Bancs dans cette zone",
+    "close": "Fermer la liste des bancs",
+    "intro": "Les bancs visibles les plus proches du centre de la carte.",
+    "matches": "Pourquoi ils correspondent : {count, plural, one {# filtre actif} other {# filtres actifs}}",
+    "loading": "Préparation de la liste des bancs …",
+    "failed": "Impossible de charger la liste.",
+    "retry": "Réessayer",
+    "zoom": "Zoome davantage pour comparer utilement des bancs individuels.",
+    "zoomAction": "Zoomer davantage",
+    "empty": "Aucun banc n’est répertorié dans cette zone.",
+    "emptyFiltered": "Aucun banc connu ici ne possède toutes les caractéristiques choisies. Les données inconnues ne comptent pas comme résultat.",
+    "metres": "{distance} m",
+    "kilometres": "{distance} km",
+    "rating": "{rating}/5 · {count, plural, one {# avis} other {# avis}}",
+    "unverified": "pas encore confirmé",
+    "distanceNote": "Tri par distance à vol d’oiseau depuis le centre de la carte ; le trajet réel peut être plus long."
+  },
   "filters": {
     "open": "Ouvrir les filtres",
     "button": "Filtres",

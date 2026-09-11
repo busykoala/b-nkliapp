@@ -4,7 +4,7 @@ import { formatDate } from "@/i18n/date";
 import { useFormatter, useTranslations } from "next-intl";
 
 import type { MessageKey, Translator } from "@/i18n/types";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Flag, MessageCircleHeart, Star } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
@@ -44,6 +44,9 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
   const [, startTransition] = useTransition();
   const signedIn = Boolean(user) || authenticated;
   const refreshBench = onBenchChange ?? (() => router.refresh());
+  const refreshTimeSensitiveDetail = useEffectEvent(() => {
+    if (document.visibilityState !== "hidden") void refreshBench();
+  });
   const contribute = (mode: "all" | "rating" | "presence" = "all") => {
     setContributionMode(mode);
     if (signedIn) setContributeOpen(true);
@@ -62,6 +65,17 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
   useEffect(() => {
     if (created) detailRef.current?.querySelector(".bench-created-status")?.scrollIntoView({ block: "start" });
   }, [created]);
+  useEffect(() => {
+    const refresh = () => refreshTimeSensitiveDetail();
+    const timer = window.setInterval(refresh, 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [bench.id]);
   const poem = scenePoem(bench, t);
   const missingFields = bench.properties.filter((item) => /^(Unbekannt|Noch offen)$/i.test(item.value)).slice(0, 3).map((item) => item.key);
   return <div ref={detailRef} className="calm-detail pb-8">

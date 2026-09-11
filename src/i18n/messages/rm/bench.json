@@ -101,11 +101,16 @@
   },
   "horizon": {
     "label": "Orizont: {open} pertschient liber, {buildings} pertschient edifizis, {plants} pertschient vegetaziun",
+    "labelPartial": "Orizont: {measured} pertschient mesirà, {unknown} pertschient betg determinabel",
+    "labelInconsistent": "Las datas da l’orizont sa cruschan; la part libra na vegn betg calculada",
     "title": "Tge che caracterisescha l’orizont",
     "open": "liber",
+    "unknown": "nunenconuschent",
     "openView": "Vista libra",
     "buildings": "Edifizis",
-    "trees": "Plantas"
+    "trees": "Plantas",
+    "unknownRemainder": "Betg determinabel",
+    "inconsistent": "Las mesiraziuns sa cruschan. Mussar ina part libra fiss engianaivel."
   },
   "views": {
     "mountains": "Vista sin las muntognas",
@@ -124,6 +129,7 @@
     "estimatedSun": "Sulegl stimà",
     "directSun": "Sulegl direct",
     "today": "Glisch oz",
+    "calculatedFor": "Stimà per las {time} · actualisaziun automatica",
     "estimatedWindows": "Fanestras da sulegl stimadas",
     "sunWindows": "Fanestras da sulegl",
     "noSun": "Oz nagin sulegl direct calculà",
@@ -156,8 +162,8 @@
       "moon": "Glisch da la glina sur il lieu",
       "night": "Notg sur il lieu",
       "unknown": "La situaziun da glisch vegn anc explorada",
-      "sun": "Il banc è en il sulegl direct",
-      "shade": "Il banc è en la sumbriva"
+      "sun": "Sulegl direct è geometricamain pussaivel",
+      "shade": "En il model dals conturns è il banc en la sumbriva"
     },
     "explanation": {
       "nightEstimate": "Tenor il model eran {duration} sulegl direct pussaivlas.",

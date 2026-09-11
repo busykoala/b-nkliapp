@@ -101,11 +101,16 @@
   },
   "horizon": {
     "label": "Horizon : {open} pour cent dégagé, {buildings} pour cent de bâtiments, {plants} pour cent de végétation",
+    "labelPartial": "Horizon : {measured} pour cent mesuré, {unknown} pour cent indéterminé",
+    "labelInconsistent": "Les données d’horizon se chevauchent ; la part dégagée n’est pas calculée",
     "title": "Ce qui dessine l’horizon",
     "open": "dégagé",
+    "unknown": "inconnu",
     "openView": "Vue dégagée",
     "buildings": "Bâtiments",
-    "trees": "Arbres"
+    "trees": "Arbres",
+    "unknownRemainder": "Indéterminé",
+    "inconsistent": "Les mesures se chevauchent. Afficher une part dégagée serait trompeur."
   },
   "views": {
     "mountains": "Vue sur les montagnes",
@@ -124,6 +129,7 @@
     "estimatedSun": "Soleil estimé",
     "directSun": "Soleil direct",
     "today": "Lumière aujourd’hui",
+    "calculatedFor": "Estimé pour {time} · actualisation automatique",
     "estimatedWindows": "Périodes de soleil estimées",
     "sunWindows": "Périodes de soleil",
     "noSun": "Aucun soleil direct calculé aujourd’hui",
@@ -156,8 +162,8 @@
       "moon": "Clair de lune sur ce lieu",
       "night": "La nuit sur ce lieu",
       "unknown": "La lumière reste à explorer",
-      "sun": "Le banc est au soleil direct",
-      "shade": "Le banc est à l’ombre"
+      "sun": "Le soleil direct est géométriquement possible",
+      "shade": "Le modèle des alentours place le banc à l’ombre"
     },
     "explanation": {
       "nightEstimate": "Le modèle indiquait {duration} de soleil direct possible.",

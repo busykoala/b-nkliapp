@@ -33,3 +33,29 @@ it.each([DATA_RUNTIME.pipelineVersion, DATA_RUNTIME.profilePipelineVersion])(
     expect(readMapFeatures(query).some((feature) => feature.kind === "bench" && feature.id === "osm-node-101")).toBe(false);
   },
 );
+
+it("returns decision evidence for nearby list results only at a useful map scale", async () => {
+  const folder = mkdtempSync(join(tmpdir(), "benchly-map-list-"));
+  folders.push(folder);
+  vi.stubEnv("DATABASE_PATH", join(folder, "benchly.sqlite"));
+  vi.stubEnv("BENCHLY_SEED_DEMO", "true");
+  vi.stubEnv("BENCHLY_E2E_NOW", "2026-06-21T12:00:00Z");
+  vi.resetModules();
+  const { sqlite } = await import("@/db/client");
+  const { readMapBenchList } = await import("./service");
+  const bench = sqlite.prepare("SELECT latitude,longitude FROM benches WHERE id='osm-node-101'").get() as { latitude: number; longitude: number };
+  const bounds = { west: bench.longitude - .001, east: bench.longitude + .001, south: bench.latitude - .001, north: bench.latitude + .001 };
+  expect(readMapBenchList({ bounds, zoom: 12 })).toEqual({ items: [], zoomRequired: true });
+  const result = readMapBenchList({ bounds, zoom: 18 });
+  expect(result.zoomRequired).toBe(false);
+  expect(result.items[0]).toMatchObject({
+    id: "osm-node-101",
+    title: "Lindenhof, Zürich",
+    backrest: true,
+    wheelchair: true,
+    rating: null,
+    ratingCount: 0,
+    verificationStatus: "verified",
+  });
+  expect(result.items[0].distanceMeters).toBeLessThan(1);
+});

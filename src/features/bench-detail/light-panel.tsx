@@ -4,7 +4,7 @@ import { compassDirection } from "@/i18n/bench-labels";
 import type { ReactNode } from "react";
 import { ChevronDown, CloudSun, Moon, Sun } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
-import { DetailRows, ObstructionSketch, PanelHeading } from "./panel-ui";
+import { DetailRows, minuteClock, ObstructionSketch, PanelHeading } from "./panel-ui";
 
 export function LightPanel({ bench }: { bench: BenchDetail }) {
   const t = useTranslations();
@@ -13,6 +13,7 @@ export function LightPanel({ bench }: { bench: BenchDetail }) {
   const sunLabel = bench.sunConfidence === "niedrig" ? t("bench.light.estimatedSun") : t("bench.light.directSun");
   return <section className="detail-panel detail-panel-light">
     <PanelHeading eyebrow={t("bench.light.today")} title={currentLight(bench, t)}><p>{lightSentence(bench, t)}</p></PanelHeading>
+    <p className="calculation-freshness">{t("bench.light.calculatedFor", {time: minuteClock(bench.localMinutesNow)})}</p>
     <SunPath bench={bench} />
     <div className="light-windows is-primary">
       <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? t("bench.light.estimatedWindows") : t("bench.light.sunWindows")} windows={bench.sunWindows} empty={t("bench.light.noSun")} />

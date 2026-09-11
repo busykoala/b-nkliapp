@@ -1,6 +1,8 @@
 # Benchly vision evaluation
 
-benchly-100.jsonl contains 100 manually reviewed Swiss locations across all seven required scene classes. Every record keeps its open-source URL, provider, licence and reviewed image hash. Image bytes are not committed.
+benchly-100.jsonl contains 100 manually reviewed locations in Valais, Geneva and Bern across all seven required scene classes. It is a regression fixture, not evidence of nationwide or elevation-stratified performance. Every record keeps its open-source URL, provider, licence and reviewed image hash. Image bytes are not committed.
+
+Shared imagery and nearby coordinate groups stay in one partition. Roughly one third is reserved for held-out calibration so that the calibration partition can reach the 30-sample minimum; a model cannot pass the benchmark when calibration remains unavailable for any reported label.
 
 Run the validator and model benchmark with:
 

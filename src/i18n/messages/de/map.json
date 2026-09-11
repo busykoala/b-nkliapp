@@ -31,6 +31,26 @@
       "place": "Ort"
     }
   },
+  "list": {
+    "button": "Liste",
+    "eyebrow": "Karte als Liste",
+    "title": "Bänkli in diesem Ausschnitt",
+    "close": "Bänkliliste schliessen",
+    "intro": "Die nächsten sichtbaren Bänkli zur Kartenmitte.",
+    "matches": "Warum passend: {count, plural, one {# aktiver Filter} other {# aktive Filter}}",
+    "loading": "Bänkliliste wird zusammengestellt …",
+    "failed": "Die Liste konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "zoom": "Zoome näher heran, damit einzelne Bänkli sinnvoll vergleichbar werden.",
+    "zoomAction": "Näher heranzoomen",
+    "empty": "In diesem Ausschnitt sind keine Bänkli erfasst.",
+    "emptyFiltered": "Hier sind keine Bänkli mit allen gewählten Eigenschaften bekannt. Unbekannte Angaben werden nicht als Treffer gezählt.",
+    "metres": "{distance} m",
+    "kilometres": "{distance} km",
+    "rating": "{rating}/5 · {count, plural, one {# Bewertung} other {# Bewertungen}}",
+    "unverified": "noch unbestätigt",
+    "distanceNote": "Nach Luftlinie zur Kartenmitte sortiert; der tatsächliche Fussweg kann länger sein."
+  },
   "filters": {
     "open": "Filter öffnen",
     "button": "Filter",
