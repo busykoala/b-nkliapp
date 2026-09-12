@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
-import { addCoreArtLayers, addCoreMapLayers, clusterExpansionZoom, featureCollection, loadMapArt, selectedBenchFeature } from "./map-renderer";
+import { addCoreArtLayers, addCoreMapLayers, clusterExpansionZoom, featureCollection, loadMapArt, selectedAmenityFeature, selectedBenchFeature } from "./map-renderer";
 import type { BenchDetail, MapFeature } from "./types";
 
 describe("map rendering", () => {
@@ -26,6 +26,14 @@ describe("map rendering", () => {
     expect(selectedBenchFeature().features).toEqual([]);
     const bench = { longitude: 7.69, latitude: 46.69, sunnyNow: null, verificationStatus: "verified" } as BenchDetail;
     expect(selectedBenchFeature(bench).features[0].properties).toEqual({ sunnyNow: null, verificationStatus: "verified" });
+  });
+
+  it("renders an exact nearby facility marker in longitude/latitude order", () => {
+    expect(selectedAmenityFeature()).toEqual({type: "FeatureCollection", features: []});
+    expect(selectedAmenityFeature({latitude: 47.376, longitude: 8.541, marker: "WC"}).features[0]).toMatchObject({
+      geometry: {type: "Point", coordinates: [8.541, 47.376]},
+      properties: {marker: "WC"},
+    });
   });
 
   it("keeps 44px click targets and identical status colors for normal and selected benches", () => {

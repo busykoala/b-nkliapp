@@ -33,6 +33,17 @@
     "usernameTaken": "Quest num d’utilisader è gia occupà.",
     "registerFailed": "Il conto n’ha betg pudì vegnir creà.",
     "credentialsInvalid": "Num d’utilisader u pled-clav nunvalid.",
-    "welcomeBack": "Bel che ti es puspè qua!"
+    "welcomeBack": "Bel che ti es puspè qua!",
+    "invitationInvalid": "Questa colliaziun d’invit è nunvalaivla u scrudada. Dumonda ina nova."
+  },
+  "invitation": {
+    "eyebrow": "In plaz è anc liber",
+    "title": "{username} t’envida a la Bänkli App",
+    "copy": "Creescha in nov conto e scuvri ensemen lieus spezials per far pausa.",
+    "qualifier": "L’invit quinta uschespert che quest nov conto è creà. Contos existents na pon betg vegnir attribuids pli tard.",
+    "invalidTitle": "Quest invit n’è betg pli valaivel",
+    "invalidCopy": "La colliaziun secreta è scrudada u n’è betg vegnida copiada cumplettamain.",
+    "signedInTitle": "Ti es gia annunzià",
+    "signedInCopy": "Invits valan mo per novs contos. Tes conto existent resta senza midada."
   }
 }

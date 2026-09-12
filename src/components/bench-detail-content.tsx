@@ -6,7 +6,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import type { MessageKey, Translator } from "@/i18n/types";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Flag, MessageCircleHeart, Star } from "lucide-react";
+import { ArrowLeft, Flag, MessageCircleHeart, Navigation, Star } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
@@ -21,6 +21,8 @@ import { VerificationQuestion } from "@/features/bench-knowledge/verification-qu
 import { PhotoGallery } from "./photo-gallery";
 import { galleryImageUrl } from "@/features/bench-photos/media-source";
 import { BenchPlaceCommunity } from "./bench-place-community";
+import { useDialectMode } from "./dialect-switcher";
+import { localBenchVoice } from "@/lib/dialect";
 
 const correctionLabels: Record<string, MessageKey> = {
   properties: "community.correction.fields.properties",
@@ -30,7 +32,9 @@ const correctionLabels: Record<string, MessageKey> = {
   environment: "community.correction.fields.environment",
 };
 
-export function BenchDetailContent({ bench, user, onBenchChange, onJourney, created = false }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; created?: boolean }) {
+type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
+
+export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLocateAmenity, created = false }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; onLocateAmenity?: (amenity: NearbyAmenity) => void; created?: boolean }) {
   const t = useTranslations();
   const router = useRouter();
   const [community, setCommunity] = useState(false);
@@ -43,6 +47,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
   const accountDialog = useRef<HTMLDialogElement>(null);
   const [, startTransition] = useTransition();
   const signedIn = Boolean(user) || authenticated;
+  const dialectMode = useDialectMode();
   const refreshBench = onBenchChange ?? (() => router.refresh());
   const refreshTimeSensitiveDetail = useEffectEvent(() => {
     if (document.visibilityState !== "hidden") void refreshBench();
@@ -77,6 +82,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
     };
   }, [bench.id]);
   const poem = scenePoem(bench, t);
+  const localVoice = dialectMode === "off" ? null : localBenchVoice(bench, dialectMode);
   const missingFields = bench.properties.filter((item) => /^(Unbekannt|Noch offen)$/i.test(item.value)).slice(0, 3).map((item) => item.key);
   return <div ref={detailRef} className="calm-detail pb-8">
     {community ? <>
@@ -90,17 +96,22 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, crea
             : bench.verificationStatus === "unverified" && <p className="unverified-note">{t("bench.story.unverified")}</p>}
           <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2></div>
           <div className="calm-title-meta"><p>{placeLine(bench, t)}</p></div>
-          <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} />
+          <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} onLocateAmenity={onLocateAmenity} />
           <div className="bench-primary-actions">
-            {onJourney && <button className="journey-entry" onClick={onJourney}><span aria-hidden="true">↝</span>  {t("bench.story.directions")}</button>}
-            <button className="contribution-entry" onClick={() => contribute()}><MessageCircleHeart size={17} /> {signedIn ? t("bench.story.contribute") : t("bench.story.join")}</button>
-            <button className="contribution-entry" onClick={() => setCommunity(true)}>{t("bench.story.ratings")}</button>
+            {onJourney && <button className="journey-entry" onClick={onJourney}><Navigation size={18} />{t("bench.story.directions")}</button>}
+            <div className="bench-secondary-actions">
+              <button className="contribution-entry" onClick={() => contribute()}><MessageCircleHeart size={17} /> {signedIn ? t("bench.story.contribute") : t("bench.story.join")}</button>
+              <button className="contribution-entry" onClick={() => setCommunity(true)}><Star size={17} />{t("bench.story.ratings")}</button>
+            </div>
           </div>
         </header>
       </section>
       <div className="calm-story-body">
         {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>{t("bench.story.nextTitle")}</h3><p>{t("bench.story.nextDescription")}</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
-        <p className="scene-caption"><span>{poem.first}</span>{" "}<span>{poem.second}</span></p>
+        <div className={`scene-caption${localVoice ? " is-local-voice" : ""}`} lang={localVoice?.languageTag} aria-label={localVoice ? `${localVoice.regionLabel}. ${localVoice.first} ${localVoice.second}` : undefined}>
+          {localVoice && <small><span aria-hidden="true">◌</span>{localVoice.regionLabel} · {t("common.dialect.approximation")}</small>}
+          <p><span>{localVoice?.first ?? poem.first}</span>{" "}<span>{localVoice?.second ?? poem.second}</span></p>
+        </div>
         {signedIn && bench.knowledge?.question && <VerificationQuestion benchId={bench.id} question={bench.knowledge.question} onChanged={refreshBench} />}
         <BenchDetails bench={bench} signedIn={signedIn} onChanged={refreshBench} />
         <BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refreshBench} />

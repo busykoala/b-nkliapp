@@ -39,10 +39,12 @@ it("filters only recorded nearby facilities and keeps photo estimates out of fac
     const row = sqlite.prepare("SELECT row_id,latitude,longitude FROM benches WHERE id='osm-node-101'").get() as { row_id: number; latitude: number; longitude: number };
     const query = { bounds: { west: row.longitude-.0001, east: row.longitude+.0001, south: row.latitude-.0001, north: row.latitude+.0001 }, zoom: 18 };
     expect(readMapFeatures({...query, filters: {toiletsNearby: true}})).toHaveLength(0);
-    sqlite.prepare("INSERT INTO bench_amenities(bench_row_id,category,distance_meters,source,method_version,computed_at) VALUES(?,'toilets',250,'OpenStreetMap','nearby-amenities-2','2026-09-10')").run(row.row_id);
+    sqlite.prepare(`INSERT INTO environment_features(source,source_id,kind,center_latitude,center_longitude,min_latitude,max_latitude,min_longitude,max_longitude,raw_tags,imported_at)
+      VALUES('OpenStreetMap','node-toilet','toilets',?,?,?,?,?,?,'{}','2026-09-10')`).run(row.latitude + .001, row.longitude + .001, row.latitude + .001, row.latitude + .001, row.longitude + .001, row.longitude + .001);
+    sqlite.prepare("INSERT INTO bench_amenities(bench_row_id,category,nearest_source_id,distance_meters,source,method_version,computed_at) VALUES(?,'toilets','node-toilet',250,'OpenStreetMap','nearby-amenities-2','2026-09-10')").run(row.row_id);
     expect(readMapFeatures({...query, filters: {toiletsNearby: true}}).some((item) => item.id === "osm-node-101")).toBe(true);
     expect(readMapFeatures({...query, filters: {drinkingWaterNearby: true}})).toHaveLength(0);
-    expect(readBenchDetail("osm-node-101", null)?.knowledge?.amenities[0]).toMatchObject({distanceMeters: 250, distanceType: "straight_line"});
+    expect(readBenchDetail("osm-node-101", null)?.knowledge?.amenities[0]).toMatchObject({distanceMeters: 250, distanceType: "straight_line", latitude: row.latitude + .001, longitude: row.longitude + .001});
     sqlite.prepare("UPDATE bench_amenities SET distance_meters=250.1").run();
     expect(readMapFeatures({...query, filters: {toiletsNearby: true}})).toHaveLength(0);
     sqlite.prepare("UPDATE benches SET backrest=NULL WHERE row_id=?").run(row.row_id);

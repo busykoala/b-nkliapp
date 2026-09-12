@@ -756,4 +756,28 @@ export const migrations: Migration[] = [
     `,
   },
   ...knowledgeMigrations,
+  {
+    id: "0029_referral_invites",
+    sql: `
+      CREATE TABLE referral_invites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inviter_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        revoked_at TEXT
+      );
+      CREATE INDEX referral_invites_owner_idx ON referral_invites(inviter_user_id,created_at DESC);
+
+      CREATE TABLE referrals (
+        invite_id INTEGER NOT NULL REFERENCES referral_invites(id),
+        inviter_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        referred_user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(invite_id,referred_user_id),
+        CHECK(inviter_user_id <> referred_user_id)
+      );
+      CREATE INDEX referrals_inviter_idx ON referrals(inviter_user_id,created_at DESC);
+    `,
+  },
 ];

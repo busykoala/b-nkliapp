@@ -283,6 +283,7 @@ export function readMapBenchList(input: MapQuery): MapBenchListResult {
     backrest: row.backrest === null || row.backrest === undefined ? null : Boolean(row.backrest),
     wheelchair: row.wheelchair === null || row.wheelchair === undefined ? null : Boolean(row.wheelchair),
     sunnyNow,
+    viewType: mapViewType(parseArray<string>(row.view_labels)),
     rating: row.rating_average === null ? null : Number(row.rating_average.toFixed(1)),
     ratingCount: Number(row.rating_count ?? 0),
     verificationStatus: row.verification_status,

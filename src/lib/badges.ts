@@ -8,6 +8,7 @@ export const badgeCatalog = [
   { key: "verifizierli", art: "checker", metric: "confirmed", target: 5 },
   { key: "holzauge", art: "detective", metric: "removed", target: 3 },
   { key: "pausenpoet", art: "poet", metric: "rated", target: 5 },
+  { key: "baenkli-botschafter", art: "scout", metric: "referred", target: 3 },
   { key: "baenkli-buenzli", art: "expert", metric: "total", target: 25 },
   { key: "bankdirektor", art: "guru", metric: "total", target: 75 },
   { key: "sitzungspraesident", art: "legend", metric: "total", target: 200 },
@@ -24,6 +25,7 @@ export function getUserActivity(userId: number, database: Database.Database = sq
       (SELECT count(*) FROM bench_confirmations WHERE user_id=@userId) confirmed,
       (SELECT count(*) FROM bench_removal_confirmations WHERE user_id=@userId) removed,
       (SELECT count(*) FROM ratings WHERE user_id=@userId) rated,
+      (SELECT count(*) FROM referrals WHERE inviter_user_id=@userId) referred,
       (SELECT count(DISTINCT bench_row_id) FROM bench_metadata_edits WHERE user_id=@userId) edited
   `).get({ userId }) as Record<string, number>;
   const total = row.added + row.confirmed + row.removed + row.rated + row.edited;

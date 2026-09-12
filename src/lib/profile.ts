@@ -26,6 +26,7 @@ export type TrailProfile = {
     confirmed: number;
     removed: number;
     edited: number;
+    referred: number;
     corrected: number;
   };
   uniquePlaces: number;

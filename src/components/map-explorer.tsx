@@ -4,7 +4,7 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Accessibility, Armchair, CloudSun, Crosshair, Footprints, Info, List, SlidersHorizontal, Star, Sun, X } from "lucide-react";
+import { Accessibility, Armchair, ChevronRight, CloudSun, Crosshair, Footprints, Info, List, MapPin, MountainSnow, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -19,12 +19,14 @@ import { AddBenchDialog } from "./add-bench-dialog";
 import { AppMenu } from "./app-menu";
 import { AccountDialog } from "./account-controls";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/lib/watercolor-map";
-import { featureCollection, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/lib/map-renderer";
+import { featureCollection, selectedAmenityFeature, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/lib/map-renderer";
 
 const WalkPlanner = dynamic(() => import("./walks/walk-planner").then((m) => m.WalkPlanner), { ssr: false, loading: WalkLoading });
 const JourneyPlanner = dynamic(() => import("./journey/journey-planner").then((m) => m.JourneyPlanner), {
   ssr: false, loading: JourneyLoading,
 });
+
+type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
 
 function WalkLoading() {
   const t = useTranslations("map.loading");
@@ -63,6 +65,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [listError, setListError] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [bench, setBench] = useState<BenchDetail | null>(null);
+  const [facilityFocus, setFacilityFocus] = useState<{ amenity: NearbyAmenity; bench: BenchDetail } | null>(null);
   const [journeyOpen, setJourneyOpen] = useState(false);
   const [walkOpen, setWalkOpen] = useState(false);
   const [returnJourney, setReturnJourney] = useState<ReturnJourney | null>(null);
@@ -113,6 +116,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
 
   const selectBench = useCallback(async (id: string, focusOnMap = false) => {
     setJourneyOpen(false); setWalkOpen(false); setReturnJourney(null);
+    setFacilityFocus(null);
+    (mapRef.current?.getSource("selected-amenity") as GeoJSONSource | undefined)?.setData(selectedAmenityFeature());
     const sequence = ++detailSequence.current;
     setSelectedId(id); setDetailLoading(true); setDetailError(false); setBench(null);
     (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature());
@@ -136,6 +141,32 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     }
     if (sequence === detailSequence.current) setDetailLoading(false);
   }, []);
+
+  const locateAmenity = useCallback((amenity: NearbyAmenity) => {
+    if (!bench || amenity.latitude === null || amenity.longitude === null) return;
+    const selectedBench = bench;
+    detailSequence.current += 1;
+    setFacilityFocus({ amenity, bench: selectedBench });
+    setSelectedId(null);
+    setBench(null);
+    setDetailError(false);
+    (mapRef.current?.getSource("selected-amenity") as GeoJSONSource | undefined)?.setData(selectedAmenityFeature({
+      latitude: amenity.latitude,
+      longitude: amenity.longitude,
+      marker: amenity.category === "toilets" ? "WC" : amenity.category === "waste_basket" ? "♲" : "H2O",
+    }));
+    const map = mapRef.current;
+    if (map) map.fitBounds([
+      [Math.min(selectedBench.longitude, amenity.longitude), Math.min(selectedBench.latitude, amenity.latitude)],
+      [Math.max(selectedBench.longitude, amenity.longitude), Math.max(selectedBench.latitude, amenity.latitude)],
+    ], {padding: {top: 110, right: 55, bottom: 180, left: 55}, maxZoom: 19, duration: 650});
+  }, [bench]);
+
+  const closeAmenity = () => {
+    setFacilityFocus(null);
+    (mapRef.current?.getSource("selected-amenity") as GeoJSONSource | undefined)?.setData(selectedAmenityFeature());
+    (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature());
+  };
 
   const refreshSelectedBench = useCallback(async () => {
     if (!selectedId) return;
@@ -218,6 +249,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         maxZoom: 19,
         maxBounds: [[5.45, 45.55], [10.9, 48.05]],
         attributionControl: false,
+        maplibreLogo: false,
         locale: { "Map.Title": t("map.canvas.interactive"), "AttributionControl.ToggleAttribution": t("map.canvas.attribution") },
         style: MINIMAL_MAP_STYLE,
       });
@@ -502,7 +534,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
-      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && <div className="map-discovery-actions">
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">
         <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t("walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>
       </div>}
@@ -514,8 +546,9 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         {!listLoading && !listError && listResult.zoomRequired && <div className="bench-list-empty"><p>{t("map.list.zoom")}</p><button type="button" onClick={() => mapRef.current?.zoomTo(14, {duration: 450})}>{t("map.list.zoomAction")}</button></div>}
         {!listLoading && !listError && !listResult.zoomRequired && listResult.items.length === 0 && <p className="bench-list-empty">{t(activeFilterCount ? "map.list.emptyFiltered" : "map.list.empty")}</p>}
         {!listError && !listResult.zoomRequired && listResult.items.length > 0 && <ol>{listResult.items.map((item) => <li key={item.id}><button type="button" onClick={() => { closeList(); void selectBench(item.id, true); }}>
+          <span className={`bench-list-appeal is-${item.sunnyNow === true ? "sun" : item.sunnyNow === false ? "shade" : item.viewType ?? "plain"}`} aria-hidden="true">{item.sunnyNow === true ? <Sun size={18} /> : item.sunnyNow === false ? <CloudSun size={18} /> : item.viewType === "mountain" || item.viewType === "hill" ? <MountainSnow size={18} /> : item.viewType === "lake" ? <Waves size={18} /> : item.viewType === "open" ? <Telescope size={18} /> : <MapPin size={18} />}</span>
           <span className="bench-list-distance">{item.distanceMeters >= 1000 ? t("map.list.kilometres", {distance: format.number(item.distanceMeters / 1000, {maximumFractionDigits: 1})}) : t("map.list.metres", {distance: Math.round(item.distanceMeters)})}</span>
-          <strong>{item.title || t("common.values.bench")}</strong>
+          <strong>{item.title || t("common.values.bench")}</strong><ChevronRight className="bench-list-open" size={17} aria-hidden="true" />
           <span className="bench-list-evidence">
             {item.backrest === true && <small><Armchair size={14} />{t("bench.attributes.backrest")}</small>}
             {item.wheelchair === true && <small><Accessibility size={14} />{t("bench.attributes.wheelchair")}</small>}
@@ -529,7 +562,12 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {walkOpen && <WalkPlanner getMap={getJourneyMap} onClose={() => setWalkOpen(false)} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} />}
       {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
       {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
-      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} onLocateAmenity={locateAmenity} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {facilityFocus && <section className="amenity-map-callout" aria-label={t("bench.summary.mapLocation")}>
+        <MapPin size={20} /><div><small>{t("bench.summary.nearbyTitle")}</small><strong>{t(facilityFocus.amenity.category === "toilets" ? "knowledge.amenities.toilets" : facilityFocus.amenity.category === "waste_basket" ? "knowledge.amenities.waste_basket" : "knowledge.amenities.drinking_water")}</strong><span>{t("bench.summary.straightLine", {distance: Math.round(facilityFocus.amenity.distanceMeters!)})}</span></div>
+        <button type="button" onClick={() => { const id = facilityFocus.bench.id; closeAmenity(); void selectBench(id, true); }}>{t("bench.summary.returnToBench")}</button>
+        <button type="button" className="amenity-map-close" aria-label={t("common.actions.close")} onClick={closeAmenity}><X size={18} /></button>
+      </section>}
       {addStage === "details" && <AddBenchDialog coordinates={addCoordinates} onChoosePosition={() => setAddStage("position")} onClose={closeAdd} onExisting={(id) => { closeAdd(); void selectBench(id, true); }} onCreated={(id) => { closeAdd(); setCreatedBenchId(id); void selectBench(id, true); if (mapRef.current) void loadVisible(mapRef.current, filtersRef.current); }} />}
       <AccountDialog dialogRef={addAccount} intent={t("common.navigation.addBench")} onAuthenticated={() => { canAdd.current = true; const point = pendingAdd.current; pendingAdd.current = null; if (point) beginPlacement(point.latitude, point.longitude); }} />
     </main>

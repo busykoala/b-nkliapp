@@ -46,7 +46,18 @@ export function readBenchKnowledge(rowId: number, userId?: number): BenchKnowled
   }
   return { attributes, photoEstimates: estimates, question: chooseVerificationQuestion(questionAttributes, answered),
     geography: geo ? { municipalityName: text(geo.municipality_name), municipalityId: text(geo.municipality_id), cantonName: text(geo.canton_name), districtName: text(geo.district_name), localityName: text(geo.locality_name), confidence: String(geo.confidence), sourceVersion: String(geo.source_version) } : null,
-    amenities: (sqlite.prepare("SELECT * FROM bench_amenities WHERE bench_row_id=?").all(rowId) as Row[]).map((row) => ({ category: String(row.category), distanceMeters: number(row.distance_meters), sourceId: text(row.nearest_source_id), count100m: number(row.count_100m), count250m: number(row.count_250m), count500m: number(row.count_500m), distanceType: "straight_line" as const, computedAt: String(row.computed_at), sourceVersion: text(row.source_version), coverage: row.distance_meters == null ? "unknown" as const : "recorded" as const })),
+    amenities: (sqlite.prepare(`SELECT a.*,
+      (SELECT e.center_latitude FROM environment_features e
+        WHERE e.source=a.source AND e.source_id=a.nearest_source_id LIMIT 1) nearest_latitude,
+      (SELECT e.center_longitude FROM environment_features e
+        WHERE e.source=a.source AND e.source_id=a.nearest_source_id LIMIT 1) nearest_longitude
+      FROM bench_amenities a WHERE a.bench_row_id=?`).all(rowId) as Row[]).map((row) => ({
+        category: String(row.category), distanceMeters: number(row.distance_meters), sourceId: text(row.nearest_source_id),
+        latitude: number(row.nearest_latitude), longitude: number(row.nearest_longitude),
+        count100m: number(row.count_100m), count250m: number(row.count_250m), count500m: number(row.count_500m),
+        distanceType: "straight_line" as const, computedAt: String(row.computed_at), sourceVersion: text(row.source_version),
+        coverage: row.distance_meters == null ? "unknown" as const : "recorded" as const,
+      })),
     approach: approach ? { lengthMeters: number(approach.length_meters), maximumSlopePercent: number(approach.maximum_slope_percent), averageSlopePercent: number(approach.average_slope_percent), elevationGainMeters: number(approach.elevation_gain_meters), steps: boolean(approach.steps), surface: text(approach.surface), smoothness: text(approach.smoothness), widthMeters: number(approach.width_meters), stepFreePossible: boolean(approach.step_free_possible), confidence: String(approach.confidence), unmappedLastMeters: number(approach.distance_meters), terrainAmbiguity: approachEvidence.terrain_ambiguity ?? null, sampleCoverage: approachEvidence.dem_coverage ?? null, computedAt: String(approach.computed_at) } : null,
     noise: (sqlite.prepare("SELECT * FROM bench_noise_exposure WHERE bench_row_id=? ORDER BY mode,period").all(rowId) as Row[]).map((row) => ({ mode: row.mode as "road" | "rail", period: row.period as "day" | "night", value: number(row.value), unit: String(row.unit), datasetVersion: String(row.dataset_version) })),
     completeness: (sqlite.prepare("SELECT * FROM bench_completeness WHERE bench_row_id=? ORDER BY category").all(rowId) as Row[]).map((row) => ({ category: String(row.category), known: Number(row.known_count), total: Number(row.total_count), uncertain: Number(row.uncertain_count), missing: JSON.parse(String(row.missing_json)) })),

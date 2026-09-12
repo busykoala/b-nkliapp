@@ -3,6 +3,14 @@
     "label": "Sprache",
     "failed": "Die Sprache konnte nicht geändert werden. Bitte erneut versuchen."
   },
+  "dialect": {
+    "label": "Ortsstimme",
+    "off": "Standard",
+    "regional": "Regional",
+    "playful": "Frech",
+    "hint": "Färbt nur die kleine Platzgeschichte – nicht die Bedienelemente.",
+    "approximation": "regional angelehnt"
+  },
   "metadata": {
     "title": "Bänkli App – Schweizer Sitzbänke",
     "description": "Finde Schweizer Sitzbänke mit Sonne, Aussicht und Community-Bewertungen."

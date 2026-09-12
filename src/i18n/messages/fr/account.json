@@ -33,6 +33,17 @@
     "usernameTaken": "Ce nom d’utilisateur est déjà pris.",
     "registerFailed": "Le compte n’a pas pu être créé.",
     "credentialsInvalid": "Le nom d’utilisateur ou le mot de passe est incorrect.",
-    "welcomeBack": "Content de te revoir !"
+    "welcomeBack": "Content de te revoir !",
+    "invitationInvalid": "Ce lien d’invitation est invalide ou expiré. Demande un nouveau lien."
+  },
+  "invitation": {
+    "eyebrow": "Une place est encore libre",
+    "title": "{username} t’invite sur Bänkli App",
+    "copy": "Crée un nouveau compte et découvrez ensemble des lieux de pause particuliers.",
+    "qualifier": "L’invitation est comptée dès la création de ce nouveau compte. Un compte existant ne peut pas être rattaché après coup.",
+    "invalidTitle": "Cette invitation n’est plus valable",
+    "invalidCopy": "Le lien secret a expiré ou n’a pas été copié entièrement.",
+    "signedInTitle": "Tu es déjà connecté·e",
+    "signedInCopy": "Les invitations ne valent que pour les nouveaux comptes. Ton compte actuel reste inchangé."
   }
 }

@@ -35,6 +35,23 @@
     "seasons": "Jahreszeiten",
     "year": "Dein Jahr draussen"
   },
+  "referrals": {
+    "eyebrow": "Gemeinsam losziehen",
+    "title": "Lade Menschen auf die Bank ein",
+    "copy": "Dein geheimer Link gilt 30 Tage. Gezählt wird nur ein neues Konto, das direkt über diesen Link erstellt wird.",
+    "count": "{count, plural, one {eingeladenes Konto} other {eingeladene Konten}}",
+    "remaining": "Noch {count, plural, one {eine Einladung} other {# Einladungen}} bis zum Abzeichen.",
+    "earned": "Das Botschafter-Abzeichen gehört dir.",
+    "create": "Geheimen Einladungslink erstellen",
+    "creating": "Link wird erstellt …",
+    "newLink": "Neuen geheimen Link erstellen",
+    "secretLabel": "Dein geheimer Link",
+    "copyLink": "Kopieren",
+    "copied": "Kopiert",
+    "expires": "30 Tage gültig · teile ihn nur mit Menschen, die du einladen möchtest.",
+    "created": "Einladungslink erstellt.",
+    "failed": "Der Einladungslink konnte nicht erstellt werden."
+  },
   "badges": {
     "title": "Abzeichenbuch",
     "collected": "{count, plural, one {Eine Erinnerung gesammelt} other {# Erinnerungen gesammelt}}",
@@ -66,6 +83,10 @@
       "pausenpoet": {
         "name": "Pausenpoet:in",
         "hint": "5 Bewertungen geschrieben"
+      },
+      "baenkli-botschafter": {
+        "name": "Bänkli-Botschafter:in",
+        "hint": "3 Menschen mit neuem Konto eingeladen"
       },
       "baenkli-buenzli": {
         "name": "Bänkli-Kenner:in",

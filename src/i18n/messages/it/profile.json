@@ -35,6 +35,23 @@
     "seasons": "Stagioni",
     "year": "Il tuo anno all’aperto"
   },
+  "referrals": {
+    "eyebrow": "Partire insieme",
+    "title": "Invita qualcuno sulla panchina",
+    "copy": "Il tuo link segreto vale 30 giorni. Conta solo un nuovo account creato direttamente tramite il link.",
+    "count": "{count, plural, one {account invitato} other {account invitati}}",
+    "remaining": "Ancora {count, plural, one {un invito} other {# inviti}} al distintivo.",
+    "earned": "Il distintivo da ambasciatore è tuo.",
+    "create": "Crea un link d’invito segreto",
+    "creating": "Creazione del link…",
+    "newLink": "Crea un nuovo link segreto",
+    "secretLabel": "Il tuo link segreto",
+    "copyLink": "Copia",
+    "copied": "Copiato",
+    "expires": "Valido 30 giorni · condividilo solo con chi vuoi invitare.",
+    "created": "Link d’invito creato.",
+    "failed": "Impossibile creare il link d’invito."
+  },
   "badges": {
     "title": "Album dei distintivi",
     "collected": "{count, plural, one {Un ricordo raccolto} other {# ricordi raccolti}}",
@@ -66,6 +83,10 @@
       "pausenpoet": {
         "name": "Poeta delle pause",
         "hint": "5 recensioni scritte"
+      },
+      "baenkli-botschafter": {
+        "name": "Ambasciatore della panchina",
+        "hint": "3 persone invitate con un nuovo account"
       },
       "baenkli-buenzli": {
         "name": "Conoscitore di panchine",

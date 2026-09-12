@@ -33,6 +33,17 @@
     "usernameTaken": "Dieser Benutzername ist schon vergeben.",
     "registerFailed": "Konto konnte nicht erstellt werden.",
     "credentialsInvalid": "Benutzername oder Passwort stimmt nicht.",
-    "welcomeBack": "Schön, bist du wieder da!"
+    "welcomeBack": "Schön, bist du wieder da!",
+    "invitationInvalid": "Dieser Einladungslink ist ungültig oder abgelaufen. Bitte lass dir einen neuen schicken."
+  },
+  "invitation": {
+    "eyebrow": "Eine Bank ist noch frei",
+    "title": "{username} lädt dich zur Bänkli App ein",
+    "copy": "Erstelle ein neues Konto und entdeckt gemeinsam besondere Pausenplätze.",
+    "qualifier": "Die Einladung zählt, sobald dieses neue Konto erstellt ist. Bestehende Konten können nicht nachträglich zugeordnet werden.",
+    "invalidTitle": "Diese Einladung ist nicht mehr gültig",
+    "invalidCopy": "Der geheime Link ist abgelaufen oder wurde nicht vollständig kopiert.",
+    "signedInTitle": "Du bist bereits angemeldet",
+    "signedInCopy": "Einladungen gelten nur für neue Konten. Dein bestehendes Konto bleibt unverändert."
   }
 }

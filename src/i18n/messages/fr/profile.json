@@ -35,6 +35,23 @@
     "seasons": "Saisons",
     "year": "Ton année dehors"
   },
+  "referrals": {
+    "eyebrow": "Partir ensemble",
+    "title": "Invite du monde sur le banc",
+    "copy": "Ton lien secret reste valable 30 jours. Seul un nouveau compte créé directement par ce lien est compté.",
+    "count": "{count, plural, one {compte invité} other {comptes invités}}",
+    "remaining": "Encore {count, plural, one {une invitation} other {# invitations}} avant l’insigne.",
+    "earned": "L’insigne d’ambassadeur est à toi.",
+    "create": "Créer un lien d’invitation secret",
+    "creating": "Création du lien…",
+    "newLink": "Créer un nouveau lien secret",
+    "secretLabel": "Ton lien secret",
+    "copyLink": "Copier",
+    "copied": "Copié",
+    "expires": "Valable 30 jours · partage-le uniquement avec les personnes que tu souhaites inviter.",
+    "created": "Lien d’invitation créé.",
+    "failed": "Impossible de créer le lien d’invitation."
+  },
   "badges": {
     "title": "Carnet d’insignes",
     "collected": "{count, plural, one {Un souvenir recueilli} other {# souvenirs recueillis}}",
@@ -66,6 +83,10 @@
       "pausenpoet": {
         "name": "Poète des pauses",
         "hint": "5 avis rédigés"
+      },
+      "baenkli-botschafter": {
+        "name": "Ambassadeur·rice des bancs",
+        "hint": "3 personnes invitées avec un nouveau compte"
       },
       "baenkli-buenzli": {
         "name": "Connaisseur·se des bancs",

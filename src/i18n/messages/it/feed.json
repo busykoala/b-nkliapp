@@ -23,6 +23,12 @@
     "care": "gesti di cura"
   },
   "stream": {
+    "period": {
+      "today": "Oggi",
+      "week": "Questa settimana",
+      "earlier": "Un po’ prima"
+    },
+    "activityCount": "{count, plural, one {# segno} other {# segni}}",
     "loaded": "{count, plural, one {Un altro contributo caricato.} other {# altri contributi caricati.}}",
     "failed": "Le novità si prendono una pausa. Riprova.",
     "openBench": "Apri {name}",

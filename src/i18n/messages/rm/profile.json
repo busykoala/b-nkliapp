@@ -35,6 +35,23 @@
     "seasons": "Stagiuns",
     "year": "Tes onn en il liber"
   },
+  "referrals": {
+    "eyebrow": "Partir ensemen",
+    "title": "Envida persunas sin il banc",
+    "copy": "Tia colliaziun secreta vala 30 dis. Mo in nov conto creà directamain cun questa colliaziun vegn quintà.",
+    "count": "{count, plural, one {conto envidà} other {contos envidads}}",
+    "remaining": "Anc {count, plural, one {in invit} other {# invits}} fin a l’insaina.",
+    "earned": "L’insaina d’ambassadur è tia.",
+    "create": "Crear ina colliaziun d’invit secreta",
+    "creating": "La colliaziun vegn creada …",
+    "newLink": "Crear ina nova colliaziun secreta",
+    "secretLabel": "Tia colliaziun secreta",
+    "copyLink": "Copiar",
+    "copied": "Copià",
+    "expires": "Vala 30 dis · cundivida ella mo cun persunas che ti vuls envidar.",
+    "created": "Colliaziun d’invit creada.",
+    "failed": "La colliaziun d’invit n’ha betg pudì vegnir creada."
+  },
   "badges": {
     "title": "Cudesch d’insignias",
     "collected": "{count, plural, one {Ina regurdientscha rimnada} other {# regurdientschas rimnadas}}",
@@ -66,6 +83,10 @@
       "pausenpoet": {
         "name": "Poet da pausas",
         "hint": "5 valitaziuns scrittas"
+      },
+      "baenkli-botschafter": {
+        "name": "Ambassadur:a dals bancs",
+        "hint": "3 persunas envidadas cun in nov conto"
       },
       "baenkli-buenzli": {
         "name": "Enconuschider da bancs",

@@ -17,7 +17,7 @@ export type ActivityFeed = FeedPage & { weeklyBench: WeeklyBench | null };
 
 export function groupFeed(entries: FeedEntry[], now = Date.now()) {
   const day = 86_400_000;
-  const groups = [
+  const groups: Array<{key: "today" | "week" | "earlier"; label: string; entries: FeedEntry[]}> = [
     { key: "today", label: "Heute", entries: [] as FeedEntry[] },
     { key: "week", label: "Diese Woche", entries: [] as FeedEntry[] },
     { key: "earlier", label: "Etwas früher", entries: [] as FeedEntry[] },

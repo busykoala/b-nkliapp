@@ -3,6 +3,14 @@
     "label": "Langue",
     "failed": "Impossible de changer la langue. Réessaie."
   },
+  "dialect": {
+    "label": "Voix locale",
+    "off": "Standard",
+    "regional": "Régionale",
+    "playful": "Espiègle",
+    "hint": "Colore uniquement la petite histoire du lieu, pas les commandes.",
+    "approximation": "inspiration régionale"
+  },
   "metadata": {
     "title": "Bänkli App – Les bancs de Suisse",
     "description": "Trouve des bancs en Suisse avec du soleil, une belle vue et les avis de la communauté."

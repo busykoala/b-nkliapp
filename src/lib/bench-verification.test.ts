@@ -60,6 +60,16 @@ describe("community verification", () => {
     expect(badge).toMatchObject({ earned: true, progress: 1 });
     expect((database.prepare("SELECT count(*) count FROM user_badges WHERE user_id=1").get() as { count: number }).count).toBe(1);
   });
+
+  it("awards the ambassador badge after three distinct invited accounts", () => {
+    const invite = database.prepare("INSERT INTO referral_invites(inviter_user_id,token_hash,created_at,expires_at) VALUES(?,?,?,?)")
+      .run(1, "secret-hash", "2026-01-01", "2027-01-01");
+    const addReferral = database.prepare("INSERT INTO referrals(invite_id,inviter_user_id,referred_user_id,created_at) VALUES(?,?,?,?)");
+    for (const userId of [2, 3, 4]) addReferral.run(invite.lastInsertRowid, 1, userId, "2026-01-02");
+    refreshUserBadges(1, database);
+    expect(getUserBadges(1, database).find((item) => item.key === "baenkli-botschafter"))
+      .toMatchObject({earned: true, progress: 3, target: 3});
+  });
 });
 
 describe("verification threshold", () => {

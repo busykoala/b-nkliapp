@@ -3,6 +3,14 @@
     "label": "Lingua",
     "failed": "Impossibile cambiare lingua. Riprova."
   },
+  "dialect": {
+    "label": "Voce locale",
+    "off": "Standard",
+    "regional": "Regionale",
+    "playful": "Sfacciata",
+    "hint": "Colora solo la piccola storia del luogo, non i comandi.",
+    "approximation": "ispirazione regionale"
+  },
   "metadata": {
     "title": "Bänkli App – Le panchine della Svizzera",
     "description": "Trova panchine in Svizzera con sole, panorama e recensioni della comunità."

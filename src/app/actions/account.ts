@@ -7,6 +7,8 @@ import { sqlite } from "@/db/client";
 import {
   createUserSession, destroyUserSession, generateUserPasswordHash, normalizeUsername, verifyUserPassword,
 } from "@/lib/security";
+import { getReferralInvite, recordReferral } from "@/features/referrals/service";
+import { refreshUserBadges } from "@/lib/badges";
 import type { Translator } from "@/i18n/types";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
@@ -26,13 +28,26 @@ export async function register(_previous: ActionResult | null, formData: FormDat
   const parsed = credentialsSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return invalid(parsed.error, t);
   const usernameKey = normalizeUsername(parsed.data.username);
+  const referralToken = String(formData.get("referralToken") ?? "");
+  const invite = referralToken ? getReferralInvite(referralToken) : null;
+  if (referralToken && !invite) return { ok: false, message: t("account.result.invitationInvalid") };
   try {
-    const result = sqlite.prepare("INSERT INTO users(username,username_key,password_hash,created_at) VALUES(?,?,?,?)")
-      .run(parsed.data.username.trim(), usernameKey, generateUserPasswordHash(parsed.data.password), new Date().toISOString());
-    await createUserSession(Number(result.lastInsertRowid));
+    const now = new Date();
+    const userId = sqlite.transaction(() => {
+      const currentInvite = referralToken ? getReferralInvite(referralToken, sqlite, now) : null;
+      if (referralToken && !currentInvite) throw new Error("REFERRAL_INVALID");
+      const result = sqlite.prepare("INSERT INTO users(username,username_key,password_hash,created_at) VALUES(?,?,?,?)")
+        .run(parsed.data.username.trim(), usernameKey, generateUserPasswordHash(parsed.data.password), now.toISOString());
+      const createdUserId = Number(result.lastInsertRowid);
+      if (currentInvite) recordReferral(currentInvite, createdUserId, sqlite, now);
+      return createdUserId;
+    })();
+    if (invite) refreshUserBadges(invite.inviterUserId);
+    await createUserSession(userId);
     revalidatePath("/", "layout");
     return { ok: true, message: t("account.result.welcome") };
   } catch (error) {
+    if (error instanceof Error && error.message.includes("REFERRAL_INVALID")) return { ok: false, message: t("account.result.invitationInvalid") };
     if (error instanceof Error && error.message.includes("UNIQUE")) return { ok: false, message: t("account.result.usernameTaken") };
     return { ok: false, message: t("account.result.registerFailed") };
   }

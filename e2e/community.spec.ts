@@ -61,9 +61,10 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await expect(filters.getByRole("link", { name: "Lieblingsplätze" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("Aus deinen Lieblingsorten", { exact: true })).toBeVisible();
   await page.locator(".feed-bench-group summary").first().click();
-  await expect(page.getByText(moment, { exact: true })).toBeVisible();
+  await expect(page.locator(".feed-bench-group details q").filter({ hasText: moment })).toBeVisible();
   await filters.getByRole("link", { name: "Alle Beiträge" }).click();
   await expect(page.getByText("Was sich an Bänkli bewegt", { exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("community-feed-varied.png"), fullPage: true });
 });
 
 test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {

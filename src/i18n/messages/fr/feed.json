@@ -23,6 +23,12 @@
     "care": "gestes de soin"
   },
   "stream": {
+    "period": {
+      "today": "Aujourd’hui",
+      "week": "Cette semaine",
+      "earlier": "Un peu plus tôt"
+    },
+    "activityCount": "{count, plural, one {# signe} other {# signes}}",
     "loaded": "{count, plural, one {Une contribution supplémentaire chargée.} other {# contributions supplémentaires chargées.}}",
     "failed": "Les actualités font une pause. Réessaie.",
     "openBench": "Ouvrir {name}",

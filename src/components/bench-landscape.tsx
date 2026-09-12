@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { CloudSun, Moon, Sun, type LucideIcon } from "lucide-react";
 import { useId, type CSSProperties, type ReactNode } from "react";
 import type { BenchDetail } from "@/lib/types";
 import { benchSceneComposition, benchSceneLayers, benchSpriteArt, seasonOverlayArt } from "@/lib/bench-scene-art";
@@ -61,8 +62,11 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
     bench.inForest ? t("bench.landscape.forest") : null,
     backrest ? t("bench.landscape.backrest") : t("bench.landscape.noBackrest")].filter(Boolean).join(", ");
   const style = { "--scene-sun-x": `${skyX / 6.4}%` } as CSSProperties;
+  const lightState = night ? "night" : bench.sunnyNow === null ? "unknown" : bench.sunnyNow ? "sunny" : "shade";
+  const LightIcon: LucideIcon = night ? Moon : bench.sunnyNow ? Sun : CloudSun;
+  const lightLabel = night ? t("bench.summary.night") : bench.sunnyNow === null ? t("bench.details.unknownLight") : t(bench.sunnyNow ? "bench.details.sunEstimate" : "bench.details.shadeEstimate");
 
-  return <figure className={`bench-landscape painted-scene scene-${sceneKind} relief-${scene.relief} water-${scene.water} phase-${bench.dayPhase} season-${bench.season} ${bench.sunnyNow ? "light-sunny" : "light-shade"} ${raining ? "is-raining" : ""} ${windy ? "is-windy" : ""} ${scene.snowy ? "has-snow" : ""}`} style={style} aria-label={aria}>
+  return <figure className={`bench-landscape painted-scene scene-${sceneKind} relief-${scene.relief} water-${scene.water} phase-${bench.dayPhase} season-${bench.season} light-${lightState} ${raining ? "is-raining" : ""} ${windy ? "is-windy" : ""} ${scene.snowy ? "has-snow" : ""}`} style={style} aria-label={aria}>
     <svg viewBox="0 0 640 480" role="img" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
       <defs>
         <linearGradient id={`${id}-sky`} x2="0" y2="1"><stop offset="0" stopColor="white" /><stop offset=".62" stopColor="white" /><stop offset="1" stopColor="black" /></linearGradient>
@@ -92,7 +96,9 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
           <stop offset="1" stopColor="white" />
         </linearGradient>
         <mask id={`${id}-place-side-mask`}><rect width="640" height="480" fill={`url(#${id}-place-side)`} /></mask>
-        <radialGradient id={`${id}-light`}><stop stopColor={night ? "#a8bfd0" : "#fff0b6"} stopOpacity=".32" /><stop offset="1" stopColor="#fff0b6" stopOpacity="0" /></radialGradient>
+        <radialGradient id={`${id}-light`}><stop stopColor={night ? "#a8bfd0" : "#fff0a6"} stopOpacity={night ? ".32" : ".72"} /><stop offset="1" stopColor="#fff0b6" stopOpacity="0" /></radialGradient>
+        <linearGradient id={`${id}-sunbeam`} x1={skyX} y1={skyY} x2={placement.ground.x} y2={placement.ground.y} gradientUnits="userSpaceOnUse"><stop stopColor="#fff4b8" stopOpacity=".04" /><stop offset="1" stopColor="#ffd86f" stopOpacity=".42" /></linearGradient>
+        <linearGradient id={`${id}-shade`} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#2f5d55" stopOpacity=".36" /><stop offset="1" stopColor="#7f9e91" stopOpacity=".09" /></linearGradient>
         <filter id={`${id}-ground`} x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="5" /></filter>
         <filter id={`${id}-contact`} x="-50%" y="-150%" width="200%" height="400%"><feGaussianBlur stdDeviation="1.2" /></filter>
         <filter id={`${id}-bench-pigment`} filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" x="-140" y="-93" width="280" height="192" colorInterpolationFilters="sRGB">
@@ -123,7 +129,18 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
       {(bench.season === "autumn" || bench.season === "spring") && <image className="painting-season" href={seasonOverlayArt(bench.season)} x="0" y="200" width="640" height="280" preserveAspectRatio="none" />}
       {snowCover > 5 && snowCover < 25 && <image className="painting-snow-ground" mask={`url(#${id}-snow-mask)`} href={seasonOverlayArt("winter")} width="640" height="480" opacity={Math.min(.3, snowCover / 120)} preserveAspectRatio="none" />}
       <rect className="painting-atmosphere" width="640" height="480" />
-      {bench.sunnyNow && <ellipse cx={skyX} cy="350" rx="280" ry="220" fill={`url(#${id}-light)`} />}
+      {bench.sunnyNow && !night && <g className="painting-direct-sun" data-light-layer="sun">
+        <path d={`M${skyX - 26} ${skyY + 18}L${placement.ground.x - 150} ${placement.ground.y + 20}L${placement.ground.x + 155} ${placement.ground.y + 8}L${skyX + 30} ${skyY + 18}Z`} fill={`url(#${id}-sunbeam)`} />
+        <ellipse cx={placement.ground.x} cy={placement.ground.y + 4} rx="190" ry="72" fill={`url(#${id}-light)`} />
+      </g>}
+      {bench.sunnyNow === false && !night && <g className={`painting-cast-shade shade-${bench.shadeCause}`} data-light-layer="shade">
+        {bench.shadeCause === "vegetation" ? <>
+          <path d={`M0 155Q110 195 200 168T380 192 535 155T640 176V480H0Z`} fill={`url(#${id}-shade)`} />
+          {[70, 155, 250, 355, 468, 570].map((cx, index) => <ellipse key={cx} cx={cx} cy={330 + index % 2 * 42} rx={48 + index % 3 * 11} ry="24" />)}
+        </> : bench.shadeCause === "gebäude" || bench.shadeCause === "überdacht" ?
+          <path d={`M0 205L${Math.max(150, placement.ground.x - 115)} 250L${Math.min(640, placement.ground.x + 210)} 480H0Z`} fill={`url(#${id}-shade)`} /> :
+          <path d={`M0 260Q180 215 330 270T640 235V480H0Z`} fill={`url(#${id}-shade)`} />}
+      </g>}
       <g transform={placement.transform} className="painting-grounding" aria-hidden="true">
         <ellipse className="painting-contact-shadow" cx={placement.centre.x} cy={placement.centre.y} rx="98" ry="17" transform={`rotate(10 ${placement.centre.x} ${placement.centre.y})`} filter={`url(#${id}-ground)`} />
         {placement.contacts.map((point, index) => <ellipse key={index} className="painting-foot-shadow" cx={point.x} cy={point.y} rx={placement.contactRadius} ry="2.2" filter={`url(#${id}-contact)`} />)}
@@ -144,6 +161,7 @@ export function BenchLandscape({ bench, children }: { bench: BenchDetail; childr
       {snowing && <g className="painting-snowfall">{Array.from({ length: 32 }, (_, i) => <circle key={i} cx={20 + (i * 113) % 600} cy={20 + (i * 73) % 420} r={.7 + (i % 3) * .45} />)}</g>}
       {windy && <g className="painting-wind" aria-hidden="true"><path d="M68 252q68-24 139 3t144-2" /><path d="M383 166q74-19 151 8" /><path d="M437 316q49-17 101 0" /></g>}
     </svg>
+    <span className={`landscape-light-badge is-${lightState}`}><LightIcon size={15} aria-hidden="true" />{lightLabel}</span>
     {weather && <span className="sr-only">{t("bench.landscape.weather", {temperature: Math.round(weather.temperatureC), precipitation: t(`bench.weather.precipitation.${weather.precipitationType}`)})}</span>}
     {night && <span className="sr-only">{t("bench.landscape.moon", {percent: Math.round(bench.moonIllumination * 100)})}</span>}
     {children}

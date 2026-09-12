@@ -23,6 +23,12 @@
     "care": "segns da tgira"
   },
   "stream": {
+    "period": {
+      "today": "Oz",
+      "week": "Questa emna",
+      "earlier": "In pau pli baud"
+    },
+    "activityCount": "{count, plural, one {# segn} other {# segns}}",
     "loaded": "{count, plural, one {In’ulteriura contribuziun chargiada.} other {# ulteriuras contribuziuns chargiadas.}}",
     "failed": "Las novitads fan gist pausa. Emprova anc ina giada.",
     "openBench": "Avrir {name}",

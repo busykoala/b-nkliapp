@@ -46,11 +46,11 @@ export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: Ben
   };
   const careEntries = Object.entries(bench.care.counts).filter((entry): entry is [BenchCareKind, number] => Number(entry[1]) > 0);
   return <section className="bench-place-community" aria-labelledby="bench-moments-heading">
-    <header><div><small>{t("community.place.eyebrow")}</small><h3 id="bench-moments-heading">{t("community.place.title")}</h3></div><button type="button" onClick={share}><Share2 size={16} /> {t("community.place.share")}</button></header>
+    <header><div><small>{t("community.place.eyebrow")}</small><h3 id="bench-moments-heading">{t("community.place.title")}</h3></div><button type="button" aria-label={t("community.place.share")} onClick={share}><Share2 size={17} /><span>{t("community.place.shareShort")}</span></button></header>
     {bench.operatorName && <p className="bench-caretaker"><Building2 size={17} /><span><small>{t("community.place.operator")}</small><strong>{bench.operatorName}</strong></span></p>}
     {signedIn && <div className="follow-place-actions">
-      <button type="button" disabled={pending} aria-pressed={followingBench} onClick={() => follow("bench")}><Bookmark size={16} />{followingBench ? t("community.place.favourite") : t("community.place.save")}</button>
-      {bench.locationName && <button type="button" disabled={pending} aria-pressed={followingPlace} onClick={() => follow("place")}><MapPin size={16} />{followingPlace ? t("community.place.following", { place: bench.locationName }) : t("community.place.follow", { place: bench.locationName })}</button>}
+      <button type="button" disabled={pending} aria-pressed={followingBench} onClick={() => follow("bench")}><Bookmark size={17} /><span><strong>{followingBench ? t("community.place.favourite") : t("community.place.save")}</strong><small>{t("community.place.saveHint")}</small></span></button>
+      {bench.locationName && <button type="button" disabled={pending} aria-pressed={followingPlace} onClick={() => follow("place")}><MapPin size={17} /><span><strong>{followingPlace ? t("community.place.followingPlace") : t("community.place.followPlace")}</strong><small>{bench.locationName}</small></span></button>}
       {followingBench && <Link className="ui-button" href="/lieblingsplaetze">{t("community.place.favourites")}</Link>}
     </div>}
     {careEntries.length > 0 && <div className="care-summary"><HeartHandshake size={17} /><p>{careEntries.map(([kind, count]) => `${count}× ${t(`community.care.events.${kind}`)}`).join(" · ")} <small>{t("community.place.recent")}</small></p></div>}

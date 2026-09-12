@@ -91,6 +91,7 @@ export type MapBenchListItem = {
   backrest: boolean | null;
   wheelchair: boolean | null;
   sunnyNow: boolean | null;
+  viewType: BenchViewType | null;
   rating: number | null;
   ratingCount: number;
   verificationStatus: "verified" | "unverified";

@@ -11,6 +11,7 @@ import { AvatarCustomizer } from "@/components/avatar-customizer";
 import { BadgeIllustration, type BadgeArt } from "@/components/badge-illustration";
 import { TrailAvatar } from "@/components/trail-avatar";
 import { LandscapeStamp, SeasonStamp } from "@/components/profile-stamps";
+import { ReferralCard } from "@/components/referral-card";
 
 type Badge = { key: BadgeKey; art: string; target: number; progress: number; earned: boolean };
 
@@ -45,6 +46,7 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
         <a href="#profile-activity">{t("profile.activity.eyebrow")}</a>
         <a href="#profile-trail">{t("profile.trail.eyebrow")}</a>
         <a href="#profile-collection">{t("profile.collection.landscapes")}</a>
+        {own && <a href="#profile-invite">{t("profile.referrals.eyebrow")}</a>}
       </nav>
       {own && <Link href="/lieblingsplaetze" className="ui-button profile-favourites"><Bookmark size={18} /> {t("favourites.title")}</Link>}
       <section id="profile-activity" className="profile-section profile-numbers">
@@ -87,6 +89,8 @@ export function ProfileJournal({ profile, badges, viewer, own }: { profile: Trai
         <header><div><small>{t("profile.collection.seasons")}</small><h2>{t("profile.collection.year")}</h2></div></header>
         <div className="season-collection">{profile.seasons.map((season) => <SeasonStamp key={season.key} season={season.key} name={t(`bench.light.seasons.${season.key}`)} found={season.found} />)}</div>
       </section>
+
+      {own && <ReferralCard count={profile.activity.referred} />}
 
       <section className="profile-section badge-book">
         <header><div><small>{t("profile.badges.title")}</small><h2>{earnedBadges.length ? t("profile.badges.collected", {count: earnedBadges.length}) : t("profile.badges.firstPage")}</h2></div><Armchair size={21} /></header>

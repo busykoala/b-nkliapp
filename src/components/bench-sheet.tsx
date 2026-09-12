@@ -8,8 +8,9 @@ import { BenchDetailContent } from "./bench-detail-content";
 import type { CurrentUser } from "@/lib/security";
 
 type Snap = "peek" | "half" | "full";
+type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
 
-export function BenchSheet({ created = false, bench, loading, error, onRetry, onClose, onBenchChange, onJourney, user }: { created?: boolean; bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; user: CurrentUser | null }) {
+export function BenchSheet({ created = false, bench, loading, error, onRetry, onClose, onBenchChange, onJourney, onLocateAmenity, user }: { created?: boolean; bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; onLocateAmenity?: (amenity: NearbyAmenity) => void; user: CurrentUser | null }) {
   const t = useTranslations();
   const [snap, setSnap] = useState<Snap>(created ? "full" : "half");
   const touchStart = useRef<number | null>(null);
@@ -22,15 +23,15 @@ export function BenchSheet({ created = false, bench, loading, error, onRetry, on
   };
   return (
     <aside aria-label={t("bench.sheet.label")} data-snap={snap} className="desktop-sheet storybook-sheet sheet-shadow fixed inset-x-0 bottom-0 z-40 h-[calc(100dvh-4.5rem)] overflow-hidden rounded-t-[2rem] transition-transform duration-300">
-      <div className="sheet-chrome absolute inset-x-0 top-0 z-30 rounded-t-[2rem] px-4 pb-1 pt-2" onTouchStart={(e) => { touchStart.current = e.touches[0].clientY; }} onTouchEnd={(e) => finishDrag(e.changedTouches[0].clientY)}>
+      <div className="sheet-chrome absolute inset-x-0 top-0 z-30 rounded-t-[2rem] px-4 py-2" onTouchStart={(e) => { touchStart.current = e.touches[0].clientY; }} onTouchEnd={(e) => finishDrag(e.changedTouches[0].clientY)}>
         <button aria-label={t("bench.sheet.resize")} aria-expanded={snap === "full"} className="overlay-resize" onClick={() => setSnap(snap === "full" ? "half" : "full")}>{snap === "full" ? <ChevronDown size={20} /> : <ChevronUp size={20} />}<span>{t(snap === "full" ? "bench.sheet.showMap" : "bench.sheet.showDetails")}</span></button>
-        <div className="flex items-center justify-end">
+        <div className="sheet-close-slot">
           <button aria-label={t("bench.sheet.close")} className="sheet-close btn btn-circle btn-ghost btn-sm" onClick={onClose}><X size={19} /></button>
         </div>
       </div>
       <div className="relative z-10 h-full overflow-y-auto safe-bottom">
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">{t("bench.sheet.loading")}</span><span className="sr-only">{t("bench.sheet.loadingAccessible")}</span></div>}
-        {!loading && bench && <BenchDetailContent created={created} key={bench.id} bench={bench} user={user} onBenchChange={onBenchChange} onJourney={onJourney} />}
+        {!loading && bench && <BenchDetailContent created={created} key={bench.id} bench={bench} user={user} onBenchChange={onBenchChange} onJourney={onJourney} onLocateAmenity={onLocateAmenity} />}
         {!loading && error && <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
           <span className="text-5xl" aria-hidden="true">🍃</span>
           <p className="max-w-64 text-lg font-semibold text-primary">{t("bench.sheet.unavailable")}</p>

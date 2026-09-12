@@ -3,6 +3,14 @@
     "label": "Lingua",
     "failed": "La lingua n’ha betg pudì vegnir midada. Emprova anc ina giada."
   },
+  "dialect": {
+    "label": "Vusch locala",
+    "off": "Standard",
+    "regional": "Regiunala",
+    "playful": "Umoristica",
+    "hint": "Colurescha mo la pitschna istorgia dal lieu, betg ils elements da navigaziun.",
+    "approximation": "inspirà da la regiun"
+  },
   "metadata": {
     "title": "Bänkli App – Bancs en Svizra",
     "description": "Chatta bancs en Svizra cun sulegl, bella vista e valitaziuns da la cuminanza."
