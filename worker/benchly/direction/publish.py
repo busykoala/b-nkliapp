@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import sqlite3
@@ -12,6 +13,29 @@ from benchly.runtime import now_iso
 from .analysis import open_analysis
 from .model import DIRECTIONS, METHOD_VERSION
 from .repository import delete_analysis_run, upsert_estimates
+
+
+def no_signal_fallback(bench: sqlite3.Row) -> tuple[dict[str, object], dict[int, float], list[dict[str, object]]]:
+    """Return an honest, stable tie-breaker when no directional evidence exists."""
+    bench_id = str(bench["bench_id"])
+    bucket = int.from_bytes(hashlib.sha256(bench_id.encode("utf-8")).digest()[:8], "big") % len(DIRECTIONS)
+    direction = DIRECTIONS[bucket]
+    candidate = {
+        **dict(bench),
+        "direction_degrees": direction,
+        "top_probability": 1 / len(DIRECTIONS),
+        "entropy": 1.0,
+    }
+    probabilities = {item: 1 / len(DIRECTIONS) for item in DIRECTIONS}
+    signals = [{
+        "name": "no_signal_fallback",
+        "weight": 0.0,
+        "details_json": json.dumps({
+            "reason": "No directional evidence was available; stable bench-ID tie-breaker only",
+            "selected_direction_degrees": direction,
+        }, separators=(",", ":")),
+    }]
+    return candidate, probabilities, signals
 
 
 def publish(args) -> dict[str, object]:
@@ -31,18 +55,31 @@ def publish(args) -> dict[str, object]:
             raise RuntimeError(
                 f"Analysis uses {run['method_version']}; this worker publishes only {METHOD_VERSION}"
             )
-        candidates = analysis.execute("""
+        predicted_candidates = analysis.execute("""
           SELECT b.*,p.direction_degrees,p.top_probability,p.entropy
           FROM direction_analysis_benches b JOIN direction_predictions p USING(run_id,bench_row_id)
           WHERE b.run_id=? AND p.top_probability>=? ORDER BY b.bench_row_id
         """, (args.run_id, args.minimum_probability)).fetchall()
+        candidates = [
+            (candidate, None, None) for candidate in predicted_candidates
+        ]
+        fallback_count = 0
+        if getattr(args, "include_no_signal_fallback", False):
+            missing = analysis.execute("""
+              SELECT b.* FROM direction_analysis_benches b
+              LEFT JOIN direction_predictions p USING(run_id,bench_row_id)
+              WHERE b.run_id=? AND p.bench_row_id IS NULL ORDER BY b.bench_row_id
+            """, (args.run_id,)).fetchall()
+            fallback_count = len(missing)
+            candidates.extend(no_signal_fallback(bench) for bench in missing)
         stats: dict[str, object] = {
             "analysis_run_id": args.run_id, "minimum_probability": args.minimum_probability,
             "selected": len(candidates), "eligible": 0, "observed_skipped": 0,
             "identity_skipped": 0, "published": 0, "apply": bool(args.apply),
+            "no_signal_fallbacks_selected": fallback_count,
         }
         eligible = []
-        for candidate in candidates:
+        for candidate, prepared_probabilities, prepared_signals in candidates:
             current = database.execute("SELECT id,latitude,longitude,direction_degrees FROM benches WHERE row_id=? AND active=1",
                                        (candidate["bench_row_id"],)).fetchone()
             if not current or current["id"] != candidate["bench_id"] or current["latitude"] != candidate["latitude"] or current["longitude"] != candidate["longitude"]:
@@ -51,11 +88,11 @@ def publish(args) -> dict[str, object]:
             if current["direction_degrees"] is not None:
                 stats["observed_skipped"] = int(stats["observed_skipped"]) + 1
                 continue
-            probabilities = dict(analysis.execute(
+            probabilities = prepared_probabilities or dict(analysis.execute(
                 "SELECT direction_degrees,probability FROM direction_probabilities WHERE run_id=? AND bench_row_id=?",
                 (args.run_id, candidate["bench_row_id"]),
             ))
-            signals = [dict(row) for row in analysis.execute(
+            signals = prepared_signals or [dict(row) for row in analysis.execute(
                 "SELECT name,weight,details_json FROM direction_signals WHERE run_id=? AND bench_row_id=? ORDER BY name",
                 (args.run_id, candidate["bench_row_id"]),
             )]

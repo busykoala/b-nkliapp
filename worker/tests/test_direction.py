@@ -135,6 +135,19 @@ class DirectionModelTests(unittest.TestCase):
         self.assertEqual(database.execute("SELECT direction_degrees FROM bench_direction_estimates").fetchone()[0], 135)
         self.assertEqual(delete_analysis_run(database, "run-a"), 1)  # type: ignore[arg-type]
 
+    def test_no_signal_fallback_is_stable_uniform_and_explicit(self):
+        from benchly.direction.publish import no_signal_fallback
+
+        bench = {"bench_row_id": 7, "bench_id": "osm-node-42", "latitude": 47.0, "longitude": 8.0}
+        first, probabilities, signals = no_signal_fallback(bench)  # type: ignore[arg-type]
+        second, _, _ = no_signal_fallback(bench)  # type: ignore[arg-type]
+        self.assertEqual(first["direction_degrees"], second["direction_degrees"])
+        self.assertIn(first["direction_degrees"], DIRECTIONS)
+        self.assertEqual(set(probabilities.values()), {.125})
+        self.assertEqual(first["top_probability"], .125)
+        self.assertEqual(first["entropy"], 1.0)
+        self.assertEqual(signals[0]["name"], "no_signal_fallback")
+
     def test_review_csv_import_persists_a_verdict(self):
         from benchly.direction.analysis import import_reviews, open_analysis
 

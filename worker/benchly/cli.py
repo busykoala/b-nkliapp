@@ -339,6 +339,10 @@ def build_parser() -> argparse.ArgumentParser:
     publish_directions.add_argument("--analysis-database", default="./data/direction-analysis.sqlite")
     publish_directions.add_argument("--run-id", required=True)
     publish_directions.add_argument("--minimum-probability", type=float, default=.8)
+    publish_directions.add_argument(
+        "--include-no-signal-fallback", action="store_true",
+        help="Also publish a stable, explicitly uninformative direction for analyzed benches without any signal",
+    )
     publish_directions.add_argument("--apply", action="store_true")
     publish_directions.add_argument("--backup", help="Required new SQLite backup path when --apply is used")
     publish_directions.set_defaults(function=publish_direction_estimates_job, uses_lock=True)
