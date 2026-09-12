@@ -100,6 +100,72 @@ uv run python worker/benchly_worker.py benchmark-vision --dataset evaluation.jso
 
 The production worker container uses `/data/benchly.sqlite`; mount the same single-writer PVC as the web container and avoid overlapping refresh jobs.
 
+## One-off bench-direction analysis
+
+Facing-direction estimates are deliberately separate from observed OSM/community values. The
+analysis stores eight probabilities per bench in a local, resumable SQLite database and emits
+CSV, JSON and a 300-bench review report. It does not write the application database:
+
+```bash
+uv run python worker/benchly_worker.py analyze-directions \
+  --database ./data/benchly.sqlite \
+  --analysis-database ./data/direction-analysis.sqlite \
+  --pbf ./data/sources/bench-direction/v1/osm/switzerland-latest.osm.pbf \
+  --cache-dir ./data/sources/bench-direction/v1 \
+  --run-id national-v1
+```
+
+`--skip-imagery` performs a fast context-only pass. Without it, the command discovers current
+SWISSIMAGE 10 cm Cloud-Optimized GeoTIFFs through the official STAC API and range-reads only a
+12 m crop around each bench. STAC pages, source identity, checksums and crops are cached below
+`data/sources/bench-direction/v1`; rerunning the same analysis does not download them again.
+Supply cached swissALTI3D tiles with `--terrain-dir` to add the downhill signal. An existing
+Geofabrik PBF can be passed with `--pbf`, or downloaded once with `--download-pbf`.
+
+The report separates spatial train/validation/test cells and includes angular accuracy, axis
+accuracy, probability calibration, signal ablations and coverage by confidence threshold.
+Inspect `data/direction-reports/<run-id>/review.html` before choosing a publication threshold.
+Low entropy alone is not evidence that the inferred seating side is correct.
+
+Populate the stratified 300-row review with rate-limited, asset-grouped orthophoto crops after
+the cheap national pass. The companion `review.csv` is the durable human review sheet:
+
+```bash
+uv run python worker/benchly_worker.py prepare-direction-review \
+  --analysis-database ./data/direction-analysis.sqlite \
+  --cache-dir ./data/sources/bench-direction/v1 \
+  --run-id national-v1 --sample-size 300 --requests-per-second .5
+
+# After filling the verdict column with plausible, unclear or implausible:
+uv run python worker/benchly_worker.py import-direction-reviews \
+  ./data/direction-reports/national-v1/review.csv \
+  --analysis-database ./data/direction-analysis.sqlite \
+  --run-id national-v1 --reviewer initials
+```
+
+Publication is a dry-run unless `--apply` is present. The apply form requires a new backup path,
+rechecks the bench ID and exact coordinates, skips every observed direction and uses the normal
+exclusive worker lock:
+
+```bash
+uv run python worker/benchly_worker.py publish-direction-estimates \
+  --database ./data/benchly.sqlite \
+  --analysis-database ./data/direction-analysis.sqlite \
+  --run-id national-v1 --minimum-probability .8
+
+uv run python worker/benchly_worker.py publish-direction-estimates \
+  --database /data/benchly.sqlite \
+  --analysis-database /data/direction-analysis.sqlite \
+  --run-id national-v1 --minimum-probability .8 --apply \
+  --backup /data/backups/before-direction-national-v1.sqlite
+```
+
+The web application resolves `benches.direction_degrees ?? bench_direction_estimates.direction_degrees`
+only when the stored bench identity and coordinates still match. A later OSM/community direction
+therefore wins automatically; rollback can remove only estimates from the affected analysis run.
+`remove-direction-estimates --run-id national-v1` previews that rollback; its `--apply` form also
+requires a new `--backup` path.
+
 ## Knowledge pipeline
 
 Migrations `0018`–`0026` add these features without replacing canonical benches or rebuilding the

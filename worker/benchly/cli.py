@@ -40,6 +40,7 @@ from benchly.landscape.service import refresh as refresh_landscape
 from benchly.transit.service import refresh as refresh_transit
 from benchly.transfers.service import run_import_geography
 from benchly.weather.jobs import refresh_weather_job
+from benchly.direction.jobs import analyze_directions_job, import_direction_reviews_job, prepare_direction_review_job, publish_direction_estimates_job, remove_direction_estimates_job
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -297,6 +298,57 @@ def build_parser() -> argparse.ArgumentParser:
     inventory = subparsers.add_parser("inventory", help="Report bench totals and data completeness")
     _database_argument(inventory)
     inventory.set_defaults(function=inventory_job, uses_lock=False)
+
+    directions = subparsers.add_parser("analyze-directions", help="Build a resumable local probability model for bench facing directions")
+    _database_argument(directions)
+    directions.add_argument("--analysis-database", default="./data/direction-analysis.sqlite")
+    directions.add_argument("--report-directory", default="./data/direction-reports")
+    directions.add_argument("--cache-dir", default="./data/sources/bench-direction/v1")
+    directions.add_argument("--terrain-dir")
+    directions.add_argument("--pbf", help="Previously downloaded Switzerland OSM PBF")
+    directions.add_argument("--pbf-url", default=DEFAULT_OSM_PBF_URL)
+    directions.add_argument("--download-pbf", action="store_true")
+    directions.add_argument("--skip-imagery", action="store_true")
+    directions.add_argument("--fail-on-image-error", action="store_true")
+    directions.add_argument("--requests-per-second", type=float, default=.5)
+    directions.add_argument("--mode", choices=("labelled", "unlabelled", "all"), default="all")
+    directions.add_argument("--run-id", help="Stable run identifier; reuse it to resume an interrupted analysis")
+    directions.add_argument("--limit", type=int)
+    _bounds_argument(directions)
+    directions.set_defaults(function=analyze_directions_job, uses_lock=False)
+
+    direction_review = subparsers.add_parser("prepare-direction-review", help="Cache a stratified SWISSIMAGE review sample for a completed direction run")
+    direction_review.add_argument("--analysis-database", default="./data/direction-analysis.sqlite")
+    direction_review.add_argument("--report-directory", default="./data/direction-reports")
+    direction_review.add_argument("--cache-dir", default="./data/sources/bench-direction/v1")
+    direction_review.add_argument("--run-id", required=True)
+    direction_review.add_argument("--sample-size", type=int, default=300)
+    direction_review.add_argument("--requests-per-second", type=float, default=.5)
+    direction_review.set_defaults(function=prepare_direction_review_job, uses_lock=False)
+
+    review_import = subparsers.add_parser("import-direction-reviews", help="Import plausible/unclear/implausible verdicts from a review CSV")
+    review_import.add_argument("csv")
+    review_import.add_argument("--analysis-database", default="./data/direction-analysis.sqlite")
+    review_import.add_argument("--report-directory", default="./data/direction-reports")
+    review_import.add_argument("--run-id", required=True)
+    review_import.add_argument("--reviewer", required=True)
+    review_import.set_defaults(function=import_direction_reviews_job, uses_lock=False)
+
+    publish_directions = subparsers.add_parser("publish-direction-estimates", help="Validate and optionally publish one completed direction-analysis run")
+    _database_argument(publish_directions)
+    publish_directions.add_argument("--analysis-database", default="./data/direction-analysis.sqlite")
+    publish_directions.add_argument("--run-id", required=True)
+    publish_directions.add_argument("--minimum-probability", type=float, default=.8)
+    publish_directions.add_argument("--apply", action="store_true")
+    publish_directions.add_argument("--backup", help="Required new SQLite backup path when --apply is used")
+    publish_directions.set_defaults(function=publish_direction_estimates_job, uses_lock=True)
+
+    remove_directions = subparsers.add_parser("remove-direction-estimates", help="Dry-run or remove estimates from exactly one analysis run")
+    _database_argument(remove_directions)
+    remove_directions.add_argument("--run-id", required=True)
+    remove_directions.add_argument("--apply", action="store_true")
+    remove_directions.add_argument("--backup", help="Required new SQLite backup path when --apply is used")
+    remove_directions.set_defaults(function=remove_direction_estimates_job, uses_lock=True)
     return parser
 
 

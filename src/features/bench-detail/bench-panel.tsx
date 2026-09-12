@@ -24,7 +24,7 @@ export function BenchPanel({ bench, signedIn = false, onChanged }: { bench: Benc
     {missingCount > 0 && <p className="missing-whisper">{t("bench.panel.missing", {count: missingCount})}</p>}
     {(bench.dedication || bench.description) && <blockquote className="bench-note">{bench.dedication || bench.description}</blockquote>}
     <div className="bearing-card">
-      <div className="bearing-dial" aria-hidden="true"><Compass size={36} /><i style={{ transform: `rotate(${bench.directionDegrees ?? 0}deg)` }} /></div>
+      <div className="bearing-dial" aria-hidden="true"><Compass size={36} />{bench.directionDegrees !== null && <i style={{ transform: `rotate(${bench.directionDegrees}deg)` }} />}</div>
       <div><small>{t("bench.attributes.direction")}</small><strong>{bench.directionDegrees === null ? t("common.values.notRecorded") : compassDirection(bench.directionDegrees, t)}</strong><p>{bench.directionDegrees === null ? t("bench.panel.directionUnknown") : t("bench.panel.directionKnown")}</p></div>
     </div>
     <details className="technical-fold">

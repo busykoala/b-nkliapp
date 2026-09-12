@@ -19,6 +19,7 @@ __pycache__/
 data/.benchly-worker.lock
 worker/evaluation/.cache/
 data/photos/
+data/direction-reports/
 
 data/terrain-cache-v1/
 .osm-stage-v1/

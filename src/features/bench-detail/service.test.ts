@@ -47,6 +47,30 @@ describe("bench detail read model", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it("uses a position-bound estimate only when no observed direction exists", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "benchly-direction-detail-"));
+    folders.push(folder);
+    vi.stubEnv("DATABASE_PATH", join(folder, "benchly.sqlite"));
+    vi.stubEnv("BENCHLY_SEED_DEMO", "true");
+    vi.resetModules();
+    const { sqlite } = await import("@/db/client");
+    const unknown = sqlite.prepare("SELECT row_id,id,latitude,longitude FROM benches WHERE id='osm-node-112'").get() as Record<string, string | number>;
+    const observed = sqlite.prepare("SELECT row_id,id,latitude,longitude FROM benches WHERE id='osm-node-101'").get() as Record<string, string | number>;
+    const insert = sqlite.prepare(`INSERT INTO bench_direction_estimates(
+      bench_row_id,bench_id,bench_latitude,bench_longitude,direction_degrees,top_probability,entropy,
+      probabilities_json,signals_json,source_versions_json,analysis_run_id,method_version,computed_at,published_at
+    ) VALUES(?,?,?,?,90,.8,.3,'{}','[]','{}','test','test','2026-01-01','2026-01-01')`);
+    insert.run(unknown.row_id, unknown.id, unknown.latitude, unknown.longitude);
+    insert.run(observed.row_id, observed.id, observed.latitude, observed.longitude);
+
+    const { readBenchDetail } = await import("./service");
+    expect(readBenchDetail("osm-node-112", null)?.directionDegrees).toBe(90);
+    expect(readBenchDetail("osm-node-101", null)?.directionDegrees).toBe(205);
+
+    sqlite.prepare("UPDATE benches SET latitude=latitude+.001 WHERE id='osm-node-112'").run();
+    expect(readBenchDetail("osm-node-112", null)?.directionDegrees).toBeNull();
+  });
+
   it("reports the nearest mapped path or road", async () => {
     const folder = mkdtempSync(join(tmpdir(), "benchly-detail-road-"));
     folders.push(folder);

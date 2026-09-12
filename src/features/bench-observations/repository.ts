@@ -31,8 +31,12 @@ function viewEvidence(rows: ViewRow[]): ViewEvidence[] {
 export function refreshEnvironmentEstimate(database: Database.Database, benchRowId: number) {
   const enrichment = database.prepare(`
     SELECT e.view_components,e.obstruction_types,e.building_obstruction_percent,e.vegetation_obstruction_percent,
-      b.direction_degrees
-    FROM bench_enrichments e JOIN benches b ON b.row_id=e.bench_row_id WHERE e.bench_row_id=?
+      coalesce(b.direction_degrees,
+        CASE WHEN de.bench_id=b.id AND de.bench_latitude=b.latitude AND de.bench_longitude=b.longitude
+          THEN de.direction_degrees END) direction_degrees
+    FROM bench_enrichments e JOIN benches b ON b.row_id=e.bench_row_id
+    LEFT JOIN bench_direction_estimates de ON de.bench_row_id=b.row_id
+    WHERE e.bench_row_id=?
   `).get(benchRowId) as {
     view_components: string | null;
     obstruction_types: string | null;

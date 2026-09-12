@@ -18,6 +18,12 @@ export function readDetailMetadata(benchId: string) {
 export function readDetailRow(benchId: string) {
   return sqlite.prepare(`
     SELECT b.*,e.*,
+      CASE
+        WHEN b.direction_degrees IS NOT NULL THEN b.direction_degrees
+        WHEN de.bench_id=b.id AND de.bench_latitude=b.latitude AND de.bench_longitude=b.longitude
+          THEN de.direction_degrees
+        ELSE NULL
+      END effective_direction_degrees,
       lm.land_context likely_land_context,lm.land_context_probability likely_land_probability,
       lm.canopy_context likely_canopy_context,lm.canopy_probability likely_canopy_probability,
       lm.lake_view_probability likely_lake_view_probability,lm.mountain_view_probability likely_mountain_view_probability,
@@ -37,6 +43,7 @@ export function readDetailRow(benchId: string) {
         WHERE rr.bench_row_id=b.row_id AND rr.status='pending') removal_confirmation_count
     FROM benches b
     LEFT JOIN bench_enrichments e ON e.bench_row_id=b.row_id
+    LEFT JOIN bench_direction_estimates de ON de.bench_row_id=b.row_id
     LEFT JOIN bench_likely_metadata lm ON lm.bench_row_id=b.row_id
     WHERE b.id=? AND b.active=1
   `).get(benchId) as DetailRow | undefined;

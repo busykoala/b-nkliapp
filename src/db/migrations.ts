@@ -780,4 +780,27 @@ export const migrations: Migration[] = [
       CREATE INDEX referrals_inviter_idx ON referrals(inviter_user_id,created_at DESC);
     `,
   },
+  {
+    id: "0030_bench_direction_estimates",
+    sql: `
+      CREATE TABLE bench_direction_estimates (
+        bench_row_id INTEGER PRIMARY KEY REFERENCES benches(row_id) ON DELETE CASCADE,
+        bench_id TEXT NOT NULL,
+        bench_latitude REAL NOT NULL,
+        bench_longitude REAL NOT NULL,
+        direction_degrees REAL NOT NULL CHECK(direction_degrees >= 0 AND direction_degrees < 360),
+        top_probability REAL NOT NULL CHECK(top_probability >= 0 AND top_probability <= 1),
+        entropy REAL NOT NULL CHECK(entropy >= 0),
+        probabilities_json TEXT NOT NULL,
+        signals_json TEXT NOT NULL,
+        source_versions_json TEXT NOT NULL,
+        analysis_run_id TEXT NOT NULL,
+        method_version TEXT NOT NULL,
+        computed_at TEXT NOT NULL,
+        published_at TEXT NOT NULL
+      );
+      CREATE INDEX bench_direction_estimates_run_idx
+        ON bench_direction_estimates(analysis_run_id,top_probability);
+    `,
+  },
 ];

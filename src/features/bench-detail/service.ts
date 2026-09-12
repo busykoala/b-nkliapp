@@ -66,7 +66,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
   const covered = roof ? roof.value : row.covered;
   const latitude = Number(row.latitude);
   const longitude = Number(row.longitude);
-  const directionDegrees = row.direction_degrees === null ? null : Number(row.direction_degrees);
+  const directionDegrees = row.effective_direction_degrees === null ? null : Number(row.effective_direction_degrees);
   const elevationMeters = row.elevation_meters == null ? null : Number(row.elevation_meters);
   const elevationSource = row.elevation_source == null ? null : String(row.elevation_source);
   const pipelineVersion = row.pipeline_version ? String(row.pipeline_version) : "OSM-Nahbereich v1";

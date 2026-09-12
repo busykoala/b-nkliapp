@@ -21,6 +21,10 @@ class PersistenceArchitectureTests(unittest.TestCase):
         for path in worker.rglob("*.py"):
             if "tests" in path.parts or path.name.startswith("test_"):
                 continue
+            # This is an explicitly local, gitignored analytical SQLite store;
+            # publication into the application DB remains subject to the guard.
+            if path.relative_to(worker) == Path("benchly/direction/analysis.py"):
+                continue
             tree = ast.parse(path.read_text(encoding="utf-8"))
             strings = (
                 node.value for node in ast.walk(tree)

@@ -252,12 +252,17 @@ export function readMunicipalityPortrait(id: string, database: Database.Database
     sum(CASE WHEN b.wheelchair IS NOT NULL THEN 1 ELSE 0 END) wheelchair_known,
     sum(CASE WHEN b.backrest IS NULL THEN 1 ELSE 0 END) missing_backrest,
     sum(CASE WHEN b.seats IS NULL THEN 1 ELSE 0 END) missing_seats,
-    sum(CASE WHEN b.direction_degrees IS NULL THEN 1 ELSE 0 END) missing_direction,
+    sum(CASE WHEN b.direction_degrees IS NULL AND
+      (de.direction_degrees IS NULL OR de.bench_id<>b.id OR de.bench_latitude<>b.latitude OR de.bench_longitude<>b.longitude)
+      THEN 1 ELSE 0 END) missing_direction,
     sum(CASE WHEN b.osm_timestamp IS NULL OR b.osm_timestamp='' THEN 1 ELSE 0 END) unknown_freshness,
     sum(CASE WHEN b.osm_timestamp IS NOT NULL AND b.osm_timestamp<>'' AND b.osm_timestamp<? THEN 1 ELSE 0 END) stale_mapping,
     sum(CASE WHEN b.verification_status='unverified' THEN 1 ELSE 0 END) unverified,
-    sum((b.backrest IS NOT NULL)+(b.seats IS NOT NULL)+(b.direction_degrees IS NOT NULL)+(b.wheelchair IS NOT NULL)) known_fields
-    FROM benches b JOIN bench_geography g ON g.bench_row_id=b.row_id WHERE b.active=1 AND g.municipality_id=?`)
+    sum((b.backrest IS NOT NULL)+(b.seats IS NOT NULL)+(coalesce(b.direction_degrees,de.direction_degrees) IS NOT NULL)+(b.wheelchair IS NOT NULL)) known_fields
+    FROM benches b JOIN bench_geography g ON g.bench_row_id=b.row_id
+    LEFT JOIN bench_direction_estimates de ON de.bench_row_id=b.row_id
+      AND de.bench_id=b.id AND de.bench_latitude=b.latitude AND de.bench_longitude=b.longitude
+    WHERE b.active=1 AND g.municipality_id=?`)
     .get(fiveYearsAgo.toISOString(), id) as Record<string, number>;
   const portrait: MunicipalityPortrait = {
     ...base,
