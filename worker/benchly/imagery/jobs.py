@@ -95,7 +95,7 @@ def reconcile_environment_job(args: Namespace) -> None:
 def audit_environment_job(args: Namespace) -> None:
     connection = connect_database(Path(args.database).resolve())
     try:
-        result = audit_environment(connection)
+        result = audit_environment(connection, release_smoke=getattr(args, "release_smoke", False))
         print(json.dumps(result, indent=2))
         if args.require_production and (
             result["sqlite_quick_check"] != "ok"

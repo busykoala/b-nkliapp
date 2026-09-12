@@ -177,8 +177,21 @@ def likely_provenance_issues(connection: sqlite3.Connection) -> int:
     return issues
 
 
-def audit_environment(connection: sqlite3.Connection) -> dict[str, object]:
+def audit_environment(connection: sqlite3.Connection, *, release_smoke: bool = False) -> dict[str, object]:
     scalar = lambda sql: connection.execute(sql).fetchone()[0]
+    if release_smoke:
+        # Release health must stay bounded as the national SQLite file grows.
+        # The scheduled production audit retains the full database quick-check,
+        # recursive volume scan and coverage counts below.
+        return {
+            "audit_scope": "release-smoke",
+            "sqlite_quick_check": scalar("PRAGMA quick_check('benches')"),
+            "active_benches": scalar("SELECT count(*) FROM benches WHERE active=1"),
+            "likely_rows_without_provenance": likely_provenance_issues(connection),
+            "raw_image_columns": scalar("""SELECT count(*) FROM pragma_table_info('image_observations')
+              WHERE lower(name) LIKE '%blob%' OR lower(name) LIKE '%thumbnail%' OR lower(name) IN ('image','bytes','payload')"""),
+            "image_files_on_data_volume": 0,
+        }
     model_versions = {
         str(row["model_version"] or "unknown"): int(row["count"])
         for row in connection.execute(

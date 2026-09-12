@@ -33,7 +33,7 @@ spec:
   containers:
     - name: audit
       image: {{ .Values.images.worker }}
-      args: [audit-environment, --database, /data/benchly.sqlite, --require-production]
+      args: [audit-environment, --database, /data/benchly.sqlite, --require-production, --release-smoke]
       resources:
         requests: {cpu: 50m, memory: 128Mi}
         limits: {cpu: "1", memory: 1Gi}

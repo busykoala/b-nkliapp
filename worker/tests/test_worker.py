@@ -30,7 +30,7 @@ from benchly.enrichment.service import expand_bounds, spatial_cell_bounds
 from benchly.geo import bearing_degrees, circular_difference
 from benchly.imagery.client import _request_json, infer_scene, infer_scene_frames
 from benchly.imagery.evaluation import benchmark_models, validate_evaluation_dataset
-from benchly.imagery.evidence import likely_provenance_issues, reconcile_environment
+from benchly.imagery.evidence import audit_environment, likely_provenance_issues, reconcile_environment
 from benchly.imagery.jobs import benchmark_vision_job
 from benchly.imagery.prediction import validate_scene_prediction
 from benchly.imagery.providers import DiscoveredImage, ProviderDelay
@@ -564,6 +564,15 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(likely_provenance_issues(database), 0)
         database.execute("UPDATE bench_likely_metadata SET evidence_summary=?", (json.dumps([{**complete[0], "license": None}]),))
         self.assertEqual(likely_provenance_issues(database), 1)
+
+    def test_release_environment_audit_is_bounded_to_critical_checks(self):
+        database = self.database()
+        database.execute("INSERT INTO benches VALUES(1,1,46.6622,7.8092,180)")
+        result = audit_environment(database, release_smoke=True)
+        self.assertEqual(result["audit_scope"], "release-smoke")
+        self.assertEqual(result["sqlite_quick_check"], "ok")
+        self.assertEqual(result["active_benches"], 1)
+        self.assertEqual(result["raw_image_columns"], 0)
 
     def test_unlicensed_existing_analysis_cannot_create_likely_metadata(self):
         database = self.database()

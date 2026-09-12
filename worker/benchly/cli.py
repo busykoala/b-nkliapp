@@ -270,6 +270,10 @@ def build_parser() -> argparse.ArgumentParser:
     audit = subparsers.add_parser("audit-environment", help="Report environment evidence coverage and conflicts")
     _database_argument(audit)
     audit.add_argument("--require-production", action="store_true")
+    audit.add_argument(
+        "--release-smoke", action="store_true",
+        help="Run bounded release-critical checks; the scheduled production audit remains exhaustive",
+    )
     audit.set_defaults(function=audit_environment_job, uses_lock=False)
 
     benchmark = subparsers.add_parser("benchmark-vision", help="Evaluate vision models against a labelled JSONL set")
