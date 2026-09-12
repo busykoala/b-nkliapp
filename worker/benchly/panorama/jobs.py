@@ -62,7 +62,7 @@ def panorama_batch_job(args: Namespace) -> None:
     cache = PanoramaCache(Path(args.cache_dir).resolve())
     stats = {"selected": 0, "generated": 0, "cache_hits": 0, "partial": 0, "unavailable": 0, "failed": 0,
              "terrain_seconds": 0.0, "semantic_seconds": 0.0, "building_seconds": 0.0,
-             "visibility_seconds": 0.0, "render_seconds": 0.0}
+             "visibility_seconds": 0.0, "render_seconds": 0.0, "errors": []}
     try:
         require_schema(database)
         if not terrain.datasets:
@@ -150,8 +150,12 @@ def panorama_batch_job(args: Namespace) -> None:
                 status = "unavailable" if "coverage" in str(error).casefold() else "error"
                 mark_failed(database, int(row["row_id"]), key, status, str(error))
                 stats["unavailable" if status == "unavailable" else "failed"] += 1
+                if len(stats["errors"]) < 3:
+                    stats["errors"].append({"bench_id": str(row["id"]), "error": str(error)[:400]})
         stats["finished_at"] = now_iso()
         print(json.dumps(stats, indent=2, sort_keys=True))
+        if stats["selected"] and not stats["generated"] and not stats["cache_hits"]:
+            raise RuntimeError("panorama batch produced no usable geometry; inspect the reported errors")
     finally:
         terrain.close()
         database.close()

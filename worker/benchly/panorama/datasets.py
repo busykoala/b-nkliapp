@@ -51,7 +51,11 @@ class SemanticIndex:
 
     def classify(self, longitudes: np.ndarray, latitudes: np.ndarray):
         size = len(longitudes)
-        semantics = np.full(size, SemanticClass.UNKNOWN_TERRAIN, dtype=object)
+        # np.full coerces str-backed Enums through a fixed-width string dtype
+        # before placing them into an object array ("SemanticClass.U" here).
+        # Assigning into an existing object array preserves the Enum instance.
+        semantics = np.empty(size, dtype=object)
+        semantics[:] = SemanticClass.UNKNOWN_TERRAIN
         confidences = np.full(size, .35, dtype=float)
         sources = np.full(size, "swissALTI3D", dtype=object)
         if self.tree is None or size == 0:
@@ -154,7 +158,8 @@ def sample_terrain_rays(
     if semantics:
         classes, confidences, sources = semantics.classify(np.asarray(longitudes), np.asarray(latitudes))
     else:
-        classes = np.full(len(locations), SemanticClass.UNKNOWN_TERRAIN, dtype=object)
+        classes = np.empty(len(locations), dtype=object)
+        classes[:] = SemanticClass.UNKNOWN_TERRAIN
         confidences = np.full(len(locations), .35)
         sources = np.full(len(locations), "swissALTI3D", dtype=object)
     rays = []
