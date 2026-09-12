@@ -23,7 +23,6 @@ import { galleryImageUrl } from "@/features/bench-photos/media-source";
 import { BenchPlaceCommunity } from "./bench-place-community";
 import { localBenchVoice } from "@/lib/dialect";
 import { useLocalBenchLanguage } from "./local-bench-language-provider";
-import { localeTags } from "@/i18n/config";
 
 const correctionLabels: Record<string, MessageKey> = {
   properties: "community.correction.fields.properties",
@@ -85,7 +84,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
   const poem = scenePoem(bench, t);
   const localVoice = localLanguage.active ? localBenchVoice(bench) : null;
   const missingFields = bench.properties.filter((item) => /^(Unbekannt|Noch offen)$/i.test(item.value)).slice(0, 3).map((item) => item.key);
-  return <div ref={detailRef} className="calm-detail pb-8" lang={localVoice ? localeTags[localVoice.uiLanguage] : undefined} data-local-language={localVoice?.uiLanguage}>
+  return <div ref={detailRef} className="calm-detail pb-8" lang={localVoice?.languageTag} data-local-language={localVoice?.uiLanguage}>
     {community ? <>
       <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> {t("bench.story.back")}</button>
       <Community bench={bench} report={report} reported={reported} user={user} onContribute={() => contribute("rating")} />

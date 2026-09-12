@@ -16,7 +16,7 @@ export function LocalBenchLanguageProvider({ bench, children }: { bench: BenchDe
   const currentMessages = useMessages();
   const active = isDialectLocale(rootLocale);
   const profile = useMemo(() => localBenchProfile(bench), [bench]);
-  const messages = useMemo(() => ({ ...currentMessages, ...localBenchMessages(profile.uiLanguage) }), [currentMessages, profile.uiLanguage]);
+  const messages = useMemo(() => ({ ...currentMessages, ...localBenchMessages(profile) }), [currentMessages, profile]);
   const state: LocalBenchLanguageState = active ? { active: true, profile } : { active: false, profile: null };
   const content = <LocalBenchLanguageContext.Provider value={state}>{children}</LocalBenchLanguageContext.Provider>;
 

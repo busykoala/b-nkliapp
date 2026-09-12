@@ -1,11 +1,16 @@
 {
   "language": {
     "label": "Sprache",
-    "dialect": "Dialekt",
-    "dialectHint": "Bänkli-Infos wechseln zur Sprache ihres Orts. Menüs ohne Ortsbezug bleiben in deiner letzten Standardsprache.",
-    "localActive": "Lokalsprache: {region}",
+    "localActive": "Dialekt: {region}",
     "localApproximation": "sorgfältig regionalisiert",
     "failed": "Die Sprache konnte nicht geändert werden. Bitte erneut versuchen."
+  },
+  "dialect": {
+    "label": "Dialekt am Bänkli",
+    "hint": "Bänkli-Ansicht spricht wie der Ort",
+    "on": "Ein",
+    "off": "Aus",
+    "failed": "Der Dialektmodus konnte nicht geändert werden. Bitte erneut versuchen."
   },
   "metadata": {
     "title": "Bänkli App – Schweizer Sitzbänke",

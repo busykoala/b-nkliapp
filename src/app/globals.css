@@ -600,7 +600,19 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .language-switcher select { min-width: 0; min-height: 2.75rem; flex: 1; border: 1px solid rgb(65 69 54 / 20%); border-radius: .65rem; background: #fffbf0; padding: .4rem .5rem; font: inherit; }
 .language-switcher select:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }
 .language-preference > p { margin-top: .5rem; font-size: .875rem; line-height: 1.4; }
-.language-preference > .language-local-hint { margin: .1rem 0 .65rem 6.5rem; color: #617068; font-size: .72rem; line-height: 1.35; }
+.dialect-preference { margin: 0 .75rem .45rem; }
+.dialect-preference > button { display: flex; width: 100%; min-height: 3.55rem; align-items: center; gap: .6rem; border-radius: .8rem; padding: .4rem 0; color: #30483f; text-align: left; }
+.dialect-preference > button:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }
+.dialect-preference > button:disabled { opacity: .65; }
+.dialect-preference > button > svg { flex: 0 0 auto; }
+.dialect-preference-copy { display: grid; min-width: 0; flex: 1; gap: .08rem; }
+.dialect-preference-copy strong { font-size: .875rem; font-weight: 680; }
+.dialect-preference-copy small { color: #68766f; font-size: .69rem; line-height: 1.25; }
+.dialect-switch { position: relative; width: 2.65rem; height: 1.5rem; flex: 0 0 auto; border: 1px solid rgb(48 72 63 / 25%); border-radius: 999px; background: #d8d8ca; transition: background .18s ease; }
+.dialect-switch > span { position: absolute; top: .16rem; left: .17rem; width: 1.05rem; height: 1.05rem; border-radius: 50%; background: #fffdf6; box-shadow: 0 1px 4px rgb(29 45 39 / 22%); transition: transform .18s ease; }
+.dialect-switch.is-on { background: #356f5c; }
+.dialect-switch.is-on > span { transform: translateX(1.12rem); }
+.dialect-preference > p { margin: .1rem 0 .4rem 1.6rem; color: #8a3328; font-size: .75rem; }
 .app-menu-row { display: flex; width: 100%; min-height: 3.35rem; align-items: center; gap: .8rem; border-top: 1px solid rgb(65 69 54 / 9%); padding: .65rem .65rem; color: #30483f; text-align: left; }
 .app-menu-row.is-current { border-radius: .9rem; background: rgb(74 111 86 / 9%); }
 .app-menu-row small { margin-left: auto; min-width: 1.45rem; border-radius: 999px; background: #e6d6ab; padding: .1rem .35rem; text-align: center; }

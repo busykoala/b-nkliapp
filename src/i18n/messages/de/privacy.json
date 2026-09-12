@@ -21,7 +21,7 @@
   "storage": {
     "title": "Cookies, Speicher & Aufbewahrung",
     "cookies": "Das Anmelde-Cookie gilt bis zu 30 Tage. Für Beiträge kann ein notwendiges Browser-Cookie bis zu einem Jahr bestehen. Abmelden beendet die aktuelle Sitzung. Gehtempo und die Erinnerung an deine Standortfreigabe liegen im lokalen Browserspeicher und verschwinden, wenn du die Website-Daten löschst.",
-    "language": "Deine gewählte Sprache wird für ein Jahr in einem Cookie gespeichert. Beim lokalen Dialektmodus merkt sich ein zweites Cookie deine letzte Standardsprache für Seiten ohne Ortsbezug. Ohne Auswahl verwenden wir eine unterstützte Browsersprache oder Deutsch.",
+    "language": "Deine gewählte Sprache und der unabhängige Dialekt-Schalter werden je für ein Jahr in einem Cookie gespeichert. Der Dialekt-Schalter betrifft nur geöffnete Bänkli; Menü und übrige App bleiben in deiner gewählten Sprache. Ohne Sprachauswahl verwenden wir eine unterstützte Browsersprache oder Deutsch.",
     "retention": "Persönliche Routen bleiben höchstens fünf Minuten im Arbeitsspeicher. Kontodaten und Beiträge bleiben für den Betrieb der Funktionen gespeichert, bis sie gelöscht werden oder nicht mehr benötigt werden. Eigene Momente und Fotos kannst du direkt entfernen. Sicherheits- und Infrastrukturprotokolle sowie Sicherungskopien können anderen Aufbewahrungsfristen unterliegen.",
     "noTracking": "Die App setzt keine Werbe- oder Analyse-Cookies ein."
   },

@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parse, TYPE, type MessageFormatElement } from "@formatjs/icu-messageformat-parser";
 import { describe, expect, it } from "vitest";
-import { languagePreferenceFromLocale, languages, resolveLanguage, resolveLanguagePreference } from "./config";
+import { isDialectLocale, languages, resolveDialectEnabled, resolveLanguage } from "./config";
 import { propertyValue, compassDirection } from "./bench-labels";
 import { poemGroupSizes } from "@/lib/scene-poetry";
 import { testTranslator } from "@/test/translations";
@@ -43,10 +43,11 @@ describe("language selection", () => {
     expect(resolveLanguage(undefined, "en-US,en;q=0.9")).toBe("de");
     expect(resolveLanguage()).toBe("de");
   });
-  it("treats local dialect as an explicit fifth choice without browser auto-detection", () => {
-    expect(resolveLanguagePreference("dialect", "fr-CH")).toBe("dialect");
-    expect(resolveLanguagePreference(undefined, "fr-CH")).toBe("fr");
-    expect(languagePreferenceFromLocale("fr-CH-x-dialect")).toBe("dialect");
+  it("keeps the dialect toggle independent and opt-in", () => {
+    expect(resolveDialectEnabled("on")).toBe(true);
+    expect(resolveDialectEnabled("off")).toBe(false);
+    expect(resolveDialectEnabled()).toBe(false);
+    expect(isDialectLocale("fr-CH-x-dialect")).toBe(true);
   });
 });
 

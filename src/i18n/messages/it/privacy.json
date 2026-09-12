@@ -21,7 +21,7 @@
   "storage": {
     "title": "Cookie, memoria e conservazione",
     "cookies": "Il cookie di accesso dura fino a 30 giorni. Un cookie necessario ai contributi può durare un anno. Uscire termina la sessione corrente. Ritmo di cammino e promemoria della condivisione della posizione restano nel browser e spariscono cancellando i dati del sito.",
-    "language": "La lingua scelta viene salvata in un cookie per un anno. Nel modo dialetto locale, un secondo cookie ricorda l’ultima lingua standard per le pagine senza un luogo preciso. Senza scelta esplicita usiamo una lingua supportata del browser oppure il tedesco.",
+    "language": "La lingua scelta e l’interruttore indipendente del dialetto vengono salvati ciascuno in un cookie per un anno. Il dialetto riguarda solo la scheda di una panchina aperta; il menu e il resto dell’app restano nella lingua scelta. Senza scelta esplicita usiamo una lingua supportata dal browser oppure il tedesco.",
     "retention": "I percorsi personali restano al massimo cinque minuti in memoria. Dati dell’account e contributi sono conservati per le funzioni fino alla cancellazione o finché necessari. Puoi rimuovere direttamente i tuoi momenti e foto. Registri di sicurezza e infrastruttura e copie di backup possono avere altri tempi di conservazione.",
     "noTracking": "L’app non usa cookie pubblicitari o di analisi."
   },

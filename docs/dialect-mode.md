@@ -1,16 +1,18 @@
 # Dialekt / lokal: Produkt- und Sprachkonzept
 
-`Dialekt` ist die fünfte, gleichrangige Sprachwahl neben Deutsch, Français,
-Italiano und Rumantsch. Sie wird wie jede andere Wahl ein Jahr lang im Cookie
-`benchly_language` gespeichert. Ein zweites Cookie bewahrt die zuletzt gewählte
-Standardsprache als Rückfall für Seiten ohne konkreten Ort.
+Die App hat genau vier Sprachen: Deutsch, Français, Italiano und Rumantsch. Der
+Dialekt ist keine fünfte Sprache, sondern ein unabhängiger Schalter. Die Sprache
+wird ein Jahr lang in `benchly_language`, der Schalter ebenso lange separat in
+`benchly_dialect` gespeichert.
 
 ## Was im UI wechselt
 
-- Navigation, Konto und Seiten ohne ausgewähltes Bänkli bleiben in der letzten
-  Standardsprache. Ohne frühere Wahl gilt die unterstützte Browsersprache.
+- Navigation, Konto und Seiten ohne ausgewähltes Bänkli bleiben immer in der
+  gewählten Sprache. Ohne Wahl gilt die unterstützte Browsersprache.
 - Der vollständige Informationsbereich eines geöffneten Bänklis wechselt in die
-  örtliche Landessprache: Deutsch, Französisch, Italienisch oder Rumantsch.
+  örtliche Sprache: Deutsch, Französisch, Italienisch oder Rumantsch. In den
+  deutschsprachigen Regionen wird der vollständige App-Text zusätzlich mit
+  vorsichtigen, regionalen Mundartformen geschrieben.
 - Eine sichtbare Sprachplakette nennt die erkannte regionale Varietät. Die kurze
   Platzstimme darf lesbare Mundart beziehungsweise ein rätoromanisches Idiom
   verwenden und trägt ein eigenes `lang`-Attribut.

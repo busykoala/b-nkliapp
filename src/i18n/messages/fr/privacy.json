@@ -21,7 +21,7 @@
   "storage": {
     "title": "Cookies, stockage et conservation",
     "cookies": "Le cookie de connexion dure jusqu’à 30 jours. Un cookie nécessaire aux contributions peut durer un an. Se déconnecter termine la session actuelle. Le rythme de marche et le rappel du partage de position sont stockés dans le navigateur et disparaissent si tu effaces les données du site.",
-    "language": "La langue choisie est enregistrée dans un cookie pendant un an. En mode dialecte local, un second cookie mémorise la dernière langue standard pour les pages sans lieu précis. Sans choix explicite, nous utilisons une langue prise en charge du navigateur ou l’allemand.",
+    "language": "La langue choisie et l’interrupteur de dialecte indépendant sont enregistrés chacun dans un cookie pendant un an. Le dialecte ne concerne que la fiche d’un banc ouvert ; le menu et le reste de l’app gardent la langue choisie. Sans choix explicite, nous utilisons une langue prise en charge du navigateur ou l’allemand.",
     "retention": "Les itinéraires personnels restent au maximum cinq minutes en mémoire vive. Les données de compte et contributions sont conservées pour les fonctions jusqu’à leur suppression ou tant qu’elles sont nécessaires. Tu peux supprimer directement tes moments et photos. Les journaux de sécurité et d’infrastructure ainsi que les sauvegardes peuvent avoir d’autres durées de conservation.",
     "noTracking": "L’app n’utilise pas de cookies publicitaires ou d’analyse."
   },
