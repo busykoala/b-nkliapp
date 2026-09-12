@@ -365,7 +365,7 @@
     "panoramaDescription": "Panorama da la cuntrada calculà en 360 grads",
     "panoramaControl": "Volver la direcziun da la vista",
     "panoramaHeading": "Direcziun da la vista {degrees} grads",
-    "panoramaHint": "Trer u muventar il regulatur · partenza en direcziun dal banc",
+    "panoramaHint": "↔ ↕ Trer",
     "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient"
   },
   "page": {

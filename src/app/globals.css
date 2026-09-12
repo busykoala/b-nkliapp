@@ -701,9 +701,10 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-landscape { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 6 / 5; border: 0; border-radius: 2rem 2rem 0 0; background: #f7f1e5; box-shadow: none; }
 .bench-panorama { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 6 / 5; margin: 0; border-radius: 2rem 2rem 0 0; background: #dce3d8; }
 .bench-panorama::after { position: absolute; inset: 0; z-index: 2; pointer-events: none; content: ""; background: url("/map-art/textures/paper.webp") repeat; background-size: 256px; mix-blend-mode: multiply; opacity: .11; }
-.bench-panorama-viewport { position: absolute; inset: 0; z-index: 0; overflow: hidden; cursor: grab; touch-action: pan-y; user-select: none; }
+.bench-panorama-viewport { position: absolute; inset: 0; z-index: 0; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
+.bench-panorama-viewport:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: -4px; }
 .bench-panorama.is-dragging .bench-panorama-viewport { cursor: grabbing; }
-.bench-panorama-track { position: absolute; inset-block: 0; left: 0; display: flex; max-width: none; transform: translate3d(var(--panorama-offset), 0, 0); will-change: transform; }
+.bench-panorama-track { position: absolute; top: -8%; left: 0; display: flex; height: 116%; max-width: none; transform: translate3d(var(--panorama-offset), var(--panorama-y), 0); will-change: transform; }
 .bench-panorama-copy { position: relative; width: auto; height: 100%; aspect-ratio: 4 / 1; flex: none; }
 .bench-panorama-art { display: block; width: 100%; max-width: none; height: 100%; pointer-events: none; }
 .bench-panorama.phase-night .bench-panorama-art { filter: saturate(.54) brightness(.68) hue-rotate(8deg); }
@@ -726,10 +727,9 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-rain i:nth-child(5n+3), .bench-panorama-snow i:nth-child(5n+3) { margin-left: 63%; margin-top: 8%; }
 .bench-panorama-rain i:nth-child(5n+4), .bench-panorama-snow i:nth-child(5n+4) { margin-left: 79%; margin-top: 49%; }
 .bench-panorama-snow i { position: absolute; top: var(--drop-y); left: var(--drop-x); width: .28rem; height: .28rem; border-radius: 50%; background: rgb(255 253 238 / 72%); }
-.bench-panorama-controls { position: absolute; top: .72rem; right: .75rem; left: .75rem; z-index: 4; display: grid; grid-template-columns: auto minmax(4rem, 1fr); align-items: center; gap: .35rem .55rem; border: 1px solid rgb(43 67 57 / 15%); border-radius: .9rem; background: rgb(251 245 224 / 78%); padding: .48rem .62rem .42rem; color: #315649; box-shadow: 0 5px 18px rgb(27 48 41 / 10%); backdrop-filter: blur(8px); }
-.bench-panorama-controls > span { display: inline-flex; min-width: 3.25rem; align-items: center; gap: .3rem; font-size: .75rem; font-weight: 750; font-variant-numeric: tabular-nums; }
-.bench-panorama-controls input { width: 100%; height: 1.45rem; accent-color: #3e7464; cursor: ew-resize; }
-.bench-panorama-controls small { grid-column: 1 / -1; color: rgb(41 66 57 / 74%); font-size: .68rem; line-height: 1.25; text-align: center; }
+.bench-panorama-hud { position: absolute; bottom: .72rem; left: .72rem; z-index: 4; display: flex; max-width: calc(100% - 7.6rem); align-items: center; gap: .5rem; pointer-events: none; }
+.bench-panorama-hud > span { display: inline-flex; min-height: 2rem; flex: none; align-items: center; gap: .3rem; border: 1px solid rgb(43 67 57 / 15%); border-radius: 999px; background: rgb(251 245 224 / 82%); padding: .3rem .55rem; color: #315649; box-shadow: 0 4px 14px rgb(27 48 41 / 10%); font-size: .72rem; font-weight: 750; font-variant-numeric: tabular-nums; backdrop-filter: blur(8px); }
+.bench-panorama-hud small { overflow: hidden; border-radius: 999px; background: rgb(251 245 224 / 68%); padding: .24rem .45rem; color: rgb(41 66 57 / 82%); box-shadow: 0 3px 12px rgb(27 48 41 / 8%); font-size: .66rem; font-weight: 680; line-height: 1.2; text-overflow: ellipsis; text-shadow: 0 1px rgb(255 253 245 / 92%); white-space: nowrap; backdrop-filter: blur(6px); }
 .bench-panorama > .landscape-rating-action { z-index: 4; }
 .bench-landscape::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; content: ""; background: url("/map-art/textures/paper.webp") repeat; background-size: 256px; mix-blend-mode: multiply; opacity: .13; }
 .bench-landscape > svg { position: relative; z-index: 0; display: block; width: 100%; height: 100%; }
@@ -1612,8 +1612,7 @@ details[open] > summary .disclosure-chevron { transform: rotate(180deg); }
 .desktop-sheet[data-snap="half"] { transform: translateY(60%); }
 .desktop-sheet[data-snap="full"] { transform: translateY(0); }
 .desktop-sheet[data-snap="full"] .bench-story-card { padding-top: 4.25rem; }
-.desktop-sheet[data-snap="half"] .bench-landscape { display: none; }
-.desktop-sheet[data-snap="half"] .calm-title { padding-top: 4.8rem; }
+.desktop-sheet[data-snap="half"] .calm-title { padding-top: 1.3rem; }
 .sheet-chrome .overlay-resize { width: fit-content; max-width: calc(100% - 6rem); margin-inline: auto; gap: .3rem; padding-inline: .75rem; font-size: .75rem; font-weight: 750; text-shadow: 0 1px rgb(255 253 247 / 70%); }
 .programmatic-focus-heading:focus { outline: none; }
 .feed-nav, .thanks-nav, .statistics-nav, .profile-nav, .standalone-bench > header {
@@ -1709,7 +1708,7 @@ details[open] > summary .disclosure-chevron { transform: rotate(180deg); }
 
 @media (max-width: 767px) and (max-height: 650px) {
   .desktop-sheet[data-snap="half"] { transform: translateY(64%); }
-  .desktop-sheet[data-snap="half"] .calm-title { padding-top: 4.55rem; }
+  .desktop-sheet[data-snap="half"] .calm-title { padding-top: 1.3rem; }
 }
 
 .photo-thumbnail > .photo-thumbnail-image { padding: 0; }

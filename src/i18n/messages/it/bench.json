@@ -365,7 +365,7 @@
     "panoramaDescription": "Panorama del paesaggio calcolato a 360 gradi",
     "panoramaControl": "Ruota la direzione dello sguardo",
     "panoramaHeading": "Direzione dello sguardo a {degrees} gradi",
-    "panoramaHint": "Trascina o sposta il cursore · parte nella direzione della panchina",
+    "panoramaHint": "↔ ↕ Trascina",
     "panoramaCalculated": "Calcolato dai dati del terreno e dell’ambiente"
   },
   "page": {

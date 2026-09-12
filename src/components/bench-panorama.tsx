@@ -3,7 +3,7 @@
 
 import { Compass } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama";
 import type { BenchDetail } from "@/lib/types";
 import { BenchLandscape } from "./bench-landscape";
@@ -12,12 +12,21 @@ function normalizeHeading(value: number) {
   return ((value % 360) + 360) % 360;
 }
 
+const PANORAMA_HEIGHT_SCALE = 1.16;
+const PANORAMA_POLL_INTERVAL_MS = 5_000;
+const PANORAMA_POLL_ATTEMPTS = 60;
+
+export function clampPanoramaVertical(viewportHeight: number, value: number) {
+  const maximum = viewportHeight * (PANORAMA_HEIGHT_SCALE - 1) / 2;
+  return Math.max(-maximum, Math.min(maximum, value));
+}
+
 function property(bench: BenchDetail, key: string) {
   return bench.properties.find((item) => item.key === key)?.value ?? "";
 }
 
 export function panoramaTrackOffset(viewportWidth: number, viewportHeight: number, heading: number) {
-  const panoramaWidth = viewportHeight * 4;
+  const panoramaWidth = viewportHeight * PANORAMA_HEIGHT_SCALE * 4;
   return viewportWidth / 2 - panoramaWidth * (1 + normalizeHeading(heading) / 360);
 }
 
@@ -29,22 +38,32 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const [artifact, setArtifact] = useState<{ benchId: string; dataUrl: string } | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [dragging, setDragging] = useState(false);
+  const [verticalOffset, setVerticalOffset] = useState(0);
   const viewport = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ pointer: number; x: number; heading: number } | null>(null);
+  const drag = useRef<{ pointer: number; x: number; y: number; heading: number; verticalOffset: number } | null>(null);
+  const hintId = useId();
   const imageUrl = artifact?.benchId === bench.id ? artifact.dataUrl : null;
 
   useEffect(() => {
-    if (!bench.panoramaAvailable) {
-      void requestBenchPanorama(bench.id);
-      return;
-    }
     let active = true;
-    void loadBenchPanorama(bench.id).then((result) => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    const load = async () => {
+      const result = await loadBenchPanorama(bench.id).catch(() => null);
       if (!active) return;
-      if (result) setArtifact({ benchId: bench.id, dataUrl: result.dataUrl });
-      else setFailed(true);
-    });
-    return () => { active = false; };
+      if (result) {
+        setArtifact({ benchId: bench.id, dataUrl: result.dataUrl });
+        return;
+      }
+      attempts += 1;
+      if (attempts < PANORAMA_POLL_ATTEMPTS) timeout = setTimeout(load, PANORAMA_POLL_INTERVAL_MS);
+    };
+    if (!bench.panoramaAvailable) void requestBenchPanorama(bench.id).then(load, load);
+    else void load();
+    return () => {
+      active = false;
+      if (timeout) clearTimeout(timeout);
+    };
   }, [bench.id, bench.panoramaAvailable]);
   useEffect(() => {
     const element = viewport.current;
@@ -56,14 +75,15 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     return () => observer.disconnect();
   }, [imageUrl]);
 
-  if (!bench.panoramaAvailable || failed || !imageUrl) return <BenchLandscape bench={bench}>{children}</BenchLandscape>;
+  if (failed || !imageUrl) return <BenchLandscape bench={bench}>{children}</BenchLandscape>;
 
   const move = (event: PointerEvent<HTMLDivElement>) => {
     const active = drag.current;
     if (!active || active.pointer !== event.pointerId || !size.height) return;
     event.preventDefault();
-    const panoramaWidth = size.height * 4;
+    const panoramaWidth = size.height * PANORAMA_HEIGHT_SCALE * 4;
     setHeading(normalizeHeading(active.heading - (event.clientX - active.x) / panoramaWidth * 360));
+    setVerticalOffset(clampPanoramaVertical(size.height, active.verticalOffset + event.clientY - active.y));
   };
   const finish = (event: PointerEvent<HTMLDivElement>) => {
     if (drag.current?.pointer !== event.pointerId) return;
@@ -73,7 +93,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   };
   const offset = panoramaTrackOffset(size.width, size.height, heading);
   const degrees = Math.round(heading) % 360;
-  const style = { "--panorama-offset": `${offset}px` } as CSSProperties;
+  const style = { "--panorama-offset": `${offset}px`, "--panorama-y": `${verticalOffset}px` } as CSSProperties;
   const benchStyle = { left: `${initialHeading / 360 * 100}%` } as CSSProperties;
   const showsRearBench = property(bench, "backrest") !== "Nein";
   const material = property(bench, "material").toLocaleLowerCase();
@@ -92,16 +112,33 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const precipitation = bench.weather?.precipitationType ?? "none";
   const raining = precipitation === "rain" || precipitation === "mixed";
   const snowing = precipitation === "snow" || precipitation === "mixed";
+  const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      setHeading((current) => normalizeHeading(current + (event.key === "ArrowRight" ? 5 : -5)));
+    } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      event.preventDefault();
+      setVerticalOffset((current) => clampPanoramaVertical(size.height, current + (event.key === "ArrowDown" ? -8 : 8)));
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setHeading(initialHeading);
+      setVerticalOffset(0);
+    }
+  };
 
   return <figure className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}`}>
     <div
       ref={viewport}
       className="bench-panorama-viewport"
-      aria-label={t("panoramaDescription")}
+      role="group"
+      tabIndex={0}
+      aria-label={`${t("panoramaDescription")} · ${t("panoramaHeading", { degrees })}`}
+      aria-describedby={hintId}
+      onKeyDown={keyDown}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);
-        drag.current = { pointer: event.pointerId, x: event.clientX, heading };
+        drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, heading, verticalOffset };
         setDragging(true);
       }}
       onPointerMove={move}
@@ -138,19 +175,9 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       {raining && <div className="bench-panorama-rain" aria-hidden="true">{Array.from({ length: 24 }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 71) % 100}%`, "--drop-y": `${(index * 37) % 90}%` } as CSSProperties} />)}</div>}
       {snowing && <div className="bench-panorama-snow" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 61) % 100}%`, "--drop-y": `${(index * 29) % 90}%` } as CSSProperties} />)}</div>}
     </div>
-    <div className="bench-panorama-controls">
-      <span title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span>
-      <input
-        type="range"
-        min="0"
-        max="359"
-        step="1"
-        value={degrees}
-        aria-label={t("panoramaControl")}
-        aria-valuetext={t("panoramaHeading", { degrees })}
-        onChange={(event) => setHeading(Number(event.currentTarget.value))}
-      />
-      <small>{t("panoramaHint")}</small>
+    <div className="bench-panorama-hud">
+      <span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span>
+      <small id={hintId}>{t("panoramaHint")}</small>
     </div>
     {children}
   </figure>;

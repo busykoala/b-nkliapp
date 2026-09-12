@@ -8,7 +8,7 @@ test.afterEach(() => {
   const databasePath = process.env.BENCHLY_E2E_DATABASE;
   if (!databasePath) return;
   const database = new Database(databasePath);
-  const row = database.prepare("SELECT row_id FROM benches WHERE id='osm-node-101'").get() as { row_id: number } | undefined;
+  const row = database.prepare("SELECT row_id FROM benches WHERE id='osm-node-109'").get() as { row_id: number } | undefined;
   if (row) {
     database.prepare("DELETE FROM bench_panorama_renders WHERE bench_row_id=?").run(row.row_id);
     database.prepare("DELETE FROM bench_panorama_geometry WHERE bench_row_id=?").run(row.row_id);
@@ -21,7 +21,7 @@ function installPanoramaFixture() {
   const databasePath = process.env.BENCHLY_E2E_DATABASE!;
   const cacheRoot = process.env.BENCHLY_E2E_PANORAMA_CACHE!;
   const database = new Database(databasePath);
-  const bench = database.prepare("SELECT row_id,id,latitude,longitude FROM benches WHERE id='osm-node-101'")
+  const bench = database.prepare("SELECT row_id,id,latitude,longitude FROM benches WHERE id='osm-node-109'")
     .get() as { row_id: number; id: string; latitude: number; longitude: number };
   const directory = join(cacheRoot, "renders", "aa");
   const artifact = join(directory, "panorama-fixture.svg.gz");
@@ -54,34 +54,43 @@ function installPanoramaFixture() {
   database.close();
 }
 
-test("starts in bench direction and rotates the panorama seamlessly on mobile", async ({ page }, testInfo) => {
+test("starts in bench direction and pans the panorama in both axes on mobile", async ({ page }, testInfo) => {
   // First navigation lets the isolated test server migrate and seed its DB.
-  await page.goto("/bank/osm-node-101");
+  await page.goto("/?bank=osm-node-109");
+  await expect(page.locator(".bench-landscape")).toBeVisible();
   installPanoramaFixture();
-  await page.reload();
 
   const panorama = page.locator(".bench-panorama");
-  await expect(panorama).toBeVisible();
-  const control = page.getByRole("slider", { name: "Blickrichtung drehen" });
-  await expect(control).toHaveValue("205");
+  // A panorama completed by the worker appears in the open detail without a reload.
+  await expect(panorama).toBeVisible({ timeout: 7_000 });
+  await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "half");
+  await page.screenshot({ path: testInfo.outputPath("panorama-overlay-half.png") });
+  const bearing = panorama.locator(".bench-panorama-bearing");
+  await expect(bearing).toHaveText("325°");
+  await expect(panorama.getByRole("slider")).toHaveCount(0);
   const image = page.locator(".bench-panorama-art").first();
   await expect(image).toHaveJSProperty("complete", true);
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
 
-  await control.fill("359");
-  const before = await page.locator(".bench-panorama-track").getAttribute("style");
-  await control.fill("1");
-  const after = await page.locator(".bench-panorama-track").getAttribute("style");
-  expect(after).not.toBe(before);
-  await expect(control).toHaveAttribute("aria-valuetext", "Blickrichtung 1 Grad");
-
   const viewport = page.locator(".bench-panorama-viewport");
   const box = await viewport.boundingBox();
   expect(box).not.toBeNull();
-  await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .55);
+  const before = await page.locator(".bench-panorama-track").getAttribute("style");
+  await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .65);
   await page.mouse.down();
-  await page.mouse.move(box!.x + box!.width * .3, box!.y + box!.height * .55, { steps: 5 });
+  await page.mouse.move(box!.x + box!.width * .3, box!.y + box!.height * .32, { steps: 5 });
   await page.mouse.up();
-  await expect(control).not.toHaveValue("1");
+  const after = await page.locator(".bench-panorama-track").getAttribute("style");
+  expect(after).not.toBe(before);
+  expect(after).not.toContain("--panorama-y: 0px");
+  await expect(bearing).not.toHaveText("325°");
+
+  await viewport.focus();
+  await viewport.press("Home");
+  await expect(bearing).toHaveText("325°");
+  for (let index = 0; index < 65; index++) await viewport.press("ArrowLeft");
+  await expect(bearing).toHaveText("0°");
+  await viewport.press("ArrowLeft");
+  await expect(bearing).toHaveText("355°");
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-rotated.png") });
 });

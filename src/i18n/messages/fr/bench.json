@@ -365,7 +365,7 @@
     "panoramaDescription": "Panorama paysager calculé à 360 degrés",
     "panoramaControl": "Faire pivoter la direction du regard",
     "panoramaHeading": "Direction du regard à {degrees} degrés",
-    "panoramaHint": "Faire glisser ou déplacer le curseur · départ dans la direction du banc",
+    "panoramaHint": "↔ ↕ Faire glisser",
     "panoramaCalculated": "Calculé à partir des données du terrain et des environs"
   },
   "page": {

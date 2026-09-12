@@ -228,7 +228,7 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator("h2").first()).toBeInViewport();
+  await expect(sheet.locator(".bench-landscape")).toBeInViewport();
   await expect(sheet.getByText("Details zeigen", { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("short-phone-bench-sheet.png") });
   await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();

@@ -365,7 +365,7 @@
     "panoramaDescription": "Berechnetes 360-Grad-Landschaftspanorama",
     "panoramaControl": "Blickrichtung drehen",
     "panoramaHeading": "Blickrichtung {degrees} Grad",
-    "panoramaHint": "Ziehen oder Regler bewegen · Start in Bänkli-Blickrichtung",
+    "panoramaHint": "↔ ↕ Ziehen",
     "panoramaCalculated": "Aus Gelände- und Umgebungsdaten berechnet"
   },
   "page": {
