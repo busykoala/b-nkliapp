@@ -15,8 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from sqlmodel import Field as SqlField, SQLModel
 
 
-GEOMETRY_VERSION = "panorama-geometry-1"
-RENDER_VERSION = "panorama-watercolor-16"
+GEOMETRY_VERSION = "panorama-geometry-2"
+RENDER_VERSION = "panorama-watercolor-17"
 EARTH_RADIUS_METERS = 6_371_008.8
 
 
@@ -49,6 +49,9 @@ class TerrainSample(Contract):
     semantic: SemanticClass = SemanticClass.UNKNOWN_TERRAIN
     confidence: float = Field(default=1, ge=0, le=1)
     source: str = "unknown"
+    terrain_source: str = "unknown"
+    slope_degrees: float | None = Field(default=None, ge=-90, le=90)
+    relief_meters: float | None = Field(default=None, ge=0)
 
 
 class TerrainRay(Contract):
@@ -82,6 +85,7 @@ class BuildingGeometry(Contract):
     source_version: str | None = None
     confidence: float = Field(ge=0, le=1)
     roof_kind: Literal["known-pitched", "flat-or-unknown"] = "flat-or-unknown"
+    orientation_degrees: float | None = Field(default=None, ge=0, lt=180)
 
     @model_validator(mode="after")
     def valid_heights(self):
@@ -98,8 +102,12 @@ class VisibleSpan(Contract):
     distance_meters: float = Field(gt=0)
     semantic: SemanticClass
     source: str
+    terrain_source: str | None = None
     confidence: float = Field(ge=0, le=1)
     object_id: str | None = None
+    terrain_elevation_meters: float | None = None
+    slope_degrees: float | None = Field(default=None, ge=-90, le=90)
+    relief_meters: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def valid_interval(self):
@@ -108,10 +116,50 @@ class VisibleSpan(Contract):
         return self
 
 
+class TerrainEdge(Contract):
+    """A visible terrain boundary, including ridges below the outer skyline."""
+
+    elevation_angle_degrees: float
+    distance_meters: float = Field(gt=0)
+    terrain_elevation_meters: float
+    semantic: SemanticClass
+    kind: Literal["inner-ridge", "skyline"]
+    source: str
+    confidence: float = Field(ge=0, le=1)
+
+
+class BuildingProjectionSample(Contract):
+    """Visible vertical slice of one building after depth composition."""
+
+    azimuth_degrees: float = Field(ge=0, lt=360)
+    lower_angle_degrees: float
+    eaves_angle_degrees: float
+    upper_angle_degrees: float
+    distance_meters: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def valid_profile(self):
+        if self.upper_angle_degrees <= self.lower_angle_degrees:
+            raise ValueError("building projection must have positive angular height")
+        if not self.lower_angle_degrees <= self.eaves_angle_degrees <= self.upper_angle_degrees:
+            raise ValueError("building eaves must lie inside the projected silhouette")
+        return self
+
+
+class ProjectedBuilding(Contract):
+    object_id: str
+    source: str
+    source_version: str | None = None
+    confidence: float = Field(ge=0, le=1)
+    orientation_degrees: float | None = Field(default=None, ge=0, lt=180)
+    samples: tuple[BuildingProjectionSample, ...]
+
+
 class PanoramaColumn(Contract):
     azimuth_degrees: float = Field(ge=0, lt=360)
     skyline_angle_degrees: float
     spans: tuple[VisibleSpan, ...]
+    terrain_edges: tuple[TerrainEdge, ...] = ()
 
 
 class PanoramaConfig(Contract):
@@ -142,6 +190,10 @@ class GeometryIdentity(Contract):
     ground_elevation_meters: float
     observer_height_meters: float = Field(default=1.1, ge=.5, le=2.5)
     terrain_version: str
+    regional_terrain_version: str | None = None
+    border_terrain_version: str | None = None
+    lod_schedule_version: str = "panorama-lod-1"
+    high_resolution_distance_meters: float = Field(default=20_000, gt=0)
     semantic_version: str
     building_version: str
     surface_version: str | None = None
@@ -174,6 +226,7 @@ class PanoramaGeometry(Contract):
     eye_elevation_meters: float
     config: PanoramaConfig
     columns: tuple[PanoramaColumn, ...]
+    buildings: tuple[ProjectedBuilding, ...] = ()
     sources: tuple[SourceEvidence, ...]
     complete: bool
     warnings: tuple[str, ...] = ()

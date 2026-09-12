@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import resource
+import sys
 import time
 from argparse import Namespace
 from pathlib import Path
@@ -11,6 +13,7 @@ from benchly.context.rasters import RasterCollection
 from benchly.db import connect_database
 from benchly.panorama.cache import PanoramaCache, geometry_cache_key, render_cache_key
 from benchly.panorama.datasets import (
+    LOD_SCHEDULE_VERSION,
     load_buildings,
     load_semantic_index,
     raster_source_version,
@@ -43,6 +46,11 @@ def _database_version(database, source: str, fallback: str) -> str:
     return str(row["version"]) if row else fallback
 
 
+def _optional_database_version(database, source: str) -> str | None:
+    row = database.execute("SELECT version FROM official_context_sources WHERE source=?", (source,)).fetchone()
+    return str(row["version"]) if row else None
+
+
 def _osm_version(database) -> str:
     row = database.execute("""SELECT coalesce(source_version,pipeline_version,finished_at) version FROM pipeline_runs
         WHERE kind IN ('import-osm','refresh') AND status='completed' ORDER BY id DESC LIMIT 1""").fetchone()
@@ -60,23 +68,36 @@ def _bench_variant(row) -> str:
 def panorama_batch_job(args: Namespace) -> None:
     database = connect_database(Path(args.database).resolve())
     terrain = RasterCollection(Path(args.terrain_dir).resolve())
+    regional_terrain = RasterCollection(Path(args.regional_terrain_dir).resolve()) if args.regional_terrain_dir else None
+    border_terrain = RasterCollection(Path(args.border_terrain_dir).resolve()) if args.border_terrain_dir else None
     cache = PanoramaCache(Path(args.cache_dir).resolve())
     stats = {"selected": 0, "generated": 0, "cache_hits": 0, "partial": 0, "unavailable": 0, "failed": 0,
              "terrain_seconds": 0.0, "semantic_seconds": 0.0, "building_seconds": 0.0,
-             "visibility_seconds": 0.0, "render_seconds": 0.0, "errors": []}
+             "visibility_seconds": 0.0, "render_seconds": 0.0, "cache_lookup_seconds": 0.0,
+             "maximum_bench_seconds": 0.0, "errors": []}
+    job_started = time.perf_counter()
     try:
         require_schema(database)
         if not terrain.datasets:
             raise RuntimeError("panorama-batch requires indexed swissALTI3D GeoTIFFs")
         terrain_version = raster_source_version(terrain)
-        semantic_version = _database_version(database, "swissTLM3D", f"osm:{_osm_version(database)}")
-        building_version = _database_version(database, "swissBUILDINGS3D", f"context:{semantic_version}:osm:{_osm_version(database)}")
+        regional_terrain_version = raster_source_version(regional_terrain) if regional_terrain and regional_terrain.datasets else None
+        border_terrain_version = raster_source_version(border_terrain) if border_terrain and border_terrain.datasets else None
+        osm_version = _osm_version(database)
+        tlm_version = _database_version(database, "swissTLM3D", "absent")
+        swissbuildings_version = _optional_database_version(database, "swissBUILDINGS3D")
+        semantic_version = f"tlm:{tlm_version}:osm:{osm_version}"
+        building_version = f"swiss:{swissbuildings_version or 'absent'}:tlm:{tlm_version}:osm:{osm_version}"
         config = PanoramaConfig(
             angular_resolution_degrees=args.angular_resolution,
             maximum_distance_meters=args.maximum_distance_meters,
         )
         source_versions = {
             "terrain": terrain_version,
+            "regional_terrain": regional_terrain_version or "absent",
+            "border_terrain": border_terrain_version or "absent",
+            "lod_schedule": LOD_SCHEDULE_VERSION,
+            "high_resolution_distance_meters": f"{args.high_resolution_distance_meters:g}",
             "semantic": semantic_version,
             "building": building_version,
             "algorithm": GEOMETRY_VERSION,
@@ -100,10 +121,16 @@ def panorama_batch_job(args: Namespace) -> None:
         for row in rows:
             if time.monotonic() >= deadline:
                 break
+            bench_started = time.perf_counter()
             identity = GeometryIdentity(
                 latitude=float(row["latitude"]), longitude=float(row["longitude"]),
                 ground_elevation_meters=float(row["elevation_meters"]),
-                terrain_version=terrain_version, semantic_version=semantic_version,
+                terrain_version=terrain_version,
+                regional_terrain_version=regional_terrain_version,
+                border_terrain_version=border_terrain_version,
+                lod_schedule_version=LOD_SCHEDULE_VERSION,
+                high_resolution_distance_meters=args.high_resolution_distance_meters,
+                semantic_version=semantic_version,
                 building_version=building_version,
                 maximum_distance_meters=config.maximum_distance_meters,
                 angular_resolution_degrees=config.angular_resolution_degrees,
@@ -113,13 +140,20 @@ def panorama_batch_job(args: Namespace) -> None:
             key = geometry_cache_key(identity)
             mark_generating(database, row, key, source_versions)
             try:
+                started = time.perf_counter()
                 geometry = cache.get_geometry(key)
+                stats["cache_lookup_seconds"] += time.perf_counter() - started
                 if geometry is None:
                     started = time.perf_counter()
                     semantic_index = load_semantic_index(database, float(row["latitude"]), float(row["longitude"]), args.semantic_radius_meters)
                     stats["semantic_seconds"] += time.perf_counter() - started
                     started = time.perf_counter()
-                    rays = sample_terrain_rays(float(row["latitude"]), float(row["longitude"]), terrain, config, semantic_index)
+                    rays = sample_terrain_rays(
+                        float(row["latitude"]), float(row["longitude"]), terrain, config, semantic_index,
+                        regional_terrain=regional_terrain,
+                        border_terrain=border_terrain,
+                        high_resolution_distance_meters=args.high_resolution_distance_meters,
+                    )
                     stats["terrain_seconds"] += time.perf_counter() - started
                     started = time.perf_counter()
                     buildings: list[BuildingGeometry] = load_buildings(
@@ -128,6 +162,12 @@ def panorama_batch_job(args: Namespace) -> None:
                     started = time.perf_counter()
                     geometry = build_panorama_geometry(identity, rays, buildings, (
                         SourceEvidence(source="swissALTI3D", version=terrain_version, confidence=1),
+                        *(() if regional_terrain_version is None else (
+                            SourceEvidence(source="regional terrain", version=regional_terrain_version, confidence=.92),
+                        )),
+                        *(() if border_terrain_version is None else (
+                            SourceEvidence(source="cross-border terrain", version=border_terrain_version, confidence=.86),
+                        )),
                         SourceEvidence(source="swissTLM3D", version=semantic_version, confidence=.9),
                         SourceEvidence(source="building hierarchy", version=building_version, confidence=.75),
                     ), config)
@@ -168,10 +208,18 @@ def panorama_batch_job(args: Namespace) -> None:
                 stats["unavailable" if status == "unavailable" else "failed"] += 1
                 if len(stats["errors"]) < 3:
                     stats["errors"].append({"bench_id": str(row["id"]), "error": str(error)[:400]})
+            finally:
+                stats["maximum_bench_seconds"] = max(stats["maximum_bench_seconds"], time.perf_counter() - bench_started)
         stats["finished_at"] = now_iso()
+        stats["total_seconds"] = time.perf_counter() - job_started
+        stats["maximum_rss_mb"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 if sys.platform != "darwin" else 1024 * 1024)
         print(json.dumps(stats, indent=2, sort_keys=True))
         if stats["selected"] and not stats["generated"] and not stats["cache_hits"]:
             raise RuntimeError("panorama batch produced no usable geometry; inspect the reported errors")
     finally:
         terrain.close()
+        if regional_terrain:
+            regional_terrain.close()
+        if border_terrain:
+            border_terrain.close()
         database.close()

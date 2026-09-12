@@ -55,6 +55,24 @@ def test_near_ridge_hides_a_lower_distant_ridge_but_retains_visible_layers():
     assert SemanticClass.SNOW_OR_GLACIER in semantics
 
 
+def test_inner_ridge_is_retained_below_the_outer_skyline_and_painted():
+    north = [
+        TerrainSample(distance_meters=100, elevation_meters=500, semantic=SemanticClass.OPEN_GRASSLAND, source="fixture"),
+        TerrainSample(distance_meters=1_000, elevation_meters=650, semantic=SemanticClass.FOREST, source="fixture"),
+        TerrainSample(distance_meters=8_000, elevation_meters=2_000, semantic=SemanticClass.ROCK, source="fixture"),
+    ]
+    result = build_panorama_geometry(IDENTITY, rays({0: north}), config=CONFIG)
+    edges = result.columns[0].terrain_edges
+    assert [edge.kind for edge in edges] == ["inner-ridge", "inner-ridge", "skyline"]
+    assert edges[-2].elevation_angle_degrees < edges[-1].elevation_angle_degrees
+
+    # A four-column fixture makes the real inner edge long enough for the
+    # renderer's noise-suppression threshold.
+    circular = build_panorama_geometry(IDENTITY, rays({azimuth: north for azimuth in (0, 90, 180, 270)}), config=CONFIG)
+    svg = render_panorama_svg(circular, 720, 240)
+    assert 'id="terrain-inner-ridges"' in svg
+
+
 def test_near_building_occludes_mountain_and_crosses_skyline():
     north = [
         TerrainSample(distance_meters=100, elevation_meters=500, semantic=SemanticClass.OPEN_GRASSLAND, source="fixture"),
@@ -77,6 +95,9 @@ def test_near_building_occludes_mountain_and_crosses_skyline():
     assert building[0].object_id == "house-1"
     assert building[0].upper_angle_degrees == result.columns[0].skyline_angle_degrees
     assert not any(span.semantic == SemanticClass.ROCK and span.lower_angle_degrees < building[0].upper_angle_degrees <= span.upper_angle_degrees for span in north_spans)
+    assert len(result.buildings) == 1
+    assert result.buildings[0].object_id == "house-1"
+    assert result.buildings[0].samples[0].lower_angle_degrees < result.buildings[0].samples[0].eaves_angle_degrees
 
 
 def test_building_behind_near_ridge_is_depth_hidden():
@@ -95,6 +116,23 @@ def test_building_behind_near_ridge_is_depth_hidden():
     )
     result = build_panorama_geometry(IDENTITY, rays({0: north}), [house], config=CONFIG)
     assert not any(span.object_id == "hidden-house" for span in result.columns[0].spans)
+    assert result.buildings == ()
+    assert result.columns[0].terrain_edges[-1].distance_meters == 500
+
+
+def test_near_building_hides_inner_terrain_edge_at_the_same_angle():
+    north = [
+        TerrainSample(distance_meters=100, elevation_meters=500, semantic=SemanticClass.OPEN_GRASSLAND, source="fixture"),
+        TerrainSample(distance_meters=1_000, elevation_meters=650, semantic=SemanticClass.ROCK, source="fixture"),
+        TerrainSample(distance_meters=10_000, elevation_meters=2_000, semantic=SemanticClass.ROCK, source="fixture"),
+    ]
+    house = BuildingGeometry(
+        source_id="edge-blocker", footprint=((-20, 100), (20, 100), (20, 130), (-20, 130)),
+        ground_elevation_meters=500, eaves_elevation_meters=525, roof_elevation_meters=525,
+        source="fixture", confidence=1,
+    )
+    result = build_panorama_geometry(IDENTITY, rays({0: north}), [house], config=CONFIG)
+    assert not any(edge.distance_meters == 1_000 for edge in result.columns[0].terrain_edges)
 
 
 def test_two_buildings_use_nearest_depth_in_overlap():
@@ -110,6 +148,22 @@ def test_two_buildings_use_nearest_depth_in_overlap():
     assert buildings[0].object_id == "near"
 
 
+def test_building_below_mountain_skyline_remains_visible_when_line_of_sight_is_clear():
+    north = [
+        TerrainSample(distance_meters=100, elevation_meters=500, semantic=SemanticClass.OPEN_GRASSLAND, source="fixture"),
+        TerrainSample(distance_meters=5_000, elevation_meters=1_300, semantic=SemanticClass.ROCK, source="fixture"),
+    ]
+    house = BuildingGeometry(
+        source_id="valley-house", footprint=((-12, 450), (12, 450), (12, 475), (-12, 475)),
+        ground_elevation_meters=500, eaves_elevation_meters=512, roof_elevation_meters=512,
+        source="fixture", confidence=1,
+    )
+    result = build_panorama_geometry(IDENTITY, rays({0: north}), [house], config=CONFIG)
+    building = next(span for span in result.columns[0].spans if span.object_id == "valley-house")
+    assert building.upper_angle_degrees < result.columns[0].skyline_angle_degrees
+    assert result.buildings[0].object_id == "valley-house"
+
+
 def test_curvature_and_refraction_are_explicit():
     geometric = curvature_drop(100_000, 0)
     refracted = curvature_drop(100_000, .13)
@@ -122,6 +176,10 @@ def test_geometry_cache_excludes_direction_while_render_cache_includes_it():
     assert first == geometry_cache_key(IDENTITY.model_copy())
     assert first != geometry_cache_key(IDENTITY.model_copy(update={"building_radius_meters": 3_000}))
     assert first != geometry_cache_key(IDENTITY.model_copy(update={"semantic_radius_meters": 30_000}))
+    assert first != geometry_cache_key(IDENTITY.model_copy(update={"regional_terrain_version": "regio-v2"}))
+    assert first != geometry_cache_key(IDENTITY.model_copy(update={"border_terrain_version": "copernicus-v2"}))
+    assert first != geometry_cache_key(IDENTITY.model_copy(update={"lod_schedule_version": "lod-v2"}))
+    assert first != geometry_cache_key(IDENTITY.model_copy(update={"high_resolution_distance_meters": 10_000}))
     base = dict(geometry_key=first, horizontal_fov_degrees=100, width=1600, height=720,
                 weather_bucket="clear", solar_lunar_bucket="day", bench_variant="wood-back", covered=False)
     north = render_cache_key(RenderIdentity(center_azimuth_degrees=0, **base))
@@ -143,6 +201,7 @@ def test_watercolor_renderer_is_deterministic_and_contains_no_location_text():
     assert 'id="water-pigment"' in first
     assert 'id="mountain-pigment"' in first
     assert 'id="building-pigment"' in first
+    assert 'id="terrain-inner-ridges"' not in first
     assert '<use href="#shape-open-grassland-near"' in first
     assert 'stroke-linecap="round"' in first
 

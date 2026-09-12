@@ -22,6 +22,7 @@ from benchly.panorama.models import BuildingGeometry, PanoramaConfig, SemanticCl
 
 WGS84 = Geod(ellps="WGS84")
 WGS84_TO_LV95 = Transformer.from_crs(4326, 2056, always_xy=True)
+LOD_SCHEDULE_VERSION = "panorama-lod-1"
 
 
 def distance_schedule(maximum_distance_meters: float) -> np.ndarray:
@@ -141,8 +142,16 @@ def sample_terrain_rays(
     terrain: RasterCollection,
     config: PanoramaConfig,
     semantics: SemanticIndex | None = None,
+    regional_terrain: RasterCollection | None = None,
+    border_terrain: RasterCollection | None = None,
+    high_resolution_distance_meters: float = 20_000,
 ) -> list[TerrainRay]:
-    """Sample the dedicated high-resolution 360° path in one raster batch."""
+    """Sample a full-circle LOD path in a few raster batches.
+
+    swissALTI3D remains authoritative nearby. A prepared regional overview can
+    answer far samples much more cheaply; missing pixels fall back through the
+    primary terrain and finally an optional cross-border DEM.
+    """
     distances = distance_schedule(config.maximum_distance_meters)
     azimuths = np.arange(config.column_count, dtype=float) * config.angular_resolution_degrees
     flat_bearings = np.repeat(azimuths, len(distances))
@@ -154,7 +163,28 @@ def sample_terrain_rays(
         flat_distances,
     )
     locations = list(zip(latitudes.tolist(), longitudes.tolist()))
-    elevations = terrain.sample_many(locations)
+    elevations: list[float | None] = [None] * len(locations)
+    terrain_sources = np.full(len(locations), "unavailable", dtype=object)
+
+    def sample(indices: np.ndarray, collection: RasterCollection | None, source: str) -> None:
+        if collection is None or not getattr(collection, "datasets", True) or not len(indices):
+            return
+        missing = [int(index) for index in indices if elevations[int(index)] is None]
+        if not missing:
+            return
+        values = collection.sample_many([locations[index] for index in missing])
+        for index, value in zip(missing, values):
+            if value is not None:
+                elevations[index] = float(value)
+                terrain_sources[index] = source
+
+    near = np.flatnonzero(flat_distances <= high_resolution_distance_meters)
+    far = np.flatnonzero(flat_distances > high_resolution_distance_meters)
+    sample(near, terrain, "swissALTI3D")
+    sample(far, regional_terrain, "regional-terrain")
+    sample(far, terrain, "swissALTI3D")
+    all_indices = np.arange(len(locations))
+    sample(all_indices, border_terrain, "cross-border-terrain")
     if semantics:
         classes, confidences, sources = semantics.classify(np.asarray(longitudes), np.asarray(latitudes))
     else:
@@ -165,13 +195,38 @@ def sample_terrain_rays(
     rays = []
     for ray_index, azimuth in enumerate(azimuths):
         offset = ray_index * len(distances)
+        ray_elevations = elevations[offset:offset + len(distances)]
+        slopes: list[float | None] = []
+        relief: list[float | None] = []
+        for sample_index, elevation in enumerate(ray_elevations):
+            if elevation is None:
+                slopes.append(None)
+                relief.append(None)
+                continue
+            start = max(0, sample_index - 2)
+            end = min(len(ray_elevations), sample_index + 3)
+            neighborhood = [float(value) for value in ray_elevations[start:end] if value is not None]
+            relief.append(max(neighborhood) - min(neighborhood) if neighborhood else 0.0)
+            previous = next((index for index in range(sample_index - 1, -1, -1) if ray_elevations[index] is not None), None)
+            following = next((index for index in range(sample_index + 1, len(ray_elevations)) if ray_elevations[index] is not None), None)
+            if previous is None and following is None:
+                slopes.append(0.0)
+            else:
+                left = previous if previous is not None else sample_index
+                right = following if following is not None else sample_index
+                run = float(distances[right] - distances[left])
+                rise = float(ray_elevations[right] - ray_elevations[left])
+                slopes.append(math.degrees(math.atan2(rise, run)) if run else 0.0)
         samples = tuple(TerrainSample(
             distance_meters=float(distance),
             elevation_meters=float(elevation),
             semantic=classes[offset + index],
             confidence=float(confidences[offset + index]),
             source=str(sources[offset + index]),
-        ) for index, (distance, elevation) in enumerate(zip(distances, elevations[offset:offset + len(distances)])) if elevation is not None)
+            terrain_source=str(terrain_sources[offset + index]),
+            slope_degrees=slopes[index],
+            relief_meters=relief[index],
+        ) for index, (distance, elevation) in enumerate(zip(distances, ray_elevations)) if elevation is not None)
         rays.append(TerrainRay(
             azimuth_degrees=float(azimuth),
             samples=samples,
@@ -182,6 +237,21 @@ def sample_terrain_rays(
 
 def _row_height(row, key: str):
     return float(row[key]) if key in row.keys() and row[key] is not None else None
+
+
+def _footprint_orientation(coordinates: tuple[tuple[float, float], ...]) -> float | None:
+    """Return the longest footprint edge orientation, modulo 180 degrees."""
+    if len(coordinates) < 2:
+        return None
+    closed = (*coordinates, coordinates[0])
+    edges = [
+        (math.hypot(second[0] - first[0], second[1] - first[1]), first, second)
+        for first, second in zip(closed, closed[1:])
+    ]
+    length, first, second = max(edges, key=lambda item: item[0])
+    if length <= .05:
+        return None
+    return math.degrees(math.atan2(second[0] - first[0], second[1] - first[1])) % 180
 
 
 def load_buildings(database, latitude: float, longitude: float, terrain: RasterCollection,
@@ -272,5 +342,6 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
             source_version=str(row["source_version"]) if "source_version" in row.keys() and row["source_version"] else None,
             confidence=confidence,
             roof_kind="known-pitched" if source == "swissBUILDINGS3D" and roof - eaves >= 1 else "flat-or-unknown",
+            orientation_degrees=_footprint_orientation(coordinates),
         ))
     return result

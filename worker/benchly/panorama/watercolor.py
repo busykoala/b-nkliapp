@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import html
 import base64
+import math
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
@@ -81,6 +82,69 @@ def _distance_band(distance_meters: float) -> str:
     return "far"
 
 
+def _inner_ridge_paths(columns: tuple[PanoramaColumn, ...], width: int, height: int,
+                       minimum: float, maximum: float) -> dict[str, list[str]]:
+    """Join real below-skyline terrain edges into restrained contour strokes.
+
+    Quantised logarithmic distance is stable enough to connect one ridge over
+    adjacent azimuth columns without merging a foreground shoulder with a
+    remote mountain. Short isolated fragments are deliberately omitted.
+    """
+    x_scale = width / len(columns)
+    runs: dict[tuple[str, int], list[tuple[float, float]]] = {}
+    paths: dict[str, list[str]] = defaultdict(list)
+
+    def flush(key: tuple[str, int]) -> None:
+        points = runs.pop(key, [])
+        if len(points) < 4:
+            return
+        command = [f"M{points[0][0]:.2f} {points[0][1]:.2f}"]
+        command.extend(f"L{x:.2f} {y:.2f}" for x, y in points[1:])
+        paths[key[0]].append("".join(command))
+
+    for index, column in enumerate(columns):
+        current: dict[tuple[str, int], tuple[float, float]] = {}
+        if column.terrain_edges:
+            edges = [
+                (edge.kind, edge.semantic, edge.distance_meters, edge.elevation_angle_degrees)
+                for edge in column.terrain_edges
+            ]
+        else:
+            # Geometry-v1 cache compatibility while v2 is prewarmed: every
+            # visible terrain layer except the outermost one ends in a real
+            # below-skyline occlusion edge.
+            terrain = [span for span in column.spans if span.semantic != SemanticClass.BUILDING]
+            edges = [
+                ("inner-ridge", span.semantic, span.distance_meters, span.upper_angle_degrees)
+                for span in terrain[:-1]
+            ]
+        for kind, semantic, distance, elevation_angle in edges:
+            if kind != "inner-ridge" or semantic not in _MOUNTAIN_SEMANTICS:
+                continue
+            band = _distance_band(distance)
+            if band not in {"middle", "far"}:
+                continue
+            distance_bucket = round(math.log2(max(1, distance) / 100) * 2)
+            key = (band, distance_bucket)
+            point = ((index + .5) * x_scale, _y(elevation_angle, minimum, maximum, height))
+            # Where multiple visible layers share a bucket, the higher edge is
+            # the most legible and usually the terrain shoulder we want.
+            if key not in current or point[1] < current[key][1]:
+                current[key] = point
+        for key in list(runs):
+            if key not in current:
+                flush(key)
+        for key, point in current.items():
+            previous = runs.get(key)
+            if previous and abs(previous[-1][1] - point[1]) > height * .09:
+                flush(key)
+                previous = None
+            runs.setdefault(key, []).append(point)
+    for key in list(runs):
+        flush(key)
+    return paths
+
+
 def _render_columns_svg(geometry: PanoramaGeometry, columns: tuple[PanoramaColumn, ...], width: int, height: int,
                         description: str) -> str:
     if width < 360 or height < 180:
@@ -99,22 +163,19 @@ def _render_columns_svg(geometry: PanoramaGeometry, columns: tuple[PanoramaColum
     building_edges: list[str] = []
     building_faces: list[tuple[str, float, float, float, float, str]] = []
     mountain_ridges: dict[str, list[str]] = defaultdict(list)
-    mountain_contours: dict[str, list[str]] = defaultdict(list)
+    mountain_contours = _inner_ridge_paths(columns, width, height, minimum, maximum)
     mark_stride = max(3, round(13 / max(x_scale, .01)))
 
     for index, column in enumerate(columns):
         x0, x1 = index * x_scale, (index + 1) * x_scale + .22
         center = (x0 + x1) / 2
         skyline.append(f"{'M' if index == 0 else 'L'}{center:.2f} {_y(column.skyline_angle_degrees, minimum, maximum, height):.2f}")
-        for span_index, span in enumerate(column.spans):
+        for span in column.spans:
             top = _y(span.upper_angle_degrees, minimum, maximum, height)
             bottom = _y(span.lower_angle_degrees, minimum, maximum, height)
             band = _distance_band(span.distance_meters)
             command = f"M{center:.2f} {top:.2f}V{bottom:.2f}"
             paths[(span.semantic, band)].append(command)
-            if (span_index == len(column.spans) - 2 and span.semantic in _MOUNTAIN_SEMANTICS
-                    and band in {"far", "middle"}):
-                mountain_contours[band].append(f"M{x0:.2f} {top:.2f}H{x1:.2f}")
         if not column.spans:
             continue
         visible = column.spans[-1]
@@ -275,11 +336,14 @@ def _render_columns_svg(geometry: PanoramaGeometry, columns: tuple[PanoramaColum
         ridge = "".join(commands)
         opacity = .2 if band == "middle" else .11
         parts.append(f'<path d="{ridge}" fill="none" stroke="#596963" stroke-opacity="{opacity}" stroke-width="1.4" stroke-linecap="round"/>')
-    for band, commands in mountain_contours.items():
-        contour = "".join(commands)
-        opacity = .34 if band == "middle" else .21
-        parts.append(f'<path d="{contour}" fill="none" stroke="#f1e3c5" stroke-opacity=".14" stroke-width="3.4" stroke-linecap="round"/>')
-        parts.append(f'<path d="{contour}" fill="none" stroke="#52645f" stroke-opacity="{opacity}" stroke-width=".76" stroke-linecap="round"/>')
+    if mountain_contours:
+        parts.append('<g id="terrain-inner-ridges">')
+        for band, commands in mountain_contours.items():
+            contour = "".join(commands)
+            opacity = .48 if band == "middle" else .32
+            parts.append(f'<path d="{contour}" fill="none" stroke="#f1e3c5" stroke-opacity=".18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>')
+            parts.append(f'<path d="{contour}" fill="none" stroke="#52645f" stroke-opacity="{opacity}" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>')
+        parts.append('</g>')
     if forest_marks:
         parts.append(f'<g id="forest-cues"><path d="{"".join(forest_marks)}" fill="none" stroke="#365f49" stroke-opacity=".31" stroke-width="1.15" stroke-linecap="round"/></g>')
     if water_marks:

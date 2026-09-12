@@ -14,13 +14,16 @@ from benchly.panorama.cache import geometry_cache_key
 from benchly.panorama.models import (
     EARTH_RADIUS_METERS,
     BuildingGeometry,
+    BuildingProjectionSample,
     GeometryIdentity,
     PanoramaColumn,
     PanoramaConfig,
     PanoramaGeometry,
+    ProjectedBuilding,
     SemanticClass,
     SourceEvidence,
     TerrainRay,
+    TerrainEdge,
     TerrainSample,
     VisibleSpan,
 )
@@ -58,7 +61,11 @@ def visible_terrain_spans(ray: TerrainRay, eye_elevation_meters: float, config: 
             distance_meters=sample.distance_meters,
             semantic=sample.semantic,
             source=sample.source,
+            terrain_source=sample.terrain_source,
             confidence=sample.confidence,
+            terrain_elevation_meters=sample.elevation_meters,
+            slope_degrees=sample.slope_degrees,
+            relief_meters=sample.relief_meters,
         ))
         top = angle
     return spans
@@ -121,7 +128,7 @@ def _building_columns(building: BuildingGeometry, config: PanoramaConfig, eye_el
         top = math.degrees(math.atan2(top_height - drop - eye_elevation, distance))
         if top <= config.minimum_elevation_angle or base >= config.maximum_elevation_angle:
             continue
-        output.append((raw_index % config.column_count, VisibleSpan(
+        span = VisibleSpan(
             lower_angle_degrees=max(config.minimum_elevation_angle, base),
             upper_angle_degrees=min(config.maximum_elevation_angle, max(eaves, top)),
             distance_meters=distance,
@@ -129,6 +136,13 @@ def _building_columns(building: BuildingGeometry, config: PanoramaConfig, eye_el
             source=building.source,
             confidence=building.confidence,
             object_id=building.source_id,
+        )
+        output.append((raw_index % config.column_count, span, BuildingProjectionSample(
+            azimuth_degrees=azimuth,
+            lower_angle_degrees=span.lower_angle_degrees,
+            eaves_angle_degrees=min(span.upper_angle_degrees, max(span.lower_angle_degrees, eaves)),
+            upper_angle_degrees=span.upper_angle_degrees,
+            distance_meters=distance,
         )))
     return output
 
@@ -182,22 +196,77 @@ def build_panorama_geometry(
 
     eye_elevation = identity.ground_elevation_meters + config.observer_height_meters
     building_spans: dict[int, list[VisibleSpan]] = defaultdict(list)
+    building_profiles: dict[tuple[int, str], BuildingProjectionSample] = {}
+    building_metadata = {building.source_id: building for building in buildings}
     for building in buildings:
-        for index, span in _building_columns(building, config, eye_elevation):
+        for index, span, profile in _building_columns(building, config, eye_elevation):
             building_spans[index].append(span)
+            building_profiles[(index, building.source_id)] = profile
 
     columns: list[PanoramaColumn] = []
+    visible_building_profiles: dict[str, list[BuildingProjectionSample]] = defaultdict(list)
     for index in range(expected):
         azimuth = index * config.angular_resolution_degrees
         ray = by_index.get(index, TerrainRay(azimuth_degrees=azimuth, samples=()))
         terrain = visible_terrain_spans(ray, eye_elevation, config)
         spans = _compose_spans([*terrain, *building_spans.get(index, ())])
         skyline = max((span.upper_angle_degrees for span in spans), default=config.minimum_elevation_angle)
-        columns.append(PanoramaColumn(azimuth_degrees=azimuth, skyline_angle_degrees=skyline, spans=spans))
+        terrain_edges: list[TerrainEdge] = []
+        for terrain_index, span in enumerate(terrain):
+            edge_angle = span.upper_angle_degrees
+            # A near building can hide an otherwise valid terrain ridge. Keep
+            # the edge only when the final depth composition still exposes it.
+            hidden = any(
+                candidate.semantic == SemanticClass.BUILDING
+                and candidate.distance_meters < span.distance_meters
+                and candidate.lower_angle_degrees - _EPSILON <= edge_angle <= candidate.upper_angle_degrees + _EPSILON
+                for candidate in spans
+            )
+            if hidden or span.terrain_elevation_meters is None:
+                continue
+            terrain_edges.append(TerrainEdge(
+                elevation_angle_degrees=edge_angle,
+                distance_meters=span.distance_meters,
+                terrain_elevation_meters=span.terrain_elevation_meters,
+                semantic=span.semantic,
+                kind="skyline" if terrain_index == len(terrain) - 1 else "inner-ridge",
+                source=span.source,
+                confidence=span.confidence,
+            ))
+        for span in spans:
+            if not span.object_id:
+                continue
+            profile = building_profiles.get((index, span.object_id))
+            if profile is None:
+                continue
+            visible_building_profiles[span.object_id].append(profile.model_copy(update={
+                "lower_angle_degrees": span.lower_angle_degrees,
+                "eaves_angle_degrees": min(span.upper_angle_degrees, max(span.lower_angle_degrees, profile.eaves_angle_degrees)),
+                "upper_angle_degrees": span.upper_angle_degrees,
+            }))
+        columns.append(PanoramaColumn(
+            azimuth_degrees=azimuth,
+            skyline_angle_degrees=skyline,
+            spans=spans,
+            terrain_edges=tuple(terrain_edges),
+        ))
 
     incomplete_rays = sum(not ray.has_complete_coverage for ray in by_index.values())
     if incomplete_rays:
         warnings.append(f"partial terrain coverage in {incomplete_rays}/{expected} columns")
+
+    projected_buildings = tuple(
+        ProjectedBuilding(
+            object_id=object_id,
+            source=building_metadata[object_id].source,
+            source_version=building_metadata[object_id].source_version,
+            confidence=building_metadata[object_id].confidence,
+            orientation_degrees=building_metadata[object_id].orientation_degrees,
+            samples=tuple(sorted(profiles, key=lambda sample: sample.azimuth_degrees)),
+        )
+        for object_id, profiles in sorted(visible_building_profiles.items())
+        if object_id in building_metadata and profiles
+    )
 
     return PanoramaGeometry(
         identity_key=geometry_cache_key(identity),
@@ -207,6 +276,7 @@ def build_panorama_geometry(
         eye_elevation_meters=eye_elevation,
         config=config,
         columns=tuple(columns),
+        buildings=projected_buildings,
         sources=tuple(sources),
         complete=len(by_index) == expected and incomplete_rays == 0,
         warnings=tuple(warnings),
