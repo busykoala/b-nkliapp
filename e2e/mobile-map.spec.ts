@@ -148,12 +148,14 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
   const orientation = page.getByRole("button", { name: "Karte nach Handyrichtung ausrichten" });
   await orientation.click();
   await expect(page.locator(".map-orientation-control")).toHaveAttribute("aria-pressed", "true");
-  await page.evaluate(() => {
+  const expectedHeading = await page.evaluate(() => {
     const event = new Event("deviceorientationabsolute");
     Object.defineProperties(event, { alpha: { value: 270 }, absolute: { value: true } });
     window.dispatchEvent(event);
+    const angle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
+    return String((90 + angle) % 360);
   });
-  await expect(map).toHaveAttribute("data-device-heading", "90");
+  await expect(map).toHaveAttribute("data-device-heading", expectedHeading);
   await page.getByRole("button", { name: "Norden wieder oben anzeigen" }).click();
   await expect(map).toHaveAttribute("data-orientation-mode", "north");
   await page.screenshot({ path: testInfo.outputPath("narrow-map-actions.png") });
