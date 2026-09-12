@@ -16,6 +16,13 @@
     "use": "Usa la mia posizione",
     "accuracy": "Posizione precisa a circa {meters} m."
   },
+  "orientation": {
+    "follow": "Orientare la mappa come il telefono",
+    "north": "Riportare il nord in alto",
+    "unsupported": "Questo dispositivo non fornisce la direzione della bussola.",
+    "denied": "L’accesso all’orientamento non è stato autorizzato.",
+    "unavailable": "L’orientamento del telefono non è disponibile al momento."
+  },
   "search": {
     "label": "Cerca un luogo",
     "placeholder": "Luogo o panchina",

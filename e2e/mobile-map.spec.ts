@@ -129,7 +129,10 @@ test("keeps core pages contained from tablet to large desktop", async ({ page },
 test("keeps primary map decisions usable on a narrow phone", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
-  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
+  await expect(page.locator(".maplibregl-ctrl-attrib-button")).toBeHidden();
+  await expect(page.locator(".maplibregl-ctrl-attrib-inner")).toContainText("OpenStreetMap");
   await expect(page.getByRole("combobox", { name: "Ort suchen" })).toHaveAttribute("placeholder", "Ort oder Bänkli");
   await expect(page.locator(".map-filter-button > span")).toBeHidden();
   const walk = await page.getByRole("button", { name: "Spaziergang" }).boundingBox();
@@ -137,12 +140,34 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
   expect(walk).not.toBeNull();
   expect(list).not.toBeNull();
   expect(Math.abs(walk!.y - list!.y)).toBeLessThanOrEqual(1);
+
+  await page.evaluate(() => {
+    class TestOrientationEvent extends Event {}
+    Object.defineProperty(window, "DeviceOrientationEvent", { configurable: true, value: TestOrientationEvent });
+  });
+  const orientation = page.getByRole("button", { name: "Karte nach Handyrichtung ausrichten" });
+  await orientation.click();
+  await expect(page.locator(".map-orientation-control")).toHaveAttribute("aria-pressed", "true");
+  await page.evaluate(() => {
+    const event = new Event("deviceorientationabsolute");
+    Object.defineProperties(event, { alpha: { value: 270 }, absolute: { value: true } });
+    window.dispatchEvent(event);
+  });
+  await expect(map).toHaveAttribute("data-device-heading", "90");
+  await page.getByRole("button", { name: "Norden wieder oben anzeigen" }).click();
+  await expect(map).toHaveAttribute("data-orientation-mode", "north");
   await page.screenshot({ path: testInfo.outputPath("narrow-map-actions.png") });
 
   await page.getByLabel("Filter öffnen").click();
   const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
   await expect(filters.getByRole("button", { name: "Karte ansehen" })).toBeVisible();
   await expect(page.locator(".filter-modal-backdrop")).toBeVisible();
+  const nearbyGroup = filters.locator(".filter-group").nth(1);
+  const facilityNote = filters.getByText("Erfasste Einrichtungen", { exact: false });
+  const [nearbyBox, noteBox] = await Promise.all([nearbyGroup.boundingBox(), facilityNote.boundingBox()]);
+  expect(nearbyBox).not.toBeNull();
+  expect(noteBox).not.toBeNull();
+  expect(noteBox!.y - (nearbyBox!.y + nearbyBox!.height)).toBeGreaterThanOrEqual(8);
   await page.screenshot({ path: testInfo.outputPath("narrow-filter-actions.png") });
   await page.locator(".filter-modal-backdrop").click({ position: { x: 2, y: 2 } });
   await expect(filters).toHaveCount(0);
@@ -156,6 +181,12 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await expect(sheet.locator("h2").first()).toBeInViewport();
   await expect(sheet.getByText("Details zeigen", { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("short-phone-bench-sheet.png") });
+  await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
+  const [chrome, landscape] = await Promise.all([sheet.locator(".sheet-chrome").boundingBox(), sheet.locator(".bench-landscape").boundingBox()]);
+  expect(chrome).not.toBeNull();
+  expect(landscape).not.toBeNull();
+  expect(landscape!.y).toBeGreaterThanOrEqual(chrome!.y + chrome!.height - 1);
+  await page.screenshot({ path: testInfo.outputPath("short-phone-full-bench-sheet.png") });
 
   await page.goto("/?action=walk");
   const title = page.getByRole("heading", { name: "Spaziergang entdecken" });

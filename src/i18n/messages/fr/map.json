@@ -16,6 +16,13 @@
     "use": "Utiliser ma position",
     "accuracy": "Position précise à environ {meters} m."
   },
+  "orientation": {
+    "follow": "Orienter la carte comme le téléphone",
+    "north": "Remettre le nord en haut",
+    "unsupported": "Cet appareil ne fournit pas de direction de boussole.",
+    "denied": "L’accès à l’orientation n’a pas été autorisé.",
+    "unavailable": "L’orientation du téléphone est indisponible pour le moment."
+  },
   "search": {
     "label": "Chercher un lieu",
     "placeholder": "Lieu ou banc",

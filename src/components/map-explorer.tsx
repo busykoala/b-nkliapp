@@ -4,7 +4,7 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Accessibility, Armchair, ChevronRight, CloudSun, Crosshair, Footprints, Info, List, MapPin, MountainSnow, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
+import { Accessibility, Armchair, ChevronRight, CloudSun, Compass, Crosshair, Footprints, Info, List, MapPin, MountainSnow, Navigation, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -27,6 +27,8 @@ const JourneyPlanner = dynamic(() => import("./journey/journey-planner").then((m
 });
 
 type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
+type OrientationConstructor = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<"granted" | "denied"> };
+type CompassOrientationEvent = DeviceOrientationEvent & { webkitCompassHeading?: number };
 
 function WalkLoading() {
   const t = useTranslations("map.loading");
@@ -74,6 +76,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [detailError, setDetailError] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
+  const [headingMode, setHeadingMode] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [addStage, setAddStage] = useState<"position" | "details" | null>(null);
   const [createdBenchId, setCreatedBenchId] = useState<string | null>(null);
@@ -254,10 +257,11 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
         style: MINIMAL_MAP_STYLE,
       });
       map.addControl(new AttributionControl({
-        compact: true,
+        compact: false,
         customAttribution: '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>',
       }), "bottom-right");
       mapRef.current = map;
+      map.getContainer().dataset.orientationMode = "north";
 
       map.getContainer().dataset.basemap = "loading";
       map.getContainer().dataset.mapReady = "false";
@@ -463,6 +467,38 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!headingMode) return;
+    const map = mapRef.current;
+    if (!map) return;
+    let animationFrame: number | undefined;
+    map.getContainer().dataset.orientationMode = "heading";
+    const orient = (event: Event) => {
+      const reading = event as CompassOrientationEvent;
+      const screenAngle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
+      const heading = typeof reading.webkitCompassHeading === "number"
+        ? reading.webkitCompassHeading
+        : typeof reading.alpha === "number" && (reading.absolute || event.type === "deviceorientationabsolute")
+          ? (360 - reading.alpha + screenAngle) % 360
+          : null;
+      if (heading === null || !Number.isFinite(heading)) return;
+      window.cancelAnimationFrame(animationFrame ?? 0);
+      animationFrame = window.requestAnimationFrame(() => {
+        map.getContainer().dataset.deviceHeading = String(Math.round(heading));
+        map.rotateTo(heading, { duration: 90 });
+      });
+    };
+    window.addEventListener("deviceorientationabsolute", orient);
+    window.addEventListener("deviceorientation", orient);
+    return () => {
+      window.cancelAnimationFrame(animationFrame ?? 0);
+      window.removeEventListener("deviceorientationabsolute", orient);
+      window.removeEventListener("deviceorientation", orient);
+      map.getContainer().dataset.orientationMode = "north";
+      delete map.getContainer().dataset.deviceHeading;
+    };
+  }, [headingMode]);
+
   const autoLocate = useEffectEvent(() => locate());
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -492,6 +528,29 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const openAdd = () => {
     const center = mapRef.current?.getCenter();
     if (center) openAddAt(center.lat, center.lng);
+  };
+  const toggleHeadingMode = async () => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (headingMode) {
+      setHeadingMode(false);
+      map.easeTo({ bearing: 0, duration: 300 });
+      return;
+    }
+    const Orientation = window.DeviceOrientationEvent as OrientationConstructor | undefined;
+    if (!Orientation) {
+      setMessage(t("map.orientation.unsupported"));
+      return;
+    }
+    try {
+      if (Orientation.requestPermission && await Orientation.requestPermission() !== "granted") {
+        setMessage(t("map.orientation.denied"));
+        return;
+      }
+      setHeadingMode(true);
+    } catch {
+      setMessage(t("map.orientation.unavailable"));
+    }
   };
   const openWalk = () => {
     listOpenRef.current = false;
@@ -534,6 +593,7 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
       {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && <button type="button" className="map-orientation-control" aria-label={t(headingMode ? "map.orientation.north" : "map.orientation.follow")} title={t(headingMode ? "map.orientation.north" : "map.orientation.follow")} aria-pressed={headingMode} onClick={() => void toggleHeadingMode()}>{headingMode ? <Navigation size={20} /> : <Compass size={21} />}</button>}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">
         <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t("walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>
