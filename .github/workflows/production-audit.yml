@@ -72,11 +72,11 @@ jobs:
             const database = new Database("/data/benchly.sqlite", { readonly: true });
             const state = database.prepare(`SELECT
               (SELECT count(*) FROM bench_panorama_requests) requested,
-              (SELECT count(*) FROM bench_panorama_geometry WHERE status="generating") generating,
-              (SELECT count(*) FROM bench_panorama_geometry WHERE status="ready") geometry_ready,
-              (SELECT count(*) FROM bench_panorama_renders WHERE status="ready") renders_ready,
+              (SELECT count(*) FROM bench_panorama_geometry WHERE status=?) generating,
+              (SELECT count(*) FROM bench_panorama_geometry WHERE status=?) geometry_ready,
+              (SELECT count(*) FROM bench_panorama_renders WHERE status=?) renders_ready,
               (SELECT error FROM bench_panorama_geometry WHERE error IS NOT NULL ORDER BY updated_at DESC LIMIT 1) latest_error
-            `).get();
+            `).get("generating", "ready", "ready");
             console.log(JSON.stringify(state));
             database.close();
           ' 2>&1 || true)"
