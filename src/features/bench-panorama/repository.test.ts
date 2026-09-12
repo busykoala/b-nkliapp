@@ -20,8 +20,11 @@ describe("panorama requests", () => {
     const { sqlite } = await import("@/db/client");
     const { enqueuePanoramaRequest, readPanoramaArtifact } = await import("./repository");
     expect(enqueuePanoramaRequest("osm-node-101")).toBe(true);
+    sqlite.prepare("UPDATE bench_panorama_requests SET requested_at='2026-01-01T00:00:00.000Z' WHERE bench_row_id=(SELECT row_id FROM benches WHERE id='osm-node-101')").run();
     expect(enqueuePanoramaRequest("osm-node-101")).toBe(true);
     expect((sqlite.prepare("SELECT count(*) count FROM bench_panorama_requests").get() as { count: number }).count).toBe(1);
+    expect((sqlite.prepare("SELECT requested_at requestedAt FROM bench_panorama_requests").get() as { requestedAt: string }).requestedAt)
+      .toBe("2026-01-01T00:00:00.000Z");
     const bench = sqlite.prepare("SELECT row_id,id,latitude,longitude FROM benches WHERE id='osm-node-101'")
       .get() as Record<string, string | number>;
     sqlite.prepare(`INSERT INTO bench_panorama_geometry(

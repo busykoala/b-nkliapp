@@ -31,7 +31,8 @@ export function enqueuePanoramaRequest(benchId: string) {
   const result = sqlite.prepare(`
     INSERT INTO bench_panorama_requests(bench_row_id,requested_at)
     SELECT row_id,? FROM benches WHERE id=? AND active=1
-    ON CONFLICT(bench_row_id) DO UPDATE SET requested_at=excluded.requested_at
+    ON CONFLICT(bench_row_id) DO UPDATE SET
+      requested_at=min(bench_panorama_requests.requested_at,excluded.requested_at)
   `).run(new Date().toISOString(), benchId);
   return result.changes > 0;
 }

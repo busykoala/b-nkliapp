@@ -16,7 +16,7 @@ from sqlmodel import Field as SqlField, SQLModel
 
 
 GEOMETRY_VERSION = "panorama-geometry-1"
-RENDER_VERSION = "panorama-watercolor-1"
+RENDER_VERSION = "panorama-watercolor-16"
 EARTH_RADIUS_METERS = 6_371_008.8
 
 

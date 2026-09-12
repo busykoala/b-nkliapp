@@ -6,6 +6,10 @@ describe("360 degree panorama track", () => {
     expect(panoramaTrackOffset(600, 500, 0)).toBe(-2020);
   });
 
+  it("aligns repeated image edges to whole CSS pixels", () => {
+    expect(Number.isInteger(panoramaTrackOffset(388, 323.328125, 359.67))).toBe(true);
+  });
+
   it("wraps equivalent headings to the identical crop", () => {
     expect(panoramaTrackOffset(600, 500, -10)).toBe(panoramaTrackOffset(600, 500, 350));
     expect(panoramaTrackOffset(600, 500, 720)).toBe(panoramaTrackOffset(600, 500, 0));

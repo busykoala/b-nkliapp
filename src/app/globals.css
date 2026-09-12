@@ -705,14 +705,14 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-viewport:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: -4px; }
 .bench-panorama.is-dragging .bench-panorama-viewport { cursor: grabbing; }
 .bench-panorama-track { position: absolute; top: -8%; left: 0; display: flex; height: 116%; max-width: none; transform: translate3d(var(--panorama-offset), var(--panorama-y), 0); will-change: transform; }
-.bench-panorama-copy { position: relative; width: auto; height: 100%; aspect-ratio: 4 / 1; flex: none; }
-.bench-panorama-art { display: block; width: 100%; max-width: none; height: 100%; pointer-events: none; }
-.bench-panorama.phase-night .bench-panorama-art { filter: saturate(.54) brightness(.68) hue-rotate(8deg); }
-.bench-panorama.phase-dawn .bench-panorama-art { filter: sepia(.12) saturate(.86) brightness(.95); }
-.bench-panorama.phase-dusk .bench-panorama-art { filter: sepia(.18) saturate(.8) brightness(.82); }
-.bench-panorama.season-autumn:not(.phase-night) .bench-panorama-art { filter: sepia(.2) saturate(.9); }
-.bench-panorama.season-winter:not(.phase-night) .bench-panorama-art { filter: saturate(.52) brightness(1.04); }
-.bench-panorama.is-raining .bench-panorama-art { filter: saturate(.58) brightness(.88); }
+.bench-panorama-copy { position: relative; width: var(--panorama-copy-width); height: 100%; flex: none; }
+.bench-panorama-art { display: block; width: calc(100% + 2px); max-width: none; height: 100%; margin-left: -1px; pointer-events: none; }
+.bench-panorama.phase-night .bench-panorama-track { filter: saturate(.82) brightness(.84) hue-rotate(7deg); }
+.bench-panorama.phase-dawn .bench-panorama-track { filter: sepia(.12) saturate(.86) brightness(.95); }
+.bench-panorama.phase-dusk .bench-panorama-track { filter: sepia(.18) saturate(.8) brightness(.82); }
+.bench-panorama.season-autumn:not(.phase-night) .bench-panorama-track { filter: sepia(.2) saturate(.9); }
+.bench-panorama.season-winter:not(.phase-night) .bench-panorama-track { filter: saturate(.52) brightness(1.04); }
+.bench-panorama.is-raining .bench-panorama-track { filter: saturate(.58) brightness(.88); }
 .bench-panorama-clouds { position: absolute; top: -3%; left: 12%; width: 42%; max-width: none; height: 28%; pointer-events: none; mix-blend-mode: multiply; }
 .bench-panorama-celestial { position: absolute; width: 3.8%; max-width: none; height: auto; pointer-events: none; transform: translate(-50%, -50%); mix-blend-mode: multiply; }
 .bench-panorama-celestial.is-moon { opacity: .78; mix-blend-mode: screen; }

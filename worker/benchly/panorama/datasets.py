@@ -192,9 +192,14 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
     prepared = []
     for row in rows:
         try:
-            geometry = from_wkb(bytes(row["geometry_wkb"]))
-            if geometry.is_empty:
+            source_geometry = from_wkb(bytes(row["geometry_wkb"]))
+            polygon_parts = [
+                part for part in get_parts(source_geometry)
+                if part.geom_type == "Polygon" and part.area > .05
+            ]
+            if not polygon_parts:
                 continue
+            geometry = max(polygon_parts, key=lambda part: part.area)
             distance = float(Point(origin_east, origin_north).distance(geometry))
             if distance > radius_meters or geometry.covers(Point(origin_east, origin_north)):
                 continue
@@ -244,7 +249,9 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
         tolerance = .2 if distance <= 500 else 1 if distance <= 2_000 else 3
         simplified = geometry.simplify(tolerance, preserve_topology=True)
         parts = [part for part in get_parts(simplified) if part.geom_type == "Polygon"]
-        polygon = max(parts, key=lambda part: part.area, default=simplified.convex_hull)
+        if not parts:
+            continue
+        polygon = max(parts, key=lambda part: part.area)
         # swissBUILDINGS3D footprints may retain a Z coordinate.  Panorama
         # visibility works in the local horizontal plane, so deliberately
         # consume only X/Y instead of unpacking the coordinate tuple as 2-D.

@@ -137,7 +137,14 @@ def test_watercolor_renderer_is_deterministic_and_contains_no_location_text():
     assert first == render_panorama_svg(geometry, 720, 240)
     assert "Calculated 360 degree landscape panorama" in first
     assert "Bern" not in first
-    assert "fractalNoise" in first
+    assert 'id="paint-building-near"' in first
+    assert 'id="paint-building-far"' in first
+    assert 'id="depth-wash"' in first
+    assert 'id="water-pigment"' in first
+    assert 'id="mountain-pigment"' in first
+    assert 'id="building-pigment"' in first
+    assert '<use href="#shape-open-grassland-near"' in first
+    assert 'stroke-linecap="round"' in first
 
 
 def test_missing_ray_is_partial_not_fabricated():

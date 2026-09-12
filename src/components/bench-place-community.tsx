@@ -10,6 +10,7 @@ import Link from "next/link";
 import { PhotoGallery } from "./photo-gallery";
 import type { BenchCareKind, BenchDetail } from "@/lib/types";
 import { TrailAvatar } from "./trail-avatar";
+import { canonicalBenchShareUrl } from "@/lib/bench-share";
 
 export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: BenchDetail; signedIn: boolean; onChanged?: () => void | Promise<void> }) {
   const t = useTranslations();
@@ -32,7 +33,11 @@ export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: Ben
   });
   const share = async () => {
     const title = bench.title || t("common.values.bench");
-    const data = { title, text: t("community.place.shareText", { bench: title }), url: window.location.href };
+    const data = {
+      title,
+      text: t("community.place.shareText", { bench: title }),
+      url: canonicalBenchShareUrl(window.location.href, bench.id),
+    };
     try {
       if (navigator.share) await navigator.share(data);
       else {

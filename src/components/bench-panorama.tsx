@@ -26,8 +26,8 @@ function property(bench: BenchDetail, key: string) {
 }
 
 export function panoramaTrackOffset(viewportWidth: number, viewportHeight: number, heading: number) {
-  const panoramaWidth = viewportHeight * PANORAMA_HEIGHT_SCALE * 4;
-  return viewportWidth / 2 - panoramaWidth * (1 + normalizeHeading(heading) / 360);
+  const panoramaWidth = Math.round(viewportHeight * PANORAMA_HEIGHT_SCALE * 4);
+  return Math.round(viewportWidth / 2 - panoramaWidth * (1 + normalizeHeading(heading) / 360));
 }
 
 export function BenchPanorama({ bench, children }: { bench: BenchDetail; children?: ReactNode }) {
@@ -81,7 +81,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     const active = drag.current;
     if (!active || active.pointer !== event.pointerId || !size.height) return;
     event.preventDefault();
-    const panoramaWidth = size.height * PANORAMA_HEIGHT_SCALE * 4;
+    const panoramaWidth = Math.round(size.height * PANORAMA_HEIGHT_SCALE * 4);
     setHeading(normalizeHeading(active.heading - (event.clientX - active.x) / panoramaWidth * 360));
     setVerticalOffset(clampPanoramaVertical(size.height, active.verticalOffset + event.clientY - active.y));
   };
@@ -93,7 +93,11 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   };
   const offset = panoramaTrackOffset(size.width, size.height, heading);
   const degrees = Math.round(heading) % 360;
-  const style = { "--panorama-offset": `${offset}px`, "--panorama-y": `${verticalOffset}px` } as CSSProperties;
+  const style = {
+    "--panorama-offset": `${offset}px`,
+    "--panorama-y": `${verticalOffset}px`,
+    "--panorama-copy-width": `${Math.round(size.height * PANORAMA_HEIGHT_SCALE * 4)}px`,
+  } as CSSProperties;
   const benchStyle = { left: `${initialHeading / 360 * 100}%` } as CSSProperties;
   const showsRearBench = property(bench, "backrest") !== "Nein";
   const covered = property(bench, "covered") === "Ja";

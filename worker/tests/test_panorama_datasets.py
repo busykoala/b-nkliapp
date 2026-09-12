@@ -4,7 +4,7 @@ import sqlite3
 
 import numpy as np
 from shapely import to_wkb
-from shapely.geometry import Polygon, box
+from shapely.geometry import Point, Polygon, box
 
 from benchly.panorama.datasets import SemanticIndex, WGS84_TO_LV95, distance_schedule, load_buildings, sample_terrain_rays
 from benchly.panorama.models import PanoramaConfig, SemanticClass
@@ -86,6 +86,15 @@ def test_building_loader_accepts_swissbuildings_3d_footprints():
     connection.execute(
         "INSERT INTO environment_spatial_index VALUES(1,?,?,?,?)",
         (longitude, longitude + .001, latitude - .001, latitude + .001),
+    )
+    connection.execute(
+        "INSERT INTO environment_features VALUES(2,?,?,?,?,?,?,?,?,?,?,?)",
+        ("OpenStreetMap", "building-node", "2026", "building", to_wkb(Point(easting + 4, northing)),
+         latitude, longitude, None, None, None, None),
+    )
+    connection.execute(
+        "INSERT INTO environment_spatial_index VALUES(2,?,?,?,?)",
+        (longitude, longitude, latitude, latitude),
     )
 
     class Terrain:
