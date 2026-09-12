@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 from PIL import Image
@@ -134,6 +135,30 @@ class DirectionModelTests(unittest.TestCase):
         upsert_estimates(database, [{**value, "direction_degrees": 135.0}])  # type: ignore[arg-type]
         self.assertEqual(database.execute("SELECT direction_degrees FROM bench_direction_estimates").fetchone()[0], 135)
         self.assertEqual(delete_analysis_run(database, "run-a"), 1)  # type: ignore[arg-type]
+
+    def test_publication_repository_uses_bounded_batches(self):
+        from benchly.direction import repository
+
+        database = sqlite3.connect(":memory:")
+        database.execute("""CREATE TABLE bench_direction_estimates(
+          bench_row_id INTEGER PRIMARY KEY,bench_id TEXT,bench_latitude REAL,bench_longitude REAL,
+          direction_degrees REAL,top_probability REAL,entropy REAL,probabilities_json TEXT,signals_json TEXT,
+          source_versions_json TEXT,analysis_run_id TEXT,method_version TEXT,computed_at TEXT,published_at TEXT
+        )""")
+        template = {
+            "bench_latitude": 47.0, "bench_longitude": 8.0, "direction_degrees": 90.0,
+            "top_probability": .8, "entropy": .3, "probabilities_json": "{}", "signals_json": "[]",
+            "source_versions_json": "{}", "analysis_run_id": "run-a", "method_version": "test",
+            "computed_at": "now", "published_at": "now",
+        }
+        values = [
+            {**template, "bench_row_id": row_id, "bench_id": f"osm-node-{row_id}"}
+            for row_id in range(1, 1_002)
+        ]
+        with patch.object(repository, "write", wraps=repository.write) as write:
+            repository.upsert_estimates(database, values)  # type: ignore[arg-type]
+        self.assertEqual(write.call_count, 3)
+        self.assertEqual(database.execute("SELECT count(*) FROM bench_direction_estimates").fetchone()[0], 1_001)
 
     def test_no_signal_fallback_is_stable_uniform_and_explicit(self):
         from benchly.direction.publish import no_signal_fallback

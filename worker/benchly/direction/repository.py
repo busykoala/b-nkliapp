@@ -12,17 +12,24 @@ from .models import BenchDirectionEstimate
 def upsert_estimates(database: Database, values: Sequence[dict[str, object]]) -> None:
     if not values:
         return
-    rows = [BenchDirectionEstimate.model_validate(value).model_dump() for value in values]
-    statement = insert(BenchDirectionEstimate).values(rows)
-    excluded = statement.excluded
-    write(database, statement.on_conflict_do_update(
-        index_elements=[BenchDirectionEstimate.bench_row_id],
-        set_={
-            field: getattr(excluded, field)
-            for field in BenchDirectionEstimate.model_fields
-            if field != "bench_row_id"
-        },
-    ))
+    # SQLite limits bound variables per statement. Keep the whole publication
+    # in the caller's transaction while compiling bounded upsert statements.
+    batch_size = 500
+    for offset in range(0, len(values), batch_size):
+        rows = [
+            BenchDirectionEstimate.model_validate(value).model_dump()
+            for value in values[offset:offset + batch_size]
+        ]
+        statement = insert(BenchDirectionEstimate).values(rows)
+        excluded = statement.excluded
+        write(database, statement.on_conflict_do_update(
+            index_elements=[BenchDirectionEstimate.bench_row_id],
+            set_={
+                field: getattr(excluded, field)
+                for field in BenchDirectionEstimate.model_fields
+                if field != "bench_row_id"
+            },
+        ))
 
 
 def delete_analysis_run(database: Database, analysis_run_id: str) -> int:
