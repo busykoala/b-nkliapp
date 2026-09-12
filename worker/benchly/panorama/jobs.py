@@ -21,6 +21,7 @@ from benchly.panorama.models import (
     BuildingGeometry,
     GeometryIdentity,
     PanoramaConfig,
+    RENDER_VERSION,
     RenderIdentity,
     SourceEvidence,
 )
@@ -70,17 +71,30 @@ def panorama_batch_job(args: Namespace) -> None:
         terrain_version = raster_source_version(terrain)
         semantic_version = _database_version(database, "swissTLM3D", f"osm:{_osm_version(database)}")
         building_version = _database_version(database, "swissBUILDINGS3D", f"context:{semantic_version}:osm:{_osm_version(database)}")
+        config = PanoramaConfig(
+            angular_resolution_degrees=args.angular_resolution,
+            maximum_distance_meters=args.maximum_distance_meters,
+        )
         source_versions = {
             "terrain": terrain_version,
             "semantic": semantic_version,
             "building": building_version,
             "algorithm": GEOMETRY_VERSION,
+            "angular_resolution_degrees": f"{config.angular_resolution_degrees:g}",
+            "maximum_distance_meters": f"{config.maximum_distance_meters:g}",
+            "observer_height_meters": f"{config.observer_height_meters:g}",
+            "semantic_radius_meters": f"{args.semantic_radius_meters:g}",
+            "building_radius_meters": f"{args.building_radius_meters:g}",
         }
-        config = PanoramaConfig(
-            angular_resolution_degrees=args.angular_resolution,
-            maximum_distance_meters=args.maximum_distance_meters,
+        rows = pending_benches(
+            database,
+            GEOMETRY_VERSION,
+            source_versions,
+            RENDER_VERSION,
+            args.preview_width,
+            args.preview_height,
+            args.limit,
         )
-        rows = pending_benches(database, GEOMETRY_VERSION, args.limit)
         stats["selected"] = len(rows)
         deadline = time.monotonic() + args.max_runtime_hours * 3600
         for row in rows:
@@ -93,6 +107,8 @@ def panorama_batch_job(args: Namespace) -> None:
                 building_version=building_version,
                 maximum_distance_meters=config.maximum_distance_meters,
                 angular_resolution_degrees=config.angular_resolution_degrees,
+                semantic_radius_meters=args.semantic_radius_meters,
+                building_radius_meters=args.building_radius_meters,
             )
             key = geometry_cache_key(identity)
             mark_generating(database, row, key, source_versions)

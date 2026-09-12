@@ -120,6 +120,8 @@ def test_curvature_and_refraction_are_explicit():
 def test_geometry_cache_excludes_direction_while_render_cache_includes_it():
     first = geometry_cache_key(IDENTITY)
     assert first == geometry_cache_key(IDENTITY.model_copy())
+    assert first != geometry_cache_key(IDENTITY.model_copy(update={"building_radius_meters": 3_000}))
+    assert first != geometry_cache_key(IDENTITY.model_copy(update={"semantic_radius_meters": 30_000}))
     base = dict(geometry_key=first, horizontal_fov_degrees=100, width=1600, height=720,
                 weather_bucket="clear", solar_lunar_bucket="day", bench_variant="wood-back", covered=False)
     north = render_cache_key(RenderIdentity(center_azimuth_degrees=0, **base))

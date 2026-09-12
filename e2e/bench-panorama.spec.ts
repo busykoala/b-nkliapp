@@ -13,6 +13,7 @@ test.afterEach(() => {
     database.prepare("DELETE FROM bench_panorama_renders WHERE bench_row_id=?").run(row.row_id);
     database.prepare("DELETE FROM bench_panorama_geometry WHERE bench_row_id=?").run(row.row_id);
     database.prepare("DELETE FROM bench_panorama_requests WHERE bench_row_id=?").run(row.row_id);
+    database.prepare("UPDATE benches SET covered=0 WHERE row_id=?").run(row.row_id);
   }
   database.close();
 });
@@ -37,6 +38,7 @@ function installPanoramaFixture() {
   </svg>`;
   writeFileSync(artifact, gzipSync(svg));
   const geometryKey = "g".repeat(64);
+  database.prepare("UPDATE benches SET covered=1 WHERE row_id=?").run(bench.row_id);
   database.prepare(`INSERT OR REPLACE INTO bench_panorama_geometry(
     bench_row_id,bench_id,bench_latitude,bench_longitude,geometry_key,artifact_path,status,complete,
     source_versions_json,algorithm_version,warnings_json,artifact_bytes,started_at,generated_at,updated_at,error
@@ -48,14 +50,22 @@ function installPanoramaFixture() {
     bench_row_id,geometry_key,render_key,artifact_path,status,style_version,center_azimuth_degrees,
     horizontal_fov_degrees,width,height,weather_bucket,solar_lunar_bucket,bench_variant,covered,
     artifact_bytes,generated_at,updated_at,error
-  ) VALUES(?,?,?,?,'ready','e2e',0,360,3600,900,'clear','day','wood-back',0,?,?,?,NULL)`).run(
+  ) VALUES(?,?,?,?,'ready','e2e',0,360,3600,900,'clear','day','wood-back',1,?,?,?,NULL)`).run(
     bench.row_id, geometryKey, "r".repeat(64), artifact, gzipSync(svg).byteLength, "2026-09-12", "2026-09-12",
   );
   database.close();
 }
 
+function setCoveredFixture() {
+  const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
+  database.prepare("UPDATE benches SET covered=1 WHERE id='osm-node-109'").run();
+  database.close();
+}
+
 test("starts in bench direction and pans the panorama in both axes on mobile", async ({ page }, testInfo) => {
-  // First navigation lets the isolated test server migrate and seed its DB.
+  // The first navigation lets the isolated test server migrate and seed its DB.
+  await page.goto("/");
+  setCoveredFixture();
   await page.goto("/?bank=osm-node-109");
   await expect(page.locator(".bench-landscape")).toBeVisible();
   installPanoramaFixture();
@@ -64,6 +74,7 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   // A panorama completed by the worker appears in the open detail without a reload.
   await expect(panorama).toBeVisible({ timeout: 7_000 });
   await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "half");
+  await expect(panorama.locator(".bench-panorama-shelter")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("panorama-overlay-half.png") });
   const bearing = panorama.locator(".bench-panorama-bearing");
   await expect(bearing).toHaveText("325°");

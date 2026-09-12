@@ -4,7 +4,7 @@
   "jobs": [
     {
       "name": "panorama",
-      "schedule": "8,23,38,53 * * * *",
+      "schedule": "* * * * *",
       "deadline": 240,
       "args": [
         "panorama-batch",

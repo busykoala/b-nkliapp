@@ -245,7 +245,13 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
         simplified = geometry.simplify(tolerance, preserve_topology=True)
         parts = [part for part in get_parts(simplified) if part.geom_type == "Polygon"]
         polygon = max(parts, key=lambda part: part.area, default=simplified.convex_hull)
-        coordinates = tuple((float(x - origin_east), float(y - origin_north)) for x, y in polygon.exterior.coords[:-1])
+        # swissBUILDINGS3D footprints may retain a Z coordinate.  Panorama
+        # visibility works in the local horizontal plane, so deliberately
+        # consume only X/Y instead of unpacking the coordinate tuple as 2-D.
+        coordinates = tuple(
+            (float(coordinate[0] - origin_east), float(coordinate[1] - origin_north))
+            for coordinate in polygon.exterior.coords[:-1]
+        )
         if len(coordinates) < 3:
             continue
         confidence = .98 if source == "swissBUILDINGS3D" else .8 if explicit_height is not None else .48

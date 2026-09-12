@@ -23,7 +23,16 @@ def require_schema(database) -> None:
         raise RuntimeError(f"Panorama migration 0031 is required ({', '.join(sorted(missing))})")
 
 
-def pending_benches(database, algorithm_version: str, limit: int):
+def pending_benches(
+    database,
+    algorithm_version: str,
+    source_versions: dict[str, str],
+    render_style_version: str,
+    render_width: int,
+    render_height: int,
+    limit: int,
+):
+    source_versions_json = json.dumps(source_versions, separators=(",", ":"))
     return database.execute("""
       SELECT b.row_id,b.id,b.latitude,b.longitude,b.material,b.backrest,b.armrest,b.covered,
         coalesce(b.direction_degrees,
@@ -36,15 +45,43 @@ def pending_benches(database, algorithm_version: str, limit: int):
       LEFT JOIN bench_panorama_geometry p ON p.bench_row_id=b.row_id
       LEFT JOIN bench_panorama_requests request ON request.bench_row_id=b.row_id
       WHERE b.active=1 AND e.elevation_meters IS NOT NULL AND (
-        p.bench_row_id IS NULL OR p.algorithm_version<>? OR p.status IN ('stale','error','unavailable')
+        p.bench_row_id IS NULL OR p.algorithm_version<>? OR p.source_versions_json<>?
+        OR p.status IN ('stale','error','unavailable')
         OR (p.status='generating' AND julianday(p.started_at)<julianday('now','-20 minutes'))
         OR p.bench_id<>b.id OR p.bench_latitude<>b.latitude OR p.bench_longitude<>b.longitude
+        OR NOT EXISTS (
+          SELECT 1 FROM bench_panorama_renders render
+          WHERE render.bench_row_id=b.row_id AND render.geometry_key=p.geometry_key
+            AND render.status='ready' AND render.style_version=?
+            AND render.center_azimuth_degrees=0 AND render.horizontal_fov_degrees=360
+            AND render.width=? AND render.height=?
+            AND render.weather_bucket='phase-b-neutral' AND render.solar_lunar_bucket='phase-b-neutral'
+            AND render.bench_variant=(CASE
+              WHEN lower(coalesce(b.material,'')) LIKE '%stone%'
+                OR lower(coalesce(b.material,'')) LIKE '%concrete%'
+                OR lower(coalesce(b.material,'')) LIKE '%stein%'
+                OR lower(coalesce(b.material,'')) LIKE '%beton%' THEN 'stone-'
+              WHEN lower(coalesce(b.material,'')) LIKE '%metal%'
+                OR lower(coalesce(b.material,'')) LIKE '%steel%'
+                OR lower(coalesce(b.material,'')) LIKE '%iron%'
+                OR lower(coalesce(b.material,'')) LIKE '%metall%'
+                OR lower(coalesce(b.material,'')) LIKE '%stahl%'
+                OR lower(coalesce(b.material,'')) LIKE '%eisen%' THEN 'metal-'
+              ELSE 'wood-' END) || (CASE
+                WHEN b.backrest=1 AND b.armrest=1 THEN 'back-arm'
+                WHEN b.backrest=1 THEN 'back'
+                ELSE 'backless' END)
+            AND (render.covered=b.covered OR (render.covered IS NULL AND b.covered IS NULL))
+        )
       )
       ORDER BY CASE WHEN request.bench_row_id IS NOT NULL THEN 0 ELSE 1 END,
         CASE p.status WHEN 'stale' THEN 0 WHEN 'error' THEN 2 ELSE 1 END,
         request.requested_at,b.row_id
       LIMIT ?
-    """, (algorithm_version, limit)).fetchall()
+    """, (
+        algorithm_version, source_versions_json, render_style_version,
+        render_width, render_height, limit,
+    )).fetchall()
 
 
 def mark_generating(database: Database, row, geometry_key: str, source_versions: dict[str, str]) -> None:
@@ -100,9 +137,6 @@ def mark_ready(database: Database, bench_row_id: int, geometry_key: str, artifac
         warnings_json=json.dumps(warnings, separators=(",", ":")), artifact_bytes=artifact_bytes,
         generated_at=now, updated_at=now, error=None,
     ))
-    write(database, delete(BenchPanoramaRequestState).where(
-        BenchPanoramaRequestState.bench_row_id == bench_row_id,
-    ))
     database.commit()
 
 
@@ -144,5 +178,10 @@ def mark_render_ready(database: Database, bench_row_id: int, identity, artifact_
             "updated_at": excluded.updated_at,
             "error": None,
         },
+    ))
+    # A request is fulfilled only after the browser-consumable render exists.
+    # Keeping it through geometry generation makes renderer failures retryable.
+    write(database, delete(BenchPanoramaRequestState).where(
+        BenchPanoramaRequestState.bench_row_id == bench_row_id,
     ))
     database.commit()

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-import numpy as np
-from shapely.geometry import box
+import sqlite3
 
-from benchly.panorama.datasets import SemanticIndex, WGS84_TO_LV95, distance_schedule, sample_terrain_rays
+import numpy as np
+from shapely import to_wkb
+from shapely.geometry import Polygon, box
+
+from benchly.panorama.datasets import SemanticIndex, WGS84_TO_LV95, distance_schedule, load_buildings, sample_terrain_rays
 from benchly.panorama.models import PanoramaConfig, SemanticClass
 
 
@@ -52,3 +55,46 @@ def test_terrain_rays_without_semantic_index_use_valid_unknown_enum():
     )
     assert len(rays) == 4
     assert all(sample.semantic == SemanticClass.UNKNOWN_TERRAIN for ray in rays for sample in ray.samples)
+
+
+def test_building_loader_accepts_swissbuildings_3d_footprints():
+    longitude, latitude = 8.2, 46.9
+    easting, northing = WGS84_TO_LV95.transform(longitude, latitude)
+    footprint = Polygon([
+        (easting + 10, northing - 5, 505),
+        (easting + 20, northing - 5, 505),
+        (easting + 20, northing + 5, 505),
+        (easting + 10, northing + 5, 505),
+    ])
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+    connection.executescript("""
+      CREATE TABLE environment_features(
+        row_id INTEGER PRIMARY KEY,source TEXT,source_id TEXT,source_version TEXT,kind TEXT,
+        geometry_wkb BLOB,center_latitude REAL,center_longitude REAL,
+        height_meters REAL,ground_elevation_meters REAL,eaves_elevation_meters REAL,roof_elevation_meters REAL
+      );
+      CREATE VIRTUAL TABLE environment_spatial_index USING rtree(
+        row_id,min_longitude,max_longitude,min_latitude,max_latitude
+      );
+    """)
+    connection.execute(
+        "INSERT INTO environment_features VALUES(1,?,?,?,?,?,?,?,?,?,?,?)",
+        ("swissBUILDINGS3D", "house-1", "2026", "building", to_wkb(footprint),
+         latitude, longitude + .00015, 9, 500, 506, 509),
+    )
+    connection.execute(
+        "INSERT INTO environment_spatial_index VALUES(1,?,?,?,?)",
+        (longitude, longitude + .001, latitude - .001, latitude + .001),
+    )
+
+    class Terrain:
+        @staticmethod
+        def sample_many(locations):
+            return [500.0] * len(locations)
+
+    buildings = load_buildings(connection, latitude, longitude, Terrain(), 1_000)
+    assert len(buildings) == 1
+    assert buildings[0].source == "swissBUILDINGS3D"
+    assert len(buildings[0].footprint) == 4
+    assert all(len(coordinate) == 2 for coordinate in buildings[0].footprint)

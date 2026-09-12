@@ -83,10 +83,9 @@ jobs:
           notice "Panorama production rows" "$panorama_rows"
 
           requested="$(jq -r '.requested // 0' <<<"$panorama_rows" 2>/dev/null || echo 0)"
-          renders_ready="$(jq -r '.renders_ready // 0' <<<"$panorama_rows" 2>/dev/null || echo 0)"
           panorama_active="$(kubectl --namespace benchly get jobs -o json \
             | jq '[.items[] | select(any(.metadata.ownerReferences[]?; .kind == "CronJob" and .name == "benchly-panorama")) | .status.active // 0] | add // 0')"
-          if (( requested > 0 && renders_ready == 0 && panorama_active == 0 )); then
+          if (( requested > 0 && panorama_active == 0 )); then
             recovery_job="benchly-panorama-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
             kubectl --namespace benchly create job --from=cronjob/benchly-panorama "$recovery_job"
             notice "Panorama recovery" "Started $recovery_job for the pending on-demand request."

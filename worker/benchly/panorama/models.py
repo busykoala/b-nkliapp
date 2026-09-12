@@ -148,6 +148,8 @@ class GeometryIdentity(Contract):
     algorithm_version: str = GEOMETRY_VERSION
     maximum_distance_meters: float = Field(default=150_000, gt=0)
     angular_resolution_degrees: float = Field(default=.1, gt=0)
+    semantic_radius_meters: float = Field(default=20_000, gt=0)
+    building_radius_meters: float = Field(default=2_000, gt=0)
 
 
 class RenderIdentity(Contract):

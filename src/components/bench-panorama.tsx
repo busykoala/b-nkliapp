@@ -96,6 +96,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const style = { "--panorama-offset": `${offset}px`, "--panorama-y": `${verticalOffset}px` } as CSSProperties;
   const benchStyle = { left: `${initialHeading / 360 * 100}%` } as CSSProperties;
   const showsRearBench = property(bench, "backrest") !== "Nein";
+  const covered = property(bench, "covered") === "Ja";
   const material = property(bench, "material").toLocaleLowerCase();
   const materialClass = /metall|stahl|eisen|metal|steel/.test(material) ? "is-metal"
     : /stein|beton|stone|concrete/.test(material) ? "is-stone" : "is-wood";
@@ -126,7 +127,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     }
   };
 
-  return <figure className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}`}>
+  return <figure className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}${covered ? " has-shelter" : ""}`}>
     <div
       ref={viewport}
       className="bench-panorama-viewport"
@@ -175,6 +176,8 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       {raining && <div className="bench-panorama-rain" aria-hidden="true">{Array.from({ length: 24 }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 71) % 100}%`, "--drop-y": `${(index * 37) % 90}%` } as CSSProperties} />)}</div>}
       {snowing && <div className="bench-panorama-snow" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 61) % 100}%`, "--drop-y": `${(index * 29) % 90}%` } as CSSProperties} />)}</div>}
     </div>
+    {covered && <div className="bench-panorama-shelter" aria-hidden="true"><i /><i /></div>}
+    {covered && <div className="bench-panorama-shelter-shade" aria-hidden="true" />}
     <div className="bench-panorama-hud">
       <span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span>
       <small id={hintId}>{t("panoramaHint")}</small>
