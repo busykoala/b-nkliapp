@@ -1,15 +1,11 @@
 {
   "language": {
     "label": "Lingua",
+    "dialect": "Dialetto",
+    "dialectHint": "Le informazioni della panchina passano alla lingua del luogo. I menu senza un luogo preciso restano nell’ultima lingua standard scelta.",
+    "localActive": "Lingua locale: {region}",
+    "localApproximation": "regionalizzazione prudente",
     "failed": "Impossibile cambiare lingua. Riprova."
-  },
-  "dialect": {
-    "label": "Voce locale",
-    "off": "Standard",
-    "regional": "Regionale",
-    "playful": "Sfacciata",
-    "hint": "Colora solo la piccola storia del luogo, non i comandi.",
-    "approximation": "ispirazione regionale"
   },
   "metadata": {
     "title": "Bänkli App – Le panchine della Svizzera",

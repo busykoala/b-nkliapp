@@ -7,6 +7,7 @@ import { BenchDetailContent } from "@/components/bench-detail-content";
 import { getCurrentUser } from "@/lib/security";
 import { AppMenu } from "@/components/app-menu";
 import { readBenchPageMetadata, readVerifiedBenchDetail } from "@/features/bench-detail/service";
+import { LocalBenchLanguageProvider } from "@/components/local-bench-language-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function BenchPage({ params, searchParams }: { params: Prom
       </div>
     </header>
     <article className="standalone-bench-card mx-auto max-w-2xl pb-12">
-      <BenchDetailContent bench={bench} user={user} />
+      <LocalBenchLanguageProvider bench={bench}><BenchDetailContent bench={bench} user={user} /></LocalBenchLanguageProvider>
     </article>
   </main>;
 }

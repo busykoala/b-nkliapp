@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parse, TYPE, type MessageFormatElement } from "@formatjs/icu-messageformat-parser";
 import { describe, expect, it } from "vitest";
-import { languages, resolveLanguage } from "./config";
+import { languagePreferenceFromLocale, languages, resolveLanguage, resolveLanguagePreference } from "./config";
 import { propertyValue, compassDirection } from "./bench-labels";
 import { poemGroupSizes } from "@/lib/scene-poetry";
 import { testTranslator } from "@/test/translations";
@@ -42,6 +42,11 @@ describe("language selection", () => {
     expect(resolveLanguage(undefined, "de;q=no,fr;q=2,it;q=0.4")).toBe("it");
     expect(resolveLanguage(undefined, "en-US,en;q=0.9")).toBe("de");
     expect(resolveLanguage()).toBe("de");
+  });
+  it("treats local dialect as an explicit fifth choice without browser auto-detection", () => {
+    expect(resolveLanguagePreference("dialect", "fr-CH")).toBe("dialect");
+    expect(resolveLanguagePreference(undefined, "fr-CH")).toBe("fr");
+    expect(languagePreferenceFromLocale("fr-CH-x-dialect")).toBe("dialect");
   });
 });
 

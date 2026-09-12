@@ -4,11 +4,11 @@ import { useState, useTransition } from "react";
 import { Languages } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { setLanguage } from "@/app/actions/language";
-import { languageFromLocale, languageNames, languages } from "@/i18n/config";
+import { languageNames, languagePreferenceFromLocale, languagePreferences } from "@/i18n/config";
 
 export function LanguageSwitcher() {
   const t = useTranslations("common.language");
-  const language = languageFromLocale(useLocale());
+  const language = languagePreferenceFromLocale(useLocale());
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
   return <div className="language-preference"><label className="language-switcher"><Languages size={19} /><span>{t("label")}</span>
@@ -18,6 +18,6 @@ export function LanguageSwitcher() {
         setFailed(false);
         try { await setLanguage(next); } catch { setFailed(true); }
       });
-    }}>{languages.map((value) => <option key={value} value={value} lang={value}>{languageNames[value]}</option>)}</select>
-  </label>{failed && <p role="status">{t("failed")}</p>}</div>;
+    }}>{languagePreferences.map((value) => <option key={value} value={value} lang={value === "dialect" ? undefined : value}>{value === "dialect" ? t("dialect") : languageNames[value]}</option>)}</select>
+  </label>{language === "dialect" && <p className="language-local-hint">{t("dialectHint")}</p>}{failed && <p role="status">{t("failed")}</p>}</div>;
 }

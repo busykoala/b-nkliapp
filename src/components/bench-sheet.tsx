@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, RefreshCw, X } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { BenchDetailContent } from "./bench-detail-content";
 import type { CurrentUser } from "@/lib/security";
+import { LocalBenchLanguageProvider } from "./local-bench-language-provider";
 
 type Snap = "peek" | "half" | "full";
 type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
@@ -31,7 +32,7 @@ export function BenchSheet({ created = false, bench, loading, error, onRetry, on
       </div>
       <div className="relative z-10 h-full overflow-y-auto safe-bottom">
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">{t("bench.sheet.loading")}</span><span className="sr-only">{t("bench.sheet.loadingAccessible")}</span></div>}
-        {!loading && bench && <BenchDetailContent created={created} key={bench.id} bench={bench} user={user} onBenchChange={onBenchChange} onJourney={onJourney} onLocateAmenity={onLocateAmenity} />}
+        {!loading && bench && <LocalBenchLanguageProvider bench={bench}><BenchDetailContent created={created} key={bench.id} bench={bench} user={user} onBenchChange={onBenchChange} onJourney={onJourney} onLocateAmenity={onLocateAmenity} /></LocalBenchLanguageProvider>}
         {!loading && error && <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
           <span className="text-5xl" aria-hidden="true">🍃</span>
           <p className="max-w-64 text-lg font-semibold text-primary">{t("bench.sheet.unavailable")}</p>

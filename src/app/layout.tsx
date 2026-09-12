@@ -4,6 +4,7 @@ import "./globals.css";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
+import { isDialectLocale, languageFromLocale, localeTags } from "@/i18n/config";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common.metadata");
@@ -22,8 +23,9 @@ export const viewport: Viewport = { themeColor: "#f6ecd5", viewportFit: "cover" 
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
+  const language = languageFromLocale(locale);
   return (
-    <html lang={locale} data-theme="benchly">
+    <html lang={localeTags[language]} data-language-mode={isDialectLocale(locale) ? "dialect" : "fixed"} data-theme="benchly">
       <body>
         <NextIntlClientProvider>{children}<ServiceWorkerRegistration /></NextIntlClientProvider>
       </body>

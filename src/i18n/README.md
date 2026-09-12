@@ -1,9 +1,13 @@
 # Languages
 
-The app supports Swiss Standard German (`de-CH`), French (`fr-CH`), Italian (`it-CH`), and
-Rumantsch Grischun (`rm-CH`). German is the fallback for an unsupported browser
-language. The menu saves an explicit choice in the `benchly_language` cookie for
-one year. URLs stay the same, preserving links and map state.
+The app supports Swiss Standard German (`de-CH`), French (`fr-CH`), Italian (`it-CH`),
+Rumantsch Grischun (`rm-CH`), and a fifth `dialect` language preference. German is
+the fallback for an unsupported browser language. The menu saves an explicit
+choice in the `benchly_language` cookie for one year. When `dialect` is selected,
+`benchly_language_fallback` retains the last standard language for pages without
+a concrete place. Bench panels switch their full information scope to the local
+national language and add a cautiously curated regional voice; see
+`docs/dialect-mode.md`. URLs stay the same, preserving links and map state.
 
 ## Catalog structure
 
@@ -50,7 +54,8 @@ decision. Router instructions use structured turn signs and retain street names.
 
 `catalogs.test.ts` checks complete catalogs, ICU syntax, matching placeholders
 and plural behavior. `e2e/languages.spec.ts` checks browser detection, switching,
-remembered preference and map preservation on both supported mobile browsers.
+remembered preference and map preservation. `e2e/dialect-scene.spec.ts` checks
+the fifth choice and location-dependent bench languages on mobile browsers.
 
 ## Browser consistency
 

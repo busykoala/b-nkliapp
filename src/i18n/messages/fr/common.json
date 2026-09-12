@@ -1,15 +1,11 @@
 {
   "language": {
     "label": "Langue",
+    "dialect": "Dialecte",
+    "dialectHint": "Les infos du banc adoptent la langue de son lieu. Les menus sans lieu précis restent dans ta dernière langue standard.",
+    "localActive": "Langue locale : {region}",
+    "localApproximation": "régionalisation prudente",
     "failed": "Impossible de changer la langue. Réessaie."
-  },
-  "dialect": {
-    "label": "Voix locale",
-    "off": "Standard",
-    "regional": "Régionale",
-    "playful": "Espiègle",
-    "hint": "Colore uniquement la petite histoire du lieu, pas les commandes.",
-    "approximation": "inspiration régionale"
   },
   "metadata": {
     "title": "Bänkli App – Les bancs de Suisse",

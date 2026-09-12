@@ -10,7 +10,6 @@ import { logout } from "@/app/actions/account";
 import { AccountDialog } from "./account-controls";
 import { TrailAvatar } from "./trail-avatar";
 import { LanguageSwitcher } from "./language-switcher";
-import { DialectSwitcher } from "./dialect-switcher";
 
 type InstallEvent = Event & {
   prompt: () => Promise<void>;
@@ -70,7 +69,6 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
           <Link aria-label={t("common.navigation.about")} href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Info size={19} /> {t("common.navigation.about")}</Link>
         </nav>
         <LanguageSwitcher />
-        <DialectSwitcher />
         {iosHelp && <p className="ios-help"><Share size={17} /> {t("common.install.ios")}</p>}
         {user && <form className="app-menu-signout" action={logout}><button onClick={close}><LogOut size={17} /> {t("common.navigation.signOut")}</button></form>}
       </div>

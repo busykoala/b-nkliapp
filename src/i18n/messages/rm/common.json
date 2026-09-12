@@ -1,15 +1,11 @@
 {
   "language": {
     "label": "Lingua",
+    "dialect": "Dialect",
+    "dialectHint": "Las infurmaziuns dal banc midan a la lingua dal lieu. Menus senza in lieu precis restan en tia ultima lingua da standard.",
+    "localActive": "Lingua locala: {region}",
+    "localApproximation": "adattà precautamain a la regiun",
     "failed": "La lingua n’ha betg pudì vegnir midada. Emprova anc ina giada."
-  },
-  "dialect": {
-    "label": "Vusch locala",
-    "off": "Standard",
-    "regional": "Regiunala",
-    "playful": "Umoristica",
-    "hint": "Colurescha mo la pitschna istorgia dal lieu, betg ils elements da navigaziun.",
-    "approximation": "inspirà da la regiun"
   },
   "metadata": {
     "title": "Bänkli App – Bancs en Svizra",
