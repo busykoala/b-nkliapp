@@ -79,7 +79,7 @@ jobs:
             `).get();
             console.log(JSON.stringify(state));
             database.close();
-          ')"
+          ' 2>&1 || true)"
           notice "Panorama production rows" "$panorama_rows"
 
           audit_job="benchly-production-audit-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
