@@ -27,7 +27,7 @@ test("keeps four app languages and applies dialect only to the opened bench", as
   await expect(sheet).toHaveAttribute("data-snap", "half");
   const collapsed = await sheet.boundingBox();
   expect(collapsed?.y).toBeGreaterThan(844 * .58);
-  await expect(sheet.locator("h2").first()).toBeInViewport();
+  await expect(sheet.locator(".bench-landscape")).toBeInViewport();
   await expect(sheet.getByText("Züridütsch", { exact: false }).first()).toBeVisible();
   await expect(sheet.locator(".bench-summary")).toContainText("Uf en Blick");
   await page.waitForTimeout(800);
