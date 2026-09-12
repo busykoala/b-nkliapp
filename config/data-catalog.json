@@ -1,12 +1,14 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026-09-10",
+  "catalogVersion": "2026-09-12",
   "timeZone": "Europe/Zurich",
   "runtime": {
     "pipelineVersion": "4.7.0",
     "profilePipelineVersion": "GeoAdmin-Horizont v7",
     "scenePromptVersion": "benchly-scene-1.4",
     "sceneReconcilerVersion": "benchly-evidence-1.1",
+    "panoramaGeometryVersion": "panorama-geometry-1",
+    "panoramaRenderVersion": "panorama-watercolor-1",
     "osmPbfUrl": "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf",
     "geoAdminBaseUrl": "https://api3.geo.admin.ch",
     "geoAdminDataBaseUrl": "https://data.geo.admin.ch",
@@ -70,7 +72,8 @@
         "map",
         "bench-inventory",
         "environment",
-        "walk-routing"
+        "walk-routing",
+        "panorama"
       ],
       "access": "open-data"
     },
@@ -121,7 +124,8 @@
       "usedBy": [
         "environment",
         "scene",
-        "walk-evidence"
+        "walk-evidence",
+        "panorama"
       ],
       "access": "open-data"
     },
@@ -136,7 +140,8 @@
       "license": "swisstopo Open Government Data",
       "usedBy": [
         "environment",
-        "sun-and-view"
+        "sun-and-view",
+        "panorama"
       ],
       "access": "open-data"
     },
@@ -152,7 +157,8 @@
       "usedBy": [
         "horizon",
         "sun-and-view",
-        "walk-evidence"
+        "walk-evidence",
+        "panorama"
       ],
       "access": "open-data"
     },
@@ -185,7 +191,8 @@
       "usedBy": [
         "weather",
         "scene",
-        "walk-light"
+        "walk-light",
+        "panorama"
       ],
       "access": "open-data"
     },
@@ -572,6 +579,12 @@
       "version": "benchly-scene-1.2"
     },
     {
+      "id": "panorama-cache",
+      "label": "Versionierte 360-Grad-Bänkli-Panoramen",
+      "path": "/data/panorama-cache-v1",
+      "version": "panorama-watercolor-1"
+    },
+    {
       "id": "source-status",
       "label": "Versionssignale externer Datenquellen",
       "path": "/data/source-status.sqlite",
@@ -579,6 +592,7 @@
     }
   ],
   "jobs": [
+    {"id":"panorama","title":"360-Grad-Bänkli-Panoramen","schedule":"8,23,38,53 * * * *","frequency":"alle 15 Minuten; zuerst explizit angefragte Bänkli","deadlineSeconds":240,"command":"panorama-batch","args":["--database","/data/benchly.sqlite","--terrain-dir","/data/terrain-cache-v1/swissalti3d","--cache-dir","/data/panorama-cache-v1","--limit","8","--max-runtime-hours","0.05"],"sourceIds":["openstreetmap","swisstlm3d","swissbuildings3d","swissalti3d"],"artifactIds":["benchly-db","panorama-cache"],"profile":"landscape","purpose":"production"},
     {"id":"landscape","title":"Landschaftsindex","schedule":"15 * * * *","frequency":"stündlich in ressourcenschonenden Batches","deadlineSeconds":3300,"command":"refresh-landscape","args":["--database","/data/benchly.sqlite","--landscape-database","/data/landscape.sqlite","--noise-dir","/data/sources","--terrain-cache","/data/terrain-cache-v1","--limit","2000","--max-runtime-minutes","40"],"sourceIds":["openstreetmap","swisstlm3d","swissalti3d","swisssurface3d","sonbase"],"artifactIds":["landscape-db","sonbase-day"],"profile":"landscape","purpose":"production"},
     {"id":"sonbase","title":"Strassenlärm-Raster","schedule":"40 4 * * 1","frequency":"montags um 04:40; Download nur bei neuer Serverversion","deadlineSeconds":3600,"command":"refresh-sonbase","args":["--target","/data/sources/sonbase-day.tif"],"sourceIds":["sonbase"],"artifactIds":["sonbase-day"],"profile":"landscape","purpose":"production"},
     {"id":"zurich-trees","title":"Zürcher Baumkataster","schedule":"10 3 2 * *","frequency":"monatlich am 2. um 03:10","deadlineSeconds":1800,"command":"import-zurich-trees","args":["--database","/data/benchly.sqlite"],"sourceIds":["zurich-trees"],"artifactIds":["benchly-db"],"profile":"standard","purpose":"production"},

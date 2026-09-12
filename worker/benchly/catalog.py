@@ -19,6 +19,8 @@ class RuntimeConfig(StrictModel):
     profilePipelineVersion: str
     scenePromptVersion: str
     sceneReconcilerVersion: str
+    panoramaGeometryVersion: str
+    panoramaRenderVersion: str
     osmPbfUrl: HttpUrl
     geoAdminBaseUrl: HttpUrl
     geoAdminDataBaseUrl: HttpUrl

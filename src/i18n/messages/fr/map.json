@@ -19,8 +19,9 @@
   "orientation": {
     "follow": "Orienter la carte comme le téléphone",
     "north": "Remettre le nord en haut",
+    "requesting": "Activation de la boussole…",
     "unsupported": "Cet appareil ne fournit pas de direction de boussole.",
-    "denied": "L’accès à l’orientation n’a pas été autorisé.",
+    "denied": "L’accès à la boussole est bloqué. Autorise les mouvements et l’orientation dans les réglages du site.",
     "unavailable": "L’orientation du téléphone est indisponible pour le moment."
   },
   "search": {

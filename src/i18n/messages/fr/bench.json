@@ -361,7 +361,12 @@
     "backrest": "avec dossier",
     "noBackrest": "sans dossier",
     "weather": "{temperature} degrés Celsius, {precipitation}, MétéoSuisse",
-    "moon": "Lune éclairée à {percent} pour cent"
+    "moon": "Lune éclairée à {percent} pour cent",
+    "panoramaDescription": "Panorama paysager calculé à 360 degrés",
+    "panoramaControl": "Faire pivoter la direction du regard",
+    "panoramaHeading": "Direction du regard à {degrees} degrés",
+    "panoramaHint": "Faire glisser ou déplacer le curseur · départ dans la direction du banc",
+    "panoramaCalculated": "Calculé à partir des données du terrain et des environs"
   },
   "page": {
     "description": "Banc avec analyse du soleil et des environs dans Bänkli App.",

@@ -289,6 +289,7 @@ export type BenchDetail = {
   distanceWaterMeters: number | null;
   distancePathMeters: number | null;
   directionDegrees: number | null;
+  panoramaAvailable: boolean;
   buildingObstructionPercent: number | null;
   vegetationObstructionPercent: number | null;
   distanceBuildingMeters: number | null;

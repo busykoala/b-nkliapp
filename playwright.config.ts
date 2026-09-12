@@ -4,6 +4,8 @@ import { join } from "node:path";
 
 const testDatabase = process.env.BENCHLY_E2E_DATABASE ?? join(tmpdir(), `benchly-e2e-${process.pid}.sqlite`);
 process.env.BENCHLY_E2E_DATABASE = testDatabase;
+const panoramaCache = process.env.BENCHLY_E2E_PANORAMA_CACHE ?? join(tmpdir(), `benchly-panorama-e2e-${process.pid}`);
+process.env.BENCHLY_E2E_PANORAMA_CACHE = panoramaCache;
 const production = process.env.PLAYWRIGHT_PRODUCTION === "1";
 const baseURL = production ? "https://localhost:3100" : "http://localhost:3100";
 
@@ -33,6 +35,7 @@ export default defineConfig({
     env: {
       ...process.env,
       DATABASE_PATH: testDatabase,
+      PANORAMA_CACHE_DIR: panoramaCache,
       BENCHLY_SEED_DEMO: "true",
       CONTRIBUTOR_SECRET: "playwright-contributor-secret-with-more-than-32-characters",
       RATE_LIMIT_SECRET: "playwright-rate-limit-secret-with-more-than-32-characters",

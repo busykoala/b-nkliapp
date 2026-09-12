@@ -1,7 +1,27 @@
 {
-  "generatedFrom": "config/data-catalog.json@2026-09-10",
+  "generatedFrom": "config/data-catalog.json@2026-09-12",
   "timeZone": "Europe/Zurich",
   "jobs": [
+    {
+      "name": "panorama",
+      "schedule": "8,23,38,53 * * * *",
+      "deadline": 240,
+      "args": [
+        "panorama-batch",
+        "--database",
+        "/data/benchly.sqlite",
+        "--terrain-dir",
+        "/data/terrain-cache-v1/swissalti3d",
+        "--cache-dir",
+        "/data/panorama-cache-v1",
+        "--limit",
+        "8",
+        "--max-runtime-hours",
+        "0.05"
+      ],
+      "profile": "landscape",
+      "purpose": "production"
+    },
     {
       "name": "landscape",
       "schedule": "15 * * * *",

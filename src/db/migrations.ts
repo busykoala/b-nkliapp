@@ -803,4 +803,72 @@ export const migrations: Migration[] = [
         ON bench_direction_estimates(analysis_run_id,top_probability);
     `,
   },
+  {
+    id: "0031_bench_panorama_cache",
+    sql: `
+      CREATE TABLE bench_panorama_geometry (
+        bench_row_id INTEGER PRIMARY KEY REFERENCES benches(row_id) ON DELETE CASCADE,
+        bench_id TEXT NOT NULL,
+        bench_latitude REAL NOT NULL,
+        bench_longitude REAL NOT NULL,
+        geometry_key TEXT NOT NULL,
+        artifact_path TEXT,
+        status TEXT NOT NULL CHECK(status IN ('generating','ready','unavailable','stale','error')),
+        complete INTEGER NOT NULL DEFAULT 0 CHECK(complete IN (0,1)),
+        source_versions_json TEXT NOT NULL,
+        algorithm_version TEXT NOT NULL,
+        warnings_json TEXT NOT NULL DEFAULT '[]',
+        artifact_bytes INTEGER CHECK(artifact_bytes IS NULL OR artifact_bytes >= 0),
+        started_at TEXT,
+        generated_at TEXT,
+        updated_at TEXT NOT NULL,
+        error TEXT
+      );
+      CREATE INDEX bench_panorama_geometry_status_idx
+        ON bench_panorama_geometry(status,updated_at,bench_row_id);
+      CREATE INDEX bench_panorama_geometry_key_idx
+        ON bench_panorama_geometry(geometry_key,status);
+
+      CREATE TABLE bench_panorama_renders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        geometry_key TEXT NOT NULL,
+        render_key TEXT NOT NULL UNIQUE,
+        artifact_path TEXT,
+        status TEXT NOT NULL CHECK(status IN ('generating','ready','stale','error')),
+        style_version TEXT NOT NULL,
+        center_azimuth_degrees REAL NOT NULL CHECK(center_azimuth_degrees >= 0 AND center_azimuth_degrees < 360),
+        horizontal_fov_degrees REAL NOT NULL CHECK(horizontal_fov_degrees > 0 AND horizontal_fov_degrees <= 360),
+        width INTEGER NOT NULL CHECK(width > 0),
+        height INTEGER NOT NULL CHECK(height > 0),
+        weather_bucket TEXT NOT NULL,
+        solar_lunar_bucket TEXT NOT NULL,
+        bench_variant TEXT NOT NULL,
+        covered INTEGER CHECK(covered IN (0,1)),
+        artifact_bytes INTEGER CHECK(artifact_bytes IS NULL OR artifact_bytes >= 0),
+        generated_at TEXT,
+        updated_at TEXT NOT NULL,
+        error TEXT
+      );
+      CREATE INDEX bench_panorama_renders_bench_idx
+        ON bench_panorama_renders(bench_row_id,status,updated_at DESC);
+      CREATE INDEX bench_panorama_renders_geometry_idx
+        ON bench_panorama_renders(geometry_key,status);
+
+    `,
+  },
+  {
+    id: "0032_bench_panorama_requests",
+    sql: `
+      CREATE TABLE bench_panorama_requests (
+        bench_row_id INTEGER PRIMARY KEY REFERENCES benches(row_id) ON DELETE CASCADE,
+        requested_at TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0 CHECK(attempts >= 0),
+        last_attempt_at TEXT,
+        last_error TEXT
+      );
+      CREATE INDEX bench_panorama_requests_priority_idx
+        ON bench_panorama_requests(requested_at,attempts);
+    `,
+  },
 ];

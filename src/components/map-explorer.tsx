@@ -4,7 +4,7 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Accessibility, Armchair, ChevronRight, CloudSun, Compass, Crosshair, Footprints, Info, List, MapPin, MountainSnow, Navigation, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
+import { Accessibility, Armchair, ChevronRight, CloudSun, Crosshair, Footprints, Info, List, MapPin, MountainSnow, Navigation, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -27,8 +27,37 @@ const JourneyPlanner = dynamic(() => import("./journey/journey-planner").then((m
 });
 
 type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
-type OrientationConstructor = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<"granted" | "denied"> };
+type OrientationConstructor = typeof DeviceOrientationEvent & { requestPermission?: (absolute?: boolean) => Promise<"granted" | "denied"> };
 type CompassOrientationEvent = DeviceOrientationEvent & { webkitCompassHeading?: number };
+
+function compassHeading(event: Event) {
+  const reading = event as CompassOrientationEvent;
+  const screenAngle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
+  const heading = typeof reading.webkitCompassHeading === "number"
+    ? reading.webkitCompassHeading
+    : typeof reading.alpha === "number" && (reading.absolute || event.type === "deviceorientationabsolute")
+      ? (360 - reading.alpha + screenAngle) % 360
+      : null;
+  return heading !== null && Number.isFinite(heading) ? heading : null;
+}
+
+function waitForCompassHeading(timeoutMs = 2500) {
+  return new Promise<number | null>((resolve) => {
+    const finish = (heading: number | null) => {
+      window.removeEventListener("deviceorientationabsolute", orient);
+      window.removeEventListener("deviceorientation", orient);
+      window.clearTimeout(timer);
+      resolve(heading);
+    };
+    const orient = (event: Event) => {
+      const heading = compassHeading(event);
+      if (heading !== null) finish(heading);
+    };
+    window.addEventListener("deviceorientationabsolute", orient);
+    window.addEventListener("deviceorientation", orient);
+    const timer = window.setTimeout(() => finish(null), timeoutMs);
+  });
+}
 
 function WalkLoading() {
   const t = useTranslations("map.loading");
@@ -77,6 +106,9 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [mapLoading, setMapLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const [headingMode, setHeadingMode] = useState(false);
+  const [headingPending, setHeadingPending] = useState(false);
+  const headingRequest = useRef(0);
+  const orientationMessageTimer = useRef<number | undefined>(undefined);
   const [message, setMessage] = useState<string | null>(null);
   const [addStage, setAddStage] = useState<"position" | "details" | null>(null);
   const [createdBenchId, setCreatedBenchId] = useState<string | null>(null);
@@ -472,28 +504,37 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     const map = mapRef.current;
     if (!map) return;
     let animationFrame: number | undefined;
+    let lastHeading = map.getBearing();
+    const activePointers = new Set<number>();
     map.getContainer().dataset.orientationMode = "heading";
     const orient = (event: Event) => {
-      const reading = event as CompassOrientationEvent;
-      const screenAngle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
-      const heading = typeof reading.webkitCompassHeading === "number"
-        ? reading.webkitCompassHeading
-        : typeof reading.alpha === "number" && (reading.absolute || event.type === "deviceorientationabsolute")
-          ? (360 - reading.alpha + screenAngle) % 360
-          : null;
-      if (heading === null || !Number.isFinite(heading)) return;
+      if (activePointers.size > 0) return;
+      const heading = compassHeading(event);
+      if (heading === null) return;
+      const change = Math.abs(((heading - lastHeading + 540) % 360) - 180);
+      if (change < 1) return;
+      lastHeading = heading;
       window.cancelAnimationFrame(animationFrame ?? 0);
       animationFrame = window.requestAnimationFrame(() => {
         map.getContainer().dataset.deviceHeading = String(Math.round(heading));
-        map.rotateTo(heading, { duration: 90 });
+        map.setBearing(heading);
       });
     };
+    const beginGesture = (event: PointerEvent) => activePointers.add(event.pointerId);
+    const endGesture = (event: PointerEvent) => activePointers.delete(event.pointerId);
+    const canvas = map.getCanvas();
     window.addEventListener("deviceorientationabsolute", orient);
     window.addEventListener("deviceorientation", orient);
+    canvas.addEventListener("pointerdown", beginGesture);
+    window.addEventListener("pointerup", endGesture);
+    window.addEventListener("pointercancel", endGesture);
     return () => {
       window.cancelAnimationFrame(animationFrame ?? 0);
       window.removeEventListener("deviceorientationabsolute", orient);
       window.removeEventListener("deviceorientation", orient);
+      canvas.removeEventListener("pointerdown", beginGesture);
+      window.removeEventListener("pointerup", endGesture);
+      window.removeEventListener("pointercancel", endGesture);
       map.getContainer().dataset.orientationMode = "north";
       delete map.getContainer().dataset.deviceHeading;
     };
@@ -529,27 +570,57 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
     const center = mapRef.current?.getCenter();
     if (center) openAddAt(center.lat, center.lng);
   };
+  const showOrientationMessage = (value: string) => {
+    window.clearTimeout(orientationMessageTimer.current);
+    setMessage(value);
+    orientationMessageTimer.current = window.setTimeout(() => {
+      setMessage((current) => current === value ? null : current);
+    }, 4000);
+  };
   const toggleHeadingMode = async () => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || headingPending) return;
     if (headingMode) {
+      headingRequest.current += 1;
       setHeadingMode(false);
+      map.stop();
       map.easeTo({ bearing: 0, duration: 300 });
       return;
     }
     const Orientation = window.DeviceOrientationEvent as OrientationConstructor | undefined;
     if (!Orientation) {
-      setMessage(t("map.orientation.unsupported"));
+      showOrientationMessage(t("map.orientation.unsupported"));
       return;
     }
+    const request = ++headingRequest.current;
+    let activated = false;
+    setHeadingPending(true);
+    window.clearTimeout(orientationMessageTimer.current);
+    setMessage(null);
+    map.getContainer().dataset.orientationMode = "requesting";
     try {
-      if (Orientation.requestPermission && await Orientation.requestPermission() !== "granted") {
-        setMessage(t("map.orientation.denied"));
+      if (typeof Orientation.requestPermission === "function" && await Orientation.requestPermission(true) !== "granted") {
+        showOrientationMessage(t("map.orientation.denied"));
         return;
       }
+      const initialHeading = await waitForCompassHeading();
+      if (request !== headingRequest.current) return;
+      if (initialHeading === null) {
+        showOrientationMessage(t("map.orientation.unavailable"));
+        return;
+      }
+      map.stop();
+      map.setBearing(initialHeading);
+      map.getContainer().dataset.deviceHeading = String(Math.round(initialHeading));
+      activated = true;
       setHeadingMode(true);
     } catch {
-      setMessage(t("map.orientation.unavailable"));
+      showOrientationMessage(t("map.orientation.unavailable"));
+    } finally {
+      if (request === headingRequest.current) {
+        setHeadingPending(false);
+        if (!activated) map.getContainer().dataset.orientationMode = "north";
+      }
     }
   };
   const openWalk = () => {
@@ -592,8 +663,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
       </>}
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
-      {message && <div role="status" className="toast toast-center top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
-      {!addStage && !journeyOpen && !walkOpen && !returnJourney && <button type="button" className="map-orientation-control" aria-label={t(headingMode ? "map.orientation.north" : "map.orientation.follow")} title={t(headingMode ? "map.orientation.north" : "map.orientation.follow")} aria-pressed={headingMode} onClick={() => void toggleHeadingMode()}>{headingMode ? <Navigation size={20} /> : <Compass size={21} />}</button>}
+      {message && <div role="status" className="toast toast-center pointer-events-none top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && <button type="button" className="map-orientation-control" aria-label={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} title={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} aria-pressed={headingMode} aria-busy={headingPending} disabled={headingPending} onClick={() => void toggleHeadingMode()}><Navigation size={18} fill={headingMode ? "currentColor" : "none"} /></button>}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">
         <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t("walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>

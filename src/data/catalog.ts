@@ -45,6 +45,8 @@ const catalogSchema = z.object({
     profilePipelineVersion: z.string().min(1),
     scenePromptVersion: z.string().min(1),
     sceneReconcilerVersion: z.string().min(1),
+    panoramaGeometryVersion: z.string().min(1),
+    panoramaRenderVersion: z.string().min(1),
     osmPbfUrl: z.url(),
     geoAdminBaseUrl: z.url(),
     geoAdminDataBaseUrl: z.url(),

@@ -19,8 +19,9 @@
   "orientation": {
     "follow": "Drizzar la charta tenor il telefonin",
     "north": "Mussar puspè il nord sisum",
+    "requesting": "Il cumpass vegn activà …",
     "unsupported": "Quest apparat na furnescha nagina direcziun dal cumpass.",
-    "denied": "L’access a la direcziun dal moviment n’è betg vegnì permess.",
+    "denied": "L’access al cumpass è bloccà. Permetta moviment ed orientaziun en las configuraziuns da la pagina.",
     "unavailable": "La direcziun dal telefonin n’è actualmain betg disponibla."
   },
   "search": {

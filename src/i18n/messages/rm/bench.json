@@ -361,7 +361,12 @@
     "backrest": "cun spundal",
     "noBackrest": "senza spundal",
     "weather": "{temperature} grads Celsius, {precipitation}, MeteoSvizra",
-    "moon": "Glina illuminada per {percent} pertschient"
+    "moon": "Glina illuminada per {percent} pertschient",
+    "panoramaDescription": "Panorama da la cuntrada calculà en 360 grads",
+    "panoramaControl": "Volver la direcziun da la vista",
+    "panoramaHeading": "Direcziun da la vista {degrees} grads",
+    "panoramaHint": "Trer u muventar il regulatur · partenza en direcziun dal banc",
+    "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient"
   },
   "page": {
     "description": "Banc cun analisa dal sulegl e da l’ambient en Bänkli App.",

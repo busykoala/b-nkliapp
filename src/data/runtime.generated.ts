@@ -4,6 +4,8 @@ export const DATA_RUNTIME = {
   "profilePipelineVersion": "GeoAdmin-Horizont v7",
   "scenePromptVersion": "benchly-scene-1.4",
   "sceneReconcilerVersion": "benchly-evidence-1.1",
+  "panoramaGeometryVersion": "panorama-geometry-1",
+  "panoramaRenderVersion": "panorama-watercolor-1",
   "osmPbfUrl": "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf",
   "geoAdminBaseUrl": "https://api3.geo.admin.ch",
   "geoAdminDataBaseUrl": "https://data.geo.admin.ch",

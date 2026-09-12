@@ -69,6 +69,11 @@ def test_raster_index_reuses_footprints_and_bounds_open_handles(tmp_path):
                 lon, lat = transform.transform(x+index*100, y)
                 assert collection.sample(lat, lon) == 500+index
                 assert len(collection.handles) <= 2
+            locations = []
+            for index in range(4):
+                lon, lat = transform.transform(x+index*100, y)
+                locations.append((lat, lon))
+            assert collection.sample_many(locations) == [500, 501, 502, 503]
             assert collection.sample(46, 8) is None
         finally:
             collection.close()

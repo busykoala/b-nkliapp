@@ -41,6 +41,7 @@ from benchly.transit.service import refresh as refresh_transit
 from benchly.transfers.service import run_import_geography
 from benchly.weather.jobs import refresh_weather_job
 from benchly.direction.jobs import analyze_directions_job, import_direction_reviews_job, prepare_direction_review_job, publish_direction_estimates_job, remove_direction_estimates_job
+from benchly.panorama.jobs import panorama_batch_job
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -357,6 +358,21 @@ def build_parser() -> argparse.ArgumentParser:
     remove_directions.add_argument("--apply", action="store_true")
     remove_directions.add_argument("--backup", help="Required new SQLite backup path when --apply is used")
     remove_directions.set_defaults(function=remove_direction_estimates_job, uses_lock=True)
+
+    panorama = subparsers.add_parser("panorama-batch", help="Precompute versioned geographic panoramas for existing benches")
+    _database_argument(panorama)
+    panorama.add_argument("--terrain-dir", required=True, help="Indexed swissALTI3D GeoTIFF directory")
+    panorama.add_argument("--cache-dir", default="./data/panorama-cache-v1")
+    panorama.add_argument("--limit", type=int, default=10)
+    panorama.add_argument("--max-runtime-hours", type=float, default=2)
+    panorama.add_argument("--angular-resolution", type=float, default=.1)
+    panorama.add_argument("--maximum-distance-meters", type=float, default=150_000)
+    panorama.add_argument("--semantic-radius-meters", type=float, default=20_000)
+    panorama.add_argument("--building-radius-meters", type=float, default=2_000)
+    panorama.add_argument("--preview-fov", type=float, default=360, help="Deprecated; full 360 degree renders are always produced")
+    panorama.add_argument("--preview-width", type=int, default=3600, help="Full panorama width")
+    panorama.add_argument("--preview-height", type=int, default=900, help="Full panorama height")
+    panorama.set_defaults(function=panorama_batch_job, uses_lock=True)
     return parser
 
 

@@ -19,8 +19,9 @@
   "orientation": {
     "follow": "Orientare la mappa come il telefono",
     "north": "Riportare il nord in alto",
+    "requesting": "Attivazione della bussola…",
     "unsupported": "Questo dispositivo non fornisce la direzione della bussola.",
-    "denied": "L’accesso all’orientamento non è stato autorizzato.",
+    "denied": "L’accesso alla bussola è bloccato. Consenti movimento e orientamento nelle impostazioni del sito.",
     "unavailable": "L’orientamento del telefono non è disponibile al momento."
   },
   "search": {

@@ -142,12 +142,18 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
   expect(Math.abs(walk!.y - list!.y)).toBeLessThanOrEqual(1);
 
   await page.evaluate(() => {
-    class TestOrientationEvent extends Event {}
+    class TestOrientationEvent extends Event {
+      static requestPermission(absolute?: boolean) {
+        (window as Window & { __orientationPermissionAbsolute?: boolean }).__orientationPermissionAbsolute = absolute;
+        return Promise.resolve("granted" as const);
+      }
+    }
     Object.defineProperty(window, "DeviceOrientationEvent", { configurable: true, value: TestOrientationEvent });
   });
   const orientation = page.getByRole("button", { name: "Karte nach Handyrichtung ausrichten" });
   await orientation.click();
-  await expect(page.locator(".map-orientation-control")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".map-orientation-control")).toHaveAttribute("aria-busy", "true");
+  expect(await page.evaluate(() => (window as Window & { __orientationPermissionAbsolute?: boolean }).__orientationPermissionAbsolute)).toBe(true);
   const expectedHeading = await page.evaluate(() => {
     const event = new Event("deviceorientationabsolute");
     Object.defineProperties(event, { alpha: { value: 270 }, absolute: { value: true } });
@@ -155,9 +161,51 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
     const angle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
     return String((90 + angle) % 360);
   });
+  await expect(page.locator(".map-orientation-control")).toHaveAttribute("aria-pressed", "true");
   await expect(map).toHaveAttribute("data-device-heading", expectedHeading);
+
+  // Holding or dragging the map pauses sensor updates instead of fighting the
+  // gesture. Direction following resumes as soon as the pointer is released.
+  const canvas = page.locator(".maplibregl-canvas");
+  await canvas.dispatchEvent("pointerdown", { pointerId: 7, pointerType: "mouse", button: 1, bubbles: true });
+  await page.evaluate(() => {
+    const event = new Event("deviceorientationabsolute");
+    Object.defineProperties(event, { alpha: { value: 180 }, absolute: { value: true } });
+    window.dispatchEvent(event);
+  });
+  await page.waitForTimeout(100);
+  await expect(map).toHaveAttribute("data-device-heading", expectedHeading);
+  await canvas.dispatchEvent("pointerup", { pointerId: 7, pointerType: "mouse", button: 1, bubbles: true });
+  const resumedHeading = await page.evaluate(() => {
+    const event = new Event("deviceorientationabsolute");
+    Object.defineProperties(event, { alpha: { value: 180 }, absolute: { value: true } });
+    window.dispatchEvent(event);
+    const angle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
+    return String((180 + angle) % 360);
+  });
+  await expect(map).toHaveAttribute("data-device-heading", resumedHeading);
+  await page.screenshot({ path: testInfo.outputPath("narrow-heading-active.png") });
   await page.getByRole("button", { name: "Norden wieder oben anzeigen" }).click();
   await expect(map).toHaveAttribute("data-orientation-mode", "north");
+
+  await page.evaluate(() => {
+    Object.defineProperty(window.DeviceOrientationEvent, "requestPermission", {
+      configurable: true,
+      value: () => Promise.resolve("denied"),
+    });
+  });
+  await orientation.click();
+  const orientationStatus = page.getByRole("status");
+  await expect(orientationStatus).toContainText("Der Kompasszugriff ist blockiert.");
+  await expect(orientation).toBeEnabled();
+  await expect(orientation).toHaveAttribute("aria-pressed", "false");
+  await expect(map).toHaveAttribute("data-orientation-mode", "north");
+  const statusBox = await orientationStatus.boundingBox();
+  expect(statusBox).not.toBeNull();
+  expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest(".benchly-map") !== null, {
+    x: statusBox!.x + statusBox!.width / 2,
+    y: statusBox!.y + statusBox!.height / 2,
+  })).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("narrow-map-actions.png") });
 
   await page.getByLabel("Filter öffnen").click();

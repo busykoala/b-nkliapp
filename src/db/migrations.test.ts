@@ -53,6 +53,23 @@ describe("SQLite migrations and R*Tree", () => {
     database.close();
   });
 
+  it("keeps panorama artifacts outside SQLite and versions geometry separately from renders", () => {
+    const database = new Database(":memory:");
+    applyMigrations(database);
+    const geometry = database.prepare("PRAGMA table_info(bench_panorama_geometry)").all() as Array<{ name: string }>;
+    const renders = database.prepare("PRAGMA table_info(bench_panorama_renders)").all() as Array<{ name: string }>;
+    const requests = database.prepare("PRAGMA table_info(bench_panorama_requests)").all() as Array<{ name: string }>;
+    expect(geometry.map(({ name }) => name)).toEqual(expect.arrayContaining([
+      "geometry_key", "artifact_path", "source_versions_json", "algorithm_version", "complete",
+    ]));
+    expect(renders.map(({ name }) => name)).toEqual(expect.arrayContaining([
+      "render_key", "geometry_key", "center_azimuth_degrees", "weather_bucket", "style_version",
+    ]));
+    expect([...geometry, ...renders].map(({ name }) => name)).not.toContain("artifact_blob");
+    expect(requests.map(({ name }) => name)).toEqual(expect.arrayContaining(["bench_row_id", "requested_at", "attempts"]));
+    database.close();
+  });
+
   it("preserves ratings and corrections in an online backup used for rollback", async () => {
     const directory = mkdtempSync(join(tmpdir(), "benchly-backup-test-"));
     const backupPath = join(directory, "rollback.sqlite");

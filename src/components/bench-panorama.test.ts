@@ -1,0 +1,13 @@
+import { describe, expect, it } from "vitest";
+import { panoramaTrackOffset } from "./bench-panorama";
+
+describe("360 degree panorama track", () => {
+  it("centres north in the middle copy", () => {
+    expect(panoramaTrackOffset(600, 500, 0)).toBe(-1700);
+  });
+
+  it("wraps equivalent headings to the identical crop", () => {
+    expect(panoramaTrackOffset(600, 500, -10)).toBe(panoramaTrackOffset(600, 500, 350));
+    expect(panoramaTrackOffset(600, 500, 720)).toBe(panoramaTrackOffset(600, 500, 0));
+  });
+});

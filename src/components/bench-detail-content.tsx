@@ -16,7 +16,7 @@ import { BenchContributionHub } from "./bench-contribution-hub";
 import { BenchSummary } from "@/features/bench-detail/bench-summary";
 import { BenchFeatureEditor } from "./bench-feature-editor";
 import { BenchDetails } from "@/features/bench-detail/bench-details";
-import { BenchLandscape } from "./bench-landscape";
+import { BenchPanorama } from "./bench-panorama";
 import { VerificationQuestion } from "@/features/bench-knowledge/verification-question";
 import { PhotoGallery } from "./photo-gallery";
 import { galleryImageUrl } from "@/features/bench-photos/media-source";
@@ -90,7 +90,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
       <Community bench={bench} report={report} reported={reported} user={user} onContribute={() => contribute("rating")} />
     </> : <>
       <section className="bench-story-card">
-        <BenchLandscape bench={bench}><RatingEntry bench={bench} onOpen={() => contribute("rating")} /></BenchLandscape>
+        <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaAvailable}`} bench={bench}><RatingEntry bench={bench} onOpen={() => contribute("rating")} /></BenchPanorama>
         <header className="calm-title">
           {created ? <p role="status" className="bench-created-status">{t("bench.story.created")}{bench.verificationStatus === "unverified" ? t("bench.story.remaining", {count: Math.max(0, bench.verificationThreshold - bench.confirmationCount)}) : t("bench.story.confirmed")}</p>
             : bench.verificationStatus === "unverified" && <p className="unverified-note">{t("bench.story.unverified")}</p>}

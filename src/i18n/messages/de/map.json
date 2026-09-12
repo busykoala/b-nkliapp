@@ -19,8 +19,9 @@
   "orientation": {
     "follow": "Karte nach Handyrichtung ausrichten",
     "north": "Norden wieder oben anzeigen",
+    "requesting": "Kompass wird aktiviert …",
     "unsupported": "Dieses Gerät stellt keine Kompassrichtung bereit.",
-    "denied": "Der Zugriff auf die Bewegungsrichtung wurde nicht erlaubt.",
+    "denied": "Der Kompasszugriff ist blockiert. Erlaube Bewegung & Ausrichtung in den Website-Einstellungen.",
     "unavailable": "Die Handyrichtung ist gerade nicht verfügbar."
   },
   "search": {

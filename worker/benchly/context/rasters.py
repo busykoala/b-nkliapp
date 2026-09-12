@@ -36,6 +36,8 @@ class RasterCollection:
         self.max_open = max(1, min(max_open, 32))
         self.handles = OrderedDict()
         self.datasets = []  # lightweight metadata, never a handle per national tile
+        self.footprints = []
+        self._footprint_grid = {}
         self.index = None
         if not directory or not directory.exists():
             return
@@ -83,36 +85,92 @@ class RasterCollection:
                 write(self.index, delete(RasterTile).where(RasterTile.id == row["id"]))
         self.index.commit()
 
-    def sample(self, latitude, longitude):
-        if self.index is None:
-            return None
+        # Keep the small footprint catalogue in memory. Panorama sampling can
+        # address hundreds of thousands of points per viewpoint; an RTree SQL
+        # lookup and CRS transformer construction per point would dominate the
+        # actual raster work.
+        for row in self.index.execute("""SELECT t.path,f.min_lon,f.max_lon,f.min_lat,f.max_lat,
+                json_extract(t.metadata_json,'$.source_updated_at') source_updated_at,
+                json_extract(t.metadata_json,'$.version') version
+            FROM raster_footprints f JOIN raster_tiles t ON t.id=f.id
+            ORDER BY source_updated_at DESC,version DESC,t.path DESC"""):
+            item = dict(row)
+            self.footprints.append(item)
+            min_x, max_x = int(math.floor(item["min_lon"] * 20)), int(math.floor(item["max_lon"] * 20))
+            min_y, max_y = int(math.floor(item["min_lat"] * 20)), int(math.floor(item["max_lat"] * 20))
+            for x in range(min_x, max_x + 1):
+                for y in range(min_y, max_y + 1):
+                    self._footprint_grid.setdefault((x, y), []).append(item)
+
+    def _open(self, name):
         import rasterio
-        rows = self.index.execute("""SELECT t.path FROM raster_footprints s JOIN raster_tiles t ON t.id=s.id
-            WHERE s.min_lon<=? AND s.max_lon>=? AND s.min_lat<=? AND s.max_lat>=?
-            ORDER BY json_extract(t.metadata_json,'$.source_updated_at') DESC,json_extract(t.metadata_json,'$.version') DESC,t.path DESC""",
-            (longitude, longitude, latitude, latitude))
-        for row in rows:
-            name = row[0]
+        if name in self.handles:
+            dataset, transform = self.handles.pop(name)
+        else:
+            if len(self.handles) >= self.max_open:
+                self.handles.popitem(last=False)[1][0].close()
+            dataset = rasterio.open(name)
+            transform = Transformer.from_crs(4326, dataset.crs, always_xy=True)
+        self.handles[name] = (dataset, transform)
+        return dataset, transform
+
+    def _candidates(self, latitude, longitude):
+        bucket = (int(math.floor(longitude * 20)), int(math.floor(latitude * 20)))
+        return [item for item in self._footprint_grid.get(bucket, ())
+                if item["min_lon"] <= longitude <= item["max_lon"]
+                and item["min_lat"] <= latitude <= item["max_lat"]]
+
+    def sample(self, latitude, longitude):
+        return self.sample_many([(latitude, longitude)])[0]
+
+    def sample_many(self, points):
+        """Sample a point batch while opening and transforming each tile once."""
+        points = list(points)
+        output = [None] * len(points)
+        if self.index is None or not points:
+            return output
+        grouped = {}
+        fallbacks = {}
+        for index, (latitude, longitude) in enumerate(points):
+            candidates = self._candidates(latitude, longitude)
+            if candidates:
+                grouped.setdefault(candidates[0]["path"], []).append((index, latitude, longitude))
+                if len(candidates) > 1:
+                    fallbacks[index] = candidates[1:]
+
+        def sample_group(name, values):
             try:
-                if name in self.handles:
-                    dataset, transform = self.handles.pop(name)
-                else:
-                    if len(self.handles) >= self.max_open:
-                        self.handles.popitem(last=False)[1][0].close()
-                    dataset = rasterio.open(name)
-                    transform = Transformer.from_crs(4326, dataset.crs, always_xy=True)
-                self.handles[name] = (dataset, transform)
-                x, y = transform.transform(longitude, latitude)
-                if not (dataset.bounds.left <= x < dataset.bounds.right and dataset.bounds.bottom < y <= dataset.bounds.top):
-                    continue
-                raw = next(dataset.sample([(x, y)], masked=True))[0]
-                if not getattr(raw, "mask", False):
-                    value = float(raw) * dataset.scales[0] + dataset.offsets[0]
-                    if math.isfinite(value):
-                        return value
+                dataset, transformer = self._open(name)
+                coordinates = [transformer.transform(longitude, latitude) for _index, latitude, longitude in values]
+                raw_values = dataset.sample(coordinates, masked=True)
+                for (index, _latitude, _longitude), raw in zip(values, raw_values):
+                    value = raw[0]
+                    if getattr(value, "mask", False):
+                        continue
+                    number = float(value) * dataset.scales[0] + dataset.offsets[0]
+                    if math.isfinite(number):
+                        output[index] = number
             except (OSError, ValueError, IndexError):
-                continue
-        return None
+                return
+
+        for name, values in grouped.items():
+            sample_group(name, values)
+        # Overlapping editions are ordered newest-first. Consult an older tile
+        # only for points where the preferred asset returned nodata.
+        remaining = {index: list(candidates) for index, candidates in fallbacks.items()}
+        while remaining:
+            retry = {}
+            for index, candidates in list(remaining.items()):
+                if output[index] is not None or not candidates:
+                    remaining.pop(index)
+                    continue
+                candidate = candidates.pop(0)
+                retry.setdefault(candidate["path"], []).append((index, points[index][0], points[index][1]))
+            if not retry:
+                break
+            for name, values in retry.items():
+                sample_group(name, values)
+        return output
 
     def close(self):
         for dataset, _ in self.handles.values():

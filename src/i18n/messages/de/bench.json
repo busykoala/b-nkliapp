@@ -361,7 +361,12 @@
     "backrest": "mit Rückenlehne",
     "noBackrest": "ohne Rückenlehne",
     "weather": "{temperature} Grad Celsius, {precipitation}, MeteoSchweiz",
-    "moon": "Mond {percent} Prozent beleuchtet"
+    "moon": "Mond {percent} Prozent beleuchtet",
+    "panoramaDescription": "Berechnetes 360-Grad-Landschaftspanorama",
+    "panoramaControl": "Blickrichtung drehen",
+    "panoramaHeading": "Blickrichtung {degrees} Grad",
+    "panoramaHint": "Ziehen oder Regler bewegen · Start in Bänkli-Blickrichtung",
+    "panoramaCalculated": "Aus Gelände- und Umgebungsdaten berechnet"
   },
   "page": {
     "description": "Sitzbank mit Sonnen- und Umgebungsanalyse in der Bänkli App.",
