@@ -164,7 +164,9 @@ To deliberately give every bank in the analysis snapshot an effective direction,
 `--minimum-probability 0 --include-no-signal-fallback`. Banks without any directional evidence
 receive a stable bench-ID tie-breaker with a uniform `0.125` distribution, entropy `1.0` and an
 explicit `no_signal_fallback` provenance record. This is not evidence: it only satisfies a UI
-fallback policy and remains subordinate to every observed OSM or community direction.
+fallback policy and remains subordinate to every observed OSM or community direction. Active
+production benches newer than the analysis snapshot receive the same fallback, so a deliberate
+all-benches publication does not silently omit recently imported identities.
 
 The web application resolves `benches.direction_degrees ?? bench_direction_estimates.direction_degrees`
 only when the stored bench identity and coordinates still match. A later OSM/community direction

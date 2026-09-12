@@ -148,6 +148,50 @@ class DirectionModelTests(unittest.TestCase):
         self.assertEqual(first["entropy"], 1.0)
         self.assertEqual(signals[0]["name"], "no_signal_fallback")
 
+    def test_all_benches_mode_includes_production_rows_newer_than_analysis(self):
+        from benchly.direction.analysis import open_analysis
+        from benchly.direction.model import METHOD_VERSION
+        from benchly.direction.publish import publish
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            production_path = root / "production.sqlite"
+            production = sqlite3.connect(production_path)
+            production.executescript("""
+              CREATE TABLE benches(
+                row_id INTEGER PRIMARY KEY,id TEXT,latitude REAL,longitude REAL,direction_degrees REAL,
+                active INTEGER,source_updated_at TEXT
+              );
+              CREATE TABLE bench_direction_estimates(
+                bench_row_id INTEGER PRIMARY KEY,bench_id TEXT,bench_latitude REAL,bench_longitude REAL,
+                direction_degrees REAL,top_probability REAL,entropy REAL,probabilities_json TEXT,signals_json TEXT,
+                source_versions_json TEXT,analysis_run_id TEXT,method_version TEXT,computed_at TEXT,published_at TEXT
+              );
+            """)
+            production.executemany("INSERT INTO benches VALUES(?,?,?,?,?,?,?)", [
+                (1, "osm-node-1", 47.0, 8.0, None, 1, "old"),
+                (2, "osm-node-2", 47.1, 8.1, None, 1, "new"),
+            ])
+            production.commit()
+            production.close()
+            analysis_path = root / "analysis.sqlite"
+            analysis = open_analysis(analysis_path)
+            analysis.execute("""INSERT INTO direction_analysis_runs(
+              run_id,status,method_version,source_database,source_identity,mode,stats_json,started_at,finished_at
+            ) VALUES(?,?,?,?,?,'all','{}','now','now')""", ("run", "completed", METHOD_VERSION, "source", "id"))
+            analysis.execute("INSERT INTO direction_analysis_benches VALUES('run',1,'osm-node-1',47,8,NULL,'test',0,'old',NULL)")
+            analysis.execute("INSERT INTO direction_predictions VALUES('run',1,90,.5,.8,1)")
+            analysis.commit()
+            analysis.close()
+
+            result = publish(SimpleNamespace(
+                database=str(production_path), analysis_database=str(analysis_path), run_id="run",
+                minimum_probability=0, include_no_signal_fallback=True, apply=False, backup=None,
+            ))
+            self.assertEqual(result["selected"], 2)
+            self.assertEqual(result["eligible"], 2)
+            self.assertEqual(result["production_only_fallbacks_selected"], 1)
+
     def test_review_csv_import_persists_a_verdict(self):
         from benchly.direction.analysis import import_reviews, open_analysis
 

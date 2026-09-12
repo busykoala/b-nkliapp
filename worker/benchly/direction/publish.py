@@ -97,6 +97,21 @@ def publish(args) -> dict[str, object]:
                 (args.run_id, candidate["bench_row_id"]),
             )]
             eligible.append((candidate, probabilities, signals))
+        production_only_fallbacks = 0
+        if getattr(args, "include_no_signal_fallback", False):
+            covered_row_ids = {int(candidate["bench_row_id"]) for candidate, _probabilities, _signals in eligible}
+            current_without_observation = database.execute("""
+              SELECT row_id bench_row_id,id bench_id,latitude,longitude,source_updated_at
+              FROM benches WHERE active=1 AND direction_degrees IS NULL ORDER BY row_id
+            """).fetchall()
+            for current in current_without_observation:
+                if int(current["bench_row_id"]) in covered_row_ids:
+                    continue
+                eligible.append(no_signal_fallback(current))
+                covered_row_ids.add(int(current["bench_row_id"]))
+                production_only_fallbacks += 1
+        stats["production_only_fallbacks_selected"] = production_only_fallbacks
+        stats["selected"] = int(stats["selected"]) + production_only_fallbacks
         stats["eligible"] = len(eligible)
         stats["direction_counts"] = {
             str(direction): sum(1 for candidate, _probabilities, _signals in eligible if candidate["direction_degrees"] == direction)
