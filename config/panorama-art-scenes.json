@@ -1,0 +1,34 @@
+{
+  "scenes": [
+    {
+      "benchId": "osm-node-4998419683",
+      "kind": "settlement-hills",
+      "sourceKey": "f19f1ee48dce7ab1c9c03bf03c859ef5b1d26bf677a7148bf9cb4af08e5dc774",
+      "checks": ["coherent houses", "sloping terrain", "atmospheric depth"]
+    },
+    {
+      "benchId": "osm-node-5795964447",
+      "kind": "lake-hills",
+      "sourceKey": "8a9028c7b76164ded9e131945ee0468ce895f0f5925180868344311ea322c143",
+      "checks": ["water depth", "shoreline", "layered hill ranges"]
+    },
+    {
+      "benchId": "osm-node-763529743",
+      "kind": "city",
+      "sourceKey": "3c5608069d1e141e41512fb12357fff91f70e270ef576113661fafa5a2c8dce7",
+      "checks": ["dense building masses", "roof rhythm", "urban depth"]
+    },
+    {
+      "benchId": "osm-node-768598470",
+      "kind": "mountains",
+      "sourceKey": "ff0a7b23433544a816845052e7b70fd78f83c092a64b21baac2ec2957806f7b2",
+      "checks": ["inner ridges", "snow and rock facets", "aerial perspective"]
+    },
+    {
+      "benchId": "osm-node-770651484",
+      "kind": "forest",
+      "sourceKey": "cb0e7c60cd63553f6d0b5c24fcdd40e13c1aa239bcfea655d67029dc80599353",
+      "checks": ["connected canopy", "broken forest edge", "near foliage brushwork"]
+    }
+  ]
+}

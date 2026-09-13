@@ -19,7 +19,7 @@ from benchly.panorama.identity import implementation_key
 
 
 GEOMETRY_IMPLEMENTATION = implementation_key("datasets.py", "models.py", "visibility.py")
-RENDER_IMPLEMENTATION = implementation_key("models.py", "watercolor.py")
+RENDER_IMPLEMENTATION = implementation_key("models.py", "watercolor.py", "assets/watercolor-pigment.png")
 LIGHTMAP_IMPLEMENTATION = implementation_key("models.py", "watercolor.py")
 LOD_SCHEDULE_IMPLEMENTATION = implementation_key("datasets.py")
 EARTH_RADIUS_METERS = 6_371_008.8

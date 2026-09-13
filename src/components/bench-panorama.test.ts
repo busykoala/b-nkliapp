@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampPanoramaVertical, panoramaBenchShadow, panoramaShadowContrast, panoramaTrackOffset } from "./bench-panorama";
+import { clampPanoramaVertical, panoramaBenchShadow, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
 
 describe("360 degree panorama track", () => {
   it("centres north in the middle copy", () => {
@@ -18,6 +18,13 @@ describe("360 degree panorama track", () => {
   it("wraps equivalent headings to the identical crop", () => {
     expect(panoramaTrackOffset(600, 500, -10)).toBe(panoramaTrackOffset(600, 500, 350));
     expect(panoramaTrackOffset(600, 500, 720)).toBe(panoramaTrackOffset(600, 500, 0));
+  });
+
+  it("duplicates scene objects at the circular edge so they are never clipped", () => {
+    expect(panoramaWrappedPositions(0)).toEqual([0, 100]);
+    const [primary, wrapped] = panoramaWrappedPositions(359);
+    expect(primary).toBeCloseTo(359 / 3.6);
+    expect(wrapped).toBeCloseTo(359 / 3.6 + 100);
   });
 
   it("limits vertical map-style movement to the overscan", () => {

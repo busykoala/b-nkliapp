@@ -66,7 +66,7 @@ SHARED_MODEL_BUDGET_BYTES = 15 * 1024**3
 def _artifact_implementation() -> str:
     # Orchestration changes do not invalidate byte-identical image artifacts.
     # Only the checked-in codec, contract and painter contribute to identity.
-    return implementation_key("binary.py", "models.py", "watercolor.py")
+    return implementation_key("binary.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
 
 
 def _git_commit() -> str:
@@ -172,10 +172,12 @@ def _build_one(source: str, generation_root: str, season: str) -> Built:
         existing = None
     if existing is None or existing.version != geometry.version:
         _atomic(capsule, encode_geometry(geometry))
-    if not render.exists():
-        _atomic(render, render_panorama_webp(geometry, 4096, 1024, season))
-    if not material.exists():
-        _atomic(material, render_material_webp(geometry))
+    # A source enters this worker only when its recorded artifact set is not
+    # current. Always repaint it: files can remain from an older Git checkout
+    # even after the content-derived implementation key invalidates the state.
+    # Reusing those paths would silently keep the old visual style.
+    _atomic(render, render_panorama_webp(geometry, 4096, 1024, season))
+    _atomic(material, render_material_webp(geometry))
     artifacts = tuple((kind, str(path.relative_to(output)), path.stat().st_size) for kind, path in (
         ("capsule", capsule), ("render", render), ("material", material),
     ))

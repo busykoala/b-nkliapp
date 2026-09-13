@@ -31,6 +31,11 @@ export function panoramaTrackOffset(viewportWidth: number, viewportHeight: numbe
   return Math.round(viewportWidth / 2 - panoramaWidth * (1 + normalizeHeading(heading) / 360));
 }
 
+export function panoramaWrappedPositions(heading: number) {
+  const position = normalizeHeading(heading) / 360 * 100;
+  return [position, position + 100];
+}
+
 export function panoramaShadowContrast(cloudCover: number) {
   return cloudCover < .35 ? 1 : cloudCover < .65 ? .62 : cloudCover < .8 ? .28 : .08;
 }
@@ -205,15 +210,13 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     "--cloud-mid-opacity": String(Math.min(.78, cloudMid * .82)),
     "--cloud-low-opacity": String(Math.min(.7, cloudLow * .78)),
     "--precip-opacity": String(Math.max(.08, Math.min(.32, .08 + precipitationRate * .045))),
-    "--lightmap-opacity": String(cloudContrast),
+    "--lightmap-opacity": String(cloudContrast * .32),
     "--shadow-length": `${benchShadow.lengthPercent}%`,
     "--shadow-turn": `${benchShadow.turnDegrees}deg`,
   } as CSSProperties;
-  const benchStyle = { left: `${initialHeading / 360 * 100}%` } as CSSProperties;
-  const celestialStyle = celestial ? {
-    left: `${normalizeHeading(celestial.azimuth) / 360 * 100}%`,
-    top: `${Math.max(8, Math.min(55, 55 - celestial.altitude * .72))}%`,
-  } as CSSProperties : undefined;
+  const benchPositions = panoramaWrappedPositions(initialHeading);
+  const celestialPositions = celestial ? panoramaWrappedPositions(celestial.azimuth) : [];
+  const celestialTop = celestial ? `${Math.max(8, Math.min(55, 55 - celestial.altitude * .72))}%` : "0%";
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
@@ -260,12 +263,14 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
           {descriptor.lightMapUrl && <img className="bench-panorama-lightmap" src={descriptor.lightMapUrl} alt="" draggable={false} />}
           {cloudCover > .08 && <><span className="bench-panorama-clouds is-high" /><span className="bench-panorama-clouds is-mid" /><span className="bench-panorama-clouds is-low" /></>}
           {snowGround && <span className="bench-panorama-snow-ground" />}
-          {celestial && <span className={`bench-panorama-celestial is-${celestial.kind}`} style={celestialStyle}>
+          {celestial && celestialPositions.map((left) => <span key={left} className={`bench-panorama-celestial is-${celestial.kind}`}
+            style={{ left: `${left}%`, top: celestialTop }}>
             {celestial.kind === "moon" ? <MoonDisc phase={bench.moonPhase} /> : <i />}
-          </span>}
-          <span className="bench-panorama-ground-patch" style={benchStyle} />
-          {bench.sunAltitudeDegrees > 0 && <span className="bench-panorama-bench-shadow" style={benchStyle} />}
-          <img className="bench-panorama-rear-bench" style={benchStyle} src={benchAsset(bench)} alt="" draggable={false} />
+          </span>)}
+          {benchPositions.map((left) => <span key={`ground-${left}`} className="bench-panorama-ground-patch" style={{ left: `${left}%` }} />)}
+          {bench.sunAltitudeDegrees > 0 && benchPositions.map((left) => <span key={`shadow-${left}`} className="bench-panorama-bench-shadow" style={{ left: `${left}%` }} />)}
+          {benchPositions.map((left) => <img key={`bench-${left}`} className="bench-panorama-rear-bench" style={{ left: `${left}%` }}
+            src={benchAsset(bench)} alt="" draggable={false} />)}
         </div>)}
       </div>
       <div className="bench-panorama-sightline" aria-hidden="true" />

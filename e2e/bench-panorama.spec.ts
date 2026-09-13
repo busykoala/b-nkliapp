@@ -52,6 +52,8 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   expect(panoramaBox).not.toBeNull();
   expect(groundBox!.width).toBeGreaterThan(benchBox!.width);
   expect(groundBox!.width).toBeLessThan(panoramaBox!.width);
+  expect(benchBox!.width).toBeLessThan(panoramaBox!.width * .62);
+  expect(benchBox!.y + benchBox!.height).toBeGreaterThan(panoramaBox!.y + panoramaBox!.height * .9);
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
 
   const viewport = page.locator(".bench-panorama-viewport");

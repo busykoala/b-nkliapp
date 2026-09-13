@@ -706,18 +706,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-track { position: absolute; top: -18%; left: 0; display: flex; height: 136%; max-width: none; transform: translate3d(var(--panorama-offset), var(--panorama-y), 0); will-change: transform; }
 .bench-panorama-copy { position: relative; width: var(--panorama-copy-width); height: 100%; flex: none; }
 .bench-panorama-art { display: block; width: calc(100% + 2px); max-width: none; height: 100%; margin-left: -1px; pointer-events: none; }
-.bench-panorama.phase-night .bench-panorama-track { filter: saturate(.82) brightness(.84) hue-rotate(7deg); }
-.bench-panorama.phase-dawn .bench-panorama-track { filter: sepia(.12) saturate(.86) brightness(.95); }
-.bench-panorama.phase-dusk .bench-panorama-track { filter: sepia(.18) saturate(.8) brightness(.82); }
-.bench-panorama.season-autumn:not(.phase-night) .bench-panorama-track { filter: sepia(.2) saturate(.9); }
-.bench-panorama.season-winter:not(.phase-night) .bench-panorama-track { filter: saturate(.52) brightness(1.04); }
-.bench-panorama.is-raining .bench-panorama-track { filter: saturate(.58) brightness(.88); }
-.bench-panorama-clouds { position: absolute; top: -3%; left: 12%; width: 42%; max-width: none; height: 28%; pointer-events: none; mix-blend-mode: multiply; }
-.bench-panorama-celestial { position: absolute; width: 3.8%; max-width: none; height: auto; pointer-events: none; transform: translate(-50%, -50%); mix-blend-mode: multiply; }
-.bench-panorama-celestial.is-moon { opacity: .78; mix-blend-mode: screen; }
-.bench-panorama-rear-bench { position: absolute; bottom: -.2%; width: 14%; max-width: none; height: auto; pointer-events: none; opacity: .9; transform: translateX(-50%); filter: saturate(.68) contrast(.88) brightness(.94); }
-.bench-panorama-rear-bench.is-metal { filter: grayscale(.48) sepia(.08) saturate(.58) contrast(.88); }
-.bench-panorama-rear-bench.is-stone { filter: grayscale(.65) sepia(.12) saturate(.36) contrast(.82) brightness(1.04); }
+.bench-panorama-celestial { position: absolute; max-width: none; height: auto; pointer-events: none; transform: translate(-50%, -50%); }
 .bench-panorama-sightline { position: absolute; top: 3.62rem; left: 50%; width: 1px; height: 1rem; background: linear-gradient(rgb(45 74 62 / 28%), transparent); }
 .bench-panorama-rain, .bench-panorama-snow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .bench-panorama-rain i { position: absolute; top: var(--drop-y); left: var(--drop-x); width: 1px; height: .72rem; border-radius: 1px; background: rgb(74 111 123 / 30%); transform: rotate(13deg); }
@@ -732,7 +721,6 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-shelter i:first-child { left: 1.7%; transform: rotate(-.6deg); }
 .bench-panorama-shelter i:last-child { right: 1.7%; transform: rotate(.6deg); }
 .bench-panorama-shelter-shade { position: absolute; inset: 38% 0 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, transparent, rgb(45 65 62 / 14%)); mix-blend-mode: multiply; }
-.bench-panorama.has-shelter .bench-panorama-rear-bench { filter: saturate(.54) contrast(.86) brightness(.82); }
 .bench-panorama-hud { position: absolute; bottom: .72rem; left: .72rem; z-index: 4; display: flex; max-width: calc(100% - 7.6rem); align-items: center; gap: .5rem; pointer-events: none; }
 .bench-panorama-hud > span { display: inline-flex; min-height: 2rem; flex: none; align-items: center; gap: .3rem; border: 1px solid rgb(43 67 57 / 15%); border-radius: 999px; background: rgb(251 245 224 / 82%); padding: .3rem .55rem; color: #315649; box-shadow: 0 4px 14px rgb(27 48 41 / 10%); font-size: .72rem; font-weight: 750; font-variant-numeric: tabular-nums; backdrop-filter: blur(8px); }
 .bench-panorama-hud small { overflow: hidden; border-radius: 999px; background: rgb(251 245 224 / 68%); padding: .24rem .45rem; color: rgb(41 66 57 / 82%); box-shadow: 0 3px 12px rgb(27 48 41 / 8%); font-size: .66rem; font-weight: 680; line-height: 1.2; text-overflow: ellipsis; text-shadow: 0 1px rgb(255 253 245 / 92%); white-space: nowrap; backdrop-filter: blur(6px); }
@@ -747,20 +735,24 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-webgl { width: calc(100% + 2px); max-width: none; height: 100%; margin-left: -1px; opacity: 0; transition: opacity .28s ease; }
 .bench-panorama-webgl.is-ready { opacity: 1; }
 .bench-panorama-hud .bench-panorama-zoom { min-width: 2.8rem; justify-content: center; }
-.bench-panorama-lightmap { position: absolute; inset: 0; z-index: 1; width: calc(100% + 2px); height: 100%; margin-left: -1px; opacity: var(--lightmap-opacity); mix-blend-mode: soft-light; filter: contrast(1.3) sepia(.14); transition: opacity .6s ease; }
+.bench-panorama-lightmap { position: absolute; inset: 0; z-index: 1; width: calc(100% + 2px); height: 100%; margin-left: -1px; opacity: var(--lightmap-opacity); mix-blend-mode: soft-light; filter: contrast(1.05) sepia(.08) blur(.55px); transition: opacity .6s ease; }
 .bench-panorama-clouds { position: absolute; z-index: 2; inset-inline: -2%; pointer-events: none; opacity: var(--cloud-opacity); background-repeat: no-repeat; mix-blend-mode: screen; filter: blur(6px); }
 .bench-panorama-clouds.is-high { top: 1%; height: 18%; opacity: var(--cloud-high-opacity); background-image: radial-gradient(ellipse at 12% 55%, rgb(250 242 222 / 42%) 0 11%, transparent 30%), radial-gradient(ellipse at 45% 38%, rgb(245 238 218 / 36%) 0 14%, transparent 35%), radial-gradient(ellipse at 83% 52%, rgb(246 240 224 / 38%) 0 12%, transparent 32%); transform: scaleX(1.12); }
 .bench-panorama-clouds.is-mid { top: 9%; height: 27%; opacity: var(--cloud-mid-opacity); background-image: radial-gradient(ellipse at 7% 48%, rgb(235 232 216 / 54%) 0 13%, transparent 33%), radial-gradient(ellipse at 29% 57%, rgb(242 235 215 / 62%) 0 17%, transparent 38%), radial-gradient(ellipse at 62% 43%, rgb(233 229 215 / 52%) 0 18%, transparent 39%), radial-gradient(ellipse at 95% 58%, rgb(239 234 218 / 55%) 0 15%, transparent 36%); mix-blend-mode: normal; }
 .bench-panorama-clouds.is-low { top: 20%; height: 22%; opacity: var(--cloud-low-opacity); background-image: radial-gradient(ellipse at 18% 45%, rgb(205 211 204 / 46%) 0 16%, transparent 37%), radial-gradient(ellipse at 54% 62%, rgb(211 214 205 / 48%) 0 19%, transparent 40%), radial-gradient(ellipse at 87% 46%, rgb(207 212 205 / 42%) 0 15%, transparent 36%); mix-blend-mode: multiply; }
 .bench-panorama-snow-ground { position: absolute; inset: 72% 0 0; z-index: 3; pointer-events: none; background: linear-gradient(180deg, transparent, rgb(247 246 233 / 52%) 34%, rgb(244 244 234 / 68%)); mix-blend-mode: screen; }
 .bench-panorama-celestial { z-index: 3; display: grid; width: 4.2%; aspect-ratio: 1; place-items: center; border-radius: 50%; transform: translate(-50%, -50%); }
-.bench-panorama-celestial.is-sun i { width: 58%; height: 58%; border-radius: 50%; background: #f6d47d; box-shadow: 0 0 12px 5px rgb(248 211 120 / 28%), 0 0 34px 13px rgb(247 224 161 / 18%); }
-.bench-panorama-celestial.is-moon { opacity: .88; }
-.bench-panorama-celestial svg { width: 100%; height: 100%; filter: drop-shadow(0 0 5px rgb(239 233 204 / 24%)); }
-.bench-panorama-rear-bench { z-index: 5; bottom: 14%; width: 15.5%; opacity: .98; filter: drop-shadow(0 7px 5px rgb(39 50 42 / 22%)); }
-.bench-panorama-ground-patch { position: absolute; bottom: 10%; z-index: 3; width: 19%; height: 14%; pointer-events: none; background: radial-gradient(ellipse at 50% 76%, rgb(214 196 151 / 96%) 0 27%, rgb(194 174 128 / 72%) 44%, rgb(181 161 116 / 19%) 58%, transparent 70%); transform: translateX(-50%); filter: blur(.6px); mix-blend-mode: normal; }
+.bench-panorama-celestial.is-sun { mix-blend-mode: screen; }
+.bench-panorama-celestial.is-sun i { position: relative; width: 60%; height: 57%; border-radius: 53% 47% 49% 51%; background: radial-gradient(circle at 42% 38%, #fff2bb 0 18%, #f3cd72 44%, rgb(224 165 64 / 76%) 70%, transparent 73%); box-shadow: 0 0 11px 6px rgb(248 211 120 / 22%), 0 0 35px 17px rgb(247 224 161 / 14%); filter: blur(.25px); transform: rotate(-7deg); }
+.bench-panorama-celestial.is-sun i::after { position: absolute; inset: -18% -25%; border-radius: 47% 53% 44% 56%; background: rgb(246 218 145 / 17%); content: ""; filter: blur(3px); transform: rotate(18deg); }
+.bench-panorama-celestial.is-moon { opacity: .82; mix-blend-mode: screen; }
+.bench-panorama-celestial svg { width: 100%; height: 100%; opacity: .86; filter: blur(.15px) drop-shadow(0 0 7px rgb(239 233 204 / 20%)); }
+.bench-panorama-rear-bench { position: absolute; z-index: 5; bottom: 7.5%; width: 13.25%; max-width: none; height: auto; pointer-events: none; opacity: .98; transform: translateX(-50%); filter: drop-shadow(0 6px 4px rgb(39 50 42 / 22%)); }
+.bench-panorama-rear-bench.is-metal { filter: grayscale(.48) sepia(.08) saturate(.58) contrast(.88) drop-shadow(0 6px 4px rgb(39 50 42 / 20%)); }
+.bench-panorama-rear-bench.is-stone { filter: grayscale(.65) sepia(.12) saturate(.36) contrast(.82) brightness(1.04) drop-shadow(0 6px 4px rgb(39 50 42 / 18%)); }
+.bench-panorama-ground-patch { position: absolute; bottom: 3.5%; z-index: 3; width: 17%; height: 12%; pointer-events: none; background: radial-gradient(ellipse at 50% 76%, rgb(214 196 151 / 92%) 0 27%, rgb(194 174 128 / 65%) 44%, rgb(181 161 116 / 16%) 58%, transparent 70%); transform: translateX(-50%); filter: blur(.6px); mix-blend-mode: normal; }
 .bench-panorama.is-shaded .bench-panorama-rear-bench, .bench-panorama.has-shelter .bench-panorama-rear-bench { filter: saturate(.75) brightness(.88) drop-shadow(0 6px 5px rgb(35 48 43 / 20%)); }
-.bench-panorama-bench-shadow { position: absolute; z-index: 4; bottom: 15%; width: var(--shadow-length); height: 3.2%; border-radius: 50%; background: rgb(38 62 53 / 18%); filter: blur(5px); transform: translateX(-8%) rotate(var(--shadow-turn)); transform-origin: left center; opacity: var(--lightmap-opacity); }
+.bench-panorama-bench-shadow { position: absolute; z-index: 4; bottom: 8.5%; width: var(--shadow-length); height: 2.8%; border-radius: 50%; background: rgb(38 62 53 / 18%); filter: blur(5px); transform: translateX(-8%) rotate(var(--shadow-turn)); transform-origin: left center; opacity: var(--lightmap-opacity); }
 .bench-panorama.is-shaded .bench-panorama-bench-shadow, .bench-panorama.has-shelter .bench-panorama-bench-shadow { opacity: .035; }
 .bench-panorama.phase-night::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: rgb(31 52 67 / 34%); mix-blend-mode: multiply; }
 .bench-panorama.phase-dawn::before, .bench-panorama.phase-dusk::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: linear-gradient(180deg, rgb(214 143 113 / 16%), rgb(80 99 90 / 8%)); mix-blend-mode: multiply; }
