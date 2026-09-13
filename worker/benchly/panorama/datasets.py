@@ -313,6 +313,19 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
                    radius_meters: float = 10_000) -> list[BuildingGeometry]:
     """Load and normalize only potentially visible building massing once."""
     rows = nearby_context(database, latitude, longitude, radius_meters, ["building"])
+    sources = {str(row["source"]) for row in rows}
+    preferred_source = "swissBUILDINGS3D" if "swissBUILDINGS3D" in sources else "swissTLM3D" if "swissTLM3D" in sources else None
+    if preferred_source:
+        # The national imports overlap heavily: loading OSM, TLM and
+        # swissBUILDINGS3D together can triple the footprint count before the
+        # geometric duplicate pass. For painting, the best complete official
+        # massing is authoritative. Retain only explicitly height-modelled OSM
+        # exceptions, which add information the footprint source cannot carry.
+        rows = [
+            row for row in rows
+            if str(row["source"]) == preferred_source
+            or (str(row["source"]) == "OpenStreetMap" and _row_height(row, "height_meters") is not None)
+        ]
     origin_east, origin_north = WGS84_TO_LV95.transform(longitude, latitude)
     prepared = []
     for row in rows:
