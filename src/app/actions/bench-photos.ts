@@ -5,13 +5,12 @@ import { actionError } from "@/i18n/action-error";
 import { getTranslations } from "next-intl/server";
 
 import { randomUUID } from "node:crypto";
-import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { sqlite } from "@/db/client";
-import { ensurePeopleFreePhoto } from "@/features/bench-photos/moderation";
 import { validateBenchPhoto } from "@/features/bench-photos/photo-file";
+import { findOwnedSubmission, needsSubmissionWork, processBenchPhotoSubmission, submissionFailureKey } from "@/features/bench-photos/submissions";
 import { deleteBenchPhoto, readBenchPhoto, storeBenchPhoto } from "@/features/bench-photos/storage";
 import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
-import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 
 const inputSchema = z.object({ caption: z.string().trim().max(180), website: z.string().max(0).optional() });
@@ -19,6 +18,9 @@ const benchIdSchema = z.string().regex(/^(osm-(node|way)-\d+|community-[0-9a-f-]
 const allowedTypes = new Set(["image/webp", "image/jpeg", "image/png"]);
 
 export type BenchPhotoResult = { ok: true; dataUrl: string } | { ok: false; message: string };
+export type BenchPhotoSubmissionResult =
+  | { ok: true; status: "pending" | "accepted"; submissionId: string; message: string }
+  | { ok: false; status: "rejected"; submissionId?: string; message: string };
 
 export async function loadBenchPhoto(momentId: number): Promise<BenchPhotoResult> {
   const t = await getTranslations();
@@ -38,14 +40,14 @@ export async function loadBenchPhoto(momentId: number): Promise<BenchPhotoResult
   }
 }
 
-export async function uploadBenchPhoto(benchId: string, formData: FormData): Promise<ActionResult> {
+export async function uploadBenchPhoto(benchId: string, formData: FormData): Promise<BenchPhotoSubmissionResult> {
   const t = await getTranslations();
   try {
     const id = benchIdSchema.parse(benchId);
     const parsed = inputSchema.parse({ caption: formData.get("caption") ?? "", website: formData.get("website") ?? "" });
     const photo = formData.get("photo");
     if (!(photo instanceof File) || !allowedTypes.has(photo.type) || photo.size < 8_000 || photo.size > 1_800_000) {
-      return { ok: false, message: t("photos.server.choose") };
+      return { ok: false, status: "rejected", message: t("photos.server.choose") };
     }
     const user = await requireUser();
     const identity = await getContributorIdentity();
@@ -54,23 +56,44 @@ export async function uploadBenchPhoto(benchId: string, formData: FormData): Pro
     consumeRateLimit(contributor, "bench-photo-day", 8, 86_400);
     consumeRateLimit(identity.ipHash, "bench-photo-ip-day", 20, 86_400);
     const bench = sqlite.prepare("SELECT row_id FROM benches WHERE id=? AND active=1").get(id) as { row_id: number } | undefined;
-    if (!bench) return { ok: false, message: t("common.errors.benchNotFound") };
+    if (!bench) return { ok: false, status: "rejected", message: t("common.errors.benchNotFound") };
     const bytes = new Uint8Array(await photo.arrayBuffer());
     const format = validateBenchPhoto(bytes, photo.type);
-    await ensurePeopleFreePhoto(bytes, format.type);
     const now = new Date().toISOString();
+    const submissionId = randomUUID();
     const objectKey = `benches/${id}/${randomUUID()}.${format.extension}`;
     const url = await storeBenchPhoto(objectKey, bytes, format.type);
     try {
-      sqlite.prepare(`INSERT INTO bench_moments (bench_row_id,user_id,kind,body,photo_url,created_at,updated_at,visible)
-        VALUES (?,?,'photo',?,?,?,?,1)`).run(bench.row_id, user.id, parsed.caption, url, now, now);
+      sqlite.prepare(`INSERT INTO bench_photo_submissions
+        (id,bench_row_id,user_id,caption,photo_url,status,created_at,updated_at)
+        VALUES (?,?,?,?,?,'pending',?,?)`).run(submissionId, bench.row_id, user.id, parsed.caption, url, now, now);
     } catch (error) {
       await deleteBenchPhoto(url).catch(() => undefined);
       throw error;
     }
-    revalidatePath(`/bank/${id}`); revalidatePath("/feed");
-    return { ok: true, message: t("photos.server.saved") };
+    after(() => processBenchPhotoSubmission(submissionId));
+    return { ok: true, status: "pending", submissionId, message: t("photos.capture.checking") };
   } catch (error) {
-    return { ok: false, message: actionError(t, error, "photos.server.saveFailed") };
+    return { ok: false, status: "rejected", message: actionError(t, error, "photos.server.saveFailed") };
+  }
+}
+
+export async function getBenchPhotoSubmission(submissionId: string): Promise<BenchPhotoSubmissionResult> {
+  const t = await getTranslations();
+  try {
+    const id = z.string().uuid().parse(submissionId);
+    const user = await requireUser();
+    const submission = findOwnedSubmission(id, user.id);
+    if (!submission) return { ok: false, status: "rejected", message: t("photos.server.notFound") };
+    if (needsSubmissionWork(submission)) after(() => processBenchPhotoSubmission(id));
+    if (submission.status === "accepted") {
+      return { ok: true, status: "accepted", submissionId: id, message: t("photos.server.saved") };
+    }
+    if (submission.status === "rejected") {
+      return { ok: false, status: "rejected", submissionId: id, message: t(submissionFailureKey(submission.error_key)) };
+    }
+    return { ok: true, status: "pending", submissionId: id, message: t("photos.capture.checking") };
+  } catch (error) {
+    return { ok: false, status: "rejected", message: actionError(t, error, "photos.server.saveFailed") };
   }
 }

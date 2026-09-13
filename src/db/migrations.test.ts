@@ -72,6 +72,19 @@ describe("SQLite migrations and R*Tree", () => {
     database.close();
   });
 
+  it("persists recoverable bench photo moderation jobs without image blobs", () => {
+    const database = new Database(":memory:");
+    applyMigrations(database);
+    const columns = database.prepare("PRAGMA table_info(bench_photo_submissions)").all() as Array<{ name: string }>;
+    expect(columns.map(({ name }) => name)).toEqual(expect.arrayContaining([
+      "photo_url", "status", "attempts", "lease_token", "lease_until", "error_key", "moment_id",
+    ]));
+    expect(columns.map(({ name }) => name)).not.toContain("photo_blob");
+    const definition = (database.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='bench_photo_submissions'").get() as { sql: string }).sql;
+    expect(definition).toContain("'pending','processing','accepted','rejected'");
+    database.close();
+  });
+
   it("preserves ratings and corrections in an online backup used for rollback", async () => {
     const directory = mkdtempSync(join(tmpdir(), "benchly-backup-test-"));
     const backupPath = join(directory, "rollback.sqlite");

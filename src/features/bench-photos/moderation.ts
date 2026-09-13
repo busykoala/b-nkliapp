@@ -5,15 +5,16 @@ import { z } from "zod";
 import { DATA_PROVIDERS } from "@/data/runtime.generated";
 
 const verdictSchema = z.object({ people_detected: z.boolean(), confidence: z.number().min(0).max(1) });
+const moderationTimeoutMs = 90_000;
 
 export async function ensurePeopleFreePhoto(bytes: Uint8Array, contentType: string) {
   const base = process.env.INFERENCE_BASE_URL ?? DATA_PROVIDERS.inferenceDefaultUrl;
   const key = process.env.INFERENCE_API_KEY;
   if (!key) throw new UserFacingError("photos.server.checkUnavailable");
   const response = await fetch(`${base.replace(/\/$/, "")}/v1/chat/completions`, {
-    method: "POST", signal: AbortSignal.timeout(12_000),
+    method: "POST", signal: AbortSignal.timeout(moderationTimeoutMs),
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: process.env.BENCHLY_VISION_MODEL ?? "benchly-vision", temperature: 0,
+    body: JSON.stringify({ model: process.env.BENCHLY_VISION_MODEL ?? "benchly-vision", temperature: 0, max_tokens: 64,
       messages: [{ role: "user", content: [
         { type: "text", text: "Check only whether any person or recognizable part of a person is visible. Return JSON with people_detected and confidence." },
         { type: "image_url", image_url: { url: `data:${contentType};base64,${Buffer.from(bytes).toString("base64")}` } },

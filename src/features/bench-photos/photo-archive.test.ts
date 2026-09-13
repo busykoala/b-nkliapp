@@ -70,4 +70,16 @@ describe("local photo archive", () => {
     await expect(deleteBenchPhoto(`garage:${key}`)).rejects.toThrow("photos.server.storageUnavailable");
     expect(send).not.toHaveBeenCalled();
   });
+
+  it("supports an explicitly configured writable store for local browser tests", async () => {
+    vi.stubEnv("BENCHLY_PHOTO_ARCHIVE_PATH", "");
+    vi.stubEnv("BENCHLY_PHOTO_LOCAL_PATH", root);
+    const url = await storeBenchPhoto(key, jpeg, "image/jpeg");
+    const stored = await readBenchPhoto(url);
+    expect(stored?.contentType).toBe("image/jpeg");
+    expect(new Uint8Array(stored!.bytes)).toEqual(jpeg);
+    await deleteBenchPhoto(url);
+    await expect(readBenchPhoto(url)).rejects.toThrow();
+    expect(send).not.toHaveBeenCalled();
+  });
 });

@@ -8,7 +8,9 @@ RUN npm ci
 
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
+ARG NEXT_DEPLOYMENT_ID
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_DEPLOYMENT_ID=$NEXT_DEPLOYMENT_ID
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY package.json package-lock.json next-env.d.ts next.config.ts postcss.config.mjs tsconfig.json ./
 COPY config ./config
@@ -22,8 +24,10 @@ RUN npm run build:container
 
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
+ARG NEXT_DEPLOYMENT_ID
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_DEPLOYMENT_ID=$NEXT_DEPLOYMENT_ID \
     DATABASE_PATH=/data/benchly.sqlite \
     PORT=3000 \
     HOSTNAME=0.0.0.0

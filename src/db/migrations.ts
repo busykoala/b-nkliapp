@@ -911,4 +911,28 @@ export const migrations: Migration[] = [
         ON bench_panorama_lightmaps(expires_at,status);
     `,
   },
+  {
+    id: "0034_bench_photo_submissions",
+    sql: `
+      CREATE TABLE bench_photo_submissions (
+        id TEXT PRIMARY KEY,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        caption TEXT NOT NULL,
+        photo_url TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL CHECK(status IN ('pending','processing','accepted','rejected')),
+        attempts INTEGER NOT NULL DEFAULT 0 CHECK(attempts >= 0),
+        lease_token TEXT,
+        lease_until TEXT,
+        error_key TEXT,
+        moment_id INTEGER REFERENCES bench_moments(id) ON DELETE SET NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX bench_photo_submissions_queue_idx
+        ON bench_photo_submissions(status,lease_until,created_at);
+      CREATE INDEX bench_photo_submissions_user_idx
+        ON bench_photo_submissions(user_id,created_at DESC);
+    `,
+  },
 ];

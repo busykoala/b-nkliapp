@@ -105,7 +105,8 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   await expect(dialog.getByRole("button", { name: "Foto veröffentlichen" })).toBeEnabled();
   await expect(dialog.getByLabel(/Ein Satz dazu/)).toHaveAttribute("placeholder", "Was sieht man von diesem Bänkli?");
   await dialog.getByRole("button", { name: "Foto veröffentlichen" }).click();
-  await expect(dialog.getByText("Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.")).toBeVisible();
+  await expect(dialog.getByRole("status")).toHaveText("Foto wird geprüft …");
+  await expect(dialog.getByRole("status")).toHaveText("Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.");
   expect(pageErrors).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("bench-photo-flow.png"), fullPage: true });
 });

@@ -23,3 +23,7 @@ export async function readArchivedBenchPhoto(root: string, key: string) {
   validateBenchPhoto(bytes, contentType);
   return { bytes, contentType };
 }
+
+export function isBenchPhotoKey(key: string) {
+  return photoKey.test(key);
+}

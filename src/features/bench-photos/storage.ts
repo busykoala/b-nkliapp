@@ -3,7 +3,9 @@ import "server-only";
 import { UserFacingError } from "@/i18n/action-error";
 
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { readArchivedBenchPhoto } from "./photo-archive";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { isBenchPhotoKey, readArchivedBenchPhoto } from "./photo-archive";
 
 function config() {
   // A local production snapshot must never write back to its original bucket.
@@ -22,6 +24,15 @@ function client(settings: ReturnType<typeof config>) {
 }
 
 export async function storeBenchPhoto(key: string, body: Uint8Array, contentType: string) {
+  if (process.env.BENCHLY_PHOTO_ARCHIVE_PATH) throw new UserFacingError("photos.server.storageUnavailable");
+  const local = process.env.BENCHLY_PHOTO_LOCAL_PATH;
+  if (local) {
+    if (!isBenchPhotoKey(key)) throw new UserFacingError("photos.server.storageUnavailable");
+    const file = join(local, key);
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, body, { flag: "wx" });
+    return `garage:${key}`;
+  }
   const settings = config();
   await client(settings).send(new PutObjectCommand({ Bucket: settings.bucket, Key: key, Body: body, ContentType: contentType,
     CacheControl: "public, max-age=31536000, immutable" }));
@@ -30,6 +41,16 @@ export async function storeBenchPhoto(key: string, body: Uint8Array, contentType
 
 export async function deleteBenchPhoto(url: string) {
   if (!url.startsWith("garage:")) return;
+  if (process.env.BENCHLY_PHOTO_ARCHIVE_PATH) throw new UserFacingError("photos.server.storageUnavailable");
+  const local = process.env.BENCHLY_PHOTO_LOCAL_PATH;
+  if (local) {
+    const key = url.slice(7);
+    if (!isBenchPhotoKey(key)) return;
+    await unlink(join(local, key)).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+    });
+    return;
+  }
   const settings = config();
   await client(settings).send(new DeleteObjectCommand({ Bucket: settings.bucket, Key: url.slice(7) }));
 }
@@ -38,6 +59,8 @@ export async function readBenchPhoto(url: string) {
   if (!url.startsWith("garage:")) return null;
   const archive = process.env.BENCHLY_PHOTO_ARCHIVE_PATH;
   if (archive) return readArchivedBenchPhoto(archive, url.slice(7));
+  const local = process.env.BENCHLY_PHOTO_LOCAL_PATH;
+  if (local) return readArchivedBenchPhoto(local, url.slice(7));
   const settings = config();
   const object = await client(settings).send(new GetObjectCommand({ Bucket: settings.bucket, Key: url.slice(7) }));
   if (!object.Body) return null;
