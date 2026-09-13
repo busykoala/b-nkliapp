@@ -22,7 +22,7 @@ _PROVIDERS = load_catalog().providers
 def download_file(url: str, destination: Path, max_bytes: int | None = None) -> str:
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".part")
-    request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (+https://github.com/benchly)"})
+    request = urllib.request.Request(url, headers={"User-Agent": "Benchly (+https://github.com/benchly)"})
     try:
         with urllib.request.urlopen(request, timeout=120) as response, temporary.open("wb") as output:
             size = 0
@@ -40,7 +40,7 @@ def download_file(url: str, destination: Path, max_bytes: int | None = None) -> 
 
 def discover_swisstlm_asset() -> tuple[str, str]:
     endpoint = os.environ.get("SWISSTLM_STAC_ITEMS", str(_PROVIDERS.swissTlmItemsUrl))
-    request = urllib.request.Request(endpoint, headers={"User-Agent": "Benchly/1.0 (official context import)"})
+    request = urllib.request.Request(endpoint, headers={"User-Agent": "Benchly (official context import)"})
     with urllib.request.urlopen(request, timeout=60) as response:
         payload = StacPage.model_validate(json.load(response))
     candidates: list[tuple[str, str]] = []
@@ -64,7 +64,7 @@ def discover_swissbuildings_assets(bounds: tuple[float, float, float, float]) ->
     candidates: dict[str, dict[str, str]] = {}
     pages = 0
     while url and pages < 10:
-        request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (3D building import)"})
+        request = urllib.request.Request(url, headers={"User-Agent": "Benchly (3D building import)"})
         with urllib.request.urlopen(request, timeout=60) as response:
             payload = StacPage.model_validate(json.load(response))
         for item in payload.features:
@@ -106,7 +106,7 @@ def download_stac_tiles(connection: sqlite3.Connection, collection: str, destina
     downloaded_bytes = 0
     seen_assets: set[str] = set()
     while url and (max_tiles is None or downloaded < max_tiles):
-        request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (swisstopo OGD enrichment)"})
+        request = urllib.request.Request(url, headers={"User-Agent": "Benchly (swisstopo OGD enrichment)"})
         with urllib.request.urlopen(request, timeout=60) as response:
             page = StacPage.model_validate(json.load(response))
         for item in page.features:

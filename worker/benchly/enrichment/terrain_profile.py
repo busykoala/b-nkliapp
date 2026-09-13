@@ -152,7 +152,7 @@ def fetch_terrain_horizon(latitude: float, longitude: float, timeout: float = 20
                 data=parameters,
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": "Benchly/1.0 (terrain horizon batch)",
+                    "User-Agent": "Benchly (terrain horizon batch)",
                 },
                 method="POST",
             )

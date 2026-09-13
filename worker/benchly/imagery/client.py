@@ -53,7 +53,7 @@ Return one strict prediction per index."""
 
 def _request_json(url: str, *, data: Optional[bytes] = None,
                   headers: Optional[dict[str, str]] = None, timeout: int = 45) -> object:
-    request_headers = {"User-Agent": "Benchly/1.0 (open imagery metadata; contact: bänkliapp.ch)", **(headers or {})}
+    request_headers = {"User-Agent": "Benchly (open imagery metadata; contact: bänkliapp.ch)", **(headers or {})}
     request = urllib.request.Request(url, data=data, headers=request_headers)
     for attempt in range(3):
         try:
@@ -76,7 +76,7 @@ def _request_json(url: str, *, data: Optional[bytes] = None,
 
 
 def download_image(url: str) -> tuple[bytes, str]:
-    request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (temporary scene analysis)"})
+    request = urllib.request.Request(url, headers={"User-Agent": "Benchly (temporary scene analysis)"})
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             content_type = response.headers.get_content_type()

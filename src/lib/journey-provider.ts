@@ -49,7 +49,7 @@ async function json(url: URL, signal: AbortSignal, ttl: number): Promise<unknown
   const started = Date.now();
   let status = "network-error";
   try {
-    const response = await fetch(url, { signal, cache: "no-store", redirect: "error", headers: { "User-Agent": "Benchly/0.1 (+https://github.com/busykoala/b-nkliapp)" } });
+    const response = await fetch(url, { signal, cache: "no-store", redirect: "error", headers: { "User-Agent": "Benchly (+https://github.com/busykoala/b-nkliapp)" } });
     status = String(response.status);
     if (response.status === 429 || response.status === 503) {
       const retry = response.headers.get("retry-after");

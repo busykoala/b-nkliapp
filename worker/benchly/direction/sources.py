@@ -185,7 +185,7 @@ class SwissImageCache:
             delay = 1 / self.requests_per_second - (time.monotonic() - self._last_request)
             if delay > 0:
                 time.sleep(delay)
-            headers = {"User-Agent": "Benchly/1.0 (direction analysis)"}
+            headers = {"User-Agent": "Benchly (direction analysis)"}
             if cached_metadata.get("etag") and target.exists():
                 headers["If-None-Match"] = cached_metadata["etag"]
             request = urllib.request.Request(url, headers=headers)

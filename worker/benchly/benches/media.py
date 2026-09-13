@@ -39,7 +39,7 @@ def commons_metadata(connection: sqlite3.Connection, limit: int) -> int:
             "iiprop": "url|extmetadata", "iiurlwidth": "640",
         }
         url = f"{COMMONS_API_URL}?{urllib.parse.urlencode(parameters)}"
-        request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (nearby-photo metadata)"})
+        request = urllib.request.Request(url, headers={"User-Agent": "Benchly (nearby-photo metadata)"})
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 pages = CommonsResponse.model_validate(json.load(response)).query.pages

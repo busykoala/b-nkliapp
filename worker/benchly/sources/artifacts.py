@@ -69,7 +69,7 @@ def refresh_sonbase(target: Path, url: str | None = None) -> dict[str, object]:
     state_path = target.with_suffix(target.suffix + ".json")
     current = _read_state(state_path)
 
-    head = urllib.request.Request(source_url, method="HEAD", headers={"User-Agent": "Benchly/1.0 (+https://bänkliapp.ch/danke)"})
+    head = urllib.request.Request(source_url, method="HEAD", headers={"User-Agent": "Benchly (+https://bänkliapp.ch/danke)"})
     with urllib.request.urlopen(head, timeout=60) as response:
         length = int(response.headers.get("Content-Length") or 0)
         etag = response.headers.get("ETag")
@@ -81,7 +81,7 @@ def refresh_sonbase(target: Path, url: str | None = None) -> dict[str, object]:
         return {"changed": False, "bytes": length, "version": etag or last_modified}
 
     temporary = target.with_suffix(target.suffix + ".part")
-    request = urllib.request.Request(source_url, headers={"User-Agent": "Benchly/1.0 (+https://bänkliapp.ch/danke)"})
+    request = urllib.request.Request(source_url, headers={"User-Agent": "Benchly (+https://bänkliapp.ch/danke)"})
     downloaded = 0
     try:
         with urllib.request.urlopen(request, timeout=120) as response, temporary.open("wb") as output:

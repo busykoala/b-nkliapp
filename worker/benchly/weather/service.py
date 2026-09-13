@@ -138,7 +138,7 @@ def _refresh_icon_surface_height(connection) -> str:
     from meteodatalab import ogd_api
 
     url = ogd_api.get_collection_asset_url(ICON_COLLECTION_STAC, ICON_HORIZONTAL_CONSTANTS)
-    request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (ICON surface height)"})
+    request = urllib.request.Request(url, headers={"User-Agent": "Benchly (ICON surface height)"})
     with tempfile.TemporaryDirectory(prefix="benchly-icon-surface-") as directory:
         path = Path(directory) / ICON_HORIZONTAL_CONSTANTS
         with urllib.request.urlopen(request, timeout=120) as response, path.open("wb") as output:
@@ -279,7 +279,7 @@ def refresh_radar(connection) -> dict[str, object]:
         return {"status": "unchanged", "asset": name}
     with tempfile.TemporaryDirectory(prefix="benchly-radar-") as directory:
         path = Path(directory) / name
-        request = urllib.request.Request(url, headers={"User-Agent": "Benchly/1.0 (weather raster)"})
+        request = urllib.request.Request(url, headers={"User-Agent": "Benchly (weather raster)"})
         with urllib.request.urlopen(request, timeout=60) as response, path.open("wb") as output:
             output.write(response.read())
         _store(connection, "PRECIP", "RZC", _radar_to_target(path), name, valid_at)
