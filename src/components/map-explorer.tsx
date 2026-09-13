@@ -73,7 +73,7 @@ function visibleMapQuery(map: MapLibreMap, filters: MapFilters): MapQuery {
   return { bounds: { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() }, zoom: map.getZoom(), filters };
 }
 
-export function MapExplorer({ user }: { user: CurrentUser | null }) {
+export function MapExplorer({ user, initialBench = null }: { user: CurrentUser | null; initialBench?: BenchDetail | null }) {
   const t = useTranslations();
   const format = useFormatter();
   const searchParams = useSearchParams();
@@ -84,7 +84,9 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const detailSequence = useRef(0);
   const featuresRef = useRef<MapFeature[]>([]);
   const pendingPosition = useRef<UserPosition | null>(null);
-  const openedFromUrl = useRef<string | null>(null);
+  const openedFromUrl = useRef<string | null>(initialBench?.id ?? null);
+  const initialBenchRef = useRef(initialBench);
+  const initialFocusDone = useRef(false);
   const filtersRef = useRef<MapFilters>({});
   const listOpenRef = useRef(false);
   const [features, setFeatures] = useState<MapFeature[]>([]);
@@ -94,8 +96,8 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
   const [listResult, setListResult] = useState<MapBenchListResult>({ items: [], zoomRequired: true });
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [bench, setBench] = useState<BenchDetail | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialBench?.id ?? null);
+  const [bench, setBench] = useState<BenchDetail | null>(initialBench);
   const [facilityFocus, setFacilityFocus] = useState<{ amenity: NearbyAmenity; bench: BenchDetail } | null>(null);
   const [journeyOpen, setJourneyOpen] = useState(false);
   const [walkOpen, setWalkOpen] = useState(false);
@@ -462,7 +464,25 @@ export function MapExplorer({ user }: { user: CurrentUser | null }) {
 
   useEffect(() => {
     const requestedBench = searchParams.get("bank");
-    if (!mapReady || !requestedBench || openedFromUrl.current === requestedBench) return;
+    const map = mapRef.current;
+    if (!mapReady || !map || !requestedBench) return;
+    const primed = initialBenchRef.current;
+    if (primed?.id === requestedBench && openedFromUrl.current === requestedBench) {
+      if (initialFocusDone.current) return;
+      initialFocusDone.current = true;
+      (map.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature(primed));
+      map.easeTo({ center: [primed.longitude, primed.latitude], zoom: Math.max(map.getZoom(), 17), offset: [0, -100], duration: 650 });
+      // Refresh time-sensitive and remotely verified facts without hiding the
+      // server-rendered detail or delaying its panorama.
+      const sequence = ++detailSequence.current;
+      void getBenchDetail(requestedBench).then((detail) => {
+        if (!detail || sequence !== detailSequence.current) return;
+        setBench(detail);
+        (map.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature(detail));
+      }).catch(() => undefined);
+      return;
+    }
+    if (openedFromUrl.current === requestedBench) return;
     openedFromUrl.current = requestedBench;
     void selectBench(requestedBench, true);
   }, [mapReady, searchParams, selectBench]);

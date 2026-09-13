@@ -63,6 +63,7 @@ export function PanoramaWebgl({ imageUrl, materialUrl, season, sunAltitude, clou
     }).catch(() => setReady(false));
     return () => { active = false; };
   }, [cloudCover, dayPhase, imageUrl, materialUrl, season, sunAltitude]);
-  return <><img className={`bench-panorama-art${ready ? " is-painted" : ""}`} src={imageUrl} alt="" draggable={false} onError={onError} />
+  return <><img className={`bench-panorama-art${ready ? " is-painted" : ""}`} src={imageUrl} alt="" draggable={false}
+    loading="eager" fetchPriority="high" onError={onError} />
     {materialUrl && <canvas ref={canvas} className={`bench-panorama-art bench-panorama-webgl${ready ? " is-ready" : ""}`} width="1024" height="256" />}</>;
 }
