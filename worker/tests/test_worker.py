@@ -30,7 +30,12 @@ from benchly.enrichment.service import expand_bounds, spatial_cell_bounds
 from benchly.geo import bearing_degrees, circular_difference
 from benchly.imagery.client import _request_json, infer_scene, infer_scene_frames
 from benchly.imagery.evaluation import benchmark_models, validate_evaluation_dataset
-from benchly.imagery.evidence import audit_environment, likely_provenance_issues, reconcile_environment
+from benchly.imagery.evidence import (
+    audit_environment,
+    count_persisted_source_images,
+    likely_provenance_issues,
+    reconcile_environment,
+)
 from benchly.imagery.jobs import benchmark_vision_job
 from benchly.imagery.prediction import validate_scene_prediction
 from benchly.imagery.providers import DiscoveredImage, ProviderDelay
@@ -573,6 +578,17 @@ class VisualPipelineTests(unittest.TestCase):
         self.assertEqual(result["sqlite_quick_check"], "ok")
         self.assertEqual(result["active_benches"], 1)
         self.assertEqual(result["raw_image_columns"], 0)
+
+    def test_source_image_audit_excludes_only_the_panorama_artifact_cache(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifact = root / "panorama-cache-v1" / "renders" / "derived.webp"
+            artifact.parent.mkdir(parents=True)
+            artifact.write_bytes(b"derived")
+            raw = root / "imagery" / "raw.jpg"
+            raw.parent.mkdir()
+            raw.write_bytes(b"raw")
+            self.assertEqual(count_persisted_source_images(root), 1)
 
     def test_unlicensed_existing_analysis_cannot_create_likely_metadata(self):
         database = self.database()

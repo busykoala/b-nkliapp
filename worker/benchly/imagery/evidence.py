@@ -13,6 +13,21 @@ from benchly.imagery.repository import upsert_likely_metadata
 from benchly.runtime import now_iso
 
 RECONCILER_VERSION = load_catalog().runtime.sceneReconcilerVersion
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".heic"}
+# Content-addressed products generated from geographic vectors/rasters are not
+# source photographs. Keep this allow-list explicit so a new arbitrary image
+# directory still fails the production privacy audit.
+DERIVED_IMAGE_CACHE_ROOTS = {"panorama-cache-v1"}
+
+
+def count_persisted_source_images(data_root: Path) -> int:
+    root = data_root.resolve()
+    return sum(
+        path.is_file()
+        and path.suffix.lower() in IMAGE_SUFFIXES
+        and path.relative_to(root).parts[0] not in DERIVED_IMAGE_CACHE_ROOTS
+        for path in root.rglob("*")
+    )
 
 
 def weighted_probability(groups: Sequence[tuple[dict[str, object], float]], key: str) -> Optional[float]:
@@ -199,13 +214,9 @@ def audit_environment(connection: sqlite3.Connection, *, release_smoke: bool = F
         )
     }
     database_path = str(connection.execute("PRAGMA database_list").fetchone()[2] or "")
-    image_suffixes = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".heic"}
     image_files_on_data_volume = 0
     if database_path and database_path != ":memory:":
-        image_files_on_data_volume = sum(
-            path.is_file() and path.suffix.lower() in image_suffixes
-            for path in Path(database_path).resolve().parent.rglob("*")
-        )
+        image_files_on_data_volume = count_persisted_source_images(Path(database_path).resolve().parent)
     daerligen = connection.execute("""
       SELECT count(*) benches,
         coalesce(sum(CASE WHEN e.in_forest=1 THEN 1 ELSE 0 END),0) forest_false_positives,
