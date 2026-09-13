@@ -193,7 +193,7 @@ const factualLight: Record<Language, Record<"potentialSun" | "shade" | "night" |
 };
 const manifest = packs.map((pack) => ({
   id: pack.id, label: pack.label, language: pack.language, languageTag: pack.languageTag,
-  formatLocale: `${pack.language}-CH`, version: "2026.09.1", invitations: pack.invitations.map((text, index) => ({ id: `${pack.id}-default-${index + 1}`, text })),
+  formatLocale: `${pack.language}-CH`, version: "2026.09.2", invitations: pack.invitations.map((text, index) => ({ id: `${pack.id}-default-${index + 1}`, text })),
   light: Object.fromEntries(Object.entries(factualLight[pack.language]).map(([key, value]) => [key, replaceOutsideIcu(value, pack.rules)])),
   sources: pack.sourceIds.flatMap((id) => sourceById.has(id) ? [{ id, title: sourceById.get(id)!.title, url: sourceById.get(id)!.url }] : []),
 }));

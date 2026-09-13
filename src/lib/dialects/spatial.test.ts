@@ -74,6 +74,8 @@ describe("versioned dialect geography", () => {
     expect(spatialDialectResolution(46.5197, 6.6323)).toMatchObject({ insideSwitzerland: true, languageArea: "fr", areaIds: expect.arrayContaining(["fr-vaud"]) });
     expect(spatialDialectResolution(46.0037, 8.9511)).toMatchObject({ insideSwitzerland: true, languageArea: "it", areaIds: expect.arrayContaining(["lmo-luganese"]) });
     expect(spatialDialectResolution(46.7951, 10.2948)).toMatchObject({ insideSwitzerland: true, languageArea: "rm", areaIds: expect.arrayContaining(["rm-vallader"]) });
+    expect(spatialDialectResolution(46.6865604, 7.6770958)).toMatchObject({ insideSwitzerland: true, languageArea: "de", areaIds: expect.arrayContaining(["be-thun"]) });
+    expect(spatialDialectResolution(46.6855012, 7.6972335)).toMatchObject({ insideSwitzerland: true, languageArea: "de", areaIds: [] });
     expect(spatialDialectResolution(48.8566, 2.3522)).toEqual({ insideSwitzerland: false, areaIds: [], languageArea: null, sourceVersion: "swissBOUNDARIES3D_2026-01+sprg20220501" });
   });
 });

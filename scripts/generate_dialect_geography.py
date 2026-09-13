@@ -163,7 +163,12 @@ def build(source: Path) -> dict[str, object]:
     rows = connection.execute(
         "select bfs_nummer, name, icc, geom from tlm_hoheitsgebiet where objektart = 'Gemeindegebiet'"
     ).fetchall()
+    country_row = connection.execute(
+        "select geom from tlm_landesgebiet where icc = 'CH'"
+    ).fetchone()
     connection.close()
+    if country_row is None:
+        raise SystemExit("swissBOUNDARIES3D source has no CH national territory")
     municipalities = {normalize(row[1]): row for row in rows}
     transformer = Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
 
@@ -217,12 +222,15 @@ def build(source: Path) -> dict[str, object]:
             "geometry": mapping(merged),
         })
 
-    country = unary_union(country_parts).simplify(0.00015, preserve_topology=True)
+    # The national territory explicitly includes Switzerland's lake shares and
+    # keeps benches on piers/shorelines inside CH. A municipality union can
+    # otherwise leave those water-edge points outside after simplification.
+    country = transform(to_wgs84, from_wkb(gpkg_wkb(country_row[0]))).simplify(0.00015, preserve_topology=True)
     language_areas, language_area_fallbacks = bfs_language_areas(to_wgs84, country_parts)
     return {
         "type": "FeatureCollection",
         "metadata": {
-            "schemaVersion": "1.0.0",
+            "schemaVersion": "1.0.1",
             "generatedFrom": "swissBOUNDARIES3D_2026-01",
             "sourceUrl": "https://www.swisstopo.admin.ch/en/landscape-model-swissboundaries3d",
             "sourceArchiveSha256": SOURCE_SHA256,
@@ -232,6 +240,7 @@ def build(source: Path) -> dict[str, object]:
             "license": "swissBOUNDARIES3D: Open Government Data / FSDI terms; BFS ThemaKart: reproduction with attribution for non-commercial use",
             "catalogueVersion": f"{catalogue['schemaVersion']}-{catalogue['researchDate']}",
             "method": "union-of-explicit-current-municipality-anchors",
+            "territorySource": "swissBOUNDARIES3D:tlm_landesgebiet:CH",
             "languageAreaMethod": "BFS-sprg20220501-crosswalk-to-swissBOUNDARIES3D-2026-with-0.0005-degree-seam-tolerance",
             "areaCount": len(features),
             "unresolvedAnchors": unresolved,

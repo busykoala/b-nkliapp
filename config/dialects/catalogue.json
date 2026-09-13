@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.0.1",
   "kind": "versioned-dialect-research-catalogue",
   "researchDate": "2026-09-12",
   "scope": "Territorially rooted Swiss German/Bavarian, Romansh, Lombard and Romand heritage varieties plus honestly labelled regional standard-language fallbacks. This is an extensible editorial coverage inventory, not a definitive count of all dialects or a map of residents’ identities.",
@@ -936,7 +936,8 @@
       "anchors": [
         "Thun",
         "Steffisburg",
-        "Sigriswil"
+        "Sigriswil",
+        "Spiez"
       ],
       "candidateLanguages": [
         "de"

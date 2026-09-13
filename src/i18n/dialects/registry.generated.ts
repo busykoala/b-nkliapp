@@ -6,7 +6,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-basel-default-1",
@@ -37,7 +37,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-baselbiet-default-1",
@@ -68,7 +68,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-northwest-default-1",
@@ -104,7 +104,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-bern-default-1",
@@ -135,7 +135,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-bern-oberland-default-1",
@@ -171,7 +171,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-sensler-default-1",
@@ -207,7 +207,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-jaun-default-1",
@@ -238,7 +238,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-zurich-default-1",
@@ -269,7 +269,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-schaffhausen-default-1",
@@ -300,7 +300,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-luzern-default-1",
@@ -331,7 +331,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-entlebuch-default-1",
@@ -362,7 +362,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-zug-schwyz-default-1",
@@ -393,7 +393,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-muotathal-default-1",
@@ -429,7 +429,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-obwalden-default-1",
@@ -460,7 +460,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-nidwalden-default-1",
@@ -491,7 +491,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-uri-default-1",
@@ -522,7 +522,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-glarus-default-1",
@@ -558,7 +558,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-sg-city-default-1",
@@ -589,7 +589,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-rheintal-default-1",
@@ -630,7 +630,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-toggenburg-default-1",
@@ -661,7 +661,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-southeast-default-1",
@@ -692,7 +692,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-thurgau-default-1",
@@ -723,7 +723,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-appenzell-default-1",
@@ -759,7 +759,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-wallis-default-1",
@@ -795,7 +795,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-buendner-default-1",
@@ -831,7 +831,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "gsw-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "gsw-walser-default-1",
@@ -872,7 +872,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "de",
     "languageTag": "bar-CH",
     "formatLocale": "de-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "bar-samnaun-default-1",
@@ -903,7 +903,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "rm",
     "languageTag": "rm-CH",
     "formatLocale": "rm-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "rm-sursilvan-default-1",
@@ -944,7 +944,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "rm",
     "languageTag": "rm-CH",
     "formatLocale": "rm-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "rm-sutsilvan-default-1",
@@ -985,7 +985,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "rm",
     "languageTag": "rm-CH",
     "formatLocale": "rm-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "rm-surmiran-default-1",
@@ -1026,7 +1026,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "rm",
     "languageTag": "rm-CH",
     "formatLocale": "rm-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "rm-puter-default-1",
@@ -1067,7 +1067,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "rm",
     "languageTag": "rm-CH",
     "formatLocale": "rm-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "rm-vallader-default-1",
@@ -1108,7 +1108,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "fr",
     "languageTag": "frp-CH",
     "formatLocale": "fr-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "frp-west-default-1",
@@ -1144,7 +1144,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "fr",
     "languageTag": "frp-CH",
     "formatLocale": "fr-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "frp-alpine-default-1",
@@ -1180,7 +1180,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "fr",
     "languageTag": "fr-CH",
     "formatLocale": "fr-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "frc-jura-default-1",
@@ -1216,7 +1216,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "it",
     "languageTag": "lmo-CH",
     "formatLocale": "it-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "lmo-alpine-default-1",
@@ -1247,7 +1247,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "it",
     "languageTag": "lmo-CH",
     "formatLocale": "it-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "lmo-prealpine-default-1",
@@ -1278,7 +1278,7 @@ export const DIALECT_PACK_MANIFEST = [
     "language": "it",
     "languageTag": "lmo-CH",
     "formatLocale": "it-CH",
-    "version": "2026.09.1",
+    "version": "2026.09.2",
     "invitations": [
       {
         "id": "lmo-lowland-default-1",
@@ -1689,7 +1689,8 @@ export const DIALECT_AREAS = [
     "anchors": [
       "Thun",
       "Steffisburg",
-      "Sigriswil"
+      "Sigriswil",
+      "Spiez"
     ],
     "parentPackId": "gsw-bern-oberland",
     "sourceIds": [
@@ -3763,4 +3764,4 @@ export const DIALECT_AREAS = [
     "variants": []
   }
 ] as const;
-export const DIALECT_DATA_VERSION = "catalogue-1.0.0-2026-09-12";
+export const DIALECT_DATA_VERSION = "catalogue-1.0.1-2026-09-12";

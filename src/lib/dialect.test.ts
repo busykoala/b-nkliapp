@@ -32,6 +32,7 @@ describe("versioned dialect resolver", () => {
     ["Düdingen", null, "Fribourg", "fr-sensler"], ["Tafers", null, "Fribourg", "fr-sensler"], ["Plaffeien", null, "Fribourg", "fr-sensler"],
     ["Murten", null, "Fribourg", "fr-seeland"], ["Kerzers", null, "Fribourg", "fr-seeland"], ["Jaun", "Im Fang", "Fribourg", "fr-jaun"],
     ["Gurmels", "Kleingurmels", "Fribourg", "fr-gurmels-contact"], ["St. Gallen", null, "St. Gallen", "sg-city"],
+    ["Spiez", null, "Bern", "be-thun"],
     ["Diepoldsau", null, "St. Gallen", "sg-diepoldsau"], ["Wartau", "Frümsen", "St. Gallen", "sg-werdenberg"],
     ["Appenzell", null, "Appenzell Innerrhoden", "ai-core"], ["Herisau", null, "Appenzell Ausserrhoden", "ar-hinter"],
     ["Frauenfeld", null, "Thurgau", "tg-west"], ["Arbon", null, "Thurgau", "tg-east"], ["Kerns", null, "Obwalden", "ow-sarnen-kerns"],
@@ -48,6 +49,20 @@ describe("versioned dialect resolver", () => {
 
   test("keeps official geography ahead of stale free text", () => {
     expect(dialectRegionForBench(official("Bern", null, "Bern", { locationName: "Zürich" }))).toBe("be-mittelland");
+  });
+
+  test("resolves a Spiez shoreline bench from its exact locality when the lake surface has no municipality polygon", () => {
+    expect(resolveDialect(place({
+      latitude: 46.6855012,
+      longitude: 7.6972335,
+      locationName: "Spiez",
+      locationCanton: "Bern",
+    }), "de", {
+      insideSwitzerland: true,
+      areaIds: [],
+      languageArea: "de",
+      sourceVersion: "swissBOUNDARIES3D_2026-01+sprg20220501",
+    })).toMatchObject({ areaId: "be-thun", voiceId: "gsw-bern-oberland", matchKind: "free-text" });
   });
 
   test("selects contact voices using the app language", () => {

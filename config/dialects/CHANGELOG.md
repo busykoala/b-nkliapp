@@ -1,5 +1,9 @@
 # Dialect catalogue changelog
 
+## 2026.09.2 — 2026-09-13
+
+- Assigned the official municipality of Spiez to the Thun/Oberland area so its benches use the Bernese Oberland voice instead of the generic German-language fallback.
+
 ## 2026.09.1 — 2026-09-13
 
 - Published 38 complete parent packs for all 140 stable local area IDs.
