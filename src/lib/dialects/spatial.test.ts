@@ -16,10 +16,20 @@ type Artifact = {
 
 let artifact: Artifact;
 
-function positions(value: unknown, result: number[][] = []): number[][] {
+function inspectPositions(value: unknown, result = { count: 0, invalid: [] as unknown[] }) {
   if (!Array.isArray(value)) return result;
-  if (typeof value[0] === "number" && typeof value[1] === "number") result.push(value as number[]);
-  else for (const child of value) positions(child, result);
+  if (typeof value[0] === "number" && typeof value[1] === "number") {
+    result.count += 1;
+    if (
+      value.length !== 2
+      || value[0] < 5.7
+      || value[0] > 10.8
+      || value[1] < 45.7
+      || value[1] > 48.0
+    ) result.invalid.push(value);
+    return result;
+  }
+  for (const child of value) inspectPositions(child, result);
   return result;
 }
 
@@ -48,13 +58,14 @@ describe("versioned dialect geography", () => {
   });
 
   it("contains compact 2D WGS84 coordinates", () => {
-    for (const position of [...positions(artifact.territory.coordinates), ...artifact.languageAreas.flatMap((feature) => positions(feature.geometry.coordinates)), ...artifact.languageAreaFallbacks.flatMap((feature) => positions(feature.geometry.coordinates)), ...artifact.features.flatMap((feature) => positions(feature.geometry.coordinates))]) {
-      expect(position).toHaveLength(2);
-      expect(position[0]).toBeGreaterThanOrEqual(5.7);
-      expect(position[0]).toBeLessThanOrEqual(10.8);
-      expect(position[1]).toBeGreaterThanOrEqual(45.7);
-      expect(position[1]).toBeLessThanOrEqual(48.0);
-    }
+    const inspected = { count: 0, invalid: [] as unknown[] };
+    inspectPositions(artifact.territory.coordinates, inspected);
+    for (const feature of artifact.languageAreas) inspectPositions(feature.geometry.coordinates, inspected);
+    for (const feature of artifact.languageAreaFallbacks) inspectPositions(feature.geometry.coordinates, inspected);
+    for (const feature of artifact.features) inspectPositions(feature.geometry.coordinates, inspected);
+
+    expect(inspected.count).toBeGreaterThan(0);
+    expect(inspected.invalid).toEqual([]);
   });
 
   it("resolves representative coordinates and rejects foreign locations", async () => {
