@@ -365,6 +365,14 @@ def _spatial_batches(rows: list[dict[str, object]], size: int = 16) -> list[list
     return batches
 
 
+def _terminate_executor(executor: concurrent.futures.ProcessPoolExecutor) -> None:
+    """Stop active extraction children before closing their queues."""
+    processes = getattr(executor, "_processes", {}) or {}
+    for process in processes.values():
+        if process.is_alive():
+            process.terminate()
+
+
 def panorama_extract_job(args: Namespace) -> None:
     """Resume national exact-geometry extraction on the local Mac."""
     root = Path(args.root).resolve()
@@ -431,6 +439,8 @@ def panorama_extract_job(args: Namespace) -> None:
     )
     iterator = iter(_spatial_batches(rows))
     pending: dict[concurrent.futures.Future[list[ExtractionOutcome]], list[dict[str, object]]] = {}
+    interrupted = False
+    expired = False
     try:
         while len(pending) < worker_count * 2:
             try:
@@ -475,10 +485,13 @@ def panorama_extract_job(args: Namespace) -> None:
                     except StopIteration:
                         continue
                     pending[executor.submit(_extract_many, next_row)] = next_row
+        expired = bool(pending)
     except KeyboardInterrupt:
-        pass
+        interrupted = True
     finally:
-        executor.shutdown(wait=False, cancel_futures=True)
+        if interrupted or expired:
+            _terminate_executor(executor)
+        executor.shutdown(wait=True, cancel_futures=True)
         ready = int(state.execute("SELECT count(*) FROM extractions WHERE status='ready'").fetchone()[0])
         state.close()
     elapsed = time.monotonic() - started
@@ -490,6 +503,10 @@ def panorama_extract_job(args: Namespace) -> None:
         "memory_budget_gib": args.memory_limit_gib,
         "accelerator": "cpu-vectorized-raster",
     }, indent=2, sort_keys=True))
+    if interrupted:
+        raise SystemExit(130)
+    if expired:
+        raise RuntimeError("panorama extraction stopped at its runtime limit before completing the selected rows")
 
 
 def _selected_for_pilot(paths: list[Path], count: int) -> list[Path]:

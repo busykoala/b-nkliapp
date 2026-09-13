@@ -7,7 +7,7 @@ import pytest
 from PIL import Image
 
 from benchly.panorama.binary import MAGIC, decode_geometry, encode_geometry
-from benchly.panorama.builder import _recommended_pvc, _same_bench_position
+from benchly.panorama.builder import _recommended_pvc, _same_bench_position, _terminate_executor
 from benchly.panorama.models import (
     BuildingProjectionSample,
     GeometryIdentity,
@@ -85,3 +85,21 @@ def test_activation_allows_serialization_drift_but_rejects_moved_benches():
     assert not _same_bench_position((270468, 46.554765, 8.005808526871903), expected)
     assert not _same_bench_position((270469, 46.55476390357538, 8.005808526871903), expected)
     assert not _same_bench_position(None, expected)
+
+
+def test_interrupted_extraction_terminates_live_children():
+    class Process:
+        terminated = False
+
+        def is_alive(self):
+            return True
+
+        def terminate(self):
+            self.terminated = True
+
+    class Executor:
+        _processes = {1: Process(), 2: Process()}
+
+    executor = Executor()
+    _terminate_executor(executor)
+    assert all(process.terminated for process in executor._processes.values())
