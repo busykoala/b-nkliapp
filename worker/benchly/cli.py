@@ -43,6 +43,19 @@ from benchly.weather.jobs import refresh_weather_job
 from benchly.direction.jobs import analyze_directions_job, import_direction_reviews_job, prepare_direction_review_job, publish_direction_estimates_job, remove_direction_estimates_job
 from benchly.panorama.jobs import panorama_batch_job, panorama_worker_job
 from benchly.panorama.fixtures import render_fixture_job
+from benchly.panorama.builder import (
+    panorama_activate_job,
+    panorama_build_job,
+    panorama_fetch_index_job,
+    panorama_extract_job,
+    panorama_manifest_job,
+    panorama_pilot_job,
+    panorama_reconcile_job,
+    panorama_status_job,
+    panorama_upload_job,
+    panorama_verify_job,
+)
+from benchly.panorama.pyramid import prepare_terrain_pyramid_job
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -363,6 +376,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama = subparsers.add_parser("panorama-batch", help="Precompute versioned geographic panoramas for existing benches")
     _database_argument(panorama)
     panorama.add_argument("--terrain-dir", required=True, help="Indexed swissALTI3D GeoTIFF directory")
+    panorama.add_argument("--near-terrain-dir", help="Optional prepared 10-m terrain model for panorama rays")
     panorama.add_argument("--regional-terrain-dir", help="Optional prepared lower-resolution terrain overview for the far field")
     panorama.add_argument("--border-terrain-dir", help="Optional cross-border DEM used only where Swiss terrain has no coverage")
     panorama.add_argument("--high-resolution-distance-meters", type=float, default=20_000)
@@ -383,6 +397,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_worker = subparsers.add_parser("panorama-worker", help="Continuously render requested and backfill panoramas")
     _database_argument(panorama_worker)
     panorama_worker.add_argument("--terrain-dir", required=True)
+    panorama_worker.add_argument("--near-terrain-dir")
     panorama_worker.add_argument("--regional-terrain-dir")
     panorama_worker.add_argument("--border-terrain-dir")
     panorama_worker.add_argument("--high-resolution-distance-meters", type=float, default=20_000)
@@ -401,7 +416,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_worker.add_argument("--preview-fov", type=float, default=360)
     panorama_worker.add_argument("--preview-width", type=int, default=4096)
     panorama_worker.add_argument("--preview-height", type=int, default=1024)
-    panorama_worker.add_argument("--processes", type=int, default=4, choices=range(1, 9))
+    panorama_worker.add_argument("--processes", type=int, default=4, choices=range(1, 13))
     panorama_worker.add_argument("--idle-seconds", type=float, default=2)
     panorama_worker.set_defaults(function=panorama_worker_job, uses_lock=False)
 
@@ -411,12 +426,95 @@ def build_parser() -> argparse.ArgumentParser:
     _database_argument(panorama_fixtures)
     panorama_fixtures.add_argument("--fixture", action="append", required=True, help="BENCH_ID=GEOMETRY_PATH")
     panorama_fixtures.add_argument("--cache-dir", default="./data/panorama-cache-v1")
-    panorama_fixtures.add_argument("--output-dir", default="./data/panorama-fixtures/v20/rendered")
+    panorama_fixtures.add_argument("--output-dir", default="./data/panorama-fixtures/rendered")
     panorama_fixtures.add_argument("--season", choices=("spring", "summer", "autumn", "winter"), default="autumn")
     panorama_fixtures.add_argument("--width", type=int, default=4096)
     panorama_fixtures.add_argument("--height", type=int, default=1024)
     panorama_fixtures.add_argument("--at", help="ISO timestamp for the installed local light map")
     panorama_fixtures.set_defaults(function=render_fixture_job, uses_lock=False)
+
+    panorama_pyramid = subparsers.add_parser(
+        "panorama-prepare-terrain", help="Resume the content-addressed 10/30/90-m terrain pyramid build",
+    )
+    panorama_pyramid.add_argument("--source-dir", required=True)
+    panorama_pyramid.add_argument("--output-dir", required=True)
+    panorama_pyramid.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 13))
+    panorama_pyramid.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
+    panorama_pyramid.add_argument("--memory-limit-gib", type=int, default=52, choices=range(8, 53))
+    panorama_pyramid.set_defaults(function=prepare_terrain_pyramid_job, uses_lock=False)
+
+    panorama_extract = subparsers.add_parser(
+        "panorama-extract", help="Resume national exact-geometry extraction on the local Mac",
+    )
+    _database_argument(panorama_extract)
+    panorama_extract.add_argument("--root", default="./data/panorama-builder")
+    panorama_extract.add_argument("--terrain-dir", required=True)
+    panorama_extract.add_argument("--terrain-pyramid-dir", help="Prepared 10m/30m/90m model; defaults beside --terrain-dir")
+    panorama_extract.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 13))
+    panorama_extract.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
+    panorama_extract.add_argument("--memory-limit-gib", type=int, default=52, choices=range(8, 53))
+    panorama_extract.add_argument("--bench-id", action="append", help="Extract only this bench; repeatable for local validation")
+    panorama_extract.add_argument("--limit", type=int, default=0)
+    panorama_extract.add_argument("--max-runtime-hours", type=float, default=24)
+    panorama_extract.add_argument("--angular-resolution", type=float, default=.1)
+    panorama_extract.add_argument("--maximum-distance-meters", type=float, default=150_000)
+    panorama_extract.set_defaults(function=panorama_extract_job, uses_lock=False)
+
+    panorama_pilot = subparsers.add_parser("panorama-pilot", help="Run the resumable one-percent local storage and throughput gate")
+    _database_argument(panorama_pilot)
+    panorama_pilot.add_argument("--root", default="./data/panorama-builder")
+    panorama_pilot.add_argument("--source-geometry", required=True)
+    panorama_pilot.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 13))
+    panorama_pilot.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
+    panorama_pilot.add_argument("--memory-limit-gib", type=int, default=52, choices=range(8, 53))
+    panorama_pilot.add_argument("--season", choices=("spring", "summer", "autumn", "winter"), default="autumn")
+    panorama_pilot.set_defaults(function=panorama_pilot_job, uses_lock=False)
+
+    panorama_build = subparsers.add_parser("panorama-build", help="Resume the full parallel local artifact build")
+    panorama_build.add_argument("--root", default="./data/panorama-builder")
+    panorama_build.add_argument("--source-geometry", required=True)
+    panorama_build.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 13))
+    panorama_build.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
+    panorama_build.add_argument("--memory-limit-gib", type=int, default=52, choices=range(8, 53))
+    panorama_build.add_argument("--season", choices=("spring", "summer", "autumn", "winter"), default="autumn")
+    panorama_build.set_defaults(function=panorama_build_job, uses_lock=False)
+
+    panorama_manifest = subparsers.add_parser("panorama-manifest", help="Seal the completed local build with Git and content hashes")
+    _database_argument(panorama_manifest)
+    panorama_manifest.add_argument("--root", default="./data/panorama-builder")
+    panorama_manifest.add_argument("--bench-index", help="Coordinate-bound TSV fetched from production over LAN")
+    panorama_manifest.set_defaults(function=panorama_manifest_job, uses_lock=False)
+
+    for name, function, help_text in (
+        ("panorama-verify", panorama_verify_job, "Verify every local artifact hash"),
+        ("panorama-status", panorama_status_job, "Report resumable progress and storage projections"),
+    ):
+        command = subparsers.add_parser(name, help=help_text)
+        command.add_argument("--root", default="./data/panorama-builder")
+        command.set_defaults(function=function, uses_lock=False)
+
+    panorama_upload = subparsers.add_parser("panorama-upload", help="Resume the generation upload over the private LAN SSH endpoint")
+    panorama_upload.add_argument("--root", default="./data/panorama-builder")
+    panorama_upload.add_argument("--target", default="busykoala@192.168.1.206")
+    panorama_upload.set_defaults(function=panorama_upload_job, uses_lock=False)
+
+    panorama_index = subparsers.add_parser("panorama-fetch-index", help="Fetch only the production bench/geometry mapping over LAN SSH")
+    panorama_index.add_argument("--target", default="busykoala@192.168.1.206")
+    panorama_index.add_argument("--remote-database", default="/srv/data/benchly/data/benchly.sqlite")
+    panorama_index.add_argument("--output", default="./data/panorama-builder/bench-index.tsv")
+    panorama_index.set_defaults(function=panorama_fetch_index_job, uses_lock=False)
+
+    panorama_activate = subparsers.add_parser("panorama-activate", help="Verify and atomically activate an uploaded generation")
+    _database_argument(panorama_activate)
+    panorama_activate.add_argument("--server-root", default="/srv/data/benchly/panorama")
+    panorama_activate.add_argument("--generation-id", required=True)
+    panorama_activate.add_argument("--capacity-gib", type=int, default=80)
+    panorama_activate.set_defaults(function=panorama_activate_job, uses_lock=True)
+
+    panorama_reconcile = subparsers.add_parser("panorama-reconcile", help="Queue benches affected by source-dirty spatial cells")
+    _database_argument(panorama_reconcile)
+    panorama_reconcile.add_argument("--max-cells", type=int, default=200)
+    panorama_reconcile.set_defaults(function=panorama_reconcile_job, uses_lock=True)
     return parser
 
 

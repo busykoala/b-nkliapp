@@ -19,8 +19,6 @@ class RuntimeConfig(StrictModel):
     profilePipelineVersion: str
     scenePromptVersion: str
     sceneReconcilerVersion: str
-    panoramaGeometryVersion: str
-    panoramaRenderVersion: str
     osmPbfUrl: HttpUrl
     geoAdminBaseUrl: HttpUrl
     geoAdminDataBaseUrl: HttpUrl
@@ -89,7 +87,6 @@ class Artifact(StrictModel):
     id: str = Field(pattern=r"^[a-z0-9-]+$")
     label: str
     path: str
-    version: str
 
 
 class DataJob(StrictModel):
@@ -108,7 +105,6 @@ class DataJob(StrictModel):
 
 class DataCatalog(StrictModel):
     schemaVersion: int = Field(ge=1)
-    catalogVersion: str
     timeZone: str
     runtime: RuntimeConfig
     providers: ProviderConfig

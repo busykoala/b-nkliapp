@@ -4,7 +4,7 @@ import { dataCatalog } from "../src/data/catalog";
 
 const helmTarget = resolve("deploy/charts/benchly/data-jobs.generated.json");
 const helmGenerated = `${JSON.stringify({
-  generatedFrom: `config/data-catalog.json@${dataCatalog.catalogVersion}`,
+  generatedFrom: "config/data-catalog.json",
   timeZone: dataCatalog.timeZone,
   // Panorama is a latency-sensitive permanent Deployment; all heavy source
   // imports below remain bounded CronJobs outside the release pipeline.

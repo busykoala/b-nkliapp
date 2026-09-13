@@ -17,12 +17,19 @@ from shapely.strtree import STRtree
 
 from benchly.context.evidence import nearby_context
 from benchly.context.rasters import RasterCollection
-from benchly.panorama.models import BuildingGeometry, PanoramaConfig, SemanticClass, TerrainRay, TerrainSample
+from benchly.panorama.models import (
+    LOD_SCHEDULE_IMPLEMENTATION,
+    BuildingGeometry,
+    PanoramaConfig,
+    SemanticClass,
+    TerrainRay,
+    TerrainSample,
+)
 
 
 WGS84 = Geod(ellps="WGS84")
 WGS84_TO_LV95 = Transformer.from_crs(4326, 2056, always_xy=True)
-LOD_SCHEDULE_VERSION = "panorama-lod-1"
+LOD_SCHEDULE_KEY = LOD_SCHEDULE_IMPLEMENTATION
 
 
 def distance_schedule(maximum_distance_meters: float) -> np.ndarray:
@@ -145,6 +152,7 @@ def sample_terrain_rays(
     regional_terrain: RasterCollection | None = None,
     border_terrain: RasterCollection | None = None,
     high_resolution_distance_meters: float = 20_000,
+    observer_ground_elevation_meters: float | None = None,
 ) -> list[TerrainRay]:
     """Sample a full-circle LOD path in a few raster batches.
 
@@ -185,13 +193,41 @@ def sample_terrain_rays(
     sample(far, terrain, "swissALTI3D")
     all_indices = np.arange(len(locations))
     sample(all_indices, border_terrain, "cross-border-terrain")
+    classes = np.empty(len(locations), dtype=object)
+    classes[:] = SemanticClass.UNKNOWN_TERRAIN
+    confidences = np.full(len(locations), .35)
+    sources = np.full(len(locations), "swissALTI3D", dtype=object)
     if semantics:
-        classes, confidences, sources = semantics.classify(np.asarray(longitudes), np.asarray(latitudes))
-    else:
-        classes = np.empty(len(locations), dtype=object)
-        classes[:] = SemanticClass.UNKNOWN_TERRAIN
-        confidences = np.full(len(locations), .35)
-        sources = np.full(len(locations), "swissALTI3D", dtype=object)
+        semantic_indices: np.ndarray
+        if observer_ground_elevation_meters is None:
+            semantic_indices = np.arange(len(locations))
+        else:
+            # Only samples that lift a ray's visibility envelope can appear in
+            # the painted capsule. Classifying every hidden DEM sample against
+            # tens of thousands of polygons was the dominant national-build
+            # cost and produced exactly the same visible result.
+            chosen: list[int] = []
+            eye = observer_ground_elevation_meters + config.observer_height_meters
+            for ray_index in range(len(azimuths)):
+                offset = ray_index * len(distances)
+                top = config.minimum_elevation_angle
+                for sample_index, distance in enumerate(distances):
+                    elevation = elevations[offset + sample_index]
+                    if elevation is None:
+                        continue
+                    drop = distance * distance / (2 * 6_371_008.8) * (1 - config.refraction_coefficient)
+                    angle = math.degrees(math.atan2(float(elevation) - drop - eye, float(distance)))
+                    if angle > top:
+                        chosen.append(offset + sample_index)
+                        top = angle
+            semantic_indices = np.asarray(chosen, dtype=int)
+        if len(semantic_indices):
+            selected_classes, selected_confidences, selected_sources = semantics.classify(
+                np.asarray(longitudes)[semantic_indices], np.asarray(latitudes)[semantic_indices],
+            )
+            classes[semantic_indices] = selected_classes
+            confidences[semantic_indices] = selected_confidences
+            sources[semantic_indices] = selected_sources
     rays = []
     for ray_index, azimuth in enumerate(azimuths):
         offset = ray_index * len(distances)

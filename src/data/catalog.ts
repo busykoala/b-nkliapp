@@ -19,7 +19,6 @@ const artifactSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   path: z.string().min(1),
-  version: z.string().min(1),
 });
 
 const jobSchema = z.object({
@@ -38,15 +37,12 @@ const jobSchema = z.object({
 
 const catalogSchema = z.object({
   schemaVersion: z.literal(1),
-  catalogVersion: z.string().min(1),
   timeZone: z.string().min(1),
   runtime: z.object({
     pipelineVersion: z.string().min(1),
     profilePipelineVersion: z.string().min(1),
     scenePromptVersion: z.string().min(1),
     sceneReconcilerVersion: z.string().min(1),
-    panoramaGeometryVersion: z.string().min(1),
-    panoramaRenderVersion: z.string().min(1),
     osmPbfUrl: z.url(),
     geoAdminBaseUrl: z.url(),
     geoAdminDataBaseUrl: z.url(),

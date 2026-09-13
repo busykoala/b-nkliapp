@@ -11,6 +11,16 @@ storage:
   root: /srv/data/benchly/data
   size: 50Gi
 
+# Enabled only after panorama-pilot has passed its 1% storage gate. The
+# database/backup volume above is intentionally never resized or repurposed.
+panoramaStorage:
+  enabled: true
+  className: benchly-local
+  root: /srv/data/benchly/panorama
+  size: 80Gi
+  warnAtGiB: 60
+  minimumFreeGiB: 20
+
 host: xn--bnkliapp-0za.ch
 gateway:
   name: blizzard

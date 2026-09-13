@@ -16,9 +16,13 @@ def test_geometry_and_render_cache_are_atomic_and_reusable(tmp_path: Path):
     cache = PanoramaCache(tmp_path)
     geometry_path = cache.put_geometry(geometry)
     assert geometry_path.exists()
-    assert cache.get_geometry(geometry.identity_key) == geometry
+    restored = cache.get_geometry(geometry.identity_key)
+    assert restored is not None
+    assert restored.identity_key == geometry.identity_key
+    assert len(restored.columns) == len(geometry.columns)
+    assert abs(restored.columns[0].skyline_angle_degrees - geometry.columns[0].skyline_angle_degrees) < .05
     render_path = cache.put_render("a" * 64, b"RIFF-webp")
     assert render_path.exists()
-    assert "renders-v20" in render_path.parts
+    assert "working" in render_path.parts
     assert cache.get_render("a" * 64) == b"RIFF-webp"
     assert not list(tmp_path.rglob("*.part"))

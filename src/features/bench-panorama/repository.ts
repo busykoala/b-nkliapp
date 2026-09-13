@@ -7,7 +7,6 @@ export type { PanoramaDescriptor, PanoramaStatus } from "@/features/bench-panora
 
 const BENCH_ID = /^(osm-(node|way)-\d+|community-[0-9a-f-]{36}|inventory-[0-9a-f]{24})$/;
 const ARTIFACT_KEY = /^[0-9a-f]{64}$/;
-const STYLE_VERSION = "panorama-watercolor-20";
 
 export type PanoramaArtifact = {
   artifactPath: string;
@@ -15,22 +14,16 @@ export type PanoramaArtifact = {
   generatedAt: string | null;
   completeness: "complete" | "partial";
   lightKey: string | null;
+  materialKey: string | null;
+  generationId: string;
 };
-
-function zurichSeason(date = new Date()) {
-  const month = Number(new Intl.DateTimeFormat("en", { timeZone: "Europe/Zurich", month: "numeric" }).format(date));
-  if (month >= 3 && month <= 5) return "spring";
-  if (month >= 6 && month <= 8) return "summer";
-  if (month >= 9 && month <= 11) return "autumn";
-  return "winter";
-}
 
 export function readPanoramaArtifact(benchId: string): PanoramaArtifact | null {
   if (!BENCH_ID.test(benchId)) return null;
-  const season = zurichSeason(process.env.BENCHLY_E2E_NOW ? new Date(process.env.BENCHLY_E2E_NOW) : new Date());
   return sqlite.prepare(`
     SELECT pr.artifact_path artifactPath,pr.render_key renderKey,pr.generated_at generatedAt,
       pr.source_completeness completeness,
+      pr.material_key materialKey,pr.generation_id generationId,
       (SELECT light_key FROM bench_panorama_lightmaps pl
         WHERE pl.bench_row_id=b.row_id AND pl.geometry_key=pg.geometry_key
           AND pl.status='ready' AND pl.artifact_path IS NOT NULL
@@ -40,13 +33,14 @@ export function readPanoramaArtifact(benchId: string): PanoramaArtifact | null {
     JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id
     JOIN bench_panorama_renders pr
       ON pr.bench_row_id=pg.bench_row_id AND pr.geometry_key=pg.geometry_key
+    JOIN panorama_generations generation ON generation.id=pr.generation_id AND generation.state='active'
     WHERE b.id=? AND b.active=1
       AND pg.bench_id=b.id AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
       AND pg.status='ready' AND pr.status='ready' AND pr.horizontal_fov_degrees=360
-      AND pr.style_version=? AND pr.artifact_format='webp' AND pr.season_bucket=?
+      AND pr.artifact_format='webp' AND pr.season_bucket='dynamic'
       AND pr.artifact_path IS NOT NULL
     ORDER BY pr.generated_at DESC,pr.id DESC LIMIT 1
-  `).get(benchId, STYLE_VERSION, season) as PanoramaArtifact | undefined ?? null;
+  `).get(benchId) as PanoramaArtifact | undefined ?? null;
 }
 
 export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
@@ -56,22 +50,25 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
     renderKey: artifact.renderKey,
     artifactUrl: `/media/panorama/${artifact.renderKey}`,
     lightMapUrl: artifact.lightKey ? `/media/panorama/${artifact.lightKey}` : undefined,
+    materialUrl: artifact.materialKey ? `/media/panorama/${artifact.materialKey}` : undefined,
     generatedAt: artifact.generatedAt,
     completeness: artifact.completeness,
+    generationId: artifact.generationId,
     retryAfterMs: artifact.lightKey ? undefined : 5_000,
   };
   if (!BENCH_ID.test(benchId)) return { status: "unavailable" };
   const stale = sqlite.prepare(`
-    SELECT pr.render_key renderKey,pr.generated_at generatedAt,pr.source_completeness completeness
+    SELECT pr.render_key renderKey,pr.generated_at generatedAt,pr.source_completeness completeness,
+      pr.material_key materialKey,pr.generation_id generationId
     FROM benches b
     JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id
     JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id AND pr.geometry_key=pg.geometry_key
     WHERE b.id=? AND b.active=1 AND pg.bench_id=b.id
       AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
       AND pr.status='ready' AND pr.horizontal_fov_degrees=360
-      AND pr.style_version=? AND pr.artifact_format='webp' AND pr.artifact_path IS NOT NULL
+      AND pr.artifact_format='webp' AND pr.artifact_path IS NOT NULL
     ORDER BY pr.generated_at DESC,pr.id DESC LIMIT 1
-  `).get(benchId, STYLE_VERSION) as Pick<PanoramaArtifact, "renderKey" | "generatedAt" | "completeness"> | undefined;
+  `).get(benchId) as Pick<PanoramaArtifact, "renderKey" | "generatedAt" | "completeness" | "materialKey" | "generationId"> | undefined;
   const row = sqlite.prepare(`
     SELECT pg.status geometryStatus,
       EXISTS(SELECT 1 FROM bench_panorama_requests request WHERE request.bench_row_id=b.row_id) requested
@@ -83,8 +80,10 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
     status: "stale",
     renderKey: stale.renderKey,
     artifactUrl: `/media/panorama/${stale.renderKey}`,
+    materialUrl: stale.materialKey ? `/media/panorama/${stale.materialKey}` : undefined,
     generatedAt: stale.generatedAt,
     completeness: stale.completeness,
+    generationId: stale.generationId,
     retryAfterMs: 5_000,
   };
   if (row.requested || row.geometryStatus === "generating" || row.geometryStatus === "stale") {
@@ -97,10 +96,19 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
 export function readArtifactByKey(key: string): { artifactPath: string; etag: string } | null {
   if (!ARTIFACT_KEY.test(key)) return null;
   const render = sqlite.prepare(`SELECT artifact_path artifactPath,render_key etag
-    FROM bench_panorama_renders WHERE render_key=? AND status='ready'
-      AND artifact_format='webp' AND style_version=? AND artifact_path IS NOT NULL LIMIT 1`)
-    .get(key, STYLE_VERSION) as { artifactPath: string; etag: string } | undefined;
+    FROM bench_panorama_renders render
+    JOIN panorama_generations generation ON generation.id=render.generation_id AND generation.state='active'
+    WHERE render_key=? AND status='ready'
+      AND artifact_format='webp' AND artifact_path IS NOT NULL LIMIT 1`)
+    .get(key) as { artifactPath: string; etag: string } | undefined;
   if (render) return render;
+  const material = sqlite.prepare(`SELECT material_path artifactPath,material_key etag
+    FROM bench_panorama_renders render
+    JOIN panorama_generations generation ON generation.id=render.generation_id AND generation.state='active'
+    WHERE material_key=? AND status='ready'
+      AND material_path IS NOT NULL LIMIT 1`)
+    .get(key) as { artifactPath: string; etag: string } | undefined;
+  if (material) return material;
   return sqlite.prepare(`SELECT artifact_path artifactPath,light_key etag
     FROM bench_panorama_lightmaps WHERE light_key=? AND status='ready'
       AND artifact_path IS NOT NULL AND (expires_at IS NULL OR julianday(expires_at)>julianday('now')) LIMIT 1`)

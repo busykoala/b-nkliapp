@@ -212,6 +212,7 @@ export type BenchDetail = {
   description: string | null;
   operatorName: string | null;
   properties: BenchProperty[];
+  covered: boolean;
   elevationMeters: number | null;
   elevationSource: string | null;
   analysisCoverage: "near-field" | "terrain";
@@ -291,6 +292,7 @@ export type BenchDetail = {
   distancePathMeters: number | null;
   directionDegrees: number | null;
   panoramaStatus: "ready" | "generating" | "stale" | "unavailable" | "error";
+  panorama?: import("@/features/bench-panorama/types").PanoramaDescriptor;
   buildingObstructionPercent: number | null;
   vegetationObstructionPercent: number | null;
   distanceBuildingMeters: number | null;

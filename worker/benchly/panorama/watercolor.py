@@ -59,6 +59,19 @@ _MOUNTAIN = {
 PAINT_SCALE = .31
 
 
+def _close_seam(image: Image.Image, width: int = 12) -> Image.Image:
+    """Make the circular texture C0-continuous without inventing geometry."""
+    pixels = np.asarray(image).copy()
+    seam = min(width, image.width // 8)
+    original = pixels.copy()
+    edge = np.rint((original[:, 0].astype(np.float32) + original[:, -1].astype(np.float32)) / 2)
+    for offset in range(seam):
+        amount = offset / seam
+        pixels[:, offset] = np.rint(edge * (1 - amount) + original[:, offset] * amount).astype(np.uint8)
+        pixels[:, -1 - offset] = np.rint(edge * (1 - amount) + original[:, -1 - offset] * amount).astype(np.uint8)
+    return Image.fromarray(pixels, image.mode)
+
+
 def _seed(key: str, salt: str = "") -> int:
     return int(hashlib.sha256(f"{key}:{salt}".encode()).hexdigest()[:16], 16)
 
@@ -499,8 +512,40 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     dark_fibres = fibres.point(lambda value: max(0, 124 - value) // 7)
     base.paste(Image.new("RGB", base.size, (239, 230, 208)), (0, 0), light_fibres)
     base.paste(Image.new("RGB", base.size, (103, 112, 96)), (0, 0), dark_fibres)
+    base = _close_seam(base)
     output = io.BytesIO()
     base.save(output, format="WEBP", quality=86, method=0, exact=True)
+    return output.getvalue()
+
+
+def render_material_webp(geometry: PanoramaGeometry, width: int = 2048, height: int = 512) -> bytes:
+    """Pack depth, semantic class and approximate surface orientation for WebGL.
+
+    R is logarithmic distance, G is the stable semantic id and B is the
+    normal/light response proxy. Sky remains zero. The mask is deliberately
+    small and lossless; it accompanies the neutral base watercolor.
+    """
+    semantics = tuple(SemanticClass)
+    semantic_ids = {semantic: round((index + 1) / len(semantics) * 255) for index, semantic in enumerate(semantics)}
+    packed = np.zeros((height, width, 3), dtype=np.uint8)
+    minimum, maximum = geometry.config.minimum_elevation_angle, geometry.config.maximum_elevation_angle
+    count = len(geometry.columns)
+    for x in range(width):
+        column = geometry.columns[min(count - 1, int((x + .5) * count / width))]
+        for span in column.spans:
+            top = max(0, min(height, round((maximum - span.upper_angle_degrees) / (maximum - minimum) * height)))
+            bottom = max(0, min(height, round((maximum - span.lower_angle_degrees) / (maximum - minimum) * height)))
+            if bottom <= top:
+                continue
+            depth = round(max(0, min(1, math.log1p(span.distance_meters) / math.log1p(150_000))) * 255)
+            edge = min(column.terrain_edges, key=lambda item: abs(item.distance_meters - span.distance_meters), default=None)
+            slope = edge.slope_degrees if edge and edge.slope_degrees is not None else 0
+            normal = round(max(0, min(1, .5 + slope / 180)) * 255)
+            packed[top:bottom, x] = (depth, semantic_ids[span.semantic], normal)
+    packed[:, -1] = packed[:, 0]
+    image = Image.fromarray(packed, "RGB")
+    output = io.BytesIO()
+    image.save(output, format="WEBP", lossless=True, method=6)
     return output.getvalue()
 
 

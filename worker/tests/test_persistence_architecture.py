@@ -23,7 +23,15 @@ class PersistenceArchitectureTests(unittest.TestCase):
                 continue
             # This is an explicitly local, gitignored analytical SQLite store;
             # publication into the application DB remains subject to the guard.
-            if path.relative_to(worker) == Path("benchly/direction/analysis.py"):
+            if path.relative_to(worker) in {
+                Path("benchly/direction/analysis.py"),
+                # Gitignored resumable build checkpoints only. Application-DB
+                # activation is delegated to the typed panorama repository.
+                Path("benchly/panorama/builder.py"),
+                # Gitignored local raster-build checkpoints; no application
+                # or production database is opened by this module.
+                Path("benchly/panorama/pyramid.py"),
+            }:
                 continue
             tree = ast.parse(path.read_text(encoding="utf-8"))
             strings = (

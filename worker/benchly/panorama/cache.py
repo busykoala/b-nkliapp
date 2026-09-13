@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import hashlib
-import io
 import json
 import os
 from pathlib import Path
 from typing import TypeVar
 
-import numpy as np
 from pydantic import BaseModel
 
+from benchly.panorama.binary import decode_geometry, encode_geometry
 from benchly.panorama.models import GeometryIdentity, LightMapIdentity, PanoramaGeometry, RenderIdentity
 
 
@@ -36,17 +35,25 @@ def lightmap_cache_key(identity: LightMapIdentity) -> str:
 
 
 class PanoramaCache:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, generation_id: str | None = None):
         self.root = root
+        self.generation_id = generation_id
+
+    @property
+    def base(self) -> Path:
+        return self.root / "active" / self.generation_id if self.generation_id else self.root / "working"
 
     def geometry_path(self, key: str) -> Path:
-        return self.root / "geometry-v4" / key[:2] / f"{key}.npz"
+        return self.base / "capsules" / key[:2] / f"{key}.bpc"
 
     def render_path(self, key: str) -> Path:
-        return self.root / "renders-v20" / key[:2] / f"{key}.webp"
+        return self.base / "renders" / key[:2] / f"{key}.webp"
+
+    def material_path(self, key: str) -> Path:
+        return self.base / "materials" / key[:2] / f"{key}.webp"
 
     def lightmap_path(self, key: str) -> Path:
-        return self.root / "lightmaps-v1" / key[:2] / f"{key}.webp"
+        return self.base / "lightmaps" / key[:2] / f"{key}.webp"
 
     @staticmethod
     def _atomic_write(path: Path, payload: bytes) -> None:
@@ -60,13 +67,7 @@ class PanoramaCache:
 
     def put_geometry(self, geometry: PanoramaGeometry) -> Path:
         path = self.geometry_path(geometry.identity_key)
-        # NPZ gives the v4 cache a binary, checksummed container today and lets
-        # later revisions split hot arrays out of the manifest without another
-        # path or cache migration.
-        manifest = np.frombuffer(geometry.model_dump_json(exclude_none=True).encode(), dtype=np.uint8)
-        output = io.BytesIO()
-        np.savez_compressed(output, manifest=manifest)
-        self._atomic_write(path, output.getvalue())
+        self._atomic_write(path, encode_geometry(geometry))
         return path
 
     def get_geometry(self, key: str) -> PanoramaGeometry | None:
@@ -74,10 +75,14 @@ class PanoramaCache:
         if not path.exists():
             return None
         try:
-            with np.load(path, allow_pickle=False) as archive:
-                return PanoramaGeometry.model_validate_json(archive["manifest"].tobytes())
-        except (OSError, ValueError, KeyError):
+            return decode_geometry(path.read_bytes())
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
             return None
+
+    def put_material(self, key: str, image: bytes) -> Path:
+        path = self.material_path(key)
+        self._atomic_write(path, image)
+        return path
 
     def put_render(self, key: str, image: bytes) -> Path:
         path = self.render_path(key)

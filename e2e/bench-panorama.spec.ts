@@ -41,6 +41,7 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   const bearing = panorama.locator(".bench-panorama-bearing");
   await expect(bearing).toHaveText("325°");
   await expect(panorama.getByRole("slider")).toHaveCount(0);
+  await expect(panorama.locator(".bench-panorama-zoom")).toHaveText("1.0×");
   const image = page.locator(".bench-panorama-art").first();
   await expect(image).toHaveJSProperty("complete", true);
   const groundBox = await panorama.locator(".bench-panorama-ground-patch").first().boundingBox();
@@ -57,6 +58,9 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   const box = await viewport.boundingBox();
   expect(box).not.toBeNull();
   const before = await page.locator(".bench-panorama-track").getAttribute("style");
+  await viewport.hover();
+  await page.mouse.wheel(0, -120);
+  await expect(panorama.locator(".bench-panorama-zoom")).not.toHaveText("1.0×");
   await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .65);
   await page.mouse.down();
   await page.mouse.move(box!.x + box!.width * .3, box!.y + box!.height * .32, { steps: 5 });
@@ -70,6 +74,7 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
 
   await viewport.focus();
   await viewport.press("Home");
+  await expect(panorama.locator(".bench-panorama-zoom")).toHaveText("1.0×");
   await expect(bearing).toHaveText("325°");
   for (let index = 0; index < 65; index++) await viewport.press("ArrowLeft");
   await expect(bearing).toHaveText("0°");

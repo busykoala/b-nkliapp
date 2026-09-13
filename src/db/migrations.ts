@@ -935,4 +935,94 @@ export const migrations: Migration[] = [
         ON bench_photo_submissions(user_id,created_at DESC);
     `,
   },
+  {
+    id: "0035_panorama_model",
+    sql: `
+      CREATE TABLE panorama_generations (
+        id TEXT PRIMARY KEY,
+        git_commit TEXT NOT NULL CHECK(length(git_commit) >= 7),
+        state TEXT NOT NULL CHECK(state IN ('building','incoming','verified','active','superseded','failed')),
+        source_versions_json TEXT NOT NULL,
+        manifest_sha256 TEXT,
+        artifact_count INTEGER NOT NULL DEFAULT 0 CHECK(artifact_count >= 0),
+        artifact_bytes INTEGER NOT NULL DEFAULT 0 CHECK(artifact_bytes >= 0),
+        created_at TEXT NOT NULL,
+        verified_at TEXT,
+        activated_at TEXT,
+        error TEXT
+      );
+      CREATE UNIQUE INDEX panorama_one_active_generation_idx
+        ON panorama_generations(state) WHERE state='active';
+
+      CREATE TABLE panorama_generation_artifacts (
+        generation_id TEXT NOT NULL REFERENCES panorama_generations(id) ON DELETE CASCADE,
+        artifact_key TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK(kind IN ('terrain','landscape','capsule','render','material','lightmap','index')),
+        relative_path TEXT NOT NULL,
+        sha256 TEXT NOT NULL CHECK(length(sha256)=64),
+        artifact_bytes INTEGER NOT NULL CHECK(artifact_bytes >= 0),
+        bench_row_id INTEGER REFERENCES benches(row_id) ON DELETE CASCADE,
+        bench_id TEXT,
+        bench_latitude REAL,
+        bench_longitude REAL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(generation_id,artifact_key,kind)
+      ) WITHOUT ROWID;
+      CREATE INDEX panorama_generation_artifacts_bench_idx
+        ON panorama_generation_artifacts(bench_row_id,generation_id,kind);
+
+      CREATE TABLE panorama_dirty_cells (
+        cell_id TEXT PRIMARY KEY,
+        reason_mask INTEGER NOT NULL DEFAULT 0,
+        priority INTEGER NOT NULL DEFAULT 100,
+        source_version TEXT,
+        dirty_at TEXT NOT NULL,
+        lease_owner TEXT,
+        lease_until TEXT,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT
+      );
+      CREATE INDEX panorama_dirty_cells_queue_idx
+        ON panorama_dirty_cells(priority,dirty_at,lease_until);
+
+      ALTER TABLE bench_panorama_geometry ADD COLUMN generation_id TEXT REFERENCES panorama_generations(id);
+      ALTER TABLE bench_panorama_geometry ADD COLUMN capsule_format TEXT NOT NULL DEFAULT 'npz-json';
+      ALTER TABLE bench_panorama_geometry ADD COLUMN artifact_sha256 TEXT;
+      ALTER TABLE bench_panorama_renders ADD COLUMN generation_id TEXT REFERENCES panorama_generations(id);
+      ALTER TABLE bench_panorama_renders ADD COLUMN artifact_sha256 TEXT;
+      ALTER TABLE bench_panorama_renders ADD COLUMN material_key TEXT;
+      ALTER TABLE bench_panorama_renders ADD COLUMN material_path TEXT;
+      ALTER TABLE bench_panorama_renders ADD COLUMN material_sha256 TEXT;
+      ALTER TABLE bench_panorama_renders ADD COLUMN material_bytes INTEGER;
+
+      CREATE TRIGGER panorama_bench_insert_dirty AFTER INSERT ON benches WHEN new.active=1 BEGIN
+        INSERT INTO panorama_dirty_cells(cell_id,reason_mask,priority,dirty_at)
+        VALUES (printf('%.2f:%.2f',floor(new.longitude*20)/20,floor(new.latitude*20)/20),1,0,strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        ON CONFLICT(cell_id) DO UPDATE SET reason_mask=reason_mask|1,priority=min(priority,0),dirty_at=excluded.dirty_at;
+      END;
+      CREATE TRIGGER panorama_bench_move_dirty AFTER UPDATE OF latitude,longitude,active ON benches BEGIN
+        INSERT INTO panorama_dirty_cells(cell_id,reason_mask,priority,dirty_at)
+        VALUES (printf('%.2f:%.2f',floor(old.longitude*20)/20,floor(old.latitude*20)/20),1,0,strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        ON CONFLICT(cell_id) DO UPDATE SET reason_mask=reason_mask|1,priority=min(priority,0),dirty_at=excluded.dirty_at;
+        INSERT INTO panorama_dirty_cells(cell_id,reason_mask,priority,dirty_at)
+        VALUES (printf('%.2f:%.2f',floor(new.longitude*20)/20,floor(new.latitude*20)/20),1,0,strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        ON CONFLICT(cell_id) DO UPDATE SET reason_mask=reason_mask|1,priority=min(priority,0),dirty_at=excluded.dirty_at;
+      END;
+      CREATE TRIGGER panorama_environment_insert_dirty AFTER INSERT ON environment_features BEGIN
+        INSERT INTO panorama_dirty_cells(cell_id,reason_mask,priority,source_version,dirty_at)
+        VALUES (printf('%.2f:%.2f',floor(new.center_longitude*20)/20,floor(new.center_latitude*20)/20),2,50,new.imported_at,strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        ON CONFLICT(cell_id) DO UPDATE SET reason_mask=reason_mask|2,priority=min(priority,50),source_version=excluded.source_version,dirty_at=excluded.dirty_at;
+      END;
+      CREATE TRIGGER panorama_environment_update_dirty AFTER UPDATE OF center_latitude,center_longitude,height_meters,raw_tags,imported_at ON environment_features BEGIN
+        INSERT INTO panorama_dirty_cells(cell_id,reason_mask,priority,source_version,dirty_at)
+        VALUES (printf('%.2f:%.2f',floor(new.center_longitude*20)/20,floor(new.center_latitude*20)/20),2,50,new.imported_at,strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        ON CONFLICT(cell_id) DO UPDATE SET reason_mask=reason_mask|2,priority=min(priority,50),source_version=excluded.source_version,dirty_at=excluded.dirty_at;
+      END;
+      CREATE TRIGGER panorama_environment_delete_dirty AFTER DELETE ON environment_features BEGIN
+        INSERT INTO panorama_dirty_cells(cell_id,reason_mask,priority,source_version,dirty_at)
+        VALUES (printf('%.2f:%.2f',floor(old.center_longitude*20)/20,floor(old.center_latitude*20)/20),2,50,old.imported_at,strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        ON CONFLICT(cell_id) DO UPDATE SET reason_mask=reason_mask|2,priority=min(priority,50),source_version=excluded.source_version,dirty_at=excluded.dirty_at;
+      END;
+    `,
+  },
 ];

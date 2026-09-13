@@ -4,6 +4,7 @@ import sqlite3
 
 from benchly.panorama.models import LightMapIdentity, RenderIdentity
 from benchly.panorama.repository import (
+    activate_generation,
     mark_failed,
     mark_generating,
     mark_lightmap_ready,
@@ -34,7 +35,7 @@ def database():
         bench_longitude REAL NOT NULL,geometry_key TEXT NOT NULL,artifact_path TEXT,status TEXT NOT NULL,
         complete INTEGER NOT NULL,source_versions_json TEXT NOT NULL,algorithm_version TEXT NOT NULL,
         warnings_json TEXT NOT NULL,artifact_bytes INTEGER,started_at TEXT,generated_at TEXT,
-        updated_at TEXT NOT NULL,error TEXT
+        updated_at TEXT NOT NULL,error TEXT,generation_id TEXT,capsule_format TEXT DEFAULT 'npz-json',artifact_sha256 TEXT
       );
       CREATE TABLE bench_panorama_renders(
         id INTEGER PRIMARY KEY AUTOINCREMENT,bench_row_id INTEGER NOT NULL,geometry_key TEXT NOT NULL,
@@ -44,7 +45,8 @@ def database():
         bench_variant TEXT NOT NULL,covered INTEGER,artifact_bytes INTEGER,generated_at TEXT,
         updated_at TEXT NOT NULL,error TEXT,season_bucket TEXT NOT NULL DEFAULT 'summer',
         artifact_format TEXT NOT NULL DEFAULT 'webp',manifest_path TEXT,
-        source_completeness TEXT NOT NULL DEFAULT 'partial'
+        source_completeness TEXT NOT NULL DEFAULT 'partial',generation_id TEXT,artifact_sha256 TEXT,
+        material_key TEXT,material_path TEXT,material_sha256 TEXT,material_bytes INTEGER
       );
       CREATE TABLE bench_panorama_requests(
         bench_row_id INTEGER PRIMARY KEY,requested_at TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,
@@ -56,6 +58,17 @@ def database():
         light_key TEXT NOT NULL UNIQUE,solar_bucket TEXT NOT NULL,sun_azimuth_degrees REAL NOT NULL,
         sun_altitude_degrees REAL NOT NULL,artifact_path TEXT,status TEXT NOT NULL,artifact_bytes INTEGER,
         generated_at TEXT,expires_at TEXT,updated_at TEXT NOT NULL,error TEXT
+      );
+      CREATE TABLE panorama_generations(
+        id TEXT PRIMARY KEY,git_commit TEXT NOT NULL,state TEXT NOT NULL,source_versions_json TEXT NOT NULL,
+        manifest_sha256 TEXT,artifact_count INTEGER NOT NULL DEFAULT 0,artifact_bytes INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,verified_at TEXT,activated_at TEXT,error TEXT
+      );
+      CREATE TABLE panorama_generation_artifacts(
+        generation_id TEXT NOT NULL,artifact_key TEXT NOT NULL,kind TEXT NOT NULL,relative_path TEXT NOT NULL,
+        sha256 TEXT NOT NULL,artifact_bytes INTEGER NOT NULL,bench_row_id INTEGER,bench_id TEXT,
+        bench_latitude REAL,bench_longitude REAL,created_at TEXT NOT NULL,
+        PRIMARY KEY(generation_id,artifact_key,kind)
       );
       INSERT INTO bench_panorama_requests(bench_row_id,requested_at) VALUES(7,'2026-09-12');
     """)
@@ -71,7 +84,7 @@ def test_repository_upserts_geometry_and_full_circle_render_state():
     assert connection.execute("SELECT count(*) FROM bench_panorama_requests").fetchone()[0] == 1
     identity = RenderIdentity(
         geometry_key="g" * 64, center_azimuth_degrees=0, horizontal_fov_degrees=360,
-        width=4096, height=1024, season_bucket="autumn",
+        width=4096, height=1024, season_bucket="dynamic",
     )
     light = LightMapIdentity(geometry_key="g" * 64, solar_bucket="2026-09-12T10:00:00+00:00",
         sun_azimuth_degrees=180, sun_altitude_degrees=30)
@@ -98,12 +111,12 @@ def test_pending_selection_tracks_source_render_and_bench_versions():
     mark_ready(connection, 7, "g" * 64, "/cache/geometry-v4.npz", 123, True, ())
     identity = RenderIdentity(
         geometry_key="g" * 64, center_azimuth_degrees=0, horizontal_fov_degrees=360,
-        width=4096, height=1024, season_bucket="autumn",
+        width=4096, height=1024, season_bucket="dynamic",
     )
     mark_render_ready(connection, 7, identity, "/cache/render.webp", 456)
 
     def selected(current_versions=versions, style=identity.style_version):
-        return pending_benches(connection, "a", current_versions, style, 4096, 1024, "autumn", 10)
+        return pending_benches(connection, "a", current_versions, style, 4096, 1024, "dynamic", 10)
 
     assert selected() == []
     assert [item["id"] for item in selected({**versions, "building": "new"})] == ["osm-node-7"]
@@ -122,9 +135,9 @@ def test_pending_selection_tracks_source_render_and_bench_versions():
     connection.execute("INSERT INTO bench_panorama_requests(bench_row_id,requested_at) VALUES(7,'2026-09-13')")
     connection.commit()
     assert [item["id"] for item in selected()] == ["osm-node-7"]
-    assert pending_benches(connection, "a", versions, identity.style_version, 4096, 1024, "autumn", 10, 0, 4) == []
+    assert pending_benches(connection, "a", versions, identity.style_version, 4096, 1024, "dynamic", 10, 0, 4) == []
     assert [item["id"] for item in pending_benches(
-        connection, "a", versions, identity.style_version, 4096, 1024, "autumn", 10, 3, 4,
+        connection, "a", versions, identity.style_version, 4096, 1024, "dynamic", 10, 3, 4,
     )] == ["osm-node-7"]
 
     connection.execute("UPDATE bench_panorama_requests SET status='retry',next_attempt_at='2099-01-01'")
@@ -162,3 +175,36 @@ def test_backfill_failures_create_a_delayed_retry_instead_of_hot_looping():
     assert retry["attempts"] == 1
     assert retry["next_attempt_at"] is not None
     assert retry["last_error"] == "render failure"
+
+
+def test_activation_publishes_verified_content_with_typed_models():
+    connection = database()
+    geometry_key = "a" * 64
+    records = []
+    for kind, digest, path in (
+        ("capsule", "b" * 64, "capsules/aa/file.bpc"),
+        ("render", "c" * 64, "renders/aa/file.webp"),
+        ("material", "d" * 64, "materials/aa/file.webp"),
+    ):
+        records.append({
+            "geometry_key": geometry_key, "kind": kind, "relative_path": path,
+            "sha256": digest, "bytes": 10, "bench_row_id": 7, "bench_id": "osm-node-7",
+            "bench_latitude": 47.0, "bench_longitude": 8.0,
+        })
+    manifest = {
+        "generation_id": "abcdef123456-content", "git_commit": "abcdef1234567890",
+        "geometry_implementation": "geometry-hash", "render_implementation": "render-hash",
+        "artifact_count": 3, "artifact_bytes": 30, "created_at": "2026-09-13", "artifacts": records,
+    }
+    activate_generation(connection, manifest, "e" * 64, "/panorama/active/abcdef123456-content")
+    connection.commit()
+    assert tuple(connection.execute(
+        "SELECT id,git_commit,state,artifact_count FROM panorama_generations"
+    ).fetchone()) == ("abcdef123456-content", "abcdef1234567890", "active", 3)
+    assert connection.execute("SELECT count(*) FROM panorama_generation_artifacts").fetchone()[0] == 3
+    assert tuple(connection.execute(
+        "SELECT generation_id,capsule_format,algorithm_version FROM bench_panorama_geometry"
+    ).fetchone()) == ("abcdef123456-content", "benchly-view-capsule", "geometry-hash")
+    assert tuple(connection.execute(
+        "SELECT generation_id,style_version,material_key FROM bench_panorama_renders"
+    ).fetchone()) == ("abcdef123456-content", "render-hash", "d" * 64)

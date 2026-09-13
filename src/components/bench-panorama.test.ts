@@ -10,6 +10,11 @@ describe("360 degree panorama track", () => {
     expect(Number.isInteger(panoramaTrackOffset(388, 323.328125, 359.67))).toBe(true);
   });
 
+  it("scales the circular texture without changing equivalent-heading wrap", () => {
+    expect(panoramaTrackOffset(600, 500, 0, 2)).toBe(-5140);
+    expect(panoramaTrackOffset(600, 500, 360, 2)).toBe(panoramaTrackOffset(600, 500, 0, 2));
+  });
+
   it("wraps equivalent headings to the identical crop", () => {
     expect(panoramaTrackOffset(600, 500, -10)).toBe(panoramaTrackOffset(600, 500, 350));
     expect(panoramaTrackOffset(600, 500, 720)).toBe(panoramaTrackOffset(600, 500, 0));

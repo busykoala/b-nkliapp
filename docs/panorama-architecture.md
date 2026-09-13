@@ -1,16 +1,32 @@
 # Geografisches Landschaftsaquarell-Panorama
 
-Stand: 2026-09-13. Dieser Vertrag beschreibt den v20-Cutover und trennt ausgelieferte Software von der noch laufenden nationalen Datenaufbereitung.
+Dieser Vertrag trennt ausgelieferte Software von der resumierbaren nationalen Datenaufbereitung. Git identifiziert den ausgeführten Code; generierte Daten werden durch Git-Commit, Quellenstände und Inhalts-Hashes identifiziert. Es gibt keine manuell gepflegten Panorama-Buildnummern.
+
+## Speicher- und Aktivierungsvertrag
+
+Migration `0035_panorama_model` führt content-adressierte Generationen, Artefaktprüfsummen und räumliche Dirty-Cells ein. Ein eigenes statisches `benchly-panorama`-PVC hat nach bestandenem Pilot 80 GiB; Datenbank und Backups bleiben auf dem bisherigen PVC. Bei 60 GiB wird gewarnt, mit weniger als 20 GiB logischem Freiraum startet keine Generation. Incoming und Active dürfen nur während Prüfung/Aktivierung koexistieren. Nach dem Umschalten wird die ersetzte Vollgeneration sofort gelöscht; es gibt serverseitig keine Rollback-Generation.
+
+Der echte 1-%-Pilot vom 13. September verarbeitete 1’232 zufällig stabile Produktionskapseln mit zwölf Prozessen ohne Fehler. Im aktuellen content-adressierten Format wurden 257’245’903 Bytes gemessen. Einschliesslich eines konservativen 15-GiB-Budgets für nationale Terrain-/Objektpakete ergibt das 41’811’298’935 Bytes dauerhaft und 67’516’470’510 Bytes am kurzen Aktivierungspeak. Damit bleibt die automatische Empfehlung bei 80 GiB.
+
+`panorama-prepare-terrain`, `panorama-extract`, `panorama-pilot`, `panorama-build`, `panorama-manifest`, `panorama-verify`, `panorama-upload` und `panorama-activate` bilden den lokalen Forward-only-Workflow. Der Fortschritt liegt in SQLite-WAL, Dateien werden atomar geschrieben und SHA-256-geprüft. Der Upload akzeptiert ausschliesslich `busykoala@192.168.1.206`, überträgt Artefakte resumierbar vor Manifest/Prüfsumme und bindet jede Bank vor Aktivierung erneut an unveränderte ID und Koordinaten.
+
+Der über LAN geladene aktuelle swissALTI3D-Bestand umfasst 4’846 eindeutige 1-km-Zellen. Die resumierbare, zwölfprozessige Vorbereitung verdichtete diese auf 46 MiB für die 10-/30-/90-m-Stufen. Die 2-m-Quellen bleiben für Standorthöhe und nahe Gebäude erhalten; Sichtstrahlen lesen die 10-m-Fläche bis 20 km und die 90-m-Fläche im Fernbereich. Bei ergänzten Quellzellen erzeugt ihr Inhalts-Hash automatisch neue Pyramidenartefakte.
+
+## Sichtkapseln und Browser
+
+Geometrie liegt als `benchly-view-capsule` vor: explizite Little-Endian-Arrays für Skyline, sichtbare Flächen, innere Grate und Gebäudesamples, quantisiert und komprimiert. Eine kleine Schema-Kennung dient nur der Binärformat-Kompatibilität; sie ist keine Buildversion. JSON beschreibt nur Offsets und Provenienz; es gibt kein JSON-in-NPZ mehr. Pro Bänkli begleiten ein neutrales 4096 × 1024-WebP und eine verlustfreie Tiefen-/Semantik-/Normalenmaske die Kapsel. WebGL färbt Saison, atmosphärische Tiefe und direktes Licht dynamisch; ohne WebGL bleibt das geografische Basisbild sichtbar.
+
+Der Descriptor wird bereits mit dem Bänkli geladen, sodass ein vorgewärmtes Bild keinen zusätzlichen Server-Action-Roundtrip benötigt. Maus-/Touch-Ziehen bleibt umlaufend, die Textur wird an 0°/360° weich geschlossen. Zoom reicht von 1× bis 2×: Mausrad, Doppelklick, `+`/`-` sowie Pinch werden unterstützt; an den Zoomgrenzen bleibt normales Seitenscrollen möglich.
 
 ## Produktvertrag
 
-Im Bänkli-Overlay gibt es keine generische Ersatzlandschaft mehr. Angezeigt werden ausschliesslich ein geografisches v20-WebP, ein während einer Erneuerung weiter nutzbares v20-WebP oder ein neutraler warmer Papierwash. Ältere Renderstile und die frühere `BenchLandscape`-Komposition werden nicht mehr gelesen.
+Im Bänkli-Overlay gibt es keine generische Ersatzlandschaft mehr. Angezeigt werden ausschliesslich das aktive geografische WebP, das aktive Bild während einer Erneuerung oder ein neutraler warmer Papierwash. Ältere Renderpfade und die frühere `BenchLandscape`-Komposition werden nicht mehr gelesen.
 
-`PanoramaDescriptor` unterscheidet `ready`, `generating`, `stale`, `unavailable` und `error`. `stale` behält das letzte geografische v20-Bild sichtbar. Artefakte werden über eine gleichoriginige, schlüsselvalidierte Media-Route mit ETag und unveränderlichem Cache-Header gestreamt; Server Actions liefern nur Status und Metadaten.
+`PanoramaDescriptor` unterscheidet `ready`, `generating`, `stale`, `unavailable` und `error`. `stale` behält das letzte aktive geografische Bild sichtbar. Artefakte werden über eine gleichoriginige, schlüsselvalidierte Media-Route mit ETag und unveränderlichem Cache-Header gestreamt; Server Actions liefern nur Status und Metadaten.
 
 Maus, Touch und Tastatur verschieben den Vollkreis endlos horizontal und innerhalb des vertikalen Overscans. Die erste Ansicht zeigt in die effektive beobachtete oder geschätzte Bänklirichtung. Der Share-Link bleibt die konkrete Bank-URL.
 
-## Geometrie v4
+## Geometrie
 
 Die geografische Basis ist ein richtungsneutraler Vollkreis mit 0,1°-Spalten. Pro Spalte werden tiefengeprüfte sichtbare Intervalle mit Distanz, Höhe, Semantik, Quelle und Konfidenz gehalten. Der Vertrag enthält ausserdem Skyline, innere Grate, Distanzschichten und sichtbare Gebäude-IDs mit Wand-, Trauf- und Dachprojektion. Die diskreten Intervalle sind das kompakte polare Geländemesh; beim Rendern entstehen daraus zusammenhängende Flächenmasken und ein Tiefenpuffer.
 
@@ -20,13 +36,13 @@ Semantikpriorität: Wasser/Fluss, Gebäude, Wald, Fels/Gletscher, offener Boden,
 
 Gebäude kommen aus swissBUILDINGS3D, sofern normalisierte Zellen vorhanden sind, sonst aus TLM-/OSM-Fussabdrücken. Unter 500 m werden getrennte Wand-, Trauf- und Dachflächen gemalt, bis 2 km vereinfachte Körper, danach zurückhaltende Siedlungswashes. Unbekannte Dächer bleiben konservativ flach. Wald wird als geschlossene Masse dargestellt. Wasser bleibt auf tatsächliche Masken begrenzt und erhält ruhige horizontale Tonstufen und Uferpigment.
 
-## Aquarell-Renderer v20
+## Aquarell-Renderer
 
 Der Pillow-Renderer malt deterministisch auf einer weicheren internen Arbeitsfläche und skaliert mit Lanczos auf 4096 × 1024. Er rastert nur so viele Winkelspalten, wie diese Arbeitsfläche tatsächlich darstellen kann, und verwendet gemeinsame Pigmentfelder. Dadurch bleiben Konturen erhalten, während Maskenaufbau und WebP-Encoding deutlich weniger Arbeit benötigen. Der Cache-Schlüssel bindet Geometrie, Saison, Stil und Ausgabeformat ein.
 
 Ferne Distanzschichten werden heller, kühler, entsättigter und weicher. Nahe Flächen bleiben wärmer und kontrastreicher. Mehrere leicht versetzte transparente Washes, zusammenhängende Landbloom- und Kronenmassen, Uferpigment, innere Grate und einmaliges Papierkorn erzeugen die Malwirkung ohne wiederholte Texturkacheln. Felder sind ruhig, Wald bleibt flächig, Wasser besitzt eine vertikale Tiefenstaffelung und Häuser sind kohärente Körper. Es gibt keinen erfundenen Vollbreiten-Vordergrund mehr. Nur direkt unter der im Browser komponierten Bank liegt ein kleiner erd-/sandfarbener Wash für sicheren Bodenkontakt.
 
-Gleiche Geometrie, Saison und Stilversion erzeugen byte-identische WebPs. Die 360°-Naht wird in allen Blur- und Maskenoperationen umlaufend behandelt.
+Gleiche Eingabedaten und derselbe Git-Stand erzeugen byte-identische WebPs. Die 360°-Naht wird in allen Blur- und Maskenoperationen umlaufend behandelt.
 
 ## Licht, Wetter und Saison
 
@@ -44,11 +60,11 @@ Diese projektgebundenen Rasterassets wurden mit der eingebauten Bildgenerierung 
 
 ## Queue, Cache und Betrieb
 
-Migration `0033_panorama_artifacts_v2` ergänzt WebP-/Saison-/Manifest-/Vollständigkeitsfelder, Queue-Priorität, Lease, Retry-Zeit und eine Lichtkartentabelle. Geometrie liegt atomar als kompaktes NPZ, v20-Basisbilder unter `renders-v20/`, Lichtkarten unter `lightmaps-v1/`; SQLite hält nur Zustand, Schlüssel, Provenienz und Pfade. Ein Stilwechsel invalidiert deshalb nur das schnelle Gemälde, nicht die geografische Geometrie.
+Die bereits veröffentlichte Migration `0033_panorama_artifacts_v2` ergänzt WebP-/Saison-/Manifest-/Vollständigkeitsfelder, Queue-Priorität, Lease, Retry-Zeit und eine Lichtkartentabelle; der Name bleibt als unveränderliche Schemahistorie bestehen. Geometrie liegt atomar als Binärkapsel, Bilder unter der aktiven content-adressierten Generation. SQLite hält nur Zustand, Schlüssel, Provenienz und Pfade. Ein Rendererwechsel invalidiert deshalb nur das schnelle Gemälde, nicht die geografische Geometrie.
 
 Ein permanentes Worker-Deployment betreibt vier disjunkte Prozess-Shards. UI-Anfragen gewinnen durch Request-Priorität, danach folgen Backfill-Zeilen. Abgelaufene Leases werden wieder aufgenommen und abgelaufene Lichtkarten bei jedem Lauf aus Datenbank und Dateisystem entfernt. Nationale Downloads und Backfills laufen ausdrücklich ausserhalb der Release-CI.
 
-Der vorhandene lokale Datenträger bietet deutlich mehr als die geplanten 250 GiB freien Platz. Deshalb wird für den Cutover kein zweiter statischer PV angelegt: ein PVC-Wechsel würde ohne Kapazitätsgewinn ein unnötiges Daten- und Rolloutrisiko erzeugen. Der bestehende Datenträger bleibt erhalten, bis nationale Quellen und Backfill validiert sind.
+Der vorhandene lokale Datenträger bietet ausreichend physischen Platz. Trotzdem trennt ein eigener statischer 80-GiB-PV/PVC die Panorama-Artefakte logisch von Datenbank und Backups. Der Pfad wird nicht für andere App-Daten wiederverwendet; die Retain-Policy schützt ihn bei einem Helm-Lifecycle-Fehler. Die 1-%-Messung liegt unter der festgelegten 68-GiB-Spitzengrenze, deshalb ist keine grössere Allokation nötig.
 
 ## Lokale Iteration und Review
 
@@ -58,11 +74,11 @@ Geprüft werden 390 px, 430 px und 1440 px, endloses Ziehen, der von 16 auf 36 P
 
 Auf identischer lokaler Hardware sank der Median für ein ungecachtes 4096 × 1024-Aquarell bei `osm-node-4998419683` von 566 ms auf 221 ms und bei `osm-node-5795964447` von 835 ms auf 300 ms. Einschliesslich unverändertem Geometrie-Decoding sank der lokale End-to-End-Median von 683 auf 338 ms beziehungsweise von 1’033 auf 498 ms – 50,5 und 51,8 Prozent. Horizontales oder vertikales Verschieben löst weiterhin weder Geometrie- noch Renderarbeit aus. Der maximale Raster-Abtastfehler beträgt horizontal und vertikal je rund 0,142°, deutlich unter einem Ausgabepixel im UI. Der mittlere Farbfehler an der realen 360°-Naht beträgt bei den beiden Bildern nur 1,11 beziehungsweise 1,47 von 255; ein gecachtes WebP wird im Median in 0,014 beziehungsweise 0,015 ms gelesen.
 
-Das Vorher-Profil zeigte Maskenaufbau (272 ms), Washes (127 ms) und WebP-Encoding (125 ms) als eigentliche Stil-Bottlenecks. v20 rastert nur darstellbare Winkelspalten, erzeugt Masken lazy, teilt deterministische Pigmentfelder zwischen Washes und verwendet den schnelleren WebP-Pfad. Der lokale Review deckt mit drei realen Blickrichtungen Dorf, See/Alpen und Wald ab. Verbleibende Kosten sind primär das Decoding der grossen Geometrie (rund 117/198 ms) und der Maskenaufbau; Remote-Quelldownloads sind bewusst nicht Teil dieses Offline-Benchmarks und bleiben durch den bestehenden persistenten Quell- und Geometriecache vom Stilrender getrennt.
+Das Vorher-Profil zeigte Maskenaufbau (272 ms), Washes (127 ms) und WebP-Encoding (125 ms) als eigentliche Stil-Bottlenecks. Der Renderer rastert nur darstellbare Winkelspalten, erzeugt Masken lazy, teilt deterministische Pigmentfelder zwischen Washes und verwendet den schnelleren WebP-Pfad. Verbleibende Kosten sind primär das Decoding der grossen Geometrie und der Maskenaufbau; Remote-Quelldownloads bleiben durch den persistenten Quell- und Geometriecache vom Stilrender getrennt.
 
 ## Quellendaten und verbleibende Phase-F-Arbeit
 
-Die Softwarepfade für swissALTI3D, regionales Terrain, grenzüberschreitendes Terrain, TLM-/OSM-Semantik, swissBUILDINGS3D und swissSURFACE3D sind versioniert und resumierbar. Die folgenden Punkte sind Betriebsarbeit und werden nicht durch einen Code-Deploy vorgetäuscht:
+Die Softwarepfade für swissALTI3D, regionales Terrain, grenzüberschreitendes Terrain, TLM-/OSM-Semantik, swissBUILDINGS3D und swissSURFACE3D sind content-adressiert und resumierbar. Die folgenden Punkte sind Betriebsarbeit und werden nicht durch einen Code-Deploy vorgetäuscht:
 
 - swissALTI3D national als 2/10/30/90-m-Pyramide vervollständigen;
 - Copernicus GLO-90 und swissTLMRegio für den Grenz-/Fernbereich fertig normalisieren;
@@ -72,8 +88,6 @@ Die Softwarepfade für swissALTI3D, regionales Terrain, grenzüberschreitendes T
 
 Unvollständige Quellen erzeugen weiterhin ein als `partial` markiertes geografisches Bild. Wo selbst dafür keine belastbare Basis vorhanden ist, zeigt die UI nur Papierwash und Retry – niemals eine dekorativ erfundene Landschaft.
 
-## Live-Freigabe 2026-09-13
+## Freigabe
 
-Migration `0033` und das permanente Vier-Prozess-Deployment sind produktiv. Vor dem v20-Cutover lieferten beide Referenzbänkli v19-Basisbild und Lichtkarte über die gleichoriginige Media-Route als WebP mit ETag und unveränderlichem Cache-Header. Mobile und Desktop wurden live geprüft; Tastatur sowie kombinierter horizontaler und vertikaler Mauszug verändern die Ansicht ohne Reload. Der priorisierte Worker reserviert pro Prozess nur noch ein Bänkli und prüft danach die UI-Queue erneut.
-
-Der nationale Backfill bleibt eine laufende Betriebsaufgabe. Bei der v19-Freigabe waren 172 Basisbilder und 172 Lichtkarten fertig; diese Zahl ist ausdrücklich kein Nachweis des 99-%-Ziels. v20 verwendet die vorhandene v4-Geometrie weiter und erzeugt nur neue Gemälde.
+Eine Freigabe verlangt erfolgreiche Unit-, Integrations- und Browsertests, lokale Screenshots beider Referenzbänkli und eine erfolgreiche Live-Prüfung. Der nationale Backfill bleibt messbare Betriebsarbeit; Teilzahlen gelten nicht als Nachweis des 99-%-Ziels.

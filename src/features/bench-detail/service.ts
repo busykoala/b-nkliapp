@@ -10,6 +10,7 @@ import { getLocalWeather } from "@/integrations/weather/service";
 import { nearestMappedWayDistance } from "@/lib/walking-provider";
 import type { CurrentUser } from "@/lib/security";
 import { readBenchObservationSummary } from "@/features/bench-observations/repository";
+import { readPanoramaDescriptor } from "@/features/bench-panorama/repository";
 import { directionalOpenness, scoreViewComponents } from "@/features/bench-observations/model";
 import { benchObservationNow } from "@/features/bench-observations/context";
 import { readBenchCommunity, readContributedFields, readDetailMetadata, readDetailRow, readEvidenceCoverage, readLatestVisionStats, readPhotoEvidence } from "./repository";
@@ -205,6 +206,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     verificationThreshold: Math.max(2, Math.min(10, Number(process.env.BENCH_VERIFICATION_THRESHOLD ?? 3) || 3)),
     removalConfirmationCount: Number(row.removal_confirmation_count ?? 0),
     description: null, operatorName: row.operator ? String(row.operator) : null, properties,
+    covered: Boolean(covered),
     elevationMeters,
     elevationSource,
     analysisCoverage: hasTerrainModel ? "terrain" : "near-field",
@@ -248,6 +250,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     distanceWaterMeters, distancePathMeters,
     directionDegrees,
     panoramaStatus: String(row.panorama_status ?? "unavailable") as BenchDetail["panoramaStatus"],
+    panorama: readPanoramaDescriptor(String(row.id)),
     buildingObstructionPercent: row.building_obstruction_percent === null ? null : Number(row.building_obstruction_percent),
     vegetationObstructionPercent: row.vegetation_obstruction_percent === null ? null : Number(row.vegetation_obstruction_percent),
     distanceBuildingMeters: row.distance_building_meters === null ? null : Number(row.distance_building_meters),

@@ -29,8 +29,12 @@ spec:
             - /data/benchly.sqlite
             - --terrain-dir
             - /data/terrain-cache-v1/swissalti3d
+            - --near-terrain-dir
+            - /panorama/model/terrain/10m
+            - --regional-terrain-dir
+            - /panorama/model/terrain/90m
             - --cache-dir
-            - /data/panorama-cache-v1
+            - {{ ternary "/panorama" "/data/panorama-cache-v1" .Values.panoramaStorage.enabled | quote }}
             - --processes
             - {{ .Values.workers.panoramaProcesses | quote }}
             - --limit
@@ -46,8 +50,14 @@ spec:
 {{ toYaml .Values.workers.panoramaResources | indent 12 }}
           volumeMounts:
             - {name: data, mountPath: /data}
+{{- if .Values.panoramaStorage.enabled }}
+            - {name: panorama, mountPath: /panorama}
+{{- end }}
             - {name: temporary, mountPath: /tmp}
       volumes:
         - {name: data, persistentVolumeClaim: {claimName: {{ .Release.Name }}-data}}
+{{- if .Values.panoramaStorage.enabled }}
+        - {name: panorama, persistentVolumeClaim: {claimName: {{ .Release.Name }}-panorama}}
+{{- end }}
         - name: temporary
           emptyDir: {sizeLimit: 2Gi}

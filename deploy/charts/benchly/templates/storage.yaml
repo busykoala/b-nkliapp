@@ -41,3 +41,38 @@ spec:
   resources:
     requests:
       storage: {{ .Values.storage.size }}
+{{- if .Values.panoramaStorage.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Release.Name }}-panorama
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  capacity: {storage: {{ .Values.panoramaStorage.size }}}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.panoramaStorage.className }}
+  local: {path: {{ .Values.panoramaStorage.root }}}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [{{ .Values.nodeName }}]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-panorama
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: {{ .Values.panoramaStorage.className }}
+  volumeName: {{ .Release.Name }}-panorama
+  resources:
+    requests: {storage: {{ .Values.panoramaStorage.size }}}
+{{- end }}

@@ -3,10 +3,11 @@
 
 import { Compass, LoaderCircle, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama";
 import type { PanoramaDescriptor } from "@/features/bench-panorama/types";
 import type { BenchDetail } from "@/lib/types";
+import { PanoramaWebgl } from "./panorama-webgl";
 
 function normalizeHeading(value: number) {
   return ((value % 360) + 360) % 360;
@@ -25,8 +26,8 @@ function property(bench: BenchDetail, key: string) {
   return bench.properties.find((item) => item.key === key)?.value ?? "";
 }
 
-export function panoramaTrackOffset(viewportWidth: number, viewportHeight: number, heading: number) {
-  const panoramaWidth = Math.round(viewportHeight * PANORAMA_HEIGHT_SCALE * 4);
+export function panoramaTrackOffset(viewportWidth: number, viewportHeight: number, heading: number, zoom = 1) {
+  const panoramaWidth = Math.round(viewportHeight * PANORAMA_HEIGHT_SCALE * 4 * zoom);
   return Math.round(viewportWidth / 2 - panoramaWidth * (1 + normalizeHeading(heading) / 360));
 }
 
@@ -91,13 +92,16 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const t = useTranslations("bench.landscape");
   const initialHeading = normalizeHeading(bench.directionDegrees ?? 0);
   const [heading, setHeading] = useState(initialHeading);
-  const [descriptor, setDescriptor] = useState<PanoramaDescriptor>({ status: bench.panoramaStatus });
+  const [descriptor, setDescriptor] = useState<PanoramaDescriptor>(bench.panorama ?? { status: bench.panoramaStatus });
   const [failed, setFailed] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [dragging, setDragging] = useState(false);
   const [verticalOffset, setVerticalOffset] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const viewport = useRef<HTMLDivElement>(null);
   const drag = useRef<{ pointer: number; x: number; y: number; heading: number; verticalOffset: number } | null>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
   const hintId = useId();
 
   const load = async () => {
@@ -120,6 +124,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       attempts += 1;
       if (attempts < PANORAMA_POLL_ATTEMPTS) timeout = setTimeout(poll, result.retryAfterMs ?? PANORAMA_POLL_INTERVAL_MS);
     };
+    if (bench.panorama?.status === "ready" && bench.panorama.lightMapUrl) return () => { active = false; };
     void loadBenchPanorama(bench.id).then((initial) => {
       if (!active) return;
       setDescriptor(initial);
@@ -130,7 +135,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       active = false;
       if (timeout) clearTimeout(timeout);
     };
-  }, [bench.id]);
+  }, [bench.id, bench.panorama]);
 
   useEffect(() => {
     const element = viewport.current;
@@ -145,22 +150,33 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   if (failed || !descriptor.artifactUrl) {
     return <PanoramaPlaceholder bench={bench} status={failed ? "error" : descriptor.status} onRetry={request}>{children}</PanoramaPlaceholder>;
   }
+  const artifactUrl = descriptor.artifactUrl;
 
   const move = (event: PointerEvent<HTMLDivElement>) => {
     const active = drag.current;
     if (!active || active.pointer !== event.pointerId || !size.height) return;
     event.preventDefault();
-    const panoramaWidth = Math.round(size.height * PANORAMA_HEIGHT_SCALE * 4);
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.current.size === 2) {
+      const [first, second] = [...pointers.current.values()];
+      const distance = Math.hypot(first.x - second.x, first.y - second.y);
+      if (!pinch.current) pinch.current = { distance, zoom };
+      else setZoom(Math.max(1, Math.min(2, pinch.current.zoom * distance / pinch.current.distance)));
+      return;
+    }
+    const panoramaWidth = Math.round(size.height * PANORAMA_HEIGHT_SCALE * 4 * zoom);
     setHeading(normalizeHeading(active.heading - (event.clientX - active.x) / panoramaWidth * 360));
     setVerticalOffset(clampPanoramaVertical(size.height, active.verticalOffset + event.clientY - active.y));
   };
   const finish = (event: PointerEvent<HTMLDivElement>) => {
+    pointers.current.delete(event.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
     if (drag.current?.pointer !== event.pointerId) return;
     drag.current = null;
     setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  const offset = panoramaTrackOffset(size.width, size.height, heading);
+  const offset = panoramaTrackOffset(size.width, size.height, heading, zoom);
   const degrees = Math.round(heading) % 360;
   const cloudCover = bench.weather?.cloudCover ?? 0;
   const cloudHigh = bench.weather?.cloudHigh ?? cloudCover * .58;
@@ -174,7 +190,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const rainCount = Math.round(Math.max(12, Math.min(58, 14 + precipitationRate * 11)));
   const snowCount = Math.round(Math.max(12, Math.min(46, 16 + precipitationRate * 7)));
   const snowGround = (bench.weather?.snowDepthCm ?? 0) >= 1 || (bench.weather?.snowCoverPercent ?? 0) >= .2;
-  const covered = /^(ja|oui|sì|si|gea)$/i.test(property(bench, "covered"));
+  const covered = bench.covered;
   const sunBlocked = bench.sunnyNow === false && ["gebäude", "vegetation", "gelände", "überdacht"].includes(bench.shadeCause);
   const celestial = bench.sunAltitudeDegrees > 0 && !sunBlocked && cloudCover < .8
     ? { kind: "sun" as const, azimuth: bench.sunAzimuthDegrees, altitude: bench.sunAltitudeDegrees }
@@ -183,7 +199,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const panoramaStyle = {
     "--panorama-offset": `${offset}px`,
     "--panorama-y": `${verticalOffset}px`,
-    "--panorama-copy-width": `${Math.round(size.height * PANORAMA_HEIGHT_SCALE * 4)}px`,
+    "--panorama-copy-width": `${Math.round(size.height * PANORAMA_HEIGHT_SCALE * 4 * zoom)}px`,
     "--cloud-opacity": String(Math.min(.76, cloudCover * .78)),
     "--cloud-high-opacity": String(Math.min(.68, cloudHigh * .74)),
     "--cloud-mid-opacity": String(Math.min(.78, cloudMid * .82)),
@@ -209,23 +225,38 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       event.preventDefault();
       setHeading(initialHeading);
       setVerticalOffset(0);
+      setZoom(1);
+    } else if (event.key === "+" || event.key === "=") {
+      event.preventDefault(); setZoom((current) => Math.min(2, current + .1));
+    } else if (event.key === "-") {
+      event.preventDefault(); setZoom((current) => Math.max(1, current - .1));
     }
+  };
+  const wheel = (event: WheelEvent<HTMLDivElement>) => {
+    const direction = Math.sign(event.deltaY);
+    if ((zoom <= 1 && direction > 0) || (zoom >= 2 && direction < 0)) return;
+    event.preventDefault();
+    setZoom((current) => Math.max(1, Math.min(2, current - direction * .1)));
   };
 
   return <figure className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}${snowing ? " is-snowing" : ""}${covered ? " has-shelter" : ""}${bench.sunnyNow ? " is-sunny" : " is-shaded"}`} style={panoramaStyle}>
     <div ref={viewport} className="bench-panorama-viewport" role="group" tabIndex={0}
       aria-label={`${t("panoramaDescription")} · ${t("panoramaHeading", { degrees })}`} aria-describedby={hintId}
       onKeyDown={keyDown}
+      onWheel={wheel}
+      onDoubleClick={() => setZoom((current) => current > 1 ? 1 : 1.6)}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);
         drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, heading, verticalOffset };
+        pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
         setDragging(true);
       }}
       onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}>
       <div className="bench-panorama-track" style={panoramaStyle} aria-hidden="true">
         {[0, 1, 2].map((copy) => <div className="bench-panorama-copy" key={copy}>
-          <img className="bench-panorama-art" src={descriptor.artifactUrl} alt="" draggable={false} onError={() => setFailed(true)} />
+          <PanoramaWebgl imageUrl={artifactUrl} materialUrl={descriptor.materialUrl} season={bench.season}
+            sunAltitude={bench.sunAltitudeDegrees} cloudCover={cloudCover} dayPhase={bench.dayPhase} onError={() => setFailed(true)} />
           {descriptor.lightMapUrl && <img className="bench-panorama-lightmap" src={descriptor.lightMapUrl} alt="" draggable={false} />}
           {cloudCover > .08 && <><span className="bench-panorama-clouds is-high" /><span className="bench-panorama-clouds is-mid" /><span className="bench-panorama-clouds is-low" /></>}
           {snowGround && <span className="bench-panorama-snow-ground" />}
@@ -243,7 +274,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     </div>
     {covered && <div className="bench-panorama-shelter" aria-hidden="true"><i /><i /></div>}
     {covered && <div className="bench-panorama-shelter-shade" aria-hidden="true" />}
-    <div className="bench-panorama-hud"><span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span><small id={hintId}>{t("panoramaHint")}</small></div>
+    <div className="bench-panorama-hud"><span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span><span className="bench-panorama-zoom">{zoom.toFixed(1)}×</span><small id={hintId}>{t("panoramaHint")}</small></div>
     {children}
   </figure>;
 }

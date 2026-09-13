@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import subprocess
 from argparse import Namespace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,10 +19,17 @@ from astral import Observer
 from astral.sun import azimuth as sun_azimuth, elevation as sun_elevation
 
 from benchly.db import connect_database
+from benchly.panorama.binary import decode_geometry
 from benchly.panorama.cache import PanoramaCache, lightmap_cache_key, render_cache_key
 from benchly.panorama.models import LightMapIdentity, PanoramaGeometry, RenderIdentity
-from benchly.panorama.repository import install_fixture_geometry, mark_lightmap_ready, mark_render_ready, require_schema
-from benchly.panorama.watercolor import render_lightmap_webp, render_panorama_webp
+from benchly.panorama.repository import (
+    activate_local_review_generation,
+    install_fixture_geometry,
+    mark_lightmap_ready,
+    mark_render_ready,
+    require_schema,
+)
+from benchly.panorama.watercolor import render_lightmap_webp, render_material_webp, render_panorama_webp
 
 
 REVIEW_SNAPSHOTS = (
@@ -38,6 +46,8 @@ REVIEW_SNAPSHOTS = (
 
 
 def _load_geometry(path: Path) -> PanoramaGeometry:
+    if path.suffix == ".bpc":
+        return decode_geometry(path.read_bytes())
     if path.suffix == ".npz":
         with np.load(path, allow_pickle=False) as archive:
             return PanoramaGeometry.model_validate_json(archive["manifest"].tobytes())
@@ -57,11 +67,20 @@ def _parse_fixture(value: str) -> tuple[str, Path]:
 
 def render_fixture_job(args: Namespace) -> None:
     database = connect_database(Path(args.database).resolve())
-    cache = PanoramaCache(Path(args.cache_dir).resolve())
+    git_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[3],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    generation_id = f"local-{git_commit[:12]}"
+    activate_local_review_generation(database, generation_id, git_commit)
+    cache = PanoramaCache(Path(args.cache_dir).resolve(), generation_id)
     output = Path(args.output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
     require_schema(database)
-    manifest: dict[str, object] = {"format": "benchly-panorama-review-v1", "snapshots": REVIEW_SNAPSHOTS, "benches": []}
+    manifest: dict[str, object] = {
+        "format": "benchly-panorama-review", "schema": 1, "gitCommit": git_commit,
+        "snapshots": REVIEW_SNAPSHOTS, "benches": [],
+    }
     now = datetime.fromisoformat(args.at).astimezone(UTC) if args.at else datetime.now(UTC)
     try:
         for raw in args.fixture:
@@ -72,7 +91,7 @@ def render_fixture_job(args: Namespace) -> None:
                 raise ValueError(f"active bench not found: {bench_id}")
             if abs(float(bench["latitude"]) - geometry.latitude) > 1e-7 or abs(float(bench["longitude"]) - geometry.longitude) > 1e-7:
                 raise ValueError(f"fixture coordinates do not match {bench_id}")
-            install_fixture_geometry(database, bench, geometry, str(source), source.stat().st_size)
+            install_fixture_geometry(database, bench, geometry, str(source), source.stat().st_size, generation_id)
             identity = RenderIdentity(
                 geometry_key=geometry.identity_key, center_azimuth_degrees=0, horizontal_fov_degrees=360,
                 width=args.width, height=args.height, season_bucket=args.season, source_completeness=geometry.complete,
@@ -80,7 +99,12 @@ def render_fixture_job(args: Namespace) -> None:
             render_key = render_cache_key(identity)
             image = render_panorama_webp(geometry, args.width, args.height, args.season)
             render_path = cache.put_render(render_key, image)
-            mark_render_ready(database, int(bench["row_id"]), identity, str(render_path), len(image))
+            material = render_material_webp(geometry)
+            material_path = cache.put_material(render_key, material)
+            mark_render_ready(
+                database, int(bench["row_id"]), identity, str(render_path), len(image),
+                material_path=str(material_path), material_bytes=len(material), generation_id=generation_id,
+            )
 
             observer = Observer(latitude=geometry.latitude, longitude=geometry.longitude)
             light_identity = LightMapIdentity(
@@ -100,7 +124,7 @@ def render_fixture_job(args: Namespace) -> None:
             (review_dir / f"base-{args.season}.webp").write_bytes(image)
             manifest["benches"].append({
                 "id": bench_id, "latitude": geometry.latitude, "longitude": geometry.longitude,
-                "source": str(source), "geometryVersion": geometry.version, "geometryComplete": geometry.complete,
+                "source": str(source), "geometryImplementation": geometry.version, "geometryComplete": geometry.complete,
                 "base": str(review_dir / f"base-{args.season}.webp"), "renderKey": render_key,
             })
         database.commit()

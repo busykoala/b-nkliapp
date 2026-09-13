@@ -16,6 +16,8 @@ from benchly.panorama.models import (
     BenchPanoramaLightMapState,
     BenchPanoramaRenderState,
     BenchPanoramaRequestState,
+    PanoramaGenerationArtifactState,
+    PanoramaGenerationState,
 )
 from benchly.runtime import now_iso
 
@@ -28,6 +30,137 @@ def require_schema(database) -> None:
     missing = required - present
     if missing:
         raise RuntimeError(f"Panorama migration 0033 is required ({', '.join(sorted(missing))})")
+
+
+def activate_generation(database: Database, manifest: dict[str, object], manifest_sha256: str, prefix: str) -> None:
+    """Publish a fully verified generation inside the caller's transaction."""
+    generation_id = str(manifest["generation_id"])
+    now = now_iso()
+    write(database, update(PanoramaGenerationState).where(
+        PanoramaGenerationState.state == "active",
+    ).values(state="superseded"))
+    generation = PanoramaGenerationState(
+        id=generation_id,
+        git_commit=str(manifest["git_commit"]),
+        state="active",
+        source_versions_json="{}",
+        manifest_sha256=manifest_sha256,
+        artifact_count=int(manifest["artifact_count"]),
+        artifact_bytes=int(manifest["artifact_bytes"]),
+        created_at=str(manifest["created_at"]),
+        verified_at=now,
+        activated_at=now,
+    )
+    statement = insert(PanoramaGenerationState).values(generation.model_dump())
+    excluded = statement.excluded
+    write(database, statement.on_conflict_do_update(
+        index_elements=[PanoramaGenerationState.id],
+        set_={
+            "git_commit": excluded.git_commit,
+            "state": "active",
+            "manifest_sha256": excluded.manifest_sha256,
+            "artifact_count": excluded.artifact_count,
+            "artifact_bytes": excluded.artifact_bytes,
+            "verified_at": excluded.verified_at,
+            "activated_at": excluded.activated_at,
+            "error": None,
+        },
+    ))
+    write(database, delete(PanoramaGenerationArtifactState).where(
+        PanoramaGenerationArtifactState.generation_id == generation_id,
+    ))
+    grouped: dict[str, dict[str, dict[str, object]]] = {}
+    for raw_record in manifest["artifacts"]:  # type: ignore[union-attr]
+        record = dict(raw_record)
+        artifact = PanoramaGenerationArtifactState(
+            generation_id=generation_id,
+            artifact_key=f"{record['geometry_key']}:{record['kind']}",
+            kind=str(record["kind"]),
+            relative_path=str(record["relative_path"]),
+            sha256=str(record["sha256"]),
+            artifact_bytes=int(record["bytes"]),
+            bench_row_id=int(record["bench_row_id"]),
+            bench_id=str(record["bench_id"]),
+            bench_latitude=float(record["bench_latitude"]),
+            bench_longitude=float(record["bench_longitude"]),
+            created_at=now,
+        )
+        write(database, insert(PanoramaGenerationArtifactState).values(artifact.model_dump()))
+        grouped.setdefault(str(record["geometry_key"]), {})[str(record["kind"])] = record
+
+    write(database, delete(BenchPanoramaLightMapState))
+    write(database, delete(BenchPanoramaRenderState))
+    write(database, delete(BenchPanoramaGeometryState))
+    geometry_implementation = str(manifest["geometry_implementation"])
+    render_implementation = str(manifest["render_implementation"])
+    for geometry_key, kinds in grouped.items():
+        capsule, render, material = kinds["capsule"], kinds["render"], kinds["material"]
+        bench_row_id = int(capsule["bench_row_id"])
+        geometry = BenchPanoramaGeometryState(
+            bench_row_id=bench_row_id,
+            bench_id=str(capsule["bench_id"]),
+            bench_latitude=float(capsule["bench_latitude"]),
+            bench_longitude=float(capsule["bench_longitude"]),
+            geometry_key=geometry_key,
+            artifact_path=f"{prefix}/{capsule['relative_path']}",
+            status="ready",
+            complete=True,
+            source_versions_json="{}",
+            algorithm_version=geometry_implementation,
+            warnings_json="[]",
+            artifact_bytes=int(capsule["bytes"]),
+            generated_at=now,
+            updated_at=now,
+            generation_id=generation_id,
+            capsule_format="benchly-view-capsule",
+            artifact_sha256=str(capsule["sha256"]),
+        )
+        write(database, insert(BenchPanoramaGeometryState).values(geometry.model_dump()))
+        render_state = BenchPanoramaRenderState(
+            bench_row_id=bench_row_id,
+            geometry_key=geometry_key,
+            render_key=str(render["sha256"]),
+            artifact_path=f"{prefix}/{render['relative_path']}",
+            status="ready",
+            style_version=render_implementation,
+            center_azimuth_degrees=0,
+            horizontal_fov_degrees=360,
+            width=4096,
+            height=1024,
+            weather_bucket="dynamic-client",
+            solar_lunar_bucket="dynamic-client",
+            bench_variant="overlay",
+            artifact_bytes=int(render["bytes"]),
+            generated_at=now,
+            updated_at=now,
+            season_bucket="dynamic",
+            artifact_format="webp",
+            source_completeness="complete",
+            generation_id=generation_id,
+            artifact_sha256=str(render["sha256"]),
+            material_key=str(material["sha256"]),
+            material_path=f"{prefix}/{material['relative_path']}",
+            material_sha256=str(material["sha256"]),
+            material_bytes=int(material["bytes"]),
+        )
+        write(database, insert(BenchPanoramaRenderState).values(render_state.model_dump(exclude={"id"})))
+
+
+def activate_local_review_generation(database: Database, generation_id: str, git_commit: str) -> None:
+    """Select a content-isolated generation for localhost visual iteration."""
+    now = now_iso()
+    write(database, update(PanoramaGenerationState).where(
+        PanoramaGenerationState.state == "active",
+    ).values(state="superseded"))
+    generation = PanoramaGenerationState(
+        id=generation_id, git_commit=git_commit, state="active", source_versions_json="{}",
+        created_at=now, activated_at=now,
+    )
+    statement = insert(PanoramaGenerationState).values(generation.model_dump())
+    write(database, statement.on_conflict_do_update(
+        index_elements=[PanoramaGenerationState.id],
+        set_={"git_commit": statement.excluded.git_commit, "state": "active", "activated_at": statement.excluded.activated_at},
+    ))
 
 
 def pending_benches(
@@ -71,9 +204,9 @@ def pending_benches(
             AND render.center_azimuth_degrees=0 AND render.horizontal_fov_degrees=360
             AND render.width=? AND render.height=?
             AND render.artifact_format='webp' AND render.season_bucket=?
-            AND render.weather_bucket='dynamic-client-v1'
-            AND render.solar_lunar_bucket='dynamic-client-v1'
-            AND render.bench_variant='overlay-v1' AND render.covered IS NULL
+            AND render.weather_bucket='dynamic-client'
+            AND render.solar_lunar_bucket='dynamic-client'
+            AND render.bench_variant='overlay' AND render.covered IS NULL
         )
       )
       ORDER BY CASE WHEN request.bench_row_id IS NOT NULL THEN 0 ELSE 1 END,
@@ -87,7 +220,7 @@ def pending_benches(
     )).fetchall()
 
 
-def mark_generating(database: Database, row, geometry_key: str, source_versions: dict[str, str]) -> None:
+def mark_generating(database: Database, row, geometry_key: str, source_versions: dict[str, str], generation_id: str | None = None) -> None:
     now = now_iso()
     record = BenchPanoramaGeometryState(
         bench_row_id=int(row["row_id"]), bench_id=str(row["id"]),
@@ -96,6 +229,7 @@ def mark_generating(database: Database, row, geometry_key: str, source_versions:
         source_versions_json=json.dumps(source_versions, separators=(",", ":")),
         algorithm_version=source_versions["algorithm"], warnings_json="[]",
         started_at=now, updated_at=now,
+        generation_id=generation_id, capsule_format="benchly-view-capsule",
     )
     statement = insert(BenchPanoramaGeometryState).values(record.model_dump())
     excluded = statement.excluded
@@ -132,7 +266,8 @@ def mark_generating(database: Database, row, geometry_key: str, source_versions:
     database.commit()
 
 
-def install_fixture_geometry(database: Database, row, geometry, artifact_path: str, artifact_bytes: int) -> None:
+def install_fixture_geometry(database: Database, row, geometry, artifact_path: str, artifact_bytes: int,
+                             generation_id: str | None = None) -> None:
     """Install immutable cached geometry for the local, offline review harness."""
     now = now_iso()
     record = BenchPanoramaGeometryState(
@@ -146,6 +281,7 @@ def install_fixture_geometry(database: Database, row, geometry, artifact_path: s
         algorithm_version=geometry.version,
         warnings_json=json.dumps(geometry.warnings, separators=(",", ":")),
         artifact_bytes=artifact_bytes, generated_at=now, updated_at=now,
+        generation_id=generation_id, capsule_format="benchly-view-capsule",
     )
     statement = insert(BenchPanoramaGeometryState).values(record.model_dump())
     excluded = statement.excluded
@@ -225,7 +361,9 @@ def _schedule_retry(database: Database, bench_row_id: int, error: str, delay: ti
     ))
 
 
-def mark_render_ready(database: Database, bench_row_id: int, identity, artifact_path: str, artifact_bytes: int) -> None:
+def mark_render_ready(database: Database, bench_row_id: int, identity, artifact_path: str, artifact_bytes: int,
+                      material_path: str | None = None, material_bytes: int | None = None,
+                      generation_id: str | None = None) -> None:
     now = now_iso()
     record = BenchPanoramaRenderState(
         bench_row_id=bench_row_id, geometry_key=identity.geometry_key,
@@ -241,7 +379,14 @@ def mark_render_ready(database: Database, bench_row_id: int, identity, artifact_
         bench_variant=identity.bench_variant, covered=identity.covered,
         artifact_bytes=artifact_bytes, generated_at=now, updated_at=now,
     )
-    statement = insert(BenchPanoramaRenderState).values(record.model_dump(exclude={"id"}))
+    values = record.model_dump(exclude={"id"})
+    values.update({
+        "generation_id": generation_id,
+        "material_key": render_cache_key(identity) if material_path else None,
+        "material_path": material_path,
+        "material_bytes": material_bytes,
+    })
+    statement = insert(BenchPanoramaRenderState).values(values)
     excluded = statement.excluded
     write(database, statement.on_conflict_do_update(
         index_elements=[BenchPanoramaRenderState.render_key],
@@ -252,6 +397,10 @@ def mark_render_ready(database: Database, bench_row_id: int, identity, artifact_
             "artifact_format": excluded.artifact_format,
             "source_completeness": excluded.source_completeness,
             "artifact_bytes": excluded.artifact_bytes,
+            "generation_id": excluded.generation_id,
+            "material_key": excluded.material_key,
+            "material_path": excluded.material_path,
+            "material_bytes": excluded.material_bytes,
             "generated_at": excluded.generated_at,
             "updated_at": excluded.updated_at,
             "error": None,

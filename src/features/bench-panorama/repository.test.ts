@@ -27,6 +27,8 @@ describe("panorama requests", () => {
       .toBe("2026-01-01T00:00:00.000Z");
     const bench = sqlite.prepare("SELECT row_id,id,latitude,longitude FROM benches WHERE id='osm-node-101'")
       .get() as Record<string, string | number>;
+    sqlite.prepare(`INSERT INTO panorama_generations(id,git_commit,state,source_versions_json,created_at)
+      VALUES('test-generation','0123456789abcdef','active','{}','now')`).run();
     sqlite.prepare(`INSERT INTO bench_panorama_geometry(
       bench_row_id,bench_id,bench_latitude,bench_longitude,geometry_key,status,complete,
       source_versions_json,algorithm_version,warnings_json,updated_at
@@ -36,8 +38,8 @@ describe("panorama requests", () => {
     sqlite.prepare(`INSERT INTO bench_panorama_renders(
       bench_row_id,geometry_key,render_key,artifact_path,status,style_version,center_azimuth_degrees,
       horizontal_fov_degrees,width,height,weather_bucket,solar_lunar_bucket,bench_variant,updated_at,
-      season_bucket,artifact_format,source_completeness
-    ) VALUES(?,?,?,?,'ready','panorama-watercolor-20',0,360,4096,1024,'dynamic-client-v1','dynamic-client-v1','overlay-v1','now','autumn','webp','complete')`).run(
+      season_bucket,artifact_format,source_completeness,generation_id
+    ) VALUES(?,?,?,?,'ready','implementation-hash',0,360,4096,1024,'dynamic-client','dynamic-client','overlay','now','dynamic','webp','complete','test-generation')`).run(
       bench.row_id, "geometry", "render", "/cache/render.webp",
     );
     expect(readPanoramaArtifact("osm-node-101")).toMatchObject({ renderKey: "render" });

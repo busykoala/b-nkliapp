@@ -61,10 +61,10 @@ describe("SQLite migrations and R*Tree", () => {
     const requests = database.prepare("PRAGMA table_info(bench_panorama_requests)").all() as Array<{ name: string }>;
     const lightmaps = database.prepare("PRAGMA table_info(bench_panorama_lightmaps)").all() as Array<{ name: string }>;
     expect(geometry.map(({ name }) => name)).toEqual(expect.arrayContaining([
-      "geometry_key", "artifact_path", "source_versions_json", "algorithm_version", "complete",
+      "geometry_key", "artifact_path", "source_versions_json", "algorithm_version", "complete", "generation_id", "capsule_format",
     ]));
     expect(renders.map(({ name }) => name)).toEqual(expect.arrayContaining([
-      "render_key", "geometry_key", "center_azimuth_degrees", "weather_bucket", "style_version", "season_bucket", "artifact_format",
+      "render_key", "geometry_key", "center_azimuth_degrees", "weather_bucket", "style_version", "season_bucket", "artifact_format", "material_path",
     ]));
     expect([...geometry, ...renders].map(({ name }) => name)).not.toContain("artifact_blob");
     expect(requests.map(({ name }) => name)).toEqual(expect.arrayContaining(["bench_row_id", "requested_at", "attempts", "status", "lease_until"]));

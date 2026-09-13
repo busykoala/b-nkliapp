@@ -4,8 +4,10 @@ export type PanoramaDescriptor = {
   status: PanoramaStatus;
   renderKey?: string;
   artifactUrl?: string;
+  materialUrl?: string;
   lightMapUrl?: string;
   generatedAt?: string | null;
   completeness?: "complete" | "partial";
   retryAfterMs?: number;
+  generationId?: string;
 };

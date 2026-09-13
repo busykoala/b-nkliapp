@@ -2,5 +2,6 @@ apiVersion: v2
 name: benchly
 description: Mobile Swiss bench map with a single SQLite persistence volume
 type: application
+# Helm requires a SemVer chart metadata field. This is a packaging schema
+# value, not the deployed application build; deployments use immutable Git-SHA images.
 version: 0.1.0
-appVersion: "0.1.0"

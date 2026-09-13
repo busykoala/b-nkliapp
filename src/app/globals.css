@@ -737,12 +737,16 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-hud > span { display: inline-flex; min-height: 2rem; flex: none; align-items: center; gap: .3rem; border: 1px solid rgb(43 67 57 / 15%); border-radius: 999px; background: rgb(251 245 224 / 82%); padding: .3rem .55rem; color: #315649; box-shadow: 0 4px 14px rgb(27 48 41 / 10%); font-size: .72rem; font-weight: 750; font-variant-numeric: tabular-nums; backdrop-filter: blur(8px); }
 .bench-panorama-hud small { overflow: hidden; border-radius: 999px; background: rgb(251 245 224 / 68%); padding: .24rem .45rem; color: rgb(41 66 57 / 82%); box-shadow: 0 3px 12px rgb(27 48 41 / 8%); font-size: .66rem; font-weight: 680; line-height: 1.2; text-overflow: ellipsis; text-shadow: 0 1px rgb(255 253 245 / 92%); white-space: nowrap; backdrop-filter: blur(6px); }
 .bench-panorama > .landscape-rating-action { z-index: 4; }
-/* Panorama v20: geographic paint below, current atmosphere and light above. */
+/* Panorama: neutral geographic paint, factual material shader and live atmosphere. */
 .bench-panorama { background: #e7dfca; }
 .bench-panorama::after { z-index: 6; opacity: .075; }
 .bench-panorama-track { filter: none !important; }
 .bench-panorama-copy { isolation: isolate; overflow: hidden; }
 .bench-panorama-art { position: absolute; inset: 0; z-index: 0; object-fit: fill; }
+.bench-panorama-art.is-painted { opacity: 0; }
+.bench-panorama-webgl { width: calc(100% + 2px); max-width: none; height: 100%; margin-left: -1px; opacity: 0; transition: opacity .28s ease; }
+.bench-panorama-webgl.is-ready { opacity: 1; }
+.bench-panorama-hud .bench-panorama-zoom { min-width: 2.8rem; justify-content: center; }
 .bench-panorama-lightmap { position: absolute; inset: 0; z-index: 1; width: calc(100% + 2px); height: 100%; margin-left: -1px; opacity: var(--lightmap-opacity); mix-blend-mode: soft-light; filter: contrast(1.3) sepia(.14); transition: opacity .6s ease; }
 .bench-panorama-clouds { position: absolute; z-index: 2; inset-inline: -2%; pointer-events: none; opacity: var(--cloud-opacity); background-repeat: no-repeat; mix-blend-mode: screen; filter: blur(6px); }
 .bench-panorama-clouds.is-high { top: 1%; height: 18%; opacity: var(--cloud-high-opacity); background-image: radial-gradient(ellipse at 12% 55%, rgb(250 242 222 / 42%) 0 11%, transparent 30%), radial-gradient(ellipse at 45% 38%, rgb(245 238 218 / 36%) 0 14%, transparent 35%), radial-gradient(ellipse at 83% 52%, rgb(246 240 224 / 38%) 0 12%, transparent 32%); transform: scaleX(1.12); }

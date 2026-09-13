@@ -1,4 +1,4 @@
-"""Versioned contracts between geographic analysis and watercolor painting.
+"""Contracts between geographic analysis and watercolor painting.
 
 The geometry contract is deliberately circular and contains no viewing
 direction, field of view, image dimensions, weather, or palette. A direction
@@ -15,10 +15,13 @@ from sqlalchemy import Column, Text
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlmodel import Field as SqlField, SQLModel
 
+from benchly.panorama.identity import implementation_key
 
-GEOMETRY_VERSION = "panorama-geometry-4"
-RENDER_VERSION = "panorama-watercolor-20"
-LIGHTMAP_VERSION = "panorama-lightmap-1"
+
+GEOMETRY_IMPLEMENTATION = implementation_key("datasets.py", "models.py", "visibility.py")
+RENDER_IMPLEMENTATION = implementation_key("models.py", "watercolor.py")
+LIGHTMAP_IMPLEMENTATION = implementation_key("models.py", "watercolor.py")
+LOD_SCHEDULE_IMPLEMENTATION = implementation_key("datasets.py")
 EARTH_RADIUS_METERS = 6_371_008.8
 TERRAIN_DEPTH_LIMITS_METERS = (120, 500, 1_500, 4_000, 10_000, 25_000, 60_000)
 
@@ -201,12 +204,12 @@ class GeometryIdentity(Contract):
     terrain_version: str
     regional_terrain_version: str | None = None
     border_terrain_version: str | None = None
-    lod_schedule_version: str = "panorama-lod-1"
+    lod_schedule_version: str = LOD_SCHEDULE_IMPLEMENTATION
     high_resolution_distance_meters: float = Field(default=20_000, gt=0)
     semantic_version: str
     building_version: str
     surface_version: str | None = None
-    algorithm_version: str = GEOMETRY_VERSION
+    algorithm_version: str = GEOMETRY_IMPLEMENTATION
     maximum_distance_meters: float = Field(default=150_000, gt=0)
     angular_resolution_degrees: float = Field(default=.1, gt=0)
     semantic_radius_meters: float = Field(default=20_000, gt=0)
@@ -219,14 +222,14 @@ class RenderIdentity(Contract):
     horizontal_fov_degrees: float = Field(default=360, ge=30, le=360)
     width: int = Field(default=1600, ge=320, le=8192)
     height: int = Field(default=720, ge=180, le=4096)
-    style_version: str = RENDER_VERSION
-    season_bucket: Literal["spring", "summer", "autumn", "winter"] = "summer"
+    style_version: str = RENDER_IMPLEMENTATION
+    season_bucket: Literal["spring", "summer", "autumn", "winter", "dynamic"] = "dynamic"
     # Transient atmosphere, celestial bodies, the bench and shelter are
     # composed by the browser. These sentinels keep migration-0031 rows
     # compatible without multiplying the long-lived geographic render cache.
-    weather_bucket: str = "dynamic-client-v1"
-    solar_lunar_bucket: str = "dynamic-client-v1"
-    bench_variant: str = "overlay-v1"
+    weather_bucket: str = "dynamic-client"
+    solar_lunar_bucket: str = "dynamic-client"
+    bench_variant: str = "overlay"
     covered: bool | None = None
     source_completeness: bool = True
 
@@ -238,11 +241,11 @@ class LightMapIdentity(Contract):
     sun_altitude_degrees: float = Field(ge=-90, le=90)
     width: int = Field(default=2048, ge=360, le=4096)
     height: int = Field(default=512, ge=90, le=2048)
-    version: str = LIGHTMAP_VERSION
+    version: str = LIGHTMAP_IMPLEMENTATION
 
 
 class PanoramaGeometry(Contract):
-    version: str = GEOMETRY_VERSION
+    version: str = GEOMETRY_IMPLEMENTATION
     identity_key: str
     latitude: float
     longitude: float
@@ -260,6 +263,40 @@ class PanoramaGeometry(Contract):
         if len(self.columns) != self.config.column_count:
             raise ValueError("panorama must contain one column for the full configured circle")
         return self
+
+
+class PanoramaGenerationState(SQLModel, table=True):
+    model_config = ConfigDict(extra="forbid")
+    __tablename__ = "panorama_generations"
+
+    id: str = SqlField(primary_key=True)
+    git_commit: str
+    state: str
+    source_versions_json: str
+    manifest_sha256: str | None = None
+    artifact_count: int = 0
+    artifact_bytes: int = 0
+    created_at: str
+    verified_at: str | None = None
+    activated_at: str | None = None
+    error: str | None = SqlField(default=None, sa_column=Column(Text))
+
+
+class PanoramaGenerationArtifactState(SQLModel, table=True):
+    model_config = ConfigDict(extra="forbid")
+    __tablename__ = "panorama_generation_artifacts"
+
+    generation_id: str = SqlField(primary_key=True, foreign_key="panorama_generations.id")
+    artifact_key: str = SqlField(primary_key=True)
+    kind: str = SqlField(primary_key=True)
+    relative_path: str
+    sha256: str
+    artifact_bytes: int
+    bench_row_id: int | None = SqlField(default=None, foreign_key="benches.row_id")
+    bench_id: str | None = None
+    bench_latitude: float | None = None
+    bench_longitude: float | None = None
+    created_at: str
 
 
 class BenchPanoramaGeometryState(SQLModel, table=True):
@@ -284,6 +321,9 @@ class BenchPanoramaGeometryState(SQLModel, table=True):
     generated_at: str | None = None
     updated_at: str
     error: str | None = SqlField(default=None, sa_column=Column(Text))
+    generation_id: str | None = None
+    capsule_format: str = "benchly-view-capsule"
+    artifact_sha256: str | None = None
 
 
 class BenchPanoramaRenderState(SQLModel, table=True):
@@ -313,6 +353,12 @@ class BenchPanoramaRenderState(SQLModel, table=True):
     generated_at: str | None = None
     updated_at: str
     error: str | None = SqlField(default=None, sa_column=Column(Text))
+    generation_id: str | None = None
+    artifact_sha256: str | None = None
+    material_key: str | None = None
+    material_path: str | None = None
+    material_sha256: str | None = None
+    material_bytes: int | None = None
 
 
 class BenchPanoramaRequestState(SQLModel, table=True):

@@ -1,7 +1,21 @@
 {
-  "generatedFrom": "config/data-catalog.json@2026-09-13",
+  "generatedFrom": "config/data-catalog.json",
   "timeZone": "Europe/Zurich",
   "jobs": [
+    {
+      "name": "panorama-reconcile",
+      "schedule": "20 0 * * *",
+      "deadline": 900,
+      "args": [
+        "panorama-reconcile",
+        "--database",
+        "/data/benchly.sqlite",
+        "--max-cells",
+        "500"
+      ],
+      "profile": "landscape",
+      "purpose": "production"
+    },
     {
       "name": "landscape",
       "schedule": "15 * * * *",

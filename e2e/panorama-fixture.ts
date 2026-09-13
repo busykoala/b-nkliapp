@@ -17,28 +17,40 @@ export function installPanoramaFixture(benchId: string, covered?: boolean) {
   const renderKey = key("render", benchId);
   const lightKey = key("light", benchId);
   const geometryKey = key("geometry", benchId);
-  const renderDirectory = join(cacheRoot, "renders-v20", renderKey.slice(0, 2));
-  const lightDirectory = join(cacheRoot, "lightmaps-v1", lightKey.slice(0, 2));
+  const materialKey = key("material", benchId);
+  const generationId = "e2e-generation";
+  const renderDirectory = join(cacheRoot, "active", generationId, "renders", renderKey.slice(0, 2));
+  const lightDirectory = join(cacheRoot, "active", generationId, "lightmaps", lightKey.slice(0, 2));
+  const materialDirectory = join(cacheRoot, "active", generationId, "materials", materialKey.slice(0, 2));
   const artifact = join(renderDirectory, `${renderKey}.webp`);
   const lightArtifact = join(lightDirectory, `${lightKey}.webp`);
+  const materialArtifact = join(materialDirectory, `${materialKey}.webp`);
   mkdirSync(renderDirectory, { recursive: true });
   mkdirSync(lightDirectory, { recursive: true });
+  mkdirSync(materialDirectory, { recursive: true });
   copyFileSync(join(process.cwd(), "public/map-art/textures/mountain.webp"), artifact);
   copyFileSync(join(process.cwd(), "public/map-art/textures/paper.webp"), lightArtifact);
+  copyFileSync(join(process.cwd(), "public/map-art/textures/paper.webp"), materialArtifact);
+  database.prepare(`INSERT OR IGNORE INTO panorama_generations
+    (id,git_commit,state,source_versions_json,created_at,activated_at)
+    VALUES(?,'0123456789abcdef','active','{}',?,?)`).run(generationId, now, now);
   if (covered !== undefined) database.prepare("UPDATE benches SET covered=? WHERE row_id=?").run(Number(covered), bench.row_id);
   database.prepare(`INSERT OR REPLACE INTO bench_panorama_geometry(
     bench_row_id,bench_id,bench_latitude,bench_longitude,geometry_key,artifact_path,status,complete,
-    source_versions_json,algorithm_version,warnings_json,artifact_bytes,started_at,generated_at,updated_at,error
-  ) VALUES(?,?,?,?,?,?,'ready',1,'{}','panorama-geometry-4','[]',1,?,?,?,NULL)`).run(
+    source_versions_json,algorithm_version,warnings_json,artifact_bytes,started_at,generated_at,updated_at,error,
+    generation_id,capsule_format
+  ) VALUES(?,?,?,?,?,?,'ready',1,'{}','geometry-implementation-hash','[]',1,?,?,?,NULL,?,'benchly-view-capsule')`).run(
     bench.row_id, bench.id, bench.latitude, bench.longitude, geometryKey,
-    join(cacheRoot, "geometry-v4", `${geometryKey}.npz`), now, now, now,
+    join(cacheRoot, "active", generationId, "capsules", `${geometryKey}.bpc`), now, now, now, generationId,
   );
   database.prepare(`INSERT OR REPLACE INTO bench_panorama_renders(
     bench_row_id,geometry_key,render_key,artifact_path,status,style_version,center_azimuth_degrees,
     horizontal_fov_degrees,width,height,weather_bucket,solar_lunar_bucket,bench_variant,covered,
-    artifact_bytes,generated_at,updated_at,error,season_bucket,artifact_format,source_completeness
-  ) VALUES(?,?,?,?,'ready','panorama-watercolor-20',0,360,4096,1024,'dynamic-client-v1','dynamic-client-v1','overlay-v1',NULL,?,?,?,NULL,'autumn','webp','complete')`).run(
+    artifact_bytes,generated_at,updated_at,error,season_bucket,artifact_format,source_completeness,
+    generation_id,material_key,material_path,material_bytes
+  ) VALUES(?,?,?,?,'ready','render-implementation-hash',0,360,4096,1024,'dynamic-client','dynamic-client','overlay',NULL,?,?,?,NULL,'dynamic','webp','complete',?,?,?,?)`).run(
     bench.row_id, geometryKey, renderKey, artifact, statSync(artifact).size, now, now,
+    generationId, materialKey, materialArtifact, statSync(materialArtifact).size,
   );
   database.prepare(`INSERT OR REPLACE INTO bench_panorama_lightmaps(
     bench_row_id,geometry_key,light_key,solar_bucket,sun_azimuth_degrees,sun_altitude_degrees,
