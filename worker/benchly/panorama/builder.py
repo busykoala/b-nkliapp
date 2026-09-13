@@ -30,7 +30,8 @@ from benchly.db import connect_database
 from benchly.panorama.binary import decode_geometry, encode_geometry
 from benchly.panorama.datasets import (
     LOD_SCHEDULE_KEY,
-    load_buildings,
+    buildings_for_viewpoint,
+    load_building_index,
     load_semantic_index,
     raster_source_version,
     sample_terrain_rays,
@@ -202,6 +203,13 @@ class Extracted:
     artifact_bytes: int
 
 
+@dataclass(frozen=True)
+class ExtractionOutcome:
+    row: dict[str, object]
+    result: Extracted | None = None
+    error: str | None = None
+
+
 _EXTRACT_DATABASE: sqlite3.Connection | None = None
 _EXTRACT_TERRAIN: RasterCollection | None = None
 _EXTRACT_NEAR_TERRAIN: RasterCollection | None = None
@@ -211,6 +219,7 @@ _EXTRACT_ROOT: Path | None = None
 _EXTRACT_CONFIG: PanoramaConfig | None = None
 _EXTRACT_SOURCE_VERSIONS: dict[str, str] | None = None
 _EXTRACT_SEMANTIC_CELL: tuple[tuple[int, int], object] | None = None
+_EXTRACT_BUILDING_CELL: tuple[tuple[int, int], object] | None = None
 
 
 def _extraction_source_versions(database: sqlite3.Connection, terrain: RasterCollection,
@@ -240,7 +249,8 @@ def _extraction_source_versions(database: sqlite3.Connection, terrain: RasterCol
 def _extract_initializer(database_path: str, terrain_dir: str, pyramid_dir: str, border_terrain_dir: str, root: str,
                          config_payload: dict[str, object], source_versions: dict[str, str], io_threads: int) -> None:
     global _EXTRACT_DATABASE, _EXTRACT_TERRAIN, _EXTRACT_NEAR_TERRAIN, _EXTRACT_FAR_TERRAIN
-    global _EXTRACT_BORDER_TERRAIN, _EXTRACT_ROOT, _EXTRACT_CONFIG, _EXTRACT_SOURCE_VERSIONS, _EXTRACT_SEMANTIC_CELL
+    global _EXTRACT_BORDER_TERRAIN, _EXTRACT_ROOT, _EXTRACT_CONFIG, _EXTRACT_SOURCE_VERSIONS
+    global _EXTRACT_SEMANTIC_CELL, _EXTRACT_BUILDING_CELL
     os.environ["GDAL_NUM_THREADS"] = str(max(1, io_threads))
     os.environ["OMP_NUM_THREADS"] = "1"
     _EXTRACT_DATABASE = sqlite3.connect(f"file:{database_path}?mode=ro", uri=True, timeout=60)
@@ -253,10 +263,11 @@ def _extract_initializer(database_path: str, terrain_dir: str, pyramid_dir: str,
     _EXTRACT_CONFIG = PanoramaConfig.model_validate(config_payload)
     _EXTRACT_SOURCE_VERSIONS = source_versions
     _EXTRACT_SEMANTIC_CELL = None
+    _EXTRACT_BUILDING_CELL = None
 
 
 def _extract_one(row: dict[str, object]) -> Extracted:
-    global _EXTRACT_SEMANTIC_CELL
+    global _EXTRACT_SEMANTIC_CELL, _EXTRACT_BUILDING_CELL
     if not all((_EXTRACT_DATABASE, _EXTRACT_TERRAIN, _EXTRACT_NEAR_TERRAIN, _EXTRACT_FAR_TERRAIN,
                 _EXTRACT_ROOT, _EXTRACT_CONFIG, _EXTRACT_SOURCE_VERSIONS)):
         raise RuntimeError("panorama extraction worker is not initialized")
@@ -298,7 +309,16 @@ def _extract_one(row: dict[str, object]) -> Extracted:
         border_terrain=_EXTRACT_BORDER_TERRAIN,
         observer_ground_elevation_meters=float(ground),
     )
-    buildings = load_buildings(database, latitude, longitude, terrain, identity.building_radius_meters)
+    if _EXTRACT_BUILDING_CELL is None or _EXTRACT_BUILDING_CELL[0] != semantic_key:
+        center_longitude = (semantic_key[0] + .5) / 20
+        center_latitude = (semantic_key[1] + .5) / 20
+        _EXTRACT_BUILDING_CELL = (
+            semantic_key,
+            load_building_index(database, center_latitude, center_longitude, identity.building_radius_meters + 4_000),
+        )
+    buildings = buildings_for_viewpoint(
+        _EXTRACT_BUILDING_CELL[1], latitude, longitude, terrain, identity.building_radius_meters,
+    )
     evidence = [
         SourceEvidence(source="swissALTI3D", version=source_versions["terrain"], confidence=1),
         SourceEvidence(source="land semantics", version=source_versions["semantic"], confidence=.9),
@@ -316,6 +336,33 @@ def _extract_one(row: dict[str, object]) -> Extracted:
         input_key=input_key, geometry_key=geometry.identity_key, relative_path=str(relative),
         sha256=_sha256(target), artifact_bytes=target.stat().st_size,
     )
+
+
+def _extract_many(rows: list[dict[str, object]]) -> list[ExtractionOutcome]:
+    """Keep spatially adjacent work in one process so decoded indices persist."""
+    outcomes = []
+    for row in rows:
+        try:
+            outcomes.append(ExtractionOutcome(row=row, result=_extract_one(row)))
+        except Exception as error:
+            outcomes.append(ExtractionOutcome(row=row, error=str(error)[:1000]))
+    return outcomes
+
+
+def _spatial_batches(rows: list[dict[str, object]], size: int = 16) -> list[list[dict[str, object]]]:
+    batches: list[list[dict[str, object]]] = []
+    current: list[dict[str, object]] = []
+    current_cell: tuple[int, int] | None = None
+    for row in rows:
+        cell = (math.floor(float(row["longitude"]) * 20), math.floor(float(row["latitude"]) * 20))
+        if current and (cell != current_cell or len(current) >= size):
+            batches.append(current)
+            current = []
+        current.append(row)
+        current_cell = cell
+    if current:
+        batches.append(current)
+    return batches
 
 
 def panorama_extract_job(args: Namespace) -> None:
@@ -369,11 +416,11 @@ def panorama_extract_job(args: Namespace) -> None:
     failed = 0
     started = time.monotonic()
     deadline = started + args.max_runtime_hours * 3600
-    # Each worker's largest raster/semantic batch is budgeted at 4 GiB. This
-    # caps planned concurrency under the requested shared-memory ceiling while
-    # leaving macOS enough headroom for the UI and filesystem cache.
-    memory_worker_limit = max(1, args.memory_limit_gib // 4)
-    worker_count = min(12, max(1, args.cpu_workers), memory_worker_limit)
+    # Measured peak RSS stays below 3 GiB per process even with the decoded
+    # block/index caches. Keep all 16 Mac cores busy while respecting the
+    # requested shared-memory ceiling.
+    memory_worker_limit = max(1, args.memory_limit_gib // 3)
+    worker_count = min(16, max(1, args.cpu_workers), memory_worker_limit)
     io_per_worker = max(1, min(8, args.io_threads) // min(worker_count, max(1, args.io_threads)))
     executor = concurrent.futures.ProcessPoolExecutor(
         max_workers=worker_count,
@@ -382,55 +429,63 @@ def panorama_extract_job(args: Namespace) -> None:
                   str(border_dir) if border_dir else "", str(root),
                   config.model_dump(mode="json"), source_versions, io_per_worker),
     )
-    iterator = iter(rows)
-    pending: dict[concurrent.futures.Future[Extracted], dict[str, object]] = {}
+    iterator = iter(_spatial_batches(rows))
+    pending: dict[concurrent.futures.Future[list[ExtractionOutcome]], list[dict[str, object]]] = {}
     try:
         while len(pending) < worker_count * 2:
             try:
                 row = next(iterator)
             except StopIteration:
                 break
-            pending[executor.submit(_extract_one, row)] = row
+            pending[executor.submit(_extract_many, row)] = row
         while pending and time.monotonic() < deadline:
             done, _ = concurrent.futures.wait(pending, return_when=concurrent.futures.FIRST_COMPLETED)
             for future in done:
-                row = pending.pop(future)
+                batch = pending.pop(future)
                 try:
-                    result = future.result()
-                    state.execute("""INSERT OR REPLACE INTO extractions
+                    outcomes = future.result()
+                except Exception as error:
+                    outcomes = [ExtractionOutcome(row=row, error=str(error)[:1000]) for row in batch]
+                for outcome in outcomes:
+                    row = outcome.row
+                    result = outcome.result
+                    if result is not None:
+                        state.execute("""INSERT OR REPLACE INTO extractions
                       (bench_id,bench_row_id,latitude,longitude,input_key,geometry_key,relative_path,sha256,
                        artifact_bytes,status,attempts,finished_at,last_error)
                       VALUES(?,?,?,?,?,?,?,?,?,'ready',coalesce((SELECT attempts+1 FROM extractions WHERE bench_id=?),1),?,NULL)""", (
-                        result.bench_id, result.bench_row_id, result.latitude, result.longitude, result.input_key,
-                        result.geometry_key, result.relative_path, result.sha256, result.artifact_bytes,
-                        result.bench_id, _now(),
-                    ))
-                    completed += 1
-                except Exception as error:
-                    failed += 1
-                    state.execute("""INSERT INTO extractions
+                            result.bench_id, result.bench_row_id, result.latitude, result.longitude, result.input_key,
+                            result.geometry_key, result.relative_path, result.sha256, result.artifact_bytes,
+                            result.bench_id, _now(),
+                        ))
+                        completed += 1
+                    else:
+                        failed += 1
+                        state.execute("""INSERT INTO extractions
                       (bench_id,bench_row_id,latitude,longitude,input_key,status,attempts,finished_at,last_error)
                       VALUES(?,?,?,?,?,'error',1,?,?) ON CONFLICT(bench_id) DO UPDATE SET status='error',
                       attempts=attempts+1,finished_at=excluded.finished_at,last_error=excluded.last_error""", (
-                        row["id"], row["row_id"], row["latitude"], row["longitude"], row["input_key"],
-                        _now(), str(error)[:1000],
-                    ))
-                state.commit()
+                            row["id"], row["row_id"], row["latitude"], row["longitude"], row["input_key"],
+                            _now(), outcome.error or "unknown extraction error",
+                        ))
+                    state.commit()
                 if time.monotonic() < deadline:
                     try:
                         next_row = next(iterator)
                     except StopIteration:
                         continue
-                    pending[executor.submit(_extract_one, next_row)] = next_row
+                    pending[executor.submit(_extract_many, next_row)] = next_row
     except KeyboardInterrupt:
         pass
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
         ready = int(state.execute("SELECT count(*) FROM extractions WHERE status='ready'").fetchone()[0])
         state.close()
+    elapsed = time.monotonic() - started
     print(json.dumps({
         "selected": len(rows), "completed_this_run": completed, "failed_this_run": failed,
-        "ready": ready, "expected": total, "elapsed_seconds": round(time.monotonic() - started, 3),
+        "ready": ready, "expected": total, "elapsed_seconds": round(elapsed, 3),
+        "benches_per_second": round(completed / elapsed, 3) if elapsed else None,
         "cpu_workers": worker_count, "io_threads": min(8, args.io_threads),
         "memory_budget_gib": args.memory_limit_gib,
         "accelerator": "cpu-vectorized-raster",

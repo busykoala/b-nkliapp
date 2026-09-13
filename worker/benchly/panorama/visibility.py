@@ -56,7 +56,7 @@ def visible_terrain_spans(ray: TerrainRay, eye_elevation_meters: float, config: 
         angle = min(config.maximum_elevation_angle, elevation_angle(sample, eye_elevation_meters, config))
         if angle <= top + _EPSILON:
             continue
-        spans.append(VisibleSpan(
+        spans.append(VisibleSpan.model_construct(
             lower_angle_degrees=top,
             upper_angle_degrees=angle,
             distance_meters=sample.distance_meters,
@@ -126,7 +126,7 @@ def _building_columns(building: BuildingGeometry, config: PanoramaConfig, eye_el
         top = math.degrees(math.atan2(top_height - drop - eye_elevation, distance))
         if top <= config.minimum_elevation_angle or base >= config.maximum_elevation_angle:
             continue
-        span = VisibleSpan(
+        span = VisibleSpan.model_construct(
             lower_angle_degrees=max(config.minimum_elevation_angle, base),
             upper_angle_degrees=min(config.maximum_elevation_angle, max(eaves, top)),
             distance_meters=distance,
@@ -135,7 +135,7 @@ def _building_columns(building: BuildingGeometry, config: PanoramaConfig, eye_el
             confidence=building.confidence,
             object_id=building.source_id,
         )
-        output.append((raw_index % config.column_count, span, BuildingProjectionSample(
+        output.append((raw_index % config.column_count, span, BuildingProjectionSample.model_construct(
             azimuth_degrees=azimuth,
             lower_angle_degrees=span.lower_angle_degrees,
             eaves_angle_degrees=min(span.upper_angle_degrees, max(span.lower_angle_degrees, eaves)),
@@ -248,7 +248,7 @@ def build_panorama_geometry(
             sample = samples_by_distance.get(span.distance_meters)
             if hidden or sample is None:
                 continue
-            terrain_edges.append(TerrainEdge(
+            terrain_edges.append(TerrainEdge.model_construct(
                 elevation_angle_degrees=edge_angle,
                 distance_meters=span.distance_meters,
                 depth_layer=terrain_depth_layer(span.distance_meters),
@@ -272,7 +272,7 @@ def build_panorama_geometry(
                 "eaves_angle_degrees": min(span.upper_angle_degrees, max(span.lower_angle_degrees, profile.eaves_angle_degrees)),
                 "upper_angle_degrees": span.upper_angle_degrees,
             }))
-        columns.append(PanoramaColumn(
+        columns.append(PanoramaColumn.model_construct(
             azimuth_degrees=azimuth,
             skyline_angle_degrees=skyline,
             spans=spans,

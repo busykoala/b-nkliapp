@@ -32,9 +32,16 @@ class RasterFootprint(SQLModel, table=True):
 
 
 class RasterCollection:
-    def __init__(self, directory: Path | None, max_open=8):
+    def __init__(self, directory: Path | None, max_open=8, max_cached_blocks=96):
         self.max_open = max(1, min(max_open, 32))
+        self.max_cached_blocks = max(0, max_cached_blocks)
         self.handles = OrderedDict()
+        # Nearby panorama viewpoints repeatedly touch almost exactly the same
+        # compressed COG blocks. GDAL's process cache avoids disk I/O, but it
+        # still decompresses and masks those blocks for every bench. Keep a
+        # small, process-local LRU of the already decoded arrays instead.
+        self.blocks = OrderedDict()
+        self.mapped = {}
         self.datasets = []  # lightweight metadata, never a handle per national tile
         self.footprints = []
         self._footprint_grid = {}
@@ -114,6 +121,21 @@ class RasterCollection:
         self.handles[name] = (dataset, transform)
         return dataset, transform
 
+    def _mapped_array(self, name, dataset):
+        """Open an optional raw pyramid companion through the OS page cache."""
+        if name in self.mapped:
+            return self.mapped[name]
+        path = Path(name).with_suffix(".mmap")
+        dtype = dataset.dtypes[0]
+        expected = dataset.width * dataset.height * __import__("numpy").dtype(dtype).itemsize
+        if not path.is_file() or path.stat().st_size != expected:
+            self.mapped[name] = None
+            return None
+        import numpy as np
+        mapped = np.memmap(path, dtype=dtype, mode="r", shape=(dataset.height, dataset.width))
+        self.mapped[name] = mapped
+        return mapped
+
     def _candidates(self, latitude, longitude):
         bucket = (int(math.floor(longitude * 20)), int(math.floor(latitude * 20)))
         return [item for item in self._footprint_grid.get(bucket, ())
@@ -155,6 +177,18 @@ class RasterCollection:
                 if not np.any(valid):
                     return
 
+                mapped = self._mapped_array(name, dataset)
+                if mapped is not None:
+                    positions = np.flatnonzero(valid)
+                    raw = np.asarray(mapped[rows[positions], columns[positions]])
+                    numbers = raw.astype(np.float64) * dataset.scales[0] + dataset.offsets[0]
+                    usable = np.isfinite(numbers)
+                    if dataset.nodata is not None:
+                        usable &= raw != dataset.nodata
+                    for output_index, number in zip(output_indices[positions][usable], numbers[usable]):
+                        output[int(output_index)] = float(number)
+                    return
+
                 # rasterio.dataset.sample creates a masked array and a one-pixel
                 # GDAL read for every coordinate. A panorama contains nearly
                 # half a million coordinates, but only touches a modest number
@@ -185,7 +219,16 @@ class RasterCollection:
                         min(block_width, dataset.width - column_offset),
                         min(block_height, dataset.height - row_offset),
                     )
-                    block = dataset.read(1, window=window, masked=True)
+                    cache_key = (name, block_row, block_column)
+                    if cache_key in self.blocks:
+                        block = self.blocks.pop(cache_key)
+                        self.blocks[cache_key] = block
+                    else:
+                        block = dataset.read(1, window=window, masked=True)
+                        if self.max_cached_blocks:
+                            self.blocks[cache_key] = block
+                            while len(self.blocks) > self.max_cached_blocks:
+                                self.blocks.popitem(last=False)
                     selected = block[
                         rows[positions] - row_offset,
                         columns[positions] - column_offset,
@@ -221,6 +264,8 @@ class RasterCollection:
         for dataset, _ in self.handles.values():
             dataset.close()
         self.handles.clear()
+        self.blocks.clear()
+        self.mapped.clear()
         if self.index:
             self.index.close()
             self.index = None

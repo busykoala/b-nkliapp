@@ -104,6 +104,30 @@ def _blank(dataset, nodata: int) -> None:
         dataset.write(np.full((window.height, window.width), nodata, dtype=np.uint16), 1, window=window)
 
 
+def ensure_memory_map(path: Path) -> Path:
+    """Materialize an atomic raw companion shared by all extraction workers."""
+    import rasterio
+
+    target = path.with_suffix(".mmap")
+    with rasterio.open(path) as source:
+        expected = source.width * source.height * np.dtype(source.dtypes[0]).itemsize
+        if target.is_file() and target.stat().st_size == expected:
+            return target
+        temporary = target.with_suffix(".part")
+        mapped = np.memmap(
+            temporary, dtype=source.dtypes[0], mode="w+", shape=(source.height, source.width),
+        )
+        for _index, window in source.block_windows(1):
+            mapped[
+                int(window.row_off):int(window.row_off + window.height),
+                int(window.col_off):int(window.col_off + window.width),
+            ] = source.read(1, window=window)
+        mapped.flush()
+        del mapped
+    os.replace(temporary, target)
+    return target
+
+
 def prepare_terrain_pyramid_job(args: Namespace) -> None:
     """Create 10/30/90-m regional COG-like GeoTIFFs beside the 2-m source."""
     import rasterio
@@ -190,6 +214,8 @@ def prepare_terrain_pyramid_job(args: Namespace) -> None:
                 "collection": "swissALTI3D derived pyramid", "source_version": source_key,
                 "resolution_meters": resolution, "source_cells": expected,
             }, sort_keys=True) + "\n")
+        for path in final_paths.values():
+            ensure_memory_map(path)
     finally:
         for dataset in datasets.values():
             if not dataset.closed:
@@ -198,4 +224,5 @@ def prepare_terrain_pyramid_job(args: Namespace) -> None:
     print(json.dumps({
         "source_cells": len(cells), "source_key": source_key, "cpu_workers": worker_count,
         "outputs": {str(resolution): str(path) for resolution, path in final_paths.items()},
+        "shared_memory_maps": {str(resolution): str(path.with_suffix('.mmap')) for resolution, path in final_paths.items()},
     }, indent=2, sort_keys=True))

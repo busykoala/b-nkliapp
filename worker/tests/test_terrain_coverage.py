@@ -1,4 +1,3 @@
-from pathlib import Path
 import pytest
 from benchly.context.raster_cache import RasterCache
 from benchly.context.rasters import RasterCollection
@@ -77,3 +76,29 @@ def test_raster_index_reuses_footprints_and_bounds_open_handles(tmp_path):
             assert collection.sample(46, 8) is None
         finally:
             collection.close()
+
+
+def test_raster_collection_uses_shared_memory_map_companion(tmp_path):
+    import numpy as np
+    import rasterio
+    from rasterio.transform import from_origin
+
+    x, y = WGS84_TO_LV95.transform(7.68, 46.68)
+    path = tmp_path / "terrain.tif"
+    with rasterio.open(
+        path, "w", driver="GTiff", width=2, height=1, count=1, dtype="uint16",
+        crs="EPSG:2056", transform=from_origin(x - 5, y + 5, 10, 10), nodata=65_535,
+    ) as target:
+        target.scales = (0.1,)
+        target.write(np.array([[[100, 200]]], dtype=np.uint16))
+    mapped = np.memmap(path.with_suffix(".mmap"), dtype="uint16", mode="w+", shape=(1, 2))
+    mapped[:] = [[300, 400]]
+    mapped.flush()
+    del mapped
+
+    collection = RasterCollection(tmp_path)
+    try:
+        assert collection.sample(46.68, 7.68) == 30
+        assert len(collection.mapped) == 1
+    finally:
+        collection.close()

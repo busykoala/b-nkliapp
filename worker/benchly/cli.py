@@ -472,7 +472,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_extract.add_argument("--terrain-dir", required=True)
     panorama_extract.add_argument("--terrain-pyramid-dir", help="Prepared 10m/30m/90m model; defaults beside --terrain-dir")
     panorama_extract.add_argument("--border-terrain-dir", help="Copernicus GLO-90 fallback outside swissALTI3D coverage")
-    panorama_extract.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 13))
+    panorama_extract.add_argument("--cpu-workers", type=int, default=16, choices=range(1, 17))
     panorama_extract.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
     panorama_extract.add_argument("--memory-limit-gib", type=int, default=52, choices=range(8, 53))
     panorama_extract.add_argument("--bench-id", action="append", help="Extract only this bench; repeatable for local validation")

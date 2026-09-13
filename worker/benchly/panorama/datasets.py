@@ -11,7 +11,7 @@ from collections.abc import Sequence
 import numpy as np
 from pyproj import Geod, Transformer
 from shapely import from_wkb, get_parts, points
-from shapely.geometry import Point
+from shapely.geometry import Point, box
 from shapely.strtree import STRtree
 
 from benchly.context.evidence import nearby_context
@@ -95,6 +95,36 @@ class SemanticIndex:
                 sources[index] = self.sources[int(geometry_index)]
                 chosen[index] = priority
         return semantics, confidences, sources
+
+
+class BuildingIndex:
+    """Decoded building footprints shared by nearby viewpoints in one worker."""
+
+    def __init__(self, rows: Sequence[object], preferred_source: str | None = None):
+        self.preferred_source = preferred_source
+        prepared = []
+        for row in rows:
+            try:
+                parts = [
+                    part for part in get_parts(from_wkb(bytes(row["geometry_wkb"])))
+                    if part.geom_type == "Polygon" and part.area > .05
+                ]
+                if parts:
+                    prepared.append((row, max(parts, key=lambda part: part.area)))
+            except Exception:
+                continue
+        self.records = prepared
+        self.geometries = [record[1] for record in prepared]
+        self.tree = STRtree(self.geometries) if self.geometries else None
+
+    def nearby(self, east: float, north: float, radius_meters: float):
+        if self.tree is None:
+            return []
+        # Match the database RTree's bounding-box candidate semantics. Source
+        # preference is intentionally chosen before the exact distance filter.
+        bounds = box(east - radius_meters, north - radius_meters, east + radius_meters, north + radius_meters)
+        indices = self.tree.query(bounds)
+        return [(self.records[int(index)][0], self.records[int(index)][1]) for index in indices]
 
 
 def _semantic_class(value: str, kind: str | None = None) -> SemanticClass:
@@ -271,7 +301,10 @@ def sample_terrain_rays(
                 run = float(distances[right] - distances[left])
                 rise = float(ray_elevations[right] - ray_elevations[left])
                 slope = math.degrees(math.atan2(rise, run)) if run else 0.0
-            samples.append(TerrainSample(
+            # Values originate from the validated raster/index pipeline and
+            # are already range checked above. Avoid repeating Pydantic's
+            # generic schema walk tens of thousands of times per panorama.
+            samples.append(TerrainSample.model_construct(
                 distance_meters=float(distances[sample_index]),
                 elevation_meters=float(elevation),
                 semantic=classes[offset + sample_index],
@@ -282,7 +315,7 @@ def sample_terrain_rays(
                 relief_meters=relief,
             ))
         expected = len(samples) if complete_by_ray[ray_index] else len(samples) + 1
-        rays.append(TerrainRay(
+        rays.append(TerrainRay.model_construct(
             azimuth_degrees=float(azimuth),
             samples=tuple(samples),
             expected_sample_count=expected,
@@ -292,6 +325,24 @@ def sample_terrain_rays(
 
 def _row_height(row, key: str):
     return float(row[key]) if key in row.keys() and row[key] is not None else None
+
+
+def load_building_index(database, latitude: float, longitude: float,
+                        radius_meters: float = 10_000) -> BuildingIndex:
+    """Load and decode a reusable superset of nearby authoritative buildings."""
+    rows = nearby_context(database, latitude, longitude, radius_meters, ["building"])
+    sources = {str(row["source"]) for row in rows}
+    preferred_source = (
+        "swissBUILDINGS3D" if "swissBUILDINGS3D" in sources
+        else "swissTLM3D" if "swissTLM3D" in sources else None
+    )
+    if preferred_source:
+        rows = [
+            row for row in rows
+            if str(row["source"]) == preferred_source
+            or (str(row["source"]) == "OpenStreetMap" and _row_height(row, "height_meters") is not None)
+        ]
+    return BuildingIndex(rows, preferred_source)
 
 
 def _footprint_orientation(coordinates: tuple[tuple[float, float], ...]) -> float | None:
@@ -309,35 +360,25 @@ def _footprint_orientation(coordinates: tuple[tuple[float, float], ...]) -> floa
     return math.degrees(math.atan2(second[0] - first[0], second[1] - first[1])) % 180
 
 
-def load_buildings(database, latitude: float, longitude: float, terrain: RasterCollection,
-                   radius_meters: float = 10_000) -> list[BuildingGeometry]:
-    """Load and normalize only potentially visible building massing once."""
-    rows = nearby_context(database, latitude, longitude, radius_meters, ["building"])
-    sources = {str(row["source"]) for row in rows}
-    preferred_source = "swissBUILDINGS3D" if "swissBUILDINGS3D" in sources else "swissTLM3D" if "swissTLM3D" in sources else None
+def buildings_for_viewpoint(building_index: BuildingIndex, latitude: float, longitude: float,
+                            terrain: RasterCollection, radius_meters: float = 10_000) -> list[BuildingGeometry]:
+    """Project a cached absolute building index into one exact local viewpoint."""
+    origin_east, origin_north = WGS84_TO_LV95.transform(longitude, latitude)
+    nearby = building_index.nearby(origin_east, origin_north, radius_meters)
+    sources = {str(row["source"]) for row, _geometry in nearby}
+    preferred_source = (
+        "swissBUILDINGS3D" if "swissBUILDINGS3D" in sources
+        else "swissTLM3D" if "swissTLM3D" in sources else None
+    )
     if preferred_source:
-        # The national imports overlap heavily: loading OSM, TLM and
-        # swissBUILDINGS3D together can triple the footprint count before the
-        # geometric duplicate pass. For painting, the best complete official
-        # massing is authoritative. Retain only explicitly height-modelled OSM
-        # exceptions, which add information the footprint source cannot carry.
-        rows = [
-            row for row in rows
+        nearby = [
+            (row, geometry) for row, geometry in nearby
             if str(row["source"]) == preferred_source
             or (str(row["source"]) == "OpenStreetMap" and _row_height(row, "height_meters") is not None)
         ]
-    origin_east, origin_north = WGS84_TO_LV95.transform(longitude, latitude)
     prepared = []
-    for row in rows:
+    for row, geometry in nearby:
         try:
-            source_geometry = from_wkb(bytes(row["geometry_wkb"]))
-            polygon_parts = [
-                part for part in get_parts(source_geometry)
-                if part.geom_type == "Polygon" and part.area > .05
-            ]
-            if not polygon_parts:
-                continue
-            geometry = max(polygon_parts, key=lambda part: part.area)
             distance = float(Point(origin_east, origin_north).distance(geometry))
             if distance > radius_meters or geometry.covers(Point(origin_east, origin_north)):
                 continue
@@ -347,7 +388,9 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
             prepared.append((priority, distance, row, geometry, explicit_height))
         except Exception:
             continue
-    prepared.sort(key=lambda item: (-item[0], item[1]))
+    prepared.sort(key=lambda item: (
+        -item[0], item[1], str(item[2]["source"]), str(item[2]["source_id"]),
+    ))
 
     # Suppress lower-priority duplicates by substantial footprint overlap,
     # without confusing genuinely adjacent houses.
@@ -400,7 +443,7 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
         if len(coordinates) < 3:
             continue
         confidence = .98 if source == "swissBUILDINGS3D" else .8 if explicit_height is not None else .48
-        result.append(BuildingGeometry(
+        result.append(BuildingGeometry.model_construct(
             source_id=f"{source}:{row['source_id']}",
             footprint=coordinates,
             ground_elevation_meters=float(ground),
@@ -413,3 +456,10 @@ def load_buildings(database, latitude: float, longitude: float, terrain: RasterC
             orientation_degrees=_footprint_orientation(coordinates),
         ))
     return result
+
+
+def load_buildings(database, latitude: float, longitude: float, terrain: RasterCollection,
+                   radius_meters: float = 10_000) -> list[BuildingGeometry]:
+    """Compatibility entry point for a single uncached viewpoint."""
+    index = load_building_index(database, latitude, longitude, radius_meters)
+    return buildings_for_viewpoint(index, latitude, longitude, terrain, radius_meters)

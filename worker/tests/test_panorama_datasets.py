@@ -9,8 +9,10 @@ from shapely.geometry import Point, Polygon, box
 from benchly.panorama.datasets import (
     SemanticIndex,
     WGS84_TO_LV95,
+    buildings_for_viewpoint,
     distance_schedule,
     load_buildings,
+    load_building_index,
     load_semantic_index,
     sample_terrain_rays,
 )
@@ -197,3 +199,8 @@ def test_building_loader_accepts_swissbuildings_3d_footprints():
     assert len(buildings[0].footprint) == 4
     assert all(len(coordinate) == 2 for coordinate in buildings[0].footprint)
     assert buildings[0].orientation_degrees == 90
+    cached = buildings_for_viewpoint(
+        load_building_index(connection, latitude, longitude, 2_000),
+        latitude, longitude, Terrain(), 1_000,
+    )
+    assert cached == buildings
