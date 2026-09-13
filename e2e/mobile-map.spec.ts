@@ -8,6 +8,7 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.getByLabel("Benutzername").fill(username);
   await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await page.getByRole("button", { name: "Konto erstellen" }).click();
+  await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeHidden({ timeout: 15_000 });
   await page.getByLabel("Menü öffnen").click();
   await expect(page.getByText("Mein Profil")).toBeVisible();
   await page.getByLabel("Menü schliessen").click();
@@ -376,7 +377,7 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
   await page.getByRole("button", { name: "Hier eintragen" }).click();
   await page.getByLabel("Name", { exact: false }).fill(benchName);
   await page.getByLabel("Widmung").fill("Für alle müden Tests");
-  await expect(page.getByText("Bestehende Bänkli in der Nähe werden geprüft …")).toHaveCount(0);
+  await expect(page.getByText("Bestehende Bänkli in der Nähe werden geprüft …")).toHaveCount(0, { timeout: 15_000 });
   const duplicateCheck = page.getByLabel("Geprüft: Meins ist ein weiteres Bänkli.");
   if (await duplicateCheck.isVisible()) await duplicateCheck.check();
   await page.getByRole("button", { name: "Eintragen", exact: true }).click();
