@@ -31,6 +31,9 @@ class PersistenceArchitectureTests(unittest.TestCase):
                 # Gitignored local raster-build checkpoints; no application
                 # or production database is opened by this module.
                 Path("benchly/panorama/pyramid.py"),
+                # Gitignored local source-download checkpoints; production
+                # state is never opened or mutated by the terrain fetcher.
+                Path("benchly/panorama/terrain_download.py"),
             }:
                 continue
             tree = ast.parse(path.read_text(encoding="utf-8"))
