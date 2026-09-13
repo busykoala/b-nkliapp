@@ -63,8 +63,10 @@ DEFAULT_PVC_GIB = 80
 SHARED_MODEL_BUDGET_BYTES = 15 * 1024**3
 
 
-def _builder_key() -> str:
-    return implementation_key("binary.py", "builder.py", "models.py", "watercolor.py")
+def _artifact_implementation() -> str:
+    # Orchestration changes do not invalidate byte-identical image artifacts.
+    # Only the checked-in codec, contract and painter contribute to identity.
+    return implementation_key("binary.py", "models.py", "watercolor.py")
 
 
 def _git_commit() -> str:
@@ -129,12 +131,13 @@ def _open_state(root: Path) -> sqlite3.Connection:
       );
       CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);
     """)
-    identity = database.execute("SELECT value FROM metadata WHERE key='builder_key'").fetchone()
-    builder_key = _builder_key()
-    if identity is None or identity[0] != builder_key:
+    identity = database.execute("SELECT value FROM metadata WHERE key='artifact_implementation'").fetchone()
+    artifact_implementation = _artifact_implementation()
+    if identity is None or identity[0] != artifact_implementation:
         database.execute("DELETE FROM artifacts")
         database.execute("DELETE FROM metadata WHERE key='build_revision'")
-        database.execute("INSERT OR REPLACE INTO metadata VALUES('builder_key',?)", (builder_key,))
+        database.execute("DELETE FROM metadata WHERE key='builder_key'")
+        database.execute("INSERT OR REPLACE INTO metadata VALUES('artifact_implementation',?)", (artifact_implementation,))
         database.commit()
     return database
 
@@ -498,7 +501,7 @@ def panorama_pilot_job(args: Namespace) -> None:
     recommended = _recommended_pvc(projected_peak)
     checkpoint = "1%"
     detail = {
-        **result, "builder_key": _builder_key(), "render_key": RENDER_IMPLEMENTATION,
+        **result, "artifact_implementation": _artifact_implementation(), "render_key": RENDER_IMPLEMENTATION,
         "elapsed_seconds": round(time.monotonic() - started, 3), "artifact_bytes_by_kind": by_kind,
         "steady_target_bytes": STEADY_TARGET_BYTES, "warning_bytes": WARNING_BYTES,
         "minimum_free_bytes": MINIMUM_FREE_BYTES,
@@ -533,7 +536,8 @@ def panorama_build_job(args: Namespace) -> None:
     state = _open_state(root)
     bytes_ready = int(state.execute("SELECT coalesce(sum(artifact_bytes),0) FROM artifacts WHERE status='ready'").fetchone()[0])
     state.close()
-    print(json.dumps({**result, "bytes": bytes_ready, "root": str(root), "builder_key": _builder_key()}, indent=2))
+    print(json.dumps({**result, "bytes": bytes_ready, "root": str(root),
+                      "artifact_implementation": _artifact_implementation()}, indent=2))
 
 
 def _manifest(root: Path, database_path: Path, bench_index: Path | None = None) -> tuple[Path, dict[str, object]]:
@@ -569,8 +573,10 @@ def _manifest(root: Path, database_path: Path, bench_index: Path | None = None) 
                 bench_by_geometry[geometry_key] = production
     bench_by_geometry.update(extracted_by_geometry)
     missing = sorted({str(item["geometry_key"]) for item in records} - bench_by_geometry.keys())
-    if missing:
-        raise RuntimeError(f"{len(missing)} artifacts cannot be bound to unchanged benches")
+    # The resumable workspace can retain outputs for deleted/moved benches or
+    # abandoned local fixtures. They are deliberately absent from a sealed
+    # production manifest; every included artifact remains coordinate-bound.
+    records = [item for item in records if str(item["geometry_key"]) not in missing]
     for item in records:
         item.update(bench_by_geometry[str(item["geometry_key"])])
         production = production_by_bench.get(str(item["bench_id"]))
@@ -596,10 +602,11 @@ def _manifest(root: Path, database_path: Path, bench_index: Path | None = None) 
     generation_id = f"{git_commit[:12]}-{artifact_set[:16]}"
     payload: dict[str, object] = {
         "format": GENERATION_FORMAT, "schema": GENERATION_SCHEMA, "generation_id": generation_id,
-        "git_commit": git_commit, "builder_key": _builder_key(),
+        "git_commit": git_commit, "artifact_implementation": _artifact_implementation(),
         "geometry_implementation": GEOMETRY_IMPLEMENTATION, "render_implementation": RENDER_IMPLEMENTATION,
         "created_at": _now(), "artifacts": records,
         "artifact_count": len(records), "artifact_bytes": sum(int(item["bytes"]) for item in records),
+        "ignored_unbound_artifacts": len(missing),
     }
     manifest = root / "generation" / "manifest.json"
     _atomic(manifest, json.dumps(payload, sort_keys=True, separators=(",", ":")).encode() + b"\n")
