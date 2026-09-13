@@ -736,7 +736,7 @@ def panorama_activate_job(args: Namespace) -> None:
         for record in manifest["artifacts"]:
             current = bench_rows.get(str(record["bench_id"]))
             expected_bench = (int(record["bench_row_id"]), float(record["bench_latitude"]), float(record["bench_longitude"]))
-            if current != expected_bench:
+            if not _same_bench_position(current, expected_bench):
                 raise RuntimeError(f"bench changed since build: {record['bench_id']}")
         # The rename is atomic on the panorama filesystem. Do it while the DB
         # write lock is held, so the committed rows can never reference files
@@ -762,6 +762,16 @@ def panorama_activate_job(args: Namespace) -> None:
         if candidate != active and candidate.is_dir():
             shutil.rmtree(candidate)
     print(json.dumps({"activated": args.generation_id, "artifacts": manifest["artifact_count"], "rollback_generation": False}))
+
+
+def _same_bench_position(
+    current: tuple[int, float, float] | None,
+    expected: tuple[int, float, float],
+) -> bool:
+    """Allow harmless decimal serialization drift, never a moved bench."""
+    return current is not None and current[0] == expected[0] \
+        and abs(current[1] - expected[1]) <= 1e-9 \
+        and abs(current[2] - expected[2]) <= 1e-9
 
 
 def panorama_status_job(args: Namespace) -> None:
