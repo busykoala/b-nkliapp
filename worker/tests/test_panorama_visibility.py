@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from benchly.panorama.cache import geometry_cache_key, render_cache_key
 from benchly.panorama.models import (
     BuildingGeometry,
@@ -71,6 +73,26 @@ def test_inner_ridge_is_retained_below_the_outer_skyline_and_painted():
     circular = build_panorama_geometry(IDENTITY, rays({azimuth: north for azimuth in (0, 90, 180, 270)}), config=CONFIG)
     svg = render_panorama_svg(circular, 720, 240)
     assert 'id="terrain-inner-ridges"' in svg
+
+
+def test_many_dem_increments_compact_to_stable_depth_edges():
+    distances = [50 * 1.25 ** index for index in range(30)]
+    north = [
+        TerrainSample(
+            distance_meters=distance,
+            elevation_meters=IDENTITY.ground_elevation_meters + CONFIG.observer_height_meters
+            + math.tan(math.radians(-.5 + index * .12)) * distance,
+            semantic=SemanticClass.ROCK,
+            source="fixture",
+        )
+        for index, distance in enumerate(distances)
+    ]
+    result = build_panorama_geometry(IDENTITY, rays({0: north}), config=CONFIG)
+    edges = result.columns[0].terrain_edges
+    inner_layers = [edge.depth_layer for edge in edges if edge.kind == "inner-ridge"]
+    assert len(edges) <= 8
+    assert len(inner_layers) == len(set(inner_layers))
+    assert edges[-1].kind == "skyline"
 
 
 def test_near_building_occludes_mountain_and_crosses_skyline():

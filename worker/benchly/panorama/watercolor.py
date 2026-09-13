@@ -5,12 +5,11 @@ from __future__ import annotations
 import hashlib
 import html
 import base64
-import math
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 
-from benchly.panorama.models import PanoramaColumn, PanoramaGeometry, SemanticClass
+from benchly.panorama.models import PanoramaColumn, PanoramaGeometry, SemanticClass, terrain_depth_layer
 
 
 PALETTE = {
@@ -106,7 +105,9 @@ def _inner_ridge_paths(columns: tuple[PanoramaColumn, ...], width: int, height: 
         current: dict[tuple[str, int], tuple[float, float]] = {}
         if column.terrain_edges:
             edges = [
-                (edge.kind, edge.semantic, edge.distance_meters, edge.elevation_angle_degrees)
+                (edge.kind, edge.semantic, edge.distance_meters,
+                 edge.depth_layer if edge.depth_layer is not None else terrain_depth_layer(edge.distance_meters),
+                 edge.elevation_angle_degrees)
                 for edge in column.terrain_edges
             ]
         else:
@@ -115,17 +116,17 @@ def _inner_ridge_paths(columns: tuple[PanoramaColumn, ...], width: int, height: 
             # below-skyline occlusion edge.
             terrain = [span for span in column.spans if span.semantic != SemanticClass.BUILDING]
             edges = [
-                ("inner-ridge", span.semantic, span.distance_meters, span.upper_angle_degrees)
+                ("inner-ridge", span.semantic, span.distance_meters,
+                 terrain_depth_layer(span.distance_meters), span.upper_angle_degrees)
                 for span in terrain[:-1]
             ]
-        for kind, semantic, distance, elevation_angle in edges:
+        for kind, semantic, distance, depth_layer, elevation_angle in edges:
             if kind != "inner-ridge" or semantic not in _MOUNTAIN_SEMANTICS:
                 continue
             band = _distance_band(distance)
             if band not in {"middle", "far"}:
                 continue
-            distance_bucket = round(math.log2(max(1, distance) / 100) * 2)
-            key = (band, distance_bucket)
+            key = (band, depth_layer)
             point = ((index + .5) * x_scale, _y(elevation_angle, minimum, maximum, height))
             # Where multiple visible layers share a bucket, the higher edge is
             # the most legible and usually the terrain shoulder we want.

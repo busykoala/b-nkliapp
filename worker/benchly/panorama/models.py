@@ -7,6 +7,7 @@ change therefore never invalidates the expensive geographic calculation.
 
 from __future__ import annotations
 
+from bisect import bisect_right
 from enum import Enum
 from typing import Literal
 
@@ -15,9 +16,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from sqlmodel import Field as SqlField, SQLModel
 
 
-GEOMETRY_VERSION = "panorama-geometry-2"
-RENDER_VERSION = "panorama-watercolor-17"
+GEOMETRY_VERSION = "panorama-geometry-3"
+RENDER_VERSION = "panorama-watercolor-18"
 EARTH_RADIUS_METERS = 6_371_008.8
+TERRAIN_DEPTH_LIMITS_METERS = (120, 500, 1_500, 4_000, 10_000, 25_000, 60_000)
+
+
+def terrain_depth_layer(distance_meters: float) -> int:
+    """Stable distance layer shared by geometry compaction and painting."""
+    return bisect_right(TERRAIN_DEPTH_LIMITS_METERS, distance_meters)
 
 
 class Contract(BaseModel):
@@ -105,9 +112,6 @@ class VisibleSpan(Contract):
     terrain_source: str | None = None
     confidence: float = Field(ge=0, le=1)
     object_id: str | None = None
-    terrain_elevation_meters: float | None = None
-    slope_degrees: float | None = Field(default=None, ge=-90, le=90)
-    relief_meters: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def valid_interval(self):
@@ -121,11 +125,15 @@ class TerrainEdge(Contract):
 
     elevation_angle_degrees: float
     distance_meters: float = Field(gt=0)
+    depth_layer: int | None = Field(default=None, ge=0, le=len(TERRAIN_DEPTH_LIMITS_METERS))
     terrain_elevation_meters: float
     semantic: SemanticClass
     kind: Literal["inner-ridge", "skyline"]
     source: str
+    terrain_source: str
     confidence: float = Field(ge=0, le=1)
+    slope_degrees: float | None = Field(default=None, ge=-90, le=90)
+    relief_meters: float | None = Field(default=None, ge=0)
 
 
 class BuildingProjectionSample(Contract):

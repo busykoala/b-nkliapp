@@ -52,7 +52,7 @@ class PanoramaCache:
 
     def put_geometry(self, geometry: PanoramaGeometry) -> Path:
         path = self.geometry_path(geometry.identity_key)
-        payload = gzip.compress(geometry.model_dump_json().encode(), compresslevel=6, mtime=0)
+        payload = gzip.compress(geometry.model_dump_json(exclude_none=True).encode(), compresslevel=6, mtime=0)
         self._atomic_write(path, payload)
         return path
 

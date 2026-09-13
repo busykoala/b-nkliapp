@@ -26,6 +26,7 @@ from benchly.panorama.models import (
     TerrainEdge,
     TerrainSample,
     VisibleSpan,
+    terrain_depth_layer,
 )
 
 
@@ -63,9 +64,6 @@ def visible_terrain_spans(ray: TerrainRay, eye_elevation_meters: float, config: 
             source=sample.source,
             terrain_source=sample.terrain_source,
             confidence=sample.confidence,
-            terrain_elevation_meters=sample.elevation_meters,
-            slope_degrees=sample.slope_degrees,
-            relief_meters=sample.relief_meters,
         ))
         top = angle
     return spans
@@ -171,6 +169,30 @@ def _compose_spans(spans: Sequence[VisibleSpan]) -> tuple[VisibleSpan, ...]:
     return tuple(visible)
 
 
+def _compact_terrain_edges(terrain: Sequence[VisibleSpan]) -> list[tuple[VisibleSpan, str]]:
+    """Keep one meaningful below-skyline edge per stable distance layer.
+
+    The raw visibility envelope may rise at nearly every DEM sample. Those
+    tiny increments are useful for filling terrain but are not distinct visual
+    ridges and would multiply cache size. Semantic boundaries win inside a
+    layer; otherwise the highest visible edge represents that depth shell.
+    """
+    if not terrain:
+        return []
+    selected: dict[int, tuple[tuple[int, float], VisibleSpan]] = {}
+    for index, span in enumerate(terrain[:-1]):
+        following = terrain[index + 1]
+        semantic_boundary = int(span.semantic != following.semantic)
+        score = (semantic_boundary, span.upper_angle_degrees)
+        layer = terrain_depth_layer(span.distance_meters)
+        current = selected.get(layer)
+        if current is None or score > current[0]:
+            selected[layer] = (score, span)
+    edges = [(span, "inner-ridge") for _score, span in selected.values()]
+    edges.append((terrain[-1], "skyline"))
+    return sorted(edges, key=lambda item: item[0].distance_meters)
+
+
 def build_panorama_geometry(
     identity: GeometryIdentity,
     rays: Sequence[TerrainRay],
@@ -209,10 +231,11 @@ def build_panorama_geometry(
         azimuth = index * config.angular_resolution_degrees
         ray = by_index.get(index, TerrainRay(azimuth_degrees=azimuth, samples=()))
         terrain = visible_terrain_spans(ray, eye_elevation, config)
+        samples_by_distance = {sample.distance_meters: sample for sample in ray.samples}
         spans = _compose_spans([*terrain, *building_spans.get(index, ())])
         skyline = max((span.upper_angle_degrees for span in spans), default=config.minimum_elevation_angle)
         terrain_edges: list[TerrainEdge] = []
-        for terrain_index, span in enumerate(terrain):
+        for span, edge_kind in _compact_terrain_edges(terrain):
             edge_angle = span.upper_angle_degrees
             # A near building can hide an otherwise valid terrain ridge. Keep
             # the edge only when the final depth composition still exposes it.
@@ -222,16 +245,21 @@ def build_panorama_geometry(
                 and candidate.lower_angle_degrees - _EPSILON <= edge_angle <= candidate.upper_angle_degrees + _EPSILON
                 for candidate in spans
             )
-            if hidden or span.terrain_elevation_meters is None:
+            sample = samples_by_distance.get(span.distance_meters)
+            if hidden or sample is None:
                 continue
             terrain_edges.append(TerrainEdge(
                 elevation_angle_degrees=edge_angle,
                 distance_meters=span.distance_meters,
-                terrain_elevation_meters=span.terrain_elevation_meters,
+                depth_layer=terrain_depth_layer(span.distance_meters),
+                terrain_elevation_meters=sample.elevation_meters,
                 semantic=span.semantic,
-                kind="skyline" if terrain_index == len(terrain) - 1 else "inner-ridge",
+                kind=edge_kind,
                 source=span.source,
+                terrain_source=sample.terrain_source,
                 confidence=span.confidence,
+                slope_degrees=sample.slope_degrees,
+                relief_meters=sample.relief_meters,
             ))
         for span in spans:
             if not span.object_id:
