@@ -32,7 +32,10 @@ workers:
   temporaryStorage: 120Gi
   visionModel: benchly-vision
   panoramaProcesses: 4
-  panoramaBatchSize: 8
+  # Keep leases deliberately small: after every rendered bench each process
+  # checks the priority queue again, so an interactive request cannot sit
+  # behind an entire background-backfill batch.
+  panoramaBatchSize: 1
   panoramaResources:
     requests: {cpu: "2", memory: 2Gi}
     limits: {cpu: "4", memory: 8Gi}

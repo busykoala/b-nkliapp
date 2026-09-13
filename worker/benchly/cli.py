@@ -387,7 +387,12 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_worker.add_argument("--border-terrain-dir")
     panorama_worker.add_argument("--high-resolution-distance-meters", type=float, default=20_000)
     panorama_worker.add_argument("--cache-dir", default="./data/panorama-cache-v1")
-    panorama_worker.add_argument("--limit", type=int, default=8)
+    panorama_worker.add_argument(
+        "--limit",
+        type=int,
+        default=1,
+        help="Benches leased per shard cycle; one keeps interactive requests responsive during backfill",
+    )
     panorama_worker.add_argument("--max-runtime-hours", type=float, default=.04)
     panorama_worker.add_argument("--angular-resolution", type=float, default=.1)
     panorama_worker.add_argument("--maximum-distance-meters", type=float, default=150_000)
