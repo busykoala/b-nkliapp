@@ -58,8 +58,9 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   const box = await viewport.boundingBox();
   expect(box).not.toBeNull();
   const before = await page.locator(".bench-panorama-track").getAttribute("style");
-  await viewport.hover();
-  await page.mouse.wheel(0, -120);
+  // Mobile WebKit has no mouse wheel. Double-tap/double-click exercises the
+  // same touch-friendly zoom affordance on every configured browser.
+  await viewport.dblclick({ position: { x: box!.width * .5, y: box!.height * .5 } });
   await expect(panorama.locator(".bench-panorama-zoom")).not.toHaveText("1.0×");
   await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .65);
   await page.mouse.down();
