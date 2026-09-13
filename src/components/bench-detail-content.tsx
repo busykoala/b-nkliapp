@@ -21,7 +21,6 @@ import { VerificationQuestion } from "@/features/bench-knowledge/verification-qu
 import { PhotoGallery } from "./photo-gallery";
 import { galleryImageUrl } from "@/features/bench-photos/media-source";
 import { BenchPlaceCommunity } from "./bench-place-community";
-import { localBenchVoice } from "@/lib/dialect";
 import { useLocalBenchLanguage } from "./local-bench-language-provider";
 
 const correctionLabels: Record<string, MessageKey> = {
@@ -82,7 +81,13 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
     };
   }, [bench.id]);
   const poem = scenePoem(bench, t);
-  const localVoice = localLanguage.active ? localBenchVoice(bench) : null;
+  const localVoice = localLanguage.active && bench.dialectPresentation ? {
+    regionLabel: bench.dialectPresentation.voice.label,
+    languageTag: bench.dialectPresentation.voice.languageTag,
+    uiLanguage: bench.dialectPresentation.voice.language,
+    first: bench.dialectPresentation.voice.first,
+    second: bench.dialectPresentation.voice.second,
+  } : null;
   const missingFields = bench.properties.filter((item) => /^(Unbekannt|Noch offen)$/i.test(item.value)).slice(0, 3).map((item) => item.key);
   return <div ref={detailRef} className="calm-detail pb-8" lang={localVoice?.languageTag} data-local-language={localVoice?.uiLanguage}>
     {community ? <>
@@ -110,7 +115,6 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
       <div className="calm-story-body">
         {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>{t("bench.story.nextTitle")}</h3><p>{t("bench.story.nextDescription")}</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
         <div className={`scene-caption${localVoice ? " is-local-voice" : ""}`} lang={localVoice?.languageTag} aria-label={localVoice ? `${localVoice.regionLabel}. ${localVoice.first} ${localVoice.second}` : undefined}>
-          {localVoice && <small><span aria-hidden="true">◌</span>{localVoice.regionLabel} · {t("common.language.localApproximation")}</small>}
           <p><span>{localVoice?.first ?? poem.first}</span>{" "}<span>{localVoice?.second ?? poem.second}</span></p>
         </div>
         {signedIn && bench.knowledge?.question && <VerificationQuestion benchId={bench.id} question={bench.knowledge.question} onChanged={refreshBench} />}
@@ -168,8 +172,8 @@ function Community({ bench, report, reported, user, onContribute }: { bench: Ben
     {user
       ? <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {bench.myRating ? t("community.reviews.edit") : t("community.reviews.add")}</button>
       : <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {t("community.reviews.signIn")}</button>}
-    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{formatDate(rating.createdAt, t)}</time><button disabled={reported.has(`rating-${rating.id}`)} aria-label={reported.has(`rating-${rating.id}`) ? t("community.reviews.reportedRating") : t("community.reviews.reportRating")} onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p>{rating.note}</p>}</article>)}
-    {bench.corrections.length > 0 && <section className="community-notes"><h3>{t("community.reviews.notes")}</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ? t(correctionLabels[item.field]) : item.field}</small><button disabled={reported.has(`correction-${item.id}`)} aria-label={reported.has(`correction-${item.id}`) ? t("community.reviews.reportedCorrection") : t("community.reviews.reportCorrection")} onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong>{item.proposedValue}</strong>{item.note && <p>{item.note}</p>}</article>)}</section>}
+    {bench.recentRatings.map((rating) => <article key={rating.id} className="quiet-contribution"><div><strong>{rating.overall}/5</strong><time>{formatDate(rating.createdAt, t)}</time><button disabled={reported.has(`rating-${rating.id}`)} aria-label={reported.has(`rating-${rating.id}`) ? t("community.reviews.reportedRating") : t("community.reviews.reportRating")} onClick={() => report("rating", rating.id)}><Flag size={14} /></button></div>{rating.note && <p lang={bench.dialectPresentation?.appLanguageTag}>{rating.note}</p>}</article>)}
+    {bench.corrections.length > 0 && <section className="community-notes"><h3>{t("community.reviews.notes")}</h3>{bench.corrections.map((item) => <article key={item.id} className="quiet-contribution"><div><small>{correctionLabels[item.field] ? t(correctionLabels[item.field]) : item.field}</small><button disabled={reported.has(`correction-${item.id}`)} aria-label={reported.has(`correction-${item.id}`) ? t("community.reviews.reportedCorrection") : t("community.reviews.reportCorrection")} onClick={() => report("correction", item.id)}><Flag size={14} /></button></div><strong lang={bench.dialectPresentation?.appLanguageTag}>{item.proposedValue}</strong>{item.note && <p lang={bench.dialectPresentation?.appLanguageTag}>{item.note}</p>}</article>)}</section>}
   </div>;
 }
 

@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/security";
 import { AppMenu } from "@/components/app-menu";
 import { readBenchPageMetadata, readVerifiedBenchDetail } from "@/features/bench-detail/service";
 import { LocalBenchLanguageProvider } from "@/components/local-bench-language-provider";
+import { withRequestDialect } from "@/lib/dialects/presentation";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function BenchPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string | string[] }> }) {
   const t = await getTranslations();
   const user = await getCurrentUser();
-  const bench = await readVerifiedBenchDetail((await params).id, user);
+  const bench = await withRequestDialect(await readVerifiedBenchDetail((await params).id, user));
   if (!bench) notFound();
   const source = (await searchParams).from;
   const backHref = source === "feed" ? "/feed" : source === "statistics" ? "/statistiken" : source === "favourites" ? "/lieblingsplaetze" : "/";

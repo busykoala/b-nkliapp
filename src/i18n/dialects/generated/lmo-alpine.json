@@ -1,0 +1,1264 @@
+{
+  "account": {
+    "dialog": {
+      "invitation": "Partecipa",
+      "welcome": "Bentornato",
+      "createTitle": "Il tuo account Bänkli",
+      "description": "Bastano un nome utente e una password. Nessuna e-mail.",
+      "privacy": "Cosa succede ai tuoi dati ↗",
+      "intent": "Dopo potrai continuare: {intent}.",
+      "register": "Prima volta? Crea un account",
+      "login": "Ho già un account",
+      "registerTab": "Registrati"
+    },
+    "fields": {
+      "username": "Nome utente",
+      "password": "Password",
+      "showPassword": "Mostra password",
+      "hidePassword": "Nascondi password"
+    },
+    "form": {
+      "signingIn": "Accesso…",
+      "registering": "Creazione dell’account…",
+      "register": "Crea un account"
+    },
+    "validation": {
+      "usernameCharacters": "Solo lettere, numeri, punto, _ e -",
+      "usernameShort": "Almeno 3 caratteri",
+      "usernameLong": "Al massimo 24 caratteri",
+      "passwordShort": "Almeno 8 caratteri",
+      "passwordLong": "Al massimo 128 caratteri"
+    },
+    "result": {
+      "welcome": "Benvenuto su Bänkli App!",
+      "usernameTaken": "Questo nome utente è già in uso.",
+      "registerFailed": "Impossibile creare l’account.",
+      "credentialsInvalid": "Nome utente o password non corretti.",
+      "welcomeBack": "Che bello rivederti!",
+      "invitationInvalid": "Questo link d’invito non è valido o è scaduto. Chiedine uno nuovo."
+    },
+    "invitation": {
+      "eyebrow": "C’è ancora un posto libero",
+      "title": "{username} ti invita su Bänkli App",
+      "copy": "Crea un nuovo account e scoprite insieme luoghi speciali per una pausa.",
+      "qualifier": "L’invito viene conteggiato quando viene creato questo nuovo account. Gli account esistenti non possono essere associati in seguito.",
+      "invalidTitle": "Questo invito non è più valido",
+      "invalidCopy": "Il link segreto è scaduto o non è stato copiato completamente.",
+      "signedInTitle": "Hai già effettuato l’accesso",
+      "signedInCopy": "Gli inviti valgono solo per nuovi account. Il tuo account attuale resta invariato."
+    }
+  },
+  "avatar": {
+    "editor": {
+      "title": "Crea il tuo avatar",
+      "mixture": "La tua combinazione",
+      "description": "Ogni scelta è composta da singoli livelli ad acquerello.",
+      "random": "Sorprendimi",
+      "pending": "Pittura in corso…",
+      "save": "Salva l’avatar"
+    },
+    "description": "{hair}, {coat}, sfondo {background}",
+    "groups": {
+      "skin": "Carnagione",
+      "hairStyle": "Acconciatura",
+      "hair": "Colore dei capelli",
+      "coat": "Giacca",
+      "accent": "Sciarpa",
+      "hat": "Copricapo",
+      "background": "Paesaggio preferito",
+      "companion": "Compagnia"
+    },
+    "options": {
+      "skin": {
+        "porcelain": "Chiara",
+        "sunlit": "Dorata",
+        "warm": "Calda",
+        "brown": "Bruna",
+        "deep": "Scura"
+      },
+      "hair": {
+        "charcoal": "Carbone",
+        "chestnut": "Castano",
+        "copper": "Rame",
+        "blond": "Oro",
+        "silver": "Argento"
+      },
+      "hairStyle": {
+        "short": "Corti",
+        "waves": "Onde",
+        "bob": "Caschetto",
+        "bun": "Chignon",
+        "curls": "Ricci"
+      },
+      "coat": {
+        "pine": "Abete",
+        "lake": "Lago",
+        "rust": "Ruggine",
+        "moss": "Muschio",
+        "plum": "Prugna"
+      },
+      "accent": {
+        "gold": "Oro",
+        "coral": "Corallo",
+        "sage": "Salvia",
+        "cream": "Crema",
+        "none": "Senza"
+      },
+      "hat": {
+        "none": "Senza",
+        "beanie": "Berretto",
+        "brim": "Cappello",
+        "cap": "Cappellino"
+      },
+      "background": {
+        "mountain": "Montagne",
+        "lake": "Lago",
+        "forest": "Bosco",
+        "city": "Città",
+        "meadow": "Prato"
+      },
+      "companion": {
+        "none": "Da solo",
+        "bird": "Uccello",
+        "cat": "Gatto",
+        "fox": "Volpe"
+      }
+    },
+    "label": "Ritratto ad acquerello di {username}: {description}",
+    "result": {
+      "invalid": "Impossibile salvare questa combinazione.",
+      "saved": "Il tuo avatar ad acquerello è salvato."
+    }
+  },
+  "bench": {
+    "attributes": {
+      "backrest": "Schienale",
+      "armrest": "Braccioli",
+      "covered": "Coperta",
+      "wheelchair": "Utilizzabile in sedia a rotelle",
+      "fireplaceNearby": "Focolare vicino",
+      "wasteBasketNearby": "Cestino nelle vicinanze",
+      "material": "Materiale",
+      "seats": "Posti a sedere",
+      "direction": "Direzione dello sguardo"
+    },
+    "materials": {
+      "wood": "Legno",
+      "metal": "Metallo",
+      "stone": "Pietra",
+      "concrete": "Calcestruzzo",
+      "plastic": "Plastica",
+      "mixed": "Misto"
+    },
+    "sheet": {
+      "resize": "Espandi o riduci i dettagli",
+      "showDetails": "Mostra dettagli",
+      "showMap": "Mostra mappa",
+      "close": "Sara sü la banchina",
+      "loading": "Esplorazione del luogo",
+      "loadingAccessible": "Caricamento della banchina",
+      "unavailable": "Questo luogo si nasconde per un momento.",
+      "retry": "Guarda di nuovo",
+      "label": "Dettagli della banchina"
+    },
+    "directions": {
+      "n": "N",
+      "ne": "NE",
+      "e": "E",
+      "se": "SE",
+      "s": "S",
+      "sw": "SO",
+      "w": "O",
+      "nw": "NO"
+    },
+    "details": {
+      "title": "Dettagli",
+      "bench": "Banchina",
+      "light": "Luce",
+      "view": "Vista",
+      "weather": "Meteo",
+      "unknownFeatures": "Dotazioni ancora sconosciute",
+      "night": "Ora è notte",
+      "unknownLight": "Luce ancora da determinare",
+      "sunEstimate": "Sole · stima",
+      "shadeEstimate": "Ombra · stima",
+      "unknownView": "La vista è ancora da esplorare",
+      "forecast": "{temperature} °C · previsione",
+      "unknownWeather": "Dati meteo non ancora disponibili"
+    },
+    "panel": {
+      "eyebrow": "Sedersi chì",
+      "title": "Cosa offre la banchina",
+      "unknown": "Questa banchina è ancora da esplorare",
+      "missing": "{count, plural, one {Una caratteristica non è ancora stata registrata.} other {# caratteristiche non sono ancora state registrate.}}",
+      "directionUnknown": "Il paesaggio viene quindi valutato in tutte le direzioni.",
+      "directionKnown": "La vista viene ponderata in questa direzione."
+    },
+    "location": {
+      "title": "Luogo e posizione",
+      "elevation": "Altitudine",
+      "metresAboveSea": "{value} m s.l.m.",
+      "place": "Località",
+      "municipality": "Comune politico",
+      "municipalityValue": "{name} · UST {id}",
+      "canton": "Cantone",
+      "district": "Distretto",
+      "nearbyName": "Toponimo nelle vicinanze",
+      "sourceUpdated": "Fonte aggiornata",
+      "imported": "Importato da noi",
+      "osmVersion": "Versione OSM",
+      "coordinates": "Coordinate"
+    },
+    "summary": {
+      "title": "A colpo d’occhio",
+      "unconfirmed": "Presenza non ancora confermata",
+      "today": "Confermata incoeu",
+      "yesterday": "Confermata ieri",
+      "daysAgo": "Confermata {days, plural, one {un giorno fa} other {# giorni fa}}",
+      "noBackrest": "Senza schienale",
+      "unknownBackrest": "Schienale sconosciuto",
+      "night": "Notte",
+      "unknownLight": "Luce sconosciuta",
+      "sun": "Sole stimato",
+      "shade": "Ombra stimata",
+      "lowConfidence": "Bassa affidabilità della stima della luce",
+      "lightMethod": "Calcolato dal terreno e dai dintorni; le nuvole possono cambiare la luce",
+      "uncertain": " · incerto",
+      "noWheelchair": "Non utilizzabile in sedia a rotelle",
+      "unknownWheelchair": "Uso in sedia a rotelle sconosciuto",
+      "quiet": "Tranquillità {score}/5",
+      "unknownQuiet": "Tranquillità non valutata",
+      "accessNote": "Accesso: idoneità per sedie a rotelle non verificata.",
+      "nearbyTitle": "Servizi nelle vicinanze",
+      "nearbyHint": "Tocca per vedere il punto esatto sulla mappa.",
+      "straightLine": "ca. {distance} m in linea d’aria",
+      "showOnMap": "Mappa",
+      "showFacilityOnMap": "Mostra {facility} sulla mappa",
+      "mapLocation": "Posizione di un servizio sulla mappa",
+      "returnToBench": "Torna alla banchina",
+      "lastSeen": "Vista l’ultima volta",
+      "confirming": "Conferma …",
+      "mine": "Confermata da te incoeu",
+      "confirmFailed": "Impossibile salvare la conferma. Riprova."
+    },
+    "horizon": {
+      "label": "Orizzonte: {open} per cento libero, {buildings} per cento edifici, {plants} per cento vegetazione",
+      "labelPartial": "Orizzonte: {measured} per cento misurato, {unknown} per cento non determinabile",
+      "labelInconsistent": "I dati dell’orizzonte si sovrappongono; la parte libera non viene calcolata",
+      "title": "Cosa caratterizza l’orizzonte",
+      "open": "libero",
+      "unknown": "sconosciuto",
+      "openView": "Vista libera",
+      "buildings": "Edifici",
+      "trees": "Alberi",
+      "unknownRemainder": "Non determinabile",
+      "inconsistent": "Le misure si sovrappongono. Mostrare una parte libera sarebbe fuorviante."
+    },
+    "views": {
+      "mountains": "Vista sulle montagne",
+      "hills": "Vista sulle colline",
+      "water": "Vista sull’acqua",
+      "forest": "Vista sul bosco",
+      "panorama": "Vista panoramica",
+      "limited": "Vista limitata",
+      "lake": "Vista sul lago",
+      "woodland": "Ambiente boschivo",
+      "ordinary": "Nessuna vista particolare",
+      "nearbyWater": "Acqua nei dintorni",
+      "unknown": "Vista ancora sconosciuta"
+    },
+    "light": {
+      "estimatedSun": "Sole stimato",
+      "directSun": "Sole diretto",
+      "today": "Luce incoeu",
+      "calculatedFor": "Stima per le {time} · aggiornamento automatico",
+      "estimatedWindows": "Fasce di sole stimate",
+      "sunWindows": "Fasce di sole",
+      "noSun": "Nessun sole diretto calcolato incoeu",
+      "shadeWindows": "Fasce d’ombra",
+      "noShade": "Nessuna fascia d’ombra calcolata incoeu",
+      "durationSeasons": "Durata e stagioni",
+      "detailsSummary": "Totali, ostacoli e dati del cielo",
+      "balance": "{sun} di sole diretto e {shade} d’ombra durante il giorno",
+      "shade": "Ombra",
+      "skyValues": "Dati del cielo",
+      "sunrise": "Alba",
+      "sunset": "Tramonto",
+      "directFrom": "Sole diretto dalle",
+      "directUntil": "Sole diretto fino alle",
+      "noDirect": "Nessun sole diretto",
+      "altitude": "Altezza del sole",
+      "azimuth": "Direzione del sole",
+      "moonlight": "Luce lunare",
+      "moonrise": "Sorgere della luna",
+      "moonset": "Tramonto della luna",
+      "timeline": "Alba {sunrise}, tramonto {sunset}. Sorgere della luna {moonrise}, tramonto {moonset}.",
+      "seasons": {
+        "spring": "Primavera",
+        "summer": "Estate",
+        "autumn": "Autunno",
+        "winter": "Inverno",
+        "label": "Durata tipica del sole diretto per stagione"
+      },
+      "state": {
+        "moon": "Chiaro di luna su questo luogo",
+        "night": "La notte su questo luogo",
+        "unknown": "La luce è ancora da esplorare",
+        "sun": "Il sole diretto è geometricamente possibile",
+        "shade": "Nel modello ambientale la banchina è all’ombra"
+      },
+      "explanation": {
+        "nightEstimate": "Il modello indicava {duration} di sole diretto possibile.",
+        "night": "Incoeu erano possibili {duration} di sole diretto.",
+        "unknown": "Mancano alcuni dati sui dintorni per una conclusione affidabile.",
+        "clouds": "Geometricamente libero, ma le nuvole attenuano la luce.",
+        "sun": "I raggi del sole raggiungono questo luogo."
+      },
+      "causes": {
+        "frei": "Il cielo è libero; l’origine dell’ombra resta incerta.",
+        "nacht": "È notte.",
+        "überdacht": "L’ombra proviene probabilmente dalla copertura.",
+        "gebäude": "L’ombra proviene probabilmente da un edificio.",
+        "vegetation": "L’ombra proviene probabilmente da alberi e vegetazione.",
+        "gelände": "L’ombra proviene probabilmente dal terreno.",
+        "unbekannt": "L’origine dell’ombra è ancora sconosciuta."
+      },
+      "confidence": {
+        "hoch": "Calcolato da terreno, edifici e vegetazione · nuvole considerate separatamente.",
+        "mittel": "Buona approssimazione geometrica della luce · nuvole considerate separatamente.",
+        "niedrig": "Stima provvisoria · mancano ancora alcuni dati sui dintorni."
+      }
+    },
+    "weather": {
+      "title": "Meteo e tranquillità",
+      "temperatureAt": "{temperature}° a {location}",
+      "unknown": "Il cielo resta da scoprire",
+      "rain": "Precipitazioni",
+      "wind": "Vento",
+      "humidity": "Umidità",
+      "snow": "Neve",
+      "updated": "Aggiornato: {date}",
+      "empty": "Temperatura, nuvole e precipitazioni appariranno chì quando i dati saranno disponibili.",
+      "layers": {
+        "high": "alte",
+        "mid": "medie",
+        "low": "basse",
+        "total": "totale"
+      },
+      "cloudCover": "Copertura nuvolosa: {percent} per cento",
+      "quiet": {
+        "title": "Tranquillità sul posto",
+        "empty": "Ancora nessun parere",
+        "unknown": "La tranquillità di questo luogo non è ancora stata valutata.",
+        "community": "Tranquillità secondo chi c’è stato",
+        "score": "{score} su 5",
+        "explanation": "Valutazione soggettiva, separata dai dati sul traffico."
+      },
+      "precipitation": {
+        "none": "asciutto",
+        "rain": "Pioggia",
+        "snow": "Neve",
+        "mixed": "Pioggia mista a neve",
+        "unknown": "Precipitazioni ancora incerte"
+      },
+      "clouds": {
+        "overcast": "Coperto",
+        "mostly": "Molto nuvoloso",
+        "cloudy": "Nuvoloso",
+        "few": "Poco nuvoloso",
+        "clear": "Sereno"
+      },
+      "temperatureHere": "{temperature}° presso questa banchina"
+    },
+    "view": {
+      "title": "Vista e dintorni",
+      "impression": "Impressione",
+      "empty": "La vista è ancora da esplorare.",
+      "confidence": {
+        "hoch": "Alta affidabilità",
+        "mittel": "Affidabilità media",
+        "niedrig": "Bassa affidabilità"
+      },
+      "community": "{count, plural, one {Un’impressione di una persona sul posto} other {# impressioni di persone sul posto}} · {confidence}",
+      "communityConfidence": {
+        "high": "ben supportato",
+        "medium": "supportato con cautela",
+        "low": "prima tendenza"
+      },
+      "details": "La vista in dettaglio",
+      "detailsSummary": "Misure, orizzonte e dintorni",
+      "metrics": {
+        "directions": "Direzioni libere",
+        "sky": "Apertura del cielo",
+        "relief": "Rilievo del terreno",
+        "water": "Acqua visibile",
+        "naturalness": "Ambiente naturale",
+        "remoteness": "Distanza dai disturbi",
+        "empty": "Mancano ancora punti di misura sufficienti per la vista.",
+        "label": "Componenti della valutazione della vista"
+      },
+      "water": "Acqua",
+      "path": "Via mappata",
+      "inForest": "Nel bosco",
+      "outsideForest": "Fuori dal bosco",
+      "photos": "Integrato con foto",
+      "coverage": {
+        "title": "Area di analisi",
+        "terrain": "Dintorni e terreno fino a 20 km",
+        "near": "Dintorni"
+      },
+      "buildingHorizon": "Edifici all’orizzonte",
+      "vegetationHorizon": "Vegetazione all’orizzonte",
+      "buildingCount": "Edifici entro 100 m",
+      "canopyCover": "Copertura arborea",
+      "medianVegetation": "Altezza mediana della vegetazione",
+      "maxVegetation": "Vegetazione più alta",
+      "imageHints": "Indizi dalle immagini dei dintorni",
+      "imageConfidence": {
+        "low": "indizio debole",
+        "medium": "indizio supportato",
+        "high": "supportato più volte"
+      },
+      "imageExplanation": "Indizi del modello, non misurazioni. I valori grezzi del modello visivo non sono probabilità calibrate.",
+      "score": "Vista: {score} su 5",
+      "outOfFive": "su 5",
+      "directly": "direttamente",
+      "canopy": {
+        "label": "Copertura arborea nei dintorni",
+        "title": "Chiome attorno alla banchina",
+        "none": "Cielo libero",
+        "partial": "Sotto singoli alberi",
+        "dense": "Chiome fitte",
+        "unknown": "Presenza di alberi ancora incerta"
+      },
+      "headline": {
+        "mountains": "Le montagne aprono l’orizzonte",
+        "hills": "Le colline disegnano la lontananza",
+        "water": "L’acqua si offre alla vista",
+        "limited": "Lo sguardo resta nei dintorni",
+        "open": "Fin dove si apre lo sguardo"
+      },
+      "land": {
+        "waterfront": "Direttamente sull’acqua",
+        "forest": "Bosco",
+        "forest_edge": "Margine del bosco",
+        "park": "Parco",
+        "open": "Terreno aperto",
+        "urban": "In paese",
+        "mixed": "Paesaggio misto",
+        "unknown": "Dintorni ancora incerti"
+      },
+      "explanation": {
+        "openness": "Orizzonte ampio e poco ostruito",
+        "relief": "Rilievo marcato di montagne o colline",
+        "water": "Visuale libera verso uno specchio d’acqua",
+        "naturalness": "Ambiente prevalentemente naturale",
+        "community": "Le impressioni di {count, plural, one {una persona sono} other {# persone sono}} state integrate con cautela.",
+        "model": "Calcolato da terreno, copertura del suolo e dintorni"
+      },
+      "traits": {
+        "buildings": "Edifici nei dintorni",
+        "roadRail": "Strada o ferrovia nei dintorni"
+      }
+    },
+    "story": {
+      "reportFailed": "Segnalazione non riuscita. Riprova.",
+      "back": "Torna al luogo",
+      "created": "Banchina aggiunta",
+      "remaining": " · ancora {count, plural, one {una conferma} other {# conferme}}",
+      "confirmed": " · confermata",
+      "unverified": "Appena scoperta · non ancora confermata",
+      "directions": "Percorso per arrivare chì",
+      "contribute": "Contribuisci",
+      "join": "Partecipa",
+      "ratings": "Vedi le recensioni",
+      "nextTitle": "Cosa puoi ancora aggiungere?",
+      "nextDescription": "Questi dati aiutano per la prossima pausa.",
+      "rateIntent": "Lasciare una recensione",
+      "confirmIntent": "Confermare la banchina",
+      "contributeIntent": "Contribuire alla banchina",
+      "quietPlace": "Un luogo quieto",
+      "ratingMine": "La tua valutazione è {score} su 5. Modifica la recensione",
+      "ratingEmpty": "Non ancora valutata. Lascia la prima recensione",
+      "ratingSummary": "Valutazione {score} su 5 con {count, plural, one {un voto} other {# voti}}. Lascia la tua valutazione"
+    },
+    "landscape": {
+      "sun": "La banchina è al sole",
+      "snowfall": "Nevicata",
+      "lake": "con vista sul lago",
+      "river": "con vista sul fiume",
+      "mountains": "con vista sulle montagne",
+      "hills": "con vista sulle colline",
+      "forest": "nel bosco",
+      "backrest": "con schienale",
+      "noBackrest": "senza schienale",
+      "weather": "{temperature} gradi Celsius, {precipitation}, MeteoSvizzera",
+      "moon": "Luna illuminata al {percent} per cento",
+      "panoramaDescription": "Panorama del paesaggio calcolato a 360 gradi",
+      "panoramaControl": "Ruota la direzione dello sguardo",
+      "panoramaHeading": "Direzione dello sguardo a {degrees} gradi",
+      "panoramaHint": "↔ ↕ Trascina",
+      "panoramaCalculated": "Calcolato dai dati del terreno e dell’ambiente",
+      "panoramaGenerating": "Il panorama viene dipinto…",
+      "panoramaUnavailable": "Il panorama calcolato non è ancora disponibile.",
+      "panoramaRetry": "Riprova"
+    },
+    "page": {
+      "description": "Banchina con analisi del sole e dei dintorni in Bänkli App.",
+      "ratedDescription": "Banchina con vista valutata {score}/5 in Bänkli App.",
+      "backToFeed": "Torna al feed delle panchine",
+      "onMap": "Sulla mappa"
+    }
+  },
+  "common": {
+    "language": {
+      "label": "Lingua",
+      "localActive": "Dialetto locale: {region}",
+      "localApproximation": "regionalizzazione prudente",
+      "failed": "Impossibile cambiare lingua. Riprova."
+    },
+    "dialect": {
+      "label": "Dialetto della banchina",
+      "hint": "La scheda parla come il luogo",
+      "on": "Attivo",
+      "off": "Disattivo",
+      "failed": "Impossibile cambiare la modalità dialetto. Riprova."
+    },
+    "metadata": {
+      "title": "Bänkli App – Le panchine della Svizzera",
+      "description": "Trova panchine in Svizzera con sole, panorama e recensioni della comunità."
+    },
+    "navigation": {
+      "open": "Apri il menu",
+      "close": "Sara sü il menu",
+      "label": "Navigazione principale",
+      "addBench": "Aggiungi una banchina",
+      "walk": "Passeggiata",
+      "feed": "Novità delle panchine",
+      "statistics": "Panchinologia",
+      "favourites": "I miei luoghi preferiti",
+      "profile": "Il mio profilo",
+      "signIn": "Accedi",
+      "signOut": "Esci",
+      "about": "Informazioni su Bänkli App",
+      "map": "Torna alla mappa",
+      "privacy": "Protezione dei dati",
+      "imprint": "Contatti e note legali"
+    },
+    "install": {
+      "button": "Installa l’app",
+      "ios": "In Safari, scegli «Condividi» e poi «Aggiungi alla schermata Home»."
+    },
+    "actions": {
+      "back": "Indré",
+      "close": "chiudi",
+      "cancel": "Annulla",
+      "save": "Salva",
+      "saving": "Salvataggio…",
+      "remove": "Rimuovi",
+      "delete": "Elimina",
+      "retry": "Riprova",
+      "closeTitle": "Sara sü"
+    },
+    "values": {
+      "yes": "Sì",
+      "no": "No",
+      "unknown": "Sconosciuto",
+      "open": "Da precisare",
+      "notRecorded": "Non ancora registrato",
+      "bench": "Banchina",
+      "community": "Comunità"
+    },
+    "fields": {
+      "name": "Nome",
+      "optional": "(facoltativo)"
+    },
+    "errors": {
+      "signIn": "Accedi prima.",
+      "blocked": "I contributi da questo browser sono stati bloccati.",
+      "rateLimit": "Troppi contributi. Riprova più tardi.",
+      "benchNotFound": "Questa banchina non è stata trovata.",
+      "invalid": "Controlla i tuoi dati.",
+      "unavailable": "Non ha funzionato. Riprova."
+    },
+    "notFound": {
+      "title": "Banchina non trovata",
+      "description": "Potrebbe essere stata rimossa dai dati di origine."
+    },
+    "update": {
+      "ready": "È pronta una mappa più fresca.",
+      "reload": "Ricarica",
+      "dismiss": "Sara sü l’avviso di aggiornamento"
+    },
+    "calendar": {
+      "patterns": {
+        "numeric": "{day}.{month}.{year}",
+        "long": "{day} {month} {year}",
+        "monthYear": "{month} {year}",
+        "dayMonth": "{day} {month}",
+        "dateTime": "{date}, {time}"
+      },
+      "months": {
+        "january": "gennaio",
+        "february": "febbraio",
+        "march": "marzo",
+        "april": "aprile",
+        "may": "maggio",
+        "june": "giugno",
+        "july": "luglio",
+        "august": "agosto",
+        "september": "settembre",
+        "october": "ottobre",
+        "november": "novembre",
+        "december": "dicembre"
+      }
+    }
+  },
+  "community": {
+    "hub": {
+      "eyebrow": "Osserviamo meglio, insieme",
+      "title": "Contribuisci alla banchina",
+      "close": "Sara sü i contributi"
+    },
+    "chapters": {
+      "rating": {
+        "title": "Com’è stata la tua pausa?",
+        "summary": "La tua valutazione",
+        "prompt": "Valuta comfort, tranquillità e panorama",
+        "mine": "La tua valutazione: {rating}/5"
+      },
+      "presence": {
+        "title": "Conferma la banchina",
+        "summary": "L’hai vista sul posto?"
+      },
+      "features": {
+        "title": "Descrivi la banchina",
+        "summary": "Nome, dotazioni e direzione dello sguardo"
+      },
+      "light": {
+        "title": "La luce in questo momento",
+        "recorded": "La tua osservazione è registrata",
+        "summary": "Sole, ombra o variabile",
+        "night": "Questa domanda appare di giorno, quando l’osservazione è utile."
+      },
+      "view": {
+        "title": "Panorama e dintorni",
+        "recorded": "La tua impressione è registrata",
+        "summary": "Conferma o precisa la stima"
+      },
+      "photo": {
+        "title": "Foto di questo luogo",
+        "summary": "Scatta o scegli dalla galleria"
+      },
+      "moment": {
+        "title": "Lascia un momento",
+        "summary": "Ricordo, consiglio, poesia o curiosità locale"
+      },
+      "care": {
+        "title": "Prenditi cura della banchina",
+        "summary": "Piccoli gesti di cura visibili",
+        "mine": "{count, plural, one {# tua azione oggi} other {# tue azioni oggi}}"
+      },
+      "correction": {
+        "title": "Qualcosa non va",
+        "summary": "Segnala posizione, condizioni o dintorni"
+      }
+    },
+    "theme": {
+      "month": "Tema comune · questo mese",
+      "monthly": {
+        "winter": {
+          "title": "Luce d’inverno",
+          "prompt": "Mostraci una banchina nella quieta luce d’inverno."
+        },
+        "company": {
+          "title": "Una persona cara",
+          "prompt": "Quale pausa condivideresti con qualcuno?"
+        },
+        "green": {
+          "title": "Primo verde",
+          "prompt": "Scopri i primi segni di primavera attorno alla banchina."
+        },
+        "history": {
+          "title": "Una banchina con una storia",
+          "prompt": "Quale ricordo o storia locale appartiene a questo luogo?"
+        },
+        "morning": {
+          "title": "Quiete del mattino",
+          "prompt": "Che sensazione dà questo luogo al mattino presto?"
+        },
+        "shade": {
+          "title": "Un posto all’ombra",
+          "prompt": "Quali panchine regalano ombra nei giorni caldi?"
+        },
+        "water": {
+          "title": "Acqua in vista",
+          "prompt": "Condividi un’impressione sincera dell’acqua, o della sua assenza."
+        },
+        "grandparents": {
+          "title": "Il preferito dei nonni",
+          "prompt": "Quale luogo sarebbe adatto a una pausa insieme?"
+        },
+        "evening": {
+          "title": "Oro della sera",
+          "prompt": "Cattura l’atmosfera di una tarda giornata estiva."
+        },
+        "care": {
+          "title": "Una piccola cura",
+          "prompt": "Un luogo pulito è un piccolo risultato della comunità."
+        },
+        "fog": {
+          "title": "Nebbia e vicinanza",
+          "prompt": "Cosa resta bello quando la vista lontana si prende una pausa?"
+        },
+        "thought": {
+          "title": "Un pensiero caldo",
+          "prompt": "Lascia una breve poesia o un consiglio."
+        }
+      }
+    },
+    "overview": {
+      "features": "{count, plural, one {# indicazione} other {# indicazioni}}",
+      "moments": "{count, plural, one {# momento} other {# momenti}}",
+      "mine": "I tuoi contributi chì:",
+      "empty": "Non hai ancora contribuito chì. Scegli ciò che sai con certezza.",
+      "rating": "Valutazione"
+    },
+    "metadata": {
+      "placeholder": "Come si chiama questa banchina?",
+      "dedicationHint": "(ciò che è scritto sulla banchina)",
+      "save": "Salva le indicazioni"
+    },
+    "moments": {
+      "kinds": {
+        "memory": "Ricordo",
+        "recommendation": "Consiglio",
+        "poem": "Poesia",
+        "local_fact": "Curiosità locale",
+        "photo": "Momento in foto"
+      },
+      "choose": "Cosa vuoi condividere?",
+      "label": "Il tuo momento sulla banchina",
+      "poemPlaceholder": "Qualche verso per questo luogo…",
+      "placeholder": "Cosa dovrebbero sapere gli altri su questo luogo?",
+      "publish": "Pubblica il momento"
+    },
+    "care": {
+      "actions": {
+        "cleaned": "Pulita un po’",
+        "good": "In buone condizioni",
+        "repair": "Da riparare",
+        "beautiful": "Incoeu particolarmente bella"
+      },
+      "description": "Niente punti o classifiche, solo un segno che qualcuno se n’è occupato.",
+      "mine": "{label} · da te",
+      "events": {
+        "cleaned": "pulita",
+        "good": "trovata in buone condizioni",
+        "repair": "segnalata da riparare",
+        "beautiful": "trovata particolarmente bella incoeu"
+      }
+    },
+    "presence": {
+      "signIn": "Accedi per partecipare",
+      "confirmedToday": "Confermata da te incoeu",
+      "confirm": "C’è ancora",
+      "question": "C’è ancora?",
+      "missingCount": "{count}/{threshold} persone segnalano l’assenza di questa banchina.",
+      "reportedMissing": "Assenza segnalata da te",
+      "confirmMissing": "Conferma l’assenza",
+      "reportMissing": "La banchina non c’è più"
+    },
+    "errors": {
+      "save": "Impossibile salvare l’azione. Riprova."
+    },
+    "rating": {
+      "eyebrow": "La tua impressione",
+      "existing": "La tua valutazione precedente è già inserita: puoi modificarla.",
+      "intro": "Quattro piccole impressioni aiutano gli altri a scegliere.",
+      "fields": {
+        "overall": "Complessiva",
+        "view": "Panorama",
+        "comfort": "Comfort",
+        "quiet": "Tranquillità"
+      },
+      "note": "Un pensiero",
+      "optional": "(facoltativo)",
+      "placeholder": "Cosa ti è piaciuto chì?",
+      "update": "Aggiorna la valutazione",
+      "publish": "Pubblica la valutazione",
+      "stars": "{count, plural, one {# stella} other {# stelle}}"
+    },
+    "correction": {
+      "eyebrow": "Una breve segnalazione",
+      "title": "Qualcosa non va?",
+      "intro": "Solo ciò che hai appena osservato sul posto.",
+      "field": "Cosa non va?",
+      "choose": "Scegli",
+      "options": {
+        "removed": "La banchina manca o è stata rimossa",
+        "location": "La posizione è imprecisa",
+        "properties": "Le dotazioni non corrispondono",
+        "condition": "Danneggiata o difficile da usare",
+        "environment": "Dintorni, panorama o luce non corrispondono"
+      },
+      "observation": "Cosa hai visto?",
+      "placeholder": "Per esempio: manca lo schienale",
+      "publish": "Pubblica la segnalazione",
+      "fields": {
+        "properties": "Dotazioni",
+        "condition": "Stato",
+        "location": "Posizione",
+        "removed": "Non più presente",
+        "environment": "Dintorni, vista o luce"
+      }
+    },
+    "place": {
+      "eyebrow": "Le persone di questo luogo",
+      "title": "Momenti sulla banchina",
+      "share": "Condividi il momento",
+      "shareShort": "Condividi",
+      "shareText": "Un momento sulla banchina presso {bench}",
+      "copied": "Link copiato, pronto da condividere, anche su Instagram.",
+      "shareUnavailable": "La condivisione non è disponibile in questo browser al momento.",
+      "operator": "Curata sul posto",
+      "favourite": "Luogo preferito",
+      "save": "Salva la banchina",
+      "saveHint": "Salva per più tardi",
+      "followPlace": "Segui il luogo",
+      "followingPlace": "Luogo seguito",
+      "following": "Segui {place}",
+      "follow": "Segui {place}",
+      "favourites": "Tutti i luoghi preferiti",
+      "recent": "negli ultimi 90 giorni",
+      "deleteOwn": "Elimina il mio momento",
+      "empty": "Ancora nessuna storia chì. La banchina aspetta pazientemente."
+    },
+    "features": {
+      "progress": "{known}/{total} dati noti · Tocca per completare",
+      "mine": "da te"
+    },
+    "observations": {
+      "light": {
+        "label": "Segnalare la luce sul posto",
+        "title": "È così in questo momento?",
+        "intro": "Una breve impressione dal posto",
+        "mine": "La tua osservazione: {choice}",
+        "choices": {
+          "sun": "Sole",
+          "shade": "Ombra",
+          "mixed": "Variabile"
+        },
+        "trend": "Comunità: soprattutto {choice} · {count, plural, one {una persona} other {# persone}}"
+      },
+      "view": {
+        "label": "Descrivere la vista sul posto",
+        "title": "Che impressione ti fa questo luogo?",
+        "agreed": "Confermata all’incirca da te",
+        "mine": "La tua impressione è stata registrata",
+        "intro": "La tua impressione aiuta a migliorare la stima",
+        "agree": "Corrisponde all’incirca",
+        "edit": "Vissuta diversamente",
+        "step": "Passo {current} di {total}",
+        "steps": "Passi",
+        "back": "Indré",
+        "next": "Avanti",
+        "save": "Registrare"
+      },
+      "steps": {
+        "openness": "Quanto sembra aperto il luogo?",
+        "landscape": "Cosa caratterizza il paesaggio?",
+        "horizon": "Cosa c’è all’orizzonte?",
+        "surroundings": "Che impressione danno i dintorni?"
+      },
+      "fields": {
+        "openness": "Vista libera",
+        "sky": "Cielo",
+        "relief": "Terreno",
+        "water": "Acqua",
+        "horizon": "Orizzonte",
+        "naturalness": "Dintorni",
+        "disturbance": "Disturbi"
+      },
+      "choices": {
+        "openness": {
+          "wide": "Quasi tutt’intorno",
+          "partial": "In alcune direzioni",
+          "enclosed": "Piuttosto chiuso"
+        },
+        "sky": {
+          "open": "Aperto",
+          "partial": "Parzialmente",
+          "closed": "Chiuso"
+        },
+        "relief": {
+          "flat": "Pianeggiante",
+          "gentle": "Dolce",
+          "strong": "Rilievo marcato"
+        },
+        "water": {
+          "clear": "Chiaramente visibile",
+          "some": "Un po’ visibile",
+          "none": "Non visibile"
+        },
+        "horizon": {
+          "open": "Prevalentemente libero",
+          "trees": "Alberi",
+          "buildings": "Edifici",
+          "mixed": "Misto"
+        },
+        "naturalness": {
+          "natural": "Naturale",
+          "mixed": "Misto",
+          "built": "Edificato"
+        },
+        "disturbance": {
+          "quiet": "Tranquillo",
+          "some": "Un po’",
+          "strong": "Molto"
+        }
+      },
+      "trend": {
+        "openness": "piuttosto aperto",
+        "naturalness": "naturale",
+        "quiet": "tranquillo",
+        "description": "Comunità: {qualities}",
+        "empty": "Impressione della comunità",
+        "summary": "{description} · {count, plural, one {una persona} other {# persone}} · {confidence}"
+      },
+      "undo": "Annulla"
+    },
+    "reviews": {
+      "eyebrow": "Da persone sul posto",
+      "title": "Com’è stata la pausa?",
+      "edit": "Modifica il mio contributo",
+      "add": "Condividi un’impressione",
+      "signIn": "Accedi per partecipare",
+      "reportedRating": "Recensione segnalata",
+      "reportRating": "Segnala la recensione",
+      "notes": "Segnalazioni",
+      "reportedCorrection": "Correzione segnalata",
+      "reportCorrection": "Segnala la correzione"
+    },
+    "result": {
+      "ratingSaved": "Grazie, la tua valutazione è visibile.",
+      "ratingFailed": "Impossibile salvare la valutazione.",
+      "correctionSaved": "Grazie, la tua segnalazione è stata pubblicata.",
+      "correctionFailed": "Impossibile salvare la segnalazione.",
+      "invalidContribution": "Contributo non valido.",
+      "reported": "Il contributo è stato segnalato.",
+      "reportFailed": "Segnalazione non riuscita.",
+      "momentInvalid": "Racconta questo luogo in poche parole.",
+      "momentSaved": "Il tuo momento è ora visibile in questo luogo.",
+      "momentFailed": "Impossibile salvare il momento.",
+      "invalidMoment": "Momento non valido.",
+      "notYourMoment": "Questo momento non appartiene al tuo account.",
+      "momentDeleted": "Il tuo momento è stato rimosso.",
+      "momentDeleteFailed": "Impossibile rimuovere il momento.",
+      "careInvalid": "Intervento di cura sconosciuto.",
+      "careSaved": "Grazie per la cura.",
+      "careAlreadySaved": "Lo hai già annotato incoeu.",
+      "careFailed": "Impossibile salvare l’intervento.",
+      "unfavourited": "Rimosso dai tuoi luoghi preferiti.",
+      "favourited": "Questa banchina è ora tra i tuoi luoghi preferiti.",
+      "placeUnnamed": "Questo luogo non ha ancora un nome.",
+      "placeUnfollowed": "Non segui più {place}.",
+      "placeFollowed": "I nuovi momenti di {place} appariranno nella tua vista.",
+      "followFailed": "Impossibile salvare la scelta.",
+      "lightInvalid": "Scegli sole, ombra o variabile.",
+      "lightNight": "Potrai segnalare la luce chì quando sarà giorno.",
+      "lightSaved": "Grazie, la tua osservazione sulla luce è registrata.",
+      "lightFailed": "Impossibile salvare l’osservazione sulla luce.",
+      "observationUndone": "La tua osservazione è stata ritirata.",
+      "undoFailed": "Impossibile ritirare l’osservazione.",
+      "observationConfirmed": "Grazie, la tua conferma aiuta a interpretare i dati.",
+      "observationConfirmFailed": "Impossibile salvare la conferma.",
+      "viewInvalid": "Completa la tua osservazione.",
+      "viewSaved": "Grazie, la tua osservazione è registrata.",
+      "viewFailed": "Impossibile salvare l’osservazione.",
+      "observationInvalid": "Osservazione sconosciuta.",
+      "observationDeleted": "La tua osservazione è stata cancellata.",
+      "observationDeleteFailed": "Impossibile cancellare l’osservazione."
+    }
+  },
+  "knowledge": {
+    "title": "Cosa sappiamo e cosa resta da scoprire",
+    "categories": {
+      "physical": "Dotazioni",
+      "location": "Luogo",
+      "accessibility": "Accesso",
+      "imagery": "Immagini",
+      "surroundings": "Dintorni",
+      "amenities": "Servizi vicini",
+      "environment": "Dati ambientali",
+      "recent_verification": "Avvistamento recente"
+    },
+    "amenities": {
+      "toilets": "Toilette",
+      "drinking_water": "Acqua potabile",
+      "fountain": "Fontana",
+      "shelter": "Riparo",
+      "picnic_table": "Tavolo da picnic",
+      "playground": "Parco giochi",
+      "waste_basket": "Cestino",
+      "fireplace": "Focolare"
+    },
+    "attributes": {
+      "covered": "Copertura",
+      "wheelchair": "Uso in sedia a rotelle",
+      "land_context": "Dintorni",
+      "canopy_context": "Chiome degli alberi",
+      "waterfront": "Sull’acqua",
+      "presence": "Presenza",
+      "image_water_type": "Acqua nelle foto",
+      "image_long_view": "Vista lontana stimata da seduti"
+    },
+    "sources": {
+      "osm": "OpenStreetMap",
+      "gis": "Geometria",
+      "imagery": "Modello visivo",
+      "official": "Dati ufficiali",
+      "community": "Comunità"
+    },
+    "confidence": {
+      "unknown": "sconosciuto",
+      "low": "incerto",
+      "medium": "supportato",
+      "high": "ben supportato"
+    },
+    "nearby": {
+      "title": "Nelle vicinanze",
+      "distance": "circa {distance} m",
+      "explanation": "Distanza in linea d’aria dai servizi registrati entro 500 m. Una fontana non fornisce necessariamente acqua potabile.",
+      "shortDistance": "{facility} · circa {distance} m in linea d’aria",
+      "unknown": "La mappa non registra tutti i servizi. Sul posto potrebbero essercene altri."
+    },
+    "approach": {
+      "title": "L’ultimo tratto di strada",
+      "length": "Tratto considerato",
+      "steps": "Scale su questo percorso",
+      "stepFree": "Possibilità senza gradini",
+      "open": "Sconosciuto",
+      "recorded": "Registrate",
+      "noneRecorded": "Nessuna registrata",
+      "evidence": "Indizi presenti",
+      "obstacle": "Ostacolo registrato",
+      "maxSlope": "Pendenza massima stimata",
+      "meanSlope": "Pendenza assoluta media",
+      "ascent": "Salita alla banchina",
+      "surface": "Superficie secondo la mappa",
+      "smoothness": "Condizioni secondo la mappa",
+      "width": "Larghezza minima registrata",
+      "explanation": "{confidence} · Solo un accesso locale, senza verifica dell’intero tragitto. L’assenza di ostacoli sulla mappa non garantisce l’accessibilità.",
+      "empty": "Non è ancora stato associato un sentiero pedonale sufficientemente vicino.",
+      "unmapped": "Ultimi metri non mappati",
+      "structure": "Ponte o galleria: il modello del terreno non dimostra la pendenza del percorso.",
+      "sampleCoverage": "Quota disponibile per {sampled} punti del percorso su {expected}."
+    },
+    "noise": {
+      "title": "Rumore del traffico nel modello",
+      "rail": "Ferrovia",
+      "road": "Strada",
+      "day": "Giorno",
+      "night": "Notte",
+      "empty": "Nessuna copertura raster",
+      "explanation": "Livelli di valutazione ufficiali, non misurazioni in tempo reale. Versione delle fonti: {version}."
+    },
+    "evidence": {
+      "title": "Indizi per caratteristica",
+      "conflicting": "Indizi contraddittori"
+    },
+    "completeness": {
+      "title": "Quanto sappiamo di questo luogo?",
+      "count": "{known} dati su {total}",
+      "uncertain": " · {count} incerti",
+      "explanation": "Ogni ambito è indipendente. Un valore mancante resta sconosciuto e non dice nulla di negativo sulla banchina."
+    },
+    "verification": {
+      "label": "Una breve domanda sul posto",
+      "intro": "Se sei chì adesso",
+      "unknown": "Non lo so",
+      "failed": "Impossibile salvare la risposta. Riprova.",
+      "questions": {
+        "backrest": "Questa banchina ha uno schienale?",
+        "armrest": "Questa banchina ha i braccioli?",
+        "covered": "Questa banchina ha un tetto fisso?",
+        "approach_steps": "C’erano scale nell’ultimo tratto per arrivare chì?"
+      },
+      "reasons": {
+        "conflicting": "Chì gli indizi si contraddicono.",
+        "missing": "Questa informazione manca ancora.",
+        "stale": "Un avvistamento recente è utile."
+      },
+      "result": {
+        "invalid": "Impossibile salvare questa risposta.",
+        "saved": "Grazie! La tua indicazione completa le osservazioni esistenti.",
+        "failed": "La risposta fa una pausa."
+      }
+    },
+    "surfaces": {
+      "asphalt": "Asfalto",
+      "paved": "Pavimentato",
+      "unpaved": "Non pavimentato",
+      "concrete": "Calcestruzzo",
+      "paving_stones": "Masselli",
+      "cobblestone": "Ciottoli",
+      "sett": "Pietra squadrata",
+      "gravel": "Ghiaia",
+      "fine_gravel": "Ghiaia fine",
+      "compacted": "Compattato",
+      "ground": "Terreno naturale",
+      "dirt": "Terra",
+      "earth": "Terra",
+      "grass": "Erba",
+      "sand": "Sabbia",
+      "wood": "Legno",
+      "rock": "Roccia",
+      "pebblestone": "Sassolini",
+      "mud": "Fango"
+    },
+    "smoothness": {
+      "excellent": "Molto regolare",
+      "good": "Regolare",
+      "intermediate": "Leggermente irregolare",
+      "bad": "Irregolare",
+      "very_bad": "Molto irregolare",
+      "horrible": "Molto deteriorato",
+      "very_horrible": "Estremamente deteriorato",
+      "impassable": "Impraticabile"
+    },
+    "freshness": {
+      "unknown": "Età della fonte sconosciuta",
+      "recent": "Fonte recente",
+      "old": "Fonte meno recente"
+    },
+    "estimates": {
+      "title": "Stimato dalle foto",
+      "explanation": "Stime di un modello visivo valutato, separate dai dati confermati. Non vengono usate per i filtri della dotazione o per indicazioni sull’accessibilità.",
+      "provenance": "Modello visivo: {model} · {count} esempi verificati in modo indipendente"
+    },
+    "view": {
+      "distinctions": "L’acqua vicina non garantisce una vista sull’acqua. Un ambiente aperto non garantisce una vista lontana da seduti. Le foto mostrano solo un’inquadratura e non dimostrano né ombra permanente né una direzione di vista sconosciuta."
+    }
+  },
+  "photos": {
+    "gallery": {
+      "view": "Vedi la foto",
+      "enlarge": "Ingrandisci: {caption}",
+      "close": "Sara sü le foto",
+      "unavailable": "L’immagine fa una pausa.",
+      "retry": "Ricarica",
+      "loading": "Caricamento dell’immagine…",
+      "source": "Fonte e licenza ↗",
+      "label": "Foto",
+      "previous": "Foto precedente",
+      "next": "Foto successiva",
+      "by": "Foto della banchina di {username}",
+      "exact": "Questa banchina",
+      "nearby": "Nei dintorni"
+    },
+    "capture": {
+      "title": "Metti la banchina in foto",
+      "intro": "Scegli dalla galleria, dalla fotocamera o dai file, preferibilmente senza persone nell’immagine. Verifica e archiviazione avvengono sul nostro server.",
+      "select": "Scegli una foto della banchina",
+      "preview": "Anteprima della foto della banchina",
+      "change": "Un’altra foto",
+      "choose": "Scatta o scegli una foto",
+      "caption": "Qualche parola",
+      "captionPlaceholder": "Cosa si vede da questa banchina?",
+      "checking": "Verifica della foto…",
+      "publish": "Pubblica la foto"
+    },
+    "errors": {
+      "prepare": "Impossibile preparare la foto.",
+      "originalTooLarge": "La foto originale è troppo grande. Scegli un’immagine fino a 24 MB.",
+      "decode": "Impossibile leggere la foto.",
+      "tooDetailed": "La foto contiene troppi dettagli. Scegli un’inquadratura un po’ più piccola.",
+      "read": "Impossibile leggere la foto.",
+      "upload": "Impossibile inviare la foto. Riprova."
+    },
+    "story": {
+      "nearby": "Nei dintorni · non necessariamente questa banchina",
+      "place": "Questo luogo",
+      "license": "Licenza alla fonte",
+      "title": "Uno sguardo nei dintorni",
+      "external": "Informazione esterna sul luogo ↗",
+      "defaultCaption": "Una vista da questa banchina."
+    },
+    "server": {
+      "notFound": "Immagine non trovata.",
+      "unavailable": "Immagine al momento non disponibile.",
+      "choose": "Scegli una foto nitida fino a 1,8 MB.",
+      "saved": "Foto ricevuta: la banchina ha il suo ritratto.",
+      "saveFailed": "Impossibile salvare la foto.",
+      "checkUnavailable": "Il controllo delle immagini guarda altrove. Riprova più tardi.",
+      "checkBusy": "Il controllo delle immagini riprende fiato. Riprova più tardi.",
+      "people": "La banchina può posare da sola per un momento: riprova senza persone.",
+      "uncertain": "L’immagine è un po’ troppo misteriosa per il controllo. Fotografa di nuovo la banchina in modo nitido e senza persone.",
+      "storageUnavailable": "L’archivio fotografico fa una pausa.",
+      "format": "Usa una foto JPEG, PNG o WebP.",
+      "formatMismatch": "Il formato non corrisponde alla foto. Seleziona di nuovo l’immagine."
+    }
+  },
+  "submission": {
+    "steps": {
+      "label": "Aggiungi una banchina",
+      "position": "Posizione",
+      "details": "Dettagli"
+    },
+    "location": {
+      "searching": "Ricerca del luogo…",
+      "onSave": "Il luogo sarà aggiunto al salvataggio",
+      "change": "Modifica la posizione",
+      "details": "Dettagli della posizione"
+    },
+    "nearby": {
+      "title": "Panchine nelle vicinanze",
+      "failed": "La ricerca nelle vicinanze non è riuscita.",
+      "retry": "Verifica di nuovo",
+      "checking": "Verifica delle panchine già presenti nelle vicinanze…",
+      "count": "{count, plural, one {# panchina entro 25 m} other {# panchine entro 25 m}}",
+      "question": "La tua è già presente?",
+      "open": "{meters} m · Vedi la banchina",
+      "empty": "Nessuna banchina registrata entro 25 m.",
+      "confirm": "Verificato: la mia è un’altra banchina."
+    },
+    "fields": {
+      "namePlaceholder": "La mia banchina preferita",
+      "dedication": "Dedica",
+      "features": "Aggiungi le dotazioni (facoltativo)",
+      "observation": "Cosa vedi sulla banchina?",
+      "accessNote": "Valuta separatamente l’utilizzo della banchina in sedia a rotelle e il percorso di accesso."
+    },
+    "form": {
+      "pending": "Registrazione…",
+      "submit": "Aggiungi"
+    },
+    "result": {
+      "locationInvalid": "Controlla la posizione.",
+      "reviewNearby": "Controlla prima le panchine vicine. La tua è già registrata?",
+      "added": "Banchina aggiunta · {count, plural, one {manca # conferma} other {mancano # conferme}}.",
+      "addFailed": "Impossibile salvare la banchina.",
+      "alreadyConfirmed": "Hai già confermato incoeu.",
+      "presenceConfirmed": "Grazie: presenza confermata incoeu.",
+      "verified": "Questa banchina è ora confermata!",
+      "confirmationsNeeded": "{count, plural, one {Manca # conferma.} other {Mancano # conferme.}}",
+      "confirmFailed": "Conferma non riuscita.",
+      "alreadyMissing": "Hai già confermato l’assenza.",
+      "removed": "Confermato come non più presente.",
+      "removalVotes": "Segnalazione salvata: {count, plural, one {manca # voto} other {mancano # voti}}.",
+      "removalFailed": "Segnalazione non riuscita.",
+      "metadataInvalid": "Controlla le informazioni.",
+      "metadataUpdated": "Informazioni aggiornate.",
+      "metadataFailed": "Modifica non riuscita.",
+      "fieldInvalid": "Controlla questa informazione.",
+      "chooseBoolean": "Scegli sì o no.",
+      "chooseMaterial": "Scegli un materiale.",
+      "chooseSeats": "Scegli tra 1 e 20 posti.",
+      "chooseDirection": "Scegli una direzione.",
+      "unchanged": "È già registrato così.",
+      "fieldSaved": "Grazie, è registrato.",
+      "fieldFailed": "Impossibile salvare l’informazione."
+    }
+  }
+}

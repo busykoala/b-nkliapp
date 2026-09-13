@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { dialectRegionForBench, localBenchVoice, localLanguageForBench } from "./dialect";
+import { resolveDialect } from "./dialects/resolve";
 
 type Place = Parameters<typeof dialectRegionForBench>[0];
 
@@ -12,63 +13,68 @@ function place(overrides: Partial<Place> = {}): Place {
     locationCanton: "Zürich",
     sunnyNow: true,
     shadeCause: "frei",
-    inForest: false,
-    waterfront: false,
-    viewLabels: [],
+    dayPhase: "day",
     ...overrides,
   };
 }
 
-describe("location-dependent bench voice", () => {
+function official(municipalityName: string, localityName: string | null, cantonName: string, overrides: Partial<Place> = {}): Place {
+  return place({
+    locationName: "stale imported label",
+    locationCanton: null,
+    knowledge: { geography: { municipalityName, municipalityId: "fixture", cantonName, districtName: null, localityName, confidence: "high", sourceVersion: "swissBOUNDARIES3D-2026" } },
+    ...overrides,
+  });
+}
+
+describe("versioned dialect resolver", () => {
   test.each([
-    ["Basel-Stadt", "Basel", 7.59, "basel"],
-    ["Bern", "Bern", 7.45, "bern"],
-    ["Zürich", "Zürich", 8.54, "zurich"],
-    ["St. Gallen", "St. Gallen", 9.38, "northeast"],
-    ["Luzern", "Luzern", 8.31, "central"],
-    ["Valais", "Brig-Glis", 7.99, "wallis"],
-    ["Valais", "Sion", 7.30, "frValais"],
-    ["Vaud", "Lausanne", 6.63, "frVaud"],
-    ["Genève", "Genève", 6.15, "frGeneva"],
-    ["Neuchâtel", "Neuchâtel", 6.93, "frNeuchatel"],
-    ["Jura", "Delémont", 7.35, "frJura"],
-    ["Ticino", "Lugano", 8.95, "itSottoceneri"],
-    ["Ticino", "Bellinzona", 9.02, "itSopraceneri"],
-    ["Graubünden", "Davos", 9.82, "graubuenden"],
-    ["Graubünden", "Scuol", 10.29, "rmVallader"],
-    ["Graubünden", "Samedan", 9.87, "rmPuter"],
-    ["Graubünden", "Savognin", 9.60, "rmSurmiran"],
-    ["Graubünden", "Andeer", 9.42, "rmSutsilvan"],
-    ["Graubünden", "Disentis/Mustér", 8.85, "rmSursilvan"],
-    ["Graubünden", "Val Müstair", 10.37, "rmJauer"],
-    ["Graubünden", "Poschiavo", 10.06, "itGraubuenden"],
-  ] as const)("maps %s / %s to a broad language region", (canton, municipality, longitude, expected) => {
-    expect(dialectRegionForBench(place({ longitude, locationCanton: canton, locationName: municipality }))).toBe(expected);
+    ["Düdingen", null, "Fribourg", "fr-sensler"], ["Tafers", null, "Fribourg", "fr-sensler"], ["Plaffeien", null, "Fribourg", "fr-sensler"],
+    ["Murten", null, "Fribourg", "fr-seeland"], ["Kerzers", null, "Fribourg", "fr-seeland"], ["Jaun", "Im Fang", "Fribourg", "fr-jaun"],
+    ["Gurmels", "Kleingurmels", "Fribourg", "fr-gurmels-contact"], ["St. Gallen", null, "St. Gallen", "sg-city"],
+    ["Diepoldsau", null, "St. Gallen", "sg-diepoldsau"], ["Wartau", "Frümsen", "St. Gallen", "sg-werdenberg"],
+    ["Appenzell", null, "Appenzell Innerrhoden", "ai-core"], ["Herisau", null, "Appenzell Ausserrhoden", "ar-hinter"],
+    ["Frauenfeld", null, "Thurgau", "tg-west"], ["Arbon", null, "Thurgau", "tg-east"], ["Kerns", null, "Obwalden", "ow-sarnen-kerns"],
+    ["Stans", null, "Nidwalden", "nw-core"], ["Muotathal", null, "Schwyz", "sz-muotathal"], ["Altdorf", null, "Uri", "ur-reuss"],
+    ["Andermatt", null, "Uri", "ur-urseren"], ["Glarus", null, "Glarus", "gl-central"], ["Schaffhausen", null, "Schaffhausen", "sh-city"],
+    ["Bosco Gurin", null, "Ticino", "ti-bosco-gurin"], ["Samnaun", null, "Graubünden", "gr-samnaun"], ["Avers", "Juf", "Graubünden", "gr-avers"],
+    ["Vals", null, "Graubünden", "gr-vals"], ["Safiental", "Safien", "Graubünden", "gr-safien"],
+    ["Obersaxen Mundaun", "Obersaxen", "Graubünden", "gr-obersaxen"], ["Bergün Filisur", "Bergün", "Graubünden", "rm-bergun"],
+    ["Sils im Engadin/Segl", "Segl", "Graubünden", "rm-puter"], ["Sils im Domleschg", "Sils im Domleschg", "Graubünden", "gr-rhine-rm-contact"],
+    ["Moutier", null, "Jura", "fr-jura"],
+  ] as const)("resolves %s / %s to %s", (municipality, locality, canton, expected) => {
+    expect(dialectRegionForBench(official(municipality, locality, canton))).toBe(expected);
   });
 
-  test("uses geography before the less precise imported address", () => {
-    expect(dialectRegionForBench(place({
-      locationCanton: "Zürich",
-      knowledge: { geography: { municipalityName: "Bern", municipalityId: "351", cantonName: "Bern", districtName: null, localityName: null, confidence: "high", sourceVersion: "test" } },
-    }))).toBe("bern");
+  test("keeps official geography ahead of stale free text", () => {
+    expect(dialectRegionForBench(official("Bern", null, "Bern", { locationName: "Zürich" }))).toBe("be-mittelland");
   });
 
-  test("falls back to coordinates when place metadata is absent", () => {
-    expect(dialectRegionForBench(place({ latitude: 46.006, longitude: 8.952, locationCanton: null, locationName: null }))).toBe("itSottoceneri");
-    expect(dialectRegionForBench(place({ latitude: 46.519, longitude: 6.632, locationCanton: null, locationName: null }))).toBe("frVaud");
+  test("selects contact voices using the app language", () => {
+    const biel = official("Biel/Bienne", "Biel", "Bern");
+    expect(resolveDialect(biel, "de").voiceId).toBe("gsw-bern");
+    expect(resolveDialect(biel, "fr").voiceId).toBe("frc-jura");
+    const bivio = official("Surses", "Bivio", "Graubünden");
+    expect(resolveDialect(bivio, "rm").voiceId).toBe("rm-surmiran");
+    expect(resolveDialect(bivio, "it").voiceId).toBe("lmo-prealpine");
   });
 
-  test("keeps local voices deterministic and light-aware", () => {
-    const bench = place({ sunnyNow: false, shadeCause: "vegetation" });
-    const voice = localBenchVoice(bench);
-    expect(voice).toMatchObject({ region: "zurich", regionLabel: "Züridütsch", languageTag: "gsw-CH", uiLanguage: "de" });
-    expect(voice.second).toContain("Schatte");
-    expect(localBenchVoice(bench)).toEqual(voice);
+  test("does not invent a dialect outside Switzerland", () => {
+    expect(resolveDialect(place({ latitude: 48.8566, longitude: 2.3522, locationName: null, locationCanton: null }), "de"))
+      .toMatchObject({ areaId: null, voiceId: null, matchKind: "unknown" });
   });
 
-  test("switches the complete bench information to the local national language", () => {
-    expect(localLanguageForBench(place({ locationCanton: "Vaud", locationName: "Lausanne", longitude: 6.63 }))).toBe("fr");
-    expect(localLanguageForBench(place({ locationCanton: "Ticino", locationName: "Lugano", latitude: 46.01, longitude: 8.95 }))).toBe("it");
-    expect(localLanguageForBench(place({ locationCanton: "Graubünden", locationName: "Scuol", latitude: 46.80, longitude: 10.29 }))).toBe("rm");
+  test("keeps local voices deterministic and distinguishes all light states", () => {
+    const shaded = localBenchVoice(place({ sunnyNow: false, shadeCause: "vegetation" }));
+    expect(shaded).toMatchObject({ region: "zh-core", regionLabel: "Züridütsch", languageTag: "gsw-CH", uiLanguage: "de" });
+    expect(shaded?.second).toContain("Schatte");
+    expect(localBenchVoice(place({ dayPhase: "night", shadeCause: "nacht" }))?.second).toContain("Nacht");
+    expect(localBenchVoice(place({ sunnyNow: null, shadeCause: "unbekannt" }))?.second).toContain("nöd bekannt");
+  });
+
+  test("switches the complete bench information to the local language family", () => {
+    expect(localLanguageForBench(official("Lausanne", null, "Vaud"))).toBe("fr");
+    expect(localLanguageForBench(official("Lugano", null, "Ticino"))).toBe("it");
+    expect(localLanguageForBench(official("Scuol", null, "Graubünden"))).toBe("rm");
   });
 });

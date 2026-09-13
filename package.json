@@ -21,7 +21,11 @@
     "test:worker": "uv run pytest",
     "test:worker:container": "docker build --target test -f worker/Dockerfile .",
     "data:catalog:generate": "tsx scripts/generate-data-jobs.ts",
-    "data:catalog:check": "tsx scripts/generate-data-jobs.ts --check"
+    "data:catalog:check": "tsx scripts/generate-data-jobs.ts --check && npm run dialects:check",
+    "dialects:generate": "tsx scripts/generate-dialect-packs.ts",
+    "dialects:check": "tsx scripts/generate-dialect-packs.ts --check",
+    "dialects:geography:generate": "uv run python scripts/generate_dialect_geography.py",
+    "dialects:audit": "uv run python scripts/audit_dialect_coverage.py"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",

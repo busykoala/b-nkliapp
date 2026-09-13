@@ -1,0 +1,1264 @@
+{
+  "account": {
+    "dialog": {
+      "invitation": "Mach mit",
+      "welcome": "Willkommen zurück",
+      "createTitle": "Dein Bänkli-Konto",
+      "description": "Nur Benutzername und Passwort. Ganz ohne E-Mail.",
+      "privacy": "Was mit deinen Daten passiert ↗",
+      "intent": "Danach geht es weiter: {intent}.",
+      "register": "Neu da? Konto erstellen",
+      "login": "Ich habe schon ein Konto",
+      "registerTab": "Registrieren"
+    },
+    "fields": {
+      "username": "Benutzername",
+      "password": "Passwort",
+      "showPassword": "Passwort zeige",
+      "hidePassword": "Passwort ausblenden"
+    },
+    "form": {
+      "signingIn": "Wird angemeldet …",
+      "registering": "Konto entsteht …",
+      "register": "Konto erstellen"
+    },
+    "validation": {
+      "usernameCharacters": "Nur Buchstaben, Zahlen, Punkt, _ und -",
+      "usernameShort": "Mindestens 3 Zeichen",
+      "usernameLong": "Höchstens 24 Zeichen",
+      "passwordShort": "Mindestens 8 Zeichen",
+      "passwordLong": "Höchstens 128 Zeichen"
+    },
+    "result": {
+      "welcome": "Willkommen bei der Bänkli App!",
+      "usernameTaken": "Dieser Benutzername isch schon vergeben.",
+      "registerFailed": "Konto konnte nid erstellt werden.",
+      "credentialsInvalid": "Benutzername oder Passwort stimmt nid.",
+      "welcomeBack": "Schön, bist du wieder da!",
+      "invitationInvalid": "Dieser Einladungslink isch ungültig oder abgelaufen. Bitte lass dir en neuen schicken."
+    },
+    "invitation": {
+      "eyebrow": "Eine Bänkli isch no frei",
+      "title": "{username} lädt dich zur Bänkli App ein",
+      "copy": "Erstelle ein neues Konto und entdeckt gemeinsam besondere Pausenplätze.",
+      "qualifier": "Die Einladung zählt, sobald dieses neue Konto erstellt ist. Bestehende Konten chönd nid nachträglich zugeordnet werden.",
+      "invalidTitle": "Diese Einladung isch nid mehr gültig",
+      "invalidCopy": "Der geheime Link isch abgelaufen oder wurde nid vollständig kopiert.",
+      "signedInTitle": "Du bist bereits angemeldet",
+      "signedInCopy": "Einladungen gelten nur für neue Konten. Dein bestehendes Konto bleibt unverändert."
+    }
+  },
+  "avatar": {
+    "editor": {
+      "title": "Avatar gestalten",
+      "mixture": "Deine Mischung",
+      "description": "Jede Auswahl wird aus einzelnen Aquarell-Ebenen zusammengesetzt.",
+      "random": "Überrasche mich",
+      "pending": "Wird gemalt …",
+      "save": "Avatar speichern"
+    },
+    "description": "{hair}, {coat}, Hintergrund {background}",
+    "groups": {
+      "skin": "Hautton",
+      "hairStyle": "Frisur",
+      "hair": "Haarfarbe",
+      "coat": "Jacke",
+      "accent": "Schal",
+      "hat": "Kopfbedeckung",
+      "background": "Lieblingslandschaft",
+      "companion": "Begleitung"
+    },
+    "options": {
+      "skin": {
+        "porcelain": "Hell",
+        "sunlit": "Sonnig",
+        "warm": "Warm",
+        "brown": "Braun",
+        "deep": "Dunkel"
+      },
+      "hair": {
+        "charcoal": "Kohle",
+        "chestnut": "Kastanie",
+        "copper": "Kupfer",
+        "blond": "Gold",
+        "silver": "Silber"
+      },
+      "hairStyle": {
+        "short": "Kurz",
+        "waves": "Wellen",
+        "bob": "Bob",
+        "bun": "Dutt",
+        "curls": "Locken"
+      },
+      "coat": {
+        "pine": "Tanne",
+        "lake": "See",
+        "rust": "Rost",
+        "moss": "Moos",
+        "plum": "Pflaume"
+      },
+      "accent": {
+        "gold": "Gold",
+        "coral": "Koralle",
+        "sage": "Salbei",
+        "cream": "Creme",
+        "none": "Ohne"
+      },
+      "hat": {
+        "none": "Ohne",
+        "beanie": "Mütze",
+        "brim": "Hut",
+        "cap": "Cap"
+      },
+      "background": {
+        "mountain": "Berge",
+        "lake": "See",
+        "forest": "Wald",
+        "city": "Stadt",
+        "meadow": "Wiese"
+      },
+      "companion": {
+        "none": "Allein",
+        "bird": "Vogel",
+        "cat": "Katze",
+        "fox": "Fuchs"
+      }
+    },
+    "label": "Aquarell-Profilbild von {username}: {description}",
+    "result": {
+      "invalid": "Diese Kombination konnte nid gspeicheret werden.",
+      "saved": "Dein Aquarell-Avatar isch gspeicheret."
+    }
+  },
+  "bench": {
+    "attributes": {
+      "backrest": "Ruggelehne",
+      "armrest": "Armlehnen",
+      "covered": "Überdacht",
+      "wheelchair": "Mit Rollstuhl nutzbar",
+      "fireplaceNearby": "Feuerstelle nahebei",
+      "wasteBasketNearby": "Abfalleimer nahebei",
+      "material": "Material",
+      "seats": "Sitzplätze",
+      "direction": "Blickrichtung"
+    },
+    "materials": {
+      "wood": "Holz",
+      "metal": "Metall",
+      "stone": "Stein",
+      "concrete": "Beton",
+      "plastic": "Kunststoff",
+      "mixed": "Gemischt"
+    },
+    "sheet": {
+      "resize": "Detailhöhe ändern",
+      "showDetails": "Details zeige",
+      "showMap": "Charte zeige",
+      "close": "Bänkli zuemache",
+      "loading": "Der Platz wird erkundet",
+      "loadingAccessible": "Bänkli wird geladen",
+      "unavailable": "Dieser Platz versteckt sich gerade.",
+      "retry": "No einmal schauen",
+      "label": "Bänkli-Detail"
+    },
+    "directions": {
+      "n": "N",
+      "ne": "NO",
+      "e": "O",
+      "se": "SO",
+      "s": "S",
+      "sw": "SW",
+      "w": "W",
+      "nw": "NW"
+    },
+    "details": {
+      "title": "Details",
+      "bench": "Bänkli",
+      "light": "Liecht",
+      "view": "Ussicht",
+      "weather": "Wetter",
+      "unknownFeatures": "Ausstattung no offen",
+      "night": "Jetzt isch Nacht",
+      "unknownLight": "Lichtlage no offen",
+      "sunEstimate": "Sunne · gschätzt",
+      "shadeEstimate": "Schatte · gschätzt",
+      "unknownView": "Der Blick wird no erkundet",
+      "forecast": "{temperature} °C · Prognose",
+      "unknownWeather": "Wetterdaten no offen"
+    },
+    "panel": {
+      "eyebrow": "So sitzt es sich da",
+      "title": "Was die Bänkli mitbringt",
+      "unknown": "Die Bänkli wird no erkundet",
+      "missing": "{count, plural, one {Ein Merkmal wurde noch nicht erfasst.} other {# Merkmale wurden noch nicht erfasst.}}",
+      "directionUnknown": "Die Landschaft wird deshalb rundum betrachtet.",
+      "directionKnown": "Die Ussicht wird in dieser Richtung gewichtet."
+    },
+    "location": {
+      "title": "Ort & Lage",
+      "elevation": "Höhe",
+      "metresAboveSea": "{value} m ü. M.",
+      "place": "Ort",
+      "municipality": "Politische Gemeinde",
+      "municipalityValue": "{name} · BFS {id}",
+      "canton": "Kanton",
+      "district": "Bezirk",
+      "nearbyName": "Ortsname in der Nähe",
+      "sourceUpdated": "Quelleneintrag geändert",
+      "imported": "Bei uns eingelesen",
+      "osmVersion": "OSM-Version",
+      "coordinates": "Koordinaten"
+    },
+    "summary": {
+      "title": "Uf en Blick",
+      "unconfirmed": "No kei Sichtung bestätigt",
+      "today": "Hüt bestätigt",
+      "yesterday": "Geschter bestätigt",
+      "daysAgo": "Bestätigt vor {days, plural, one {einem Tag} other {# Tagen}}",
+      "noBackrest": "Ohne Ruggelehne",
+      "unknownBackrest": "Ruggelehne offen",
+      "night": "Nacht",
+      "unknownLight": "Liecht nid bekannt",
+      "sun": "Sunne gschätzt",
+      "shade": "Schatte gschätzt",
+      "lowConfidence": "Geringe Sicherheit der Lichtschätzung",
+      "lightMethod": "Aus Gländ und Umgebung berechnet; Wolken chönd das Liecht ändern",
+      "uncertain": " · unsicher",
+      "noWheelchair": "Mit Rollstuhl nid nutzbar",
+      "unknownWheelchair": "Rollstuhlnutzung offen",
+      "quiet": "Rueh {score}/5",
+      "unknownQuiet": "Rueh unbewertet",
+      "accessNote": "Zuegang: nid uf Rollstuhltauglichkeit prüeft.",
+      "nearbyTitle": "Praktisches in der Nähe",
+      "nearbyHint": "Antippen zeigt den genauen Ort uf de Charte.",
+      "straightLine": "ca. {distance} m Luftlinie",
+      "showOnMap": "Charte",
+      "showFacilityOnMap": "{facility} uf de Charte zeige",
+      "mapLocation": "Ort einer Einrichtung uf de Charte",
+      "returnToBench": "Zrugg zum Bänkli",
+      "lastSeen": "Zuletzt gesehen",
+      "confirming": "Wird bestätigt …",
+      "mine": "Hüt von dir bestätigt",
+      "confirmFailed": "Bestätigung konnte nid gspeicheret werden. Bitte erneut versuchen."
+    },
+    "horizon": {
+      "label": "Horizont: {open} Prozent frei, {buildings} Prozent Gebäud, {plants} Prozent Vegetation",
+      "labelPartial": "Horizont: {measured} Prozent gemessen, {unknown} Prozent nid ableitbar",
+      "labelInconsistent": "Horizontdaten überschneiden sich; der freie Anteil wird nid berechnet",
+      "title": "Was den Horizont prägt",
+      "open": "frei",
+      "unknown": "nid bekannt",
+      "openView": "Freier Blick",
+      "buildings": "Gebäud",
+      "trees": "Böim",
+      "unknownRemainder": "Nid ableitbar",
+      "inconsistent": "Die Messwerte überschneiden sich. Es freier Anteil wäre deshalb irreführend."
+    },
+    "views": {
+      "mountains": "Bergblick",
+      "hills": "Hügelblick",
+      "water": "Wasserblick",
+      "forest": "Waldblick",
+      "panorama": "Weitsicht",
+      "limited": "Eingeschränkte Sicht",
+      "lake": "Seeblick",
+      "woodland": "Waldumgebung",
+      "ordinary": "Kei besondere Ussicht",
+      "nearbyWater": "Wasser im Umfeld",
+      "unknown": "Ussicht no offen"
+    },
+    "light": {
+      "estimatedSun": "Geschätzte Sunne",
+      "directSun": "Direkte Sunne",
+      "today": "Liecht hüt",
+      "calculatedFor": "Für {time} Uhr gschätzt · aktualisiert sich automatisch",
+      "estimatedWindows": "Geschätzte Sonnenfenster",
+      "sunWindows": "Sonnenfenster",
+      "noSun": "Hüt kei direkte Sunne berechnet",
+      "shadeWindows": "Schattenfenster",
+      "noShade": "Hüt kein Schattenfenster berechnet",
+      "durationSeasons": "Dauer & Jahreszeiten",
+      "detailsSummary": "Summen, Hindernisse und Himmelswerte",
+      "balance": "{sun} direkte Sunne und {shade} Schatte bei Tageslicht",
+      "shade": "Schatte",
+      "skyValues": "Himmelswerte",
+      "sunrise": "Sonnenaufgang",
+      "sunset": "Sonnenuntergang",
+      "directFrom": "Direkte Sunne ab",
+      "directUntil": "Direkte Sunne bis",
+      "noDirect": "Kei direkte Sunne",
+      "altitude": "Sonnenhöhe",
+      "azimuth": "Sonnenrichtung",
+      "moonlight": "Mondlicht",
+      "moonrise": "Mondaufgang",
+      "moonset": "Monduntergang",
+      "timeline": "Sonnenaufgang {sunrise}, Sonnenuntergang {sunset}. Mondaufgang {moonrise}, Monduntergang {moonset}.",
+      "seasons": {
+        "spring": "Frühling",
+        "summer": "Sommer",
+        "autumn": "Herbst",
+        "winter": "Winter",
+        "label": "Typische direkte Sonnendauer nach Jahreszeit"
+      },
+      "state": {
+        "moon": "Mondlicht über dem Platz",
+        "night": "Nacht über dem Platz",
+        "unknown": "Die Lichtlage wird no erkundet",
+        "sun": "Direkte Sunne isch geometrisch möglich",
+        "shade": "Im Umgebungsmodell liegt die Bänkli im Schatte"
+      },
+      "explanation": {
+        "nightEstimate": "Im Modell waren {duration} direkte Sunne möglich.",
+        "night": "Hüt waren {duration} direkte Sunne möglich.",
+        "unknown": "Für e sichere Aussage fehlen no einzelne Umgebungsdaten.",
+        "clouds": "Geometrisch frei, doch Wolken dämpfen das Liecht.",
+        "sun": "Der Sonnenstrahl erreicht den Platz."
+      },
+      "causes": {
+        "frei": "Der Himmel isch frei; die Ursache des Schattens bleibt unklar.",
+        "nacht": "Es isch Nacht.",
+        "überdacht": "Der Schatte kommt wahrscheinlich durch die Überdachung.",
+        "gebäude": "Der Schatte kommt wahrscheinlich durch ein Gebäud.",
+        "vegetation": "Der Schatte kommt wahrscheinlich durch Böim und Vegetation.",
+        "gelände": "Der Schatte kommt wahrscheinlich durch das Gländ.",
+        "unbekannt": "Die Ursache des Schattens isch no nid bekannt."
+      },
+      "confidence": {
+        "hoch": "Aus Gländ, Gebäuden und Bewuchs berechnet · Wolken separat betrachtet.",
+        "mittel": "Gut angenäherte geometrische Lichtlage · Wolken separat betrachtet.",
+        "niedrig": "Vorläufige Schätzung · einzelne Umgebungsdaten fehlen no."
+      }
+    },
+    "weather": {
+      "title": "Wetter & Rueh",
+      "temperatureAt": "{temperature}° bei {location}",
+      "unknown": "Der Himmel bleibt no verborgen",
+      "rain": "Niederschlag",
+      "wind": "Wind",
+      "humidity": "Feuchte",
+      "snow": "Schnee",
+      "updated": "Stand {date}",
+      "empty": "Sobald Wetterdaten verfügbar sind, erscheinen Temperatur, Wolken und Niederschlag da.",
+      "layers": {
+        "high": "hoch",
+        "mid": "mittel",
+        "low": "tief",
+        "total": "gesamt"
+      },
+      "cloudCover": "Wolkendecke {percent} Prozent",
+      "quiet": {
+        "title": "Rueh vor Ort",
+        "empty": "No kei Stimmen",
+        "unknown": "Die Rueh an diesem Platz wurde no nid erkundet.",
+        "community": "Rueh laut Lüüt vor Ort",
+        "score": "{score} von 5",
+        "explanation": "Subjektive Bewertung, getrennt von Verkehrsdaten."
+      },
+      "precipitation": {
+        "none": "trocken",
+        "rain": "Regen",
+        "snow": "Schnee",
+        "mixed": "Schneeregen",
+        "unknown": "Niederschlag no unklar"
+      },
+      "clouds": {
+        "overcast": "Bedeckt",
+        "mostly": "Stark bewölkt",
+        "cloudy": "Wolkig",
+        "few": "Leicht bewölkt",
+        "clear": "Klar"
+      },
+      "temperatureHere": "{temperature}° bei diesem Bänkli"
+    },
+    "view": {
+      "title": "Ussicht & Umgebung",
+      "impression": "Eindruck",
+      "empty": "Die Ussicht wird no erkundet.",
+      "confidence": {
+        "hoch": "Hohe Sicherheit",
+        "mittel": "Mittlere Sicherheit",
+        "niedrig": "Niedrige Sicherheit"
+      },
+      "community": "{count, plural, one {Ein Eindruck von einem Menschen vor Ort} other {# Eindrücke von Menschen vor Ort}} · {confidence}",
+      "communityConfidence": {
+        "high": "gut gestützt",
+        "medium": "vorsichtig gestützt",
+        "low": "erste Tendenz"
+      },
+      "details": "Ussicht im Detail",
+      "detailsSummary": "Messwerte, Horizont und Umgebung",
+      "metrics": {
+        "directions": "Freie Blickrichtungen",
+        "sky": "Himmelsoffenheit",
+        "relief": "Geländerelief",
+        "water": "Wasser im Blick",
+        "naturalness": "Natürliche Umgebung",
+        "remoteness": "Abstand zu Störungen",
+        "empty": "Für die Ussicht fehlen no genügend Messpunkte.",
+        "label": "Bestandteile der Aussichtswertung"
+      },
+      "water": "Wasser",
+      "path": "Weg oder Strasse",
+      "inForest": "Im Wald",
+      "outsideForest": "Ausserhalb des Waldes",
+      "photos": "Mit Fotos ergänzt",
+      "coverage": {
+        "title": "Analysebereich",
+        "terrain": "Nahbereich und Gländ bis 20 km",
+        "near": "Nahbereich"
+      },
+      "buildingHorizon": "Gebäud am Horizont",
+      "vegetationHorizon": "Vegetation am Horizont",
+      "buildingCount": "Gebäud in 100 m",
+      "canopyCover": "Baumdeckung",
+      "medianVegetation": "Mittlere Vegetationshöhe",
+      "maxVegetation": "Höchste Vegetation",
+      "imageHints": "Hinweise aus Bildern der Umgebung",
+      "imageConfidence": {
+        "low": "schwacher Hinweis",
+        "medium": "gestützter Hinweis",
+        "high": "mehrfach gestützt"
+      },
+      "imageExplanation": "Modellhinweise, kei Messungen. Die Rohwerte des Bildmodells sind kei kalibrierten Wahrscheinlichkeiten.",
+      "score": "Ussicht {score} von 5",
+      "outOfFive": "von 5",
+      "directly": "direkt",
+      "canopy": {
+        "label": "Baumdeckung im Nahbereich",
+        "title": "Baumdach rund um die Bänkli",
+        "none": "Freier Himmel",
+        "partial": "Unter einzelnen Bäumen",
+        "dense": "Dichtes Blätterdach",
+        "unknown": "Baumbestand no unklar"
+      },
+      "headline": {
+        "mountains": "Berge öffnen den Horizont",
+        "hills": "Hügel zeichnen die Ferne",
+        "water": "Wasser liegt im Blick",
+        "limited": "Der Blick bleibt im Nahraum",
+        "open": "So weit öffnet sich der Blick"
+      },
+      "land": {
+        "waterfront": "Direkt am Wasser",
+        "forest": "Wald",
+        "forest_edge": "Waldrand",
+        "park": "Park",
+        "open": "Offenes Gländ",
+        "urban": "Im Ort",
+        "mixed": "Gemischte Landschaft",
+        "unknown": "Umgebung no unklar"
+      },
+      "explanation": {
+        "openness": "Weiter, wenig verdeckter Horizont",
+        "relief": "Ausgeprägtes Berg- oder Hügelrelief",
+        "water": "Freie Sichtachse zu einer Wasserfläche",
+        "naturalness": "Überwiegend natürliche Umgebung",
+        "community": "Community-Eindrücke von {count, plural, one {einer Person sind} other {# Personen sind}} vorsichtig eingeflossen.",
+        "model": "Aus Gländ, Landbedeckung und Umgebung berechnet"
+      },
+      "traits": {
+        "buildings": "Gebäud im Umfeld",
+        "roadRail": "Strasse oder Bahn im Umfeld"
+      }
+    },
+    "story": {
+      "reportFailed": "Meldung fehlgeschlagen. Bitte erneut versuchen.",
+      "back": "Zum Platz",
+      "created": "Bänkli eingetragen",
+      "remaining": " · no {count, plural, one {eine Bestätigung} other {# Bestätigungen}}",
+      "confirmed": " · bestätigt",
+      "unverified": "Neu entdeckt · no unbestätigt",
+      "directions": "Weg hierher",
+      "contribute": "Beitragen",
+      "join": "Mitmachen",
+      "ratings": "Bewärtige ansehen",
+      "nextTitle": "Was kannst du no ergänzen?",
+      "nextDescription": "Diese Angaben helfen bei der nächsten Pause.",
+      "rateIntent": "Bewertung abgeben",
+      "confirmIntent": "Bänkli bestätigen",
+      "contributeIntent": "Zum Bänkli beitragen",
+      "quietPlace": "Es stiller Platz",
+      "ratingMine": "Deine Bewertung isch {score} von 5. Bewertung bearbeiten",
+      "ratingEmpty": "No unbewertet. Erste Bewertung abgeben",
+      "ratingSummary": "Bewertung {score} von 5 bei {count, plural, one {einer Stimme} other {# Stimmen}}. Selbst bewerten"
+    },
+    "landscape": {
+      "sun": "Die Bänkli liegt in der Sunne",
+      "snowfall": "Schneefall",
+      "lake": "mit Seeblick",
+      "river": "mit Flussblick",
+      "mountains": "mit Bergblick",
+      "hills": "mit Hügelblick",
+      "forest": "im Wald",
+      "backrest": "mit Ruggelehne",
+      "noBackrest": "ohne Ruggelehne",
+      "weather": "{temperature} Grad Celsius, {precipitation}, MeteoSchweiz",
+      "moon": "Mond {percent} Prozent beleuchtet",
+      "panoramaDescription": "Berechnetes 360-Grad-Landschaftspanorama",
+      "panoramaControl": "Blickrichtung drehen",
+      "panoramaHeading": "Blickrichtung {degrees} Grad",
+      "panoramaHint": "↔ ↕ Ziehen",
+      "panoramaCalculated": "Aus Gländ- und Umgebungsdaten berechnet",
+      "panoramaGenerating": "Die Ussicht wird gerade gemalt …",
+      "panoramaUnavailable": "Die berechnete Ussicht isch no nid verfügbar.",
+      "panoramaRetry": "Erneut versuchen"
+    },
+    "page": {
+      "description": "Bänkli mit Sunne- und Umgebungsanalyse in der Bänkli App.",
+      "ratedDescription": "Bänkli mit Ussicht {score}/5 in der Bänkli App.",
+      "backToFeed": "Zrugg zum Bänkli-Feed",
+      "onMap": "Auf der Charte"
+    }
+  },
+  "common": {
+    "language": {
+      "label": "Sprache",
+      "localActive": "Dialekt: {region}",
+      "localApproximation": "sorgfältig regionalisiert",
+      "failed": "Die Sprache konnte nid geändert werden. Bitte erneut versuchen."
+    },
+    "dialect": {
+      "label": "Dialekt am Bänkli",
+      "hint": "Bänkli-Ansicht spricht wie der Ort",
+      "on": "Es",
+      "off": "Aus",
+      "failed": "Der Dialektmodus konnte nid geändert werden. Bitte erneut versuchen."
+    },
+    "metadata": {
+      "title": "Bänkli App – Schweizer Sitzbänke",
+      "description": "Finde Schweizer Sitzbänke mit Sunne, Ussicht und Community-Bewärtige."
+    },
+    "navigation": {
+      "open": "Menü öffnen",
+      "close": "Menü zuemache",
+      "label": "Hauptnavigation",
+      "addBench": "Bänkli eintragen",
+      "walk": "Spaziergang",
+      "feed": "Bänkli-Feed",
+      "statistics": "Bänklilogie",
+      "favourites": "Meine Lieblingsplätze",
+      "profile": "Mein Profil",
+      "signIn": "Anmelden",
+      "signOut": "Abmelden",
+      "about": "Über die Bänkli App",
+      "map": "Zur Charte",
+      "privacy": "Datenschutz",
+      "imprint": "Kontakt & Impressum"
+    },
+    "install": {
+      "button": "App installieren",
+      "ios": "In Safari „Teilen“ und danach „Zum Home-Bildschirm“ wählen."
+    },
+    "actions": {
+      "back": "Zrugg",
+      "close": "zuemache",
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "saving": "Wird gspeicheret …",
+      "remove": "Wägneh",
+      "delete": "Löschen",
+      "retry": "Erneut versuchen",
+      "closeTitle": "Zuemache"
+    },
+    "values": {
+      "yes": "Ja",
+      "no": "Nein",
+      "unknown": "Unbekannt",
+      "open": "No offen",
+      "notRecorded": "No nid erfasst",
+      "bench": "Bänkli",
+      "community": "Community"
+    },
+    "fields": {
+      "name": "Name",
+      "optional": "(optional)"
+    },
+    "errors": {
+      "signIn": "Bitte melde dich zuerst an.",
+      "blocked": "Biträg von diesem Browser wurden gesperrt.",
+      "rateLimit": "Zu viele Biträg. Bitte versuche es später erneut.",
+      "benchNotFound": "Dieses Bänkli wurde nid gefunden.",
+      "invalid": "Bitte prüfe deine Angaben.",
+      "unavailable": "Das hat gerade nid geklappt. Bitte versuche es erneut."
+    },
+    "notFound": {
+      "title": "Bänkli nid gefunden",
+      "description": "Sie wurde vielleicht aus den Quelldaten entfernt."
+    },
+    "update": {
+      "ready": "Eine frischere Charte isch bereit.",
+      "reload": "Neu laden",
+      "dismiss": "Update-Hinweis zuemache"
+    },
+    "calendar": {
+      "patterns": {
+        "numeric": "{day}.{month}.{year}",
+        "long": "{day}. {month} {year}",
+        "monthYear": "{month} {year}",
+        "dayMonth": "{day}. {month}",
+        "dateTime": "{date}, {time}"
+      },
+      "months": {
+        "january": "Januar",
+        "february": "Februar",
+        "march": "März",
+        "april": "April",
+        "may": "Mai",
+        "june": "Juni",
+        "july": "Juli",
+        "august": "August",
+        "september": "September",
+        "october": "Oktober",
+        "november": "November",
+        "december": "Dezember"
+      }
+    }
+  },
+  "community": {
+    "hub": {
+      "eyebrow": "Gemeinsam genauer hinschauen",
+      "title": "Zum Bänkli beitragen",
+      "close": "Biträg zuemache"
+    },
+    "chapters": {
+      "rating": {
+        "title": "Wie war deine Pause?",
+        "summary": "Deine Bewertung",
+        "prompt": "Komfort, Rueh und Ussicht bewerten",
+        "mine": "Deine Bewertung: {rating}/5"
+      },
+      "presence": {
+        "title": "Bänkli bestätigen",
+        "summary": "Hast du es vor Ort gesehen?"
+      },
+      "features": {
+        "title": "Bänkli beschreiben",
+        "summary": "Name, Ausstattung und Blickrichtung"
+      },
+      "light": {
+        "title": "Liecht gerade jetzt",
+        "recorded": "Deine Beobachtung isch eingetragen",
+        "summary": "Sunne, Schatte oder wechselhaft",
+        "night": "Diese Frage erscheint bei Tageslicht – dann isch die Beobachtung sinnvoll."
+      },
+      "view": {
+        "title": "Ussicht & Umgebung",
+        "recorded": "Dein Eindruck isch eingetragen",
+        "summary": "Schätzung bestätigen oder anders einordnen"
+      },
+      "photo": {
+        "title": "Foto von diesem Platz",
+        "summary": "Aufnehmen oder aus der Mediathek wählen"
+      },
+      "moment": {
+        "title": "Einen Moment hinterlassen",
+        "summary": "Erinnerung, Tipp, Gedicht oder Ortswissen"
+      },
+      "care": {
+        "title": "Sich ums Bänkli kümmern",
+        "summary": "Kleine, sichtbare Pflegeaktionen",
+        "mine": "{count, plural, one {# heutige Aktion von dir} other {# heutige Aktionen von dir}}"
+      },
+      "correction": {
+        "title": "Etwas stimmt nid",
+        "summary": "Position, Zustand oder Umgebung melden"
+      }
+    },
+    "theme": {
+      "month": "Gemeinsames Thema · diesen Monat",
+      "monthly": {
+        "winter": {
+          "title": "Winterlicht",
+          "prompt": "Zeig uns ein Bänkli im stillen Winterlicht."
+        },
+        "company": {
+          "title": "Lieblingsmensch",
+          "prompt": "Welche Pause würdest du mit jemandem teilen?"
+        },
+        "green": {
+          "title": "Erstes Grün",
+          "prompt": "Entdecke die ersten Frühlingszeichen rund ums Bänkli."
+        },
+        "history": {
+          "title": "Bänkli mit Geschichte",
+          "prompt": "Welche Erinnerung oder lokale Geschichte gehört hierher?"
+        },
+        "morning": {
+          "title": "Morgenruhe",
+          "prompt": "Wie fühlt sich dieser Platz früh am Tag an?"
+        },
+        "shade": {
+          "title": "Schattenplatz",
+          "prompt": "Welche Bänkli schenken an warmen Tagen Schatte?"
+        },
+        "water": {
+          "title": "Wasser in Sicht",
+          "prompt": "Teile en ehrlichen Eindruck vom Wasser – oder seinem Fehlen."
+        },
+        "grandparents": {
+          "title": "Grosselterns Liebling",
+          "prompt": "Welcher Platz wäre gut für e gemeinsame Pause?"
+        },
+        "evening": {
+          "title": "Abendgold",
+          "prompt": "Fang die Stimmung eines späten Sommertags ein."
+        },
+        "care": {
+          "title": "Kleine Pflege",
+          "prompt": "Es sauberer Platz isch e leise Gemeinschaftsleistung."
+        },
+        "fog": {
+          "title": "Nebel & Nähe",
+          "prompt": "Was bleibt schön, wenn die Fernsicht Pause macht?"
+        },
+        "thought": {
+          "title": "Es warmer Gedanke",
+          "prompt": "Hinterlasse ein kurzes Gedicht oder e Empfehlung."
+        }
+      }
+    },
+    "overview": {
+      "features": "{count, plural, one {# Angabe} other {# Angaben}}",
+      "moments": "{count, plural, one {# Moment} other {# Momente}}",
+      "mine": "Von dir da:",
+      "empty": "Da isch no kein Bitrag von dir – wähle einfach, was du gerade sicher weisst.",
+      "rating": "Bewertung"
+    },
+    "metadata": {
+      "placeholder": "Wie heisst dieses Bänkli?",
+      "dedicationHint": "(was uf de Bänkli steht)",
+      "save": "Angaben speichern"
+    },
+    "moments": {
+      "kinds": {
+        "memory": "Erinnerung",
+        "recommendation": "Empfehlung",
+        "poem": "Gedicht",
+        "local_fact": "Ortswissen",
+        "photo": "Bildmoment"
+      },
+      "choose": "Was möchtest du teilen?",
+      "label": "Dein Bänkli-Moment",
+      "poemPlaceholder": "Es paar Zeilen für diesen Platz …",
+      "placeholder": "Was sollten andere über diesen Platz wissen?",
+      "publish": "Moment veröffentlichen"
+    },
+    "care": {
+      "actions": {
+        "cleaned": "Kurz gereinigt",
+        "good": "In gutem Zustand",
+        "repair": "Braucht Reparatur",
+        "beautiful": "Hüt besonders schön"
+      },
+      "description": "Kei Punkte, kei Rangliste – einfach ein Zeichen, dass jemand geschaut hat.",
+      "mine": "{label} · von dir",
+      "events": {
+        "cleaned": "gereinigt",
+        "good": "in gutem Zustand gesehen",
+        "repair": "mit Reparaturbedarf gemeldet",
+        "beautiful": "hüt besonders schön gefunden"
+      }
+    },
+    "presence": {
+      "signIn": "Zum Mitmachen anmelden",
+      "confirmedToday": "Hüt von dir bestätigt",
+      "confirm": "Isch no da",
+      "question": "Isch es no da?",
+      "missingCount": "{count}/{threshold} Personen vermissen dieses Bänkli.",
+      "reportedMissing": "Fehlen von dir gemeldet",
+      "confirmMissing": "Fehlen bestätigen",
+      "reportMissing": "Bänkli isch nid mehr da"
+    },
+    "errors": {
+      "save": "Aktion konnte nid gspeicheret werden. Bitte erneut versuchen."
+    },
+    "rating": {
+      "eyebrow": "Dein Eindruck",
+      "existing": "Deine frühere Bewertung isch vorausgefüllt – du kannst sie ändern.",
+      "intro": "Vier kleine Eindrücke helfen anderen bei der Wahl.",
+      "fields": {
+        "overall": "Gesamt",
+        "view": "Ussicht",
+        "comfort": "Komfort",
+        "quiet": "Rueh"
+      },
+      "note": "Es Gedanke dazu",
+      "optional": "(freiwillig)",
+      "placeholder": "Was hat dir da gefallen?",
+      "update": "Bewertung aktualisieren",
+      "publish": "Bewertung veröffentlichen",
+      "stars": "{count, plural, one {# Stern} other {# Sterne}}"
+    },
+    "correction": {
+      "eyebrow": "Kurz Bescheid geben",
+      "title": "Etwas stimmt nid?",
+      "intro": "Nur für Dinge, die du gerade vor Ort gesehen hast.",
+      "field": "Was stimmt nid?",
+      "choose": "Auswählen",
+      "options": {
+        "removed": "Bänkli fehlt oder wurde entfernt",
+        "location": "Position isch ungenau",
+        "properties": "Ausstattung stimmt nid",
+        "condition": "Beschädigt oder schlecht nutzbar",
+        "environment": "Umgebung, Ussicht oder Liecht stimmt nid"
+      },
+      "observation": "Was hast du gesehen?",
+      "placeholder": "Zum Beispiel: Die Ruggelehne fehlt",
+      "publish": "Hinweis veröffentlichen",
+      "fields": {
+        "properties": "Ausstattung",
+        "condition": "Zustand",
+        "location": "Position",
+        "removed": "Nid mehr vorhanden",
+        "environment": "Umgebung, Ussicht oder Liecht"
+      }
+    },
+    "place": {
+      "eyebrow": "Lüüt an diesem Platz",
+      "title": "Bänkli-Momente",
+      "share": "Moment teilen",
+      "shareShort": "Teilen",
+      "shareText": "Es Bänkli-Moment bei {bench}",
+      "copied": "Link kopiert – bereit fürs Teilen, auch uf Instagram.",
+      "shareUnavailable": "Teilen isch in diesem Browser gerade nid verfügbar.",
+      "operator": "Betreut vor Ort",
+      "favourite": "Lieblingsplatz",
+      "save": "Bänkli merken",
+      "saveHint": "Für später speichern",
+      "followPlace": "Ort folgen",
+      "followingPlace": "Ort abonniert",
+      "following": "{place} abonniert",
+      "follow": "{place} folgen",
+      "favourites": "Alle Lieblingsplätze",
+      "recent": "in den letzten 90 Tagen",
+      "deleteOwn": "Eigenen Moment löschen",
+      "empty": "No kei Geschichte da. Das Bänkli wartet geduldig."
+    },
+    "features": {
+      "progress": "{known}/{total} Angaben bekannt · Zum Ergänzen antippen",
+      "mine": "von dir"
+    },
+    "observations": {
+      "light": {
+        "label": "Liecht vor Ort melden",
+        "title": "Stimmt das gerade?",
+        "intro": "Es kurzer Eindruck von vor Ort",
+        "mine": "Deine Beobachtung: {choice}",
+        "choices": {
+          "sun": "Sunne",
+          "shade": "Schatte",
+          "mixed": "Wechselhaft"
+        },
+        "trend": "Community: meist {choice} · {count, plural, one {eine Person} other {# Personen}}"
+      },
+      "view": {
+        "label": "Ussicht vor Ort einordnen",
+        "title": "Wie wirkt der Platz für dich?",
+        "agreed": "Von dir ungefähr bestätigt",
+        "mine": "Dein eigener Eindruck isch eingetragen",
+        "intro": "Dein Eindruck hilft, die Schätzung zu verbessern",
+        "agree": "Passt ungefähr",
+        "edit": "Anders erlebt",
+        "step": "Schritt {current} von {total}",
+        "steps": "Schritte",
+        "back": "Zrugg",
+        "next": "Weiter",
+        "save": "Eintragen"
+      },
+      "steps": {
+        "openness": "Wie offen fühlt es sich an?",
+        "landscape": "Was prägt die Landschaft?",
+        "horizon": "Was steht am Horizont?",
+        "surroundings": "Wie wirkt die Umgebung?"
+      },
+      "fields": {
+        "openness": "Freie Sicht",
+        "sky": "Himmel",
+        "relief": "Gländ",
+        "water": "Wasser",
+        "horizon": "Horizont",
+        "naturalness": "Umgebung",
+        "disturbance": "Störungen"
+      },
+      "choices": {
+        "openness": {
+          "wide": "Fast rundum",
+          "partial": "Einige Richtungen",
+          "enclosed": "Eher eng"
+        },
+        "sky": {
+          "open": "Offen",
+          "partial": "Teilweise",
+          "closed": "Geschlossen"
+        },
+        "relief": {
+          "flat": "Flach",
+          "gentle": "Sanft",
+          "strong": "Starkes Relief"
+        },
+        "water": {
+          "clear": "Klar sichtbar",
+          "some": "Etwas sichtbar",
+          "none": "Nid sichtbar"
+        },
+        "horizon": {
+          "open": "Überwiegend frei",
+          "trees": "Böim",
+          "buildings": "Gebäud",
+          "mixed": "Gemischt"
+        },
+        "naturalness": {
+          "natural": "Natürlich",
+          "mixed": "Gemischt",
+          "built": "Bebaut"
+        },
+        "disturbance": {
+          "quiet": "Ruhig",
+          "some": "Etwas",
+          "strong": "Stark"
+        }
+      },
+      "trend": {
+        "openness": "eher offen",
+        "naturalness": "natürlich",
+        "quiet": "ruhig",
+        "description": "Community: {qualities}",
+        "empty": "Community-Eindruck",
+        "summary": "{description} · {count, plural, one {eine Person} other {# Personen}} · {confidence}"
+      },
+      "undo": "Rückgängig"
+    },
+    "reviews": {
+      "eyebrow": "Von Lüüt vor Ort",
+      "title": "Wie war die Pause?",
+      "edit": "Meinen Bitrag bearbeiten",
+      "add": "Einen Eindruck beitragen",
+      "signIn": "Zum Mitmachen kurz anmelden",
+      "reportedRating": "Bewertung gemeldet",
+      "reportRating": "Bewertung melden",
+      "notes": "Hinweise",
+      "reportedCorrection": "Korrektur gemeldet",
+      "reportCorrection": "Korrektur melden"
+    },
+    "result": {
+      "ratingSaved": "Danke – deine Bewertung isch sichtbar.",
+      "ratingFailed": "Bewertung konnte nid gspeicheret werden.",
+      "correctionSaved": "Danke – dein Hinweis wurde veröffentlicht.",
+      "correctionFailed": "Hinweis konnte nid gspeicheret werden.",
+      "invalidContribution": "Ungültiger Bitrag.",
+      "reported": "Bitrag wurde gemeldet.",
+      "reportFailed": "Meldung fehlgeschlagen.",
+      "momentInvalid": "Bitte erzähle in ein paar Worten von diesem Platz.",
+      "momentSaved": "Dein Bänkli-Moment isch jetzt am Platz zu lesen.",
+      "momentFailed": "Moment konnte nid gspeicheret werden.",
+      "invalidMoment": "Ungültiger Moment.",
+      "notYourMoment": "Dieser Moment gehört nid zu deinem Konto.",
+      "momentDeleted": "Dein Moment wurde entfernt.",
+      "momentDeleteFailed": "Moment konnte nid entfernt werden.",
+      "careInvalid": "Unbekannte Pflegeaktion.",
+      "careSaved": "Danke fürs Kümmern.",
+      "careAlreadySaved": "Das hast du hüt schon festgehalten.",
+      "careFailed": "Pflegeaktion konnte nid gspeicheret werden.",
+      "unfavourited": "Aus deinen Lieblingsplätzen entfernt.",
+      "favourited": "Dieses Bänkli gehört jetzt zu deinen Lieblingsplätzen.",
+      "placeUnnamed": "Für diesen Platz fehlt no ein Ortsname.",
+      "placeUnfollowed": "{place} wird nid mehr gefolgt.",
+      "placeFollowed": "Neue Bänkli-Momente aus {place} erscheinen jetzt bei dir.",
+      "followFailed": "Auswahl konnte nid gspeicheret werden.",
+      "lightInvalid": "Bitte wähle Sunne, Schatte oder Wechselhaft.",
+      "lightNight": "Lichteindrücke kannst du da erst wieder bei Tageslicht melden.",
+      "lightSaved": "Danke – dein Lichteindruck isch eingetragen.",
+      "lightFailed": "Der Lichteindruck konnte nid gspeicheret werden.",
+      "observationUndone": "Deine Beobachtung wurde zurückgenommen.",
+      "undoFailed": "Die Beobachtung konnte nid zurückgenommen werden.",
+      "observationConfirmed": "Danke – deine Bestätigung hilft bei der Einordnung.",
+      "observationConfirmFailed": "Die Bestätigung konnte nid gspeicheret werden.",
+      "viewInvalid": "Bitte vervollständige deinen Eindruck.",
+      "viewSaved": "Danke – dein Eindruck isch eingetragen.",
+      "viewFailed": "Der Eindruck konnte nid gspeicheret werden.",
+      "observationInvalid": "Unbekannte Beobachtung.",
+      "observationDeleted": "Deine Beobachtung wurde gelöscht.",
+      "observationDeleteFailed": "Die Beobachtung konnte nid gelöscht werden."
+    }
+  },
+  "knowledge": {
+    "title": "Was wir wissen – und was no offen ist",
+    "categories": {
+      "physical": "Ausstattung",
+      "location": "Ort",
+      "accessibility": "Zuegang",
+      "imagery": "Bilder",
+      "surroundings": "Umgebung",
+      "amenities": "Einrichtungen",
+      "environment": "Umweltdaten",
+      "recent_verification": "Aktuelle Sichtung"
+    },
+    "amenities": {
+      "toilets": "Toilette",
+      "drinking_water": "Trinkwasser",
+      "fountain": "Brunnen",
+      "shelter": "Unterstand",
+      "picnic_table": "Picknicktisch",
+      "playground": "Spielplatz",
+      "waste_basket": "Abfalleimer",
+      "fireplace": "Feuerstelle"
+    },
+    "attributes": {
+      "covered": "Überdachung",
+      "wheelchair": "Rollstuhlnutzung",
+      "land_context": "Umgebung",
+      "canopy_context": "Baumdach",
+      "waterfront": "Am Wasser",
+      "presence": "Vorhandensein",
+      "image_water_type": "Wasser uf Fotos",
+      "image_long_view": "Geschätzte Weitsicht im Sitzen"
+    },
+    "sources": {
+      "osm": "OpenStreetMap",
+      "gis": "Geometrie",
+      "imagery": "Bildmodell",
+      "official": "Amtliche Daten",
+      "community": "Community"
+    },
+    "confidence": {
+      "unknown": "offen",
+      "low": "unsicher",
+      "medium": "gestützt",
+      "high": "gut gestützt"
+    },
+    "nearby": {
+      "title": "In der Nähe",
+      "distance": "ca. {distance} m",
+      "explanation": "Abstand in Luftlinie zu erfassten Einrichtungen innerhalb von 500 m. Es Brunnen isch nid automatisch Trinkwasser.",
+      "shortDistance": "{facility} · ca. {distance} m Luftlinie",
+      "unknown": "Die Charte kennt nid alle Einrichtungen. Vor Ort cha es mehr geben."
+    },
+    "approach": {
+      "title": "Das letzte Wegstück",
+      "length": "Betrachteter Weg",
+      "steps": "Treppen uf diesem Weg",
+      "stepFree": "Stufenfreie Möglichkeit",
+      "open": "Offen",
+      "recorded": "Erfasst",
+      "noneRecorded": "Kei erfasst",
+      "evidence": "Hinweise vorhanden",
+      "obstacle": "Hindernis erfasst",
+      "maxSlope": "Stärkste geschätzte Steigung",
+      "meanSlope": "Mittlere absolute Steigung",
+      "ascent": "Aufstieg zur Bänkli",
+      "surface": "Belag laut Charte",
+      "smoothness": "Beschaffenheit laut Charte",
+      "width": "Schmalste erfasste Breite",
+      "explanation": "{confidence} · Nur ein lokaler Zugang, kei Prüfung der gesamten Anreise. Fehlende Hindernisse in der Charte sind kei Zusage zur Barrierefreiheit.",
+      "empty": "No kein ausreichend naher Fussweg zugeordnet.",
+      "unmapped": "Letzte nid kartierte Meter",
+      "structure": "Brücke oder Tunnel: Das Geländemodell belegt die Wegsteigung da nid.",
+      "sampleCoverage": "Geländehöhe an {sampled} von {expected} Wegpunkten verfügbar."
+    },
+    "noise": {
+      "title": "Verkehrslärm im Modell",
+      "rail": "Bahn",
+      "road": "Strasse",
+      "day": "Tag",
+      "night": "Nacht",
+      "empty": "Kei Rasterabdeckung",
+      "explanation": "Amtliche Beurteilungspegel, kei Live-Messung. Quellenstand: {version}."
+    },
+    "evidence": {
+      "title": "Hinweise je Merkmal",
+      "conflicting": "Widersprüchliche Hinweise"
+    },
+    "completeness": {
+      "title": "Wie vollständig isch dieser Platz?",
+      "count": "{known} von {total} Angaben",
+      "uncertain": " · {count} unsicher",
+      "explanation": "Jeder Bereich steht für sich. Es fehlender Wert zählt als offen und sagt nichts Schlechtes über die Bänkli aus."
+    },
+    "verification": {
+      "label": "Eine kurze Frage vor Ort",
+      "intro": "Wenn du gerade da bist",
+      "unknown": "Weiss ich nid",
+      "failed": "Die Antwort konnte nid gspeicheret werden. Bitte versuche es no einmal.",
+      "questions": {
+        "backrest": "Hat dieses Bänkli e Ruggelehne?",
+        "armrest": "Hat dieses Bänkli Armlehnen?",
+        "covered": "Hat dieses Bänkli ein festes Dach?",
+        "approach_steps": "Gab es uf deinem letzten Wegstück hierher Treppen?"
+      },
+      "reasons": {
+        "conflicting": "Da widersprechen sich die Hinweise.",
+        "missing": "Diese Angabe fehlt no.",
+        "stale": "Eine aktuelle Sichtung hilft."
+      },
+      "result": {
+        "invalid": "Diese Antwort konnte nid gspeicheret werden.",
+        "saved": "Danke! Dein Hinweis ergänzt die vorhandenen Beobachtungen.",
+        "failed": "Die Antwort macht gerade Pause."
+      }
+    },
+    "surfaces": {
+      "asphalt": "Asphalt",
+      "paved": "Befestigt",
+      "unpaved": "Unbefestigt",
+      "concrete": "Beton",
+      "paving_stones": "Pflastersteine",
+      "cobblestone": "Kopfsteinpflaster",
+      "sett": "Natursteinpflaster",
+      "gravel": "Kies",
+      "fine_gravel": "Feiner Kies",
+      "compacted": "Verdichtet",
+      "ground": "Naturboden",
+      "dirt": "Erde",
+      "earth": "Erde",
+      "grass": "Gras",
+      "sand": "Sand",
+      "wood": "Holz",
+      "rock": "Fels",
+      "pebblestone": "Kieselsteine",
+      "mud": "Schlamm"
+    },
+    "smoothness": {
+      "excellent": "Sehr eben",
+      "good": "Eben",
+      "intermediate": "Leicht uneben",
+      "bad": "Uneben",
+      "very_bad": "Sehr uneben",
+      "horrible": "Stark beschädigt",
+      "very_horrible": "Extrem beschädigt",
+      "impassable": "Unpassierbar"
+    },
+    "freshness": {
+      "unknown": "Alter der Quelle nid bekannt",
+      "recent": "Quelle zeitlich aktuell",
+      "old": "Ältere Quelle"
+    },
+    "estimates": {
+      "title": "Auf Fotos gschätzt",
+      "explanation": "Geprüfte Bildmodell-Schätzungen, getrennt von bestätigten Angaben. Sie zählen nid für Ausstattungsfilter oder Aussagen zur Barrierefreiheit.",
+      "provenance": "Bildmodell: {model} · {count} unabhängig geprüfte Beispiele"
+    },
+    "view": {
+      "distinctions": "Wasser in der Nähe isch no kein Wasserblick. Offene Umgebung isch no kei Weitsicht im Sitzen. Fotos zeige nur en Ausschnitt und belegen weder dauerhaften Schatte no e unbekannte Blickrichtung."
+    }
+  },
+  "photos": {
+    "gallery": {
+      "view": "Foto ansehen",
+      "enlarge": "{caption} gross ansehen",
+      "close": "Fotos zuemache",
+      "unavailable": "Das Bild macht gerade Pause.",
+      "retry": "Erneut laden",
+      "loading": "Bild wird geladen …",
+      "source": "Quelle & Lizenz ↗",
+      "label": "Fotos",
+      "previous": "Vorheriges Foto",
+      "next": "Nächstes Foto",
+      "by": "Bänkli-Foto von {username}",
+      "exact": "Dieses Bänkli",
+      "nearby": "Aus der Umgebung"
+    },
+    "capture": {
+      "title": "Das Bänkli ins Bild setzen",
+      "intro": "Aus Fotomediathek, Kamera oder Dateien wählen – am besten ohne Lüüt im Bild. Prüfung und Ablage laufen uf unserem eigenen Server.",
+      "select": "Bänkli-Foto auswählen",
+      "preview": "Vorschau deines Bänkli-Fotos",
+      "change": "Anderes Foto",
+      "choose": "Foto aufnehmen oder wählen",
+      "caption": "Es Satz dazu",
+      "captionPlaceholder": "Was sieht man von diesem Bänkli?",
+      "checking": "Foto wird prüeft …",
+      "publish": "Foto veröffentlichen"
+    },
+    "errors": {
+      "prepare": "Das Foto liess sich nid vorbereiten.",
+      "originalTooLarge": "Das Originalfoto isch zu gross. Bitte wähle ein Bild bis 24 MB.",
+      "decode": "Das Foto liess sich nid lesen.",
+      "tooDetailed": "Das Foto enthält zu viele Details. Bitte wähle en etwas kleineren Bildausschnitt.",
+      "read": "Foto konnte nid gelesen werden.",
+      "upload": "Das Foto konnte nid übertragen werden. Bitte versuche es nochmals."
+    },
+    "story": {
+      "nearby": "Aus der Umgebung · nid zwingend diese Bänkli",
+      "place": "Dieser Platz",
+      "license": "Lizenz bei Quelle",
+      "title": "Es Blick in die Nähe",
+      "external": "Externer Hinweis zum Platz ↗",
+      "defaultCaption": "Es Blick von diesem Bänkli."
+    },
+    "server": {
+      "notFound": "Bild nid gefunden.",
+      "unavailable": "Bild gerade nid verfügbar.",
+      "choose": "Bitte wähle ein klares Foto bis 1,8 MB.",
+      "saved": "Foto angekommen – das Bänkli hat jetzt sein Porträt.",
+      "saveFailed": "Das Foto konnte nid gspeicheret werden.",
+      "checkUnavailable": "Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.",
+      "checkBusy": "Die Bildprüfung braucht kurz e Verschnaufpause. Bitte später nochmals versuchen.",
+      "people": "Das Bänkli darf fürs Foto kurz allein posieren – bitte nochmals ohne Personen.",
+      "uncertain": "Das Bild isch der Prüfung etwas zu geheimnisvoll. Bitte fotografiere das Bänkli nochmals klar und ohne Personen.",
+      "storageUnavailable": "Der Foto-Speicher macht gerade Pause.",
+      "format": "Bitte verwende ein JPEG-, PNG- oder WebP-Foto.",
+      "formatMismatch": "Das Bildformat passt nid zum Foto. Bitte wähle das Bild nochmals."
+    }
+  },
+  "submission": {
+    "steps": {
+      "label": "Bänkli eintragen",
+      "position": "Position",
+      "details": "Details"
+    },
+    "location": {
+      "searching": "Ort wird gesucht …",
+      "onSave": "Ort wird beim Speichern ergänzt",
+      "change": "Position ändern",
+      "details": "Details zur Position"
+    },
+    "nearby": {
+      "title": "Bänkli in der Nähe",
+      "failed": "Die Suche in der Nähe isch fehlgeschlagen.",
+      "retry": "Erneut prüfen",
+      "checking": "Bestehende Bänkli in der Nähe werden prüeft …",
+      "count": "{count, plural, one {# Bänkli innerhalb von 25 m} other {# Bänkli innerhalb von 25 m}}",
+      "question": "Isch deines schon dabei?",
+      "open": "{meters} m · Bänkli ansehen",
+      "empty": "Kein eingetragenes Bänkli innerhalb von 25 m gefunden.",
+      "confirm": "Geprüft: Meins isch ein weiteres Bänkli."
+    },
+    "fields": {
+      "namePlaceholder": "Lieblingsbänkli",
+      "dedication": "Widmung",
+      "features": "Ausstattung ergänzen (freiwillig)",
+      "observation": "Was siehst du am Bänkli?",
+      "accessNote": "Rollstuhlnutzung am Bänkli und Zuegang bitte getrennt beurteilen."
+    },
+    "form": {
+      "pending": "Wird eingetragen …",
+      "submit": "Eintragen"
+    },
+    "result": {
+      "locationInvalid": "Bitte Standort prüfen.",
+      "reviewNearby": "Bitte prüfe zuerst die Bänkli in der Nähe. Isch deines schon eingetragen?",
+      "added": "Bänkli eingetragen · {count, plural, one {noch # Bestätigung} other {noch # Bestätigungen}}.",
+      "addFailed": "Bänkli konnte nid gspeicheret werden.",
+      "alreadyConfirmed": "Hüt bereits von dir bestätigt.",
+      "presenceConfirmed": "Danke – hüt als no vorhanden bestätigt.",
+      "verified": "Dieses Bänkli isch jetzt bestätigt!",
+      "confirmationsNeeded": "{count, plural, one {Noch # Bestätigung.} other {Noch # Bestätigungen.}}",
+      "confirmFailed": "Bestätigung fehlgeschlagen.",
+      "alreadyMissing": "Du hast das Fehlen schon bestätigt.",
+      "removed": "Als nid mehr vorhanden bestätigt.",
+      "removalVotes": "Hinweis gspeicheret – {count, plural, one {noch # Stimme} other {noch # Stimmen}}.",
+      "removalFailed": "Hinweis fehlgeschlagen.",
+      "metadataInvalid": "Bitte Angaben prüfen.",
+      "metadataUpdated": "Angaben aktualisiert.",
+      "metadataFailed": "Änderung fehlgeschlagen.",
+      "fieldInvalid": "Bitte Angabe prüfen.",
+      "chooseBoolean": "Bitte Ja oder Nein wählen.",
+      "chooseMaterial": "Bitte Material wählen.",
+      "chooseSeats": "Bitte Sitzplätze zwischen 1 und 20 wählen.",
+      "chooseDirection": "Bitte Blickrichtung wählen.",
+      "unchanged": "Isch bereits so eingetragen.",
+      "fieldSaved": "Danke – isch eingetragen.",
+      "fieldFailed": "Angabe konnte nid gspeicheret werden."
+    }
+  }
+}

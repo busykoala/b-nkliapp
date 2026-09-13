@@ -59,14 +59,16 @@ export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: Ben
       {followingBench && <Link className="ui-button" href="/lieblingsplaetze">{t("community.place.favourites")}</Link>}
     </div>}
     {careEntries.length > 0 && <div className="care-summary"><HeartHandshake size={17} /><p>{careEntries.map(([kind, count]) => `${count}× ${t(`community.care.events.${kind}`)}`).join(" · ")} <small>{t("community.place.recent")}</small></p></div>}
-    {bench.moments.length ? <div className="bench-moment-list">{bench.moments.map((moment) => <article key={moment.id}>
+    {bench.moments.length ? <div className="bench-moment-list">{bench.moments.map((moment) => {
+      const generatedCaption = moment.kind === "photo" && (!moment.body || moment.body === "Ein Blick von diesem Bänkli.");
+      return <article key={moment.id}>
       <TrailAvatar seed={moment.avatarSeed} username={moment.username} compact />
-      <div><header><strong>{moment.username}</strong><span>{t(`community.moments.kinds.${moment.kind}`)}</span></header><p>{moment.kind === "photo" && (!moment.body || moment.body === "Ein Blick von diesem Bänkli.") ? t("photos.story.defaultCaption") : moment.body}</p>
+      <div><header><strong>{moment.username}</strong><span>{t(`community.moments.kinds.${moment.kind}`)}</span></header><p lang={generatedCaption ? undefined : bench.dialectPresentation?.appLanguageTag}>{generatedCaption ? t("photos.story.defaultCaption") : moment.body}</p>
         {moment.hasPhoto && <PhotoGallery photos={bench.moments.filter((item) => item.hasPhoto).map((item) => ({ id: String(item.id), src: item.photoUrl, momentId: item.id, caption: t("photos.gallery.by", { username: item.username }), credit: item.username }))} thumbnailIndex={bench.moments.filter((item) => item.hasPhoto).findIndex((item) => item.id === moment.id)} />}
         <time dateTime={moment.createdAt}>{formatDate(moment.createdAt, t)}</time>
       </div>
       {moment.mine && <button type="button" disabled={pending} aria-label={t("community.place.deleteOwn")} onClick={() => remove(moment.id)}><Trash2 size={14} /></button>}
-    </article>)}</div> : <p className="bench-moments-empty">{t("community.place.empty")}</p>}
+    </article>})}</div> : <p className="bench-moments-empty">{t("community.place.empty")}</p>}
     {message && <p className="place-community-status" role="status">{message}</p>}
   </section>;
 }

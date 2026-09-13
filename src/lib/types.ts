@@ -190,6 +190,7 @@ export type BenchObservationSummary = {
 };
 
 export type BenchDetail = {
+  dialectPresentation?: import("@/lib/dialects/model").DialectPresentation | null;
   knowledge?: import("@/features/bench-knowledge/model").BenchKnowledge;
   id: string;
   osmType: string;

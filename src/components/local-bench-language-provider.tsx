@@ -2,9 +2,8 @@
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { NextIntlClientProvider, useLocale, useMessages } from "next-intl";
-import { isDialectLocale, localeTags } from "@/i18n/config";
-import { localBenchMessages } from "@/i18n/local-bench-messages";
-import { localBenchProfile, type LocalBenchProfile } from "@/lib/dialect";
+import { isDialectLocale } from "@/i18n/config";
+import type { LocalBenchProfile } from "@/lib/dialect";
 import type { BenchDetail } from "@/lib/types";
 
 type LocalBenchLanguageState = { active: false; profile: null } | { active: true; profile: LocalBenchProfile };
@@ -14,14 +13,22 @@ const LocalBenchLanguageContext = createContext<LocalBenchLanguageState>({ activ
 export function LocalBenchLanguageProvider({ bench, children }: { bench: BenchDetail; children: ReactNode }) {
   const rootLocale = useLocale();
   const currentMessages = useMessages();
-  const active = isDialectLocale(rootLocale);
-  const profile = useMemo(() => localBenchProfile(bench), [bench]);
-  const messages = useMemo(() => ({ ...currentMessages, ...localBenchMessages(profile) }), [currentMessages, profile]);
-  const state: LocalBenchLanguageState = active ? { active: true, profile } : { active: false, profile: null };
+  const presentation = bench.dialectPresentation;
+  const active = isDialectLocale(rootLocale) && Boolean(presentation);
+  const profile = useMemo<LocalBenchProfile | null>(() => presentation ? ({
+    region: presentation.resolution.areaId ?? presentation.voice.id,
+    regionLabel: presentation.voice.label,
+    voiceId: presentation.voice.id,
+    languageTag: presentation.voice.languageTag,
+    formatLocale: presentation.voice.formatLocale,
+    uiLanguage: presentation.voice.language,
+  }) : null, [presentation]);
+  const messages = useMemo(() => presentation ? ({ ...currentMessages, ...presentation.messages }) : currentMessages, [currentMessages, presentation]);
+  const state: LocalBenchLanguageState = active && profile ? { active: true, profile } : { active: false, profile: null };
   const content = <LocalBenchLanguageContext.Provider value={state}>{children}</LocalBenchLanguageContext.Provider>;
 
-  return active
-    ? <NextIntlClientProvider locale={localeTags[profile.uiLanguage]} messages={messages}>{content}</NextIntlClientProvider>
+  return active && presentation
+    ? <NextIntlClientProvider locale={presentation.voice.formatLocale} messages={messages}>{content}</NextIntlClientProvider>
     : content;
 }
 

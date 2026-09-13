@@ -1,0 +1,1264 @@
+{
+  "account": {
+    "dialog": {
+      "invitation": "Participe",
+      "welcome": "Heureux de te revoir",
+      "createTitle": "Ton compte Bänkli",
+      "description": "Un nom d’utilisateur et un mot de passe suffisent. Sans adresse e-mail.",
+      "privacy": "Ce qui arrive à tes données ↗",
+      "intent": "Ensuite, tu pourras : {intent}.",
+      "register": "Nouveau ique ? Créer un compte",
+      "login": "J’ai déjà un compte",
+      "registerTab": "Inscription"
+    },
+    "fields": {
+      "username": "Nom d’utilisateur",
+      "password": "Mot de passe",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe"
+    },
+    "form": {
+      "signingIn": "Connexion…",
+      "registering": "Création du compte…",
+      "register": "Créer un compte"
+    },
+    "validation": {
+      "usernameCharacters": "Uniquement lettres, chiffres, point, _ et -",
+      "usernameShort": "Au moins 3 caractères",
+      "usernameLong": "Au maximum 24 caractères",
+      "passwordShort": "Au moins 8 caractères",
+      "passwordLong": "Au maximum 128 caractères"
+    },
+    "result": {
+      "welcome": "Bienvenue sur Bänkli App !",
+      "usernameTaken": "Ce nom d’utilisateur est déjà pris.",
+      "registerFailed": "Le compte n’a pas pu être créé.",
+      "credentialsInvalid": "Le nom d’utilisateur ou le mot de passe est incorrect.",
+      "welcomeBack": "Content de te revoir !",
+      "invitationInvalid": "Ce lien d’invitation est invalide ou expiré. Demande un nouveau lien."
+    },
+    "invitation": {
+      "eyebrow": "Une place est encore libre",
+      "title": "{username} t’invite sur Bänkli App",
+      "copy": "Crée un nouveau compte et découvrez ensemble des lieux de pause particuliers.",
+      "qualifier": "L’invitation est comptée dès la création de ce nouveau compte. Un compte existant ne peut pas être rattaché après coup.",
+      "invalidTitle": "Cette invitation n’est plus valable",
+      "invalidCopy": "Le lien secret a expiré ou n’a pas été copié entièrement.",
+      "signedInTitle": "Tu es déjà connecté·e",
+      "signedInCopy": "Les invitations ne valent que pour les nouveaux comptes. Ton compte actuel reste inchangé."
+    }
+  },
+  "avatar": {
+    "editor": {
+      "title": "Créer ton avatar",
+      "mixture": "Ton mélange",
+      "description": "Chaque choix est composé de couches d’aquarelle individuelles.",
+      "random": "Surprends-moi",
+      "pending": "En cours de peinture…",
+      "save": "Enregistrer l’avatar"
+    },
+    "description": "{hair}, {coat}, arrière-plan {background}",
+    "groups": {
+      "skin": "Teint",
+      "hairStyle": "Coiffure",
+      "hair": "Couleur des cheveux",
+      "coat": "Veste",
+      "accent": "Écharpe",
+      "hat": "Couvre-chef",
+      "background": "Paysage favori",
+      "companion": "Compagnie"
+    },
+    "options": {
+      "skin": {
+        "porcelain": "Clair",
+        "sunlit": "Doré",
+        "warm": "Chaud",
+        "brown": "Brun",
+        "deep": "Foncé"
+      },
+      "hair": {
+        "charcoal": "Charbon",
+        "chestnut": "Châtain",
+        "copper": "Cuivré",
+        "blond": "Doré",
+        "silver": "Argenté"
+      },
+      "hairStyle": {
+        "short": "Courts",
+        "waves": "Ondulations",
+        "bob": "Carré",
+        "bun": "Chignon",
+        "curls": "Boucles"
+      },
+      "coat": {
+        "pine": "Sapin",
+        "lake": "Lac",
+        "rust": "Rouille",
+        "moss": "Mousse",
+        "plum": "Prune"
+      },
+      "accent": {
+        "gold": "Or",
+        "coral": "Corail",
+        "sage": "Sauge",
+        "cream": "Crème",
+        "none": "Sans"
+      },
+      "hat": {
+        "none": "Sans",
+        "beanie": "Bonnet",
+        "brim": "Chapeau",
+        "cap": "Casquette"
+      },
+      "background": {
+        "mountain": "Montagnes",
+        "lake": "Lac",
+        "forest": "Forêt",
+        "city": "Ville",
+        "meadow": "Prairie"
+      },
+      "companion": {
+        "none": "Seul",
+        "bird": "Oiseau",
+        "cat": "Chat",
+        "fox": "Renard"
+      }
+    },
+    "label": "Portrait à l’aquarelle de {username} : {description}",
+    "result": {
+      "invalid": "Cette combinaison n’a pas pu être enregistrée.",
+      "saved": "Ton avatar aquarelle est enregistré."
+    }
+  },
+  "bench": {
+    "attributes": {
+      "backrest": "Dossier",
+      "armrest": "Accoudoirs",
+      "covered": "Couvert",
+      "wheelchair": "Utilisable en fauteuil roulant",
+      "fireplaceNearby": "Foyer à proximité",
+      "wasteBasketNearby": "Poubelle à proximité",
+      "material": "Matériau",
+      "seats": "Places assises",
+      "direction": "Direction du regard"
+    },
+    "materials": {
+      "wood": "Bois",
+      "metal": "Métal",
+      "stone": "Pierre",
+      "concrete": "Béton",
+      "plastic": "Plastique",
+      "mixed": "Mixte"
+    },
+    "sheet": {
+      "resize": "Agrandir ou réduire les détails",
+      "showDetails": "Afficher les détails",
+      "showMap": "Afficher la carte",
+      "close": "Cllôre le banc du payis",
+      "loading": "Exploration du lieu",
+      "loadingAccessible": "Chargement du banc du payis",
+      "unavailable": "Ce lieu se cache pour le moment.",
+      "retry": "Regarder à nouveau",
+      "label": "Détails du banc du payis"
+    },
+    "directions": {
+      "n": "N",
+      "ne": "NE",
+      "e": "E",
+      "se": "SE",
+      "s": "S",
+      "sw": "SO",
+      "w": "O",
+      "nw": "NO"
+    },
+    "details": {
+      "title": "Détails",
+      "bench": "Banc du payis",
+      "light": "Lumière",
+      "view": "Vue",
+      "weather": "Météo",
+      "unknownFeatures": "Équipement encore inconnu",
+      "night": "Il fait nuit",
+      "unknownLight": "Lumière encore indéterminée",
+      "sunEstimate": "Soleil · estimation",
+      "shadeEstimate": "Ombre · estimation",
+      "unknownView": "La vue reste à découvrir",
+      "forecast": "{temperature} °C · prévision",
+      "unknownWeather": "Données météo indisponibles"
+    },
+    "panel": {
+      "eyebrow": "Pour s’asseoir ique",
+      "title": "Les atouts du banc du payis",
+      "unknown": "Ce banc du payis reste à découvrir",
+      "missing": "{count, plural, one {Une caractéristique n’a pas encore été relevée.} other {# caractéristiques n’ont pas encore été relevées.}}",
+      "directionUnknown": "Le paysage est donc considéré dans toutes les directions.",
+      "directionKnown": "La vue est pondérée dans cette direction."
+    },
+    "location": {
+      "title": "Lieu et situation",
+      "elevation": "Altitude",
+      "metresAboveSea": "{value} m d’altitude",
+      "place": "Lieu",
+      "municipality": "Commune politique",
+      "municipalityValue": "{name} · OFS {id}",
+      "canton": "Canton",
+      "district": "District",
+      "nearbyName": "Toponyme à proximité",
+      "sourceUpdated": "Source mise à jour",
+      "imported": "Importé chez nous",
+      "osmVersion": "Version OSM",
+      "coordinates": "Coordonnées"
+    },
+    "summary": {
+      "title": "En un coup d’œil",
+      "unconfirmed": "Aucune présence confirmée",
+      "today": "Confirmé houé",
+      "yesterday": "Confirmé hier",
+      "daysAgo": "Confirmé il y a {days, plural, one {un jour} other {# jours}}",
+      "noBackrest": "Sans dossier",
+      "unknownBackrest": "Dossier inconnu",
+      "night": "Nuit",
+      "unknownLight": "Lumière inconnue",
+      "sun": "Soleil estimé",
+      "shade": "Ombre estimée",
+      "lowConfidence": "Faible fiabilité de l’estimation de lumière",
+      "lightMethod": "Calculé selon le terrain et les environs ; les nuages peuvent modifier la lumière",
+      "uncertain": " · incertain",
+      "noWheelchair": "Non utilisable en fauteuil roulant",
+      "unknownWheelchair": "Usage en fauteuil roulant inconnu",
+      "quiet": "Calme {score}/5",
+      "unknownQuiet": "Calme non évalué",
+      "accessNote": "Accès : non vérifié pour les fauteuils roulants.",
+      "nearbyTitle": "Pratique à proximité",
+      "nearbyHint": "Touche pour voir l’emplacement exact sur la carte.",
+      "straightLine": "env. {distance} m à vol d’oiseau",
+      "showOnMap": "Carte",
+      "showFacilityOnMap": "Afficher {facility} sur la carte",
+      "mapLocation": "Emplacement d’un équipement sur la carte",
+      "returnToBench": "Retô au banc du payis",
+      "lastSeen": "Vu pour la dernière fois",
+      "confirming": "Confirmation …",
+      "mine": "Confirmé par toi houé",
+      "confirmFailed": "Impossible d’enregistrer la confirmation. Réessaie."
+    },
+    "horizon": {
+      "label": "Horizon : {open} pour cent dégagé, {buildings} pour cent de bâtiments, {plants} pour cent de végétation",
+      "labelPartial": "Horizon : {measured} pour cent mesuré, {unknown} pour cent indéterminé",
+      "labelInconsistent": "Les données d’horizon se chevauchent ; la part dégagée n’est pas calculée",
+      "title": "Ce qui dessine l’horizon",
+      "open": "dégagé",
+      "unknown": "inconnu",
+      "openView": "Vue dégagée",
+      "buildings": "Bâtiments",
+      "trees": "Arbres",
+      "unknownRemainder": "Indéterminé",
+      "inconsistent": "Les mesures se chevauchent. Afficher une part dégagée serait trompeur."
+    },
+    "views": {
+      "mountains": "Vue sur les montagnes",
+      "hills": "Vue sur les collines",
+      "water": "Vue sur l’eau",
+      "forest": "Vue sur la forêt",
+      "panorama": "Vue lointaine",
+      "limited": "Vue limitée",
+      "lake": "Vue sur le lac",
+      "woodland": "Environnement forestier",
+      "ordinary": "Pas de vue particulière",
+      "nearbyWater": "Eau aux alentours",
+      "unknown": "Vue encore inconnue"
+    },
+    "light": {
+      "estimatedSun": "Soleil estimé",
+      "directSun": "Soleil direct",
+      "today": "Lumière houé",
+      "calculatedFor": "Estimé pour {time} · actualisation automatique",
+      "estimatedWindows": "Périodes de soleil estimées",
+      "sunWindows": "Périodes de soleil",
+      "noSun": "Aucun soleil direct calculé houé",
+      "shadeWindows": "Périodes d’ombre",
+      "noShade": "Aucune période d’ombre calculée houé",
+      "durationSeasons": "Durée et saisons",
+      "detailsSummary": "Totaux, obstacles et données du ciel",
+      "balance": "{sun} de soleil direct et {shade} d’ombre pendant le jour",
+      "shade": "Ombre",
+      "skyValues": "Données du ciel",
+      "sunrise": "Lever du soleil",
+      "sunset": "Coucher du soleil",
+      "directFrom": "Soleil direct dès",
+      "directUntil": "Soleil direct jusqu’à",
+      "noDirect": "Pas de soleil direct",
+      "altitude": "Hauteur du soleil",
+      "azimuth": "Direction du soleil",
+      "moonlight": "Clair de lune",
+      "moonrise": "Lever de la lune",
+      "moonset": "Coucher de la lune",
+      "timeline": "Lever du soleil {sunrise}, coucher {sunset}. Lever de la lune {moonrise}, coucher {moonset}.",
+      "seasons": {
+        "spring": "Printemps",
+        "summer": "Été",
+        "autumn": "Automne",
+        "winter": "Hiver",
+        "label": "Durée typique de soleil direct par saison"
+      },
+      "state": {
+        "moon": "Clair de lune sur ce lieu",
+        "night": "La nuit sur ce lieu",
+        "unknown": "La lumière reste à explorer",
+        "sun": "Le soleil direct est géométriquement possible",
+        "shade": "Le modèle des alentours place le banc du payis à l’ombre"
+      },
+      "explanation": {
+        "nightEstimate": "Le modèle indiquait {duration} de soleil direct possible.",
+        "night": "Houé, {duration} de soleil direct étaient possibles.",
+        "unknown": "Certaines données des environs manquent pour une conclusion fiable.",
+        "clouds": "La géométrie laisse passer le soleil, mais les nuages atténuent la lumière.",
+        "sun": "Les rayons du soleil atteignent ce lieu."
+      },
+      "causes": {
+        "frei": "Le ciel est dégagé ; l’origine de l’ombre reste incertaine.",
+        "nacht": "Il fait nuit.",
+        "überdacht": "L’ombre vient probablement du toit.",
+        "gebäude": "L’ombre vient probablement d’un bâtiment.",
+        "vegetation": "L’ombre vient probablement des arbres et de la végétation.",
+        "gelände": "L’ombre vient probablement du relief.",
+        "unbekannt": "L’origine de l’ombre est encore inconnue."
+      },
+      "confidence": {
+        "hoch": "Calculé selon le terrain, les bâtiments et la végétation · nuages considérés séparément.",
+        "mittel": "Bonne approximation géométrique de la lumière · nuages considérés séparément.",
+        "niedrig": "Estimation provisoire · certaines données des environs manquent encore."
+      }
+    },
+    "weather": {
+      "title": "Météo et calme",
+      "temperatureAt": "{temperature}° à {location}",
+      "unknown": "Le ciel reste à découvrir",
+      "rain": "Précipitations",
+      "wind": "Vent",
+      "humidity": "Humidité",
+      "snow": "Neige",
+      "updated": "Mis à jour : {date}",
+      "empty": "La température, les nuages et les précipitations apparaîtront ique dès que les données seront disponibles.",
+      "layers": {
+        "high": "élevés",
+        "mid": "moyens",
+        "low": "bas",
+        "total": "total"
+      },
+      "cloudCover": "Couverture nuageuse : {percent} pour cent",
+      "quiet": {
+        "title": "Calme sur place",
+        "empty": "Aucun avis pour l’instant",
+        "unknown": "Le calme de ce lieu n’a pas encore été évalué.",
+        "community": "Calme selon les personnes sur place",
+        "score": "{score} sur 5",
+        "explanation": "Évaluation subjective, distincte des données de trafic."
+      },
+      "precipitation": {
+        "none": "sec",
+        "rain": "Pluie",
+        "snow": "Neige",
+        "mixed": "Pluie et neige",
+        "unknown": "Précipitations indéterminées"
+      },
+      "clouds": {
+        "overcast": "Couvert",
+        "mostly": "Très nuageux",
+        "cloudy": "Nuageux",
+        "few": "Peu nuageux",
+        "clear": "Dégagé"
+      },
+      "temperatureHere": "{temperature}° près de ce banc du payis"
+    },
+    "view": {
+      "title": "Vue et environs",
+      "impression": "Impression",
+      "empty": "La vue reste à découvrir.",
+      "confidence": {
+        "hoch": "Fiabilité élevée",
+        "mittel": "Fiabilité moyenne",
+        "niedrig": "Faible fiabilité"
+      },
+      "community": "{count, plural, one {Une impression d’une personne sur place} other {# impressions de personnes sur place}} · {confidence}",
+      "communityConfidence": {
+        "high": "bien étayé",
+        "medium": "prudemment étayé",
+        "low": "première tendance"
+      },
+      "details": "La vue en détail",
+      "detailsSummary": "Mesures, horizon et environs",
+      "metrics": {
+        "directions": "Directions dégagées",
+        "sky": "Ouverture du ciel",
+        "relief": "Relief du terrain",
+        "water": "Eau visible",
+        "naturalness": "Environnement naturel",
+        "remoteness": "Distance aux perturbations",
+        "empty": "Il manque encore des points de mesure pour évaluer la vue.",
+        "label": "Composantes de la note de vue"
+      },
+      "water": "Eau",
+      "path": "Voie cartographiée",
+      "inForest": "Dans la forêt",
+      "outsideForest": "Hors de la forêt",
+      "photos": "Complété par des photos",
+      "coverage": {
+        "title": "Zone d’analyse",
+        "terrain": "Proximité et terrain jusqu’à 20 km",
+        "near": "Proximité"
+      },
+      "buildingHorizon": "Bâtiments à l’horizon",
+      "vegetationHorizon": "Végétation à l’horizon",
+      "buildingCount": "Bâtiments dans les 100 m",
+      "canopyCover": "Couverture arborée",
+      "medianVegetation": "Hauteur médiane de la végétation",
+      "maxVegetation": "Végétation la plus haute",
+      "imageHints": "Indices tirés des images des environs",
+      "imageConfidence": {
+        "low": "indice faible",
+        "medium": "indice étayé",
+        "high": "étayé plusieurs fois"
+      },
+      "imageExplanation": "Indices du modèle, pas des mesures. Les valeurs brutes du modèle visuel ne sont pas des probabilités calibrées.",
+      "score": "Vue : {score} sur 5",
+      "outOfFive": "sur 5",
+      "directly": "juste à côté",
+      "canopy": {
+        "label": "Couverture arborée à proximité",
+        "title": "Canopée autour du banc du payis",
+        "none": "Ciel dégagé",
+        "partial": "Sous quelques arbres",
+        "dense": "Canopée dense",
+        "unknown": "Couvert arboré indéterminé"
+      },
+      "headline": {
+        "mountains": "Les montagnes ouvrent l’horizon",
+        "hills": "Les collines dessinent le lointain",
+        "water": "L’eau s’offre au regard",
+        "limited": "Le regard reste à proximité",
+        "open": "Jusqu’où porte le regard"
+      },
+      "land": {
+        "waterfront": "Au bord de l’eau",
+        "forest": "Forêt",
+        "forest_edge": "Lisière de forêt",
+        "park": "Parc",
+        "open": "Terrain ouvert",
+        "urban": "En localité",
+        "mixed": "Paysage varié",
+        "unknown": "Environs encore indéterminés"
+      },
+      "explanation": {
+        "openness": "Horizon large et peu obstrué",
+        "relief": "Relief marqué de montagnes ou de collines",
+        "water": "Ligne de vue dégagée vers une surface d’eau",
+        "naturalness": "Environnement principalement naturel",
+        "community": "Les impressions de {count, plural, one {une personne ont} other {# personnes ont}} été intégrées avec prudence.",
+        "model": "Calculé selon le terrain, la couverture du sol et les environs"
+      },
+      "traits": {
+        "buildings": "Bâtiments aux alentours",
+        "roadRail": "Route ou voie ferrée aux alentours"
+      }
+    },
+    "story": {
+      "reportFailed": "Le signalement a échoué. Réessaie.",
+      "back": "Retô au lieu",
+      "created": "Banc du payis ajouté",
+      "remaining": " · encore {count, plural, one {une confirmation} other {# confirmations}}",
+      "confirmed": " · confirmé",
+      "unverified": "Nouvelle découverte · non confirmée",
+      "directions": "Itinéraire pour venir ique",
+      "contribute": "Contribuer",
+      "join": "Participer",
+      "ratings": "Voir les avis",
+      "nextTitle": "Que peux-tu encore ajouter ?",
+      "nextDescription": "Ces informations aideront à la prochaine pause.",
+      "rateIntent": "Donner un avis",
+      "confirmIntent": "Confirmer le banc du payis",
+      "contributeIntent": "Contribuer à ce banc du payis",
+      "quietPlace": "Un lieu paisible",
+      "ratingMine": "Ton avis est de {score} sur 5. Modifier l’avis",
+      "ratingEmpty": "Pas encore d’avis. Donner le premier avis",
+      "ratingSummary": "Note de {score} sur 5 pour {count, plural, one {un avis} other {# avis}}. Donner ton avis"
+    },
+    "landscape": {
+      "sun": "Le banc du payis est au soleil",
+      "snowfall": "Chute de neige",
+      "lake": "avec vue sur le lac",
+      "river": "avec vue sur la rivière",
+      "mountains": "avec vue sur les montagnes",
+      "hills": "avec vue sur les collines",
+      "forest": "dans la forêt",
+      "backrest": "avec dossier",
+      "noBackrest": "sans dossier",
+      "weather": "{temperature} degrés Celsius, {precipitation}, MétéoSuisse",
+      "moon": "Lune éclairée à {percent} pour cent",
+      "panoramaDescription": "Panorama paysager calculé à 360 degrés",
+      "panoramaControl": "Faire pivoter la direction du regard",
+      "panoramaHeading": "Direction du regard à {degrees} degrés",
+      "panoramaHint": "↔ ↕ Faire glisser",
+      "panoramaCalculated": "Calculé à partir des données du terrain et des environs",
+      "panoramaGenerating": "La vue est en train d’être peinte…",
+      "panoramaUnavailable": "La vue calculée n’est pas encore disponible.",
+      "panoramaRetry": "Réessayer"
+    },
+    "page": {
+      "description": "Banc du payis avec analyse du soleil et des environs dans Bänkli App.",
+      "ratedDescription": "Banc du payis avec vue notée {score}/5 dans Bänkli App.",
+      "backToFeed": "Retô au fil des bancs",
+      "onMap": "Sur la carte"
+    }
+  },
+  "common": {
+    "language": {
+      "label": "Langue",
+      "localActive": "Dialecte local : {region}",
+      "localApproximation": "régionalisation prudente",
+      "failed": "Impossible de changer la langue. Réessaie."
+    },
+    "dialect": {
+      "label": "Dialecte du banc du payis",
+      "hint": "La fiche parle comme le lieu",
+      "on": "Activé",
+      "off": "Désactivé",
+      "failed": "Impossible de changer le mode dialecte. Réessaie."
+    },
+    "metadata": {
+      "title": "Bänkli App – Les bancs de Suisse",
+      "description": "Trouve des bancs en Suisse avec du soleil, une belle vue et les avis de la communauté."
+    },
+    "navigation": {
+      "open": "Ouvrir le menu",
+      "close": "Cllôre le menu",
+      "label": "Navigation principale",
+      "addBench": "Ajouter un banc du payis",
+      "walk": "Balade",
+      "feed": "Actualités des bancs",
+      "statistics": "Bancologie",
+      "favourites": "Mes lieux favoris",
+      "profile": "Mon profil",
+      "signIn": "Se connecter",
+      "signOut": "Se déconnecter",
+      "about": "À propos de Bänkli App",
+      "map": "Retô à la carte",
+      "privacy": "Protection des données",
+      "imprint": "Contact et mentions légales"
+    },
+    "install": {
+      "button": "Installer l’app",
+      "ios": "Dans Safari, choisis « Partager », puis « Sur l’écran d’accueil »."
+    },
+    "actions": {
+      "back": "Retô",
+      "close": "fermer",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "remove": "Retirer",
+      "delete": "Supprimer",
+      "retry": "Réessayer",
+      "closeTitle": "Cllôre"
+    },
+    "values": {
+      "yes": "Oui",
+      "no": "Non",
+      "unknown": "Inconnu",
+      "open": "À préciser",
+      "notRecorded": "Pas encore renseigné",
+      "bench": "Banc du payis",
+      "community": "Communauté"
+    },
+    "fields": {
+      "name": "Nom",
+      "optional": "(facultatif)"
+    },
+    "errors": {
+      "signIn": "Connecte-toi d’abord.",
+      "blocked": "Les contributions de ce navigateur ont été bloquées.",
+      "rateLimit": "Trop de contributions. Réessaie plus tard.",
+      "benchNotFound": "Ce banc du payis est introuvable.",
+      "invalid": "Vérifie tes informations.",
+      "unavailable": "Cela n’a pas fonctionné. Réessaie."
+    },
+    "notFound": {
+      "title": "Banc du payis introuvable",
+      "description": "Il a peut-être été retiré des données sources."
+    },
+    "update": {
+      "ready": "Une carte plus fraîche est prête.",
+      "reload": "Recharger",
+      "dismiss": "Cllôre l’avis de mise à jour"
+    },
+    "calendar": {
+      "patterns": {
+        "numeric": "{day}.{month}.{year}",
+        "long": "{day} {month} {year}",
+        "monthYear": "{month} {year}",
+        "dayMonth": "{day} {month}",
+        "dateTime": "{date}, {time}"
+      },
+      "months": {
+        "january": "janvier",
+        "february": "février",
+        "march": "mars",
+        "april": "avril",
+        "may": "mai",
+        "june": "juin",
+        "july": "juillet",
+        "august": "août",
+        "september": "septembre",
+        "october": "octobre",
+        "november": "novembre",
+        "december": "décembre"
+      }
+    }
+  },
+  "community": {
+    "hub": {
+      "eyebrow": "Regarder de plus près, ensemble",
+      "title": "Contribuer à ce banc du payis",
+      "close": "Cllôre les contributions"
+    },
+    "chapters": {
+      "rating": {
+        "title": "Comment était ta pause ?",
+        "summary": "Ton avis",
+        "prompt": "Évaluer le confort, le calme et la vue",
+        "mine": "Ton avis : {rating}/5"
+      },
+      "presence": {
+        "title": "Confirmer le banc du payis",
+        "summary": "L’as-tu vu sur place ?"
+      },
+      "features": {
+        "title": "Décrire le banc du payis",
+        "summary": "Nom, équipement et direction du regard"
+      },
+      "light": {
+        "title": "La lumière en ce moment",
+        "recorded": "Ton observation est enregistrée",
+        "summary": "Soleil, ombre ou variable",
+        "night": "Cette question apparaît à la lumière du jour, quand l’observation est pertinente."
+      },
+      "view": {
+        "title": "Vue et environs",
+        "recorded": "Ton impression est enregistrée",
+        "summary": "Confirmer ou nuancer l’estimation"
+      },
+      "photo": {
+        "title": "Photo de ce lieu",
+        "summary": "Prendre une photo ou choisir dans la photothèque"
+      },
+      "moment": {
+        "title": "Laisser un moment",
+        "summary": "Souvenir, conseil, poème ou savoir local"
+      },
+      "care": {
+        "title": "Prendre soin du banc du payis",
+        "summary": "De petits gestes d’entretien visibles",
+        "mine": "{count, plural, one {# geste de ta part aujourd’hui} other {# gestes de ta part aujourd’hui}}"
+      },
+      "correction": {
+        "title": "Quelque chose ne va pas",
+        "summary": "Signaler la position, l’état ou les environs"
+      }
+    },
+    "theme": {
+      "month": "Thème commun · ce mois-ci",
+      "monthly": {
+        "winter": {
+          "title": "Lumière d’hiver",
+          "prompt": "Montre-nous un banc du payis dans la lumière paisible de l’hiver."
+        },
+        "company": {
+          "title": "Une personne chère",
+          "prompt": "Quelle pause aimerais-tu partager avec quelqu’un ?"
+        },
+        "green": {
+          "title": "Première verdure",
+          "prompt": "Découvre les premiers signes du printemps autour du banc du payis."
+        },
+        "history": {
+          "title": "Un banc du payis avec une histoire",
+          "prompt": "Quel souvenir ou quelle histoire locale appartient à ce lieu ?"
+        },
+        "morning": {
+          "title": "Calme du matin",
+          "prompt": "Quelle impression donne ce lieu tôt le matin ?"
+        },
+        "shade": {
+          "title": "Un coin d’ombre",
+          "prompt": "Quels bancs offrent de l’ombre les jours chauds ?"
+        },
+        "water": {
+          "title": "De l’eau en vue",
+          "prompt": "Partage une impression sincère de l’eau — ou de son absence."
+        },
+        "grandparents": {
+          "title": "Le favori des grands-parents",
+          "prompt": "Quel lieu conviendrait à une pause ensemble ?"
+        },
+        "evening": {
+          "title": "L’or du soir",
+          "prompt": "Saisis l’ambiance d’une fin de journée d’été."
+        },
+        "care": {
+          "title": "Un petit geste de soin",
+          "prompt": "Un lieu propre est un effort collectif discret."
+        },
+        "fog": {
+          "title": "Brouillard et proximité",
+          "prompt": "Qu’est-ce qui reste beau quand la vue lointaine fait une pause ?"
+        },
+        "thought": {
+          "title": "Une pensée chaleureuse",
+          "prompt": "Laisse un petit poème ou une recommandation."
+        }
+      }
+    },
+    "overview": {
+      "features": "{count, plural, one {# indication} other {# indications}}",
+      "moments": "{count, plural, one {# moment} other {# moments}}",
+      "mine": "Tes contributions ique :",
+      "empty": "Tu n’as pas encore contribué ique. Choisis ce que tu sais avec certitude.",
+      "rating": "Avis"
+    },
+    "metadata": {
+      "placeholder": "Quel est le nom de ce banc du payis ?",
+      "dedicationHint": "(ce qui est inscrit sur le banc du payis)",
+      "save": "Enregistrer les indications"
+    },
+    "moments": {
+      "kinds": {
+        "memory": "Souvenir",
+        "recommendation": "Conseil",
+        "poem": "Poème",
+        "local_fact": "Savoir local",
+        "photo": "Moment en image"
+      },
+      "choose": "Que souhaites-tu partager ?",
+      "label": "Ton moment sur le banc du payis",
+      "poemPlaceholder": "Quelques lignes pour ce lieu…",
+      "placeholder": "Que devraient savoir les autres sur ce lieu ?",
+      "publish": "Publier le moment"
+    },
+    "care": {
+      "actions": {
+        "cleaned": "Un petit nettoyage",
+        "good": "En bon état",
+        "repair": "À réparer",
+        "beautiful": "Particulièrement beau houé"
+      },
+      "description": "Pas de points ni de classement, juste un signe que quelqu’un y a prêté attention.",
+      "mine": "{label} · par toi",
+      "events": {
+        "cleaned": "nettoyé",
+        "good": "vu en bon état",
+        "repair": "signalé à réparer",
+        "beautiful": "trouvé particulièrement beau houé"
+      }
+    },
+    "presence": {
+      "signIn": "Se connecter pour participer",
+      "confirmedToday": "Confirmé par toi houé",
+      "confirm": "Toujours là",
+      "question": "Est-il toujours là ?",
+      "missingCount": "{count}/{threshold} personnes signalent l’absence de ce banc du payis.",
+      "reportedMissing": "Absence signalée par toi",
+      "confirmMissing": "Confirmer l’absence",
+      "reportMissing": "Le banc du payis n’est plus là"
+    },
+    "errors": {
+      "save": "L’action n’a pas pu être enregistrée. Réessaie."
+    },
+    "rating": {
+      "eyebrow": "Ton impression",
+      "existing": "Ton avis précédent est prérempli, tu peux le modifier.",
+      "intro": "Quatre petites impressions aident les autres à choisir.",
+      "fields": {
+        "overall": "Ensemble",
+        "view": "Vue",
+        "comfort": "Confort",
+        "quiet": "Calme"
+      },
+      "note": "Une pensée à partager",
+      "optional": "(facultatif)",
+      "placeholder": "Qu’as-tu apprécié ique ?",
+      "update": "Actualiser l’avis",
+      "publish": "Publier l’avis",
+      "stars": "{count, plural, one {# étoile} other {# étoiles}}"
+    },
+    "correction": {
+      "eyebrow": "Un petit signalement",
+      "title": "Quelque chose ne va pas ?",
+      "intro": "Uniquement ce que tu viens de constater sur place.",
+      "field": "Qu’est-ce qui ne va pas ?",
+      "choose": "Choisir",
+      "options": {
+        "removed": "Le banc du payis a disparu ou a été retiré",
+        "location": "La position est imprécise",
+        "properties": "L’équipement est incorrect",
+        "condition": "Endommagé ou difficile à utiliser",
+        "environment": "Les environs, la vue ou la lumière ne correspondent pas"
+      },
+      "observation": "Qu’as-tu vu ?",
+      "placeholder": "Par exemple : le dossier manque",
+      "publish": "Publier le signalement",
+      "fields": {
+        "properties": "Équipement",
+        "condition": "État",
+        "location": "Position",
+        "removed": "N’existe plus",
+        "environment": "Environs, vue ou lumière"
+      }
+    },
+    "place": {
+      "eyebrow": "Les gens de ce lieu",
+      "title": "Moments sur un banc du payis",
+      "share": "Partager le moment",
+      "shareShort": "Partager",
+      "shareText": "Un moment sur un banc du payis près de {bench}",
+      "copied": "Lien copié, prêt à partager, aussi sur Instagram.",
+      "shareUnavailable": "Le partage n’est pas disponible dans ce navigateur pour le moment.",
+      "operator": "Entretenu sur place",
+      "favourite": "Lieu favori",
+      "save": "Garder ce banc du payis",
+      "saveHint": "Enregistrer pour plus tard",
+      "followPlace": "Suivre le lieu",
+      "followingPlace": "Lieu suivi",
+      "following": "Tu suis {place}",
+      "follow": "Suivre {place}",
+      "favourites": "Tous les lieux favoris",
+      "recent": "ces 90 derniers jours",
+      "deleteOwn": "Supprimer mon moment",
+      "empty": "Pas encore d’histoire ique. Le banc du payis attend patiemment."
+    },
+    "features": {
+      "progress": "{known}/{total} indications connues · Appuie pour compléter",
+      "mine": "de toi"
+    },
+    "observations": {
+      "light": {
+        "label": "Signaler la lumière sur place",
+        "title": "Est-ce le cas en ce moment ?",
+        "intro": "Une brève impression sur place",
+        "mine": "Ton observation : {choice}",
+        "choices": {
+          "sun": "Soleil",
+          "shade": "Ombre",
+          "mixed": "Variable"
+        },
+        "trend": "Communauté : surtout {choice} · {count, plural, one {une personne} other {# personnes}}"
+      },
+      "view": {
+        "label": "Décrire la vue sur place",
+        "title": "Quelle impression te fait ce lieu ?",
+        "agreed": "Confirmé à peu près par toi",
+        "mine": "Ton impression a été enregistrée",
+        "intro": "Ton impression aide à améliorer l’estimation",
+        "agree": "Ça correspond à peu près",
+        "edit": "Vécu autrement",
+        "step": "Étape {current} sur {total}",
+        "steps": "Étapes",
+        "back": "Retô",
+        "next": "Suivant",
+        "save": "Enregistrer"
+      },
+      "steps": {
+        "openness": "Le lieu paraît-il ouvert ?",
+        "landscape": "Qu’est-ce qui marque le paysage ?",
+        "horizon": "Que voit-on à l’horizon ?",
+        "surroundings": "Quelle impression donnent les environs ?"
+      },
+      "fields": {
+        "openness": "Vue dégagée",
+        "sky": "Ciel",
+        "relief": "Terrain",
+        "water": "Eau",
+        "horizon": "Horizon",
+        "naturalness": "Environs",
+        "disturbance": "Perturbations"
+      },
+      "choices": {
+        "openness": {
+          "wide": "Presque partout",
+          "partial": "Dans certaines directions",
+          "enclosed": "Plutôt fermé"
+        },
+        "sky": {
+          "open": "Ouvert",
+          "partial": "Partiellement",
+          "closed": "Fermé"
+        },
+        "relief": {
+          "flat": "Plat",
+          "gentle": "Doux",
+          "strong": "Relief marqué"
+        },
+        "water": {
+          "clear": "Clairement visible",
+          "some": "Un peu visible",
+          "none": "Invisible"
+        },
+        "horizon": {
+          "open": "Principalement dégagé",
+          "trees": "Arbres",
+          "buildings": "Bâtiments",
+          "mixed": "Mixte"
+        },
+        "naturalness": {
+          "natural": "Naturel",
+          "mixed": "Mixte",
+          "built": "Bâti"
+        },
+        "disturbance": {
+          "quiet": "Calme",
+          "some": "Un peu",
+          "strong": "Beaucoup"
+        }
+      },
+      "trend": {
+        "openness": "plutôt ouvert",
+        "naturalness": "naturel",
+        "quiet": "calme",
+        "description": "Communauté : {qualities}",
+        "empty": "Impression de la communauté",
+        "summary": "{description} · {count, plural, one {une personne} other {# personnes}} · {confidence}"
+      },
+      "undo": "Annuler"
+    },
+    "reviews": {
+      "eyebrow": "Par des personnes sur place",
+      "title": "Comment était la pause ?",
+      "edit": "Modifier ma contribution",
+      "add": "Partager une impression",
+      "signIn": "Connecte-toi pour participer",
+      "reportedRating": "Avis signalé",
+      "reportRating": "Signaler l’avis",
+      "notes": "Remarques",
+      "reportedCorrection": "Correction signalée",
+      "reportCorrection": "Signaler la correction"
+    },
+    "result": {
+      "ratingSaved": "Merci, ton avis est visible.",
+      "ratingFailed": "L’avis n’a pas pu être enregistré.",
+      "correctionSaved": "Merci, ta remarque a été publiée.",
+      "correctionFailed": "La remarque n’a pas pu être enregistrée.",
+      "invalidContribution": "Contribution invalide.",
+      "reported": "La contribution a été signalée.",
+      "reportFailed": "Le signalement a échoué.",
+      "momentInvalid": "Décris ce lieu en quelques mots.",
+      "momentSaved": "Ton moment est maintenant visible sur ce lieu.",
+      "momentFailed": "Le moment n’a pas pu être enregistré.",
+      "invalidMoment": "Moment invalide.",
+      "notYourMoment": "Ce moment n’appartient pas à ton compte.",
+      "momentDeleted": "Ton moment a été supprimé.",
+      "momentDeleteFailed": "Le moment n’a pas pu être supprimé.",
+      "careInvalid": "Action d’entretien inconnue.",
+      "careSaved": "Merci d’en prendre soin.",
+      "careAlreadySaved": "Tu l’as déjà noté houé.",
+      "careFailed": "L’entretien n’a pas pu être enregistré.",
+      "unfavourited": "Retiré de tes lieux favoris.",
+      "favourited": "Ce banc du payis fait maintenant partie de tes lieux favoris.",
+      "placeUnnamed": "Ce lieu n’a pas encore de nom.",
+      "placeUnfollowed": "Tu ne suis plus {place}.",
+      "placeFollowed": "Les nouveaux moments de {place} apparaîtront chez toi.",
+      "followFailed": "Le choix n’a pas pu être enregistré.",
+      "lightInvalid": "Choisis soleil, ombre ou variable.",
+      "lightNight": "Tu pourras signaler la lumière ique quand il fera jour.",
+      "lightSaved": "Merci, ton observation de lumière est enregistrée.",
+      "lightFailed": "L’observation de lumière n’a pas pu être enregistrée.",
+      "observationUndone": "Ton observation a été retirée.",
+      "undoFailed": "L’observation n’a pas pu être retirée.",
+      "observationConfirmed": "Merci, ta confirmation aide à interpréter les données.",
+      "observationConfirmFailed": "La confirmation n’a pas pu être enregistrée.",
+      "viewInvalid": "Complète ton observation.",
+      "viewSaved": "Merci, ton observation est enregistrée.",
+      "viewFailed": "L’observation n’a pas pu être enregistrée.",
+      "observationInvalid": "Observation inconnue.",
+      "observationDeleted": "Ton observation a été supprimée.",
+      "observationDeleteFailed": "L’observation n’a pas pu être supprimée."
+    }
+  },
+  "knowledge": {
+    "title": "Ce que nous savons — et ce qui reste à découvrir",
+    "categories": {
+      "physical": "Équipement",
+      "location": "Lieu",
+      "accessibility": "Accès",
+      "imagery": "Images",
+      "surroundings": "Environs",
+      "amenities": "Équipements à proximité",
+      "environment": "Données environnementales",
+      "recent_verification": "Présence récente"
+    },
+    "amenities": {
+      "toilets": "Toilettes",
+      "drinking_water": "Eau potable",
+      "fountain": "Fontaine",
+      "shelter": "Abri",
+      "picnic_table": "Table de pique-nique",
+      "playground": "Place de jeux",
+      "waste_basket": "Poubelle",
+      "fireplace": "Foyer"
+    },
+    "attributes": {
+      "covered": "Toit",
+      "wheelchair": "Usage en fauteuil roulant",
+      "land_context": "Environs",
+      "canopy_context": "Canopée",
+      "waterfront": "Au bord de l’eau",
+      "presence": "Présence",
+      "image_water_type": "Eau sur les photos",
+      "image_long_view": "Vue lointaine estimée depuis le siège"
+    },
+    "sources": {
+      "osm": "OpenStreetMap",
+      "gis": "Géométrie",
+      "imagery": "Modèle visuel",
+      "official": "Données officielles",
+      "community": "Communauté"
+    },
+    "confidence": {
+      "unknown": "inconnu",
+      "low": "incertain",
+      "medium": "étayé",
+      "high": "bien étayé"
+    },
+    "nearby": {
+      "title": "À proximité",
+      "distance": "env. {distance} m",
+      "explanation": "Distance à vol d’oiseau vers les équipements recensés dans un rayon de 500 m. Une fontaine ne fournit pas forcément de l’eau potable.",
+      "shortDistance": "{facility} · env. {distance} m à vol d’oiseau",
+      "unknown": "La carte ne recense pas tous les équipements. Il peut y en avoir davantage sur place."
+    },
+    "approach": {
+      "title": "Le dernier bout de chemin",
+      "length": "Chemin étudié",
+      "steps": "Escaliers sur ce chemin",
+      "stepFree": "Possibilité sans marches",
+      "open": "Inconnu",
+      "recorded": "Recensés",
+      "noneRecorded": "Aucun recensé",
+      "evidence": "Indices disponibles",
+      "obstacle": "Obstacle recensé",
+      "maxSlope": "Pente maximale estimée",
+      "meanSlope": "Pente absolue moyenne",
+      "ascent": "Montée vers le banc du payis",
+      "surface": "Revêtement selon la carte",
+      "smoothness": "État du chemin selon la carte",
+      "width": "Largeur minimale recensée",
+      "explanation": "{confidence} · Un accès local seulement, sans vérification du trajet complet. L’absence d’obstacles sur la carte ne garantit pas l’accessibilité.",
+      "empty": "Aucun chemin piéton assez proche n’a encore été associé.",
+      "unmapped": "Derniers mètres non cartographiés",
+      "structure": "Pont ou tunnel : le modèle du terrain ne permet pas d’établir la pente du chemin.",
+      "sampleCoverage": "Altitude disponible pour {sampled} points du chemin sur {expected}."
+    },
+    "noise": {
+      "title": "Bruit du trafic selon le modèle",
+      "rail": "Rail",
+      "road": "Route",
+      "day": "Jour",
+      "night": "Nuit",
+      "empty": "Aucune couverture de la grille",
+      "explanation": "Niveaux d’évaluation officiels, pas des mesures en direct. Version des sources : {version}."
+    },
+    "evidence": {
+      "title": "Indices par caractéristique",
+      "conflicting": "Indices contradictoires"
+    },
+    "completeness": {
+      "title": "Que savons-nous de ce lieu ?",
+      "count": "{known} indications sur {total}",
+      "uncertain": " · {count} incertaines",
+      "explanation": "Chaque domaine est indépendant. Une valeur manquante reste inconnue et ne signifie rien de négatif sur le banc du payis."
+    },
+    "verification": {
+      "label": "Une petite question sur place",
+      "intro": "Si tu es sur place",
+      "unknown": "Je ne sais pas",
+      "failed": "Impossible d’enregistrer la réponse. Réessaie.",
+      "questions": {
+        "backrest": "Ce banc du payis a-t-il un dossier ?",
+        "armrest": "Ce banc du payis a-t-il des accoudoirs ?",
+        "covered": "Ce banc du payis a-t-il un toit fixe ?",
+        "approach_steps": "Y avait-il des escaliers sur ton dernier bout de chemin pour venir ique ?"
+      },
+      "reasons": {
+        "conflicting": "Les indices se contredisent ique.",
+        "missing": "Cette information manque encore.",
+        "stale": "Une observation récente aide."
+      },
+      "result": {
+        "invalid": "Cette réponse n’a pas pu être enregistrée.",
+        "saved": "Merci ! Ton indication complète les observations existantes.",
+        "failed": "La réponse fait une pause."
+      }
+    },
+    "surfaces": {
+      "asphalt": "Asphalte",
+      "paved": "Revêtu",
+      "unpaved": "Non revêtu",
+      "concrete": "Béton",
+      "paving_stones": "Pavés",
+      "cobblestone": "Pavés irréguliers",
+      "sett": "Pavés taillés",
+      "gravel": "Gravier",
+      "fine_gravel": "Gravier fin",
+      "compacted": "Compacté",
+      "ground": "Sol naturel",
+      "dirt": "Terre",
+      "earth": "Terre",
+      "grass": "Herbe",
+      "sand": "Sable",
+      "wood": "Bois",
+      "rock": "Roche",
+      "pebblestone": "Galets",
+      "mud": "Boue"
+    },
+    "smoothness": {
+      "excellent": "Très régulier",
+      "good": "Régulier",
+      "intermediate": "Légèrement irrégulier",
+      "bad": "Irrégulier",
+      "very_bad": "Très irrégulier",
+      "horrible": "Très dégradé",
+      "very_horrible": "Extrêmement dégradé",
+      "impassable": "Impraticable"
+    },
+    "freshness": {
+      "unknown": "Âge de la source inconnu",
+      "recent": "Source récente",
+      "old": "Source ancienne"
+    },
+    "estimates": {
+      "title": "Estimé à partir de photos",
+      "explanation": "Estimations d’un modèle d’image évalué, séparées des informations confirmées. Elles ne servent ni aux filtres d’équipement ni aux indications d’accessibilité.",
+      "provenance": "Modèle d’image : {model} · {count} exemples examinés indépendamment"
+    },
+    "view": {
+      "distinctions": "De l’eau à proximité ne garantit pas une vue sur l’eau. Un espace ouvert ne garantit pas une vue lointaine en position assise. Les photos ne montrent qu’un cadrage et ne prouvent ni une ombre permanente ni une direction de vue inconnue."
+    }
+  },
+  "photos": {
+    "gallery": {
+      "view": "Voir la photo",
+      "enlarge": "Agrandir : {caption}",
+      "close": "Cllôre les photos",
+      "unavailable": "L’image fait une pause.",
+      "retry": "Recharger",
+      "loading": "Chargement de l’image…",
+      "source": "Source et licence ↗",
+      "label": "Photos",
+      "previous": "Photo précédente",
+      "next": "Photo suivante",
+      "by": "Photo du banc du payis par {username}",
+      "exact": "Ce banc du payis",
+      "nearby": "Dans les environs"
+    },
+    "capture": {
+      "title": "Mettre le banc du payis à l’image",
+      "intro": "Choisis une photo dans ta photothèque, avec l’appareil photo ou dans tes fichiers, de préférence sans personnes. La vérification et le stockage se font sur notre propre serveur.",
+      "select": "Choisir une photo du banc du payis",
+      "preview": "Aperçu de ta photo du banc du payis",
+      "change": "Autre photo",
+      "choose": "Prendre ou choisir une photo",
+      "caption": "Quelques mots",
+      "captionPlaceholder": "Que voit-on depuis ce banc du payis ?",
+      "checking": "Vérification de la photo…",
+      "publish": "Publier la photo"
+    },
+    "errors": {
+      "prepare": "La photo n’a pas pu être préparée.",
+      "originalTooLarge": "La photo originale est trop volumineuse. Choisis une image de 24 Mo maximum.",
+      "decode": "La photo n’a pas pu être lue.",
+      "tooDetailed": "La photo contient trop de détails. Choisis un cadrage un peu plus petit.",
+      "read": "Impossible de lire la photo.",
+      "upload": "La photo n’a pas pu être envoyée. Réessaie."
+    },
+    "story": {
+      "nearby": "Dans les environs · pas forcément ce banc du payis",
+      "place": "Ce lieu",
+      "license": "Licence auprès de la source",
+      "title": "Un regard aux alentours",
+      "external": "Information externe sur ce lieu ↗",
+      "defaultCaption": "Une vue depuis ce banc du payis."
+    },
+    "server": {
+      "notFound": "Image introuvable.",
+      "unavailable": "Image indisponible pour le moment.",
+      "choose": "Choisis une photo nette de 1,8 Mo maximum.",
+      "saved": "Photo reçue : le banc du payis a maintenant son portrait.",
+      "saveFailed": "La photo n’a pas pu être enregistrée.",
+      "checkUnavailable": "Le contrôle des images regarde ailleurs. Réessaie plus tard.",
+      "checkBusy": "Le contrôle des images reprend son souffle. Réessaie plus tard.",
+      "people": "Le banc du payis peut poser seul un instant : reprends la photo sans personnes.",
+      "uncertain": "Cette image est un peu trop mystérieuse pour le contrôle. Reprends une photo nette du banc du payis, sans personnes.",
+      "storageUnavailable": "Le stockage des photos fait une pause.",
+      "format": "Utilise une photo JPEG, PNG ou WebP.",
+      "formatMismatch": "Le format ne correspond pas à la photo. Sélectionne l’image à nouveau."
+    }
+  },
+  "submission": {
+    "steps": {
+      "label": "Ajouter un banc du payis",
+      "position": "Position",
+      "details": "Détails"
+    },
+    "location": {
+      "searching": "Recherche du lieu…",
+      "onSave": "Le lieu sera ajouté lors de l’enregistrement",
+      "change": "Modifier la position",
+      "details": "Détails de la position"
+    },
+    "nearby": {
+      "title": "Bancs à proximité",
+      "failed": "La recherche à proximité a échoué.",
+      "retry": "Vérifier à nouveau",
+      "checking": "Vérification des bancs déjà présents à proximité…",
+      "count": "{count, plural, one {# banc dans un rayon de 25 m} other {# bancs dans un rayon de 25 m}}",
+      "question": "Le vôtre est-il déjà là ?",
+      "open": "{meters} m · Voir le banc du payis",
+      "empty": "Aucun banc du payis enregistré dans un rayon de 25 m.",
+      "confirm": "Vérifié : mon banc du payis est un autre banc du payis."
+    },
+    "fields": {
+      "namePlaceholder": "Mon banc du payis préféré",
+      "dedication": "Dédicace",
+      "features": "Ajouter l’équipement (facultatif)",
+      "observation": "Que vois-tu sur ce banc du payis ?",
+      "accessNote": "Évalue séparément l’utilisation du banc du payis en fauteuil roulant et son chemin d’accès."
+    },
+    "form": {
+      "pending": "Ajout en cours…",
+      "submit": "Ajouter"
+    },
+    "result": {
+      "locationInvalid": "Vérifie la position.",
+      "reviewNearby": "Vérifie d’abord les bancs voisins. Le tien est-il déjà répertorié ?",
+      "added": "Banc du payis ajouté · {count, plural, one {encore # confirmation} other {encore # confirmations}}.",
+      "addFailed": "Le banc du payis n’a pas pu être enregistré.",
+      "alreadyConfirmed": "Tu l’as déjà confirmé houé.",
+      "presenceConfirmed": "Merci : sa présence a été confirmée houé.",
+      "verified": "Ce banc du payis est maintenant confirmé !",
+      "confirmationsNeeded": "{count, plural, one {Encore # confirmation.} other {Encore # confirmations.}}",
+      "confirmFailed": "La confirmation a échoué.",
+      "alreadyMissing": "Tu as déjà confirmé son absence.",
+      "removed": "Confirmé comme disparu.",
+      "removalVotes": "Signalement enregistré : {count, plural, one {encore # vote} other {encore # votes}}.",
+      "removalFailed": "Le signalement a échoué.",
+      "metadataInvalid": "Vérifie les informations.",
+      "metadataUpdated": "Informations mises à jour.",
+      "metadataFailed": "La modification a échoué.",
+      "fieldInvalid": "Vérifie cette information.",
+      "chooseBoolean": "Choisis oui ou non.",
+      "chooseMaterial": "Choisis un matériau.",
+      "chooseSeats": "Choisis entre 1 et 20 places.",
+      "chooseDirection": "Choisis une orientation.",
+      "unchanged": "C’est déjà enregistré ainsi.",
+      "fieldSaved": "Merci, c’est enregistré.",
+      "fieldFailed": "L’information n’a pas pu être enregistrée."
+    }
+  }
+}

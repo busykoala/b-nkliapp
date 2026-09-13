@@ -1,0 +1,3936 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "versioned-dialect-research-catalogue",
+  "researchDate": "2026-09-12",
+  "scope": "Territorially rooted Swiss German/Bavarian, Romansh, Lombard and Romand heritage varieties plus honestly labelled regional standard-language fallbacks. This is an extensible editorial coverage inventory, not a definitive count of all dialects or a map of residents’ identities.",
+  "sources": [
+    {
+      "id": "repo-dialect",
+      "title": "b-nkliapp: src/lib/dialect.ts",
+      "url": "https://raw.githubusercontent.com/busykoala/b-nkliapp/main/src/lib/dialect.ts",
+      "accessLevel": "source-code-read",
+      "usedFor": "Current resolver, metadata, first/second sentence architecture",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "repo-tests",
+      "title": "b-nkliapp: src/lib/dialect.test.ts",
+      "url": "https://raw.githubusercontent.com/busykoala/b-nkliapp/main/src/lib/dialect.test.ts",
+      "accessLevel": "source-code-read",
+      "usedFor": "Regression-test design; inconsistent coordinate fixtures",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "repo-geography",
+      "title": "b-nkliapp: bench-knowledge/model.ts",
+      "url": "https://raw.githubusercontent.com/busykoala/b-nkliapp/main/src/features/bench-knowledge/model.ts",
+      "accessLevel": "source-code-read",
+      "usedFor": "Existing municipalityId, localityName, sourceVersion and confidence",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "repo-types",
+      "title": "b-nkliapp: src/lib/types.ts",
+      "url": "https://raw.githubusercontent.com/busykoala/b-nkliapp/main/src/lib/types.ts",
+      "accessLevel": "source-code-read",
+      "usedFor": "Light-state fields, shadeCause and dayPhase",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "repo-readme",
+      "title": "b-nkliapp README",
+      "url": "https://github.com/busykoala/b-nkliapp",
+      "accessLevel": "read",
+      "usedFor": "Geometric sun model does not model cloud effects",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "repo-i18n",
+      "title": "b-nkliapp: src/i18n/config.ts",
+      "url": "https://raw.githubusercontent.com/busykoala/b-nkliapp/main/src/i18n/config.ts",
+      "accessLevel": "source-code-read",
+      "usedFor": "Preserve UI-language and dialect opt-in separation",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "sds",
+      "title": "Sprachatlas der deutschen Schweiz",
+      "url": "https://sprachatlas.ch/",
+      "accessLevel": "project-and-digital-map-portal-read",
+      "usedFor": "Historical linguistic geography; not evidence that the editorial area polygons below have been digitized",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "ksds",
+      "title": "Kleiner Sprachatlas der deutschen Schweiz",
+      "url": "https://www.kleinersprachatlas.ch/",
+      "accessLevel": "project-portal-read",
+      "usedFor": "Accessible comparison of regional lexical and phonological distributions",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "dialektatlas",
+      "title": "Dialäktatlas: Swiss dialects across generations",
+      "url": "https://dialektatlas.ch/",
+      "accessLevel": "project-and-download-portal-read",
+      "usedFor": "Compare traditional with contemporary usage; individual recordings were not listened to",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "dialektkarten",
+      "title": "SDS/SADS digital dialect maps",
+      "url": "https://dialektkarten.ch/mapviewer/swg/index.de.html",
+      "accessLevel": "portal-read",
+      "usedFor": "Potential machine-readable point data and interpolations; inspect licence and individual maps before deriving deployment boundaries",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "swisstopo",
+      "title": "swissBOUNDARIES3D",
+      "url": "https://www.swisstopo.admin.ch/de/landschaftsmodell-swissboundaries3d",
+      "accessLevel": "read",
+      "usedFor": "Administrative geometry, 2026 changes, CRS, included foreign enclaves; not dialect boundaries",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "moutier",
+      "title": "Republic and Canton of Jura: Moutier historical context",
+      "url": "https://www.jura.ch/fr/Autorites/Moutier/Contexte-historique/Moutier-dans-le-Jura-Contexte-historique.html",
+      "accessLevel": "official-result-read",
+      "usedFor": "Moutier belongs to Jura from 1 January 2026",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "sensler-state",
+      "title": "State of Fribourg: Kenntnis und Pflege des Senslerdeutschen",
+      "url": "https://www.fr.ch/de/culture-et-tourisme/tradifri/kenntnis-und-pflege-des-senslerdeutschen",
+      "accessLevel": "read",
+      "usedFor": "Sense district; parts of Gurmels parish and Fribourg city; written and spoken traditions",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "sensler-glossary",
+      "title": "Christian Schmutz: Seisler glossary",
+      "url": "https://senslerhotline.ch/seisler/glossar/",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "ggùgge, hǜbscheli, muusdǜri, ù; writing forms connected with D Seisler hiis böös",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "sensler-museum",
+      "title": "Sensler Museum: Sensler Dialekt",
+      "url": "https://www.senslermuseum.ch/aktuell/sensler-dialekt/",
+      "accessLevel": "read",
+      "usedFor": "Contemporary local writing and dialect transmission",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "jaun",
+      "title": "Leo Buchs: Jaundeutsches Wörterbuch, publisher page",
+      "url": "https://www.kund.ch/produkt/jaundeutsches-woerterbuch",
+      "accessLevel": "publisher-description-only",
+      "usedFor": "Distinct Jaundeutsch; dictionary and grammar are review resources. Interior not read",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "fribourg-diversity",
+      "title": "Fribourg tourism: Patois de Fribourg",
+      "url": "https://fribourg.ch/de/blog/patois-fribourg-dialekt/",
+      "accessLevel": "read",
+      "usedFor": "Distinguish Sensler, Jaundeutsch, Fribourg patois and Bolz code-switching",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "bern-writing",
+      "title": "Berndeutsch.ch: Schrybe",
+      "url": "https://www.berndeutsch.ch/pages/schrybe",
+      "accessLevel": "writing-guidance-read",
+      "usedFor": "Two legitimate writing approaches; do not mix their conventions mechanically",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "basel-dictionary",
+      "title": "Rudolf Suter: digitized Baseldeutsch dictionary",
+      "url": "https://baseldeutsch-woerterbuch.floatleft.ch/woerterbuch/",
+      "accessLevel": "dictionary-and-writing-guidance-preview",
+      "usedFor": "Basel writing tradition; no claim that every draft word was individually checked",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "solothurn",
+      "title": "Matthias Friedli: Eigenart der Solothurner Dialekte",
+      "url": "https://solothurner.mundartverein.ch/eigenart-der-solothurner-dialekte/",
+      "accessLevel": "linguistic-description-read",
+      "usedFor": "Schwarzbubenland, Niederamt, Bucheggberg and remaining Solothurn distinctions",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "aargau",
+      "title": "SRF: dialectologist Hans-Peter Schifferle on Aargau regions",
+      "url": "https://www.srf.ch/news/aargau-solothurn-raetselraten-woher-kommt-diese-aargauerin",
+      "accessLevel": "expert-interview-read",
+      "usedFor": "Fricktal, eastern Aargau, Freiamt and Bernese Aargau; transitional boundaries",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "zurich",
+      "title": "Zürich tourism: Zürichdeutsch",
+      "url": "https://www.zuerich.com/de/informieren-planen/nuetzliche-infos-und-services/zuerichdeutsch",
+      "accessLevel": "regional-resource-preview",
+      "usedFor": "Review lead; not word-by-word validation of Zürich candidate",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "schaffhausen",
+      "title": "Verein für die Schaffhauser Mundart: books",
+      "url": "https://mundartschaffhausen.ch/buecher/",
+      "accessLevel": "publisher-description-only",
+      "usedFor": "Richli/Gallmann dictionary; interior not read",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "sg-city",
+      "title": "SRF: Susan Osterwalder-Brändle on Hopp Sanggale!",
+      "url": "https://www.srf.ch/news/st-galler-dialekt-3-000-st-galler-woerter-gesammelt",
+      "accessLevel": "author-interview-read",
+      "usedFor": "bibääbele means fuss or make unnecessary circumstances; not a pan-SG exclusive marker",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "diepoldsau",
+      "title": "Diepoldsau municipality: dialect and local literature",
+      "url": "https://www.diepoldsau.ch/diepoldsau/portraet/dialekt.html/21",
+      "accessLevel": "read",
+      "usedFor": "Berta Thurnherr; Diepoldsau/Schmitter-specific writing, not all Rheintal",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "diep-dictionary",
+      "title": "Tippìlzouar und Schmeattar Dialekt: dictionary",
+      "url": "https://www.diepoldsau.ch/public/upload/assets/1383/W%C3%B6rterbuch.pdf?fp=1",
+      "accessLevel": "pdf-entries-read-and-pages-visually-checked",
+      "usedFor": "röschta = rest; rööschta = roast; rüabìg = quiet",
+      "locator": "PDF p. 9 (zero-based page 8), r section; 18 January 2021 version",
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "werdenberg",
+      "title": "Doazmol: Frümsner Dialekt-Ausdrücke",
+      "url": "https://www.doazmol.ch/frumsner-dialekt-ausdrucke",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "hofeli = gently/carefully; gstäät = slowly; evidence specifically from Frümsen",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "toggenburg",
+      "title": "Region Toggenburg: Memo-Spiel zum Toggenburger Dialekt",
+      "url": "https://www.toggenburg.ch/de/aktuell/detail-seite/memo-spiel-zum-toggenburger-dialekt/",
+      "accessLevel": "article-and-local-headings-read",
+      "usedFor": "Local written forms; Brunner book identified, not read in full",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "thurgau",
+      "title": "Martin Hannes Graf: Thurgauer Mundart in Geschichte und Gegenwart (2014)",
+      "url": "https://www.napoleonturm-hohenrain.ch/app/download/12576876893/Thurgauer%2BMundart%2B-%2BM.%2BGraf.pdf?t=1767890971",
+      "accessLevel": "pdf-chapters-literary-excerpts-and-maps-read",
+      "usedFor": "Writing, intersecting east-west and north-south isoglosses, traditional Untersee features, Lara Stoll and Tanja Kummer excerpts",
+      "locator": "pp. 9, 11–15, 47–53, 91–93",
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "appenzell-ai",
+      "title": "Appenzellerdialekt.ch: dialect glossary",
+      "url": "https://appenzellerdialekt.ch/",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "bezli = a little; chnooze = toil/struggle; Innerrhoden-oriented example writing",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "appenzell-tourism",
+      "title": "Appenzell tourism: Appenzeller Dialekt",
+      "url": "https://www.appenzell.ch/de/kultur-und-braeuche/appenzeller-dialekt.html",
+      "accessLevel": "read",
+      "usedFor": "Local usage; avoid in-group/out-group labels as app address",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "appenzell-ar",
+      "title": "Staatsarchiv AR: Heinrich Altherr book project",
+      "url": "https://query-staatsarchiv.ar.ch/archivplansuche.aspx?ID=617020",
+      "accessLevel": "archive-catalogue-only",
+      "usedFor": "Sonnesiits ond schattehalb title attested; book interior not read",
+      "locator": "Pa.184-11-02-38; project 1979–1980",
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "appenzell-literature",
+      "title": "AppenzellDigital: literature portal",
+      "url": "https://www.appenzelldigital.ch/appenzeller-literatur/",
+      "accessLevel": "portal-only",
+      "usedFor": "Further local literary sources, not proof of candidate sentence grammar",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "glarus",
+      "title": "ESAF 2025 Glarnerland+: Glarner glossary",
+      "url": "https://esaf2025.ch/glossar/",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "nügge = doze; weidli = quickly; do not generalize one form to every Glarus valley",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "glarus-dictionary",
+      "title": "Glarner Mundartverein",
+      "url": "https://glarner.mundartverein.ch/",
+      "accessLevel": "publisher-resource-preview",
+      "usedFor": "2024 Glarner dictionary by Thöny, Müller and Marti: review lead",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "kerns",
+      "title": "Municipality of Kerns: Mundartwörter on benches",
+      "url": "https://www.kerns.ch/_doc/1443095",
+      "accessLevel": "pdf-read-and-pages-visually-checked",
+      "usedFor": "ghirmä = rest; äs Schutzli = a short while; bänklä = gambling at cards, not bench-sitting",
+      "locator": "2017 collection, entries based on Karl Imfeld; PDF pp. 2–3",
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "nidwalden",
+      "title": "Holebänz: Nidwaldner Ausdrücke",
+      "url": "https://holebaenz.ch/nidwaldner-ausdruecke/",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "kommod = comfortable/practical; contemporary local spelling examples",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "muotathal",
+      "title": "Muotathaler Wörterbuch: sauft and related examples",
+      "url": "https://dialekt.muotathal.ch/search/sauft",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "plodärä = chat/speak; ä endings in documented examples",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "muotathal-sun",
+      "title": "Muotathaler Wörterbuch: Schii",
+      "url": "https://dialekt.muotathal.ch/search/Schii",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "übärschiinig is a specific shade term; do not apply blindly to any cloud or night state",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "uri",
+      "title": "Lucerne tourism: interview with Felix Aschwanden about Urner dialect",
+      "url": "https://blog.luzern.com/typisch-urner-dialekt/",
+      "accessLevel": "lexical-and-regional-description-read",
+      "usedFor": "Distinguish Uri and Urseren; Urseren baschta = enough/basta",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "luzern",
+      "title": "Luzerner Fasnachtskomitee: local written usage",
+      "url": "https://www.lfk.ch/",
+      "accessLevel": "local-usage-read",
+      "usedFor": "rüüdig used as a local intensifier; full new sentence is a draft",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "wallis-lexicon",
+      "title": "Volmar Schmid: Walliser dialect lexicon, R",
+      "url": "https://www.walliserdialekt.ch/r",
+      "accessLevel": "lexical-entries-read",
+      "usedFor": "riewu = rest; Rupf = a while",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "wallis-regions",
+      "title": "Volmar Schmid: Die Zweiteilung",
+      "url": "https://www.walliserdialekt.ch/die-zweiteilung",
+      "accessLevel": "linguistic-description-read",
+      "usedFor": "Internal Wallis divisions are not a single longitude threshold; valley distinctions",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "wallis-writing",
+      "title": "Anleitung zur Schreibweise: Walliser dialect",
+      "url": "https://www.walliserdialekt.ch/anleitung-zur-schreibweise",
+      "accessLevel": "writing-guidance-read",
+      "usedFor": "Traditional spelling proposal with vowel-length conventions; not compulsory orthography",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "walser",
+      "title": "Internationale Vereinigung für Walsertum: Sprache",
+      "url": "https://www.wir-walser.ch/die-walser/sprache",
+      "accessLevel": "linguistic-description-read",
+      "usedFor": "Walser varieties differ; not a single replace-vowels algorithm",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "walser-books",
+      "title": "Walserverein Graubünden: book catalogue",
+      "url": "https://shop.walserverein-gr.ch/Buecher/",
+      "accessLevel": "publisher-catalogue-only",
+      "usedFor": "Läsiblüescht; Oovnrtüütsch; Dopma; valley-specific review resources. Interiors not read",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "buendner-word",
+      "title": "Bergün Filisur tourism: Patschifig eis go neh",
+      "url": "https://www.berguen-filisur.graubuenden.ch/de/winter/patschifig-eis-go-neh",
+      "accessLevel": "local-written-usage-read",
+      "usedFor": "patschifig attested regionally; not Chur-exclusive and not verification of Chur grammar",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "bosco",
+      "title": "Native lexicographer interview: Gurinerdeutsch",
+      "url": "https://www.beobachter.ch/gesellschaft/wattarhuat-chlaptuachtschi-co-so-will-eine-tessinerin-das-bedrohte-gurinerdeutsch",
+      "accessLevel": "native-author-interview-read",
+      "usedFor": "Bosco Gurin is a distinct Walser case; do not fabricate a Ticinese voice",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "samnaun",
+      "title": "Samnaun: Die Sprache der Samnauner",
+      "url": "https://www.samnaun.swiss/",
+      "accessLevel": "official-search-excerpt-only",
+      "usedFor": "Samnaun dialect is Tyrolean/South Bavarian; not Alemannic or Vallader. Locate article before implementation",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "romansh",
+      "title": "Lia Rumantscha: The Romansh",
+      "url": "https://www.liarumantscha.ch/en/romansh/romansh",
+      "accessLevel": "description-and-parallel-text-read",
+      "usedFor": "Five written idioms, Rumantsch Grischun and local spoken varieties; different spellings are not interchangeable",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "romansh-regions",
+      "title": "Disentis Sedrun: Rhaeto-Romanic",
+      "url": "https://www.andermatt-sedrun-disentis.ch/disentis-sedrun/en/stories/romontsch",
+      "accessLevel": "regional-description-read",
+      "usedFor": "Bergün local speech near Surmiran with Puter written tradition; Jauer and Vallader distinction",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "rm-phrase",
+      "title": "Chattà: Rumantsch Grischun text collection",
+      "url": "https://xn--chatt-vqa.ch/creschids?Sposition=1937",
+      "accessLevel": "search-text-excerpt-only",
+      "usedFor": "prenda peda attested; newly composed fallback remains editorial draft",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "gpsr",
+      "title": "University of Neuchâtel: Glossaire des patois de la Suisse romande",
+      "url": "https://www.unine.ch/isla/glossaire-des-patois-de-la-suisse-romande-gpsr/",
+      "accessLevel": "project-description-read",
+      "usedFor": "Historical/local patois rather than generic regional Standard French; entry-level review still needed",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "romand-historical",
+      "title": "Bridel / Favrat: Glossaire du patois de la Suisse romande (1866)",
+      "url": "https://www.shsr.ch/mdr/MDR21_02.html",
+      "accessLevel": "selected-historical-entries-read",
+      "usedFor": "Historical source with locality labels; not automatic contemporary spelling or usage authority",
+      "locator": null,
+      "accessed": "2026-09-12"
+    },
+    {
+      "id": "cde",
+      "title": "Canton Ticino: Centro di dialettologia e di etnografia",
+      "url": "https://www4.ti.ch/decs/dcsu/cde/cde",
+      "accessLevel": "institutional-portal-only",
+      "usedFor": "VDSI/LSI are appropriate Lombard/Ticinese resources; no local Lombard sentence validated in this research",
+      "locator": null,
+      "accessed": "2026-09-12"
+    }
+  ],
+  "areas": [
+    {
+      "id": "bs-city",
+      "label": "Basel-Stadt / Baseldeutsch",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Basel",
+        "Riehen",
+        "Bettingen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "basel-dictionary",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "bl-lower",
+      "label": "Unteres Baselbiet / Birstal",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Muttenz",
+        "Pratteln",
+        "Reinach BL",
+        "Aesch BL"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "bl-upper",
+      "label": "Oberes Baselbiet",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Sissach",
+        "Gelterkinden",
+        "Waldenburg"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Liestal and contact areas need boundary review; Basel city speech must not be spread across BL."
+    },
+    {
+      "id": "bl-laufental",
+      "label": "Laufental",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Laufen",
+        "Zwingen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "so-schwarzbuben",
+      "label": "Schwarzbubenland",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Dornach",
+        "Breitenbach",
+        "Büsserach"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "solothurn"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "so-core",
+      "label": "Solothurn core / Jurasüdfuss",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Solothurn",
+        "Grenchen",
+        "Balsthal"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "solothurn"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "so-niederamt",
+      "label": "Olten / Niederamt",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Olten",
+        "Schönenwerd",
+        "Niedergösgen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "solothurn"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "so-bucheggberg",
+      "label": "Bucheggberg",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Buchegg",
+        "Lüterswil"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "solothurn"
+      ],
+      "boundaryNote": "Bernese-contact variety; historical/locality names can survive municipality mergers."
+    },
+    {
+      "id": "ag-fricktal",
+      "label": "Fricktal",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Frick",
+        "Rheinfelden",
+        "Laufenburg AG"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "aargau"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "ag-west",
+      "label": "Westlicher / Berner Aargau",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Aarau",
+        "Zofingen",
+        "Unterkulm"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "aargau"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "ag-east",
+      "label": "Östlicher Aargau",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Baden",
+        "Wettingen",
+        "Zurzach"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "aargau"
+      ],
+      "boundaryNote": "Zürich-related regional continuum, not identical to Zürich city; Brugg and border areas require review."
+    },
+    {
+      "id": "ag-freiamt",
+      "label": "Freiamt",
+      "group": "Northwest",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Muri AG",
+        "Wohlen AG",
+        "Sins"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "aargau"
+      ],
+      "boundaryNote": "Central-Swiss contact; Bremgarten and Reusstal boundaries require local review."
+    },
+    {
+      "id": "be-mittelland",
+      "label": "Berner Mittelland",
+      "group": "Bern / Fribourg",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Bern",
+        "Köniz",
+        "Münsingen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "bern-writing",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-emmental",
+      "label": "Emmental",
+      "group": "Bern / Fribourg",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Langnau im Emmental",
+        "Trub",
+        "Sumiswald"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-oberaargau",
+      "label": "Oberaargau",
+      "group": "Bern / Fribourg",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Langenthal",
+        "Herzogenbuchsee",
+        "Huttwil"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-seeland",
+      "label": "Berner Seeland",
+      "group": "Bern / Fribourg",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Lyss",
+        "Aarberg",
+        "Ins",
+        "Erlach"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "fr-seeland",
+      "label": "Deutschfreiburger Seeland",
+      "group": "Bern / Fribourg",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Murten/Morat",
+        "Kerzers",
+        "Ried bei Kerzers"
+      ],
+      "candidateLanguages": [
+        "de",
+        "fr"
+      ],
+      "sourceIds": [
+        "sensler-state",
+        "fribourg-diversity",
+        "sds"
+      ],
+      "boundaryNote": "Use Bernese/Seeland-related German, not Sensler for all German FR. Murten/Morat is a bilingual-contact case."
+    },
+    {
+      "id": "fr-sensler",
+      "label": "Senslerdeutsch / Seislertütsch",
+      "group": "Bern / Fribourg",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Düdingen",
+        "Tafers",
+        "Schmitten FR",
+        "Bösingen",
+        "Wünnewil",
+        "Flamatt",
+        "Ueberstorf",
+        "Heitenried",
+        "St. Ursen",
+        "St. Silvester",
+        "Rechthalten",
+        "Brünisried",
+        "Tentlingen",
+        "Giffers",
+        "Plaffeien",
+        "Plasselb",
+        "Alterswil",
+        "St. Antoni",
+        "Oberschrot",
+        "Zumholz"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sensler-state",
+        "sensler-glossary"
+      ],
+      "boundaryNote": "Core Sense-district anchors. Preserve lower/upper Sense variation as refinements; historical locality names are not necessarily current municipality names."
+    },
+    {
+      "id": "fr-gurmels-contact",
+      "label": "Gurmels contact area",
+      "group": "Bern / Fribourg",
+      "kind": "contact-zone",
+      "anchors": [
+        "Gurmels",
+        "Kleingurmels"
+      ],
+      "candidateLanguages": [
+        "de",
+        "fr"
+      ],
+      "sourceIds": [
+        "sensler-state",
+        "swisstopo"
+      ],
+      "boundaryNote": "Sensler–Bernese contact, not a blanket canton or newly merged municipality assignment. Resolve 2026 geography to localities."
+    },
+    {
+      "id": "fr-jaun",
+      "label": "Jaundeutsch / Jùutütsch",
+      "group": "Bern / Fribourg",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Jaun",
+        "Im Fang"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "jaun",
+        "fribourg-diversity"
+      ],
+      "boundaryNote": "Separate from Senslerdeutsch and from French-speaking Gruyère; no fabricated candidate supplied."
+    },
+    {
+      "id": "fr-city-contact",
+      "label": "Fribourg/Freiburg multilingual urban contact",
+      "group": "Bern / Fribourg",
+      "kind": "contact-zone",
+      "anchors": [
+        "Fribourg/Freiburg",
+        "Basse-Ville/Unterstadt"
+      ],
+      "candidateLanguages": [
+        "fr",
+        "de"
+      ],
+      "sourceIds": [
+        "sensler-state",
+        "fribourg-diversity"
+      ],
+      "boundaryNote": "Return German/French candidates; Bolz is code-switching, not a simple uniform territorial dialect to auto-generate."
+    },
+    {
+      "id": "be-biel-contact",
+      "label": "Biel/Bienne bilingual city",
+      "group": "Bern / Fribourg",
+      "kind": "contact-zone",
+      "anchors": [
+        "Biel/Bienne"
+      ],
+      "candidateLanguages": [
+        "de",
+        "fr"
+      ],
+      "sourceIds": [
+        "sds",
+        "gpsr"
+      ],
+      "boundaryNote": "Do not force French from city-name regex. User preference chooses an offered local-language voice."
+    },
+    {
+      "id": "be-thun",
+      "label": "Thun and adjoining Oberland foothills",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Thun",
+        "Steffisburg",
+        "Sigriswil"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-boedeli",
+      "label": "Bödeli",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Interlaken",
+        "Unterseen",
+        "Matten bei Interlaken"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-brienz",
+      "label": "Brienz",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Brienz",
+        "Schwanden bei Brienz"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-hasli",
+      "label": "Haslital",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Meiringen",
+        "Innertkirchen",
+        "Guttannen",
+        "Gadmen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-grindelwald",
+      "label": "Grindelwald",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Grindelwald"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-lauterbrunnen",
+      "label": "Lauterbrunnental",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Lauterbrunnen",
+        "Wengen",
+        "Mürren",
+        "Stechelberg"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-frutig",
+      "label": "Frutigland",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Frutigen",
+        "Adelboden",
+        "Kandersteg"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-simmental",
+      "label": "Simmental",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Zweisimmen",
+        "Lenk",
+        "Diemtigen",
+        "Erlenbach im Simmental"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "be-saanen",
+      "label": "Saanenland",
+      "group": "Bernese Oberland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Saanen",
+        "Gstaad",
+        "Lauenen",
+        "Gsteig"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "zh-core",
+      "label": "Zürich city / central canton",
+      "group": "Zürich / Schaffhausen",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Zürich",
+        "Uster",
+        "Horgen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "zurich"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "zh-north",
+      "label": "Zürcher Weinland / Rafzerfeld",
+      "group": "Zürich / Schaffhausen",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Andelfingen",
+        "Rafz",
+        "Marthalen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "zurich"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "zh-oberland",
+      "label": "Zürcher Oberland",
+      "group": "Zürich / Schaffhausen",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Wald ZH",
+        "Fischenthal",
+        "Bauma"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "zurich"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sh-city",
+      "label": "Schaffhausen city / surrounding area",
+      "group": "Zürich / Schaffhausen",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Schaffhausen",
+        "Neuhausen am Rheinfall"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "schaffhausen"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sh-klettgau",
+      "label": "Schaffhauser Klettgau",
+      "group": "Zürich / Schaffhausen",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Hallau",
+        "Wilchingen",
+        "Osterfingen",
+        "Schleitheim"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "schaffhausen"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sh-reiat",
+      "label": "Reiat",
+      "group": "Zürich / Schaffhausen",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Thayngen",
+        "Lohn SH",
+        "Stetten SH"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "schaffhausen"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sh-stein",
+      "label": "Stein / upper Rhine",
+      "group": "Zürich / Schaffhausen",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Stein am Rhein",
+        "Ramsen",
+        "Buch SH"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "schaffhausen"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "lu-core",
+      "label": "Luzern city / central Mittelland",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Luzern",
+        "Kriens",
+        "Emmen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "luzern"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "lu-entlebuch",
+      "label": "Entlebuch",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Schüpfheim",
+        "Entlebuch",
+        "Escholzmatt",
+        "Marbach LU",
+        "Flühli"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "luzern"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "lu-hinterland",
+      "label": "Luzerner Hinterland / northwest",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Willisau",
+        "Zell LU",
+        "Reiden"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "luzern"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "lu-seetal",
+      "label": "Luzerner Seetal",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Hochdorf",
+        "Hitzkirch",
+        "Ballwil"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "luzern"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "zg-core",
+      "label": "Zug",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Zug",
+        "Baar",
+        "Cham",
+        "Menzingen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sz-core",
+      "label": "Schwyz basin",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Schwyz",
+        "Steinen",
+        "Arth"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sz-einsiedeln",
+      "label": "Einsiedeln / Alpthal",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Einsiedeln",
+        "Alpthal",
+        "Rothenthurm"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sz-march-hoefe",
+      "label": "March / Höfe",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Lachen",
+        "Schübelbach",
+        "Wollerau",
+        "Feusisberg"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sz-muotathal",
+      "label": "Muotathal / Bisisthal",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Muotathal",
+        "Bisisthal",
+        "Ried SZ"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "muotathal",
+        "muotathal-sun"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "ow-sarnen-kerns",
+      "label": "Sarneraatal, Kerns writing model",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Kerns",
+        "Sarnen",
+        "Sachseln",
+        "Alpnach",
+        "Giswil"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "kerns",
+        "sds"
+      ],
+      "boundaryNote": "Text evidence is specifically Kerns. Widening a Kerns voice to the whole valley needs local review."
+    },
+    {
+      "id": "ow-lungern",
+      "label": "Lungern",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Lungern"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "ow-engelberg",
+      "label": "Engelberg",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Engelberg"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "dialektatlas"
+      ],
+      "boundaryNote": "Separate from the geographically disconnected main canton of Obwalden."
+    },
+    {
+      "id": "nw-core",
+      "label": "Nidwalden",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Stans",
+        "Buochs",
+        "Ennetbürgen",
+        "Beckenried",
+        "Dallenwil",
+        "Wolfenschiessen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "nidwalden",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "ur-reuss",
+      "label": "Uri main Reuss valley and adjoining valleys",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Altdorf",
+        "Bürglen UR",
+        "Erstfeld",
+        "Silenen",
+        "Gurtnellen",
+        "Isenthal",
+        "Unterschächen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "uri",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "ur-urseren",
+      "label": "Urseren",
+      "group": "Central Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Andermatt",
+        "Hospental",
+        "Realp"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "uri"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "gl-north",
+      "label": "Glarus North / Kerenzen",
+      "group": "Glarus",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Näfels",
+        "Mollis",
+        "Niederurnen",
+        "Obstalden",
+        "Filzbach"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "glarus",
+        "glarus-dictionary",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "gl-central",
+      "label": "Glarus central valley",
+      "group": "Glarus",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Glarus",
+        "Ennenda",
+        "Netstal"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "glarus",
+        "glarus-dictionary",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "gl-linth",
+      "label": "Upper Linth valley",
+      "group": "Glarus",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Schwanden",
+        "Linthal",
+        "Rüti GL",
+        "Braunwald"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "glarus",
+        "glarus-dictionary",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "gl-sernf",
+      "label": "Sernftal",
+      "group": "Glarus",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Engi",
+        "Matt",
+        "Elm"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "glarus",
+        "glarus-dictionary",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sg-city",
+      "label": "St. Gallen city / Fürstenland",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "St. Gallen",
+        "Gossau SG",
+        "Flawil",
+        "Uzwil"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sg-city",
+        "thurgau"
+      ],
+      "boundaryNote": "City/Fürstenland editorial profile. Boundary towards Wil and eastern Thurgau is a continuum."
+    },
+    {
+      "id": "sg-rheintal-north",
+      "label": "St. Galler Rheintal: northern contact belt",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Rheineck",
+        "St. Margrethen",
+        "Au SG",
+        "Heerbrugg",
+        "Berneck",
+        "Balgach"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "thurgau",
+        "diepoldsau"
+      ],
+      "boundaryNote": "Separate from city SG; local subvarieties differ. Diepoldsau dictionary is NOT blanket evidence for every village here."
+    },
+    {
+      "id": "sg-rheintal-upper",
+      "label": "St. Galler Rheintal: central / southern belt",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Altstätten",
+        "Rebstein",
+        "Marbach SG",
+        "Oberriet",
+        "Eichberg",
+        "Rüthi"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "diepoldsau"
+      ],
+      "boundaryNote": "Editorial grouping only. Do not merge its spelling into the Diepoldsau/Schmitter microvoice."
+    },
+    {
+      "id": "sg-diepoldsau",
+      "label": "Diepoldsau / Schmitter",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Diepoldsau",
+        "Schmitter"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "diepoldsau",
+        "diep-dictionary"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sg-werdenberg",
+      "label": "Werdenberg",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Sennwald",
+        "Frümsen",
+        "Sax",
+        "Salez",
+        "Buchs SG",
+        "Grabs",
+        "Gams",
+        "Sevelen",
+        "Wartau"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "werdenberg",
+        "sds"
+      ],
+      "boundaryNote": "Lexical evidence is specifically Frümsen. A valley-wide voice needs wider review."
+    },
+    {
+      "id": "sg-togg-lower",
+      "label": "Lower / middle Toggenburg",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Bütschwil",
+        "Lichtensteig",
+        "Wattwil",
+        "Kirchberg SG"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "toggenburg",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sg-togg-upper",
+      "label": "Upper Toggenburg",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Nesslau",
+        "Neu St. Johann",
+        "Wildhaus",
+        "Alt St. Johann",
+        "Unterwasser"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "toggenburg",
+        "sds"
+      ],
+      "boundaryNote": "Non-exhaustive locality anchors, not a polygon or an exhaustive municipality assignment. Verify atlas evidence and locality geometry before production."
+    },
+    {
+      "id": "sg-sargans",
+      "label": "Sarganserland",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Sargans",
+        "Mels",
+        "Flums",
+        "Walenstadt",
+        "Bad Ragaz",
+        "Vilters",
+        "Pfäfers"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds"
+      ],
+      "boundaryNote": "Distinguish from SG city, Werdenberg and Walser-related local cases; Weisstannen and other valley refinements need evidence."
+    },
+    {
+      "id": "sg-see-gaster",
+      "label": "See-Gaster",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Rapperswil-Jona",
+        "Uznach",
+        "Schänis",
+        "Kaltbrunn",
+        "Amden",
+        "Weesen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds"
+      ],
+      "boundaryNote": "Zürich, Glarus and Schwyz contact; proposed regional coverage unit, not a single homogeneous dialect."
+    },
+    {
+      "id": "tg-west",
+      "label": "Western Thurgau candidate cluster",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Frauenfeld",
+        "Diessenhofen",
+        "Steckborn"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "boundaryNote": "nüüt/nüüd tendency west versus nünt/nütz east. Do not use a single canton-midpoint meridian."
+    },
+    {
+      "id": "tg-east",
+      "label": "Eastern Thurgau candidate cluster",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Arbon",
+        "Romanshorn",
+        "Amriswil",
+        "Bischofszell"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "boundaryNote": "nünt/nütz tendency. Eastern TG overlaps SG/Fürstenland; lexical and phonological borders intersect."
+    },
+    {
+      "id": "tg-hinter",
+      "label": "Hinterthurgau",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Münchwilen",
+        "Sirnach",
+        "Eschlikon",
+        "Aadorf"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "boundaryNote": "Retain a separate contact-area candidate; do not infer every feature from east/west membership."
+    },
+    {
+      "id": "tg-seerhein-traditional",
+      "label": "Traditional Untersee / Seerhein local voice",
+      "group": "Eastern Switzerland",
+      "kind": "traditional-local-variety",
+      "anchors": [
+        "Ermatingen",
+        "Triboltingen",
+        "Salenstein"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "boundaryNote": "Opt-in traditional layer, not a claim that every contemporary resident uses these older forms. Do not extend to all Kreuzlingen."
+    },
+    {
+      "id": "tg-transition",
+      "label": "Central Thurgau / Kreuzlingen transition",
+      "group": "Eastern Switzerland",
+      "kind": "contact-zone",
+      "anchors": [
+        "Weinfelden",
+        "Kreuzlingen",
+        "Berg TG"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "boundaryNote": "Keep uncertainty between overlapping east-west and north-south features; choose a documented local model rather than artificial uniform Mittelthurgau."
+    },
+    {
+      "id": "ai-core",
+      "label": "Appenzell Innerrhoden core",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Appenzell",
+        "Schwende",
+        "Rüte",
+        "Gonten",
+        "Schlatt",
+        "Haslen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "appenzell-ai",
+        "appenzell-tourism"
+      ],
+      "boundaryNote": "Historical district/locality names; Oberegg is not an automatic core-AI voice."
+    },
+    {
+      "id": "ai-oberegg",
+      "label": "Oberegg contact / exclave",
+      "group": "Eastern Switzerland",
+      "kind": "contact-zone",
+      "anchors": [
+        "Oberegg"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "appenzell-literature"
+      ],
+      "boundaryNote": "Do not assign the whole AI canton to one core Appenzell spelling."
+    },
+    {
+      "id": "ar-hinter",
+      "label": "Ausserrhoden Hinterland",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Herisau",
+        "Waldstatt",
+        "Schwellbrunn",
+        "Urnäsch",
+        "Hundwil",
+        "Schönengrund"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "appenzell-ar",
+        "appenzell-literature"
+      ],
+      "boundaryNote": "Conventional coverage grouping. Altherr title supports a broad AR literary candidate, not each locality’s full grammar; check Appenzeller Sprachbuch before finer voices."
+    },
+    {
+      "id": "ar-mittel",
+      "label": "Ausserrhoden Mittelland",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Teufen",
+        "Bühler",
+        "Gais",
+        "Speicher",
+        "Trogen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "appenzell-ar",
+        "appenzell-literature"
+      ],
+      "boundaryNote": "Conventional coverage grouping. Altherr title supports a broad AR literary candidate, not each locality’s full grammar; check Appenzeller Sprachbuch before finer voices."
+    },
+    {
+      "id": "ar-vorder",
+      "label": "Ausserrhoden Vorderland",
+      "group": "Eastern Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Heiden",
+        "Wolfhalden",
+        "Walzenhausen",
+        "Reute AR",
+        "Grub AR",
+        "Lutzenberg",
+        "Rehetobel",
+        "Wald AR"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "appenzell-ar",
+        "appenzell-literature"
+      ],
+      "boundaryNote": "Conventional coverage grouping. Altherr title supports a broad AR literary candidate, not each locality’s full grammar; check Appenzeller Sprachbuch before finer voices."
+    },
+    {
+      "id": "vs-goms",
+      "label": "Goms",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Münster VS",
+        "Reckingen",
+        "Fiesch",
+        "Ernen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "vs-brig",
+      "label": "Brig / eastern main-valley contact",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Brig",
+        "Naters",
+        "Termen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "vs-visp-contact",
+      "label": "Visp / surrounding contact area",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Visp",
+        "Baltschieder",
+        "Eggerberg",
+        "Ausserberg"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "vs-west",
+      "label": "Western Upper Valais main valley",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Raron",
+        "Leuk",
+        "Salgesch"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "vs-loetschen",
+      "label": "Lötschental",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Ferden",
+        "Kippel",
+        "Wiler",
+        "Blatten"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "vs-saastal",
+      "label": "Saastal",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Saas-Fee",
+        "Saas-Grund",
+        "Saas-Almagell",
+        "Saas-Balen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "vs-mattertal",
+      "label": "Mattertal / Zermatt",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "St. Niklaus",
+        "Randa",
+        "Täsch",
+        "Zermatt"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "vs-simplon",
+      "label": "Simplon / Gondo",
+      "group": "Wallis",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Simplon Dorf",
+        "Gondo"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "wallis-regions",
+        "wallis-lexicon",
+        "sds"
+      ],
+      "boundaryNote": "Valley-level editorial coverage. Lexical boundaries around Visp do not form one clean meridian; source-informed general Wallis text does not certify each local variety."
+    },
+    {
+      "id": "gr-chur",
+      "label": "Chur / lower Chur Rhine valley",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Chur",
+        "Felsberg",
+        "Trimmis",
+        "Zizers"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "buendner-word"
+      ],
+      "boundaryNote": "Bündner Rhine-valley German, not automatically Walser. patschifig is regional evidence, not proof of Chur-exclusive wording."
+    },
+    {
+      "id": "gr-landquart",
+      "label": "Landquart / Bündner Herrschaft",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Landquart",
+        "Malans",
+        "Maienfeld",
+        "Jenins",
+        "Fläsch"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "sds",
+        "buendner-word"
+      ],
+      "boundaryNote": "Bündner Rhine-valley German, not automatically Walser. patschifig is regional evidence, not proof of Chur-exclusive wording."
+    },
+    {
+      "id": "gr-praettigau",
+      "label": "Prättigau",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Schiers",
+        "Luzein",
+        "St. Antönien",
+        "Küblis",
+        "Klosters"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-davos",
+      "label": "Davos",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Davos",
+        "Monstein",
+        "Wiesen GR"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-schanfigg",
+      "label": "Upper Schanfigg / local Walser traditions",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Langwies",
+        "Arosa",
+        "Peist",
+        "Tschiertschen"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-vals",
+      "label": "Vals",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Vals"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-safien",
+      "label": "Safiental",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Safien Platz",
+        "Thalkirch",
+        "Tenna"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-rheinwald",
+      "label": "Rheinwald",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Splügen",
+        "Hinterrhein",
+        "Nufenen",
+        "Sufers"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-avers",
+      "label": "Avers",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Juf",
+        "Cresta Avers",
+        "Madris"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-obersaxen",
+      "label": "Obersaxen German localities",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Obersaxen",
+        "Meierhof",
+        "Affeier"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-tschappina",
+      "label": "Tschappina",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Tschappina",
+        "Obertschappina"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-mutten",
+      "label": "Mutten",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Mutten",
+        "Obermutten"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "walser",
+        "walser-books",
+        "sds"
+      ],
+      "boundaryNote": "Distinct Walser-related coverage unit; do not transfer one valley’s spelling wholesale. Locality overrides are needed inside merged multilingual municipalities."
+    },
+    {
+      "id": "gr-samnaun",
+      "label": "Samnaunerisch: South Bavarian / Tyrolean",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Samnaun",
+        "Ravaisch",
+        "Laret",
+        "Compatsch",
+        "Plan Samnaun"
+      ],
+      "candidateLanguages": [
+        "de"
+      ],
+      "sourceIds": [
+        "samnaun"
+      ],
+      "boundaryNote": "German but not Alemannic; never infer Vallader from eastern-GR coordinates. Local sentence validation pending."
+    },
+    {
+      "id": "ti-bosco-gurin",
+      "label": "Gurinerdeutsch / Ggurijnartitsch",
+      "group": "German Graubünden",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Bosco Gurin"
+      ],
+      "candidateLanguages": [
+        "de",
+        "it"
+      ],
+      "sourceIds": [
+        "bosco",
+        "walser"
+      ],
+      "boundaryNote": "Walser enclave in Ticino. Respect German/Italian multilingual present; no automatic local Lombard voice."
+    },
+    {
+      "id": "rm-sursilvan",
+      "label": "Sursilvan written idiom",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Ilanz/Glion",
+        "Trun",
+        "Disentis/Mustér",
+        "Sumvitg",
+        "Breil/Brigels",
+        "Lumnezia",
+        "Laax",
+        "Falera"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "romansh-regions"
+      ],
+      "boundaryNote": "Exclude German-speaking Obersaxen localities. Offer German alongside Romansh where appropriate."
+    },
+    {
+      "id": "rm-tuatschin",
+      "label": "Tuatschin spoken / Sursilvan written tradition",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Tujetsch",
+        "Sedrun"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "romansh-regions"
+      ],
+      "boundaryNote": "Do not invent a new standardized written idiom from a local spoken variety."
+    },
+    {
+      "id": "rm-sutsilvan",
+      "label": "Sutsilvan written idiom",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Zillis/Reischen",
+        "Andeer",
+        "Mathon",
+        "Lohn GR",
+        "Donat"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "romansh-regions"
+      ],
+      "boundaryNote": "Current Schams/Schamserberg core; historical Domleschg coverage does not mean every locality is now Romansh-dominant."
+    },
+    {
+      "id": "rm-surmiran",
+      "label": "Surmiran written idiom",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Savognin",
+        "Riom",
+        "Parsonz",
+        "Tinizong",
+        "Cunter",
+        "Tiefencastel",
+        "Lantsch/Lenz",
+        "Vaz/Obervaz"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "romansh-regions"
+      ],
+      "boundaryNote": "Bivio and merged Surses need locality-level multilingual treatment."
+    },
+    {
+      "id": "rm-puter",
+      "label": "Puter written idiom",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Samedan",
+        "Zuoz",
+        "Celerina/Schlarigna",
+        "Pontresina",
+        "Bever",
+        "La Punt",
+        "Madulain",
+        "S-chanf",
+        "Sils/Segl",
+        "Silvaplana",
+        "St. Moritz"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "romansh-regions"
+      ],
+      "boundaryNote": "Disambiguate Sils/Segl from Sils im Domleschg; do not infer current speaker majority solely from historical tradition."
+    },
+    {
+      "id": "rm-bergun",
+      "label": "Bargunsegner spoken / Puter written tradition",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Bergün/Bravuogn"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh-regions"
+      ],
+      "boundaryNote": "Local speech is transitional towards Surmiran, but Puter is the written tradition. Preserve both dimensions."
+    },
+    {
+      "id": "rm-vallader",
+      "label": "Vallader written idiom",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Scuol",
+        "Sent",
+        "Ftan",
+        "Ardez",
+        "Guarda",
+        "Zernez",
+        "Susch",
+        "Lavin",
+        "Tschlin",
+        "Ramosch"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "romansh-regions"
+      ],
+      "boundaryNote": "Exclude Samnaun; old localities inside merged municipalities remain relevant."
+    },
+    {
+      "id": "rm-jauer",
+      "label": "Jauer spoken / Vallader written tradition",
+      "group": "Romansh",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Tschierv",
+        "Fuldera",
+        "Lü",
+        "Valchava",
+        "Santa Maria Val Müstair",
+        "Müstair"
+      ],
+      "candidateLanguages": [
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "romansh-regions"
+      ],
+      "boundaryNote": "Label a Vallader written adaptation honestly; Jauer is not simply a sixth equal standardized written idiom."
+    },
+    {
+      "id": "gr-bivio-contact",
+      "label": "Bivio/Beiva multilingual contact",
+      "group": "Romansh",
+      "kind": "contact-zone",
+      "anchors": [
+        "Bivio/Beiva"
+      ],
+      "candidateLanguages": [
+        "it",
+        "de",
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh-regions",
+        "cde"
+      ],
+      "boundaryNote": "Offer Italian, German and Romansh candidates; do not force Italian from one regex."
+    },
+    {
+      "id": "gr-rhine-rm-contact",
+      "label": "Chur Rhine-valley / Domleschg Romansh–German contact",
+      "group": "Romansh",
+      "kind": "contact-zone",
+      "anchors": [
+        "Domat/Ems",
+        "Rhäzüns",
+        "Bonaduz",
+        "Domleschg",
+        "Heinzenberg"
+      ],
+      "candidateLanguages": [
+        "de",
+        "rm"
+      ],
+      "sourceIds": [
+        "romansh",
+        "sds"
+      ],
+      "boundaryNote": "Local/historical Romansh varieties and contemporary German; not all are one Sutsilvan voice."
+    },
+    {
+      "id": "fr-vaud",
+      "label": "Regional French: Vaud",
+      "group": "Romandie",
+      "kind": "regional-standard-language",
+      "anchors": [
+        "Lausanne",
+        "Yverdon-les-Bains",
+        "Nyon",
+        "Montreux"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr"
+      ],
+      "boundaryNote": "Contemporary French fallback is allowed, but must not be labelled as local patois. Anchors are examples, not a single-dialect claim."
+    },
+    {
+      "id": "fr-geneva",
+      "label": "Regional French: Geneva",
+      "group": "Romandie",
+      "kind": "regional-standard-language",
+      "anchors": [
+        "Genève",
+        "Carouge"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr"
+      ],
+      "boundaryNote": "Contemporary French fallback is allowed, but must not be labelled as local patois. Anchors are examples, not a single-dialect claim."
+    },
+    {
+      "id": "fr-fribourg",
+      "label": "Regional French: French-speaking Fribourg",
+      "group": "Romandie",
+      "kind": "regional-standard-language",
+      "anchors": [
+        "Bulle",
+        "Romont",
+        "Châtel-Saint-Denis"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr"
+      ],
+      "boundaryNote": "Contemporary French fallback is allowed, but must not be labelled as local patois. Anchors are examples, not a single-dialect claim."
+    },
+    {
+      "id": "fr-valais",
+      "label": "Regional French: French-speaking Valais",
+      "group": "Romandie",
+      "kind": "regional-standard-language",
+      "anchors": [
+        "Sion",
+        "Sierre",
+        "Martigny",
+        "Monthey"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr"
+      ],
+      "boundaryNote": "Contemporary French fallback is allowed, but must not be labelled as local patois. Anchors are examples, not a single-dialect claim."
+    },
+    {
+      "id": "fr-neuchatel",
+      "label": "Regional French: Neuchâtel",
+      "group": "Romandie",
+      "kind": "regional-standard-language",
+      "anchors": [
+        "Neuchâtel",
+        "La Chaux-de-Fonds",
+        "Le Locle"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr"
+      ],
+      "boundaryNote": "Contemporary French fallback is allowed, but must not be labelled as local patois. Anchors are examples, not a single-dialect claim."
+    },
+    {
+      "id": "fr-jura",
+      "label": "Regional French: Jura and Bernese Jura",
+      "group": "Romandie",
+      "kind": "regional-standard-language",
+      "anchors": [
+        "Delémont",
+        "Porrentruy",
+        "Saignelégier",
+        "Moutier",
+        "Tavannes",
+        "Saint-Imier",
+        "Tramelan",
+        "La Neuveville"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "moutier"
+      ],
+      "boundaryNote": "Contemporary French fallback is allowed, but must not be labelled as local patois. Anchors are examples, not a single-dialect claim."
+    },
+    {
+      "id": "frp-vaud-alps",
+      "label": "Vaud Alpine Francoprovençal traditions",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Ormont-Dessus",
+        "Ormont-Dessous",
+        "Château-d’Œx",
+        "Rougemont"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-fribourg-gruyere",
+      "label": "Gruyère Francoprovençal traditions",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Bulle",
+        "Gruyères",
+        "Val-de-Charmey"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-fribourg-broye",
+      "label": "Broye Francoprovençal traditions",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Estavayer",
+        "Payerne"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-fribourg-veveyse",
+      "label": "Veveyse Francoprovençal traditions",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Châtel-Saint-Denis",
+        "Attalens"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-valais-evolene",
+      "label": "Evolène patois",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Evolène",
+        "Les Haudères"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-valais-nendaz",
+      "label": "Nendaz patois",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Nendaz"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-valais-bagnes",
+      "label": "Bagnes patois",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Le Châble",
+        "Lourtier",
+        "Bruson"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-valais-entremont",
+      "label": "Entremont local patois",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Orsières",
+        "Liddes",
+        "Bourg-Saint-Pierre"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-geneva-historical",
+      "label": "Geneva historical Francoprovençal",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Genève",
+        "Meyrin"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "frp-neuchatel-historical",
+      "label": "Neuchâtel historical Francoprovençal",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Val-de-Ruz",
+        "Val-de-Travers"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "oil-jura-ajoie",
+      "label": "Jurassian / Franc-Comtois: Ajoie",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Porrentruy",
+        "Courgenay",
+        "Boncourt"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "oil-jura-clos-doubs",
+      "label": "Jurassian / Franc-Comtois: Clos du Doubs",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Saint-Ursanne",
+        "Soubey"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "oil-jura-franches-montagnes",
+      "label": "Jurassian / Franc-Comtois: Franches-Montagnes",
+      "group": "Romandie",
+      "kind": "heritage-local-variety",
+      "anchors": [
+        "Saignelégier",
+        "Le Noirmont",
+        "Les Breuleux"
+      ],
+      "candidateLanguages": [
+        "fr"
+      ],
+      "sourceIds": [
+        "gpsr",
+        "romand-historical"
+      ],
+      "boundaryNote": "Heritage opt-in only. These are research coverage units, not validated territorial boundaries or completed text packs. Verify the exact village source and spelling system; never synthesize from French orthography."
+    },
+    {
+      "id": "lmo-mendrisiotto",
+      "label": "Mendrisiotto Lombard",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Mendrisio",
+        "Chiasso",
+        "Balerna",
+        "Stabio"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-luganese",
+      "label": "Luganese Lombard",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Lugano",
+        "Massagno",
+        "Paradiso",
+        "Morcote"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-malcantone",
+      "label": "Malcantone local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Agno",
+        "Bioggio",
+        "Novaggio",
+        "Astano"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-bellinzonese",
+      "label": "Bellinzonese local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Bellinzona",
+        "Giubiasco",
+        "Sementina"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-locarnese",
+      "label": "Locarnese local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Locarno",
+        "Minusio",
+        "Ascona",
+        "Muralto"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-vallemaggia",
+      "label": "Vallemaggia local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Maggia",
+        "Cevio",
+        "Lavizzara",
+        "Avegno"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-leventina",
+      "label": "Leventina local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Airolo",
+        "Ambrì",
+        "Faido",
+        "Giornico"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-bedretto",
+      "label": "Bedretto",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Bedretto",
+        "Villa Bedretto"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-blenio",
+      "label": "Blenio local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Acquarossa",
+        "Olivone",
+        "Malvaglia"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-mesolcina",
+      "label": "Mesolcina local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Roveredo GR",
+        "Grono",
+        "Lostallo",
+        "Soazza",
+        "Mesocco"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-calanca",
+      "label": "Calanca local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Arvigo",
+        "Braggio",
+        "Rossa"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-bregaglia",
+      "label": "Bregagliot local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Vicosoprano",
+        "Stampa",
+        "Bondo",
+        "Soglio",
+        "Castasegna"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    },
+    {
+      "id": "lmo-poschiavo",
+      "label": "Poschiavino local varieties",
+      "group": "Italian Switzerland",
+      "kind": "territorial-variety",
+      "anchors": [
+        "Poschiavo",
+        "Le Prese",
+        "Brusio"
+      ],
+      "candidateLanguages": [
+        "it"
+      ],
+      "sourceIds": [
+        "cde"
+      ],
+      "boundaryNote": "Traditional Lombard / local Italian-area coverage. Do not substitute Standard Italian and call it dialect. Valley-internal subdivisions and local spelling require CDE/native-source validation; exclude Bosco Gurin."
+    }
+  ],
+  "voiceCandidates": [
+    {
+      "id": "gsw-sensler",
+      "label": "Seislertütsch",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "fr-sensler"
+      ],
+      "first": [
+        {
+          "id": "gsw-sensler-rest-1",
+          "text": "Muusdǜri? Hie chasch hǜbscheli häresitze ù ggùgge.",
+          "standardGermanGloss": "Müde/erschöpft? Hier kannst du dich in Ruhe hinsetzen und schauen."
+        }
+      ],
+      "sourceIds": [
+        "sensler-glossary",
+        "sensler-state"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "muusdǜri",
+          "meaning": "erschöpft",
+          "sourceId": "sensler-glossary",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        },
+        {
+          "form": "hǜbscheli",
+          "meaning": "behutsam, langsam",
+          "sourceId": "sensler-glossary",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        },
+        {
+          "form": "ggùgge",
+          "meaning": "schauen",
+          "sourceId": "sensler-glossary",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        },
+        {
+          "form": "ù",
+          "meaning": "und",
+          "sourceId": "sensler-glossary",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Follow the selected Christian Schmutz literary convention for attested words. Preserve ù and ǜ; do not accent every u by analogy."
+    },
+    {
+      "id": "gsw-sg-city",
+      "label": "St. Gallen / Fürstenland",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "sg-city"
+      ],
+      "first": [
+        {
+          "id": "gsw-sg-city-rest-1",
+          "text": "Nüd lang bibääbele: Hock ab und mach e chli Pause.",
+          "standardGermanGloss": "Nicht lange Umstände machen: Setz dich und mach eine kleine Pause."
+        }
+      ],
+      "sourceIds": [
+        "sg-city"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "bibääbele",
+          "meaning": "Umstände machen, sich unnötig aufhalten",
+          "sourceId": "sg-city",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Use the city/Fürstenland model, not a blanket SG canton model. Confirm nüd/nöd and imperative with local readers."
+    },
+    {
+      "id": "gsw-diepoldsau",
+      "label": "Diepoldsau / Schmitter",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "sg-diepoldsau"
+      ],
+      "first": [
+        {
+          "id": "gsw-diepoldsau-rest-1",
+          "text": "Do chasch röschta. Mach s rüabìg.",
+          "standardGermanGloss": "Hier kannst du ausruhen. Lass es ruhig angehen."
+        }
+      ],
+      "sourceIds": [
+        "diep-dictionary",
+        "diepoldsau"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "röschta",
+          "meaning": "ruhen; NICHT rööschta = rösten",
+          "sourceId": "diep-dictionary",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        },
+        {
+          "form": "rüabìg",
+          "meaning": "ruhig",
+          "sourceId": "diep-dictionary",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Retain the dictionary’s vowel length and grave accents. This spelling model is specifically Diepoldsau/Schmitter."
+    },
+    {
+      "id": "gsw-werdenberg-fruemsner",
+      "label": "Werdenberg, Frümsen model",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "sg-werdenberg"
+      ],
+      "first": [
+        {
+          "id": "gsw-werdenberg-fruemsner-rest-1",
+          "text": "Mach s hofeli. Do chasch e chli verwiila.",
+          "standardGermanGloss": "Lass es langsam/behutsam angehen. Hier kannst du etwas verweilen."
+        }
+      ],
+      "sourceIds": [
+        "werdenberg"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "hofeli",
+          "meaning": "behutsam, sanft",
+          "sourceId": "werdenberg",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Use Frümsen evidence; confirm the complete inflection and infinitive with a local reader before extending to Buchs/Grabs."
+    },
+    {
+      "id": "gsw-tg-east",
+      "label": "Eastern Thurgau",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "tg-east"
+      ],
+      "first": [
+        {
+          "id": "gsw-tg-east-rest-1",
+          "text": "Nünt pressiert. Hock ab und mach e chli Pause.",
+          "standardGermanGloss": "Nichts eilt. Setz dich und mach eine kleine Pause."
+        }
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "nünt",
+          "meaning": "nichts; eastern tendency, not exclusive",
+          "sourceId": "thurgau",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Readable phonemic spelling. Keep east-west lexical evidence separate from north-south phonology."
+    },
+    {
+      "id": "gsw-tg-west",
+      "label": "Western Thurgau",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "tg-west"
+      ],
+      "first": [
+        {
+          "id": "gsw-tg-west-rest-1",
+          "text": "Nüüt pressiert. Do chasch e chli verwiile.",
+          "standardGermanGloss": "Nichts eilt. Hier kannst du etwas verweilen."
+        }
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "nüüt",
+          "meaning": "nichts; western tendency, not exclusive",
+          "sourceId": "thurgau",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "nüüt/nüüd are alternatives in western areas; choose a specific local model rather than randomizing them."
+    },
+    {
+      "id": "gsw-tg-seerhein-traditional",
+      "label": "Traditional Untersee / Seerhein",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "tg-seerhein-traditional"
+      ],
+      "first": [
+        {
+          "id": "gsw-tg-seerhein-traditional-rest-1",
+          "text": "Hock ab und mach e chlääni Pause.",
+          "standardGermanGloss": "Setz dich und mach eine kleine Pause."
+        }
+      ],
+      "sourceIds": [
+        "thurgau"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "chlääni",
+          "meaning": "kleine; inflected draft from documented chlää / Chlääne",
+          "sourceId": "thurgau",
+          "evidenceType": "derived-inflection-from-attested-stem",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Traditional local layer, not universal contemporary TG; local review of the inflected form is mandatory."
+    },
+    {
+      "id": "gsw-appenzell-ai",
+      "label": "Appenzell Innerrhoden core",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "ai-core"
+      ],
+      "first": [
+        {
+          "id": "gsw-appenzell-ai-rest-1",
+          "text": "Chnooze chasch denn wider. Etz mach e bezli Pause.",
+          "standardGermanGloss": "Arbeiten/abrackern kannst du später wieder. Jetzt mach eine kleine Pause."
+        }
+      ],
+      "sourceIds": [
+        "appenzell-ai"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "chnooze",
+          "meaning": "sich abmühen, hart arbeiten",
+          "sourceId": "appenzell-ai",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        },
+        {
+          "form": "bezli",
+          "meaning": "ein wenig",
+          "sourceId": "appenzell-ai",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Use Innerrhoden-oriented source forms. Do not impose them on AR or Oberegg."
+    },
+    {
+      "id": "gsw-appenzell-ar-literary",
+      "label": "Ausserrhoden, broad literary candidate",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "ar-hinter",
+        "ar-mittel",
+        "ar-vorder"
+      ],
+      "first": [
+        {
+          "id": "gsw-appenzell-ar-literary-rest-1",
+          "text": "Sonnesiits oder schattehalb: Mach e chli Pause.",
+          "standardGermanGloss": "Auf der Sonnen- oder Schattenseite: Mach eine kleine Pause."
+        }
+      ],
+      "sourceIds": [
+        "appenzell-ar"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "Sonnesiits / schattehalb",
+          "meaning": "auf der Sonnenseite / auf der Schattenseite",
+          "sourceId": "appenzell-ar",
+          "evidenceType": "book-title-only",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Short lexical allusion to Altherr’s title, not a quotation of a book passage. Does not validate three separate AR microvoices."
+    },
+    {
+      "id": "gsw-toggenburg",
+      "label": "Toggenburg",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "sg-togg-lower",
+        "sg-togg-upper"
+      ],
+      "first": [
+        {
+          "id": "gsw-toggenburg-rest-1",
+          "text": "Etz isch Ziit för e Pause. Alles andere chonnt nochher.",
+          "standardGermanGloss": "Jetzt ist Zeit für eine Pause. Alles andere kommt später."
+        }
+      ],
+      "sourceIds": [
+        "toggenburg"
+      ],
+      "lexicalEvidence": [],
+      "writingPolicy": "Local headings support some spelling choices, but no distinctive rare bench-related lexeme was securely validated."
+    },
+    {
+      "id": "gsw-kerns",
+      "label": "Kerns / Obwalden model",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "ow-sarnen-kerns"
+      ],
+      "first": [
+        {
+          "id": "gsw-kerns-rest-1",
+          "text": "Da chasch äs Schutzli ghirmä.",
+          "standardGermanGloss": "Hier kannst du eine kurze Weile ausruhen."
+        }
+      ],
+      "sourceIds": [
+        "kerns"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "äs Schutzli",
+          "meaning": "eine kurze Weile",
+          "sourceId": "kerns",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        },
+        {
+          "form": "ghirmä",
+          "meaning": "ausruhen",
+          "sourceId": "kerns",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Follow the Kerns/Imfeld source for these words; do not transform all Obwalden words by replacing e with ä."
+    },
+    {
+      "id": "gsw-nidwalden",
+      "label": "Nidwalden",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "nw-core"
+      ],
+      "first": [
+        {
+          "id": "gsw-nidwalden-rest-1",
+          "text": "Mach s der kommod und bliib no chli.",
+          "standardGermanGloss": "Mach es dir bequem und bleib noch ein wenig."
+        }
+      ],
+      "sourceIds": [
+        "nidwalden"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "kommod",
+          "meaning": "bequem, praktisch",
+          "sourceId": "nidwalden",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Use the local glossary’s conventions; review pronouns and vowel length in the newly composed wording."
+    },
+    {
+      "id": "gsw-muotathal",
+      "label": "Muotathal",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "sz-muotathal"
+      ],
+      "first": [
+        {
+          "id": "gsw-muotathal-rest-1",
+          "text": "Da chasch ä chli plodärä oder eifach Pause machä.",
+          "standardGermanGloss": "Hier kannst du etwas plaudern oder einfach Pause machen."
+        }
+      ],
+      "sourceIds": [
+        "muotathal"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "plodärä",
+          "meaning": "plaudern, sprechen",
+          "sourceId": "muotathal",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Documented ä endings and plodärä; no automatic mutation of every vowel. Full phrase remains a draft."
+    },
+    {
+      "id": "gsw-glarus",
+      "label": "Glarus, provisional central model",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "gl-central"
+      ],
+      "first": [
+        {
+          "id": "gsw-glarus-rest-1",
+          "text": "Da chasch e chli nügge. S mues nöd alles weidli gaa.",
+          "standardGermanGloss": "Hier kannst du etwas dösen. Nicht alles muss schnell gehen."
+        }
+      ],
+      "sourceIds": [
+        "glarus"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "nügge",
+          "meaning": "dösen",
+          "sourceId": "glarus",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        },
+        {
+          "form": "weidli",
+          "meaning": "schnell",
+          "sourceId": "glarus",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Do not label this candidate as verified Sernftal or Kerenzen speech without separate reviewers."
+    },
+    {
+      "id": "gsw-luzern",
+      "label": "Luzern core",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "lu-core"
+      ],
+      "first": [
+        {
+          "id": "gsw-luzern-rest-1",
+          "text": "E chli Pause tuet rüüdig guet.",
+          "standardGermanGloss": "Eine kleine Pause tut sehr gut."
+        }
+      ],
+      "sourceIds": [
+        "luzern"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "rüüdig",
+          "meaning": "sehr; Verstärkung",
+          "sourceId": "luzern",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Use a contemporary readable Luzern model; not an Entlebuch microvoice."
+    },
+    {
+      "id": "gsw-urseren",
+      "label": "Urseren",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "ur-urseren"
+      ],
+      "first": [
+        {
+          "id": "gsw-urseren-rest-1",
+          "text": "Baschta mit Juflä. Etz git s ä Pause.",
+          "standardGermanGloss": "Genug mit der Eile. Jetzt gibt es eine Pause."
+        }
+      ],
+      "sourceIds": [
+        "uri"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "baschta",
+          "meaning": "genug, basta",
+          "sourceId": "uri",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Urseren-specific lexical evidence. The rest of the sentence needs local vowel/inflection review."
+    },
+    {
+      "id": "gsw-wallis-general",
+      "label": "Wallis, broad source-informed candidate",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [],
+      "first": [
+        {
+          "id": "gsw-wallis-general-rest-1",
+          "text": "Da chasch e chli riewu.",
+          "standardGermanGloss": "Hier kannst du ein wenig ausruhen."
+        }
+      ],
+      "sourceIds": [
+        "wallis-lexicon",
+        "wallis-writing"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "riewu",
+          "meaning": "ausruhen",
+          "sourceId": "wallis-lexicon",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Broad Upper Valais candidate only; do not assign as certified Goms/Lötschen/Zermatt speech. Choose one documented orthography."
+    },
+    {
+      "id": "gsw-buendner-rhine",
+      "label": "Bündner Rhine valley, provisional",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "gr-chur",
+        "gr-landquart"
+      ],
+      "first": [
+        {
+          "id": "gsw-buendner-rhine-rest-1",
+          "text": "Do chasch a Wili patschifig dasitza.",
+          "standardGermanGloss": "Hier kannst du eine Weile gemütlich/entspannt dasitzen."
+        }
+      ],
+      "sourceIds": [
+        "buendner-word"
+      ],
+      "lexicalEvidence": [
+        {
+          "form": "patschifig",
+          "meaning": "gemütlich, ruhig, entspannt",
+          "sourceId": "buendner-word",
+          "evidenceType": "attested-lemma",
+          "exclusiveToArea": false
+        }
+      ],
+      "writingPolicy": "Regional word, not Chur-exclusive. Infinitive and article need Chur/Herrschaft native review; never use as a universal Walser voice."
+    },
+    {
+      "id": "gsw-bern",
+      "label": "Berner Mittelland",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "be-mittelland"
+      ],
+      "first": [
+        {
+          "id": "gsw-bern-rest-1",
+          "text": "Hie muesch nid jufle. Hock di häre u verschnuuf e chli.",
+          "standardGermanGloss": "Hier musst du dich nicht beeilen. Setz dich und verschnaufe etwas."
+        }
+      ],
+      "sourceIds": [
+        "bern-writing"
+      ],
+      "lexicalEvidence": [],
+      "writingPolicy": "Choose one Berndeutsch.ch writing model; retain consistent u/nid/ii choices. No claim that jufle is uniquely Bernese."
+    },
+    {
+      "id": "gsw-basel",
+      "label": "Basel city",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "bs-city"
+      ],
+      "first": [
+        {
+          "id": "gsw-basel-rest-1",
+          "text": "Hogg di ane und mach e bitzli Pause. S pressiert jo nit.",
+          "standardGermanGloss": "Setz dich und mach eine kleine Pause. Es eilt nicht."
+        }
+      ],
+      "sourceIds": [
+        "basel-dictionary"
+      ],
+      "lexicalEvidence": [],
+      "writingPolicy": "Contemporary readable Basel draft, not a reconstruction of every older entrundung feature; full dictionary check pending."
+    },
+    {
+      "id": "gsw-zurich",
+      "label": "Zürich core",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "zh-core"
+      ],
+      "first": [
+        {
+          "id": "gsw-zurich-rest-1",
+          "text": "Hock e chli ab. Nöd alles mues grad sofort sii.",
+          "standardGermanGloss": "Setz dich etwas hin. Nicht alles muss sofort sein."
+        }
+      ],
+      "sourceIds": [
+        "zurich",
+        "sds"
+      ],
+      "lexicalEvidence": [],
+      "writingPolicy": "Avoid city/busy/tech stereotypes; no claim that this common vocabulary identifies Zürich in a blind test."
+    },
+    {
+      "id": "gsw-solothurn",
+      "label": "Solothurn core",
+      "languageTag": "gsw-CH",
+      "writtenRegister": "regional-dialect",
+      "areaIds": [
+        "so-core"
+      ],
+      "first": [
+        {
+          "id": "gsw-solothurn-rest-1",
+          "text": "Hock di häre. Es pressiert nit.",
+          "standardGermanGloss": "Setz dich. Es eilt nicht."
+        }
+      ],
+      "sourceIds": [
+        "solothurn"
+      ],
+      "lexicalEvidence": [],
+      "writingPolicy": "Conservative broad candidate only; not for all Schwarzbubenland/Niederamt/Bucheggberg."
+    }
+  ],
+  "mandatoryExceptions": [
+    "Düdingen -> fr-sensler, not Bern",
+    "Murten/Kerzers -> Seeland/contact, not automatically Sensler",
+    "Jaun/Im Fang -> fr-jaun",
+    "Gurmels -> localities and contact after the 2026 merger",
+    "Biel/Bienne and Fribourg/Freiburg -> multilingual candidates",
+    "Bosco Gurin -> Walser/Guriner candidate, not automatic Ticinese",
+    "Samnaun -> South Bavarian candidate, not Vallader",
+    "Avers/Juf/Madris -> German/Walser candidate, not GR Italian wedge",
+    "Vals/Safien/Obersaxen German localities -> no Romansh wedge",
+    "Bivio -> multilingual candidates",
+    "Bergün -> Bargunsegner spoken, Puter written convention",
+    "Sils/Segl != Sils im Domleschg",
+    "Jauer spoken != newly invented sixth written standard",
+    "Moutier -> current JU after 2026-01-01"
+  ]
+}
