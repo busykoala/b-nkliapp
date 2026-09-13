@@ -33,6 +33,8 @@ spec:
             - /panorama/model/terrain/10m
             - --regional-terrain-dir
             - /panorama/model/terrain/90m
+            - --border-terrain-dir
+            - /panorama/model/terrain/border
             - --cache-dir
             - {{ ternary "/panorama" "/data/panorama-cache-v1" .Values.panoramaStorage.enabled | quote }}
             - --processes
