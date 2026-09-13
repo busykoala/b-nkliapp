@@ -7,7 +7,7 @@ export type { PanoramaDescriptor, PanoramaStatus } from "@/features/bench-panora
 
 const BENCH_ID = /^(osm-(node|way)-\d+|community-[0-9a-f-]{36}|inventory-[0-9a-f]{24})$/;
 const ARTIFACT_KEY = /^[0-9a-f]{64}$/;
-const STYLE_VERSION = "panorama-watercolor-19";
+const STYLE_VERSION = "panorama-watercolor-20";
 
 export type PanoramaArtifact = {
   artifactPath: string;

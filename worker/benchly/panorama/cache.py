@@ -43,7 +43,7 @@ class PanoramaCache:
         return self.root / "geometry-v4" / key[:2] / f"{key}.npz"
 
     def render_path(self, key: str) -> Path:
-        return self.root / "renders-v19" / key[:2] / f"{key}.webp"
+        return self.root / "renders-v20" / key[:2] / f"{key}.webp"
 
     def lightmap_path(self, key: str) -> Path:
         return self.root / "lightmaps-v1" / key[:2] / f"{key}.webp"

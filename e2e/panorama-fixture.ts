@@ -17,7 +17,7 @@ export function installPanoramaFixture(benchId: string, covered?: boolean) {
   const renderKey = key("render", benchId);
   const lightKey = key("light", benchId);
   const geometryKey = key("geometry", benchId);
-  const renderDirectory = join(cacheRoot, "renders-v19", renderKey.slice(0, 2));
+  const renderDirectory = join(cacheRoot, "renders-v20", renderKey.slice(0, 2));
   const lightDirectory = join(cacheRoot, "lightmaps-v1", lightKey.slice(0, 2));
   const artifact = join(renderDirectory, `${renderKey}.webp`);
   const lightArtifact = join(lightDirectory, `${lightKey}.webp`);
@@ -37,7 +37,7 @@ export function installPanoramaFixture(benchId: string, covered?: boolean) {
     bench_row_id,geometry_key,render_key,artifact_path,status,style_version,center_azimuth_degrees,
     horizontal_fov_degrees,width,height,weather_bucket,solar_lunar_bucket,bench_variant,covered,
     artifact_bytes,generated_at,updated_at,error,season_bucket,artifact_format,source_completeness
-  ) VALUES(?,?,?,?,'ready','panorama-watercolor-19',0,360,4096,1024,'dynamic-client-v1','dynamic-client-v1','overlay-v1',NULL,?,?,?,NULL,'autumn','webp','complete')`).run(
+  ) VALUES(?,?,?,?,'ready','panorama-watercolor-20',0,360,4096,1024,'dynamic-client-v1','dynamic-client-v1','overlay-v1',NULL,?,?,?,NULL,'autumn','webp','complete')`).run(
     bench.row_id, geometryKey, renderKey, artifact, statSync(artifact).size, now, now,
   );
   database.prepare(`INSERT OR REPLACE INTO bench_panorama_lightmaps(

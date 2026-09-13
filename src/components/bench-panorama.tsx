@@ -12,7 +12,7 @@ function normalizeHeading(value: number) {
   return ((value % 360) + 360) % 360;
 }
 
-const PANORAMA_HEIGHT_SCALE = 1.16;
+const PANORAMA_HEIGHT_SCALE = 1.36;
 const PANORAMA_POLL_INTERVAL_MS = 5_000;
 const PANORAMA_POLL_ATTEMPTS = 60;
 
@@ -232,6 +232,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
           {celestial && <span className={`bench-panorama-celestial is-${celestial.kind}`} style={celestialStyle}>
             {celestial.kind === "moon" ? <MoonDisc phase={bench.moonPhase} /> : <i />}
           </span>}
+          <span className="bench-panorama-ground-patch" style={benchStyle} />
           {bench.sunAltitudeDegrees > 0 && <span className="bench-panorama-bench-shadow" style={benchStyle} />}
           <img className="bench-panorama-rear-bench" style={benchStyle} src={benchAsset(bench)} alt="" draggable={false} />
         </div>)}

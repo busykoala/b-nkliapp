@@ -17,7 +17,7 @@ from sqlmodel import Field as SqlField, SQLModel
 
 
 GEOMETRY_VERSION = "panorama-geometry-4"
-RENDER_VERSION = "panorama-watercolor-19"
+RENDER_VERSION = "panorama-watercolor-20"
 LIGHTMAP_VERSION = "panorama-lightmap-1"
 EARTH_RADIUS_METERS = 6_371_008.8
 TERRAIN_DEPTH_LIMITS_METERS = (120, 500, 1_500, 4_000, 10_000, 25_000, 60_000)

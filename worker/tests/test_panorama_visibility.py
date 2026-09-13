@@ -225,6 +225,42 @@ def test_watercolor_renderer_is_deterministic_webp_with_real_painted_variation()
     assert len(image.getcolors(maxcolors=100_000) or []) > 100
 
 
+def test_water_remains_water_at_the_bottom_without_an_invented_sand_band():
+    water = [
+        TerrainSample(distance_meters=100, elevation_meters=500,
+                      semantic=SemanticClass.WATER, source="fixture"),
+    ]
+    geometry = build_panorama_geometry(
+        IDENTITY, rays({azimuth: water for azimuth in (0, 90, 180, 270)}), config=CONFIG,
+    )
+    image = np.asarray(Image.open(io.BytesIO(render_panorama_webp(geometry, 720, 240))).convert("RGB"))
+    bottom = image[210:235]
+    assert float(bottom[..., 2].mean()) > float(bottom[..., 0].mean()) + 12
+
+
+def test_uniform_geography_has_a_visually_seamless_watercolor_wrap():
+    geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    image = np.asarray(Image.open(io.BytesIO(render_panorama_webp(geometry, 720, 240))).convert("RGB"), dtype=np.int16)
+    seam_error = np.abs(image[:, 0] - image[:, -1]).mean()
+    assert seam_error < 8
+
+
+def test_forest_is_tonally_layered_and_distinct_from_open_land():
+    forest_sample = [TerrainSample(distance_meters=100, elevation_meters=500,
+                                   semantic=SemanticClass.FOREST, source="fixture")]
+    forest = build_panorama_geometry(
+        IDENTITY, rays({azimuth: forest_sample for azimuth in (0, 90, 180, 270)}), config=CONFIG,
+    )
+    meadow = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    forest_pixels = np.asarray(Image.open(io.BytesIO(render_panorama_webp(forest, 720, 240))).convert("RGB"))
+    meadow_pixels = np.asarray(Image.open(io.BytesIO(render_panorama_webp(meadow, 720, 240))).convert("RGB"))
+    forest_land = forest_pixels[150:225]
+    meadow_land = meadow_pixels[150:225]
+    assert float(forest_land[..., 1].mean() - forest_land[..., 0].mean()) > 7
+    assert float(forest_land.std()) > 10
+    assert float(np.abs(forest_land.astype(np.int16) - meadow_land.astype(np.int16)).mean()) > 4
+
+
 def test_lightmap_follows_sun_height_and_is_soft():
     geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
     low = Image.open(io.BytesIO(render_lightmap_webp(geometry, 180, 5, 720, 180))).convert("L")

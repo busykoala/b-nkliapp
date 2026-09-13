@@ -37,7 +37,7 @@ describe("panorama requests", () => {
       bench_row_id,geometry_key,render_key,artifact_path,status,style_version,center_azimuth_degrees,
       horizontal_fov_degrees,width,height,weather_bucket,solar_lunar_bucket,bench_variant,updated_at,
       season_bucket,artifact_format,source_completeness
-    ) VALUES(?,?,?,?,'ready','panorama-watercolor-19',0,360,4096,1024,'dynamic-client-v1','dynamic-client-v1','overlay-v1','now','autumn','webp','complete')`).run(
+    ) VALUES(?,?,?,?,'ready','panorama-watercolor-20',0,360,4096,1024,'dynamic-client-v1','dynamic-client-v1','overlay-v1','now','autumn','webp','complete')`).run(
       bench.row_id, "geometry", "render", "/cache/render.webp",
     );
     expect(readPanoramaArtifact("osm-node-101")).toMatchObject({ renderKey: "render" });

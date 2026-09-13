@@ -3,7 +3,7 @@ import { clampPanoramaVertical, panoramaBenchShadow, panoramaShadowContrast, pan
 
 describe("360 degree panorama track", () => {
   it("centres north in the middle copy", () => {
-    expect(panoramaTrackOffset(600, 500, 0)).toBe(-2020);
+    expect(panoramaTrackOffset(600, 500, 0)).toBe(-2420);
   });
 
   it("aligns repeated image edges to whole CSS pixels", () => {
@@ -16,8 +16,8 @@ describe("360 degree panorama track", () => {
   });
 
   it("limits vertical map-style movement to the overscan", () => {
-    expect(clampPanoramaVertical(500, 200)).toBeCloseTo(40);
-    expect(clampPanoramaVertical(500, -200)).toBeCloseTo(-40);
+    expect(clampPanoramaVertical(500, 200)).toBeCloseTo(90);
+    expect(clampPanoramaVertical(500, -200)).toBeCloseTo(-90);
     expect(clampPanoramaVertical(500, 12)).toBe(12);
   });
 });

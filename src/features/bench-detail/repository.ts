@@ -31,7 +31,7 @@ export function readDetailRow(benchId: string) {
         WHERE pg.bench_row_id=b.row_id AND pg.bench_id=b.id
           AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
           AND pg.status='ready' AND pr.status='ready' AND pr.horizontal_fov_degrees=360
-          AND pr.style_version='panorama-watercolor-19' AND pr.artifact_format='webp'
+          AND pr.style_version='panorama-watercolor-20' AND pr.artifact_format='webp'
       ) THEN 'ready'
       WHEN EXISTS(SELECT 1 FROM bench_panorama_requests pqr WHERE pqr.bench_row_id=b.row_id) THEN 'generating'
       WHEN EXISTS(SELECT 1 FROM bench_panorama_geometry pg WHERE pg.bench_row_id=b.row_id AND pg.status='stale') THEN 'stale'

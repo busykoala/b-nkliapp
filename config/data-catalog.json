@@ -8,7 +8,7 @@
     "scenePromptVersion": "benchly-scene-1.4",
     "sceneReconcilerVersion": "benchly-evidence-1.1",
     "panoramaGeometryVersion": "panorama-geometry-4",
-    "panoramaRenderVersion": "panorama-watercolor-19",
+    "panoramaRenderVersion": "panorama-watercolor-20",
     "osmPbfUrl": "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf",
     "geoAdminBaseUrl": "https://api3.geo.admin.ch",
     "geoAdminDataBaseUrl": "https://data.geo.admin.ch",
@@ -582,7 +582,7 @@
       "id": "panorama-cache",
       "label": "Versionierte 360-Grad-Bänkli-Panoramen",
       "path": "/data/panorama-cache-v1",
-      "version": "panorama-watercolor-19"
+      "version": "panorama-watercolor-20"
     },
     {
       "id": "source-status",

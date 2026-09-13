@@ -411,7 +411,7 @@ def build_parser() -> argparse.ArgumentParser:
     _database_argument(panorama_fixtures)
     panorama_fixtures.add_argument("--fixture", action="append", required=True, help="BENCH_ID=GEOMETRY_PATH")
     panorama_fixtures.add_argument("--cache-dir", default="./data/panorama-cache-v1")
-    panorama_fixtures.add_argument("--output-dir", default="./data/panorama-fixtures/v19/rendered")
+    panorama_fixtures.add_argument("--output-dir", default="./data/panorama-fixtures/v20/rendered")
     panorama_fixtures.add_argument("--season", choices=("spring", "summer", "autumn", "winter"), default="autumn")
     panorama_fixtures.add_argument("--width", type=int, default=4096)
     panorama_fixtures.add_argument("--height", type=int, default=1024)

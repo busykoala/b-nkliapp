@@ -36,12 +36,21 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   await expect(panorama).toBeVisible({ timeout: 7_000 });
   await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "half");
   await expect(panorama.locator(".bench-panorama-shelter")).toBeVisible();
+  await expect(panorama.locator(".bench-panorama-ground-patch").first()).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("panorama-overlay-half.png") });
   const bearing = panorama.locator(".bench-panorama-bearing");
   await expect(bearing).toHaveText("325°");
   await expect(panorama.getByRole("slider")).toHaveCount(0);
   const image = page.locator(".bench-panorama-art").first();
   await expect(image).toHaveJSProperty("complete", true);
+  const groundBox = await panorama.locator(".bench-panorama-ground-patch").first().boundingBox();
+  const benchBox = await panorama.locator(".bench-panorama-rear-bench").first().boundingBox();
+  const panoramaBox = await panorama.boundingBox();
+  expect(groundBox).not.toBeNull();
+  expect(benchBox).not.toBeNull();
+  expect(panoramaBox).not.toBeNull();
+  expect(groundBox!.width).toBeGreaterThan(benchBox!.width);
+  expect(groundBox!.width).toBeLessThan(panoramaBox!.width);
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
 
   const viewport = page.locator(".bench-panorama-viewport");
@@ -55,6 +64,8 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   const after = await page.locator(".bench-panorama-track").getAttribute("style");
   expect(after).not.toBe(before);
   expect(after).not.toContain("--panorama-y: 0px");
+  const vertical = Number(after?.match(/--panorama-y:\s*(-?[\d.]+)px/)?.[1]);
+  expect(Math.abs(vertical)).toBeGreaterThan(45);
   await expect(bearing).not.toHaveText("325°");
 
   await viewport.focus();
