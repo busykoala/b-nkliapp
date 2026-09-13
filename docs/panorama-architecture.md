@@ -67,3 +67,9 @@ Die Softwarepfade für swissALTI3D, regionales Terrain, grenzüberschreitendes T
 - p95-Zeiten und die 99-%-Abdeckung während des nationalen Backfills messen, nicht schätzen.
 
 Unvollständige Quellen erzeugen weiterhin ein als `partial` markiertes geografisches Bild. Wo selbst dafür keine belastbare Basis vorhanden ist, zeigt die UI nur Papierwash und Retry – niemals eine dekorativ erfundene Landschaft.
+
+## Live-Freigabe 2026-09-13
+
+Migration `0033` und das permanente Vier-Prozess-Deployment sind produktiv. Beide Referenzbänkli liefern v19-Basisbild und Lichtkarte über die gleichoriginige Media-Route als WebP mit ETag und unveränderlichem Cache-Header. Mobile und Desktop wurden live geprüft; Tastatur sowie kombinierter horizontaler und vertikaler Mauszug verändern die Ansicht ohne Reload. Der priorisierte Worker reserviert pro Prozess nur noch ein Bänkli und prüft danach die UI-Queue erneut.
+
+Der nationale Backfill bleibt eine laufende Betriebsaufgabe. Bei der Freigabe waren 172 v19-Basisbilder und 172 Lichtkarten fertig; diese Zahl ist ausdrücklich kein Nachweis des 99-%-Ziels.
