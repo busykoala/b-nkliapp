@@ -41,7 +41,8 @@ from benchly.transit.service import refresh as refresh_transit
 from benchly.transfers.service import run_import_geography
 from benchly.weather.jobs import refresh_weather_job
 from benchly.direction.jobs import analyze_directions_job, import_direction_reviews_job, prepare_direction_review_job, publish_direction_estimates_job, remove_direction_estimates_job
-from benchly.panorama.jobs import panorama_batch_job
+from benchly.panorama.jobs import panorama_batch_job, panorama_worker_job
+from benchly.panorama.fixtures import render_fixture_job
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -373,9 +374,44 @@ def build_parser() -> argparse.ArgumentParser:
     panorama.add_argument("--semantic-radius-meters", type=float, default=20_000)
     panorama.add_argument("--building-radius-meters", type=float, default=2_000)
     panorama.add_argument("--preview-fov", type=float, default=360, help="Deprecated; full 360 degree renders are always produced")
-    panorama.add_argument("--preview-width", type=int, default=3600, help="Full panorama width")
-    panorama.add_argument("--preview-height", type=int, default=900, help="Full panorama height")
+    panorama.add_argument("--preview-width", type=int, default=4096, help="Full panorama width")
+    panorama.add_argument("--preview-height", type=int, default=1024, help="Full panorama height")
+    panorama.add_argument("--shard-index", type=int, default=0, help=argparse.SUPPRESS)
+    panorama.add_argument("--shard-count", type=int, default=1, help=argparse.SUPPRESS)
     panorama.set_defaults(function=panorama_batch_job, uses_lock=True)
+
+    panorama_worker = subparsers.add_parser("panorama-worker", help="Continuously render requested and backfill panoramas")
+    _database_argument(panorama_worker)
+    panorama_worker.add_argument("--terrain-dir", required=True)
+    panorama_worker.add_argument("--regional-terrain-dir")
+    panorama_worker.add_argument("--border-terrain-dir")
+    panorama_worker.add_argument("--high-resolution-distance-meters", type=float, default=20_000)
+    panorama_worker.add_argument("--cache-dir", default="./data/panorama-cache-v1")
+    panorama_worker.add_argument("--limit", type=int, default=8)
+    panorama_worker.add_argument("--max-runtime-hours", type=float, default=.04)
+    panorama_worker.add_argument("--angular-resolution", type=float, default=.1)
+    panorama_worker.add_argument("--maximum-distance-meters", type=float, default=150_000)
+    panorama_worker.add_argument("--semantic-radius-meters", type=float, default=20_000)
+    panorama_worker.add_argument("--building-radius-meters", type=float, default=2_000)
+    panorama_worker.add_argument("--preview-fov", type=float, default=360)
+    panorama_worker.add_argument("--preview-width", type=int, default=4096)
+    panorama_worker.add_argument("--preview-height", type=int, default=1024)
+    panorama_worker.add_argument("--processes", type=int, default=4, choices=range(1, 9))
+    panorama_worker.add_argument("--idle-seconds", type=float, default=2)
+    panorama_worker.set_defaults(function=panorama_worker_job, uses_lock=False)
+
+    panorama_fixtures = subparsers.add_parser(
+        "render-panorama-fixtures", help="Render cached geographic geometry into a local art-review matrix"
+    )
+    _database_argument(panorama_fixtures)
+    panorama_fixtures.add_argument("--fixture", action="append", required=True, help="BENCH_ID=GEOMETRY_PATH")
+    panorama_fixtures.add_argument("--cache-dir", default="./data/panorama-cache-v1")
+    panorama_fixtures.add_argument("--output-dir", default="./data/panorama-fixtures/v19/rendered")
+    panorama_fixtures.add_argument("--season", choices=("spring", "summer", "autumn", "winter"), default="autumn")
+    panorama_fixtures.add_argument("--width", type=int, default=4096)
+    panorama_fixtures.add_argument("--height", type=int, default=1024)
+    panorama_fixtures.add_argument("--at", help="ISO timestamp for the installed local light map")
+    panorama_fixtures.set_defaults(function=render_fixture_job, uses_lock=False)
     return parser
 
 

@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-import gzip
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 from typing import TypeVar
 
+import numpy as np
 from pydantic import BaseModel
 
-from benchly.panorama.models import GeometryIdentity, PanoramaGeometry, RenderIdentity
+from benchly.panorama.models import GeometryIdentity, LightMapIdentity, PanoramaGeometry, RenderIdentity
 
 
 Model = TypeVar("Model", bound=BaseModel)
@@ -30,15 +31,22 @@ def render_cache_key(identity: RenderIdentity) -> str:
     return _key(identity)
 
 
+def lightmap_cache_key(identity: LightMapIdentity) -> str:
+    return _key(identity)
+
+
 class PanoramaCache:
     def __init__(self, root: Path):
         self.root = root
 
     def geometry_path(self, key: str) -> Path:
-        return self.root / "geometry" / key[:2] / f"{key}.json.gz"
+        return self.root / "geometry-v4" / key[:2] / f"{key}.npz"
 
     def render_path(self, key: str) -> Path:
-        return self.root / "renders" / key[:2] / f"{key}.svg.gz"
+        return self.root / "renders-v19" / key[:2] / f"{key}.webp"
+
+    def lightmap_path(self, key: str) -> Path:
+        return self.root / "lightmaps-v1" / key[:2] / f"{key}.webp"
 
     @staticmethod
     def _atomic_write(path: Path, payload: bytes) -> None:
@@ -52,8 +60,13 @@ class PanoramaCache:
 
     def put_geometry(self, geometry: PanoramaGeometry) -> Path:
         path = self.geometry_path(geometry.identity_key)
-        payload = gzip.compress(geometry.model_dump_json(exclude_none=True).encode(), compresslevel=6, mtime=0)
-        self._atomic_write(path, payload)
+        # NPZ gives the v4 cache a binary, checksummed container today and lets
+        # later revisions split hot arrays out of the manifest without another
+        # path or cache migration.
+        manifest = np.frombuffer(geometry.model_dump_json(exclude_none=True).encode(), dtype=np.uint8)
+        output = io.BytesIO()
+        np.savez_compressed(output, manifest=manifest)
+        self._atomic_write(path, output.getvalue())
         return path
 
     def get_geometry(self, key: str) -> PanoramaGeometry | None:
@@ -61,18 +74,31 @@ class PanoramaCache:
         if not path.exists():
             return None
         try:
-            return PanoramaGeometry.model_validate_json(gzip.decompress(path.read_bytes()))
-        except (OSError, ValueError):
+            with np.load(path, allow_pickle=False) as archive:
+                return PanoramaGeometry.model_validate_json(archive["manifest"].tobytes())
+        except (OSError, ValueError, KeyError):
             return None
 
-    def put_render(self, key: str, svg: str) -> Path:
+    def put_render(self, key: str, image: bytes) -> Path:
         path = self.render_path(key)
-        self._atomic_write(path, gzip.compress(svg.encode(), compresslevel=6, mtime=0))
+        self._atomic_write(path, image)
         return path
 
-    def get_render(self, key: str) -> str | None:
+    def get_render(self, key: str) -> bytes | None:
         path = self.render_path(key)
         try:
-            return gzip.decompress(path.read_bytes()).decode() if path.exists() else None
+            return path.read_bytes() if path.exists() else None
+        except OSError:
+            return None
+
+    def put_lightmap(self, key: str, image: bytes) -> Path:
+        path = self.lightmap_path(key)
+        self._atomic_write(path, image)
+        return path
+
+    def get_lightmap(self, key: str) -> bytes | None:
+        path = self.lightmap_path(key)
+        try:
+            return path.read_bytes() if path.exists() else None
         except OSError:
             return None

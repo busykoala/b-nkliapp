@@ -21,18 +21,9 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   await expect(page.getByLabel("Ort suchen")).toBeVisible();
   await expect(page.getByLabel("Menü öffnen")).toBeVisible();
   await page.goto("/bank/osm-node-101");
-  const painting = page.locator(".bench-landscape");
+  const painting = page.locator(".bench-panorama");
   await expect(painting).toBeVisible();
-  const environments = await painting.locator(".painting-environment").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
-  expect(environments.length).toBeGreaterThanOrEqual(2);
-  for (const environment of environments) {
-    expect(environment).toMatch(/^\/ui-art\/scenes\//);
-    const artwork = await page.request.get(environment!);
-    expect(artwork.ok()).toBeTruthy();
-    expect(artwork.headers()["cache-control"]).toContain("max-age=3600");
-    expect(artwork.headers()["cache-control"]).not.toContain("immutable");
-  }
-  await expect(painting.locator('.painting-water[href^="/ui-art/scenes/"]')).toHaveCount(1);
+  await expect(painting).toHaveAttribute("data-status", /generating|unavailable|error/);
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
   await page.getByRole("button", { name: "Mitmachen", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
@@ -228,11 +219,11 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator(".bench-landscape")).toBeInViewport();
+  await expect(sheet.locator(".bench-panorama")).toBeInViewport();
   await expect(sheet.getByText("Details zeigen", { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("short-phone-bench-sheet.png") });
   await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
-  const [chrome, landscape] = await Promise.all([sheet.locator(".sheet-chrome").boundingBox(), sheet.locator(".bench-landscape").boundingBox()]);
+  const [chrome, landscape] = await Promise.all([sheet.locator(".sheet-chrome").boundingBox(), sheet.locator(".bench-panorama").boundingBox()]);
   expect(chrome).not.toBeNull();
   expect(landscape).not.toBeNull();
   expect(landscape!.y).toBeGreaterThanOrEqual(chrome!.y + chrome!.height - 1);

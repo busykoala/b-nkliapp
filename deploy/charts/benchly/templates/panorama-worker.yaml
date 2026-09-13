@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-panorama
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: panorama}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: panorama}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: {{ .Values.nodeName }}}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: panorama
+          image: {{ .Values.images.worker }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - panorama-worker
+            - --database
+            - /data/benchly.sqlite
+            - --terrain-dir
+            - /data/terrain-cache-v1/swissalti3d
+            - --cache-dir
+            - /data/panorama-cache-v1
+            - --processes
+            - {{ .Values.workers.panoramaProcesses | quote }}
+            - --limit
+            - {{ .Values.workers.panoramaBatchSize | quote }}
+          env:
+            - {name: HOME, value: /tmp}
+            - {name: TMPDIR, value: /tmp}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+{{ toYaml .Values.workers.panoramaResources | indent 12 }}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: temporary, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: {{ .Release.Name }}-data}}
+        - name: temporary
+          emptyDir: {sizeLimit: 2Gi}

@@ -17,7 +17,7 @@ def test_geometry_and_render_cache_are_atomic_and_reusable(tmp_path: Path):
     geometry_path = cache.put_geometry(geometry)
     assert geometry_path.exists()
     assert cache.get_geometry(geometry.identity_key) == geometry
-    render_path = cache.put_render("a" * 64, "<svg/>")
+    render_path = cache.put_render("a" * 64, b"RIFF-webp")
     assert render_path.exists()
-    assert cache.get_render("a" * 64) == "<svg/>"
+    assert cache.get_render("a" * 64) == b"RIFF-webp"
     assert not list(tmp_path.rglob("*.part"))

@@ -247,7 +247,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     canopyShare3m, canopyShare10m, canopyShare25m, vegetationMedianHeight, vegetationMaxHeight,
     distanceWaterMeters, distancePathMeters,
     directionDegrees,
-    panoramaAvailable: Boolean(row.panorama_available),
+    panoramaStatus: String(row.panorama_status ?? "unavailable") as BenchDetail["panoramaStatus"],
     buildingObstructionPercent: row.building_obstruction_percent === null ? null : Number(row.building_obstruction_percent),
     vegetationObstructionPercent: row.vegetation_obstruction_percent === null ? null : Number(row.vegetation_obstruction_percent),
     distanceBuildingMeters: row.distance_building_meters === null ? null : Number(row.distance_building_meters),

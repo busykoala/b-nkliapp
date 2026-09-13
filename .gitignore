@@ -22,4 +22,6 @@ data/photos/
 data/direction-reports/
 
 data/terrain-cache-v1/
+data/panorama-cache-v1/
+data/panorama-fixtures/
 .osm-stage-v1/

@@ -35,9 +35,10 @@ describe("panorama requests", () => {
     );
     sqlite.prepare(`INSERT INTO bench_panorama_renders(
       bench_row_id,geometry_key,render_key,artifact_path,status,style_version,center_azimuth_degrees,
-      horizontal_fov_degrees,width,height,weather_bucket,solar_lunar_bucket,bench_variant,updated_at
-    ) VALUES(?,?,?,?,'ready','test',0,360,3600,900,'clear','day','wood','now')`).run(
-      bench.row_id, "geometry", "render", "/cache/render.svg.gz",
+      horizontal_fov_degrees,width,height,weather_bucket,solar_lunar_bucket,bench_variant,updated_at,
+      season_bucket,artifact_format,source_completeness
+    ) VALUES(?,?,?,?,'ready','panorama-watercolor-19',0,360,4096,1024,'dynamic-client-v1','dynamic-client-v1','overlay-v1','now','autumn','webp','complete')`).run(
+      bench.row_id, "geometry", "render", "/cache/render.webp",
     );
     expect(readPanoramaArtifact("osm-node-101")).toMatchObject({ renderKey: "render" });
     sqlite.prepare("UPDATE benches SET longitude=longitude+.001 WHERE row_id=?").run(bench.row_id);

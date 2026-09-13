@@ -366,7 +366,10 @@
     "panoramaControl": "Volver la direcziun da la vista",
     "panoramaHeading": "Direcziun da la vista {degrees} grads",
     "panoramaHint": "↔ ↕ Trer",
-    "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient"
+    "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient",
+    "panoramaGenerating": "La vista vegn gist malegiada…",
+    "panoramaUnavailable": "La vista calculada n’è anc betg disponibla.",
+    "panoramaRetry": "Empruvar anc ina giada"
   },
   "page": {
     "description": "Banc cun analisa dal sulegl e da l’ambient en Bänkli App.",

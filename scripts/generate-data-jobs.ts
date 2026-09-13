@@ -6,7 +6,9 @@ const helmTarget = resolve("deploy/charts/benchly/data-jobs.generated.json");
 const helmGenerated = `${JSON.stringify({
   generatedFrom: `config/data-catalog.json@${dataCatalog.catalogVersion}`,
   timeZone: dataCatalog.timeZone,
-  jobs: dataCatalog.jobs.map((job) => ({
+  // Panorama is a latency-sensitive permanent Deployment; all heavy source
+  // imports below remain bounded CronJobs outside the release pipeline.
+  jobs: dataCatalog.jobs.filter((job) => job.id !== "panorama").map((job) => ({
     name: job.id,
     schedule: job.schedule,
     deadline: job.deadlineSeconds,

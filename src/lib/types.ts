@@ -289,7 +289,7 @@ export type BenchDetail = {
   distanceWaterMeters: number | null;
   distancePathMeters: number | null;
   directionDegrees: number | null;
-  panoramaAvailable: boolean;
+  panoramaStatus: "ready" | "generating" | "stale" | "unavailable" | "error";
   buildingObstructionPercent: number | null;
   vegetationObstructionPercent: number | null;
   distanceBuildingMeters: number | null;

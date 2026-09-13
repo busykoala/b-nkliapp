@@ -1,6 +1,6 @@
-/** Render already-calculated 360° SVG artifacts without an app server.
+/** Render already-calculated 360° v19 WebP artifacts without an app server.
  * Usage:
- *   npx tsx scripts/review-panorama.ts <output-dir> name:path.svg:heading [...]
+ *   npx tsx scripts/review-panorama.ts <output-dir> name:path.webp:heading [...]
  *
  * This intentionally uses the production panorama CSS and public foreground
  * asset, but never reads or mutates the application database.
@@ -23,27 +23,27 @@ function parseCase(value: string): Case {
 async function main() {
   const output = resolve(process.argv[2] ?? "test-results/panorama-review");
   const cases = process.argv.slice(3).map(parseCase);
-  if (!cases.length) throw new Error("At least one name:path.svg:heading case is required");
+  if (!cases.length) throw new Error("At least one name:path.webp:heading case is required");
   await mkdir(output, { recursive: true });
   const css = await readFile("src/app/globals.css", "utf8");
-  const bench = await readFile("public/ui-art/benches/bench-rear-watercolor-v2.webp");
+  const bench = await readFile("public/ui-art/panorama/benches/wood-back.webp");
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 440, height: 390 }, deviceScaleFactor: 1 });
   const manifest = [];
 
   for (const fixture of cases) {
-    const svg = await readFile(fixture.path);
+    const artifact = await readFile(fixture.path);
     const artPath = `/fixture/${encodeURIComponent(basename(fixture.path))}`;
     await page.route("https://panorama.test/**", async (route) => {
       const pathname = new URL(route.request().url()).pathname;
-      if (pathname === artPath) return route.fulfill({ body: svg, contentType: "image/svg+xml" });
+      if (pathname === artPath) return route.fulfill({ body: artifact, contentType: "image/webp" });
       if (pathname === "/bench.webp") return route.fulfill({ body: bench, contentType: "image/webp" });
       return route.fulfill({ body: "", contentType: "text/plain" });
     });
     await page.goto("https://panorama.test/");
     const copyWidth = Math.round(366 * 1.16 * 4);
     const offset = Math.round(440 / 2 - copyWidth * (1 + fixture.heading / 360));
-    const markup = `<figure class="bench-panorama"><div class="bench-panorama-viewport"><div class="bench-panorama-track" style="--panorama-offset:${offset}px;--panorama-y:0px;--panorama-copy-width:${copyWidth}px">${[0, 1, 2].map(() => `<div class="bench-panorama-copy"><img class="bench-panorama-art" src="${artPath}"><img class="bench-panorama-rear-bench is-wood" style="left:${fixture.heading / 360 * 100}%" src="/bench.webp"></div>`).join("")}</div></div></figure>`;
+    const markup = `<figure class="bench-panorama"><div class="bench-panorama-viewport"><div class="bench-panorama-track" style="--panorama-offset:${offset}px;--panorama-y:0px;--panorama-copy-width:${copyWidth}px">${[0, 1, 2].map(() => `<div class="bench-panorama-copy"><img class="bench-panorama-art" src="${artPath}"><img class="bench-panorama-rear-bench" style="left:${fixture.heading / 360 * 100}%" src="/bench.webp"></div>`).join("")}</div></div></figure>`;
     await page.setContent(`<style>${css}</style><style>html,body{margin:0;background:#faf5e9}.bench-panorama{width:440px;height:366px;aspect-ratio:auto;border-radius:0}</style>${markup}`);
     await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete && image.naturalWidth > 0));
     await page.screenshot({ path: join(output, `${fixture.name}.png`) });

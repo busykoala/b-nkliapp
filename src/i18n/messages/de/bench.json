@@ -366,7 +366,10 @@
     "panoramaControl": "Blickrichtung drehen",
     "panoramaHeading": "Blickrichtung {degrees} Grad",
     "panoramaHint": "↔ ↕ Ziehen",
-    "panoramaCalculated": "Aus Gelände- und Umgebungsdaten berechnet"
+    "panoramaCalculated": "Aus Gelände- und Umgebungsdaten berechnet",
+    "panoramaGenerating": "Die Aussicht wird gerade gemalt …",
+    "panoramaUnavailable": "Die berechnete Aussicht ist noch nicht verfügbar.",
+    "panoramaRetry": "Erneut versuchen"
   },
   "page": {
     "description": "Sitzbank mit Sonnen- und Umgebungsanalyse in der Bänkli App.",

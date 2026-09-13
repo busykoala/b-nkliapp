@@ -12,12 +12,12 @@ function filesBelow(directory: string): string[] {
 }
 
 describe("application boundaries", () => {
-  it("uses Server Actions instead of internal Route Handlers", () => {
+  it("uses Server Actions except for immutable media streaming", () => {
     const handlers = filesBelow(join(sourceRoot, "app"))
       .filter((path) => /^route\.(?:js|jsx|ts|tsx)$/.test(path.split("/").at(-1) ?? ""))
       .map((path) => relative(sourceRoot, path));
 
-    expect(handlers).toEqual([]);
+    expect(handlers).toEqual(["app/media/panorama/[renderKey]/route.ts"]);
   });
 
   it("keeps shared libraries independent of UI and application features", () => {

@@ -3,15 +3,21 @@
 from __future__ import annotations
 
 import json
+import multiprocessing
 import resource
+import signal
 import sys
 import time
 from argparse import Namespace
+from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
+from astral import Observer
+from astral.sun import azimuth as sun_azimuth, elevation as sun_elevation
 from benchly.context.rasters import RasterCollection
 from benchly.db import connect_database
-from benchly.panorama.cache import PanoramaCache, geometry_cache_key, render_cache_key
+from benchly.panorama.cache import PanoramaCache, geometry_cache_key, lightmap_cache_key, render_cache_key
 from benchly.panorama.datasets import (
     LOD_SCHEDULE_VERSION,
     load_buildings,
@@ -23,21 +29,25 @@ from benchly.panorama.models import (
     GEOMETRY_VERSION,
     BuildingGeometry,
     GeometryIdentity,
+    LightMapIdentity,
     PanoramaConfig,
     RENDER_VERSION,
     RenderIdentity,
     SourceEvidence,
 )
 from benchly.panorama.repository import (
+    delete_expired_lightmaps,
     mark_failed,
     mark_generating,
+    mark_lightmap_ready,
     mark_ready,
     mark_render_ready,
+    mark_request_retry,
     pending_benches,
     require_schema,
 )
 from benchly.panorama.visibility import build_panorama_geometry
-from benchly.panorama.watercolor import render_panorama_svg
+from benchly.panorama.watercolor import render_lightmap_webp, render_panorama_webp
 from benchly.runtime import now_iso
 
 
@@ -57,12 +67,16 @@ def _osm_version(database) -> str:
     return str(row["version"]) if row and row["version"] else "unknown"
 
 
-def _bench_variant(row) -> str:
-    material = str(row["material"] or "wood").casefold()
-    kind = "stone" if any(value in material for value in ("stone", "concrete", "stein", "beton")) else "metal" if any(
-        value in material for value in ("metal", "steel", "iron", "metall", "stahl", "eisen")) else "wood"
-    shape = "back-arm" if row["backrest"] and row["armrest"] else "back" if row["backrest"] else "backless"
-    return f"{kind}-{shape}"
+def _season(now: datetime) -> str:
+    month = now.astimezone(ZoneInfo("Europe/Zurich")).month
+    return "spring" if 3 <= month <= 5 else "summer" if 6 <= month <= 8 else "autumn" if 9 <= month <= 11 else "winter"
+
+
+def _solar_state(latitude: float, longitude: float, now: datetime) -> tuple[str, float, float]:
+    bucket_minute = now.minute - now.minute % 10
+    bucket = now.replace(minute=bucket_minute, second=0, microsecond=0).isoformat()
+    observer = Observer(latitude=latitude, longitude=longitude)
+    return bucket, float(sun_azimuth(observer, now)), float(sun_elevation(observer, now))
 
 
 def panorama_batch_job(args: Namespace) -> None:
@@ -78,6 +92,11 @@ def panorama_batch_job(args: Namespace) -> None:
     job_started = time.perf_counter()
     try:
         require_schema(database)
+        for expired_path in delete_expired_lightmaps(database, now_iso()):
+            try:
+                Path(expired_path).unlink(missing_ok=True)
+            except OSError:
+                pass
         if not terrain.datasets:
             raise RuntimeError("panorama-batch requires indexed swissALTI3D GeoTIFFs")
         terrain_version = raster_source_version(terrain)
@@ -92,6 +111,8 @@ def panorama_batch_job(args: Namespace) -> None:
             angular_resolution_degrees=args.angular_resolution,
             maximum_distance_meters=args.maximum_distance_meters,
         )
+        now = datetime.now(UTC)
+        season = _season(now)
         source_versions = {
             "terrain": terrain_version,
             "regional_terrain": regional_terrain_version or "absent",
@@ -114,7 +135,10 @@ def panorama_batch_job(args: Namespace) -> None:
             RENDER_VERSION,
             args.preview_width,
             args.preview_height,
+            season,
             args.limit,
+            getattr(args, "shard_index", 0),
+            getattr(args, "shard_count", 1),
         )
         stats["selected"] = len(rows)
         deadline = time.monotonic() + args.max_runtime_hours * 3600
@@ -122,9 +146,16 @@ def panorama_batch_job(args: Namespace) -> None:
             if time.monotonic() >= deadline:
                 break
             bench_started = time.perf_counter()
+            ground_elevation = float(row["elevation_meters"]) if row["elevation_meters"] is not None else terrain.sample(
+                float(row["latitude"]), float(row["longitude"]),
+            )
+            if ground_elevation is None:
+                stats["unavailable"] += 1
+                mark_request_retry(database, int(row["row_id"]), "terrain elevation unavailable")
+                continue
             identity = GeometryIdentity(
                 latitude=float(row["latitude"]), longitude=float(row["longitude"]),
-                ground_elevation_meters=float(row["elevation_meters"]),
+                ground_elevation_meters=float(ground_elevation),
                 terrain_version=terrain_version,
                 regional_terrain_version=regional_terrain_version,
                 border_terrain_version=border_terrain_version,
@@ -189,18 +220,31 @@ def panorama_batch_job(args: Namespace) -> None:
                     horizontal_fov_degrees=360,
                     width=args.preview_width,
                     height=args.preview_height,
-                    weather_bucket="phase-b-neutral",
-                    solar_lunar_bucket="phase-b-neutral",
-                    bench_variant=_bench_variant(row),
-                    covered=None if row["covered"] is None else bool(row["covered"]),
+                    season_bucket=season,
+                    source_completeness=geometry.complete,
                 )
                 render_key = render_cache_key(render_identity)
                 render_path = cache.render_path(render_key)
                 if not render_path.exists():
                     started = time.perf_counter()
-                    svg = render_panorama_svg(geometry, render_identity.width, render_identity.height)
-                    render_path = cache.put_render(render_key, svg)
+                    image = render_panorama_webp(geometry, render_identity.width, render_identity.height, season)
+                    render_path = cache.put_render(render_key, image)
                     stats["render_seconds"] += time.perf_counter() - started
+
+                solar_bucket, azimuth, altitude = _solar_state(float(row["latitude"]), float(row["longitude"]), datetime.now(UTC))
+                light_identity = LightMapIdentity(
+                    geometry_key=key,
+                    solar_bucket=solar_bucket,
+                    sun_azimuth_degrees=azimuth,
+                    sun_altitude_degrees=altitude,
+                )
+                light_key = lightmap_cache_key(light_identity)
+                light_path = cache.lightmap_path(light_key)
+                if not light_path.exists():
+                    light_path = cache.put_lightmap(light_key, render_lightmap_webp(
+                        geometry, azimuth, altitude, light_identity.width, light_identity.height,
+                    ))
+                mark_lightmap_ready(database, int(row["row_id"]), light_identity, light_key, str(light_path), light_path.stat().st_size)
                 mark_render_ready(database, int(row["row_id"]), render_identity, str(render_path), render_path.stat().st_size)
             except Exception as error:
                 status = "unavailable" if "coverage" in str(error).casefold() else "error"
@@ -223,3 +267,47 @@ def panorama_batch_job(args: Namespace) -> None:
         if border_terrain:
             border_terrain.close()
         database.close()
+
+
+def _panorama_worker_loop(args: Namespace) -> None:
+    while True:
+        try:
+            panorama_batch_job(args)
+            time.sleep(args.idle_seconds)
+        except KeyboardInterrupt:
+            return
+        except Exception as error:
+            print(json.dumps({"panorama_worker": args.shard_index, "error": str(error)[:500]}), file=sys.stderr)
+            time.sleep(max(5, args.idle_seconds))
+
+
+def panorama_worker_job(args: Namespace) -> None:
+    """Keep four disjoint panorama shards warm without overlapping benches."""
+    context = multiprocessing.get_context("spawn")
+    processes = []
+    for shard_index in range(args.processes):
+        child_args = Namespace(**vars(args))
+        child_args.shard_index = shard_index
+        child_args.shard_count = args.processes
+        process = context.Process(target=_panorama_worker_loop, args=(child_args,), name=f"panorama-{shard_index}", daemon=True)
+        process.start()
+        processes.append(process)
+
+    stopping = False
+    def stop(_signum, _frame):
+        nonlocal stopping
+        stopping = True
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    try:
+        while not stopping and all(process.is_alive() for process in processes):
+            time.sleep(1)
+        if not stopping:
+            failed = next((process for process in processes if not process.is_alive()), None)
+            raise RuntimeError(f"panorama shard exited unexpectedly ({failed.exitcode if failed else 'unknown'})")
+    finally:
+        for process in processes:
+            if process.is_alive():
+                process.terminate()
+        for process in processes:
+            process.join(timeout=10)

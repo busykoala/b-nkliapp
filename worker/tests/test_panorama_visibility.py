@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import math
+import io
+
+from PIL import Image
+import numpy as np
 
 from benchly.panorama.cache import geometry_cache_key, render_cache_key
 from benchly.panorama.models import (
@@ -13,7 +17,7 @@ from benchly.panorama.models import (
     TerrainSample,
 )
 from benchly.panorama.visibility import build_panorama_geometry, curvature_drop
-from benchly.panorama.watercolor import render_panorama_svg
+from benchly.panorama.watercolor import render_lightmap_webp, render_panorama_webp
 
 
 CONFIG = PanoramaConfig(angular_resolution_degrees=90, maximum_distance_meters=150_000)
@@ -71,8 +75,8 @@ def test_inner_ridge_is_retained_below_the_outer_skyline_and_painted():
     # A four-column fixture makes the real inner edge long enough for the
     # renderer's noise-suppression threshold.
     circular = build_panorama_geometry(IDENTITY, rays({azimuth: north for azimuth in (0, 90, 180, 270)}), config=CONFIG)
-    svg = render_panorama_svg(circular, 720, 240)
-    assert 'id="terrain-inner-ridges"' in svg
+    image = Image.open(io.BytesIO(render_panorama_webp(circular, 720, 240)))
+    assert image.size == (720, 240)
 
 
 def test_many_dem_increments_compact_to_stable_depth_edges():
@@ -193,7 +197,7 @@ def test_curvature_and_refraction_are_explicit():
     assert refracted < geometric
 
 
-def test_geometry_cache_excludes_direction_while_render_cache_includes_it():
+def test_geometry_cache_excludes_direction_while_render_cache_tracks_crop_and_season():
     first = geometry_cache_key(IDENTITY)
     assert first == geometry_cache_key(IDENTITY.model_copy())
     assert first != geometry_cache_key(IDENTITY.model_copy(update={"building_radius_meters": 3_000}))
@@ -206,26 +210,27 @@ def test_geometry_cache_excludes_direction_while_render_cache_includes_it():
                 weather_bucket="clear", solar_lunar_bucket="day", bench_variant="wood-back", covered=False)
     north = render_cache_key(RenderIdentity(center_azimuth_degrees=0, **base))
     east = render_cache_key(RenderIdentity(center_azimuth_degrees=90, **base))
-    rainy = render_cache_key(RenderIdentity(center_azimuth_degrees=0, **{**base, "weather_bucket": "rain"}))
+    autumn = render_cache_key(RenderIdentity(center_azimuth_degrees=0, **{**base, "season_bucket": "autumn"}))
     assert north != east
-    assert north != rainy
+    assert north != autumn
 
 
-def test_watercolor_renderer_is_deterministic_and_contains_no_location_text():
+def test_watercolor_renderer_is_deterministic_webp_with_real_painted_variation():
     geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
-    first = render_panorama_svg(geometry, 720, 240)
-    assert first == render_panorama_svg(geometry, 720, 240)
-    assert "Calculated 360 degree landscape panorama" in first
-    assert "Bern" not in first
-    assert 'id="paint-building-near"' in first
-    assert 'id="paint-building-far"' in first
-    assert 'id="depth-wash"' in first
-    assert 'id="water-pigment"' in first
-    assert 'id="mountain-pigment"' in first
-    assert 'id="building-pigment"' in first
-    assert 'id="terrain-inner-ridges"' not in first
-    assert '<use href="#shape-open-grassland-near"' in first
-    assert 'stroke-linecap="round"' in first
+    first = render_panorama_webp(geometry, 720, 240, "autumn")
+    assert first == render_panorama_webp(geometry, 720, 240, "autumn")
+    assert first[:4] == b"RIFF"
+    image = Image.open(io.BytesIO(first)).convert("RGB")
+    assert image.size == (720, 240)
+    assert len(image.getcolors(maxcolors=100_000) or []) > 100
+
+
+def test_lightmap_follows_sun_height_and_is_soft():
+    geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    low = Image.open(io.BytesIO(render_lightmap_webp(geometry, 180, 5, 720, 180))).convert("L")
+    high = Image.open(io.BytesIO(render_lightmap_webp(geometry, 180, 55, 720, 180))).convert("L")
+    assert low.size == high.size == (720, 180)
+    assert np.asarray(high).mean() > np.asarray(low).mean()
 
 
 def test_missing_ray_is_partial_not_fabricated():

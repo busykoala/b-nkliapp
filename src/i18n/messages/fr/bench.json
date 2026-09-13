@@ -366,7 +366,10 @@
     "panoramaControl": "Faire pivoter la direction du regard",
     "panoramaHeading": "Direction du regard à {degrees} degrés",
     "panoramaHint": "↔ ↕ Faire glisser",
-    "panoramaCalculated": "Calculé à partir des données du terrain et des environs"
+    "panoramaCalculated": "Calculé à partir des données du terrain et des environs",
+    "panoramaGenerating": "La vue est en train d’être peinte…",
+    "panoramaUnavailable": "La vue calculée n’est pas encore disponible.",
+    "panoramaRetry": "Réessayer"
   },
   "page": {
     "description": "Banc avec analyse du soleil et des environs dans Bänkli App.",

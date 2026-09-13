@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import Database from "better-sqlite3";
+import { installPanoramaFixture } from "./panorama-fixture";
 
 test("keeps four app languages and applies dialect only to the opened bench", async ({ page, context }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -22,12 +23,13 @@ test("keeps four app languages and applies dialect only to the opened bench", as
   expect(cookies.find(cookie => cookie.name === "benchly_language")?.value).toBe("fr");
   expect(cookies.find(cookie => cookie.name === "benchly_dialect")?.value).toBe("on");
 
+  installPanoramaFixture("osm-node-101");
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Détails du banc" });
   await expect(sheet).toHaveAttribute("data-snap", "half");
   const collapsed = await sheet.boundingBox();
-  expect(collapsed?.y).toBeGreaterThan(844 * .58);
-  await expect(sheet.locator(".bench-landscape")).toBeInViewport();
+  expect(collapsed?.y).toBeGreaterThan(844 * .5);
+  await expect(sheet.locator(".bench-panorama")).toBeInViewport();
   await expect(sheet.getByText("Züridütsch", { exact: false }).first()).toBeVisible();
   await expect(sheet.locator(".bench-summary")).toContainText("Uf en Blick");
   await page.waitForTimeout(800);
@@ -35,7 +37,7 @@ test("keeps four app languages and applies dialect only to the opened bench", as
 
   await sheet.locator(".overlay-resize").click();
   await expect(sheet).toHaveAttribute("data-snap", "full");
-  await expect(sheet.locator(".landscape-light-badge")).toBeVisible();
+  await expect(sheet.locator(".bench-panorama-art").first()).toBeVisible();
   await sheet.locator(".bench-story-card").screenshot({ path: testInfo.outputPath("zurich-local-scene.png"), animations: "disabled" });
   await expect(sheet.locator(".calm-detail")).toHaveAttribute("lang", "gsw-CH");
   await sheet.locator(".scene-caption").scrollIntoViewIfNeeded();
@@ -63,24 +65,28 @@ test("keeps four app languages and applies dialect only to the opened bench", as
   await expect(page.locator(".bench-summary")).toContainText("En un coup d’œil");
 });
 
-test("draws direct sun and cast shade as visibly different scene layers", async ({ page }, testInfo) => {
+test("keeps sun and covered shade states on the panorama", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  installPanoramaFixture("osm-node-101");
   await page.goto("/bank/osm-node-101");
-  let scene = page.locator(".bench-landscape");
-  await expect(scene.locator('[data-light-layer="sun"]')).toBeVisible();
-  await expect(scene.locator(".landscape-light-badge.is-sunny")).toBeVisible();
+  let scene = page.locator(".bench-panorama");
+  await expect(scene).toBeVisible();
+  await expect(scene).toHaveClass(/is-sunny/);
+  await expect(scene.locator(".bench-panorama-bench-shadow").first()).toBeVisible();
   await scene.screenshot({ path: testInfo.outputPath("scene-direct-sun.png") });
 
-  const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
   try {
-    database.prepare("UPDATE benches SET covered=1 WHERE id='osm-node-112'").run();
+    installPanoramaFixture("osm-node-112", true);
     await page.goto("/bank/osm-node-112");
-    scene = page.locator(".bench-landscape");
-    await expect(scene.locator('[data-light-layer="shade"]')).toBeVisible();
-    await expect(scene.locator(".landscape-light-badge.is-shade")).toBeVisible();
+    scene = page.locator(".bench-panorama");
+    await expect(scene).toBeVisible();
+    await expect(scene).toHaveClass(/is-shaded/);
+    await expect(scene.locator(".bench-panorama-shelter")).toBeVisible();
     await scene.screenshot({ path: testInfo.outputPath("scene-cast-shade.png") });
   } finally {
-    database.prepare("UPDATE benches SET covered=0 WHERE id='osm-node-112'").run();
-    database.close();
+    const cleanup = new Database(process.env.BENCHLY_E2E_DATABASE!);
+    cleanup.prepare("UPDATE benches SET covered=0 WHERE id='osm-node-112'").run();
+    cleanup.close();
   }
 });

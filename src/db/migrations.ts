@@ -871,4 +871,44 @@ export const migrations: Migration[] = [
         ON bench_panorama_requests(requested_at,attempts);
     `,
   },
+  {
+    id: "0033_panorama_artifacts_v2",
+    sql: `
+      ALTER TABLE bench_panorama_renders ADD COLUMN season_bucket TEXT NOT NULL DEFAULT 'summer';
+      ALTER TABLE bench_panorama_renders ADD COLUMN artifact_format TEXT NOT NULL DEFAULT 'svg-gzip';
+      ALTER TABLE bench_panorama_renders ADD COLUMN manifest_path TEXT;
+      ALTER TABLE bench_panorama_renders ADD COLUMN source_completeness TEXT NOT NULL DEFAULT 'partial'
+        CHECK(source_completeness IN ('complete','partial'));
+
+      ALTER TABLE bench_panorama_requests ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'
+        CHECK(status IN ('pending','leased','retry'));
+      ALTER TABLE bench_panorama_requests ADD COLUMN priority INTEGER NOT NULL DEFAULT 100;
+      ALTER TABLE bench_panorama_requests ADD COLUMN lease_owner TEXT;
+      ALTER TABLE bench_panorama_requests ADD COLUMN lease_until TEXT;
+      ALTER TABLE bench_panorama_requests ADD COLUMN next_attempt_at TEXT;
+      CREATE INDEX bench_panorama_requests_lease_idx
+        ON bench_panorama_requests(status,priority,requested_at,lease_until);
+
+      CREATE TABLE bench_panorama_lightmaps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        geometry_key TEXT NOT NULL,
+        light_key TEXT NOT NULL UNIQUE,
+        solar_bucket TEXT NOT NULL,
+        sun_azimuth_degrees REAL NOT NULL,
+        sun_altitude_degrees REAL NOT NULL,
+        artifact_path TEXT,
+        status TEXT NOT NULL CHECK(status IN ('generating','ready','stale','error')),
+        artifact_bytes INTEGER CHECK(artifact_bytes IS NULL OR artifact_bytes >= 0),
+        generated_at TEXT,
+        expires_at TEXT,
+        updated_at TEXT NOT NULL,
+        error TEXT
+      );
+      CREATE INDEX bench_panorama_lightmaps_bench_idx
+        ON bench_panorama_lightmaps(bench_row_id,status,generated_at DESC);
+      CREATE INDEX bench_panorama_lightmaps_expiry_idx
+        ON bench_panorama_lightmaps(expires_at,status);
+    `,
+  },
 ];

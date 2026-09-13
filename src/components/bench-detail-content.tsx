@@ -90,7 +90,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
       <Community bench={bench} report={report} reported={reported} user={user} onContribute={() => contribute("rating")} />
     </> : <>
       <section className="bench-story-card">
-        <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaAvailable}`} bench={bench}><RatingEntry bench={bench} onOpen={() => contribute("rating")} /></BenchPanorama>
+        <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaStatus}`} bench={bench}><RatingEntry bench={bench} onOpen={() => contribute("rating")} /></BenchPanorama>
         <header className="calm-title">
           {created ? <p role="status" className="bench-created-status">{t("bench.story.created")}{bench.verificationStatus === "unverified" ? t("bench.story.remaining", {count: Math.max(0, bench.verificationThreshold - bench.confirmationCount)}) : t("bench.story.confirmed")}</p>
             : bench.verificationStatus === "unverified" && <p className="unverified-note">{t("bench.story.unverified")}</p>}

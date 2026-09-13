@@ -16,8 +16,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from sqlmodel import Field as SqlField, SQLModel
 
 
-GEOMETRY_VERSION = "panorama-geometry-3"
-RENDER_VERSION = "panorama-watercolor-18"
+GEOMETRY_VERSION = "panorama-geometry-4"
+RENDER_VERSION = "panorama-watercolor-19"
+LIGHTMAP_VERSION = "panorama-lightmap-1"
 EARTH_RADIUS_METERS = 6_371_008.8
 TERRAIN_DEPTH_LIMITS_METERS = (120, 500, 1_500, 4_000, 10_000, 25_000, 60_000)
 
@@ -219,10 +220,25 @@ class RenderIdentity(Contract):
     width: int = Field(default=1600, ge=320, le=8192)
     height: int = Field(default=720, ge=180, le=4096)
     style_version: str = RENDER_VERSION
-    weather_bucket: str
-    solar_lunar_bucket: str
-    bench_variant: str
-    covered: bool | None
+    season_bucket: Literal["spring", "summer", "autumn", "winter"] = "summer"
+    # Transient atmosphere, celestial bodies, the bench and shelter are
+    # composed by the browser. These sentinels keep migration-0031 rows
+    # compatible without multiplying the long-lived geographic render cache.
+    weather_bucket: str = "dynamic-client-v1"
+    solar_lunar_bucket: str = "dynamic-client-v1"
+    bench_variant: str = "overlay-v1"
+    covered: bool | None = None
+    source_completeness: bool = True
+
+
+class LightMapIdentity(Contract):
+    geometry_key: str
+    solar_bucket: str
+    sun_azimuth_degrees: float = Field(ge=0, lt=360)
+    sun_altitude_degrees: float = Field(ge=-90, le=90)
+    width: int = Field(default=2048, ge=360, le=4096)
+    height: int = Field(default=512, ge=90, le=2048)
+    version: str = LIGHTMAP_VERSION
 
 
 class PanoramaGeometry(Contract):
@@ -281,6 +297,10 @@ class BenchPanoramaRenderState(SQLModel, table=True):
     artifact_path: str | None = None
     status: str
     style_version: str
+    season_bucket: str = "summer"
+    artifact_format: str = "webp"
+    manifest_path: str | None = None
+    source_completeness: str = "partial"
     center_azimuth_degrees: float
     horizontal_fov_degrees: float
     width: int
@@ -301,6 +321,31 @@ class BenchPanoramaRequestState(SQLModel, table=True):
 
     bench_row_id: int = SqlField(primary_key=True, foreign_key="benches.row_id")
     requested_at: str
+    status: str = "pending"
+    priority: int = 100
+    lease_owner: str | None = None
+    lease_until: str | None = None
+    next_attempt_at: str | None = None
     attempts: int = 0
     last_attempt_at: str | None = None
     last_error: str | None = SqlField(default=None, sa_column=Column(Text))
+
+
+class BenchPanoramaLightMapState(SQLModel, table=True):
+    model_config = ConfigDict(extra="forbid")
+    __tablename__ = "bench_panorama_lightmaps"
+
+    id: int | None = SqlField(default=None, primary_key=True)
+    bench_row_id: int = SqlField(foreign_key="benches.row_id")
+    geometry_key: str
+    light_key: str
+    solar_bucket: str
+    sun_azimuth_degrees: float
+    sun_altitude_degrees: float
+    artifact_path: str | None = None
+    status: str
+    artifact_bytes: int | None = None
+    generated_at: str | None = None
+    expires_at: str | None = None
+    updated_at: str
+    error: str | None = SqlField(default=None, sa_column=Column(Text))

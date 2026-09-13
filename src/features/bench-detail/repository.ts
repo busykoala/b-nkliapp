@@ -24,14 +24,19 @@ export function readDetailRow(benchId: string) {
           THEN de.direction_degrees
         ELSE NULL
       END effective_direction_degrees,
-      EXISTS(
+      CASE WHEN EXISTS(
         SELECT 1 FROM bench_panorama_geometry pg
         JOIN bench_panorama_renders pr
           ON pr.bench_row_id=pg.bench_row_id AND pr.geometry_key=pg.geometry_key
         WHERE pg.bench_row_id=b.row_id AND pg.bench_id=b.id
           AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
           AND pg.status='ready' AND pr.status='ready' AND pr.horizontal_fov_degrees=360
-      ) panorama_available,
+          AND pr.style_version='panorama-watercolor-19' AND pr.artifact_format='webp'
+      ) THEN 'ready'
+      WHEN EXISTS(SELECT 1 FROM bench_panorama_requests pqr WHERE pqr.bench_row_id=b.row_id) THEN 'generating'
+      WHEN EXISTS(SELECT 1 FROM bench_panorama_geometry pg WHERE pg.bench_row_id=b.row_id AND pg.status='stale') THEN 'stale'
+      WHEN EXISTS(SELECT 1 FROM bench_panorama_geometry pg WHERE pg.bench_row_id=b.row_id AND pg.status='error') THEN 'error'
+      ELSE 'unavailable' END panorama_status,
       lm.land_context likely_land_context,lm.land_context_probability likely_land_probability,
       lm.canopy_context likely_canopy_context,lm.canopy_probability likely_canopy_probability,
       lm.lake_view_probability likely_lake_view_probability,lm.mountain_view_probability likely_mountain_view_probability,
