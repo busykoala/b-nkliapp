@@ -1315,7 +1315,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .weather-sketch > .weather-sky-mark { z-index: 1; display: grid; width: 4rem; height: 4rem; grid-template-columns: 1fr; place-items: center; border-radius: 50% 45% 53% 47%; background: rgb(255 246 219 / 60%); color: #315d51; transform: rotate(-3deg); }
 .weather-sky-mark svg { width: 2rem; height: 2rem; }
 .weather-sketch > .cloud-layers { z-index: 1; display: grid; grid-template-columns: 1fr; gap: .5rem; color: inherit; font-size: inherit; }
-.cloud-layers > div { display: grid; grid-template-columns: 2.7rem minmax(0, 1fr) 2.2rem; align-items: center; gap: .4rem; }
+.cloud-layers > div { display: grid; grid-template-columns: max-content minmax(2.5rem, 1fr) 2.4rem; align-items: center; gap: .4rem; }
 .cloud-layers span, .cloud-layers strong { color: rgb(35 61 52 / 85%); font-size: .875rem; font-weight: 600; }
 .cloud-layers i { height: .48rem; overflow: hidden; border-radius: 999px; background: rgb(255 250 235 / 28%); }
 .cloud-layers i b { display: block; height: 100%; border-radius: inherit; background: rgb(255 250 235 / 76%); }
