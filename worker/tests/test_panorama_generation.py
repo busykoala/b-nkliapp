@@ -8,7 +8,15 @@ from PIL import Image
 
 from benchly.panorama.binary import MAGIC, decode_geometry, encode_geometry
 from benchly.panorama.builder import _recommended_pvc
-from benchly.panorama.models import GeometryIdentity, PanoramaConfig, SemanticClass, TerrainRay, TerrainSample
+from benchly.panorama.models import (
+    BuildingProjectionSample,
+    GeometryIdentity,
+    PanoramaConfig,
+    ProjectedBuilding,
+    SemanticClass,
+    TerrainRay,
+    TerrainSample,
+)
 from benchly.panorama.visibility import build_panorama_geometry
 from benchly.panorama.watercolor import render_material_webp, render_panorama_webp
 
@@ -39,6 +47,19 @@ def test_view_capsule_is_deterministic_binary_and_roundtrips_quantized_geometry(
     assert abs(restored.columns[0].skyline_angle_degrees - geometry.columns[0].skyline_angle_degrees) < .05
     with pytest.raises(ValueError, match="truncated"):
         decode_geometry(first[:-4])
+
+
+def test_view_capsule_normalizes_float16_bearing_at_full_circle():
+    geometry = fixture_geometry()
+    sample = BuildingProjectionSample(
+        azimuth_degrees=359.999, lower_angle_degrees=-2, eaves_angle_degrees=3,
+        upper_angle_degrees=5, distance_meters=20,
+    )
+    building = ProjectedBuilding(
+        object_id="building", source="fixture", confidence=1, samples=(sample,),
+    )
+    restored = decode_geometry(encode_geometry(geometry.model_copy(update={"buildings": (building,)})))
+    assert restored.buildings[0].samples[0].azimuth_degrees == 0
 
 
 def test_material_mask_and_paint_are_wrap_continuous():

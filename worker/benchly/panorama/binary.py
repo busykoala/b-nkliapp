@@ -148,7 +148,9 @@ def decode_geometry(data: bytes) -> PanoramaGeometry:
     sample_groups: list[list[BuildingProjectionSample]] = [[] for _ in header["buildings"]]
     for row in building_samples:
         sample_groups[int(row["building"])].append(BuildingProjectionSample(
-            azimuth_degrees=float(row["azimuth"]), lower_angle_degrees=float(row["lower"]),
+            # float16 rounds bearings immediately below 360 to 360. Normalise
+            # after decoding so the circular value remains valid.
+            azimuth_degrees=float(row["azimuth"]) % 360, lower_angle_degrees=float(row["lower"]),
             eaves_angle_degrees=float(row["eaves"]), upper_angle_degrees=float(row["upper"]),
             distance_meters=float(row["distance"]),
         ))
