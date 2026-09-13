@@ -125,6 +125,9 @@ class RasterCollection:
 
     def sample_many(self, points):
         """Sample a point batch while opening and transforming each tile once."""
+        import numpy as np
+        from rasterio.windows import Window
+
         points = list(points)
         output = [None] * len(points)
         if self.index is None or not points:
@@ -141,15 +144,57 @@ class RasterCollection:
         def sample_group(name, values):
             try:
                 dataset, transformer = self._open(name)
-                coordinates = [transformer.transform(longitude, latitude) for _index, latitude, longitude in values]
-                raw_values = dataset.sample(coordinates, masked=True)
-                for (index, _latitude, _longitude), raw in zip(values, raw_values):
-                    value = raw[0]
-                    if getattr(value, "mask", False):
+                output_indices = np.fromiter((value[0] for value in values), dtype=np.int64)
+                latitudes = np.fromiter((value[1] for value in values), dtype=np.float64)
+                longitudes = np.fromiter((value[2] for value in values), dtype=np.float64)
+                eastings, northings = transformer.transform(longitudes, latitudes)
+                columns, rows = (~dataset.transform) * (np.asarray(eastings), np.asarray(northings))
+                columns = np.floor(columns).astype(np.int64)
+                rows = np.floor(rows).astype(np.int64)
+                valid = (rows >= 0) & (rows < dataset.height) & (columns >= 0) & (columns < dataset.width)
+                if not np.any(valid):
+                    return
+
+                # rasterio.dataset.sample creates a masked array and a one-pixel
+                # GDAL read for every coordinate. A panorama contains nearly
+                # half a million coordinates, but only touches a modest number
+                # of raster blocks. Read each touched block once and index it
+                # with NumPy instead. This preserves nearest-neighbour sampling
+                # while removing millions of Python objects per bench.
+                block_height, block_width = dataset.block_shapes[0]
+                valid_positions = np.flatnonzero(valid)
+                block_rows = rows[valid_positions] // block_height
+                block_columns = columns[valid_positions] // block_width
+                order = np.lexsort((block_columns, block_rows))
+                sorted_positions = valid_positions[order]
+                sorted_block_rows = block_rows[order]
+                sorted_block_columns = block_columns[order]
+                boundaries = np.flatnonzero(
+                    (np.diff(sorted_block_rows) != 0) | (np.diff(sorted_block_columns) != 0)
+                ) + 1
+                for positions in np.split(sorted_positions, boundaries):
+                    if not len(positions):
                         continue
-                    number = float(value) * dataset.scales[0] + dataset.offsets[0]
-                    if math.isfinite(number):
-                        output[index] = number
+                    block_row = int(rows[positions[0]] // block_height)
+                    block_column = int(columns[positions[0]] // block_width)
+                    row_offset = block_row * block_height
+                    column_offset = block_column * block_width
+                    window = Window(
+                        column_offset,
+                        row_offset,
+                        min(block_width, dataset.width - column_offset),
+                        min(block_height, dataset.height - row_offset),
+                    )
+                    block = dataset.read(1, window=window, masked=True)
+                    selected = block[
+                        rows[positions] - row_offset,
+                        columns[positions] - column_offset,
+                    ]
+                    numbers = np.asarray(selected, dtype=np.float64) * dataset.scales[0] + dataset.offsets[0]
+                    selected_mask = np.ma.getmaskarray(selected)
+                    usable = (~selected_mask) & np.isfinite(numbers)
+                    for output_index, number in zip(output_indices[positions][usable], numbers[usable]):
+                        output[int(output_index)] = float(number)
             except (OSError, ValueError, IndexError):
                 return
 

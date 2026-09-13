@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import sqlite3
 from collections import defaultdict
 from collections.abc import Sequence
 
@@ -24,6 +23,7 @@ from benchly.panorama.models import (
     SemanticClass,
     TerrainRay,
     TerrainSample,
+    terrain_depth_layer,
 )
 
 
@@ -197,30 +197,50 @@ def sample_terrain_rays(
     classes[:] = SemanticClass.UNKNOWN_TERRAIN
     confidences = np.full(len(locations), .35)
     sources = np.full(len(locations), "swissALTI3D", dtype=object)
+    retained_by_ray: list[list[int]] = []
+    complete_by_ray: list[bool] = []
+    eye = observer_ground_elevation_meters + config.observer_height_meters if observer_ground_elevation_meters is not None else None
+    for ray_index in range(len(azimuths)):
+        offset = ray_index * len(distances)
+        visible: list[int] = []
+        complete = True
+        top = config.minimum_elevation_angle
+        for sample_index, distance in enumerate(distances):
+            elevation = elevations[offset + sample_index]
+            if elevation is None:
+                complete = False
+                continue
+            if eye is None:
+                visible.append(sample_index)
+                continue
+            drop = distance * distance / (2 * 6_371_008.8) * (1 - config.refraction_coefficient)
+            angle = math.degrees(math.atan2(float(elevation) - drop - eye, float(distance)))
+            if angle > top:
+                visible.append(sample_index)
+                top = angle
+
+        # The final panorama stores terrain in eight stable depth layers. Keep
+        # the first and highest visible sample of each layer rather than
+        # materialising every intermediate DEM step as a Pydantic object. The
+        # two endpoints retain foreground transitions and the layer skyline;
+        # hidden samples cannot affect the depth-composed image.
+        by_layer: dict[int, list[int]] = {}
+        for sample_index in visible:
+            by_layer.setdefault(terrain_depth_layer(float(distances[sample_index])), []).append(sample_index)
+        retained = []
+        for layer_indices in by_layer.values():
+            retained.append(layer_indices[0])
+            if layer_indices[-1] != layer_indices[0]:
+                retained.append(layer_indices[-1])
+        retained_by_ray.append(retained)
+        complete_by_ray.append(complete)
+
     if semantics:
-        semantic_indices: np.ndarray
-        if observer_ground_elevation_meters is None:
-            semantic_indices = np.arange(len(locations))
-        else:
-            # Only samples that lift a ray's visibility envelope can appear in
-            # the painted capsule. Classifying every hidden DEM sample against
-            # tens of thousands of polygons was the dominant national-build
-            # cost and produced exactly the same visible result.
-            chosen: list[int] = []
-            eye = observer_ground_elevation_meters + config.observer_height_meters
-            for ray_index in range(len(azimuths)):
-                offset = ray_index * len(distances)
-                top = config.minimum_elevation_angle
-                for sample_index, distance in enumerate(distances):
-                    elevation = elevations[offset + sample_index]
-                    if elevation is None:
-                        continue
-                    drop = distance * distance / (2 * 6_371_008.8) * (1 - config.refraction_coefficient)
-                    angle = math.degrees(math.atan2(float(elevation) - drop - eye, float(distance)))
-                    if angle > top:
-                        chosen.append(offset + sample_index)
-                        top = angle
-            semantic_indices = np.asarray(chosen, dtype=int)
+        semantic_indices = np.asarray([
+            ray_index * len(distances) + sample_index
+            for ray_index, retained in enumerate(retained_by_ray)
+            for sample_index in retained
+        ], dtype=int)
         if len(semantic_indices):
             selected_classes, selected_confidences, selected_sources = semantics.classify(
                 np.asarray(longitudes)[semantic_indices], np.asarray(latitudes)[semantic_indices],
@@ -232,41 +252,40 @@ def sample_terrain_rays(
     for ray_index, azimuth in enumerate(azimuths):
         offset = ray_index * len(distances)
         ray_elevations = elevations[offset:offset + len(distances)]
-        slopes: list[float | None] = []
-        relief: list[float | None] = []
-        for sample_index, elevation in enumerate(ray_elevations):
-            if elevation is None:
-                slopes.append(None)
-                relief.append(None)
+        samples = []
+        for sample_index in retained_by_ray[ray_index]:
+            elevation = ray_elevations[sample_index]
+            if elevation is None:  # retained indices always have elevation; keep the invariant explicit
                 continue
             start = max(0, sample_index - 2)
             end = min(len(ray_elevations), sample_index + 3)
             neighborhood = [float(value) for value in ray_elevations[start:end] if value is not None]
-            relief.append(max(neighborhood) - min(neighborhood) if neighborhood else 0.0)
+            relief = max(neighborhood) - min(neighborhood) if neighborhood else 0.0
             previous = next((index for index in range(sample_index - 1, -1, -1) if ray_elevations[index] is not None), None)
             following = next((index for index in range(sample_index + 1, len(ray_elevations)) if ray_elevations[index] is not None), None)
             if previous is None and following is None:
-                slopes.append(0.0)
+                slope = 0.0
             else:
                 left = previous if previous is not None else sample_index
                 right = following if following is not None else sample_index
                 run = float(distances[right] - distances[left])
                 rise = float(ray_elevations[right] - ray_elevations[left])
-                slopes.append(math.degrees(math.atan2(rise, run)) if run else 0.0)
-        samples = tuple(TerrainSample(
-            distance_meters=float(distance),
-            elevation_meters=float(elevation),
-            semantic=classes[offset + index],
-            confidence=float(confidences[offset + index]),
-            source=str(sources[offset + index]),
-            terrain_source=str(terrain_sources[offset + index]),
-            slope_degrees=slopes[index],
-            relief_meters=relief[index],
-        ) for index, (distance, elevation) in enumerate(zip(distances, ray_elevations)) if elevation is not None)
+                slope = math.degrees(math.atan2(rise, run)) if run else 0.0
+            samples.append(TerrainSample(
+                distance_meters=float(distances[sample_index]),
+                elevation_meters=float(elevation),
+                semantic=classes[offset + sample_index],
+                confidence=float(confidences[offset + sample_index]),
+                source=str(sources[offset + sample_index]),
+                terrain_source=str(terrain_sources[offset + sample_index]),
+                slope_degrees=slope,
+                relief_meters=relief,
+            ))
+        expected = len(samples) if complete_by_ray[ray_index] else len(samples) + 1
         rays.append(TerrainRay(
             azimuth_degrees=float(azimuth),
-            samples=samples,
-            expected_sample_count=len(distances),
+            samples=tuple(samples),
+            expected_sample_count=expected,
         ))
     return rays
 

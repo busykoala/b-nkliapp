@@ -140,8 +140,10 @@ def test_terrain_lod_prefers_regional_overview_far_away():
     assert near and far
     assert {sample.terrain_source for sample in near} == {"swissALTI3D"}
     assert {sample.terrain_source for sample in far} == {"regional-terrain"}
-    assert sum(primary.calls) == len(near)
-    assert sum(regional.calls) == len(far)
+    distances = distance_schedule(150_000)
+    assert sum(primary.calls) == 4 * int(np.count_nonzero(distances <= 20_000))
+    assert sum(regional.calls) == 4 * int(np.count_nonzero(distances > 20_000))
+    assert len(near) + len(far) < sum(primary.calls) + sum(regional.calls)
 
 
 def test_building_loader_accepts_swissbuildings_3d_footprints():
