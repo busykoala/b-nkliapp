@@ -206,6 +206,7 @@ _EXTRACT_DATABASE: sqlite3.Connection | None = None
 _EXTRACT_TERRAIN: RasterCollection | None = None
 _EXTRACT_NEAR_TERRAIN: RasterCollection | None = None
 _EXTRACT_FAR_TERRAIN: RasterCollection | None = None
+_EXTRACT_BORDER_TERRAIN: RasterCollection | None = None
 _EXTRACT_ROOT: Path | None = None
 _EXTRACT_CONFIG: PanoramaConfig | None = None
 _EXTRACT_SOURCE_VERSIONS: dict[str, str] | None = None
@@ -213,7 +214,8 @@ _EXTRACT_SEMANTIC_CELL: tuple[tuple[int, int], object] | None = None
 
 
 def _extraction_source_versions(database: sqlite3.Connection, terrain: RasterCollection,
-                                near_terrain: RasterCollection, far_terrain: RasterCollection) -> dict[str, str]:
+                                near_terrain: RasterCollection, far_terrain: RasterCollection,
+                                border_terrain: RasterCollection | None = None) -> dict[str, str]:
     def official(source: str, fallback: str = "absent") -> str:
         row = database.execute("SELECT version FROM official_context_sources WHERE source=?", (source,)).fetchone()
         return str(row[0]) if row and row[0] else fallback
@@ -229,15 +231,16 @@ def _extraction_source_versions(database: sqlite3.Connection, terrain: RasterCol
         )).encode()).hexdigest(),
         "semantic": f"tlm:{tlm}:osm:{osm_key}",
         "building": f"swiss:{buildings}:tlm:{tlm}:osm:{osm_key}",
+        "border": raster_source_version(border_terrain) if border_terrain and border_terrain.datasets else "absent",
         "algorithm": GEOMETRY_IMPLEMENTATION,
         "lod_schedule": LOD_SCHEDULE_KEY,
     }
 
 
-def _extract_initializer(database_path: str, terrain_dir: str, pyramid_dir: str, root: str,
+def _extract_initializer(database_path: str, terrain_dir: str, pyramid_dir: str, border_terrain_dir: str, root: str,
                          config_payload: dict[str, object], source_versions: dict[str, str], io_threads: int) -> None:
     global _EXTRACT_DATABASE, _EXTRACT_TERRAIN, _EXTRACT_NEAR_TERRAIN, _EXTRACT_FAR_TERRAIN
-    global _EXTRACT_ROOT, _EXTRACT_CONFIG, _EXTRACT_SOURCE_VERSIONS, _EXTRACT_SEMANTIC_CELL
+    global _EXTRACT_BORDER_TERRAIN, _EXTRACT_ROOT, _EXTRACT_CONFIG, _EXTRACT_SOURCE_VERSIONS, _EXTRACT_SEMANTIC_CELL
     os.environ["GDAL_NUM_THREADS"] = str(max(1, io_threads))
     os.environ["OMP_NUM_THREADS"] = "1"
     _EXTRACT_DATABASE = sqlite3.connect(f"file:{database_path}?mode=ro", uri=True, timeout=60)
@@ -245,6 +248,7 @@ def _extract_initializer(database_path: str, terrain_dir: str, pyramid_dir: str,
     _EXTRACT_TERRAIN = RasterCollection(Path(terrain_dir))
     _EXTRACT_NEAR_TERRAIN = RasterCollection(Path(pyramid_dir) / "10m")
     _EXTRACT_FAR_TERRAIN = RasterCollection(Path(pyramid_dir) / "90m")
+    _EXTRACT_BORDER_TERRAIN = RasterCollection(Path(border_terrain_dir)) if border_terrain_dir else None
     _EXTRACT_ROOT = Path(root)
     _EXTRACT_CONFIG = PanoramaConfig.model_validate(config_payload)
     _EXTRACT_SOURCE_VERSIONS = source_versions
@@ -263,6 +267,8 @@ def _extract_one(row: dict[str, object]) -> Extracted:
     source_versions = _EXTRACT_SOURCE_VERSIONS
     latitude, longitude = float(row["latitude"]), float(row["longitude"])
     ground = float(row["elevation_meters"]) if row.get("elevation_meters") is not None else terrain.sample(latitude, longitude)
+    if ground is None and _EXTRACT_BORDER_TERRAIN:
+        ground = _EXTRACT_BORDER_TERRAIN.sample(latitude, longitude)
     if ground is None:
         raise RuntimeError("terrain elevation unavailable")
     identity = GeometryIdentity(
@@ -270,6 +276,7 @@ def _extract_one(row: dict[str, object]) -> Extracted:
         longitude=longitude,
         ground_elevation_meters=float(ground),
         terrain_version=source_versions["terrain"],
+        border_terrain_version=None if source_versions["border"] == "absent" else source_versions["border"],
         lod_schedule_version=source_versions["lod_schedule"],
         semantic_version=source_versions["semantic"],
         building_version=source_versions["building"],
@@ -288,14 +295,18 @@ def _extract_one(row: dict[str, object]) -> Extracted:
     rays = sample_terrain_rays(
         latitude, longitude, _EXTRACT_NEAR_TERRAIN, config, semantics,
         regional_terrain=_EXTRACT_FAR_TERRAIN,
+        border_terrain=_EXTRACT_BORDER_TERRAIN,
         observer_ground_elevation_meters=float(ground),
     )
     buildings = load_buildings(database, latitude, longitude, terrain, identity.building_radius_meters)
-    geometry = build_panorama_geometry(identity, rays, buildings, (
+    evidence = [
         SourceEvidence(source="swissALTI3D", version=source_versions["terrain"], confidence=1),
         SourceEvidence(source="land semantics", version=source_versions["semantic"], confidence=.9),
         SourceEvidence(source="building hierarchy", version=source_versions["building"], confidence=.75),
-    ), config)
+    ]
+    if source_versions["border"] != "absent":
+        evidence.append(SourceEvidence(source="Copernicus DEM GLO-90", version=source_versions["border"], confidence=.86))
+    geometry = build_panorama_geometry(identity, rays, buildings, evidence, config)
     relative = Path("source") / geometry.identity_key[:2] / f"{geometry.identity_key}.bpc"
     target = root / relative
     _atomic(target, encode_geometry(geometry))
@@ -317,9 +328,11 @@ def panorama_extract_job(args: Namespace) -> None:
     terrain = RasterCollection(terrain_dir)
     near_terrain = RasterCollection(pyramid_dir / "10m")
     far_terrain = RasterCollection(pyramid_dir / "90m")
+    border_dir = Path(args.border_terrain_dir).resolve() if args.border_terrain_dir else None
+    border_terrain = RasterCollection(border_dir) if border_dir else None
     if not terrain.datasets or not near_terrain.datasets or not far_terrain.datasets:
         raise RuntimeError("panorama extraction requires 2m source plus prepared 10m and 90m terrain")
-    source_versions = _extraction_source_versions(source_database, terrain, near_terrain, far_terrain)
+    source_versions = _extraction_source_versions(source_database, terrain, near_terrain, far_terrain, border_terrain)
     config = PanoramaConfig(angular_resolution_degrees=args.angular_resolution,
                             maximum_distance_meters=args.maximum_distance_meters)
     state = _open_state(root)
@@ -349,6 +362,8 @@ def panorama_extract_job(args: Namespace) -> None:
     terrain.close()
     near_terrain.close()
     far_terrain.close()
+    if border_terrain:
+        border_terrain.close()
     total = int(state.execute("SELECT count(*) FROM extractions WHERE status='ready'").fetchone()[0]) + len(rows)
     completed = 0
     failed = 0
@@ -363,7 +378,8 @@ def panorama_extract_job(args: Namespace) -> None:
     executor = concurrent.futures.ProcessPoolExecutor(
         max_workers=worker_count,
         initializer=_extract_initializer,
-        initargs=(str(Path(args.database).resolve()), str(terrain_dir), str(pyramid_dir), str(root),
+        initargs=(str(Path(args.database).resolve()), str(terrain_dir), str(pyramid_dir),
+                  str(border_dir) if border_dir else "", str(root),
                   config.model_dump(mode="json"), source_versions, io_per_worker),
     )
     iterator = iter(rows)

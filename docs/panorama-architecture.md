@@ -8,9 +8,9 @@ Migration `0035_panorama_model` führt content-adressierte Generationen, Artefak
 
 Der echte 1-%-Pilot vom 13. September verarbeitete 1’232 zufällig stabile Produktionskapseln mit zwölf Prozessen ohne Fehler. Im aktuellen content-adressierten Format wurden 257’245’903 Bytes gemessen. Einschliesslich eines konservativen 15-GiB-Budgets für nationale Terrain-/Objektpakete ergibt das 41’811’298’935 Bytes dauerhaft und 67’516’470’510 Bytes am kurzen Aktivierungspeak. Damit bleibt die automatische Empfehlung bei 80 GiB.
 
-`panorama-fetch-terrain`, `panorama-prepare-terrain`, `panorama-extract`, `panorama-pilot`, `panorama-build`, `panorama-manifest`, `panorama-verify`, `panorama-upload` und `panorama-activate` bilden den lokalen Forward-only-Workflow. Der Terrain-Nachzug liest den aktuellen Produktionsindex, wählt je benötigter 1-km-Zelle ausschliesslich das neueste offizielle 2-m-GeoTIFF und arbeitet mit acht I/O-Threads. Ein konfigurierbarer 20-km-Radius stellt auch die Nahbereichsstrahlen bereit. Fertige Downloads, Prüfsummen und STAC-Seiten bleiben bei Unterbrüchen erhalten. Der weitere Fortschritt liegt ebenfalls in SQLite-WAL, Dateien werden atomar geschrieben und SHA-256-geprüft. Der Upload akzeptiert ausschliesslich `busykoala@192.168.1.206`, überträgt Artefakte resumierbar vor Manifest/Prüfsumme und bindet jede Bank vor Aktivierung erneut an unveränderte ID und Koordinaten.
+`panorama-fetch-terrain`, `panorama-fetch-border-terrain`, `panorama-prepare-terrain`, `panorama-extract`, `panorama-pilot`, `panorama-build`, `panorama-manifest`, `panorama-verify`, `panorama-upload` und `panorama-activate` bilden den lokalen Forward-only-Workflow. Der Terrain-Nachzug liest den aktuellen Produktionsindex, wählt je benötigter 1-km-Zelle ausschliesslich das neueste offizielle 2-m-GeoTIFF und arbeitet mit acht I/O-Threads. Ein konfigurierbarer 20-km-Radius stellt auch die Nahbereichsstrahlen bereit. Der kleine Copernicus-GLO-90-Cache deckt Standort und Fernsicht an der Landesgrenze ab. Fertige Downloads, Prüfsummen und STAC-Seiten bleiben bei Unterbrüchen erhalten. Der weitere Fortschritt liegt ebenfalls in SQLite-WAL, Dateien werden atomar geschrieben und SHA-256-geprüft. Der Upload akzeptiert ausschliesslich `busykoala@192.168.1.206`, überträgt Artefakte resumierbar vor Manifest/Prüfsumme und bindet jede Bank vor Aktivierung erneut an unveränderte ID und Koordinaten.
 
-Der über LAN geladene aktuelle swissALTI3D-Bestand umfasst 4’846 eindeutige 1-km-Zellen. Die resumierbare, zwölfprozessige Vorbereitung verdichtete diese auf 46 MiB für die 10-/30-/90-m-Stufen. Die 2-m-Quellen bleiben für Standorthöhe und nahe Gebäude erhalten; Sichtstrahlen lesen die 10-m-Fläche bis 20 km und die 90-m-Fläche im Fernbereich. Bei ergänzten Quellzellen erzeugt ihr Inhalts-Hash automatisch neue Pyramidenartefakte.
+Der aktuelle swissALTI3D-Bestand umfasst 43’650 eindeutige, SHA-256-geprüfte 1-km-Zellen und deckt damit sämtliche verfügbaren Schweizer Zellen im 20-km-Umfeld des Produktionsbestands ab. Die resumierbare, zwölfprozessige Vorbereitung verdichtete diese auf rund 472 MiB für die 10-/30-/90-m-Stufen. Die 2-m-Quellen bleiben für Standorthöhe und nahe Gebäude erhalten; Sichtstrahlen lesen die 10-m-Fläche bis 20 km und die 90-m-Fläche im Fernbereich. Bei ergänzten Quellzellen erzeugt ihr Inhalts-Hash automatisch neue Pyramidenartefakte.
 
 ## Sichtkapseln und Browser
 
@@ -80,8 +80,7 @@ Das Vorher-Profil zeigte Maskenaufbau (272 ms), Washes (127 ms) und WebP-Encodin
 
 Die Softwarepfade für swissALTI3D, regionales Terrain, grenzüberschreitendes Terrain, TLM-/OSM-Semantik, swissBUILDINGS3D und swissSURFACE3D sind content-adressiert und resumierbar. Die folgenden Punkte sind Betriebsarbeit und werden nicht durch einen Code-Deploy vorgetäuscht:
 
-- swissALTI3D national als 2/10/30/90-m-Pyramide vervollständigen;
-- Copernicus GLO-90 und swissTLMRegio für den Grenz-/Fernbereich fertig normalisieren;
+- swissTLMRegio für zusätzliche Grenzsemantik normalisieren;
 - swissBUILDINGS3D kachelweise importieren und Roharchive erst nach Prüfsummen- und Stichprobenkontrolle entfernen;
 - Alpen-, Jura-, See-, Tal-, Wald-, Dorf- und Stadtreferenzen im Review-Satz ergänzen;
 - p95-Zeiten und die 99-%-Abdeckung während des nationalen Backfills messen, nicht schätzen.

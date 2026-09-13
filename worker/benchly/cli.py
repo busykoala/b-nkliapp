@@ -56,6 +56,7 @@ from benchly.panorama.builder import (
     panorama_verify_job,
 )
 from benchly.panorama.pyramid import prepare_terrain_pyramid_job
+from benchly.panorama.border_terrain import fetch_border_terrain_job
 from benchly.panorama.terrain_download import fetch_panorama_terrain_job
 
 
@@ -454,6 +455,15 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_terrain.add_argument("--max-download-gib", type=int, default=80, choices=range(1, 257))
     panorama_terrain.set_defaults(function=fetch_panorama_terrain_job, uses_lock=False)
 
+    panorama_border_terrain = subparsers.add_parser(
+        "panorama-fetch-border-terrain", help="Resume the compact Copernicus GLO-90 border and far-field cache",
+    )
+    panorama_border_terrain.add_argument("--bench-index", required=True)
+    panorama_border_terrain.add_argument("--source-dir", required=True)
+    panorama_border_terrain.add_argument("--radius-km", type=float, default=170)
+    panorama_border_terrain.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
+    panorama_border_terrain.set_defaults(function=fetch_border_terrain_job, uses_lock=False)
+
     panorama_extract = subparsers.add_parser(
         "panorama-extract", help="Resume national exact-geometry extraction on the local Mac",
     )
@@ -461,6 +471,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_extract.add_argument("--root", default="./data/panorama-builder")
     panorama_extract.add_argument("--terrain-dir", required=True)
     panorama_extract.add_argument("--terrain-pyramid-dir", help="Prepared 10m/30m/90m model; defaults beside --terrain-dir")
+    panorama_extract.add_argument("--border-terrain-dir", help="Copernicus GLO-90 fallback outside swissALTI3D coverage")
     panorama_extract.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 13))
     panorama_extract.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
     panorama_extract.add_argument("--memory-limit-gib", type=int, default=52, choices=range(8, 53))
