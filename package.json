@@ -8,6 +8,7 @@
     "dev": "next dev",
     "prebuild": "node scripts/prepare-map-worker.mjs",
     "build": "npm run data:catalog:check && npm run db:migrate && next build --webpack",
+    "build:container": "node scripts/prepare-map-worker.mjs && npm run db:migrate && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
