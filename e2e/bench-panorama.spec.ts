@@ -44,16 +44,27 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   await expect(panorama.locator(".bench-panorama-zoom")).toHaveText("1.0×");
   const image = page.locator(".bench-panorama-art").first();
   await expect(image).toHaveJSProperty("complete", true);
-  const groundBox = await panorama.locator(".bench-panorama-ground-patch").first().boundingBox();
-  const benchBox = await panorama.locator(".bench-panorama-rear-bench").first().boundingBox();
-  const panoramaBox = await panorama.boundingBox();
-  expect(groundBox).not.toBeNull();
-  expect(benchBox).not.toBeNull();
-  expect(panoramaBox).not.toBeNull();
-  expect(groundBox!.width).toBeGreaterThan(benchBox!.width);
-  expect(groundBox!.width).toBeLessThan(panoramaBox!.width);
-  expect(benchBox!.width).toBeLessThan(panoramaBox!.width * .62);
-  expect(benchBox!.y + benchBox!.height).toBeGreaterThan(panoramaBox!.y + panoramaBox!.height * .9);
+  // Read the three rectangles in one browser task. The light-map poll can
+  // replace the figure between separate WebKit boundingBox calls, which made
+  // this purely visual assertion intermittently observe a detached element.
+  const layout = await panorama.evaluate((element) => {
+    const ground = element.querySelector<HTMLElement>(".bench-panorama-ground-patch");
+    const bench = element.querySelector<HTMLElement>(".bench-panorama-rear-bench");
+    if (!ground || !bench) return null;
+    const panoramaBox = element.getBoundingClientRect();
+    const groundBox = ground.getBoundingClientRect();
+    const benchBox = bench.getBoundingClientRect();
+    return {
+      panorama: { width: panoramaBox.width, height: panoramaBox.height, y: panoramaBox.y },
+      ground: { width: groundBox.width },
+      bench: { width: benchBox.width, height: benchBox.height, y: benchBox.y },
+    };
+  });
+  expect(layout).not.toBeNull();
+  expect(layout!.ground.width).toBeGreaterThan(layout!.bench.width);
+  expect(layout!.ground.width).toBeLessThan(layout!.panorama.width);
+  expect(layout!.bench.width).toBeLessThan(layout!.panorama.width * .62);
+  expect(layout!.bench.y + layout!.bench.height).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height * .9);
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
 
   const viewport = page.locator(".bench-panorama-viewport");

@@ -56,6 +56,7 @@ from benchly.panorama.builder import (
     panorama_verify_job,
 )
 from benchly.panorama.pyramid import prepare_terrain_pyramid_job
+from benchly.panorama.terrain_download import fetch_panorama_terrain_job
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -442,6 +443,16 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_pyramid.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
     panorama_pyramid.add_argument("--memory-limit-gib", type=int, default=52, choices=range(8, 53))
     panorama_pyramid.set_defaults(function=prepare_terrain_pyramid_job, uses_lock=False)
+
+    panorama_terrain = subparsers.add_parser(
+        "panorama-fetch-terrain", help="Resume latest-only swissALTI3D acquisition for production benches",
+    )
+    panorama_terrain.add_argument("--bench-index", required=True, help="Coordinate-bound production TSV fetched over LAN")
+    panorama_terrain.add_argument("--source-dir", required=True)
+    panorama_terrain.add_argument("--radius-km", type=int, default=20, choices=range(0, 51))
+    panorama_terrain.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
+    panorama_terrain.add_argument("--max-download-gib", type=int, default=80, choices=range(1, 257))
+    panorama_terrain.set_defaults(function=fetch_panorama_terrain_job, uses_lock=False)
 
     panorama_extract = subparsers.add_parser(
         "panorama-extract", help="Resume national exact-geometry extraction on the local Mac",
