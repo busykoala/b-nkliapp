@@ -1,5 +1,5 @@
 import type { Language } from "@/i18n/config";
-import { DIALECT_AREAS, DIALECT_DATA_VERSION, DIALECT_PACK_MANIFEST } from "@/i18n/dialects/registry.generated";
+import { DIALECT_AREAS, DIALECT_PACK_MANIFEST } from "@/i18n/dialects/registry.generated";
 import type { DialectBenchPlace, DialectMatchKind, DialectResolution, DialectSpatialResolution } from "./model";
 
 type Area = (typeof DIALECT_AREAS)[number];
@@ -96,7 +96,7 @@ export function resolveDialect(bench: DialectBenchPlace, language: Language, spa
   const geography = bench.knowledge?.geography;
   const sourceVersion = geography?.sourceVersion ?? spatial?.sourceVersion ?? null;
   if ((spatial && !spatial.insideSwitzerland) || (!spatial && !insideSwissEnvelope(bench) && !cantonKey(geography?.cantonName ?? bench.locationCanton))) {
-    return { areaId: null, areaIds: [], areaLabel: null, voiceId: null, matchKind: "unknown", dataVersion: DIALECT_DATA_VERSION, geographySourceVersion: sourceVersion };
+    return { areaId: null, areaIds: [], areaLabel: null, voiceId: null, matchKind: "unknown", geographySourceVersion: sourceVersion };
   }
 
   const stages: Array<[DialectMatchKind, string[]]> = [
@@ -115,10 +115,10 @@ export function resolveDialect(bench: DialectBenchPlace, language: Language, spa
     const area = areaId ? areasById.get(areaId) : null;
     return {
       areaId, areaIds: candidates, areaLabel: area?.label ?? null, voiceId: voiceAreaId ? areasById.get(voiceAreaId)?.parentPackId ?? null : null,
-      matchKind, dataVersion: DIALECT_DATA_VERSION, geographySourceVersion: sourceVersion,
+      matchKind, geographySourceVersion: sourceVersion,
     };
   }
-  return { areaId: null, areaIds: [], areaLabel: null, voiceId: null, matchKind: "unknown", dataVersion: DIALECT_DATA_VERSION, geographySourceVersion: sourceVersion };
+  return { areaId: null, areaIds: [], areaLabel: null, voiceId: null, matchKind: "unknown", geographySourceVersion: sourceVersion };
 }
 
 export function dialectArea(areaId: string) { return areasById.get(areaId) ?? null; }

@@ -1,6 +1,6 @@
 # Dialect build data
 
-`catalogue.json` is the versioned editorial and source catalogue. It contains 140 stable area IDs and the sourced local text variants that can be published immediately and corrected forward. It intentionally has no review-state field or release gate.
+`catalogue.json` is the editorial and source catalogue. It contains 140 stable area IDs and the sourced local text variants that can be published immediately and corrected forward. It intentionally has no review-state field, release gate or independent build version; Git identifies every published state.
 
 `areas.generated.json` is built offline from the pinned swissBOUNDARIES3D 2026-01 GeoPackage and the BFS `sprg20220501` language regions. It contains only unions of explicitly named current municipalities for the fine-grained dialect areas. The four BFS regions provide complete conservative coverage; foreign coordinates fall back to the selected app language.
 

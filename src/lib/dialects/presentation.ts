@@ -42,7 +42,7 @@ export function createDialectPresentation(bench: BenchDetail, language: Language
     resolution,
     voice: {
       id: pack.id, label: pack.label, language: pack.language, languageTag: pack.languageTag,
-      formatLocale: pack.formatLocale, version: pack.version, first: variant.text, second: pack.light[lightState(bench)],
+      formatLocale: pack.formatLocale, first: variant.text, second: pack.light[lightState(bench)],
     },
     messages: messages as Record<string, unknown>,
   };

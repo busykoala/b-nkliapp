@@ -8,7 +8,6 @@ export type DialectResolution = {
   areaLabel: string | null;
   voiceId: string | null;
   matchKind: DialectMatchKind;
-  dataVersion: string;
   geographySourceVersion: string | null;
 };
 
@@ -28,7 +27,6 @@ export type DialectPresentation = {
     language: Language;
     languageTag: string;
     formatLocale: string;
-    version: string;
     first: string;
     second: string;
   };

@@ -1,12 +1,12 @@
 # Dialect catalogue changelog
 
-## 2026.09.2 — 2026-09-13
+## 2026-09-13 — Spiez assignment
 
 - Assigned the official municipality of Spiez to the Thun/Oberland area so its benches use the Bernese Oberland voice instead of the generic German-language fallback.
 
-## 2026.09.1 — 2026-09-13
+## 2026-09-13 — Initial catalogue
 
 - Published 38 complete parent packs for all 140 stable local area IDs.
 - Added sourced local invitation variants and the documented mandatory locality/contact-zone exceptions.
 - Added swissBOUNDARIES3D 2026-01 municipality geometry and BFS `sprg20220501` language-area fallback.
-- Removed runtime text mutation and all review-state/release-gate metadata; later language corrections keep IDs stable and increment the pack version.
+- Removed runtime text mutation and all review-state/release-gate metadata; later language corrections keep IDs stable and are tracked by Git.

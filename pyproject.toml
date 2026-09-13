@@ -1,6 +1,7 @@
 [project]
 name = "benchly-worker"
-version = "0.1.0"
+# Required by PEP 621 even though uv does not package this project; releases are identified by Git.
+version = "0"
 description = "Data imports and enrichment for Benchly"
 requires-python = ">=3.12"
 dependencies = [
