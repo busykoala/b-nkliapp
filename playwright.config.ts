@@ -30,6 +30,11 @@ export default defineConfig({
   webServer: {
     command: production ? "tsx scripts/serve-production-tests.ts" : "npm run dev -- --port 3100",
     url: baseURL,
+    // A fully saturated hosted runner can occasionally need just over the
+    // Playwright default minute to expose Next's dev server. Keep the job's
+    // four-minute hard cap, but do not fail an otherwise healthy shard while
+    // it is still starting.
+    timeout: process.env.CI ? 90_000 : 60_000,
     ignoreHTTPSErrors: production,
     reuseExistingServer: false,
     env: {
