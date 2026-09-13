@@ -787,6 +787,15 @@ def _paint_buildings(base: Image.Image, geometry: PanoramaGeometry, seed: int,
     overlay = Image.new("RGBA", base.size)
     draw = ImageDraw.Draw(overlay)
     for index, (_building, samples, walls, roof) in enumerate(_building_runs(geometry, width, height)):
+        # A projection run can collapse to one sub-pixel x coordinate when a
+        # footprint only touches two neighbouring angular rays. Outlining that
+        # degenerate polygon turns a perfectly ordinary settlement into a row
+        # of identical vertical fence posts. It contains no drawable facade;
+        # the underlying settlement/terrain wash is the honest representation
+        # until a wider run exposes a coherent building body.
+        projected_width = max(x for x, _y in walls) - min(x for x, _y in walls)
+        if projected_width < max(1.5, width / 1_400):
+            continue
         distance = float(np.median([sample.distance_meters for sample in samples]))
         haze = .04 if distance < 120 else .28 if distance < 1_500 else .62
         rng = np.random.default_rng(seed + index * 31)

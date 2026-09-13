@@ -8,16 +8,18 @@ import numpy as np
 
 from benchly.panorama.cache import geometry_cache_key, render_cache_key
 from benchly.panorama.models import (
+    BuildingProjectionSample,
     BuildingGeometry,
     GeometryIdentity,
     PanoramaConfig,
+    ProjectedBuilding,
     RenderIdentity,
     SemanticClass,
     TerrainRay,
     TerrainSample,
 )
 from benchly.panorama.visibility import build_panorama_geometry, curvature_drop
-from benchly.panorama.watercolor import render_lightmap_webp, render_panorama_webp
+from benchly.panorama.watercolor import _paint_buildings, render_lightmap_webp, render_panorama_webp
 
 
 CONFIG = PanoramaConfig(angular_resolution_degrees=90, maximum_distance_meters=150_000)
@@ -223,6 +225,29 @@ def test_watercolor_renderer_is_deterministic_webp_with_real_painted_variation()
     image = Image.open(io.BytesIO(first)).convert("RGB")
     assert image.size == (720, 240)
     assert len(image.getcolors(maxcolors=100_000) or []) > 100
+
+
+def test_subpixel_building_runs_do_not_become_vertical_fence_posts():
+    geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    sample = BuildingProjectionSample(
+        azimuth_degrees=90,
+        lower_angle_degrees=-8,
+        eaves_angle_degrees=8,
+        upper_angle_degrees=10,
+        distance_meters=120,
+    )
+    geometry = geometry.model_copy(update={
+        "buildings": (ProjectedBuilding(
+            object_id="degenerate",
+            source="fixture",
+            confidence=1,
+            samples=(sample, sample),
+        ),),
+    })
+    canvas = Image.new("RGB", (720, 240), (243, 235, 216))
+    before = np.asarray(canvas).copy()
+    _paint_buildings(canvas, geometry, 7, Image.new("L", canvas.size, 128))
+    assert np.array_equal(np.asarray(canvas), before)
 
 
 def test_water_remains_water_at_the_bottom_without_an_invented_sand_band():
