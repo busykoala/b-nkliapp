@@ -5,17 +5,13 @@ on:
   workflow_run:
     workflows: ["Build and publish containers"]
     types: [completed]
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/production-audit.yml"
 
 permissions:
   contents: read
 
 concurrency:
   group: benchly-production-audit
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   audit:
@@ -88,7 +84,15 @@ jobs:
             --dry-run=client -o json \
             | jq --argjson args "$audit_args" '.spec.backoffLimit=0 | .spec.activeDeadlineSeconds=900 | .spec.template.spec.containers[0].args=$args' \
             | kubectl --namespace benchly apply -f -
-          if ! kubectl --namespace benchly wait --for=condition=complete "job/$audit_job" --timeout=15m; then
+          audit_state=running
+          audit_deadline=$((SECONDS + 900))
+          while (( SECONDS < audit_deadline )); do
+            audit_state="$(kubectl --namespace benchly get "job/$audit_job" -o json \
+              | jq -r 'if (.status.succeeded // 0) > 0 then "complete" elif (.status.failed // 0) > 0 then "failed" else "running" end')"
+            [[ "$audit_state" != running ]] && break
+            sleep 5
+          done
+          if [[ "$audit_state" != complete ]]; then
             kubectl --namespace benchly logs "job/$audit_job" --all-containers --tail=200 || true
             kubectl --namespace benchly describe "job/$audit_job" || true
             exit 1
