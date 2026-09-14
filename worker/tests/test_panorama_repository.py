@@ -123,8 +123,18 @@ def test_pending_selection_tracks_source_render_and_bench_versions():
         return pending_benches(connection, "a", current_versions, style, 4096, 1024, "dynamic", 10)
 
     assert selected() == []
-    assert [item["id"] for item in selected({**versions, "building": "new"})] == ["osm-node-7"]
-    assert [item["id"] for item in selected(style="panorama-watercolor-next")] == ["osm-node-7"]
+    # A verified active generation is the published snapshot. Git/source
+    # changes alone do not start a national cluster backfill; data imports mark
+    # affected cells stale explicitly.
+    assert selected({**versions, "building": "new"}) == []
+    assert selected(style="panorama-watercolor-next") == []
+
+    connection.execute("UPDATE panorama_generations SET state='superseded'")
+    connection.commit()
+    assert [item["id"] for item in selected()] == ["osm-node-7"]
+    connection.execute("UPDATE panorama_generations SET state='active'")
+    connection.commit()
+    assert selected() == []
 
     connection.execute("UPDATE benches SET direction_degrees=275")
     connection.commit()

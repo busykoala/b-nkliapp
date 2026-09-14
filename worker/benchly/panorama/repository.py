@@ -186,7 +186,6 @@ def pending_benches(
     shard_index: int = 0,
     shard_count: int = 1,
 ):
-    source_versions_json = json.dumps(source_versions, separators=(",", ":"))
     return database.execute("""
       SELECT b.row_id,b.id,b.latitude,b.longitude,b.material,b.backrest,b.armrest,b.covered,
         coalesce(b.direction_degrees,
@@ -203,17 +202,18 @@ def pending_benches(
           (request.next_attempt_at IS NULL OR julianday(request.next_attempt_at)<=julianday('now'))
           AND (request.status<>'leased' OR request.lease_until IS NULL OR julianday(request.lease_until)<=julianday('now'))
         )) AND (
-        p.bench_row_id IS NULL OR p.algorithm_version<>? OR p.source_versions_json<>?
-        OR p.status IN ('stale','error','unavailable')
+        p.bench_row_id IS NULL OR p.status IN ('stale','error','unavailable')
         OR (p.status='generating' AND julianday(p.started_at)<julianday('now','-20 minutes'))
         OR p.bench_id<>b.id OR abs(p.bench_latitude-b.latitude)>1e-9 OR abs(p.bench_longitude-b.longitude)>1e-9
         OR NOT EXISTS (
           SELECT 1 FROM bench_panorama_renders render
+          JOIN panorama_generations generation
+            ON generation.id=render.generation_id AND generation.state='active'
           WHERE render.bench_row_id=b.row_id AND render.geometry_key=p.geometry_key
-            AND render.status='ready' AND render.style_version=?
+            AND render.status='ready'
             AND render.center_azimuth_degrees=0 AND render.horizontal_fov_degrees=360
-            AND render.width=? AND render.height=?
-            AND render.artifact_format='webp' AND render.season_bucket=?
+            AND render.artifact_format='webp' AND render.season_bucket='dynamic'
+            AND render.artifact_path IS NOT NULL
             AND render.weather_bucket='dynamic-client'
             AND render.solar_lunar_bucket='dynamic-client'
             AND render.bench_variant='overlay' AND render.covered IS NULL
@@ -224,10 +224,7 @@ def pending_benches(
         CASE p.status WHEN 'stale' THEN 0 WHEN 'error' THEN 2 ELSE 1 END,
         request.requested_at,b.row_id
       LIMIT ?
-    """, (
-        shard_count, shard_index, algorithm_version, source_versions_json, render_style_version,
-        render_width, render_height, season_bucket, limit,
-    )).fetchall()
+    """, (shard_count, shard_index, limit)).fetchall()
 
 
 def delete_fulfilled_requests(database: Database) -> int:
