@@ -204,6 +204,69 @@ def _span_masks(geometry: PanoramaGeometry, width: int, height: int):
     return masks
 
 
+def _surface_masks(masks: dict[tuple[SemanticClass, int], Image.Image]) -> dict[SemanticClass, Image.Image]:
+    """Merge quantized distance bands into continuous painterly surfaces.
+
+    Distance bins are useful data, but painting each bin as a separate opaque
+    shape exposes the polar renderer as vertical GIS strips.  An artist sees a
+    lake or wooded hillside as one mass and varies its tone *inside* that mass.
+    The merge also rounds only the final contour; it does not add a semantic
+    class where the source geometry has none.
+    """
+    if not masks:
+        return {}
+    size = next(iter(masks.values())).size
+    width, height = size
+    merged: dict[SemanticClass, Image.Image] = {}
+    for (semantic, _layer), mask in masks.items():
+        current = merged.get(semantic)
+        merged[semantic] = mask if current is None else ImageChops.lighter(current, mask)
+    for semantic, mask in tuple(merged.items()):
+        # Forest and water source outlines are often much coarser than the
+        # panorama raster.  A circular low-pass turns their staircase into a
+        # loose brush contour while retaining the recognisable landform.
+        if semantic == SemanticClass.FOREST:
+            radius = max(3.0, width / 180)
+            amount = .90
+        elif semantic in {SemanticClass.WATER, SemanticClass.RIVER}:
+            radius = max(2.5, width / 220)
+            amount = .82
+        else:
+            radius = max(2.5, width / 220)
+            amount = .82
+        smooth = _wrap_blur(mask, radius)
+        # Image.blend keeps solid interiors but replaces square contour turns
+        # with translucent wet edges instead of merely painting blur outside.
+        merged[semantic] = Image.blend(mask, smooth, amount)
+    return merged
+
+
+def _paint_depth_atmosphere(base: Image.Image, semantic: SemanticClass, surface: Image.Image,
+                            masks: dict[tuple[SemanticClass, int], Image.Image]) -> None:
+    """Model aerial perspective continuously without exposing depth bins."""
+    width, height = base.size
+    field = np.zeros((height, width), dtype=np.float32)
+    weight = np.zeros((height, width), dtype=np.float32)
+    for layer in _LAYERS:
+        mask = masks.get((semantic, layer))
+        if mask is None:
+            continue
+        alpha = np.asarray(mask, dtype=np.float32) / 255
+        # The visible spans should barely overlap.  Max keeps the farthest
+        # contribution at a soft rim instead of summing it into a dark stripe.
+        field = np.maximum(field, alpha * (_LAYER_HAZE[layer] ** .82))
+        weight = np.maximum(weight, alpha)
+    if not weight.any():
+        return
+    haze = Image.fromarray(np.rint(field * 255).clip(0, 255).astype(np.uint8), "L")
+    # A broad, wrap-safe blend is the essential difference between atmospheric
+    # depth and a colour-coded range map.
+    haze = _wrap_blur(haze, max(4.0, width / 210))
+    haze = ImageChops.multiply(surface, haze).point(lambda value: round(value * .48))
+    target = (178, 204, 216) if semantic in _MOUNTAIN else (195, 214, 215)
+    base.paste(Image.new("RGB", base.size, target), (0, 0), haze)
+
+
 def _gradient(size: tuple[int, int], top: tuple[int, int, int], bottom: tuple[int, int, int]) -> Image.Image:
     width, height = size
     y = np.linspace(0, 1, height, dtype=np.float32)[:, None, None]
@@ -234,10 +297,28 @@ def _paint_wash(base: Image.Image, mask: Image.Image, color: tuple[int, int, int
         base.paste(layer, (0, 0), alpha)
 
 
+def _painted_skyline(geometry: PanoramaGeometry, width: int, height: int) -> np.ndarray:
+    raw = np.array([
+        _angle_y(
+            geometry.columns[min(len(geometry.columns) - 1, int((x + .5) * len(geometry.columns) / width))].skyline_angle_degrees,
+            geometry,
+            height,
+        ) for x in range(width)
+    ], dtype=np.float32)
+    radius = max(3, width // 190)
+    offsets = np.arange(-radius, radius + 1, dtype=np.float32)
+    kernel = np.exp(-.5 * (offsets / max(1, radius / 2.8)) ** 2)
+    kernel /= kernel.sum()
+    extended = np.concatenate((raw[-radius:], raw, raw[:radius]))
+    smooth = np.convolve(extended, kernel, mode="same")[radius:-radius]
+    # Keep summits and valleys recognisable while taking the right angles out
+    # of quantized source steps.
+    return raw * .08 + smooth * .92
+
+
 def _sky_mask(geometry: PanoramaGeometry, width: int, height: int) -> Image.Image:
     mask = Image.new("L", (width, height))
-    skyline = [((index + .5) / len(geometry.columns) * width,
-                _angle_y(column.skyline_angle_degrees, geometry, height)) for index, column in enumerate(geometry.columns)]
+    skyline = [(x, float(y)) for x, y in enumerate(_painted_skyline(geometry, width, height))]
     ImageDraw.Draw(mask).polygon([(0, 0), (width, 0), *reversed(skyline)], fill=255)
     return _wrap_blur(mask, 1.2)
 
@@ -308,17 +389,18 @@ def _paint_landform_relief(base: Image.Image, masks) -> None:
     """Model factual layer boundaries as soft watercolor folds."""
     width, _height = base.size
     combined = Image.new("L", base.size)
-    edges = Image.new("L", base.size)
     for layer in _LAYERS:
         for semantic in _MOUNTAIN:
             mask = masks.get((semantic, layer))
             if mask is not None:
                 combined = ImageChops.lighter(combined, mask)
-                edges = ImageChops.lighter(edges, _horizontal_edges(mask))
     if not combined.getbbox():
         return
+    # Pool pigment at the landform silhouette, never at every semantic
+    # boundary inside it. The latter drew a dark green halo around forests.
+    edges = _horizontal_edges(combined)
     shadow = ImageChops.multiply(combined, ImageChops.offset(edges, max(1, width // 1800), 3))
-    shadow = _wrap_blur(shadow, 1.45).point(lambda value: round(value * .18))
+    shadow = _wrap_blur(shadow, 1.45).point(lambda value: round(value * .10))
     highlight = ImageChops.multiply(combined, ImageChops.offset(edges, -max(1, width // 2300), -2))
     highlight = _wrap_blur(highlight, 1.4).point(lambda value: round(value * .025))
     base.paste(Image.new("RGB", base.size, (68, 84, 72)), (0, 0), shadow)
@@ -343,7 +425,13 @@ def _paint_landform_relief(base: Image.Image, masks) -> None:
 
 def _paint_mountain_facets(base: Image.Image, geometry: PanoramaGeometry, masks,
                            pigment_field: Image.Image) -> None:
-    """Lay broken, factual relief planes below real ridges and steep slopes."""
+    """Lay restrained broken washes along factual inner ridges.
+
+    Earlier revisions closed every ridge into a large polygon.  In a 360°
+    projection those polygons became long vertical curtains.  Parallel broken
+    strokes still communicate a turning mountain plane, while leaving the
+    underlying connected terrain wash visible.
+    """
     width, height = base.size
     mountain = Image.new("L", base.size)
     for layer in _LAYERS:
@@ -359,45 +447,31 @@ def _paint_mountain_facets(base: Image.Image, geometry: PanoramaGeometry, masks,
     shade_draw, light_draw = ImageDraw.Draw(shade), ImageDraw.Draw(light)
     column_count = len(geometry.columns)
     rng = np.random.default_rng(_seed(geometry.identity_key, "relief-planes"))
-    # Broad planes under the true skyline establish readable mountain volume
-    # even where a source lacks dense per-slope classifications.
-    cursor = 0
-    while cursor < column_count:
-        length = min(column_count - cursor, int(rng.integers(28, 105)))
-        group = geometry.columns[cursor:cursor + length]
-        if len(group) < 4:
-            break
-        top = [((cursor + index + .5) / column_count * width,
-                _angle_y(column.skyline_angle_degrees, geometry, height))
-               for index, column in enumerate(group)]
-        amplitude = rng.uniform(height * .035, height * .14)
-        lower = [(x + rng.uniform(-2, 2), y + amplitude * rng.uniform(.72, 1.18)) for x, y in reversed(top)]
-        fall = top[-1][1] - top[0][1]
-        target = shade_draw if fall > 0 else light_draw
-        target.polygon([*top, *lower], fill=int(rng.uniform(17, 39)))
-        cursor += max(8, length - int(rng.integers(4, 14)))
-    # Build short planes from contiguous real ridges. Each polygon follows its
-    # measured upper edge; only the loose lower brush boundary is expressive.
     for layer in _LAYERS:
         run: list[tuple[float, float, float, float]] = []
         def flush(points: list[tuple[float, float, float, float]]) -> None:
             if len(points) < 8:
                 return
-            cursor = 0
-            while cursor < len(points) - 4:
-                length = min(len(points) - cursor, int(rng.integers(13, 48)))
-                group = points[cursor:cursor + length]
-                if len(group) < 4:
-                    break
-                relief = np.median([point[3] for point in group])
-                drop = min(height * .17, max(height * .018, 4 + relief / 1050 * height))
-                top = [(point[0], point[1]) for point in group]
-                direction = group[-1][1] - group[0][1]
-                lower = [(point[0] + rng.uniform(-2, 2), point[1] + drop * rng.uniform(.68, 1.12)) for point in reversed(group)]
-                slope = np.median([point[2] for point in group])
-                target = shade_draw if (direction > 0) ^ (slope < 0) else light_draw
-                target.polygon([*top, *lower], fill=int(rng.uniform(34, 73)))
-                cursor += max(5, length - int(rng.integers(2, 7)))
+            radius = min(8, max(2, len(points) // 30))
+            ys = np.array([point[1] for point in points], dtype=np.float32)
+            padded = np.pad(ys, (radius, radius), mode="edge")
+            smooth_y = np.convolve(padded, np.ones(radius * 2 + 1) / (radius * 2 + 1), mode="valid")
+            line = [(points[index][0], float(smooth_y[index])) for index in range(len(points))]
+            slope = float(np.median([point[2] for point in points]))
+            direction = line[-1][1] - line[0][1]
+            target = shade_draw if (direction > 0) ^ (slope < 0) else light_draw
+            relief = float(np.median([point[3] for point in points]))
+            depth = min(height * .055, max(4, 3 + relief / 2400 * height))
+            fragment = max(7, len(line) // 7)
+            for start in range(0, len(line), fragment):
+                if rng.random() < .18:
+                    continue
+                section = line[start:min(len(line), start + fragment + 2)]
+                for pass_index, fraction in enumerate((0, .28, .58, .9)):
+                    shifted = [(x + fraction * depth * (.22 if slope >= 0 else -.22), y + fraction * depth)
+                               for x, y in section]
+                    target.line(shifted, fill=max(5, round((30 - pass_index * 5) * (1 - layer * .045))),
+                                width=max(1, round(3 - pass_index * .55)), joint="curve")
         for index, column in enumerate(geometry.columns):
             candidates = [edge for edge in column.terrain_edges
                           if edge.semantic in _MOUNTAIN
@@ -411,11 +485,11 @@ def _paint_mountain_facets(base: Image.Image, geometry: PanoramaGeometry, masks,
                         _angle_y(edge.elevation_angle_degrees, geometry, height),
                         edge.slope_degrees or 0, edge.relief_meters or 18))
         flush(run)
-    shade = ImageChops.multiply(mountain, _wrap_blur(shade, .75))
-    light = ImageChops.multiply(mountain, _wrap_blur(light, 1.0))
+    shade = ImageChops.multiply(mountain, _wrap_blur(shade, 1.1))
+    light = ImageChops.multiply(mountain, _wrap_blur(light, 1.35))
     shade = ImageChops.multiply(shade, pigment_field.point(lambda value: 105 + value * 150 // 255))
-    base.paste(Image.new("RGB", base.size, (43, 63, 86)), (0, 0), _scaled_alpha(shade, 1.72))
-    base.paste(Image.new("RGB", base.size, (221, 199, 145)), (0, 0), _scaled_alpha(light, .96))
+    base.paste(Image.new("RGB", base.size, (43, 63, 86)), (0, 0), _scaled_alpha(shade, 1.36))
+    base.paste(Image.new("RGB", base.size, (225, 198, 137)), (0, 0), _scaled_alpha(light, .88))
 
 
 def _paint_ambient_volume(base: Image.Image, geometry: PanoramaGeometry, masks) -> None:
@@ -443,18 +517,33 @@ def _paint_ambient_volume(base: Image.Image, geometry: PanoramaGeometry, masks) 
     slope = np.gradient(smooth)
     curvature = np.gradient(slope)
     value = np.clip(slope * 58 + curvature * 105, -1, 1)
-    shadow_line = np.clip(value, 0, 1) * 78
-    light_line = np.clip(-value, 0, 1) * 62
-    vertical = np.arange(height, dtype=np.float32)[:, None]
-    below_profile = np.maximum(0, vertical - skyline[None, :])
-    # A fold begins at the crest and dissolves down the slope. Broadcasting
-    # one value through the whole column produced the tell-tale vertical bars
-    # of a depth map rather than the turning plane of a painted hill.
-    falloff = .18 + .82 * np.exp(-below_profile / max(1, height * .21))
-    shadow = Image.fromarray(np.rint(shadow_line[None, :] * falloff).clip(0, 255).astype(np.uint8), "L")
-    light = Image.fromarray(np.rint(light_line[None, :] * falloff).clip(0, 255).astype(np.uint8), "L")
-    shadow = ImageChops.multiply(terrain, _wrap_blur(shadow, width / 210))
-    light = ImageChops.multiply(terrain, _wrap_blur(light, width / 240))
+    shadow = Image.new("L", base.size)
+    light = Image.new("L", base.size)
+    shadow_draw, light_draw = ImageDraw.Draw(shadow), ImageDraw.Draw(light)
+    # Place overlapping diagonal pools along turning crests.  Finite pools
+    # wrap around a hill like brush washes; a value broadcast down the entire
+    # ray inevitably reads as a vertical database column.
+    step = max(12, width // 85)
+    for x in range(0, width, step):
+        strength = abs(float(value[x]))
+        if strength < .08:
+            continue
+        center_y = float(skyline[x] + height * (.10 + .08 * strength))
+        radius_x = width * (.022 + .035 * strength)
+        radius_y = height * (.075 + .11 * strength)
+        slant = (-1 if slope[x] < 0 else 1) * radius_x * .22
+        polygon = [
+            (x - radius_x, center_y - radius_y * .35),
+            (x + slant, center_y - radius_y),
+            (x + radius_x, center_y + radius_y * .25),
+            (x - slant, center_y + radius_y),
+        ]
+        target = shadow_draw if value[x] > 0 else light_draw
+        ink = round((18 if value[x] > 0 else 12) + strength * (31 if value[x] > 0 else 21))
+        for wrap in (-width, 0, width):
+            target.polygon([(px + wrap, py) for px, py in polygon], fill=ink)
+    shadow = ImageChops.multiply(terrain, _wrap_blur(shadow, width / 105))
+    light = ImageChops.multiply(terrain, _wrap_blur(light, width / 115))
     base.paste(Image.new("RGB", base.size, (42, 63, 87)), (0, 0), shadow)
     base.paste(Image.new("RGB", base.size, (240, 207, 142)), (0, 0), light)
 
@@ -533,6 +622,7 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
     if not forest.getbbox():
         return
     width, height = base.size
+    forest = Image.blend(forest, _wrap_blur(forest, max(2.2, width / 340)), .78)
     rng = np.random.default_rng(seed)
 
     # Pale, overlapping apertures separate foreground foliage from the cool
@@ -568,9 +658,10 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
     # an individual procedural crown corresponds to a surveyed tree.
     crown_groups = Image.new("L", base.size)
     crowns = ImageDraw.Draw(crown_groups)
-    for layer in _LAYERS:
-        mask = masks.get((SemanticClass.FOREST, layer))
-        if mask is None or not mask.getbbox():
+    # Follow the merged woodland contour once. Repeating these crowns for each
+    # distance band outlined the renderer's staircase rather than a tree line.
+    for layer, mask in ((0, forest),):
+        if not mask.getbbox():
             continue
         pixels = np.asarray(mask)
         left, _top, right, _bottom = mask.getbbox()
@@ -1037,39 +1128,55 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     canopy_field = _paper_noise(render_width, render_height, seed + 43, 30)
     _paint_sky(base, geometry, broad_pigment, artist_pigment)
     masks = _span_masks(geometry, render_width, render_height)
+    surfaces = _surface_masks(masks)
+    terrain_silhouette = ImageOps.invert(_sky_mask(geometry, render_width, render_height))
+    surfaces = {
+        semantic: ImageChops.multiply(mask, terrain_silhouette)
+        for semantic, mask in surfaces.items()
+    }
     palette = SEASON_PALETTES[season]
     order = (SemanticClass.SNOW_OR_GLACIER, SemanticClass.ROCK, SemanticClass.UNKNOWN_TERRAIN,
              SemanticClass.OPEN_GRASSLAND, SemanticClass.FOREST, SemanticClass.SETTLEMENT,
              SemanticClass.WATER, SemanticClass.RIVER)
-    for layer in reversed(_LAYERS):
-        for semantic in order:
-            mask = masks.get((semantic, layer))
-            if mask is None:
-                continue
-            if semantic in {SemanticClass.WATER, SemanticClass.RIVER}:
-                target = (186, 214, 222)
-            elif semantic in _MOUNTAIN and layer >= 3:
-                target = (145, 169, 184)
-            else:
-                target = (211, 216, 199)
-            color = _mix(palette[semantic], target, _LAYER_HAZE[layer])
-            if semantic in {SemanticClass.UNKNOWN_TERRAIN, SemanticClass.OPEN_GRASSLAND} and layer <= 1:
-                color = _mix(color, (181, 164, 91), .12)
-            _paint_wash(base, mask, color, _LAYER_OPACITY[layer], pigments)
-            if layer < 3 or semantic in {SemanticClass.WATER, SemanticClass.RIVER, SemanticClass.FOREST}:
-                _pool_pigment(base, mask, color, .13 if layer < 3 else .06)
+    # Paint each geographic surface as one connected watercolor mass.  Depth
+    # is glazed on afterwards; rendering the eight distance bins separately
+    # was the source of conspicuous vertical bands in otherwise smooth hills.
+    land = terrain_silhouette
+    if land.getbbox():
+        ground = _mix(palette[SemanticClass.UNKNOWN_TERRAIN], palette[SemanticClass.OPEN_GRASSLAND], .46)
+        _paint_wash(base, land, ground, .78, pigments)
+    for semantic in order:
+        mask = surfaces.get(semantic)
+        if mask is None:
+            continue
+        color = palette[semantic]
+        if semantic in {SemanticClass.WATER, SemanticClass.RIVER}:
+            color = _mix(color, (174, 208, 217), .12)
+        elif semantic in {SemanticClass.UNKNOWN_TERRAIN, SemanticClass.OPEN_GRASSLAND}:
+            color = _mix(color, (181, 164, 91), .10)
+        opacity = .91 if semantic in {SemanticClass.WATER, SemanticClass.RIVER} else (
+            .60 if semantic == SemanticClass.FOREST else .42
+        )
+        _paint_wash(base, mask, color, opacity, pigments)
+        _paint_depth_atmosphere(base, semantic, mask, masks)
+        if semantic != SemanticClass.FOREST:
+            _pool_pigment(base, mask, color, .055 if semantic in {
+                SemanticClass.WATER, SemanticClass.RIVER,
+            } else .045)
     water = Image.new("L", base.size)
-    for layer in _LAYERS:
-        if (SemanticClass.WATER, layer) in masks:
-            water = ImageChops.lighter(water, masks[(SemanticClass.WATER, layer)])
-        if (SemanticClass.RIVER, layer) in masks:
-            water = ImageChops.lighter(water, masks[(SemanticClass.RIVER, layer)])
-    _paint_landform_relief(base, masks)
-    _paint_ambient_volume(base, geometry, masks)
-    _paint_mountain_facets(base, geometry, masks, medium_pigment)
-    _paint_surface_blooms(base, masks, medium_pigment, artist_pigment)
-    _paint_land_brushwork(base, masks, seed + 47)
-    _paint_perspective_sweeps(base, masks, seed + 53)
+    if SemanticClass.WATER in surfaces:
+        water = ImageChops.lighter(water, surfaces[SemanticClass.WATER])
+    if SemanticClass.RIVER in surfaces:
+        water = ImageChops.lighter(water, surfaces[SemanticClass.RIVER])
+    # Detail painters consume a single visual layer per semantic so they never
+    # retrace the implementation's distance-band edges.
+    visual_masks = {(semantic, 0): mask for semantic, mask in surfaces.items()}
+    _paint_landform_relief(base, visual_masks)
+    _paint_ambient_volume(base, geometry, visual_masks)
+    _paint_mountain_facets(base, geometry, visual_masks, medium_pigment)
+    _paint_surface_blooms(base, visual_masks, medium_pigment, artist_pigment)
+    _paint_land_brushwork(base, visual_masks, seed + 47)
+    _paint_perspective_sweeps(base, visual_masks, seed + 53)
     _paint_forest_details(base, masks, canopy_field, artist_pigment, seed + 59)
     _paint_water_details(base, water, seed + 71, broad_pigment)
     _paint_buildings(base, geometry, seed + 113, medium_pigment)
