@@ -36,6 +36,7 @@ from benchly.panorama.models import (
     SourceEvidence,
 )
 from benchly.panorama.repository import (
+    delete_fulfilled_requests,
     delete_expired_lightmaps,
     mark_failed,
     mark_generating,
@@ -93,6 +94,7 @@ def panorama_batch_job(args: Namespace) -> None:
     job_started = time.perf_counter()
     try:
         require_schema(database)
+        stats["fulfilled_requests_removed"] = delete_fulfilled_requests(database)
         generation_row = database.execute("SELECT id FROM panorama_generations WHERE state='active' LIMIT 1").fetchone()
         if not generation_row:
             raise RuntimeError("panorama has no active verified generation")

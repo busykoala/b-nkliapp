@@ -129,15 +129,18 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       const result = await loadBenchPanorama(bench.id).catch((): PanoramaDescriptor => ({ status: "error", retryAfterMs: 30_000 }));
       if (!active) return;
       setDescriptor(result);
-      if (result.status === "ready" && result.lightMapUrl) return;
+      if (result.status === "ready") return;
       attempts += 1;
       if (attempts < PANORAMA_POLL_ATTEMPTS) timeout = setTimeout(poll, result.retryAfterMs ?? PANORAMA_POLL_INTERVAL_MS);
     };
-    if (bench.panorama?.status === "ready" && bench.panorama.lightMapUrl) return () => { active = false; };
+    // The precomputed painting is the user-visible completion boundary. A
+    // short-lived light map is optional enhancement data and must never turn
+    // opening an otherwise ready bench into an on-demand render request.
+    if (bench.panorama?.status === "ready") return () => { active = false; };
     void loadBenchPanorama(bench.id).then((initial) => {
       if (!active) return;
       setDescriptor(initial);
-      if (initial.status === "ready" && initial.lightMapUrl) return;
+      if (initial.status === "ready") return;
       void requestBenchPanorama(bench.id).then(poll, poll);
     }, () => void requestBenchPanorama(bench.id).then(poll, poll));
     return () => {

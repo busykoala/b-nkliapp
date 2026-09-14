@@ -54,7 +54,6 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
     generatedAt: artifact.generatedAt,
     completeness: artifact.completeness,
     generationId: artifact.generationId,
-    retryAfterMs: artifact.lightKey ? undefined : 5_000,
   };
   if (!BENCH_ID.test(benchId)) return { status: "unavailable" };
   const stale = sqlite.prepare(`
@@ -117,9 +116,27 @@ export function readArtifactByKey(key: string): { artifactPath: string; etag: st
 
 export function enqueuePanoramaRequest(benchId: string) {
   if (!BENCH_ID.test(benchId)) return false;
+  if (readPanoramaArtifact(benchId)) {
+    sqlite.prepare(`DELETE FROM bench_panorama_requests
+      WHERE bench_row_id=(SELECT row_id FROM benches WHERE id=? AND active=1)`)
+      .run(benchId);
+    return false;
+  }
   const result = sqlite.prepare(`
     INSERT INTO bench_panorama_requests(bench_row_id,requested_at,status,priority,next_attempt_at)
-    SELECT row_id,?,'pending',0,NULL FROM benches WHERE id=? AND active=1
+    SELECT b.row_id,?,'pending',0,NULL FROM benches b
+    WHERE b.id=? AND b.active=1 AND NOT EXISTS (
+      SELECT 1 FROM bench_panorama_geometry pg
+      JOIN bench_panorama_renders pr
+        ON pr.bench_row_id=pg.bench_row_id AND pr.geometry_key=pg.geometry_key
+      JOIN panorama_generations generation
+        ON generation.id=pr.generation_id AND generation.state='active'
+      WHERE pg.bench_row_id=b.row_id AND pg.bench_id=b.id
+        AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
+        AND pg.status='ready' AND pr.status='ready'
+        AND pr.horizontal_fov_degrees=360 AND pr.artifact_format='webp'
+        AND pr.season_bucket='dynamic' AND pr.artifact_path IS NOT NULL
+    )
     ON CONFLICT(bench_row_id) DO UPDATE SET
       requested_at=min(bench_panorama_requests.requested_at,excluded.requested_at),
       status='pending',priority=min(bench_panorama_requests.priority,excluded.priority),

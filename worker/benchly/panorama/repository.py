@@ -203,8 +203,7 @@ def pending_benches(
           (request.next_attempt_at IS NULL OR julianday(request.next_attempt_at)<=julianday('now'))
           AND (request.status<>'leased' OR request.lease_until IS NULL OR julianday(request.lease_until)<=julianday('now'))
         )) AND (
-        request.bench_row_id IS NOT NULL
-        OR p.bench_row_id IS NULL OR p.algorithm_version<>? OR p.source_versions_json<>?
+        p.bench_row_id IS NULL OR p.algorithm_version<>? OR p.source_versions_json<>?
         OR p.status IN ('stale','error','unavailable')
         OR (p.status='generating' AND julianday(p.started_at)<julianday('now','-20 minutes'))
         OR p.bench_id<>b.id OR p.bench_latitude<>b.latitude OR p.bench_longitude<>b.longitude
@@ -229,6 +228,28 @@ def pending_benches(
         shard_count, shard_index, algorithm_version, source_versions_json, render_style_version,
         render_width, render_height, season_bucket, limit,
     )).fetchall()
+
+
+def delete_fulfilled_requests(database: Database) -> int:
+    """Drop optional UI requests when an active painting is already ready."""
+    result = database.execute("""
+      DELETE FROM bench_panorama_requests
+      WHERE EXISTS (
+        SELECT 1 FROM benches b
+        JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id
+        JOIN bench_panorama_renders pr
+          ON pr.bench_row_id=pg.bench_row_id AND pr.geometry_key=pg.geometry_key
+        JOIN panorama_generations generation
+          ON generation.id=pr.generation_id AND generation.state='active'
+        WHERE b.row_id=bench_panorama_requests.bench_row_id AND b.active=1
+          AND pg.bench_id=b.id AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
+          AND pg.status='ready' AND pr.status='ready' AND pr.horizontal_fov_degrees=360
+          AND pr.artifact_format='webp' AND pr.season_bucket='dynamic'
+          AND pr.artifact_path IS NOT NULL
+      )
+    """)
+    database.commit()
+    return max(0, int(result.rowcount))
 
 
 def mark_generating(database: Database, row, geometry_key: str, source_versions: dict[str, str], generation_id: str | None = None) -> None:

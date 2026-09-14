@@ -5,6 +5,7 @@ import sqlite3
 from benchly.panorama.models import LightMapIdentity, RenderIdentity
 from benchly.panorama.repository import (
     activate_generation,
+    delete_fulfilled_requests,
     mark_failed,
     mark_generating,
     mark_lightmap_ready,
@@ -109,11 +110,14 @@ def test_pending_selection_tracks_source_render_and_bench_versions():
     row = dict(connection.execute("SELECT * FROM benches WHERE row_id=7").fetchone())
     mark_generating(connection, row, "g" * 64, versions)
     mark_ready(connection, 7, "g" * 64, "/cache/geometry-v4.npz", 123, True, ())
+    connection.execute("""INSERT INTO panorama_generations(
+      id,git_commit,state,source_versions_json,created_at
+    ) VALUES('active-generation','abcdef0','active','{}','2026-09-13')""")
     identity = RenderIdentity(
         geometry_key="g" * 64, center_azimuth_degrees=0, horizontal_fov_degrees=360,
         width=4096, height=1024, season_bucket="dynamic",
     )
-    mark_render_ready(connection, 7, identity, "/cache/render.webp", 456)
+    mark_render_ready(connection, 7, identity, "/cache/render.webp", 456, generation_id="active-generation")
 
     def selected(current_versions=versions, style=identity.style_version):
         return pending_benches(connection, "a", current_versions, style, 4096, 1024, "dynamic", 10)
@@ -130,15 +134,17 @@ def test_pending_selection_tracks_source_render_and_bench_versions():
     connection.commit()
     assert selected() == []
 
-    # A UI request refreshes the short-lived light map even when the geographic
-    # base is already current; process shards stay strictly disjoint.
+    # A UI request must not force the expensive geographic pipeline when the
+    # active browser-consumable painting is already ready.
     connection.execute("INSERT INTO bench_panorama_requests(bench_row_id,requested_at) VALUES(7,'2026-09-13')")
     connection.commit()
-    assert [item["id"] for item in selected()] == ["osm-node-7"]
+    assert selected() == []
     assert pending_benches(connection, "a", versions, identity.style_version, 4096, 1024, "dynamic", 10, 0, 4) == []
-    assert [item["id"] for item in pending_benches(
+    assert pending_benches(
         connection, "a", versions, identity.style_version, 4096, 1024, "dynamic", 10, 3, 4,
-    )] == ["osm-node-7"]
+    ) == []
+    assert delete_fulfilled_requests(connection) == 1
+    assert connection.execute("SELECT count(*) FROM bench_panorama_requests").fetchone()[0] == 0
 
     connection.execute("UPDATE bench_panorama_requests SET status='retry',next_attempt_at='2099-01-01'")
     connection.commit()
