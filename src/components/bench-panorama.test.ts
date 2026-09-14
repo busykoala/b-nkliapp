@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampPanoramaVertical, panoramaBenchShadow, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
+import { clampPanoramaVertical, moonShadowPath, panoramaBenchShadow, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
 
 describe("360 degree panorama track", () => {
   it("centres north in the middle copy", () => {
@@ -35,6 +35,11 @@ describe("360 degree panorama track", () => {
 });
 
 describe("panorama light", () => {
+  it("builds a valid closed moon shadow from two absolute arcs", () => {
+    expect(moonShadowPath(.25)).toBe("M 24 6 A 18 18 0 0 0 24 42 A 5.5 18 0 0 0 24 6 Z");
+    expect(moonShadowPath(.75)).toBe("M 24 6 A 18 18 0 0 1 24 42 A 5.5 18 0 0 1 24 6 Z");
+  });
+
   it("projects a longer bench shadow away from a low sun", () => {
     const low = panoramaBenchShadow(90, 6, 90);
     const high = panoramaBenchShadow(90, 60, 90);

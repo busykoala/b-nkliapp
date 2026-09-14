@@ -63,13 +63,17 @@ function benchAsset(bench: BenchDetail) {
   return `/ui-art/panorama/benches/${kind}-${shape}.webp`;
 }
 
-function MoonDisc({ phase }: { phase: number }) {
+export function moonShadowPath(phase: number) {
   const illuminated = Math.max(0, Math.min(1, phase));
   const sweep = illuminated < .5 ? 0 : 1;
   const radius = Math.max(1, Math.abs(.5 - illuminated) * 22);
+  return `M 24 6 A 18 18 0 0 ${sweep} 24 42 A ${radius} 18 0 0 ${sweep} 24 6 Z`;
+}
+
+function MoonDisc({ phase }: { phase: number }) {
   return <svg viewBox="0 0 48 48" aria-hidden="true">
     <circle cx="24" cy="24" r="18" fill="#f4ebc9" opacity=".95" />
-    <path d={`M24 6a18 18 0 0 ${sweep} 0 36 36a${radius} 18 0 0 ${sweep} 0-36-36Z`} fill="#657477" opacity=".72" />
+    <path d={moonShadowPath(phase)} fill="#657477" opacity=".72" />
   </svg>;
 }
 
