@@ -208,3 +208,32 @@ def test_activation_publishes_verified_content_with_typed_models():
     assert tuple(connection.execute(
         "SELECT generation_id,style_version,material_key FROM bench_panorama_renders"
     ).fetchone()) == ("abcdef123456-content", "render-hash", "d" * 64)
+
+
+def test_activation_binds_shared_geometry_to_each_colocated_bench():
+    connection = database()
+    connection.execute("INSERT INTO benches VALUES(8,'osm-node-8',47,8,'wood',1,0,0,1,180)")
+    geometry_key = "a" * 64
+    records = []
+    for bench_row_id in (7, 8):
+        for kind, digest, path in (
+            ("capsule", "b" * 64, "capsules/aa/file.bpc"),
+            ("render", "c" * 64, "renders/aa/file.webp"),
+            ("material", "d" * 64, "materials/aa/file.webp"),
+        ):
+            records.append({
+                "geometry_key": geometry_key, "kind": kind, "relative_path": path,
+                "sha256": digest, "bytes": 10, "bench_row_id": bench_row_id,
+                "bench_id": f"osm-node-{bench_row_id}", "bench_latitude": 47.0,
+                "bench_longitude": 8.0,
+            })
+    manifest = {
+        "generation_id": "abcdef123456-shared", "git_commit": "abcdef1234567890",
+        "geometry_implementation": "geometry-hash", "render_implementation": "render-hash",
+        "artifact_count": 6, "artifact_bytes": 60, "created_at": "2026-09-13", "artifacts": records,
+    }
+    activate_generation(connection, manifest, "e" * 64, "/panorama/active/abcdef123456-shared")
+    connection.commit()
+    assert connection.execute("SELECT count(*) FROM panorama_generation_artifacts").fetchone()[0] == 6
+    assert connection.execute("SELECT count(*) FROM bench_panorama_geometry").fetchone()[0] == 2
+    assert connection.execute("SELECT count(DISTINCT render_key) FROM bench_panorama_renders").fetchone()[0] == 2

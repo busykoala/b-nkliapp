@@ -645,11 +645,16 @@ def _manifest(root: Path, database_path: Path, bench_index: Path | None = None) 
                 "relative_path": row[4], "sha256": row[5], "bytes": row[6]}
                for row in state.execute("""SELECT source_path,bench_id,cell_id,kind,relative_path,sha256,artifact_bytes
                  FROM artifacts WHERE status='ready' ORDER BY kind,relative_path""")]
+    extracted_rows = list(state.execute("""SELECT geometry_key,bench_row_id,bench_id,latitude,longitude FROM extractions
+      WHERE status='ready' AND geometry_key IS NOT NULL"""))
     extracted_by_geometry = {str(row[0]): {
         "geometry_key": str(row[0]), "bench_row_id": int(row[1]), "bench_id": str(row[2]),
         "bench_latitude": float(row[3]), "bench_longitude": float(row[4]),
-    } for row in state.execute("""SELECT geometry_key,bench_row_id,bench_id,latitude,longitude FROM extractions
-      WHERE status='ready' AND geometry_key IS NOT NULL""")}
+    } for row in extracted_rows}
+    extracted_by_bench = {str(row[2]): {
+        "geometry_key": str(row[0]), "bench_row_id": int(row[1]), "bench_id": str(row[2]),
+        "bench_latitude": float(row[3]), "bench_longitude": float(row[4]),
+    } for row in extracted_rows}
     state.close()
     source_database = sqlite3.connect(database_path)
     source_database.row_factory = sqlite3.Row
@@ -675,27 +680,38 @@ def _manifest(root: Path, database_path: Path, bench_index: Path | None = None) 
     # The resumable workspace can retain outputs for deleted/moved benches or
     # abandoned local fixtures. They are deliberately absent from a sealed
     # production manifest; every included artifact remains coordinate-bound.
-    records = [item for item in records if str(item["geometry_key"]) not in missing]
-    for item in records:
-        item.update(bench_by_geometry[str(item["geometry_key"])])
-        production = production_by_bench.get(str(item["bench_id"]))
-        if production:
-            item.update({key: production[key] for key in (
-                "bench_row_id", "bench_id", "bench_latitude", "bench_longitude",
-            )})
-    preferred = {str(value["bench_id"]): key for key, value in extracted_by_geometry.items()}
     by_geometry: dict[str, list[dict[str, object]]] = {}
     for item in records:
         by_geometry.setdefault(str(item["geometry_key"]), []).append(item)
-    selected: dict[str, tuple[int, str, list[dict[str, object]]]] = {}
-    for geometry_key, items in by_geometry.items():
-        bench_id = str(items[0]["bench_id"])
-        rank = 0 if preferred.get(bench_id) == geometry_key else 1
-        candidate = (rank, geometry_key, items)
-        if bench_id not in selected or candidate[:2] < selected[bench_id][:2]:
-            selected[bench_id] = candidate
-    records = [item for _rank, _key, items in selected.values() for item in items]
-    records.sort(key=lambda item: (str(item["kind"]), str(item["relative_path"])))
+    if production_by_bench:
+        bound_records: list[dict[str, object]] = []
+        missing_benches: list[str] = []
+        for bench_id, production in production_by_bench.items():
+            extracted = extracted_by_bench.get(bench_id)
+            candidates = tuple(dict.fromkeys(filter(None, (
+                str(extracted["geometry_key"]) if extracted else None,
+                str(production["geometry_key"]) if production["geometry_key"] else None,
+            ))))
+            geometry_key = next((candidate for candidate in candidates if candidate in by_geometry), None)
+            if geometry_key is None:
+                missing_benches.append(bench_id)
+                continue
+            for item in by_geometry[geometry_key]:
+                bound = dict(item)
+                bound.update({key: production[key] for key in (
+                    "bench_row_id", "bench_id", "bench_latitude", "bench_longitude",
+                )})
+                bound_records.append(bound)
+        if missing_benches:
+            raise RuntimeError(
+                f"production manifest is missing artifacts for {len(missing_benches)} benches: {missing_benches[:10]}"
+            )
+        records = bound_records
+    else:
+        records = [item for item in records if str(item["geometry_key"]) not in missing]
+        for item in records:
+            item.update(bench_by_geometry[str(item["geometry_key"])])
+    records.sort(key=lambda item: (str(item["kind"]), str(item["relative_path"]), str(item["bench_id"])))
     git_commit = _git_commit()
     artifact_set = hashlib.sha256(json.dumps(records, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     generation_id = f"{git_commit[:12]}-{artifact_set[:16]}"

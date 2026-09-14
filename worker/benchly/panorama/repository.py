@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from datetime import UTC, datetime, timedelta
@@ -69,12 +70,15 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
     write(database, delete(PanoramaGenerationArtifactState).where(
         PanoramaGenerationArtifactState.generation_id == generation_id,
     ))
-    grouped: dict[str, dict[str, dict[str, object]]] = {}
+    grouped: dict[tuple[int, str], dict[str, dict[str, object]]] = {}
     for raw_record in manifest["artifacts"]:  # type: ignore[union-attr]
         record = dict(raw_record)
+        bench_row_id = int(record["bench_row_id"])
+        geometry_key = str(record["geometry_key"])
+        binding_key = hashlib.sha256(f"{geometry_key}:{bench_row_id}".encode()).hexdigest()
         artifact = PanoramaGenerationArtifactState(
             generation_id=generation_id,
-            artifact_key=f"{record['geometry_key']}:{record['kind']}",
+            artifact_key=binding_key,
             kind=str(record["kind"]),
             relative_path=str(record["relative_path"]),
             sha256=str(record["sha256"]),
@@ -86,16 +90,23 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
             created_at=now,
         )
         write(database, insert(PanoramaGenerationArtifactState).values(artifact.model_dump()))
-        grouped.setdefault(str(record["geometry_key"]), {})[str(record["kind"])] = record
+        grouped.setdefault((bench_row_id, geometry_key), {})[str(record["kind"])] = record
 
     write(database, delete(BenchPanoramaLightMapState))
     write(database, delete(BenchPanoramaRenderState))
     write(database, delete(BenchPanoramaGeometryState))
     geometry_implementation = str(manifest["geometry_implementation"])
     render_implementation = str(manifest["render_implementation"])
-    for geometry_key, kinds in grouped.items():
+    geometry_bindings: dict[str, int] = {}
+    for _bench_row_id, geometry_key in grouped:
+        geometry_bindings[geometry_key] = geometry_bindings.get(geometry_key, 0) + 1
+    for (bench_row_id, geometry_key), kinds in grouped.items():
         capsule, render, material = kinds["capsule"], kinds["render"], kinds["material"]
-        bench_row_id = int(capsule["bench_row_id"])
+        shared = geometry_bindings[geometry_key] > 1
+        render_key = hashlib.sha256(f"{render['sha256']}:{bench_row_id}".encode()).hexdigest() \
+            if shared else str(render["sha256"])
+        material_key = hashlib.sha256(f"{material['sha256']}:{bench_row_id}".encode()).hexdigest() \
+            if shared else str(material["sha256"])
         geometry = BenchPanoramaGeometryState(
             bench_row_id=bench_row_id,
             bench_id=str(capsule["bench_id"]),
@@ -119,7 +130,7 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
         render_state = BenchPanoramaRenderState(
             bench_row_id=bench_row_id,
             geometry_key=geometry_key,
-            render_key=str(render["sha256"]),
+            render_key=render_key,
             artifact_path=f"{prefix}/{render['relative_path']}",
             status="ready",
             style_version=render_implementation,
@@ -138,7 +149,7 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
             source_completeness="complete",
             generation_id=generation_id,
             artifact_sha256=str(render["sha256"]),
-            material_key=str(material["sha256"]),
+            material_key=material_key,
             material_path=f"{prefix}/{material['relative_path']}",
             material_sha256=str(material["sha256"]),
             material_bytes=int(material["bytes"]),
