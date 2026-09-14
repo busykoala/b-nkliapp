@@ -35,7 +35,9 @@ export function readPanoramaArtifact(benchId: string): PanoramaArtifact | null {
       ON pr.bench_row_id=pg.bench_row_id AND pr.geometry_key=pg.geometry_key
     JOIN panorama_generations generation ON generation.id=pr.generation_id AND generation.state='active'
     WHERE b.id=? AND b.active=1
-      AND pg.bench_id=b.id AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
+      AND pg.bench_id=b.id
+      AND abs(pg.bench_latitude-b.latitude)<=1e-9
+      AND abs(pg.bench_longitude-b.longitude)<=1e-9
       AND pg.status='ready' AND pr.status='ready' AND pr.horizontal_fov_degrees=360
       AND pr.artifact_format='webp' AND pr.season_bucket='dynamic'
       AND pr.artifact_path IS NOT NULL
@@ -63,7 +65,8 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
     JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id
     JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id AND pr.geometry_key=pg.geometry_key
     WHERE b.id=? AND b.active=1 AND pg.bench_id=b.id
-      AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
+      AND abs(pg.bench_latitude-b.latitude)<=1e-9
+      AND abs(pg.bench_longitude-b.longitude)<=1e-9
       AND pr.status='ready' AND pr.horizontal_fov_degrees=360
       AND pr.artifact_format='webp' AND pr.artifact_path IS NOT NULL
     ORDER BY pr.generated_at DESC,pr.id DESC LIMIT 1
@@ -132,7 +135,8 @@ export function enqueuePanoramaRequest(benchId: string) {
       JOIN panorama_generations generation
         ON generation.id=pr.generation_id AND generation.state='active'
       WHERE pg.bench_row_id=b.row_id AND pg.bench_id=b.id
-        AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
+        AND abs(pg.bench_latitude-b.latitude)<=1e-9
+        AND abs(pg.bench_longitude-b.longitude)<=1e-9
         AND pg.status='ready' AND pr.status='ready'
         AND pr.horizontal_fov_degrees=360 AND pr.artifact_format='webp'
         AND pr.season_bucket='dynamic' AND pr.artifact_path IS NOT NULL

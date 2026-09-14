@@ -45,6 +45,8 @@ describe("panorama requests", () => {
     expect(readPanoramaArtifact("osm-node-101")).toMatchObject({ renderKey: "render" });
     expect(enqueuePanoramaRequest("osm-node-101")).toBe(false);
     expect((sqlite.prepare("SELECT count(*) count FROM bench_panorama_requests").get() as { count: number }).count).toBe(0);
+    sqlite.prepare("UPDATE benches SET longitude=longitude+5e-10 WHERE row_id=?").run(bench.row_id);
+    expect(readPanoramaArtifact("osm-node-101")).toMatchObject({ renderKey: "render" });
     sqlite.prepare("UPDATE benches SET longitude=longitude+.001 WHERE row_id=?").run(bench.row_id);
     expect(readPanoramaArtifact("osm-node-101")).toBeNull();
   });

@@ -134,6 +134,10 @@ def test_pending_selection_tracks_source_render_and_bench_versions():
     connection.commit()
     assert selected() == []
 
+    connection.execute("UPDATE benches SET longitude=longitude+5e-10")
+    connection.commit()
+    assert selected() == []
+
     # A UI request must not force the expensive geographic pipeline when the
     # active browser-consumable painting is already ready.
     connection.execute("INSERT INTO bench_panorama_requests(bench_row_id,requested_at) VALUES(7,'2026-09-13')")

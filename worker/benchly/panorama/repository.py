@@ -206,7 +206,7 @@ def pending_benches(
         p.bench_row_id IS NULL OR p.algorithm_version<>? OR p.source_versions_json<>?
         OR p.status IN ('stale','error','unavailable')
         OR (p.status='generating' AND julianday(p.started_at)<julianday('now','-20 minutes'))
-        OR p.bench_id<>b.id OR p.bench_latitude<>b.latitude OR p.bench_longitude<>b.longitude
+        OR p.bench_id<>b.id OR abs(p.bench_latitude-b.latitude)>1e-9 OR abs(p.bench_longitude-b.longitude)>1e-9
         OR NOT EXISTS (
           SELECT 1 FROM bench_panorama_renders render
           WHERE render.bench_row_id=b.row_id AND render.geometry_key=p.geometry_key
@@ -242,7 +242,9 @@ def delete_fulfilled_requests(database: Database) -> int:
         JOIN panorama_generations generation
           ON generation.id=pr.generation_id AND generation.state='active'
         WHERE b.row_id=bench_panorama_requests.bench_row_id AND b.active=1
-          AND pg.bench_id=b.id AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
+          AND pg.bench_id=b.id
+          AND abs(pg.bench_latitude-b.latitude)<=1e-9
+          AND abs(pg.bench_longitude-b.longitude)<=1e-9
           AND pg.status='ready' AND pr.status='ready' AND pr.horizontal_fov_degrees=360
           AND pr.artifact_format='webp' AND pr.season_bucket='dynamic'
           AND pr.artifact_path IS NOT NULL

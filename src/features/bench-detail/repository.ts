@@ -29,7 +29,8 @@ export function readDetailRow(benchId: string) {
         JOIN bench_panorama_renders pr
           ON pr.bench_row_id=pg.bench_row_id AND pr.geometry_key=pg.geometry_key
         WHERE pg.bench_row_id=b.row_id AND pg.bench_id=b.id
-          AND pg.bench_latitude=b.latitude AND pg.bench_longitude=b.longitude
+          AND abs(pg.bench_latitude-b.latitude)<=1e-9
+          AND abs(pg.bench_longitude-b.longitude)<=1e-9
           AND pg.status='ready' AND pr.status='ready' AND pr.horizontal_fov_degrees=360
           AND pr.artifact_format='webp'
           AND EXISTS(SELECT 1 FROM panorama_generations generation
