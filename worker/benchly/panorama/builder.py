@@ -804,7 +804,10 @@ def panorama_upload_job(args: Namespace) -> None:
     excludes = ("--exclude=manifest.json", "--exclude=manifest.sha256")
     subprocess.run([rsync, "-a", "--partial", "--append-verify", "--info=progress2", *excludes,
                     f"{root / 'generation'}/", remote], check=True)
-    subprocess.run([rsync, "-a", "--partial", "--append-verify",
+    # Manifests are small mutable seal files. Always replace them: append mode
+    # intentionally trusts an equal-sized destination, which could retain the
+    # checksum from an earlier manifest after an incoming directory is reused.
+    subprocess.run([rsync, "-a",
                     str(root / "generation" / "manifest.json"),
                     str(root / "generation" / "manifest.sha256"), remote], check=True)
     print(json.dumps({"uploaded": generation_id, "target": args.target, "bytes": manifest["artifact_bytes"]}))
