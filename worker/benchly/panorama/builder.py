@@ -541,24 +541,33 @@ def _run_build(root: Path, sources: list[Path], workers: int, season: str) -> di
     done = {row[0].rsplit(":", 1)[0] for row in state.execute("SELECT source_path FROM artifacts WHERE status='ready'")}
     pending = [path for path in sources if str(path) not in done]
     failed = 0
+    interrupted = False
+    pool = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
     try:
         # Spawn keeps Pillow/GDAL state isolated and saturates performance cores.
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as pool:
-            future_paths = {pool.submit(_build_one, str(path), str(generation), season): path for path in pending}
-            for future in concurrent.futures.as_completed(future_paths):
-                path = future_paths[future]
-                try:
-                    _record_build(state, future.result(), generation)
-                except Exception as error:
-                    failed += 1
-                    state.execute("""INSERT INTO cells(cell_id,status,attempts,last_error) VALUES(?,'error',1,?)
-                      ON CONFLICT(cell_id) DO UPDATE SET status='error',attempts=attempts+1,last_error=excluded.last_error""",
-                      (hashlib.sha256(str(path).encode()).hexdigest()[:12], str(error)[:1000]))
-                    state.commit()
-        complete = int(state.execute("SELECT count(DISTINCT source_path) FROM artifacts WHERE kind='capsule' AND status='ready'").fetchone()[0])
-        return {"selected": len(sources), "previously_complete": len(sources) - len(pending), "complete": complete, "failed": failed}
+        future_paths = {pool.submit(_build_one, str(path), str(generation), season): path for path in pending}
+        for future in concurrent.futures.as_completed(future_paths):
+            path = future_paths[future]
+            try:
+                _record_build(state, future.result(), generation)
+            except Exception as error:
+                failed += 1
+                state.execute("""INSERT INTO cells(cell_id,status,attempts,last_error) VALUES(?,'error',1,?)
+                  ON CONFLICT(cell_id) DO UPDATE SET status='error',attempts=attempts+1,last_error=excluded.last_error""",
+                  (hashlib.sha256(str(path).encode()).hexdigest()[:12], str(error)[:1000]))
+                state.commit()
+    except KeyboardInterrupt:
+        interrupted = True
     finally:
+        complete = int(state.execute("SELECT count(DISTINCT source_path) FROM artifacts WHERE kind='capsule' AND status='ready'").fetchone()[0])
+        result = {"selected": len(sources), "previously_complete": len(sources) - len(pending), "complete": complete, "failed": failed}
+        if interrupted:
+            _terminate_executor(pool)
+        pool.shutdown(wait=True, cancel_futures=True)
         state.close()
+    if interrupted:
+        raise SystemExit(130)
+    return result
 
 
 def panorama_pilot_job(args: Namespace) -> None:

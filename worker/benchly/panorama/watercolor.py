@@ -193,7 +193,10 @@ def _span_masks(geometry: PanoramaGeometry, width: int, height: int):
         # Only loosen the rim; the interior and the recognisable landform stay
         # fixed. A real brush never stops at precisely the same contour on all
         # three watercolor passes.
-        expanded = mask.filter(ImageFilter.MaxFilter(5))
+        # A wet blur supplies the translucent outside fringe directly. Pillow's
+        # generic rank-based MaxFilter spent more time here than the rest of
+        # the painter while producing a harder, more digital dilation.
+        expanded = _wrap_blur(mask, 1.85)
         outer_rim = ImageChops.subtract(expanded, mask)
         broken_rim = ImageChops.multiply(outer_rim, organic.point(lambda value: max(0, value - 92)))
         # Preserve the factual solid body and let only a translucent fringe
