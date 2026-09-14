@@ -186,6 +186,7 @@ def pending_benches(
     shard_index: int = 0,
     shard_count: int = 1,
 ):
+    """Select missing or explicitly stale work without invalidating the active national snapshot."""
     return database.execute("""
       SELECT b.row_id,b.id,b.latitude,b.longitude,b.material,b.backrest,b.armrest,b.covered,
         coalesce(b.direction_degrees,
