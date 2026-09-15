@@ -20,7 +20,7 @@ test("shows nearby practical places on the map and keeps bench details readable"
 
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", {name: "Bankdetails"});
-  await sheet.getByRole("button", {name: "Detailhöhe ändern"}).click();
+  await expect(sheet).toHaveAttribute("data-snap", "full");
   await expect(sheet.getByRole("region", {name: "Auf einen Blick"})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   const amenityItems = sheet.locator(".bench-nearby-amenities li");

@@ -10,7 +10,7 @@ import { LocalBenchLanguageProvider, useLocalBenchLanguage } from "./local-bench
 import { MapSheetShell } from "./map-sheet-shell";
 
 type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
-type BenchSheetProps = { created?: boolean; bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; onResumeWalk?: () => void; onLocateAmenity?: (amenity: NearbyAmenity) => void; user: CurrentUser | null };
+type BenchSheetProps = { created?: boolean; initiallyExpanded?: boolean; bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; onResumeWalk?: () => void; onLocateAmenity?: (amenity: NearbyAmenity) => void; user: CurrentUser | null };
 
 export function BenchSheet(props: BenchSheetProps) {
   return props.bench && !props.loading
@@ -18,11 +18,11 @@ export function BenchSheet(props: BenchSheetProps) {
     : <BenchSheetSurface key="empty" {...props} />;
 }
 
-function BenchSheetSurface({ created = false, bench, loading, error, onRetry, onClose, onBenchChange, onJourney, onResumeWalk, onLocateAmenity, user }: BenchSheetProps) {
+function BenchSheetSurface({ created = false, initiallyExpanded = false, bench, loading, error, onRetry, onClose, onBenchChange, onJourney, onResumeWalk, onLocateAmenity, user }: BenchSheetProps) {
   const t = useTranslations();
   const localLanguage = useLocalBenchLanguage();
   return (
-    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} closeLabel={t("bench.sheet.close")} initialSnap={created ? "full" : "half"} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
+    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} closeLabel={t("bench.sheet.close")} initialSnap={created || initiallyExpanded ? "full" : "half"} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
       {(visibleSnap) => <>
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">{t("bench.sheet.loading")}</span><span className="sr-only">{t("bench.sheet.loadingAccessible")}</span></div>}
         {!loading && bench && (visibleSnap === "full"

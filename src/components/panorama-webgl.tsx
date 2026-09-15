@@ -19,7 +19,10 @@ void main(){vec4 source=texture2D(painting,uv);vec3 facts=texture2D(material,uv)
 float depth=facts.r;float normal=facts.b;float land=step(0.003,facts.g);vec3 colour=source.rgb;
 if(season<0.5)colour*=vec3(1.01,1.055,.99);else if(season>2.5)colour=mix(colour,vec3(dot(colour,vec3(.299,.587,.114))),.14)*vec3(.98,1.01,1.055);else if(season>1.5)colour*=vec3(1.075,.985,.88);
 float direct=max(0.0,sin(sunAltitude)*(.74+normal*.26))*(1.0-clouds*.92)*land;
-colour=mix(colour,vec3(.91,.94,.93),depth*depth*.14*land);colour+=vec3(.065,.042,.006)*direct;colour*=mix(1.0,.58,phase);gl_FragColor=vec4(colour,source.a);}`;
+colour=mix(colour,vec3(.91,.94,.93),depth*depth*.14*land);colour+=vec3(.065,.042,.006)*direct;
+// Preserve the watercolor's value structure at night. A second cool CSS wash
+// already darkens the scene; multiplying every pigment by .58 erased hills.
+colour*=mix(1.0,.77,phase);gl_FragColor=vec4(colour,source.a);}`;
 
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const value = gl.createShader(type);

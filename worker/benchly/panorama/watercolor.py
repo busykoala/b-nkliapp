@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
-from scipy.ndimage import maximum_filter1d, minimum_filter, minimum_filter1d
+from scipy.ndimage import gaussian_filter1d, maximum_filter1d, minimum_filter, minimum_filter1d
 
 from benchly.panorama.models import PanoramaGeometry, SemanticClass, TERRAIN_DEPTH_LIMITS_METERS, terrain_depth_layer
 
@@ -389,7 +389,7 @@ def _paint_depth_atmosphere(base: Image.Image, semantic: SemanticClass, surface:
     haze = Image.fromarray(np.rint(field * 255).clip(0, 255).astype(np.uint8), "L")
     # A broad, wrap-safe blend is the essential difference between atmospheric
     # depth and a colour-coded range map.
-    haze = _wrap_blur(haze, max(6.0, width / 110))
+    haze = _wrap_blur(haze, max(6.0, width / (48 if semantic == SemanticClass.FOREST else 110)))
     # Distance still cools the wash, but it must not erase every chromatic
     # fold into the same grey-green computer plane.
     haze = ImageChops.multiply(surface, haze).point(lambda value: round(value * .95))
@@ -405,9 +405,9 @@ def _paint_depth_atmosphere(base: Image.Image, semantic: SemanticClass, surface:
             if sample is not None:
                 near = ImageChops.lighter(near, sample)
         if near.getbbox():
-            near = ImageChops.multiply(surface, _wrap_blur(near, max(6.0, width / 120)))
+            near = ImageChops.multiply(surface, _wrap_blur(near, max(6.0, width / (55 if semantic == SemanticClass.FOREST else 120))))
             tint = (82, 110, 73) if semantic == SemanticClass.FOREST else (124, 105, 83)
-            base.paste(Image.new("RGB", base.size, tint), (0, 0), _scaled_alpha(near, .12))
+            base.paste(Image.new("RGB", base.size, tint), (0, 0), _scaled_alpha(near, .21 if semantic == SemanticClass.FOREST else .12))
 
 
 def _gradient(size: tuple[int, int], top: tuple[int, int, int], bottom: tuple[int, int, int]) -> Image.Image:
@@ -1055,121 +1055,31 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
         near_ink = ImageChops.multiply(near_forest, Image.fromarray(near_ramp, "L"))
         near_ink = ImageChops.multiply(near_ink, canopy_field.point(lambda value: 90 + value * 165 // 255))
         base.paste(Image.new("RGB", base.size, (33, 72, 51)), (0, 0), _scaled_alpha(near_ink, .34))
-        trunks = Image.new("L", base.size)
-        branches = Image.new("L", base.size)
-        trunk_draw, branch_draw = ImageDraw.Draw(trunks), ImageDraw.Draw(branches)
         pixels = np.asarray(near_forest)
         left, _top, right, _bottom = bounds
-        crown_accents = Image.new("L", base.size)
-        crown_draw = ImageDraw.Draw(crown_accents)
-        for tree_index in range(max(18, width // 110)):
-            x = int(rng.uniform(left, right))
-            visible = np.flatnonzero(pixels[:, min(width - 1, x)] > 95)
-            if visible.size < 8:
+        # Nearby woodland is a connected canopy and undergrowth, not a row of
+        # schematic trunks. Overlapping wet masses follow real mapped forest
+        # pixels; their softened edges provide foreground scale without
+        # claiming that procedural marks are surveyed individual trees.
+        foliage_mass = Image.new("L", base.size)
+        foliage_draw = ImageDraw.Draw(foliage_mass)
+        for _ in range(max(18, width // 75)):
+            x = float(rng.uniform(left, right))
+            visible = np.flatnonzero(pixels[:, min(width - 1, int(x))] > 95)
+            if visible.size < 12:
                 continue
             top, bottom = int(visible[0]), int(visible[-1])
-            length = (bottom - top) * rng.uniform(.30, .72)
-            foot = bottom - (bottom - top) * rng.uniform(.02, .18)
-            crown = max(top, foot - length)
-            lean = rng.uniform(-11, 11)
-            ink = int(rng.uniform(128, 205))
-            center_points = []
-            for segment in range(8):
-                fraction = segment / 7
-                center_points.append((x + lean * fraction + rng.uniform(-1.8, 1.8),
-                                      foot - length * fraction))
-            foot_width = rng.uniform(6.5, 15)
-            left_edge = []
-            right_edge = []
-            for segment, (point_x, point_y) in enumerate(center_points):
-                fraction = segment / max(1, len(center_points) - 1)
-                half_width = foot_width * (1 - fraction * .76)
-                left_edge.append((point_x - half_width + rng.uniform(-.8, .8), point_y))
-                right_edge.append((point_x + half_width + rng.uniform(-.8, .8), point_y))
-            trunk_draw.polygon([*left_edge, *reversed(right_edge)], fill=ink)
-            for fraction in (.32, .47, .61, .74, .84):
-                branch_x = x + lean * fraction
-                branch_y = foot - length * fraction
-                reach = rng.uniform(20, 48) * (-1 if rng.random() < .5 else 1)
-                branch_draw.line((branch_x, branch_y, branch_x + reach * .65, branch_y - rng.uniform(2, 6),
-                                  branch_x + reach, branch_y - rng.uniform(5, 13)),
-                                 fill=min(235, int(ink * 1.04)), width=max(1, width // 1150), joint="curve")
-                if fraction > .6:
-                    fork = reach * rng.uniform(.48, .78)
-                    branch_draw.line((branch_x + reach * .58, branch_y - 5,
-                                      branch_x + fork, branch_y - rng.uniform(12, 24)),
-                                     fill=min(220, ink), width=max(1, width // 1700))
-                    for _ in range(int(rng.integers(3, 7))):
-                        foliage_x = branch_x + reach * rng.uniform(.48, 1.08)
-                        foliage_y = branch_y - rng.uniform(5, 20)
-                        for touch in range(3):
-                            extent = rng.uniform(13, 35)
-                            crown_draw.line((foliage_x - extent * .5, foliage_y + touch * 2,
-                                             foliage_x + extent * .2, foliage_y - rng.uniform(1, 5),
-                                             foliage_x + extent, foliage_y + rng.uniform(-3, 3)),
-                                            fill=int(rng.uniform(37, 94)), width=int(rng.integers(2, 6)))
-            # Cluster broken leaf washes through the upper crown volume. The
-            # trunk and branch scaffold stays grounded, but it must not read
-            # as a bare technical tree with a few horizontal antennae.
-            for _ in range(int(rng.integers(7, 12))):
-                fraction = float(rng.uniform(.67, .98))
-                center_x = x + lean * fraction + rng.normal(0, 18)
-                center_y = foot - length * fraction + rng.normal(0, 8)
-                span_x = rng.uniform(10, 25)
-                span_y = rng.uniform(5, 13)
-                for _touch in range(int(rng.integers(3, 6))):
-                    brush_x = center_x + rng.normal(0, span_x * .43)
-                    brush_y = center_y + rng.normal(0, span_y * .43)
-                    rx = span_x * rng.uniform(.22, .48)
-                    ry = span_y * rng.uniform(.25, .58)
-                    crown_draw.ellipse((brush_x - rx, brush_y - ry,
-                                        brush_x + rx, brush_y + ry), fill=int(rng.uniform(34, 96)))
-            for _ in range(int(rng.integers(38, 57))):
-                fraction = float(rng.uniform(.52, .98))
-                center_x = x + lean * fraction + rng.normal(0, rng.uniform(10, 24))
-                center_y = foot - length * fraction + rng.normal(0, rng.uniform(5, 16))
-                sweep = rng.uniform(3, 17)
-                lift = rng.uniform(-5, 5)
-                crown_draw.line((center_x - sweep * .6, center_y + lift,
-                                 center_x + sweep * .42, center_y - lift * .45),
-                                fill=int(rng.uniform(38, 107)), width=int(rng.integers(2, 7)))
-            # Several broken touches form one irregular crown; a single oval
-            # reads as a computer icon rather than foliage laid by a brush.
-            crown_radius = max(18, int(rng.uniform(28, 55)))
-            for dab in range(int(rng.integers(20, 32))):
-                dab_x = center_points[-1][0] + rng.normal(0, crown_radius * .58)
-                dab_y = crown + rng.normal(0, crown_radius * .35)
-                dab_rx = crown_radius * rng.uniform(.16, .48)
-                angle = rng.uniform(-.7, .7)
-                reach = dab_rx * rng.uniform(.55, 1.2)
-                rise = math.sin(angle) * reach
-                crown_draw.line((dab_x - reach / 2, dab_y - rise / 2,
-                                 dab_x + reach / 2, dab_y + rise / 2),
-                                fill=int(rng.uniform(65, 135)), width=int(rng.integers(3, 9)))
-        trunks = ImageChops.multiply(near_forest, _wrap_blur(trunks, .38))
-        branches = ImageChops.multiply(near_forest, _wrap_blur(branches, .25))
-        # The twig scaffold should disappear into the crown wash. At display
-        # size its old opacity made trees look like vertical circuit traces.
-        branches = _scaled_alpha(branches, .42)
-        # A crown naturally projects slightly above the footprint's sampled
-        # forest silhouette. Clipping every leaf to the terrain ray left only
-        # bare vertical trunks; a soft, shallow canopy fringe fixes that
-        # without placing woodland outside a mapped near-forest sector.
-        crown_envelope = maximum_filter1d(
-            np.asarray(near_forest, dtype=np.uint8), size=max(9, height // 20) | 1,
-            axis=0, mode="nearest",
-        )
-        crown_envelope = Image.fromarray(crown_envelope, "L")
-        crown_accents = ImageChops.multiply(crown_envelope, _wrap_blur(crown_accents, 1.2))
-        base.paste(Image.new("RGB", base.size, (70, 63, 45)), (0, 0), trunks)
-        base.paste(Image.new("RGB", base.size, (54, 67, 42)), (0, 0), branches)
-        base.paste(Image.new("RGB", base.size, (25, 71, 43)), (0, 0), _scaled_alpha(crown_accents, 1.75))
-        crown_shadow = ImageChops.multiply(near_forest, ImageChops.offset(crown_accents, 3, 3))
-        crown_highlight = ImageChops.multiply(near_forest, ImageChops.offset(crown_accents, -4, -3))
-        base.paste(Image.new("RGB", base.size, (25, 57, 39)), (0, 0), _scaled_alpha(crown_shadow, .72))
-        base.paste(Image.new("RGB", base.size, (203, 188, 103)), (0, 0), _scaled_alpha(crown_highlight, .46))
-        trunk_glints = ImageChops.multiply(near_forest, ImageChops.offset(trunks, -1, 0))
-        base.paste(Image.new("RGB", base.size, (177, 145, 91)), (0, 0), _scaled_alpha(trunk_glints, .27))
+            y = float(rng.uniform(top + (bottom - top) * .22, bottom - (bottom - top) * .04))
+            radius_x = float(rng.uniform(width * .009, width * .030))
+            radius_y = float(rng.uniform(height * .025, height * .11))
+            for wrap in (-width, 0, width):
+                foliage_draw.ellipse((x + wrap - radius_x, y - radius_y,
+                                      x + wrap + radius_x, y + radius_y),
+                                     fill=int(rng.uniform(34, 80)))
+        foliage_mass = ImageChops.multiply(near_forest, _wrap_blur(foliage_mass, max(9, width / 185)))
+        base.paste(Image.new("RGB", base.size, (35, 76, 54)), (0, 0), _scaled_alpha(foliage_mass, .58))
+        highlights = ImageChops.multiply(near_forest, ImageChops.offset(foliage_mass, -5, -7))
+        base.paste(Image.new("RGB", base.size, (183, 182, 118)), (0, 0), _scaled_alpha(highlights, .22))
 
         # A broken, earthy lower wash anchors nearby woodland and stops a
         # full-frame forest from reading as a single upright green curtain.
@@ -1195,17 +1105,22 @@ def _paint_forest_relief(base: Image.Image, geometry: PanoramaGeometry,
         return
     width, height = base.size
     crest = _painted_skyline(geometry, width, height)
-    slope = np.gradient(crest)
+    # The projected woodland silhouette is sampled ray by ray. Taking its
+    # unsmoothed derivative created a vertical light/dark stripe at each ray
+    # discontinuity. Brush-scale circular smoothing yields actual turning
+    # hill *planes*, while the factual silhouette itself stays untouched.
+    painted_crest = gaussian_filter1d(crest, sigma=max(12, width / 85), mode="wrap")
+    slope = np.gradient(painted_crest)
     curvature = np.gradient(slope)
     # This is a painter's ambient light judgement, not a second solar model.
     # The wash bends across measured landform turns and fades down each face;
     # no azimuth bin is painted as a full-height green or blue column.
     turn = np.clip(slope * 1.35 + curvature * 3.8, -.9, .9)
     y = np.arange(height, dtype=np.float32)[:, None]
-    reach = np.exp(-((y - crest[None, :] - height * .22) / (height * .27)) ** 2)
+    reach = np.exp(-((y - painted_crest[None, :] - height * .22) / (height * .27)) ** 2)
     face = np.asarray(forest, dtype=np.float32) / 255
-    cool = Image.fromarray(np.rint(np.clip(turn, 0, 1)[None, :] * reach * face * 118).astype(np.uint8), "L")
-    warm = Image.fromarray(np.rint(np.clip(-turn, 0, 1)[None, :] * reach * face * 91).astype(np.uint8), "L")
+    cool = Image.fromarray(np.rint(np.clip(turn, 0, 1)[None, :] * reach * face * 145).astype(np.uint8), "L")
+    warm = Image.fromarray(np.rint(np.clip(-turn, 0, 1)[None, :] * reach * face * 125).astype(np.uint8), "L")
     cool = _wrap_blur(cool, max(10, width / 88))
     warm = _wrap_blur(warm, max(10, width / 95))
     cool = ImageChops.multiply(forest, cool)
@@ -1293,26 +1208,41 @@ def _paint_buildings(base: Image.Image, geometry: PanoramaGeometry, seed: int,
         # Keep all measured wall planes in one warm plaster family.
         wall = _mix(wall_base, (228, 210, 187), haze)
         roof_color = _mix((137, 77, 65) if index % 3 else (123, 104, 97), (197, 203, 199), haze)
-        alpha = 210 if distance < 500 else 165 if distance < 2_000 else 92
+        # A foreground wall must occlude the woodland wash behind it. The
+        # earlier translucent polygon let green terrain shine through a warm
+        # plaster facade, making the house appear abruptly cut in half.
+        alpha = 255 if distance < 500 else 190 if distance < 2_000 else 105
         # TLM/OSM often supplies a reliable footprint but no roof model. A
         # shallow, conservative wash roof makes it readable as a house without
         # claiming an exact architectural form or storey count.
         roof_top = roof[:len(samples)]
         eaves = list(reversed(roof[len(samples):]))
-        if roof_top and max(abs(upper[1] - lower[1]) for upper, lower in zip(roof_top, eaves)) < 1:
+        if roof_top:
             wall_bottom = list(reversed(walls[len(samples):]))
             wall_height = float(np.median([abs(upper[1] - lower[1]) for upper, lower in zip(eaves, wall_bottom)]))
-            roof_height = min(height * .026, max(1.5, wall_height * .24))
-            count = max(1, len(roof_top) - 1)
-            roof_top = [
-                (point[0], point[1] - roof_height * (1 - abs(index / count * 2 - 1)))
-                for index, point in enumerate(eaves)
-            ]
-            roof = [*roof_top, *reversed(eaves)]
+            measured_roof = max(abs(upper[1] - lower[1]) for upper, lower in zip(roof_top, eaves))
+            # Retain real roof planes. Only footprint-only buildings with an
+            # almost flat projected cap receive a restrained pitched wash.
+            if measured_roof < max(1, wall_height * .12):
+                roof_height = min(height * .045, max(2, wall_height * .28))
+                count = max(1, len(roof_top) - 1)
+                roof_top = [
+                    (point[0], point[1] - roof_height * (1 - abs(sample_index / count * 2 - 1)))
+                    for sample_index, point in enumerate(eaves)
+                ]
+                roof = [*roof_top, *reversed(eaves)]
         for horizontal in (-width, 0, width):
             shifted_walls = [(x + horizontal, y) for x, y in walls]
             shifted_roof = [(x + horizontal, y) for x, y in roof]
             draw.polygon(shifted_walls, fill=(*wall, alpha))
+            # Two connected plaster planes add volume without inventing
+            # windows or storeys, and break the computer-flat wall value.
+            if len(samples) >= 4:
+                split = len(samples) // 2
+                near_plane = [*shifted_walls[:split + 1],
+                              *shifted_walls[len(samples) + len(samples) - split - 1:]]
+                if len(near_plane) >= 3:
+                    draw.polygon(near_plane, fill=(*_mix(wall, (118, 112, 121), .25), min(255, alpha)))
             draw.polygon(shifted_roof, fill=(*roof_color, alpha), outline=(*_mix(roof_color, (67, 78, 69), .32), min(195, alpha + 10)), width=max(1, width // 2048))
             # Eaves and the upper roof plane reserve highlights as in a
             # watercolor architectural study; no additional house is drawn.

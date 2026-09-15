@@ -777,7 +777,9 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama.is-shaded .bench-panorama-rear-bench, .bench-panorama.has-shelter .bench-panorama-rear-bench { filter: saturate(.75) brightness(.88) drop-shadow(0 6px 5px rgb(35 48 43 / 20%)); }
 .bench-panorama-bench-shadow { position: absolute; z-index: 4; bottom: 1%; left: 50%; width: var(--shadow-length); height: 2.2%; border-radius: 50%; background: rgb(38 62 53 / 18%); filter: blur(5px); transform: translateX(-8%) rotate(var(--shadow-turn)); transform-origin: left center; opacity: var(--lightmap-opacity); }
 .bench-panorama.is-shaded .bench-panorama-bench-shadow, .bench-panorama.has-shelter .bench-panorama-bench-shadow { opacity: .035; }
-.bench-panorama.phase-night::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: rgb(31 52 67 / 34%); mix-blend-mode: multiply; }
+.bench-panorama.phase-night::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: rgb(31 52 67 / 20%); mix-blend-mode: multiply; }
+.bench-panorama.phase-night .bench-panorama-ground-patch { filter: saturate(.72) brightness(.77) blur(2px); }
+.bench-panorama.phase-night .bench-panorama-rear-bench { filter: saturate(.62) brightness(.73) drop-shadow(0 4px 3px rgb(30 44 43 / 18%)); }
 .bench-panorama.phase-dawn::before, .bench-panorama.phase-dusk::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: linear-gradient(180deg, rgb(214 143 113 / 16%), rgb(80 99 90 / 8%)); mix-blend-mode: multiply; }
 .bench-panorama.is-raining::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: rgb(80 110 119 / 15%); mix-blend-mode: multiply; }
 .bench-panorama-rain, .bench-panorama-snow { opacity: var(--precip-opacity); }

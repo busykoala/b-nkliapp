@@ -27,21 +27,17 @@ test("filters are beside search and removable after the panel closes", async ({ 
   expect(items.slice(0, 4).map((text) => text.trim())).toEqual(["Spaziergang", "Bänkli-Feed", "Anmelden", "Bänkli eintragen"]);
 });
 
-test("selected bench exposes a decision sheet and resumes saving after sign-in", async ({ page }, info) => {
+test("direct bench link opens the painting and resumes saving after sign-in", async ({ page }, info) => {
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
-  const preview = sheet.locator(".bench-quick-preview");
-  await expect(preview).toBeVisible();
-  await expect(preview.getByRole("heading", { name: /Lindenhof/ })).toBeVisible();
-  await expect(preview.getByRole("button", { name: "Weg hierher" })).toBeVisible();
-  const save = preview.getByRole("button", { name: "Bänkli merken" });
+  await expect(sheet).toHaveAttribute("data-snap", "full");
+  await expect(sheet.locator(".calm-title")).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
+  const save = sheet.getByRole("button", { name: "Bänkli merken" });
   await expect(save).toBeVisible();
   await save.click();
   await registerInOpenDialog(page, `save-${info.project.name.slice(-3)}`);
-  await expect(preview.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
-  await preview.screenshot({ path: info.outputPath("bench-decision-sheet.png") });
-  await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
-  await expect(sheet.locator(".calm-title")).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
   const order = await page.evaluate(() => document.querySelector(".calm-title")!.compareDocumentPosition(document.querySelector(".bench-panorama")!) & Node.DOCUMENT_POSITION_FOLLOWING);
   expect(order).toBeTruthy();
   await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();

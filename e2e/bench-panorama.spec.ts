@@ -28,9 +28,8 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   await page.goto("/");
   setCoveredFixture();
   await page.goto("/?bank=osm-node-109");
-  await expect(page.locator(".bench-quick-preview")).toBeVisible();
+  await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "full");
   installPanoramaFixture("osm-node-109", true);
-  await page.locator(".desktop-sheet .map-sheet-resize").click();
 
   const panorama = page.locator(".bench-panorama");
   // A panorama completed by the worker appears in the open detail without a reload.

@@ -220,16 +220,18 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator(".bench-quick-preview")).toBeInViewport();
+  await expect(sheet).toHaveAttribute("data-snap", "full");
+  await expect(sheet.locator(".bench-panorama")).toBeInViewport();
   await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Detailhöhe ändern" })).toBeInViewport();
-  await page.screenshot({ path: testInfo.outputPath("short-phone-bench-sheet.png") });
-  await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
+  await page.screenshot({ path: testInfo.outputPath("short-phone-full-bench-sheet.png") });
   const [chrome, landscape] = await Promise.all([sheet.locator(".map-sheet-chrome").boundingBox(), sheet.locator(".bench-panorama").boundingBox()]);
   expect(chrome).not.toBeNull();
   expect(landscape).not.toBeNull();
   expect(landscape!.y).toBeGreaterThanOrEqual(chrome!.y + chrome!.height - 1);
-  await page.screenshot({ path: testInfo.outputPath("short-phone-full-bench-sheet.png") });
+  await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
+  await expect(sheet).toHaveAttribute("data-snap", "half");
+  await page.screenshot({ path: testInfo.outputPath("short-phone-collapsed-bench-sheet.png") });
 
   await page.goto("/?action=walk");
   const title = page.getByRole("heading", { name: "Spaziergang entdecken" });
@@ -386,6 +388,8 @@ test("publishes an overall rating without optional detail stars", async ({ page,
 test("bench, journey and walk use one mobile sheet handle with consistent snap gestures", async ({ page }) => {
   await page.goto("/?bank=osm-node-101");
   const shell = page.locator(".map-sheet-shell");
+  await expect(shell).toHaveAttribute("data-snap", "full");
+  await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "full");

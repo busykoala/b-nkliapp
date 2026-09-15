@@ -28,18 +28,12 @@ test("keeps four app languages and applies dialect only to the opened bench", as
   const sheet = page.locator(".desktop-sheet");
   await expect(sheet).toHaveAttribute("lang", "gsw-CH");
   await expect(sheet).toHaveAttribute("data-local-voice", "gsw-zurich");
-  await expect(sheet).toHaveAttribute("data-snap", "half");
-  const collapsed = await sheet.boundingBox();
-  expect(collapsed?.height).toBeGreaterThan(844 * .4);
-  expect(collapsed?.height).toBeLessThan(844 * .65);
-  await expect(sheet.locator(".bench-quick-preview")).toBeInViewport();
-  await expect(sheet.getByText("Züridütsch", { exact: false }).first()).toBeVisible();
-  await expect(sheet.locator(".quick-preview-facts")).toBeVisible();
-  await page.waitForTimeout(800);
-  await sheet.screenshot({ path: testInfo.outputPath("map-first-local-preview.png"), animations: "disabled" });
-
-  await sheet.locator(".map-sheet-resize").click();
   await expect(sheet).toHaveAttribute("data-snap", "full");
+  const expanded = await sheet.boundingBox();
+  expect(expanded?.height).toBeGreaterThan(844 * .75);
+  await expect(sheet.getByText("Züridütsch", { exact: false }).first()).toBeVisible();
+  await page.waitForTimeout(800);
+  await sheet.screenshot({ path: testInfo.outputPath("map-first-local-detail.png"), animations: "disabled" });
   await expect(sheet.locator(".bench-panorama-art").first()).toBeVisible();
   await sheet.locator(".bench-story-card").screenshot({ path: testInfo.outputPath("zurich-local-scene.png"), animations: "disabled" });
   await expect(sheet.locator(".calm-detail")).toHaveAttribute("lang", "gsw-CH");

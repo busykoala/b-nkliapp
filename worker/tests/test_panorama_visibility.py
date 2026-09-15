@@ -370,6 +370,29 @@ def test_quarter_degree_building_samples_form_one_coherent_facade():
     assert len(runs[0][1]) == 5
 
 
+def test_near_facade_occludes_green_forest_wash():
+    geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    sample = BuildingProjectionSample(
+        azimuth_degrees=90, lower_angle_degrees=-18, eaves_angle_degrees=8,
+        upper_angle_degrees=8, distance_meters=90,
+    )
+    geometry = geometry.model_copy(update={"buildings": (ProjectedBuilding(
+        object_id="forest-edge-house", source="fixture", confidence=1,
+        samples=tuple(sample.model_copy(update={"azimuth_degrees": 90 + delta})
+                      for delta in (0, 1, 2, 3, 4)),
+    ),)})
+    canvas = Image.new("RGB", (720, 240), (32, 133, 58))
+    _building, _samples, walls, _roof = next(_building_runs(geometry, 720, 240))
+    _paint_buildings(canvas, geometry, 7, Image.new("L", canvas.size, 128))
+    pixels = np.asarray(canvas)
+    left = max(0, math.floor(min(x for x, _y in walls)))
+    right = min(canvas.width, math.ceil(max(x for x, _y in walls)))
+    house = pixels[:, left:right]
+    # The complete wall, not only its outline, must replace the green wash.
+    warm = (house[..., 0] > house[..., 1]) & (house[..., 1] > house[..., 2])
+    assert warm.sum() > 20
+
+
 def test_water_remains_water_at_the_bottom_without_an_invented_sand_band():
     water = [
         TerrainSample(distance_meters=100, elevation_meters=500,
