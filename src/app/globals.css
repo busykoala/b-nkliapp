@@ -685,7 +685,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .community-detail { padding: 5rem 1.25rem 0; }
 .bench-story-card { border-bottom: 1px solid rgb(46 67 58 / 12%); background: #f8efd9; }
 .calm-title { min-height: 8.6rem; padding: 1.3rem 1.35rem 1.55rem; }
-.calm-title h2 { max-width: 28rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(2.35rem, 10vw, 3.6rem); font-weight: 700; line-height: .95; letter-spacing: -.04em; }
+.calm-title-row > h2 { max-width: 28rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: clamp(2.35rem, 10vw, 3.6rem); font-weight: 700; line-height: .95; letter-spacing: -.04em; }
 .calm-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: .7rem; }
 .story-edit-button { display: grid; min-width: 2.75rem; min-height: 2.75rem; flex: none; place-items: center; margin-top: -.35rem; border-radius: 50%; color: rgb(42 77 64 / 85%); transition: background .18s ease, color .18s ease; }
 .story-edit-button:hover, .story-edit-button:focus-visible, .story-edit-button[aria-expanded="true"] { background: rgb(64 105 85 / 9%); color: #2d6653; }
@@ -818,7 +818,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .detail-chapter h3 { margin-bottom: .45rem; font-family: Iowan Old Style, Palatino Linotype, ui-serif, serif; font-size: 1.05rem; font-weight: 650; }
 .quiet-details dl > div { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 1rem; padding: .58rem .05rem; }
 .quiet-details dt { color: rgb(41 66 57 / 85%); font-size: .875rem; }
-.quiet-details dt, .quiet-details dd, .calm-title h2 { min-width: 0; overflow-wrap: anywhere; }
+.quiet-details dt, .quiet-details dd, .calm-title-row > h2 { min-width: 0; overflow-wrap: anywhere; }
 .quiet-details dd { text-align: right; font-size: .875rem; line-height: 1.42; }
 .metric-sketch { display: grid; gap: .42rem; margin: .85rem 0 1rem; padding: .9rem; border-radius: 1rem; background: rgb(221 226 204 / 37%); }
 .metric-sketch > div { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr) 1.5rem; align-items: center; gap: .5rem; color: rgb(41 66 57 / 85%); font-size: .875rem; }
@@ -1600,8 +1600,9 @@ details[open] > summary .disclosure-chevron { transform: rotate(180deg); }
 .desktop-sheet[data-snap="half"] .bench-panorama-shelter { top: 3.7rem; }
 .desktop-sheet[data-snap="half"] .calm-title { padding-top: 1.3rem; }
 .bench-quick-preview { padding: 4.3rem 1.2rem max(1.1rem,env(safe-area-inset-bottom)); color: #29453a; }
-.quick-preview-heading h2 { font-family: Iowan Old Style,Palatino Linotype,ui-serif,serif; font-size: clamp(2rem,8vw,2.65rem); font-weight: 700; line-height: 1; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.quick-preview-heading > h2 { font-family: Iowan Old Style,Palatino Linotype,ui-serif,serif; font-size: clamp(2rem,8vw,2.65rem); font-weight: 700; line-height: 1; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .quick-preview-heading p { margin-top: .35rem; color: #4d6659; font-size: .9rem; overflow-wrap: anywhere; }
+.quick-preview-heading .quick-preview-voice { display: inline-flex; align-items: center; gap: .35rem; margin-top: .4rem; color: #705733; font-size: .76rem; font-weight: 750; }
 .quick-preview-facts { display: flex; flex-wrap: wrap; gap: .45rem .8rem; margin-top: .85rem; padding-block: .7rem; border-block: 1px solid rgb(47 79 63 / 15%); }
 .quick-preview-facts span { display: inline-flex; min-width: 0; align-items: center; gap: .4rem; color: #385749; font-size: .83rem; font-weight: 650; overflow-wrap: anywhere; }
 .quick-preview-facts svg { flex: 0 0 auto; color: #3e7762; }

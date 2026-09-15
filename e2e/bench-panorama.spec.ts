@@ -28,16 +28,17 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   await page.goto("/");
   setCoveredFixture();
   await page.goto("/?bank=osm-node-109");
-  await expect(page.locator(".bench-panorama-placeholder")).toBeVisible();
+  await expect(page.locator(".bench-quick-preview")).toBeVisible();
   installPanoramaFixture("osm-node-109", true);
+  await page.locator(".desktop-sheet .overlay-resize").click();
 
   const panorama = page.locator(".bench-panorama");
   // A panorama completed by the worker appears in the open detail without a reload.
   await expect(panorama).toBeVisible({ timeout: 7_000 });
-  await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "half");
+  await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "full");
   await expect(panorama.locator(".bench-panorama-shelter")).toBeVisible();
   await expect(panorama.locator(".bench-panorama-ground-patch").first()).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("panorama-overlay-half.png") });
+  await page.screenshot({ path: testInfo.outputPath("panorama-overlay-full.png") });
   const bearing = panorama.locator(".bench-panorama-bearing");
   await expect(bearing).toHaveText("325°");
   await expect(panorama.getByRole("slider")).toHaveCount(0);

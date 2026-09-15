@@ -103,7 +103,7 @@ test("keeps the view observation understandable in the mobile detail", async ({ 
 
 test("does not turn observations into disabled decoration for guests", async ({ page }) => {
   await page.goto(`/bank/${benchId}`);
-  await expect(page.getByRole("button", { name: "Mitmachen" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Beitragen", exact: true })).toBeVisible();
   await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
   await expect(page.getByLabel("Aussicht vor Ort einordnen")).toHaveCount(0);
   await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Licht" }).click();

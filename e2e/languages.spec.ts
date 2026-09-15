@@ -12,7 +12,7 @@ test("switches all four languages, preserves the map, and remembers the choice",
   await expect(page.locator("[data-map-ready=true]")).toBeVisible();
   await page.getByRole("combobox", {name: labels.de.search}).fill("Lindenhof");
   await page.getByRole("option").first().click();
-  await expect(page.locator(".calm-title h2")).toContainText("Lindenhof");
+  await expect(page.locator(".quick-preview-heading > h2")).toContainText("Lindenhof");
   const location = page.url();
   // Keep a DOM identity marker: changing language must not rebuild the map.
   await page.locator(".maplibregl-canvas").evaluate(canvas => {canvas.setAttribute("data-language-test", "original");});
@@ -26,7 +26,7 @@ test("switches all four languages, preserves the map, and remembers the choice",
     await expect(page.locator(".maplibregl-canvas")).toHaveAttribute("data-language-test", "original");
     await expect(page.locator(".maplibregl-canvas")).toHaveAttribute("aria-label", testTranslator(language)("map.canvas.interactive"));
     await expect(page.locator(".maplibregl-ctrl-attrib-button")).toHaveAttribute("title", testTranslator(language)("map.canvas.attribution"));
-    await expect(page.locator(".calm-title h2")).toContainText("Lindenhof");
+    await expect(page.locator(".quick-preview-heading > h2")).toContainText("Lindenhof");
     await expect(page).toHaveURL(location);
     previous = language;
   }
@@ -112,7 +112,7 @@ for (const language of ["de", "fr", "it", "rm"] as const) {
     await visit("/feed");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(t("feed.page.title"));
     await visit("/bank/osm-node-101");
-    await expect(page.locator(".calm-title h2")).toContainText("Lindenhof");
+    await expect(page.locator(".calm-title-row > h2")).toContainText("Lindenhof");
     await expect(page.getByRole("link", { name: t("bench.page.onMap"), exact: true })).toBeVisible();
     await expect(page.locator(".detail-disclosures")).toContainText(t("bench.details.weather"));
     await page.getByRole("button", { name: t("common.navigation.open"), exact: true }).click();

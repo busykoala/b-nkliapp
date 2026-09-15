@@ -18,7 +18,8 @@ test("keeps the community feed local, finite and centred on places", async ({ pa
   await page.getByLabel("Menü öffnen").click();
   await page.getByRole("link", { name: "Bänkli-Feed" }).click();
 
-  await expect(page.getByRole("heading", { name: "Bänkli-Momente" })).toBeVisible();
+  await expect(page).toHaveURL(/\/feed(?:\?|$)/, { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Bänkli-Momente" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Bänkli dieser Woche", { exact: true })).toBeVisible();
   await expect(page.getByText("Gemeinsames Thema", { exact: true })).toBeVisible();
   const entryCount = await page.locator(".feed-bench-group").count();
