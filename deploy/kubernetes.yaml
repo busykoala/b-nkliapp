@@ -38,10 +38,6 @@ spec:
             - name: USER_SESSION_SECRET
               valueFrom: { secretKeyRef: { name: benchly-secrets, key: contributor-secret } }
             - { name: BENCH_VERIFICATION_THRESHOLD, value: "3" }
-            - name: ADMIN_PASSWORD_HASH
-              valueFrom: { secretKeyRef: { name: benchly-secrets, key: admin-password-hash } }
-            - name: ADMIN_SESSION_SECRET
-              valueFrom: { secretKeyRef: { name: benchly-secrets, key: admin-session-secret } }
           volumeMounts:
             - { name: data, mountPath: /data }
           readinessProbe:

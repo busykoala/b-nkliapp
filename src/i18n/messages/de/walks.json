@@ -17,6 +17,8 @@
   },
   "planner": {
     "title": "Spaziergang entdecken",
+    "resume": "Spaziergang fortsetzen",
+    "end": "Spaziergang beenden",
     "resize": "Spaziergang vergrössern oder verkleinern",
     "close": "Spaziergang schliessen",
     "eyebrow": "Zeit für ein Bänkli",

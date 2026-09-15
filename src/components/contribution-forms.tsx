@@ -13,17 +13,23 @@ function SubmitButton({ label }: { label: string }) {
   return <button className="btn btn-primary min-h-12 w-full rounded-2xl" disabled={pending}>{pending ? <span className="loading loading-spinner loading-sm" /> : <Send size={18} />}{pending ? t("common.actions.saving") : label}</button>;
 }
 
-export function RatingForm({ benchId, rating, onChanged }: { benchId: string; onChanged?: () => void | Promise<void>; rating: { overall: number; view: number; comfort: number; quiet: number; note: string | null } | null }) {
+export function RatingForm({ benchId, rating, onChanged }: { benchId: string; onChanged?: () => void | Promise<void>; rating: { overall: number; view: number | null; comfort: number | null; quiet: number | null; note: string | null } | null }) {
   const t = useTranslations();
   const action = async (_previous: ActionResult | null, data: FormData) => { const result = await submitRating(benchId, null, data); if (result.ok) await onChanged?.(); return result; };
   const [state, formAction] = useActionState(action, null);
+  const [detailsOpen, setDetailsOpen] = useState(Boolean(rating?.view || rating?.comfort || rating?.quiet));
   return (
     <form action={formAction} className="story-card p-4">
       <div className="story-eyebrow flex items-center gap-1.5"><Star size={14} /> {t("community.rating.eyebrow")}</div>
       <h3 className="mt-1 text-lg font-extrabold">{t("community.chapters.rating.title")}</h3>
       <p className="mb-3 mt-1 text-sm opacity-60">{rating ? t("community.rating.existing") : t("community.rating.intro")}</p>
       <div className="rating-controls">
-        {([ ["overall", t("community.rating.fields.overall")], ["view", t("community.rating.fields.view")], ["comfort", t("community.rating.fields.comfort")], ["quiet", t("community.rating.fields.quiet")] ] as const).map(([name, label]) => <StarRating key={name} name={name} label={label} initialValue={rating?.[name] ?? 0} />)}
+        <StarRating name="overall" label={t("community.rating.fields.overall")} initialValue={rating?.overall ?? 0} required />
+        <details className="rating-detail-disclosure" open={detailsOpen} onToggle={(event) => setDetailsOpen(event.currentTarget.open)}>
+          <summary>{t("community.rating.moreDetails")}</summary>
+          {([ ["view", t("community.rating.fields.view")], ["comfort", t("community.rating.fields.comfort")], ["quiet", t("community.rating.fields.quiet")] ] as const).map(([name, label]) => <StarRating key={name} name={name} label={label} initialValue={rating?.[name] ?? 0} />)}
+          {rating && <label className="rating-clear-details"><input type="checkbox" name="clearDetails" />{t("community.rating.clearDetails")}</label>}
+        </details>
       </div>
       <label className="form-control my-3 block">
         <span className="label pb-1 text-sm font-bold">{t("community.rating.note")} <span className="font-normal opacity-50">{t("community.rating.optional")}</span></span>
@@ -67,11 +73,11 @@ export function CorrectionForm({ benchId, onChanged }: { benchId: string; onChan
   );
 }
 
-function StarRating({ name, label, initialValue }: { name: string; label: string; initialValue: number }) {
+function StarRating({ name, label, initialValue, required = false }: { name: string; label: string; initialValue: number; required?: boolean }) {
   const t = useTranslations();
   const [value, setValue] = useState(initialValue);
   return <fieldset className="rating-control"><legend>{label}</legend><div>{[1, 2, 3, 4, 5].map((score) => <label key={score} className={score <= value ? "is-filled" : ""}>
-    <input type="radio" name={name} value={score} required checked={value === score} onChange={() => setValue(score)} aria-label={t("community.rating.stars", { count: score })} />
+    <input type="radio" name={name} value={score} required={required} checked={value === score} onChange={() => setValue(score)} aria-label={t("community.rating.stars", { count: score })} />
     <Star size={25} aria-hidden="true" />
   </label>)}<output aria-live="polite">{value ? t("community.rating.stars", { count: value }) : "—"}</output></div></fieldset>;
 }

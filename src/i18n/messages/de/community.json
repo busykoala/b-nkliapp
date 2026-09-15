@@ -159,7 +159,9 @@
   "rating": {
     "eyebrow": "Dein Eindruck",
     "existing": "Deine frühere Bewertung ist vorausgefüllt – du kannst sie ändern.",
-    "intro": "Vier kleine Eindrücke helfen anderen bei der Wahl.",
+    "intro": "Dein Gesamteindruck reicht. Wenn du magst, kannst du noch mehr erzählen.",
+    "moreDetails": "Aussicht, Komfort und Ruhe ergänzen (freiwillig)",
+    "clearDetails": "Bisherige Detailwertungen entfernen",
     "fields": {
       "overall": "Gesamt",
       "view": "Aussicht",

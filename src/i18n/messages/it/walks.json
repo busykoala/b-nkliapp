@@ -17,6 +17,8 @@
   },
   "planner": {
     "title": "Scopri una passeggiata",
+    "resume": "Riprendi la passeggiata",
+    "end": "Termina la passeggiata",
     "resize": "Ingrandisci o riduci la passeggiata",
     "close": "Chiudi la passeggiata",
     "eyebrow": "Tempo per una panchina",

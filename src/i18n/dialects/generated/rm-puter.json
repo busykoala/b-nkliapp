@@ -499,6 +499,8 @@
       "panoramaHeading": "Direcziun da la vista {degrees} grads",
       "panoramaHint": "↔ ↕ Trer",
       "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient",
+      "panoramaZoomIn": "Engrondir",
+      "panoramaZoomOut": "Empitschnir",
       "panoramaGenerating": "La vista vegn gist malegiada…",
       "panoramaUnavailable": "La vista calculada n’è auncha betg disponibla.",
       "panoramaRetry": "Empruvar auncha ina giada"
@@ -778,7 +780,9 @@
     "rating": {
       "eyebrow": "Tia impressiun",
       "existing": "Tia valitaziun precedenta è gia inditgada. Ti pos la midar.",
-      "intro": "Quatter pitschnas impressiuns gidan auters a tscherner.",
+      "intro": "Tia impressiun generala tanscha. Sche ti vuls, pos ti agiuntar detagls.",
+      "moreDetails": "Agiuntar vista, confort e quietezza (facultativ)",
+      "clearDetails": "Stizzar mes giudicaments detagliads",
       "fields": {
         "overall": "En general",
         "view": "Vista",

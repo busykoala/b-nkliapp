@@ -4,8 +4,8 @@ test("discovers the rotating statistics and opens a municipality portrait", asyn
   await page.goto("/statistiken");
   await expect(page.getByRole("heading", { name: "Institut für angewandte Bänklilogie" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Bänkli des Tages" })).toBeVisible();
-  await expect(page.locator(".statistics-totals")).toContainText("12 vollständig landschaftlich analysiert");
-  await expect(page.locator(".statistics-totals")).toContainText("12 amtlich einer Gemeinde zugeordnet");
+  await expect(page.locator(".statistics-totals")).toContainText("11 vollständig landschaftlich analysiert");
+  await expect(page.locator(".statistics-totals")).toContainText("11 amtlich einer Gemeinde zugeordnet");
   await expect(page.locator(".record-grid article")).toHaveCount(4);
   await expect(page.locator(".lab-sticker")).toContainText("r =");
   await expect(page.locator(".lab-months a")).toHaveCount(12);

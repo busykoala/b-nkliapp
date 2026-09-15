@@ -6,7 +6,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import type { MessageKey, Translator } from "@/i18n/types";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Camera, Flag, Languages, MessageCircleHeart, Navigation, Pencil, Star } from "lucide-react";
+import { ArrowLeft, Camera, Flag, Languages, MessageCircleHeart, Navigation, Pencil, Share2, Star } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
@@ -23,6 +23,7 @@ import { PhotoGallery } from "./photo-gallery";
 import { galleryImageUrl } from "@/features/bench-photos/media-source";
 import { BenchPlaceCommunity } from "./bench-place-community";
 import { useLocalBenchLanguage } from "./local-bench-language-provider";
+import { canonicalBenchShareUrl } from "@/lib/bench-share";
 
 const correctionLabels: Record<string, MessageKey> = {
   properties: "community.correction.fields.properties",
@@ -34,7 +35,7 @@ const correctionLabels: Record<string, MessageKey> = {
 
 type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
 
-export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLocateAmenity, created = false }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; onLocateAmenity?: (amenity: NearbyAmenity) => void; created?: boolean }) {
+export function BenchDetailContent({ bench, user, onBenchChange, onJourney, journeyHref, onLocateAmenity, amenityMapHrefPrefix, created = false }: { bench: BenchDetail; user: CurrentUser | null; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; journeyHref?: string; onLocateAmenity?: (amenity: NearbyAmenity) => void; amenityMapHrefPrefix?: string; created?: boolean }) {
   const t = useTranslations();
   const router = useRouter();
   const [community, setCommunity] = useState(false);
@@ -43,6 +44,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
   const [focusedField, setFocusedField] = useState<"backrest" | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [reported, setReported] = useState<Set<string>>(new Set());
   const detailRef = useRef<HTMLDivElement>(null);
   const accountDialog = useRef<HTMLDialogElement>(null);
@@ -72,6 +74,17 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
       if (result.ok) setReported((current) => new Set(current).add(`${type}-${id}`));
     } catch { setStatus(t("bench.story.reportFailed")); }
   });
+  const share = async () => {
+    const title = bench.title || t("common.values.bench");
+    const data = { title, text: t("community.place.shareText", { bench: title }), url: canonicalBenchShareUrl(window.location.href, bench.id) };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else { await navigator.clipboard.writeText(`${data.text} ${data.url}`); setShareNotice(t("community.place.copied")); }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareNotice(t("community.place.shareUnavailable"));
+    }
+  };
   useEffect(() => {
     if (community) detailRef.current?.parentElement?.scrollTo({ top: 0, behavior: "smooth" });
   }, [community]);
@@ -107,18 +120,22 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
         <header className="calm-title">
           {created ? <p role="status" className="bench-created-status">{t("bench.story.created")}{bench.verificationStatus === "unverified" ? t("bench.story.remaining", {count: Math.max(0, bench.verificationThreshold - bench.confirmationCount)}) : t("bench.story.confirmed")}</p>
             : bench.verificationStatus === "unverified" && <p className="unverified-note">{t("bench.story.unverified")}</p>}
-          <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2><button type="button" className="title-edit-action" title={t("community.chapters.features.title")} aria-label={t("community.chapters.features.title")} onClick={() => contribute("features")}><Pencil size={17} /></button></div>
+          <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2><div className="bench-identity-actions"><button type="button" className="bench-share-action" title={t("community.place.share")} aria-label={t("community.place.share")} onClick={() => void share()}><Share2 size={18} /></button><button type="button" className="title-edit-action" title={t("community.chapters.features.title")} aria-label={t("community.chapters.features.title")} onClick={() => contribute("features")}><Pencil size={17} /></button></div></div>
+          {shareNotice && <p role="status" className="bench-share-notice">{shareNotice}</p>}
           <div className="calm-title-meta"><p>{placeLine(bench, t)}</p></div>
           {localVoice && <p className="local-language-badge"><Languages size={14} /> {t("common.language.localActive", { region: localVoice.regionLabel })}</p>}
-          <RatingEntry bench={bench} onOpen={() => contribute("rating")} />
           <div className="bench-primary-actions">
             {onJourney && <button className="journey-entry" onClick={onJourney}><Navigation size={18} />{t("bench.story.directions")}</button>}
+            {!onJourney && journeyHref && <a className="journey-entry" href={journeyHref}><Navigation size={18} />{t("bench.story.directions")}</a>}
             <BenchSaveButton key={bench.id} bench={bench} user={user} onChanged={refreshBench} />
           </div>
-          <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} onLocateAmenity={onLocateAmenity} onEditBackrest={editBackrest} />
-          <div className="bench-secondary-actions"><button className="contribution-entry is-quiet" onClick={() => contribute()}><MessageCircleHeart size={17} />{t("bench.story.contribute")}</button><button className="contribution-entry is-quiet" onClick={() => setCommunity(true)}><Star size={17} />{t("bench.story.ratings")}</button></div>
         </header>
         <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaStatus}`} bench={bench} />
+        <div className="bench-below-art">
+          <RatingEntry bench={bench} onOpen={() => contribute("rating")} />
+          <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} onLocateAmenity={onLocateAmenity} amenityMapHrefPrefix={amenityMapHrefPrefix} onEditBackrest={editBackrest} />
+          <div className="bench-secondary-actions"><button className="contribution-entry is-quiet" onClick={() => contribute()}><MessageCircleHeart size={17} />{t("bench.story.contribute")}</button><button className="contribution-entry is-quiet" onClick={() => setCommunity(true)}><Star size={17} />{t("bench.story.ratings")}</button></div>
+        </div>
       </section>
       <div className="calm-story-body">
         {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>{t("bench.story.nextTitle")}</h3><p>{t("bench.story.nextDescription")}</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
@@ -175,7 +192,12 @@ function Community({ bench, report, reported, user, onContribute }: { bench: Ben
   const format = useFormatter();
   return <div className="community-page">
     <header><small>{t("community.reviews.eyebrow")}</small><h3>{t("community.reviews.title")}</h3></header>
-    {bench.ratingBreakdown && <div className="rating-line">{Object.entries({ [t("community.rating.fields.overall")]: bench.ratingBreakdown.overall, [t("community.rating.fields.view")]: bench.ratingBreakdown.view, [t("community.rating.fields.comfort")]: bench.ratingBreakdown.comfort, [t("community.rating.fields.quiet")]: bench.ratingBreakdown.quiet }).map(([label, value]) => <span key={label}><strong>{format.number(value, {maximumFractionDigits: 1})}</strong><small>{label}</small></span>)}</div>}
+    {bench.ratingBreakdown && <div className="rating-line">{([
+      [t("community.rating.fields.overall"), bench.ratingBreakdown.overall, bench.ratingBreakdown.counts.overall],
+      [t("community.rating.fields.view"), bench.ratingBreakdown.view, bench.ratingBreakdown.counts.view],
+      [t("community.rating.fields.comfort"), bench.ratingBreakdown.comfort, bench.ratingBreakdown.counts.comfort],
+      [t("community.rating.fields.quiet"), bench.ratingBreakdown.quiet, bench.ratingBreakdown.counts.quiet],
+    ] as const).filter(([, value]) => value !== null).map(([label, value, count]) => <span key={label}><strong>{format.number(value!, {maximumFractionDigits: 1})}</strong><small>{label} · {count}</small></span>)}</div>}
     {user
       ? <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {bench.myRating ? t("community.reviews.edit") : t("community.reviews.add")}</button>
       : <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {t("community.reviews.signIn")}</button>}

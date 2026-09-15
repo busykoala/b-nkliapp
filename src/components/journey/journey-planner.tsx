@@ -8,8 +8,8 @@ import { useFormatter, useTranslations } from "next-intl";
 /* eslint-disable @next/next/no-img-element */
 
 import { translateMessage } from "@/i18n/message";
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Footprints, MapPin, RefreshCw, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ChevronDown, Footprints, MapPin, RefreshCw } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { JourneyOrigin, JourneyPoint } from "@/lib/journey";
 import { StartPicker } from "../routing/start-picker";
@@ -17,11 +17,11 @@ import { journeyClock, journeyMinutes, PACE_OPTIONS, type JourneyLeg } from "@/l
 import { useJourneyPlanner } from "./use-journey-planner";
 import { finalWalkingLeg, journeyExternalLinks } from "@/lib/journey-links";
 import { tightestTransfer, type JourneySettings } from "@/lib/journey-planner";
+import { MapSheetShell } from "../map-sheet-shell";
 
 export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { id: string; title: string }; initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string }; getMap: () => MapLibreMap | null; onClose: () => void }) {
   const t = useTranslations();
   const format = useFormatter();
-  const [expanded, setExpanded] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
   const resultSection = useRef<HTMLElement>(null);
   const {
@@ -34,9 +34,7 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
   const { mode, timeMode, time, speed, buffer } = settings;
   useEffect(() => { title.current?.focus(); }, []);
   useEffect(() => { if (result) resultSection.current?.scrollIntoView({ block: "start", behavior: "instant" }); }, [result]);
-  return <aside className={`journey-panel storybook-panel ${expanded ? "is-expanded" : ""}`} aria-label={t("journey.planner.title")}>
-    <div className="journey-chrome"><button className="journey-resize" aria-label={t("journey.planner.resize")} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}><span className="journey-handle" /></button><button aria-label={t("journey.planner.close")} onClick={onClose}><X size={18} /></button></div>
-    <div className="journey-scroll">
+  return <MapSheetShell label={t("journey.planner.title")} resizeLabel={t("journey.planner.resize")} closeLabel={t("journey.planner.close")} onClose={onClose} initialSnap="half">
       <header><span className="story-eyebrow">{t("journey.planner.eyebrow")}</span><h2 tabIndex={-1} ref={title}>{initial ? t("journey.planner.return") : t("journey.planner.title")}</h2><p className="journey-destination"><MapPin size={15} /> {bench.title || t("common.values.bench")}</p></header>
       <section className="journey-controls" aria-label={t("journey.planner.label")}>
         <StartPicker origin={origin} onChange={chooseOrigin} getMap={getMap} />
@@ -69,8 +67,7 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
         <small>{t("journey.results.fetched", {time: journeyClock(result.fetchedAt), feed: result.feedUpdatedAt ? t("journey.results.feedDate", {date: formatDate(result.feedUpdatedAt, t)}) : t("journey.results.noFeed")})}</small>
       </section>}
       <footer className="journey-sources"><details><summary>{t("routing.controls.goodToKnow")}</summary><p>{t("journey.information.estimates")}</p><p>{t("journey.information.privacy")}</p><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer">{t("journey.information.mapError")}</a></details></footer>
-    </div>
-  </aside>;
+  </MapSheetShell>;
 }
 function TransportArt({ mode }: { mode: JourneyLeg["mode"] }) {
   return mode === "walk" ? <Footprints size={26} /> : <img src={`/map-art/transit/${mode}.png`} alt="" width="42" height="42" />;

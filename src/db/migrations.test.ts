@@ -10,6 +10,29 @@ function applyMigrations(database: Database.Database, selected = migrations) {
 }
 
 describe("SQLite migrations and R*Tree", () => {
+  it("retains old ratings while allowing an overall-only rating and removes web admin sessions", () => {
+    const database = new Database(":memory:");
+    try {
+      database.pragma("foreign_keys=ON");
+      const optionalIndex = migrations.findIndex(({ id }) => id === "0038_optional_rating_details");
+      applyMigrations(database, migrations.slice(0, optionalIndex));
+      database.prepare("INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at) VALUES('rating-bench','node',1,47,8,'2026-01-01','2026-01-01')").run();
+      database.prepare(`INSERT INTO ratings(bench_row_id,contributor_hash,overall,view_score,comfort,quiet,created_at,updated_at)
+        VALUES(1,'old',5,4,3,2,'2026-01-01','2026-01-01')`).run();
+      applyMigrations(database, migrations.slice(optionalIndex));
+      database.prepare(`INSERT INTO ratings(bench_row_id,contributor_hash,overall,created_at,updated_at)
+        VALUES(1,'overall-only',4,'2026-09-15','2026-09-15')`).run();
+      expect(database.prepare("SELECT contributor_hash,overall,view_score,comfort,quiet FROM ratings ORDER BY id").all())
+        .toEqual([
+          { contributor_hash: "old", overall: 5, view_score: 4, comfort: 3, quiet: 2 },
+          { contributor_hash: "overall-only", overall: 4, view_score: null, comfort: null, quiet: null },
+        ]);
+      expect((database.prepare("SELECT avg(view_score) value,count(view_score) count FROM ratings").get() as { value: number; count: number }))
+        .toEqual({ value: 4, count: 1 });
+      expect(database.prepare("SELECT 1 FROM sqlite_master WHERE name='admin_sessions'").get()).toBeUndefined();
+      expect(database.pragma("foreign_key_check")).toEqual([]);
+    } finally { database.close(); }
+  });
   it("retains existing confirmation dates and votes when adding freshness", () => {
     const database = new Database(":memory:");
     try {

@@ -367,6 +367,8 @@
     "panoramaHeading": "Direcziun da la vista {degrees} grads",
     "panoramaHint": "↔ ↕ Trer",
     "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient",
+    "panoramaZoomIn": "Engrondir",
+    "panoramaZoomOut": "Empitschnir",
     "panoramaGenerating": "La vista vegn gist malegiada…",
     "panoramaUnavailable": "La vista calculada n’è anc betg disponibla.",
     "panoramaRetry": "Empruvar anc ina giada"

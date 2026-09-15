@@ -499,6 +499,8 @@
       "panoramaHeading": "Blickrichtung {degrees} Grad",
       "panoramaHint": "↔ ↕ Ziehen",
       "panoramaCalculated": "Aus Gländ- und Umgebungsdaten berechnet",
+      "panoramaZoomIn": "Vergrössern",
+      "panoramaZoomOut": "Verkleinern",
       "panoramaGenerating": "Die Ussicht wird gerade gemalt …",
       "panoramaUnavailable": "Die berechnete Ussicht isch no nid verfügbar.",
       "panoramaRetry": "Erneut versuchen"
@@ -778,7 +780,9 @@
     "rating": {
       "eyebrow": "Dein Eindruck",
       "existing": "Deine frühere Bewertung isch vorausgefüllt – du kannst sie ändern.",
-      "intro": "Vier kleine Eindrücke helfen anderen bei der Wahl.",
+      "intro": "Dein Gesamteindruck reicht. Wenn du magst, kannst du no mehr erzählen.",
+      "moreDetails": "Ussicht, Komfort und Rueh ergänzen (freiwillig)",
+      "clearDetails": "Bisherige Detailwertungen entfernen",
       "fields": {
         "overall": "Gesamt",
         "view": "Ussicht",

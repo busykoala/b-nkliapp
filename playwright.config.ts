@@ -51,7 +51,6 @@ export default defineConfig({
       CONTRIBUTOR_SECRET: "playwright-contributor-secret-with-more-than-32-characters",
       RATE_LIMIT_SECRET: "playwright-rate-limit-secret-with-more-than-32-characters",
       USER_SESSION_SECRET: "playwright-user-session-secret-with-more-than-32-characters",
-      ADMIN_SESSION_SECRET: "playwright-admin-secret-with-more-than-32-characters",
       BENCH_VERIFICATION_THRESHOLD: "3",
       BENCHLY_DISABLE_ELEVATION_FETCH: "true",
       BENCHLY_JOURNEY_TEST_FIXTURES: "true",

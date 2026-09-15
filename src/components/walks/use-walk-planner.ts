@@ -5,11 +5,12 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import { getWalkSuggestions } from "@/app/actions/walks";
+import { saveWalkDraft } from "@/app/actions/walk-draft";
 import { summarizeJourney, swissWallTime, swissWallTimeToIso, type JourneyLeg, type JourneyOrigin, type JourneyPoint } from "@/lib/journey";
 import { clearJourneyMap, paintJourney } from "@/lib/journey-map";
 import { journeyBounds, parsePreferences, PREFERENCES_KEY } from "@/lib/journey-planner";
 import type { ReturnJourney } from "@/lib/journey";
-import type { WalkQuery, WalkResult, WalkSuggestion } from "@/lib/walks/model";
+import type { WalkDraftSnapshot, WalkQuery, WalkResult, WalkSuggestion } from "@/lib/walks/model";
 import { pathTimes } from "@/lib/walking";
 
 export function walkLegs(s: WalkSuggestion, query: WalkQuery): JourneyLeg[] {
@@ -21,19 +22,29 @@ export function walkLegs(s: WalkSuggestion, query: WalkQuery): JourneyLeg[] {
   const last = s.path.geometry.length - 1;
   return query.shape === "loop" ? [make("bench", 0, s.benchIndex, query.origin, s.bench), make("return", s.benchIndex, last, s.bench, query.origin)] : [make("bench", 0, last, query.origin, s.bench)];
 }
-export function useWalkPlanner(getMap: () => MapLibreMap | null) {
+export function useWalkPlanner(getMap: () => MapLibreMap | null, initial: WalkDraftSnapshot | null, onSnapshot: (draft: WalkDraftSnapshot) => void) {
   const t = useTranslations();
-  const [origin, setOrigin] = useState<JourneyOrigin | null>(null);
+  const [origin, setOrigin] = useState<JourneyOrigin | null>(initial?.origin ?? null);
   const [settings, setSettings] = useState(() => {
+    if (initial) return initial.settings;
     let speed: WalkQuery["speed"] = 4.2;
     try { speed = parsePreferences(localStorage.getItem(PREFERENCES_KEY)).speed; } catch {}
     return { minutes: 50 as WalkQuery["minutes"], shape: "loop" as WalkQuery["shape"], light: "any" as WalkQuery["light"], difficulty: "easy" as WalkQuery["difficulty"], speed, time: "", maxRestMinutes: undefined as WalkQuery["maxRestMinutes"] };
   });
-  const [result, setResult] = useState<WalkResult | null>(null); const [selected, setSelected] = useState("");
-  const [error, setError] = useState(""); const [dirty, setDirty] = useState(false); const [pending, startTransition] = useTransition();
-  const [active, setActive] = useState<string | null>(null), [extras, setExtras] = useState(false);
+  const [result, setResult] = useState<WalkResult | null>(initial?.result ?? null); const [selected, setSelected] = useState(initial?.selected ?? "");
+  const [error, setError] = useState(""); const [dirty, setDirty] = useState(initial?.dirty ?? false); const [pending, startTransition] = useTransition();
+  const [active, setActive] = useState<string | null>(null), [extras, setExtras] = useState(initial?.extras ?? false);
   const sequence = useRef(0);
+  const firstSnapshot = useRef(true);
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const chosen = result?.suggestions.find((s) => s.id === selected);
+  useEffect(() => {
+    const snapshot = { origin, settings, result, selected, extras, dirty };
+    onSnapshot(snapshot);
+    if (firstSnapshot.current) { firstSnapshot.current = false; return; }
+    // Serialize writes so rapid option changes cannot restore an older choice.
+    saveQueue.current = saveQueue.current.catch(() => undefined).then(() => saveWalkDraft({ origin, settings, selected, extras, dirty }));
+  }, [origin, settings, result, selected, extras, dirty, onSnapshot]);
   const change = (patch: Partial<typeof settings>) => { sequence.current++; setSettings((s) => ({ ...s, ...patch })); setDirty(true); };
   const chooseOrigin = (p: JourneyOrigin | null) => { sequence.current++; setOrigin(p); setDirty(true); };
   const focus = (legs: JourneyLeg[]) => { const bounds = journeyBounds(legs); if (bounds) getMap()?.fitBounds(bounds, { padding: { top: 100, left: 30, right: innerWidth >= 768 ? 485 : 30, bottom: innerWidth >= 768 ? 45 : innerHeight * .5 }, maxZoom: 17, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400 }); };

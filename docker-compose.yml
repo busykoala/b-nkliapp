@@ -9,8 +9,6 @@ services:
       WALK_ROUTER_URL: ${WALK_ROUTER_URL:-http://host.docker.internal:8989}
       CONTRIBUTOR_SECRET: ${CONTRIBUTOR_SECRET:-change-this-local-contributor-secret}
       RATE_LIMIT_SECRET: ${RATE_LIMIT_SECRET:-change-this-local-rate-secret}
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
-      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-change-this-local-admin-secret}
     volumes:
       - ./data:/data
     restart: unless-stopped

@@ -3,13 +3,12 @@
 import { formatDate } from "@/i18n/date";
 import { useTranslations } from "next-intl";
 
-import { Building2, HeartHandshake, MapPin, Share2, Trash2 } from "lucide-react";
+import { Building2, HeartHandshake, MapPin, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { deleteOwnBenchMoment, toggleBenchFollow } from "@/app/actions/bench-community";
 import Link from "next/link";
 import type { BenchCareKind, BenchDetail } from "@/lib/types";
 import { TrailAvatar } from "./trail-avatar";
-import { canonicalBenchShareUrl } from "@/lib/bench-share";
 
 export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: BenchDetail; signedIn: boolean; onChanged?: () => void | Promise<void> }) {
   const t = useTranslations();
@@ -28,27 +27,9 @@ export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: Ben
     setMessage(result.message);
     if (result.ok && onChanged) await onChanged();
   });
-  const share = async () => {
-    const title = bench.title || t("common.values.bench");
-    const data = {
-      title,
-      text: t("community.place.shareText", { bench: title }),
-      url: canonicalBenchShareUrl(window.location.href, bench.id),
-    };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else {
-        await navigator.clipboard.writeText(`${data.text} ${data.url}`);
-        setMessage(t("community.place.copied"));
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      setMessage(t("community.place.shareUnavailable"));
-    }
-  };
   const careEntries = Object.entries(bench.care.counts).filter((entry): entry is [BenchCareKind, number] => Number(entry[1]) > 0);
   return <section className="bench-place-community" aria-labelledby="bench-moments-heading">
-    <header><div><small>{t("community.place.eyebrow")}</small><h3 id="bench-moments-heading">{t("community.place.title")}</h3></div><button type="button" aria-label={t("community.place.share")} onClick={share}><Share2 size={17} /><span>{t("community.place.shareShort")}</span></button></header>
+    <header><div><small>{t("community.place.eyebrow")}</small><h3 id="bench-moments-heading">{t("community.place.title")}</h3></div></header>
     {bench.operatorName && <p className="bench-caretaker"><Building2 size={17} /><span><small>{t("community.place.operator")}</small><strong>{bench.operatorName}</strong></span></p>}
     {signedIn && <div className="follow-place-actions">
       {bench.locationName && <button type="button" disabled={pending} aria-pressed={followingPlace} onClick={follow}><MapPin size={17} /><span><strong>{followingPlace ? t("community.place.followingPlace") : t("community.place.followPlace")}</strong><small>{bench.locationName}</small></span></button>}

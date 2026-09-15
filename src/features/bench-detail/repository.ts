@@ -50,8 +50,11 @@ export function readDetailRow(benchId: string) {
       (SELECT avg(overall) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_average,
       (SELECT count(*) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_count,
       (SELECT avg(view_score) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_view,
+      (SELECT count(view_score) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_view_count,
       (SELECT avg(comfort) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_comfort,
+      (SELECT count(comfort) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_comfort_count,
       (SELECT avg(quiet) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_quiet,
+      (SELECT count(quiet) FROM ratings r WHERE r.bench_row_id=b.row_id AND r.visible=1) rating_quiet_count,
       (SELECT count(*) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id) confirmation_count,
       (SELECT max(coalesce(last_seen_at,created_at)) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id) last_confirmed_at,
       (SELECT count(*) FROM bench_removal_confirmations rc

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
+from scipy.ndimage import maximum_filter1d, minimum_filter, minimum_filter1d
 
 from benchly.panorama.models import PanoramaGeometry, SemanticClass, TERRAIN_DEPTH_LIMITS_METERS, terrain_depth_layer
 
@@ -64,7 +65,7 @@ _MOUNTAIN = {
 }
 # Paint below delivery resolution so adjacent pigment marks merge like wet
 # watercolor, but retain enough resolution for roofs and real inner ridges.
-PAINT_SCALE = .58
+PAINT_SCALE = .72
 
 
 def _close_seam(image: Image.Image, width: int = 12) -> Image.Image:
@@ -83,6 +84,29 @@ def _close_seam(image: Image.Image, width: int = 12) -> Image.Image:
     pixels[:, 0] = edge
     pixels[:, -1] = edge
     return Image.fromarray(np.rint(pixels).clip(0, 255).astype(np.uint8), image.mode)
+
+
+def _heal_water_wrap_cusp(image: Image.Image, water_mask: Image.Image) -> Image.Image:
+    """Remove a narrow dark 0/360 cusp left by independent water reflections.
+
+    Matching only the two boundary pixels made the seam C0-continuous, yet
+    both sides could still dip together and read as a vertical ink line.
+    Blend only that tiny *water* neighbourhood from adjacent circular pigment;
+    geographic shores and landforms remain untouched.
+    """
+    if not water_mask.getbbox():
+        return image
+    pixels = np.asarray(image, dtype=np.float32).copy()
+    wet = np.asarray(water_mask.resize(image.size, Image.Resampling.LANCZOS), dtype=np.float32) / 255
+    radius = max(5, image.width // 360)
+    sample = radius + 5
+    for offset in range(radius):
+        nearby = (pixels[:, sample + offset] + pixels[:, -sample - offset - 1]) * .5
+        amount = ((1 - offset / radius) ** 2 * wet[:, offset])[:, None]
+        opposite = ((1 - offset / radius) ** 2 * wet[:, -offset - 1])[:, None]
+        pixels[:, offset] = pixels[:, offset] * (1 - amount) + nearby * amount
+        pixels[:, -offset - 1] = pixels[:, -offset - 1] * (1 - opposite) + nearby * opposite
+    return Image.fromarray(np.rint(pixels).clip(0, 255).astype(np.uint8), "RGB")
 
 
 def _seed(key: str, salt: str = "") -> int:
@@ -153,6 +177,18 @@ def _horizontal_edges(mask: Image.Image) -> Image.Image:
     return Image.fromarray(edges, "L")
 
 
+def _broken_horizontal_edges(mask: Image.Image, seed: int, width: int, height: int) -> Image.Image:
+    """Break continuous depth-bin rims into uneven wet-pigment passages.
+
+    Their location remains derived from the terrain, but a uniform line all
+    the way around a 360-degree image reads as a technical contour.
+    """
+    rim = _horizontal_edges(mask)
+    pigment = _periodic_pigment(width, height, seed, (61, 23))
+    gaps = pigment.point(lambda value: min(255, max(0, (value - 62) * 2)))
+    return ImageChops.multiply(rim, gaps)
+
+
 @lru_cache(maxsize=8)
 def _artist_pigment(width: int, height: int) -> Image.Image:
     """Resize the checked-in real-watercolor material into a circular field."""
@@ -174,7 +210,6 @@ def _span_masks(geometry: PanoramaGeometry, width: int, height: int):
     for left in range(width):
         index = min(column_count - 1, math.floor((left + .5) * column_count / width))
         column = geometry.columns[index]
-        right = left + 1
         for span in column.spans:
             if span.semantic == SemanticClass.BUILDING or span.semantic not in SEASON_PALETTES["summer"]:
                 continue
@@ -186,7 +221,10 @@ def _span_masks(geometry: PanoramaGeometry, width: int, height: int):
             if key not in draws:
                 masks[key] = Image.new("L", (width, height))
                 draws[key] = ImageDraw.Draw(masks[key])
-            draws[key].rectangle((left, top, right, bottom), fill=255)
+            # Pillow rectangles include their right and bottom endpoints.
+            # Painting x+1 as well let a ray overwrite its neighbour and
+            # exposed one-pixel semantic seams after the final scale pass.
+            draws[key].rectangle((left, top, left, bottom - 1), fill=255)
     organic = _periodic_pigment(width, height, _seed(geometry.identity_key, "paint-edges"), (113, 47, 23))
     softened = {}
     for key, mask in masks.items():
@@ -224,13 +262,64 @@ def _surface_masks(masks: dict[tuple[SemanticClass, int], Image.Image]) -> dict[
     for (semantic, _layer), mask in masks.items():
         current = merged.get(semantic)
         merged[semantic] = mask if current is None else ImageChops.lighter(current, mask)
+    forest = merged.get(SemanticClass.FOREST)
+    grass = merged.get(SemanticClass.OPEN_GRASSLAND)
+    if forest is not None and grass is not None:
+        # Narrow grassland wedges embedded in a known canopy are often a
+        # coarse land-cover sector rather than a floor-to-sky clearing. Keep
+        # the actual semantic data intact; only its painting is reduced to a
+        # translucent dapple. Broad real clearings do not bridge and remain.
+        pixels = np.asarray(forest, dtype=np.uint8)
+        # A coarse land-cover sample can leave a several-degree, ruler-straight
+        # meadow slit in a continuous canopy. Close only narrow contact gaps;
+        # the meadow still remains as a translucent local wash below it.
+        gap_radius = max(2, width // 30)
+        expanded = maximum_filter1d(pixels, size=gap_radius * 2 + 1, axis=1, mode="wrap")
+        closed = minimum_filter1d(expanded, size=gap_radius * 2 + 1, axis=1, mode="wrap")
+        bridge = Image.fromarray(np.maximum(0, closed.astype(np.int16) - pixels).astype(np.uint8), "L")
+        merged[SemanticClass.FOREST] = ImageChops.lighter(forest, bridge)
+        merged[SemanticClass.OPEN_GRASSLAND] = ImageChops.subtract(
+            grass, ImageChops.multiply(grass, _scaled_alpha(bridge, .84)),
+        )
+        # The remaining very short meadow sectors are still real land-cover
+        # observations, but the polar projection must not turn them into
+        # floor-to-sky searchlight beams inside a wood.
+        merged[SemanticClass.OPEN_GRASSLAND] = _soften_narrow_sector_view(
+            merged[SemanticClass.OPEN_GRASSLAND], max(6, width // 28), .11, .30,
+        )
+    rock = merged.get(SemanticClass.ROCK)
+    snow = merged.get(SemanticClass.SNOW_OR_GLACIER)
+    if snow is not None:
+        # A few coarse snow rays crossing a whole near mountain face create a
+        # ruler-straight white chute. A narrow patch remains visibly snowy at
+        # its upper edge, then thins as a translucent wash on the underlying
+        # mountain. Broad surveyed snowfields remain solid.
+        merged[SemanticClass.SNOW_OR_GLACIER] = _soften_narrow_sector_view(
+            snow, max(8, width // 36), .65, -.57,
+        )
+        if rock is not None:
+            pixels = np.asarray(rock, dtype=np.uint8)
+            radius = max(3, width // 58)
+            expanded = maximum_filter1d(pixels, size=radius * 2 + 1, axis=1, mode="wrap")
+            closed = minimum_filter1d(expanded, size=radius * 2 + 1, axis=1, mode="wrap")
+            bridge = Image.fromarray(np.maximum(0, closed.astype(np.int16) - pixels).astype(np.uint8), "L")
+            merged[SemanticClass.ROCK] = ImageChops.lighter(rock, _scaled_alpha(bridge, .82))
+    for semantic in (SemanticClass.WATER, SemanticClass.RIVER):
+        if semantic in merged:
+            merged[semantic] = _soften_narrow_water_view(merged[semantic])
     for semantic, mask in tuple(merged.items()):
         # Forest and water source outlines are often much coarser than the
         # panorama raster.  A circular low-pass turns their staircase into a
         # loose brush contour while retaining the recognisable landform.
         if semantic == SemanticClass.FOREST:
-            radius = max(3.0, width / 180)
-            amount = .90
+            radius = max(4.0, width / 140)
+            amount = .85
+        elif semantic == SemanticClass.SNOW_OR_GLACIER:
+            # Coarse snow classes sometimes switch for only a degree or two
+            # of azimuth yet cover a complete mountain ray. A wider wet edge
+            # keeps the real pale patch without a ruler-straight white pillar.
+            radius = max(4.0, width / 85)
+            amount = .95
         elif semantic in {SemanticClass.WATER, SemanticClass.RIVER}:
             radius = max(2.5, width / 220)
             amount = .82
@@ -242,6 +331,42 @@ def _surface_masks(masks: dict[tuple[SemanticClass, int], Image.Image]) -> dict[
         # with translucent wet edges instead of merely painting blur outside.
         merged[semantic] = Image.blend(mask, smooth, amount)
     return merged
+
+
+def _soften_narrow_water_view(mask: Image.Image) -> Image.Image:
+    """Turn short polar water slits into translucent stream/pool washes.
+
+    A 3–8° water sector extending straight to the painting's lower edge is a
+    ray-projection artifact, not a surveyed rectangular shoreline. Keep the
+    measured water present, but let nearby land show through it. Real lakes
+    span broad sectors and are left untouched.
+    """
+    return _soften_narrow_sector_view(mask, max(6, mask.width // 32), .02, .14)
+
+
+def _soften_narrow_sector_view(mask: Image.Image, maximum_width: int,
+                               top_opacity: float, lower_opacity: float) -> Image.Image:
+    pixels = np.asarray(mask, dtype=np.uint8).copy()
+    height, width = pixels.shape
+    active = (pixels > 120).mean(axis=0) > .25
+    if not active.any() or active.all():
+        return mask
+    pivot = int(np.flatnonzero(~active)[0])
+    rotated = np.roll(active, -pivot)
+    changes = np.diff(np.r_[0, rotated.astype(np.int8), 0])
+    for begin, end in zip(np.flatnonzero(changes == 1), np.flatnonzero(changes == -1)):
+        if end - begin >= maximum_width:
+            continue
+        columns = (np.arange(begin, end) + pivot) % width
+        area = pixels[:, columns]
+        occupied = np.flatnonzero((area > 80).any(axis=1))
+        if occupied.size < height * .18:
+            continue
+        top, bottom = int(occupied[0]), int(occupied[-1])
+        distance = np.clip((np.arange(height) - top) / max(1, bottom - top), 0, 1)
+        opacity = top_opacity + lower_opacity * distance ** .78
+        pixels[:, columns] = np.rint(area * opacity[:, None]).astype(np.uint8)
+    return Image.fromarray(pixels, "L")
 
 
 def _paint_depth_atmosphere(base: Image.Image, semantic: SemanticClass, surface: Image.Image,
@@ -264,10 +389,25 @@ def _paint_depth_atmosphere(base: Image.Image, semantic: SemanticClass, surface:
     haze = Image.fromarray(np.rint(field * 255).clip(0, 255).astype(np.uint8), "L")
     # A broad, wrap-safe blend is the essential difference between atmospheric
     # depth and a colour-coded range map.
-    haze = _wrap_blur(haze, max(4.0, width / 210))
-    haze = ImageChops.multiply(surface, haze).point(lambda value: round(value * .48))
-    target = (178, 204, 216) if semantic in _MOUNTAIN else (195, 214, 215)
+    haze = _wrap_blur(haze, max(6.0, width / 110))
+    # Distance still cools the wash, but it must not erase every chromatic
+    # fold into the same grey-green computer plane.
+    haze = ImageChops.multiply(surface, haze).point(lambda value: round(value * .95))
+    target = (195, 211, 222) if semantic in _MOUNTAIN else (209, 221, 221)
     base.paste(Image.new("RGB", base.size, target), (0, 0), haze)
+    # Nearby faces retain warm, granular paint against the cool distant wash.
+    # The broad glaze follows actual near-depth spans but never draws their
+    # hard angular sides as outlines.
+    if semantic in _MOUNTAIN:
+        near = Image.new("L", base.size)
+        for layer in (0, 1, 2):
+            sample = masks.get((semantic, layer))
+            if sample is not None:
+                near = ImageChops.lighter(near, sample)
+        if near.getbbox():
+            near = ImageChops.multiply(surface, _wrap_blur(near, max(6.0, width / 120)))
+            tint = (82, 110, 73) if semantic == SemanticClass.FOREST else (124, 105, 83)
+            base.paste(Image.new("RGB", base.size, tint), (0, 0), _scaled_alpha(near, .12))
 
 
 def _gradient(size: tuple[int, int], top: tuple[int, int, int], bottom: tuple[int, int, int]) -> Image.Image:
@@ -295,7 +435,7 @@ def _paint_wash(base: Image.Image, mask: Image.Image, color: tuple[int, int, int
         pigment = pigments[min(pass_index, len(pigments) - 1)]
         alpha = ImageChops.multiply(mask, pigment)
         alpha = ImageChops.offset(alpha, shift[0], shift[1])
-        factor = opacity * ((.42, .46, .31)[pass_index])
+        factor = opacity * ((.53, .51, .39)[pass_index])
         alpha = alpha.point(lambda value, factor=factor: round(value * factor))
         base.paste(layer, (0, 0), alpha)
 
@@ -420,25 +560,53 @@ def _paint_landform_relief(base: Image.Image, masks) -> None:
                 layer_mask = ImageChops.lighter(layer_mask, mask)
         if not layer_mask.getbbox():
             continue
-        inner = layer_mask.filter(ImageFilter.MinFilter(9))
+        # Pillow's rank filter walked the full raster in Python/C for each
+        # distance layer (~one second per Bänkli). The equivalent SciPy
+        # erosion is both faster and circular at the 0°/360° seam.
+        inner = Image.fromarray(minimum_filter(
+            np.asarray(layer_mask, dtype=np.uint8), size=9, mode=("nearest", "wrap"),
+        ), "L")
         rim = ImageChops.subtract(layer_mask, inner).filter(ImageFilter.GaussianBlur(1.2))
         strength = .17 if layer < 3 else .10
         base.paste(Image.new("RGB", base.size, _LAYER_SHADOWS[layer]), (0, 0), _scaled_alpha(rim, strength))
 
 
-def _paint_mountain_facets(base: Image.Image, geometry: PanoramaGeometry, masks,
-                           pigment_field: Image.Image) -> None:
-    """Lay restrained broken washes along factual inner ridges.
+def _paint_layered_valleys(base: Image.Image, masks) -> None:
+    """Glaze broad turning planes from measured near/far terrain intervals.
 
-    Earlier revisions closed every ridge into a large polygon.  In a 360°
-    projection those polygons became long vertical curtains.  Parallel broken
-    strokes still communicate a turning mountain plane, while leaving the
-    underlying connected terrain wash visible.
+    Only horizontal landform rims are used. A broad wet blur and soft inward
+    pool create overlapping hill bodies without drawing polar depth-bin sides.
     """
     width, height = base.size
+    for layer in reversed(_LAYERS):
+        mass = Image.new("L", base.size)
+        for semantic in _MOUNTAIN:
+            mask = masks.get((semantic, layer))
+            if mask is not None:
+                mass = ImageChops.lighter(mass, mask)
+        if not mass.getbbox():
+            continue
+        rim = _broken_horizontal_edges(mass, 431 + layer * 37, width, height)
+        reach = max(3, round(height * (.039 if layer < 3 else .025)))
+        spread = max(8, width / (115 if layer < 3 else 145))
+        underside = _wrap_blur(ImageChops.offset(rim, 0, reach), spread)
+        underside = ImageChops.multiply(mass, underside)
+        upper = _wrap_blur(ImageChops.offset(rim, -max(1, width // 2100), -max(2, reach // 4)), spread * .7)
+        upper = ImageChops.multiply(mass, upper)
+        shadow = _mix((58, 77, 75), (99, 123, 143), min(.75, layer / 8))
+        light = _mix((238, 212, 158), (211, 226, 215), min(.8, layer / 8))
+        base.paste(Image.new("RGB", base.size, shadow), (0, 0), _scaled_alpha(underside, 1.55 if layer < 3 else .91))
+        base.paste(Image.new("RGB", base.size, light), (0, 0), _scaled_alpha(upper, .65 if layer < 3 else .38))
+
+
+def _paint_mountain_facets(base: Image.Image, geometry: PanoramaGeometry, masks,
+                           pigment_field: Image.Image) -> None:
+    """Brush short diagonal planes below measured ridges, never radial bands."""
+    width, height = base.size
+    faceted = {SemanticClass.ROCK, SemanticClass.SNOW_OR_GLACIER, SemanticClass.UNKNOWN_TERRAIN}
     mountain = Image.new("L", base.size)
     for layer in _LAYERS:
-        for semantic in _MOUNTAIN:
+        for semantic in faceted:
             mask = masks.get((semantic, layer))
             if mask is not None:
                 mountain = ImageChops.lighter(mountain, mask)
@@ -448,51 +616,53 @@ def _paint_mountain_facets(base: Image.Image, geometry: PanoramaGeometry, masks,
     shade = Image.new("L", base.size)
     light = Image.new("L", base.size)
     shade_draw, light_draw = ImageDraw.Draw(shade), ImageDraw.Draw(light)
-    column_count = len(geometry.columns)
+    columns = geometry.columns
     rng = np.random.default_rng(_seed(geometry.identity_key, "relief-planes"))
-    for layer in _LAYERS:
-        run: list[tuple[float, float, float, float]] = []
-        def flush(points: list[tuple[float, float, float, float]]) -> None:
-            if len(points) < 8:
-                return
-            radius = min(8, max(2, len(points) // 30))
-            ys = np.array([point[1] for point in points], dtype=np.float32)
-            padded = np.pad(ys, (radius, radius), mode="edge")
-            smooth_y = np.convolve(padded, np.ones(radius * 2 + 1) / (radius * 2 + 1), mode="valid")
-            line = [(points[index][0], float(smooth_y[index])) for index in range(len(points))]
-            slope = float(np.median([point[2] for point in points]))
-            direction = line[-1][1] - line[0][1]
-            target = shade_draw if (direction > 0) ^ (slope < 0) else light_draw
-            relief = float(np.median([point[3] for point in points]))
-            depth = min(height * .055, max(4, 3 + relief / 2400 * height))
-            fragment = max(7, len(line) // 7)
-            for start in range(0, len(line), fragment):
-                if rng.random() < .18:
-                    continue
-                section = line[start:min(len(line), start + fragment + 2)]
-                for pass_index, fraction in enumerate((0, .28, .58, .9)):
-                    shifted = [(x + fraction * depth * (.22 if slope >= 0 else -.22), y + fraction * depth)
-                               for x, y in section]
-                    target.line(shifted, fill=max(5, round((30 - pass_index * 5) * (1 - layer * .045))),
-                                width=max(1, round(3 - pass_index * .55)), joint="curve")
-        for index, column in enumerate(geometry.columns):
-            candidates = [edge for edge in column.terrain_edges
-                          if edge.semantic in _MOUNTAIN
-                          and (edge.depth_layer if edge.depth_layer is not None else terrain_depth_layer(edge.distance_meters)) == layer]
-            if not candidates:
-                flush(run)
-                run = []
-                continue
-            edge = max(candidates, key=lambda item: (item.relief_meters or 0, item.elevation_angle_degrees))
-            run.append(((index + .5) / column_count * width,
-                        _angle_y(edge.elevation_angle_degrees, geometry, height),
-                        edge.slope_degrees or 0, edge.relief_meters or 18))
-        flush(run)
-    shade = ImageChops.multiply(mountain, _wrap_blur(shade, 1.1))
-    light = ImageChops.multiply(mountain, _wrap_blur(light, 1.35))
+    step = max(9, width // 95)
+    for x in range(0, width, step):
+        column = columns[min(len(columns) - 1, round((x + .5) * len(columns) / width))]
+        candidates = [edge for edge in column.terrain_edges if edge.semantic in faceted]
+        if not candidates or rng.random() < .24:
+            continue
+        edge = max(candidates, key=lambda item: (item.relief_meters or 0, item.elevation_angle_degrees))
+        layer = edge.depth_layer if edge.depth_layer is not None else terrain_depth_layer(edge.distance_meters)
+        if layer > 5:
+            continue
+        y = _angle_y(edge.elevation_angle_degrees, geometry, height)
+        slope = edge.slope_degrees or 0
+        relief = max(12, edge.relief_meters or 12)
+        drop = min(height * .046, max(height * .012, relief / 2600 * height))
+        turn = (-1 if slope < 0 else 1) * rng.uniform(step * .38, step * .95)
+        reach = rng.uniform(step * .42, step * 1.10)
+        target = shade_draw if slope < 0 else light_draw
+        counterplane = light_draw if slope < 0 else shade_draw
+        # A finite sloping pigment plane makes the ridge turn into a hillside
+        # rather than a thin contour. Its measured edge anchors it; its soft,
+        # uneven end stays safely short of the next angular sector.
+        target.polygon([
+            (x - reach * .55, y + drop * .24),
+            (x + reach * .46, y + drop * .12),
+            (x + turn + reach * .23, y + drop * 1.42),
+            (x + turn - reach * .51, y + drop * 1.14),
+        ], fill=max(9, round(76 * (1 - layer * .07))))
+        counterplane.polygon([
+            (x + reach * .38, y + drop * .12),
+            (x + reach * .88, y + drop * .30),
+            (x + turn + reach * .55, y + drop * 1.30),
+            (x + turn + reach * .13, y + drop * 1.13),
+        ], fill=max(8, round(55 * (1 - layer * .07))))
+        for fraction, ink in ((0, 43), (.34, 31), (.71, 22)):
+            jitter = rng.uniform(-step * .08, step * .08)
+            path = [(x - reach * .25 + jitter, y + fraction * drop),
+                    (x + reach * .12 + turn * fraction, y + fraction * drop + drop * .26),
+                    (x + reach * .42 + turn * fraction, y + fraction * drop + drop * .45)]
+            target.line(path, fill=max(4, round(ink * (1 - layer * .085))),
+                        width=max(2, round(height / 220)), joint="curve")
+    shade = ImageChops.multiply(mountain, _wrap_blur(shade, 5.1))
+    light = ImageChops.multiply(mountain, _wrap_blur(light, 5.5))
     shade = ImageChops.multiply(shade, pigment_field.point(lambda value: 105 + value * 150 // 255))
-    base.paste(Image.new("RGB", base.size, (43, 63, 86)), (0, 0), _scaled_alpha(shade, 1.36))
-    base.paste(Image.new("RGB", base.size, (225, 198, 137)), (0, 0), _scaled_alpha(light, .88))
+    base.paste(Image.new("RGB", base.size, (43, 63, 86)), (0, 0), _scaled_alpha(shade, 1.80))
+    base.paste(Image.new("RGB", base.size, (238, 209, 145)), (0, 0), _scaled_alpha(light, 1.38))
 
 
 def _paint_ambient_volume(base: Image.Image, geometry: PanoramaGeometry, masks) -> None:
@@ -519,7 +689,10 @@ def _paint_ambient_volume(base: Image.Image, geometry: PanoramaGeometry, masks) 
     smooth = np.convolve(extended, kernel, mode="same")[radius:-radius]
     slope = np.gradient(smooth)
     curvature = np.gradient(slope)
-    value = np.clip(slope * 58 + curvature * 105, -1, 1)
+    # Derivatives are measured in paint pixels: multiplying them by dozens
+    # saturated nearly every hill at +/-1 and turned volume into a repeated
+    # uniform blob. Keep the actual variation of each turning hillside.
+    value = np.clip(slope * .9 + curvature * 3.2, -1, 1)
     shadow = Image.new("L", base.size)
     light = Image.new("L", base.size)
     shadow_draw, light_draw = ImageDraw.Draw(shadow), ImageDraw.Draw(light)
@@ -542,13 +715,64 @@ def _paint_ambient_volume(base: Image.Image, geometry: PanoramaGeometry, masks) 
             (x - slant, center_y + radius_y),
         ]
         target = shadow_draw if value[x] > 0 else light_draw
-        ink = round((18 if value[x] > 0 else 12) + strength * (31 if value[x] > 0 else 21))
+        ink = round((32 if value[x] > 0 else 24) + strength * (70 if value[x] > 0 else 53))
         for wrap in (-width, 0, width):
             target.polygon([(px + wrap, py) for px, py in polygon], fill=ink)
     shadow = ImageChops.multiply(terrain, _wrap_blur(shadow, width / 105))
     light = ImageChops.multiply(terrain, _wrap_blur(light, width / 115))
-    base.paste(Image.new("RGB", base.size, (42, 63, 87)), (0, 0), shadow)
-    base.paste(Image.new("RGB", base.size, (240, 207, 142)), (0, 0), light)
+    base.paste(Image.new("RGB", base.size, (42, 63, 87)), (0, 0), _scaled_alpha(shadow, 1.72))
+    base.paste(Image.new("RGB", base.size, (240, 207, 142)), (0, 0), _scaled_alpha(light, 1.48))
+
+
+def _paint_measured_slope_volume(base: Image.Image, geometry: PanoramaGeometry,
+                                 surfaces: dict[SemanticClass, Image.Image]) -> None:
+    """Glaze broad cool/warm planes from visible terrain slope, not column art.
+
+    The polar rays are factual but individually narrow; averaging the slope
+    field across both image axes turns their stepped measurements into hill
+    *bodies*. This is neutral painting volume, not a claim about today's sun.
+    """
+    width, height = base.size
+    terrain = Image.new("L", base.size)
+    # A forest semantic is a canopy mass, not a measured bare-ground slope.
+    # Applying radial ALTI gradients to it produced pale vertical columns
+    # instead of trees; its depth belongs to the forest brushwork below.
+    volume_semantics = _MOUNTAIN - {SemanticClass.FOREST}
+    for semantic in volume_semantics:
+        mask = surfaces.get(semantic)
+        if mask is not None:
+            terrain = ImageChops.lighter(terrain, mask)
+    if not terrain.getbbox():
+        return
+    values = np.full((height, width), 128, dtype=np.uint8)
+    count = len(geometry.columns)
+    for x in range(width):
+        column = geometry.columns[min(count - 1, int((x + .5) * count / width))]
+        for span in column.spans:
+            if span.semantic not in volume_semantics:
+                continue
+            top = max(0, min(height, _angle_y(span.upper_angle_degrees, geometry, height)))
+            bottom = max(0, min(height, _angle_y(span.lower_angle_degrees, geometry, height)))
+            if bottom <= top:
+                continue
+            edge = min(column.terrain_edges, key=lambda item: abs(item.distance_meters - span.distance_meters), default=None)
+            slope = edge.slope_degrees if edge and edge.slope_degrees is not None else 0
+            # Let the measured incline describe a finite visible *plane* near
+            # its crest, not a full-height radial stripe down to the observer.
+            reach = min(bottom, top + max(8, round((bottom - top) * .54)))
+            values[top:reach, x] = round(128 + max(-65, min(65, slope)) * 1.55)
+    field = np.asarray(_wrap_blur(Image.fromarray(values, "L"), max(7, width / 145)), dtype=np.float32)
+    cool = Image.fromarray(np.rint(np.clip((128 - field) * 2.8, 0, 135)).astype(np.uint8), "L")
+    warm = Image.fromarray(np.rint(np.clip((field - 128) * 1.9, 0, 95)).astype(np.uint8), "L")
+    cool = ImageChops.multiply(terrain, cool)
+    warm = ImageChops.multiply(terrain, warm)
+    base.paste(Image.new("RGB", base.size, (69, 84, 104)), (0, 0), cool)
+    rock = surfaces.get(SemanticClass.ROCK)
+    if rock is not None:
+        rock_warm = ImageChops.multiply(warm, rock)
+        warm = ImageChops.subtract(warm, rock_warm)
+        base.paste(Image.new("RGB", base.size, (211, 213, 205)), (0, 0), rock_warm)
+    base.paste(Image.new("RGB", base.size, (231, 206, 154)), (0, 0), warm)
 
 
 def _paint_perspective_sweeps(base: Image.Image, masks, seed: int) -> None:
@@ -615,7 +839,7 @@ def _paint_land_brushwork(base: Image.Image, masks, seed: int) -> None:
 
 
 def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
-                          artist_field: Image.Image, seed: int) -> None:
+                          artist_field: Image.Image, seed: int, near_masks=None) -> None:
     """Add clustered canopy mass only where geographic forest is visible."""
     forest = Image.new("L", base.size)
     for layer in _LAYERS:
@@ -643,16 +867,16 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
             radius_y = int(rng.uniform(height * .022, height * .085))
             aperture_draw.ellipse((center_x - radius_x, center_y - radius_y,
                                    center_x + radius_x, center_y + radius_y),
-                                  fill=int(rng.uniform(12, 31)))
+                                  fill=int(rng.uniform(32, 68)))
         apertures = ImageChops.multiply(forest, _wrap_blur(apertures, height * .018))
         base.paste(Image.new("RGB", base.size, (191, 188, 134)), (0, 0), apertures)
     # Broad connected blooms read as canopy masses without turning mapped
     # forest into a field of decorative dots or claiming individual trees.
     artist_deposits = ImageOps.invert(artist_field).point(lambda value: max(0, min(105, value - 20)))
-    clusters = canopy_field.point(lambda value: max(8, min(48, 32 + 128 - value)))
+    clusters = canopy_field.point(lambda value: max(24, min(88, 67 + 128 - value)))
     clusters = ImageChops.multiply(forest, _wrap_blur(ImageChops.lighter(clusters, artist_deposits), 1.3))
     base.paste(Image.new("RGB", base.size, (29, 82, 50)), (0, 0), clusters)
-    canopy_light = canopy_field.point(lambda value: max(0, min(34, value - 119)))
+    canopy_light = canopy_field.point(lambda value: max(0, min(68, value - 112)))
     canopy_light = ImageChops.multiply(forest, _wrap_blur(ImageChops.offset(canopy_light, -3, -2), 1.5))
     base.paste(Image.new("RGB", base.size, (174, 176, 112)), (0, 0), canopy_light)
 
@@ -694,7 +918,10 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
                                 center_x + shift + tree_width, top + tree_height,
                             ), fill=ink)
             x += max(5, round(step * rng.uniform(.68, 1.15)))
-    crown_groups = ImageChops.multiply(forest, _wrap_blur(crown_groups, .65))
+    # A few brush-widths of crown fringe loosen a mapped block contour while
+    # the wooded mass remains anchored in the actual forest geometry.
+    crown_fringe = ImageChops.lighter(forest, _scaled_alpha(_wrap_blur(forest, 3.5), .52))
+    crown_groups = ImageChops.multiply(crown_fringe, _wrap_blur(crown_groups, .65))
     base.paste(Image.new("RGB", base.size, (22, 78, 46)), (0, 0), _scaled_alpha(crown_groups, 1.08))
     crown_group_light = ImageChops.multiply(forest, ImageChops.offset(crown_groups, -1, -2))
     crown_group_light = crown_group_light.point(lambda value: round(value * .18))
@@ -726,12 +953,22 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
         base.paste(Image.new("RGB", base.size, (194, 188, 102)), (0, 0), _scaled_alpha(flecks, .45))
 
     near_forest = Image.new("L", base.size)
+    near_masks = near_masks if near_masks is not None else masks
     for layer in (0, 1):
-        mask = masks.get((SemanticClass.FOREST, layer))
+        mask = near_masks.get((SemanticClass.FOREST, layer))
         if mask is not None:
             near_forest = ImageChops.lighter(near_forest, mask)
     bounds = near_forest.getbbox()
     if bounds:
+        # The foreground canopy is a separate, warmer value mass. A vertical
+        # depth glaze alone made the mapped woodland read like a flat green
+        # wall; reserve dark pigment for actual near spans and let it build
+        # towards the observer rather than down every distant tree ray.
+        near_ramp = np.clip((np.arange(height, dtype=np.float32) / height - .43) / .57, 0, 1) ** 1.7
+        near_ramp = np.broadcast_to(np.rint(near_ramp[:, None] * 255).astype(np.uint8), (height, width))
+        near_ink = ImageChops.multiply(near_forest, Image.fromarray(near_ramp, "L"))
+        near_ink = ImageChops.multiply(near_ink, canopy_field.point(lambda value: 90 + value * 165 // 255))
+        base.paste(Image.new("RGB", base.size, (33, 72, 51)), (0, 0), _scaled_alpha(near_ink, .34))
         trunks = Image.new("L", base.size)
         branches = Image.new("L", base.size)
         trunk_draw, branch_draw = ImageDraw.Draw(trunks), ImageDraw.Draw(branches)
@@ -739,7 +976,7 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
         left, _top, right, _bottom = bounds
         crown_accents = Image.new("L", base.size)
         crown_draw = ImageDraw.Draw(crown_accents)
-        for tree_index in range(max(10, width // 165)):
+        for tree_index in range(max(18, width // 110)):
             x = int(rng.uniform(left, right))
             visible = np.flatnonzero(pixels[:, min(width - 1, x)] > 95)
             if visible.size < 8:
@@ -776,35 +1013,72 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
                     branch_draw.line((branch_x + reach * .58, branch_y - 5,
                                       branch_x + fork, branch_y - rng.uniform(12, 24)),
                                      fill=min(220, ink), width=max(1, width // 1700))
-                    for _ in range(int(rng.integers(2, 5))):
+                    for _ in range(int(rng.integers(3, 7))):
                         foliage_x = branch_x + reach * rng.uniform(.48, 1.08)
                         foliage_y = branch_y - rng.uniform(5, 20)
-                        foliage_rx = rng.uniform(8, 22)
-                        foliage_ry = rng.uniform(4, 14)
-                        crown_draw.ellipse((foliage_x - foliage_rx, foliage_y - foliage_ry,
-                                            foliage_x + foliage_rx, foliage_y + foliage_ry),
-                                           fill=int(rng.uniform(32, 76)))
+                        for touch in range(3):
+                            extent = rng.uniform(7, 20)
+                            crown_draw.line((foliage_x - extent * .5, foliage_y + touch * 2,
+                                             foliage_x + extent * .2, foliage_y - rng.uniform(1, 5),
+                                             foliage_x + extent, foliage_y + rng.uniform(-3, 3)),
+                                            fill=int(rng.uniform(37, 94)), width=int(rng.integers(2, 6)))
+            # Cluster broken leaf washes through the upper crown volume. The
+            # trunk and branch scaffold stays grounded, but it must not read
+            # as a bare technical tree with a few horizontal antennae.
+            for _ in range(int(rng.integers(7, 12))):
+                fraction = float(rng.uniform(.67, .98))
+                center_x = x + lean * fraction + rng.normal(0, 18)
+                center_y = foot - length * fraction + rng.normal(0, 8)
+                span_x = rng.uniform(10, 25)
+                span_y = rng.uniform(5, 13)
+                for _touch in range(int(rng.integers(3, 6))):
+                    brush_x = center_x + rng.normal(0, span_x * .43)
+                    brush_y = center_y + rng.normal(0, span_y * .43)
+                    rx = span_x * rng.uniform(.22, .48)
+                    ry = span_y * rng.uniform(.25, .58)
+                    crown_draw.ellipse((brush_x - rx, brush_y - ry,
+                                        brush_x + rx, brush_y + ry), fill=int(rng.uniform(34, 96)))
+            for _ in range(int(rng.integers(38, 57))):
+                fraction = float(rng.uniform(.52, .98))
+                center_x = x + lean * fraction + rng.normal(0, rng.uniform(10, 24))
+                center_y = foot - length * fraction + rng.normal(0, rng.uniform(5, 16))
+                sweep = rng.uniform(3, 17)
+                lift = rng.uniform(-5, 5)
+                crown_draw.line((center_x - sweep * .6, center_y + lift,
+                                 center_x + sweep * .42, center_y - lift * .45),
+                                fill=int(rng.uniform(38, 107)), width=int(rng.integers(2, 7)))
             # Several broken touches form one irregular crown; a single oval
             # reads as a computer icon rather than foliage laid by a brush.
             crown_radius = max(18, int(rng.uniform(28, 55)))
-            for dab in range(int(rng.integers(11, 19))):
+            for dab in range(int(rng.integers(20, 32))):
                 dab_x = center_points[-1][0] + rng.normal(0, crown_radius * .58)
                 dab_y = crown + rng.normal(0, crown_radius * .35)
-                dab_rx = crown_radius * rng.uniform(.32, .78)
-                dab_ry = crown_radius * rng.uniform(.20, .56)
-                crown_draw.ellipse((dab_x - dab_rx, dab_y - dab_ry,
-                                    dab_x + dab_rx, dab_y + dab_ry),
-                                   fill=int(rng.uniform(57, 112)))
+                dab_rx = crown_radius * rng.uniform(.16, .48)
+                angle = rng.uniform(-.7, .7)
+                reach = dab_rx * rng.uniform(.55, 1.2)
+                rise = math.sin(angle) * reach
+                crown_draw.line((dab_x - reach / 2, dab_y - rise / 2,
+                                 dab_x + reach / 2, dab_y + rise / 2),
+                                fill=int(rng.uniform(65, 135)), width=int(rng.integers(3, 9)))
         trunks = ImageChops.multiply(near_forest, _wrap_blur(trunks, .38))
         branches = ImageChops.multiply(near_forest, _wrap_blur(branches, .25))
-        crown_accents = ImageChops.multiply(near_forest, _wrap_blur(crown_accents, 1.2))
+        # A crown naturally projects slightly above the footprint's sampled
+        # forest silhouette. Clipping every leaf to the terrain ray left only
+        # bare vertical trunks; a soft, shallow canopy fringe fixes that
+        # without placing woodland outside a mapped near-forest sector.
+        crown_envelope = maximum_filter1d(
+            np.asarray(near_forest, dtype=np.uint8), size=max(9, height // 20) | 1,
+            axis=0, mode="nearest",
+        )
+        crown_envelope = Image.fromarray(crown_envelope, "L")
+        crown_accents = ImageChops.multiply(crown_envelope, _wrap_blur(crown_accents, 1.2))
         base.paste(Image.new("RGB", base.size, (70, 63, 45)), (0, 0), trunks)
         base.paste(Image.new("RGB", base.size, (54, 67, 42)), (0, 0), branches)
-        base.paste(Image.new("RGB", base.size, (25, 86, 48)), (0, 0), crown_accents)
+        base.paste(Image.new("RGB", base.size, (25, 71, 43)), (0, 0), _scaled_alpha(crown_accents, 1.50))
         crown_shadow = ImageChops.multiply(near_forest, ImageChops.offset(crown_accents, 3, 3))
         crown_highlight = ImageChops.multiply(near_forest, ImageChops.offset(crown_accents, -4, -3))
-        base.paste(Image.new("RGB", base.size, (30, 66, 46)), (0, 0), _scaled_alpha(crown_shadow, .36))
-        base.paste(Image.new("RGB", base.size, (175, 169, 86)), (0, 0), _scaled_alpha(crown_highlight, .22))
+        base.paste(Image.new("RGB", base.size, (25, 57, 39)), (0, 0), _scaled_alpha(crown_shadow, .72))
+        base.paste(Image.new("RGB", base.size, (203, 188, 103)), (0, 0), _scaled_alpha(crown_highlight, .46))
         trunk_glints = ImageChops.multiply(near_forest, ImageChops.offset(trunks, -1, 0))
         base.paste(Image.new("RGB", base.size, (177, 145, 91)), (0, 0), _scaled_alpha(trunk_glints, .27))
 
@@ -830,13 +1104,14 @@ def _paint_surface_blooms(base: Image.Image, masks, pigment_field: Image.Image,
     """Give broad land surfaces transparent, connected watercolor blooms."""
     tones = {
         SemanticClass.OPEN_GRASSLAND: ((85, 105, 70), (222, 211, 158)),
-        SemanticClass.ROCK: ((91, 86, 80), (224, 215, 198)),
+        SemanticClass.ROCK: ((67, 83, 112), (210, 218, 222)),
         SemanticClass.UNKNOWN_TERRAIN: ((76, 96, 78), (216, 211, 170)),
+        SemanticClass.SETTLEMENT: ((119, 91, 83), (235, 207, 162)),
     }
-    artist_dark = ImageOps.invert(artist_field).point(lambda value: max(0, min(64, value - 18)))
-    artist_light = artist_field.point(lambda value: max(0, min(48, value - 164)))
-    shadow_field = ImageChops.lighter(pigment_field.point(lambda value: max(0, min(31, 143 - value))), artist_dark)
-    light_field = ImageChops.lighter(pigment_field.point(lambda value: max(0, min(25, value - 128))), artist_light)
+    artist_dark = ImageOps.invert(artist_field).point(lambda value: max(0, min(93, value - 18)))
+    artist_light = artist_field.point(lambda value: max(0, min(72, value - 151)))
+    shadow_field = ImageChops.lighter(pigment_field.point(lambda value: max(0, min(55, 157 - value))), artist_dark)
+    light_field = ImageChops.lighter(pigment_field.point(lambda value: max(0, min(48, value - 117))), artist_light)
     for semantic, (shadow_color, light_color) in tones.items():
         surface = Image.new("L", base.size)
         for layer in _LAYERS:
@@ -853,13 +1128,17 @@ def _paint_surface_blooms(base: Image.Image, masks, pigment_field: Image.Image,
 
 def _building_runs(geometry: PanoramaGeometry, width: int, height: int):
     resolution = geometry.config.angular_resolution_degrees
+    # swissBUILDINGS/TLM footprints are sampled at roughly 0.25° even when
+    # terrain rays are 0.1°. Using the terrain spacing for run continuity
+    # broke one factual facade into hundreds of subpixel polygons.
+    sample_gap = max(resolution * 2.2, .52)
     for building in geometry.buildings:
         ordered = sorted(building.samples, key=lambda sample: sample.azimuth_degrees)
         if not ordered:
             continue
         runs: list[list] = [[]]
         for sample in ordered:
-            if runs[-1] and sample.azimuth_degrees - runs[-1][-1].azimuth_degrees > resolution * 2.2:
+            if runs[-1] and sample.azimuth_degrees - runs[-1][-1].azimuth_degrees > sample_gap:
                 runs.append([])
             runs[-1].append(sample)
         if len(runs) > 1 and runs[0][0].azimuth_degrees < 2 and runs[-1][-1].azimuth_degrees > 358:
@@ -893,38 +1172,45 @@ def _paint_buildings(base: Image.Image, geometry: PanoramaGeometry, seed: int,
         distance = float(np.median([sample.distance_meters for sample in samples]))
         haze = .04 if distance < 120 else .28 if distance < 1_500 else .62
         rng = np.random.default_rng(seed + index * 31)
-        wall_bases = ((181, 126, 92), (199, 157, 107), (187, 145, 122), (211, 183, 137), (164, 139, 116))
+        wall_bases = ((188, 139, 106), (219, 178, 128), (183, 153, 140), (230, 201, 156), (173, 149, 126))
         wall_base = _mix(wall_bases[index % len(wall_bases)], (203, 171, 130), float(rng.uniform(0, .22)))
-        wall = _mix(wall_base, (215, 220, 207), haze)
-        roof_color = _mix((132, 91, 72), (205, 211, 201), haze)
+        # Cool aerial haze belongs around the house, not as a green facade.
+        # Keep all measured wall planes in one warm plaster family.
+        wall = _mix(wall_base, (228, 210, 187), haze)
+        roof_color = _mix((137, 77, 65) if index % 3 else (123, 104, 97), (197, 203, 199), haze)
         alpha = 210 if distance < 500 else 165 if distance < 2_000 else 92
         # TLM/OSM often supplies a reliable footprint but no roof model. A
         # shallow, conservative wash roof makes it readable as a house without
         # claiming an exact architectural form or storey count.
-        top = roof[:len(samples)]
+        roof_top = roof[:len(samples)]
         eaves = list(reversed(roof[len(samples):]))
-        if top and max(abs(upper[1] - lower[1]) for upper, lower in zip(top, eaves)) < 1:
+        if roof_top and max(abs(upper[1] - lower[1]) for upper, lower in zip(roof_top, eaves)) < 1:
             wall_bottom = list(reversed(walls[len(samples):]))
             wall_height = float(np.median([abs(upper[1] - lower[1]) for upper, lower in zip(eaves, wall_bottom)]))
             roof_height = min(height * .026, max(1.5, wall_height * .24))
-            count = max(1, len(top) - 1)
-            top = [
+            count = max(1, len(roof_top) - 1)
+            roof_top = [
                 (point[0], point[1] - roof_height * (1 - abs(index / count * 2 - 1)))
                 for index, point in enumerate(eaves)
             ]
-            roof = [*top, *reversed(eaves)]
+            roof = [*roof_top, *reversed(eaves)]
         for horizontal in (-width, 0, width):
             shifted_walls = [(x + horizontal, y) for x, y in walls]
             shifted_roof = [(x + horizontal, y) for x, y in roof]
             draw.polygon(shifted_walls, fill=(*wall, alpha))
             draw.polygon(shifted_roof, fill=(*roof_color, alpha), outline=(*_mix(roof_color, (67, 78, 69), .32), min(195, alpha + 10)), width=max(1, width // 2048))
+            # Eaves and the upper roof plane reserve highlights as in a
+            # watercolor architectural study; no additional house is drawn.
+            draw.line([(x + horizontal, y) for x, y in roof_top],
+                      fill=(*_mix(roof_color, (237, 214, 173), .46), min(175, alpha)),
+                      width=max(1, width // 1900), joint="curve")
             # A second imperfect glaze sits slightly inside the same factual
             # building body and suggests sun-faded plaster and facade depth.
             if len(shifted_walls) >= 6:
                 middle = len(samples) // 2
                 facade_plane = [*shifted_walls[middle:len(samples)], *shifted_walls[len(samples):len(samples) + len(samples) - middle]]
                 if len(facade_plane) >= 3:
-                    draw.polygon(facade_plane, fill=(*_mix(wall, (94, 83, 75), .32), max(18, alpha // 5)))
+                    draw.polygon(facade_plane, fill=(*_mix(wall, (124, 90, 76), .46), max(68, alpha // 2)))
             draw.line(shifted_walls[:len(samples)], fill=(*_mix(wall, (70, 79, 69), .25), min(130, alpha)), width=max(1, width // 2700))
             draw.line(shifted_walls[len(samples):], fill=(*_mix(wall, (55, 67, 59), .32), min(105, alpha)), width=max(1, width // 2400))
             if distance < 500 and len(shifted_walls) >= 4:
@@ -932,16 +1218,23 @@ def _paint_buildings(base: Image.Image, geometry: PanoramaGeometry, seed: int,
                 ys = [point[1] for point in shifted_walls]
                 left, right, top, bottom = min(xs), max(xs), min(ys), max(ys)
                 if right - left > width * .006 and bottom - top > height * .025:
-                    for fraction in (.34, .7):
+                    for fraction in np.linspace(.18, .82, min(5, max(2, int(projected_width / (width * .025))))):
                         x = left + (right - left) * fraction
-                        y = top + (bottom - top) * (.45 + rng.uniform(-.06, .06))
-                        radius = max(1, width // 1300)
-                        draw.rounded_rectangle((x - radius * 2, y - radius, x + radius * 2, y + radius), radius=radius, fill=(67, 77, 68, 48))
+                        y = top + (bottom - top) * (.50 + rng.uniform(-.04, .04))
+                        radius = min(7, max(2, int(projected_width / 48)))
+                        draw.rectangle((x - radius * 1.3, y - radius,
+                                        x + radius * 1.3, y + radius * 1.45),
+                                       fill=(67, 77, 68, 75))
+                        draw.line((x - radius * 1.6, y - radius * 1.2, x + radius * 1.4, y - radius * 1.2),
+                                  fill=(239, 207, 157, 105), width=1)
     softened = _wrap_blur(overlay, max(.65, width / 6200))
     base.paste(softened.convert("RGB"), (0, 0), softened.getchannel("A"))
-    granulation = pigment_field.point(lambda value: max(0, min(22, 135 - value)))
+    granulation = pigment_field.point(lambda value: max(0, min(38, 151 - value)))
     granulation = ImageChops.multiply(softened.getchannel("A"), granulation)
     base.paste(Image.new("RGB", base.size, (105, 79, 66)), (0, 0), granulation)
+    dry_lights = pigment_field.point(lambda value: max(0, min(30, value - 169)))
+    dry_lights = ImageChops.multiply(softened.getchannel("A"), dry_lights)
+    base.paste(Image.new("RGB", base.size, (237, 210, 171)), (0, 0), dry_lights)
     ghost = ImageChops.offset(softened, 1, 1)
     ghost.putalpha(ghost.getchannel("A").point(lambda value: round(value * .16)))
     base.paste(ghost.convert("RGB"), (0, 0), ghost.getchannel("A"))
@@ -983,7 +1276,8 @@ def _paint_edges(base: Image.Image, geometry: PanoramaGeometry) -> None:
                       width=max(1, width // 2500), joint="curve")
     for index, column in enumerate(geometry.columns):
         current = {edge.depth_layer if edge.depth_layer is not None else terrain_depth_layer(edge.distance_meters): edge
-                   for edge in column.terrain_edges if edge.kind == "inner-ridge" and edge.semantic in _MOUNTAIN}
+                   for edge in column.terrain_edges if edge.kind == "inner-ridge" and edge.semantic in _MOUNTAIN
+                   and edge.semantic != SemanticClass.FOREST}
         for layer in list(runs):
             if layer not in current:
                 points = runs.pop(layer)
@@ -1012,7 +1306,9 @@ def _paint_water_details(base: Image.Image, water_mask: Image.Image, seed: int,
         if visible.size:
             top_x, bottom_x = int(visible[0]), int(visible[-1])
             local_depth[top_x:bottom_x + 1, x] = np.linspace(0, 255, bottom_x - top_x + 1).astype(np.uint8)
-    depth_field = _wrap_blur(Image.fromarray(local_depth, "L"), 2.2)
+    # Shore offsets can jump between adjacent azimuth rays; blend the depth
+    # plane laterally before glazing it, instead of exposing a vertical seam.
+    depth_field = _wrap_blur(Image.fromarray(local_depth, "L"), max(5, width / 185))
     depth_amount = np.asarray(depth_field, dtype=np.float32)[..., None] / 255
     shallow = np.array((185, 217, 213), dtype=np.float32)
     deep = np.array((28, 94, 148), dtype=np.float32)
@@ -1022,6 +1318,13 @@ def _paint_water_details(base: Image.Image, water_mask: Image.Image, seed: int,
     base.paste(Image.new("RGB", base.size, (192, 214, 210)), (0, 0), reflection_alpha)
     depth_alpha = ImageChops.multiply(water_mask, depth_field.point(lambda value: 25 + value * 155 // 255))
     base.paste(depth, (0, 0), depth_alpha)
+    # Large, translucent water planes change hue with *local* visible depth;
+    # they are not a uniform repeating wave texture across the whole lake.
+    plane = Image.fromarray(np.rint(np.clip(
+        (np.asarray(depth_field, dtype=np.float32) / 255 - .16) * 145, 0, 92,
+    )).astype(np.uint8), "L")
+    plane = ImageChops.multiply(water_mask, _wrap_blur(plane, max(2, width / 320)))
+    base.paste(Image.new("RGB", base.size, (27, 89, 137)), (0, 0), plane)
     # Reflect the already-painted factual shore and landforms. The reflection
     # is deliberately loose, short and soft, but gives the lake spatial context
     # that a standalone blue gradient cannot provide.
@@ -1033,15 +1336,15 @@ def _paint_water_details(base: Image.Image, water_mask: Image.Image, seed: int,
         if not visible.size:
             continue
         shore, bottom_x = int(visible[0]), int(visible[-1])
-        reach = min(bottom_x - shore + 1, max(4, round(height * .16)))
+        reach = min(bottom_x - shore + 1, max(4, round(height * .23)))
         for offset in range(reach):
-            source_y = max(0, shore - 1 - offset // 3)
+            source_y = max(0, shore - 1 - offset // 2)
             target_y = shore + offset
             reflected[target_y, x] = scene[source_y, x]
-            reflected_alpha[target_y, x] = round(46 * (1 - offset / max(1, reach)))
-    reflection_image = Image.fromarray(reflected, "RGB").filter(ImageFilter.GaussianBlur(max(1, width / 1300)))
+            reflected_alpha[target_y, x] = round(84 * (1 - offset / max(1, reach)) ** 1.4)
+    reflection_image = _wrap_blur(Image.fromarray(reflected, "RGB"), max(3, width / 510))
     reflection_mask = ImageChops.multiply(
-        water_mask, _wrap_blur(Image.fromarray(reflected_alpha, "L"), 2.4),
+        water_mask, _wrap_blur(Image.fromarray(reflected_alpha, "L"), max(3, width / 510)),
     )
     base.paste(reflection_image, (0, 0), reflection_mask)
     # One low-frequency, wrap-safe pigment field gives the water depth without
@@ -1050,51 +1353,41 @@ def _paint_water_details(base: Image.Image, water_mask: Image.Image, seed: int,
     # not the same texture used on a hill.
     compressed = broad_pigment.resize((max(4, width // 5), height), Image.Resampling.BICUBIC)
     water_pigment = compressed.resize((width, height), Image.Resampling.BICUBIC)
-    bloom = water_pigment.point(lambda value: 5 + value * 33 // 255)
+    bloom = water_pigment.point(lambda value: 9 + value * 66 // 255)
     bloom = ImageChops.multiply(water_mask, bloom)
     base.paste(Image.new("RGB", base.size, (38, 107, 143)), (0, 0), bloom)
 
-    # Vertical reflections are sparse, broad and fade with local depth. They
-    # borrow only the shoreline positions, never inventing an object.
-    reflections = Image.new("L", base.size)
-    reflection_draw = ImageDraw.Draw(reflections)
     rng = np.random.default_rng(seed)
-    for _ in range(46):
-        x = int(rng.uniform(0, width))
-        visible = np.flatnonzero(water_pixels[:, x] > 80)
-        if not visible.size:
-            continue
-        top_x = int(visible[0])
-        length = int(rng.uniform(height * .015, height * .11))
-        reflection_draw.line((x, top_x, x + rng.uniform(-2, 2), top_x + length),
-                             fill=int(rng.uniform(7, 20)), width=int(rng.uniform(2, 7)))
-    reflections = ImageChops.multiply(water_mask, _wrap_blur(reflections, 2.1))
-    base.paste(Image.new("RGB", base.size, (218, 218, 187)), (0, 0), reflections)
     details = Image.new("L", base.size)
     draw = ImageDraw.Draw(details)
     _left, top, _right, bottom = water_mask.getbbox()
     water_height = max(1, bottom - top)
-    for index in range(150):
-        y = int(top + water_height * (.08 + .88 * index / 149))
+    for _ in range(72):
+        fraction = float(rng.uniform(.08, .96))
+        y = int(top + water_height * fraction)
         start = int(rng.uniform(0, width))
-        length = int(rng.uniform(width * .025, width * .1))
+        length = int(rng.uniform(width * .012, width * (.035 + fraction * .055)))
         end = start + length
-        ink = int(rng.uniform(13, 34))
-        draw.line((start, y, min(width, end), y), fill=min(58, ink + 19), width=max(1, height // 520))
+        ink = int(rng.uniform(21, 53))
+        bend = float(rng.uniform(-.004, .004) * water_height)
+        points = [(start, y), (start + length * .43, y + bend), (end, y + bend * .28)]
+        draw.line(points, fill=ink, width=max(1, height // 620), joint="curve")
         if end > width:
-            draw.line((0, y, end - width, y), fill=min(58, ink + 19), width=max(1, height // 520))
+            draw.line((0, y + bend * .28, end - width, y + bend * .28), fill=ink // 2, width=max(1, height // 620))
     clipped = ImageChops.multiply(_wrap_blur(details, .45), water_mask)
     base.paste(Image.new("RGB", base.size, (242, 237, 215)), (0, 0), clipped)
     # A few darker, discontinuous horizontal strokes create receding water
     # planes. Their length and contrast taper towards the shore/horizon.
     dark_details = Image.new("L", base.size)
     dark_draw = ImageDraw.Draw(dark_details)
-    for _ in range(115):
+    for _ in range(51):
         fraction = float(rng.uniform(.08, .92))
         y = int(top + water_height * fraction)
         start = int(rng.uniform(0, width))
         length = int(rng.uniform(width * .008, width * (.025 + fraction * .04)))
-        dark_draw.line((start, y, min(width, start + length), y), fill=int(rng.uniform(17, 38)),
+        bend = float(rng.uniform(-.003, .003) * water_height)
+        dark_draw.line([(start, y), (start + length * .52, y + bend),
+                        (min(width, start + length), y + bend * .2)], fill=int(rng.uniform(25, 62)),
                        width=max(1, height // 620))
         if start + length > width:
             dark_draw.line((0, y, start + length - width, y), fill=12, width=max(1, height // 620))
@@ -1117,8 +1410,8 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     # final 4096px WebP remains crisp at the UI's roughly 90° crop.
     render_width, render_height = round(width * PAINT_SCALE), round(height * PAINT_SCALE)
     seed = _seed(geometry.identity_key, season)
-    sky_top = {"spring": (174, 208, 220), "summer": (159, 201, 219), "autumn": (181, 204, 211), "winter": (187, 208, 221)}[season]
-    base = _gradient((render_width, render_height), sky_top, (244, 232, 204))
+    sky_top = {"spring": (153, 195, 219), "summer": (135, 185, 218), "autumn": (153, 181, 208), "winter": (161, 187, 215)}[season]
+    base = _gradient((render_width, render_height), sky_top, (248, 228, 187))
     artist_pigment = _artist_pigment(render_width, render_height)
     broad_pigment = _periodic_pigment(render_width, render_height, seed + 17, (190, 91, 43))
     medium_pigment = _periodic_pigment(render_width, render_height, seed + 29, (74, 31, 17))
@@ -1139,7 +1432,7 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     }
     palette = SEASON_PALETTES[season]
     order = (SemanticClass.SNOW_OR_GLACIER, SemanticClass.ROCK, SemanticClass.UNKNOWN_TERRAIN,
-             SemanticClass.OPEN_GRASSLAND, SemanticClass.FOREST, SemanticClass.SETTLEMENT,
+             SemanticClass.OPEN_GRASSLAND, SemanticClass.FOREST, SemanticClass.SETTLEMENT, SemanticClass.BUILDING,
              SemanticClass.WATER, SemanticClass.RIVER)
     # Paint each geographic surface as one connected watercolor mass.  Depth
     # is glazed on afterwards; rendering the eight distance bins separately
@@ -1147,7 +1440,7 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     land = terrain_silhouette
     if land.getbbox():
         ground = _mix(palette[SemanticClass.UNKNOWN_TERRAIN], palette[SemanticClass.OPEN_GRASSLAND], .46)
-        _paint_wash(base, land, ground, .78, pigments)
+        _paint_wash(base, land, ground, .94, pigments)
     for semantic in order:
         mask = surfaces.get(semantic)
         if mask is None:
@@ -1155,10 +1448,13 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
         color = palette[semantic]
         if semantic in {SemanticClass.WATER, SemanticClass.RIVER}:
             color = _mix(color, (174, 208, 217), .12)
+        elif semantic == SemanticClass.ROCK:
+            color = _mix(color, (104, 137, 169), .34)
         elif semantic in {SemanticClass.UNKNOWN_TERRAIN, SemanticClass.OPEN_GRASSLAND}:
             color = _mix(color, (181, 164, 91), .10)
-        opacity = .91 if semantic in {SemanticClass.WATER, SemanticClass.RIVER} else (
-            .60 if semantic == SemanticClass.FOREST else .42
+        opacity = 1.08 if semantic in {SemanticClass.WATER, SemanticClass.RIVER} else (
+            1.16 if semantic == SemanticClass.BUILDING else 1.46 if semantic == SemanticClass.FOREST
+            else 1.09 if semantic == SemanticClass.ROCK else .75
         )
         _paint_wash(base, mask, color, opacity, pigments)
         _paint_depth_atmosphere(base, semantic, mask, masks)
@@ -1174,13 +1470,15 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     # Detail painters consume a single visual layer per semantic so they never
     # retrace the implementation's distance-band edges.
     visual_masks = {(semantic, 0): mask for semantic, mask in surfaces.items()}
-    _paint_landform_relief(base, visual_masks)
+    _paint_landform_relief(base, masks)
+    _paint_layered_valleys(base, masks)
     _paint_ambient_volume(base, geometry, visual_masks)
     _paint_mountain_facets(base, geometry, visual_masks, medium_pigment)
     _paint_surface_blooms(base, visual_masks, medium_pigment, artist_pigment)
     _paint_land_brushwork(base, visual_masks, seed + 47)
     _paint_perspective_sweeps(base, visual_masks, seed + 53)
-    _paint_forest_details(base, masks, canopy_field, artist_pigment, seed + 59)
+    _paint_forest_details(base, visual_masks, canopy_field, artist_pigment, seed + 59, masks)
+    _paint_measured_slope_volume(base, geometry, surfaces)
     _paint_water_details(base, water, seed + 71, broad_pigment)
     _paint_buildings(base, geometry, seed + 113, medium_pigment)
     _paint_edges(base, geometry)
@@ -1195,10 +1493,11 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     base.paste(Image.new("RGB", base.size, (239, 230, 208)), (0, 0), light_fibres)
     base.paste(Image.new("RGB", base.size, (103, 112, 96)), (0, 0), dark_fibres)
     base = _close_seam(base)
+    base = _heal_water_wrap_cusp(base, water)
     output = io.BytesIO()
     # Slightly higher quality also keeps the lossy encoder's boundary blocks
     # visually continuous after the circular edge has been matched above.
-    base.save(output, format="WEBP", quality=88, method=1, exact=True)
+    base.save(output, format="WEBP", quality=91, method=1, exact=True)
     return output.getvalue()
 
 

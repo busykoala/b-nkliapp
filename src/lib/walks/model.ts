@@ -10,6 +10,15 @@ export type RouteEvidence = { noise?: RouteNoise[]; quiet: number | null; nature
 export type RestStop = { bench: WalkBench; routeSeconds: number };
 export type WalkSuggestion = { id: string; path: WalkPath; bench: WalkBench; extraBenches: WalkBench[]; durationSeconds: number; score: number; evidence: RouteEvidence; withinBudget: boolean; repeated: boolean; benchIndex: number; rest?: { stops: RestStop[]; maxGapSeconds: number } };
 export type WalkResult = { suggestions: WalkSuggestion[]; query: WalkQuery; fetchedAt: string; partial: boolean; message?: UiMessage };
+export type WalkDraftSettings = Pick<WalkQuery, "minutes" | "shape" | "light" | "speed" | "difficulty" | "maxRestMinutes"> & { time: string };
+export type WalkDraftSnapshot = {
+  origin: JourneyOrigin | null;
+  settings: WalkDraftSettings;
+  result: WalkResult | null;
+  selected: string;
+  extras: boolean;
+  dirty?: boolean;
+};
 
 export function individualBenchName(name: string | null) { return name && !/^(sitzbank|bank|bänkli|bench)$/i.test(name.trim()) ? name : null; }
 export function walkCopy(benches: WalkBench[], shape: WalkQuery["shape"], extraCount: number, t: Translator) {

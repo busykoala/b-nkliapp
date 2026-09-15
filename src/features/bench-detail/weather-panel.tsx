@@ -49,7 +49,7 @@ function WeatherSketch({ weather }: { weather: NonNullable<BenchDetail["weather"
 function CommunityQuiet({ bench }: { bench: BenchDetail }) {
   const t = useTranslations();
   const format = useFormatter();
-  if (!bench.ratingBreakdown) return <div className="community-quiet is-empty"><MessageCircleHeart size={21} /><div><small>{t("bench.weather.quiet.title")}</small><strong>{t("bench.weather.quiet.empty")}</strong><p>{t("bench.weather.quiet.unknown")}</p></div></div>;
+  if (bench.ratingBreakdown?.quiet == null) return <div className="community-quiet is-empty"><MessageCircleHeart size={21} /><div><small>{t("bench.weather.quiet.title")}</small><strong>{t("bench.weather.quiet.empty")}</strong><p>{t("bench.weather.quiet.unknown")}</p></div></div>;
   const quiet = bench.ratingBreakdown.quiet;
   return <div className="community-quiet">
     <MessageCircleHeart size={21} />

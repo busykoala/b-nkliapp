@@ -24,14 +24,14 @@ export function CorrelationPlot({ points, trend, label, trendLabel, xLabel, yLab
   const y = (value: number) => top + (1 - Math.max(0, Math.min(1, (value - yMinimum) / (yMaximum - yMinimum)))) * height;
   const trendY = (value: number) => y(trend ? trend.intercept + trend.slope * value : 0);
   return <figure className="lab-plot">
-    <svg viewBox="0 0 540 260" role="img" aria-label={label}>
+    <div className="lab-plot-axis-labels"><span>↑ {yLabel}</span></div>
+    <svg viewBox="0 0 540 236" role="img" aria-label={label}>
       <defs><clipPath id="correlation-field"><rect x={left} y={top} width={width} height={height} /></clipPath></defs>
       <path className="lab-grid" d={`M${left} ${top}V${top + height}H${left + width} M${left} ${top + height / 2}H${left + width} M${left + width / 2} ${top}V${top + height}`} />
       {points.map((point) => <circle key={point.id} cx={x(point.xValue)} cy={y(point.yValue)} r="5"><title>{`${point.title ?? point.id}: ${point.xValue.toFixed(1)} · ${point.yValue.toFixed(1)}`}</title></circle>)}
       {trend ? <line className="lab-trend" clipPath="url(#correlation-field)" x1={x(xMinimum)} y1={trendY(xMinimum)} x2={x(xMaximum)} y2={trendY(xMaximum)}><title>{trendLabel}</title></line> : null}
-      <text x={left + width / 2} y="252" textAnchor="middle">{xLabel}</text>
-      <text x="13" y={top + height / 2} textAnchor="middle" transform={`rotate(-90 13 ${top + height / 2})`}>{yLabel}</text>
     </svg>
+    <div className="lab-plot-axis-labels is-horizontal"><span>→ {xLabel}</span></div>
     {trend ? <figcaption><i aria-hidden="true" /> {trendLabel}</figcaption> : null}
   </figure>;
 }

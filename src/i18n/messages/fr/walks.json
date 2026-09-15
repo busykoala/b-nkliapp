@@ -17,6 +17,8 @@
   },
   "planner": {
     "title": "Découvrir une balade",
+    "resume": "Reprendre la balade",
+    "end": "Terminer la balade",
     "resize": "Agrandir ou réduire la balade",
     "close": "Fermer la balade",
     "eyebrow": "Le temps d’un banc",

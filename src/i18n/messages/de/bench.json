@@ -367,6 +367,8 @@
     "panoramaHeading": "Blickrichtung {degrees} Grad",
     "panoramaHint": "↔ ↕ Ziehen",
     "panoramaCalculated": "Aus Gelände- und Umgebungsdaten berechnet",
+    "panoramaZoomIn": "Vergrössern",
+    "panoramaZoomOut": "Verkleinern",
     "panoramaGenerating": "Die Aussicht wird gerade gemalt …",
     "panoramaUnavailable": "Die berechnete Aussicht ist noch nicht verfügbar.",
     "panoramaRetry": "Erneut versuchen"

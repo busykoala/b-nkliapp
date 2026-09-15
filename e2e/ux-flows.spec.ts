@@ -85,7 +85,9 @@ test("guest rating resumes directly into four tap controls after authentication"
   await registerInOpenDialog(page, `rate-${info.project.name.slice(-3)}`);
   const rating = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await expect(rating.getByRole("group", { name: "Gesamt", exact: true })).toBeVisible();
-  for (const label of ["Gesamt", "Aussicht", "Komfort", "Ruhe"]) await rating.getByRole("group", { name: label, exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
+  await rating.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
+  await rating.getByText("Aussicht, Komfort und Ruhe ergänzen (freiwillig)").click();
+  for (const label of ["Aussicht", "Komfort", "Ruhe"]) await rating.getByRole("group", { name: label, exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
   await rating.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(rating.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
   await rating.getByRole("button", { name: "Beiträge schliessen" }).click();

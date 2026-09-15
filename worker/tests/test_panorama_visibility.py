@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import io
 
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
 
 from benchly.panorama.cache import geometry_cache_key, render_cache_key
@@ -19,7 +19,11 @@ from benchly.panorama.models import (
     TerrainSample,
 )
 from benchly.panorama.visibility import build_panorama_geometry, curvature_drop
-from benchly.panorama.watercolor import _paint_buildings, render_lightmap_webp, render_panorama_webp
+from benchly.panorama.watercolor import (
+    _building_runs, _heal_water_wrap_cusp, _paint_buildings, _paint_measured_slope_volume,
+    _paint_mountain_facets, _paint_water_details,
+    _periodic_pigment, _soften_narrow_water_view, _surface_masks, render_lightmap_webp, render_panorama_webp,
+)
 
 
 CONFIG = PanoramaConfig(angular_resolution_degrees=90, maximum_distance_meters=150_000)
@@ -32,6 +36,31 @@ IDENTITY = GeometryIdentity(
     building_version="buildings-test",
     angular_resolution_degrees=90,
 )
+
+
+def test_narrow_water_ray_is_a_wash_but_broad_lake_and_wrap_are_preserved():
+    mask = Image.new("L", (200, 80))
+    draw = ImageDraw.Draw(mask)
+    draw.rectangle((30, 20, 34, 79), fill=255)
+    draw.rectangle((100, 20, 170, 79), fill=255)
+    draw.rectangle((198, 20, 199, 79), fill=255)
+    draw.rectangle((0, 20, 2, 79), fill=255)
+    softened = _soften_narrow_water_view(mask)
+    assert 0 < softened.getpixel((32, 65)) < 255
+    assert softened.getpixel((130, 65)) == 255
+    assert 0 < softened.getpixel((0, 65)) < 255
+
+
+def test_narrow_snow_chute_fades_into_connected_mountain_but_broad_snow_remains():
+    rock = Image.new("L", (200, 80), 255)
+    snow = Image.new("L", (200, 80))
+    ImageDraw.Draw(rock).rectangle((30, 10, 34, 79), fill=0)
+    ImageDraw.Draw(snow).rectangle((30, 10, 34, 79), fill=255)
+    ImageDraw.Draw(snow).rectangle((110, 10, 170, 79), fill=255)
+    surfaces = _surface_masks({(SemanticClass.ROCK, 0): rock, (SemanticClass.SNOW_OR_GLACIER, 0): snow})
+    assert surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((32, 20)) > surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((32, 70))
+    assert surfaces[SemanticClass.ROCK].getpixel((32, 60)) > 100
+    assert surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((140, 60)) > 200
 
 
 def rays(samples_by_direction=None):
@@ -227,6 +256,78 @@ def test_watercolor_renderer_is_deterministic_webp_with_real_painted_variation()
     assert len(image.getcolors(maxcolors=100_000) or []) > 100
 
 
+def test_ridge_brushwork_never_fills_a_vertical_panorama_column():
+    north = [
+        TerrainSample(distance_meters=100, elevation_meters=500,
+                      semantic=SemanticClass.OPEN_GRASSLAND, source="fixture"),
+        TerrainSample(distance_meters=1_000, elevation_meters=650,
+                      semantic=SemanticClass.FOREST, source="fixture"),
+        TerrainSample(distance_meters=8_000, elevation_meters=2_500,
+                      semantic=SemanticClass.ROCK, source="fixture"),
+    ]
+    geometry = build_panorama_geometry(IDENTITY, rays({0: north}), config=CONFIG)
+    canvas = Image.new("RGB", (720, 240), (212, 216, 192))
+    before = np.asarray(canvas).copy()
+    _paint_mountain_facets(canvas, geometry, {(SemanticClass.ROCK, 0): Image.new("L", canvas.size, 255)},
+                           Image.new("L", canvas.size, 255))
+    changed = np.any(np.asarray(canvas) != before, axis=2)
+    assert changed.any()
+    # A true facet is finite: even a strong ridge may not paint a radial
+    # curtain from skyline to the bottom of the panorama.
+    assert max(np.count_nonzero(changed[:, x]) for x in range(720)) < 120
+
+
+def test_measured_opposite_hillside_slopes_have_distinct_soft_volume():
+    geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    columns = tuple(column.model_copy(update={
+        "terrain_edges": tuple(edge.model_copy(update={"slope_degrees": 45 if index % 2 == 0 else -45})
+                               for edge in column.terrain_edges),
+    }) for index, column in enumerate(geometry.columns))
+    geometry = geometry.model_copy(update={"columns": columns})
+    canvas = Image.new("RGB", (720, 240), (160, 160, 160))
+    _paint_measured_slope_volume(canvas, geometry,
+                                 {SemanticClass.OPEN_GRASSLAND: Image.new("L", canvas.size, 255)})
+    pixels = np.asarray(canvas)
+    assert pixels[200, 20, 0] > pixels[200, 220, 0] + 25
+    assert pixels[200, 20, 0] > pixels[200, 20, 2]
+    assert pixels[200, 220, 0] < pixels[200, 220, 2]
+
+
+def test_lake_washes_do_not_add_long_vertical_reflection_posts():
+    canvas = Image.new("RGB", (720, 240), (201, 213, 196))
+    water = Image.new("L", canvas.size)
+    ImageDraw.Draw(water).rectangle((0, 118, 719, 239), fill=255)
+    _paint_water_details(canvas, water, 17, _periodic_pigment(720, 240, 19, (190, 91, 43)))
+    pixels = np.asarray(canvas, dtype=np.float32)[145:230]
+    column_edges = np.abs(np.diff(pixels, axis=1)).mean(axis=(0, 2))
+    assert np.count_nonzero(column_edges > 8) <= 3
+
+
+def test_water_wrap_heals_a_dark_cusp_without_changing_land():
+    image = Image.new("RGB", (720, 240), (90, 130, 160))
+    water = Image.new("L", image.size)
+    ImageDraw.Draw(water).rectangle((0, 120, 719, 239), fill=255)
+    ImageDraw.Draw(image).rectangle((0, 120, 8, 239), fill=(76, 116, 146))
+    ImageDraw.Draw(image).rectangle((711, 120, 719, 239), fill=(76, 116, 146))
+    corrected = np.asarray(_heal_water_wrap_cusp(image, water), dtype=np.int16)
+    assert np.abs(corrected[180, 0] - corrected[180, 20]).mean() < 3
+    assert tuple(corrected[30, 0]) == (90, 130, 160)
+
+
+def test_narrow_canopy_gap_becomes_dappled_but_wide_clearing_stays_open():
+    forest = Image.new("L", (360, 120), 255)
+    grass = Image.new("L", forest.size)
+    for left, right in ((90, 92), (200, 250)):
+        ImageDraw.Draw(forest).rectangle((left, 40, right, 100), fill=0)
+        ImageDraw.Draw(grass).rectangle((left, 40, right, 100), fill=255)
+    result = _surface_masks({(SemanticClass.FOREST, 0): forest,
+                             (SemanticClass.OPEN_GRASSLAND, 0): grass})
+    assert result[SemanticClass.FOREST].getpixel((91, 70)) > 200
+    assert result[SemanticClass.OPEN_GRASSLAND].getpixel((91, 70)) < 80
+    assert result[SemanticClass.FOREST].getpixel((225, 70)) < 30
+    assert result[SemanticClass.OPEN_GRASSLAND].getpixel((225, 70)) > 200
+
+
 def test_subpixel_building_runs_do_not_become_vertical_fence_posts():
     geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
     sample = BuildingProjectionSample(
@@ -248,6 +349,25 @@ def test_subpixel_building_runs_do_not_become_vertical_fence_posts():
     before = np.asarray(canvas).copy()
     _paint_buildings(canvas, geometry, 7, Image.new("L", canvas.size, 128))
     assert np.array_equal(np.asarray(canvas), before)
+
+
+def test_quarter_degree_building_samples_form_one_coherent_facade():
+    geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    sample = BuildingProjectionSample(
+        azimuth_degrees=12, lower_angle_degrees=-5, eaves_angle_degrees=6,
+        upper_angle_degrees=9, distance_meters=120,
+    )
+    geometry = geometry.model_copy(update={
+        "config": geometry.config.model_copy(update={"angular_resolution_degrees": .1}),
+        "buildings": (ProjectedBuilding(
+            object_id="sampled-facade", source="fixture", confidence=1,
+            samples=tuple(sample.model_copy(update={"azimuth_degrees": 12 + delta})
+                          for delta in (0, .25, .5, .75, 1.0)),
+        ),),
+    })
+    runs = list(_building_runs(geometry, 720, 240))
+    assert len(runs) == 1
+    assert len(runs[0][1]) == 5
 
 
 def test_water_remains_water_at_the_bottom_without_an_invented_sand_band():

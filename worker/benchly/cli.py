@@ -43,6 +43,7 @@ from benchly.weather.jobs import refresh_weather_job
 from benchly.direction.jobs import analyze_directions_job, import_direction_reviews_job, prepare_direction_review_job, publish_direction_estimates_job, remove_direction_estimates_job
 from benchly.panorama.jobs import panorama_batch_job, panorama_worker_job
 from benchly.panorama.fixtures import render_fixture_job
+from benchly.panorama.refresh import repaint_index_job, fetch_repaint_capsules_job, repaint_job, seal_repaint_job, upload_repaint_job, activate_repaint_job
 from benchly.panorama.builder import (
     panorama_activate_job,
     panorama_build_job,
@@ -58,11 +59,22 @@ from benchly.panorama.builder import (
 from benchly.panorama.pyramid import prepare_terrain_pyramid_job
 from benchly.panorama.border_terrain import fetch_border_terrain_job
 from benchly.panorama.terrain_download import fetch_panorama_terrain_job
+from benchly.moderation import moderate_job
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Import and enrich Swiss benches into Benchly's database.")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    moderation = subparsers.add_parser("moderation", help="List or preview/apply audited contribution moderation")
+    _database_argument(moderation)
+    moderation.add_argument("action", choices=("list", "hide", "show", "block"))
+    moderation.add_argument("--type", choices=("rating", "correction"))
+    moderation.add_argument("--id", type=int)
+    moderation.add_argument("--limit", type=int, default=200)
+    moderation.add_argument("--reason", default="Moderation")
+    moderation.add_argument("--apply", action="store_true")
+    moderation.set_defaults(function=moderate_job, uses_lock=True)
 
     knowledge = subparsers.add_parser("backfill-knowledge", help="Resume geography, evidence, amenities, approaches and separate noise enrichment")
     _database_argument(knowledge)
@@ -448,7 +460,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_terrain = subparsers.add_parser(
         "panorama-fetch-terrain", help="Resume latest-only swissALTI3D acquisition for production benches",
     )
-    panorama_terrain.add_argument("--bench-index", required=True, help="Coordinate-bound production TSV fetched over LAN")
+    panorama_terrain.add_argument("--bench-index", required=True, help="Coordinate-bound production TSV fetched over SSH")
     panorama_terrain.add_argument("--source-dir", required=True)
     panorama_terrain.add_argument("--radius-km", type=int, default=20, choices=range(0, 51))
     panorama_terrain.add_argument("--io-threads", type=int, default=8, choices=range(1, 9))
@@ -504,7 +516,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_manifest = subparsers.add_parser("panorama-manifest", help="Seal the completed local build with Git and content hashes")
     _database_argument(panorama_manifest)
     panorama_manifest.add_argument("--root", default="./data/panorama-builder")
-    panorama_manifest.add_argument("--bench-index", help="Coordinate-bound TSV fetched from production over LAN")
+    panorama_manifest.add_argument("--bench-index", help="Coordinate-bound TSV fetched from production over SSH")
     panorama_manifest.set_defaults(function=panorama_manifest_job, uses_lock=False)
 
     for name, function, help_text in (
@@ -515,13 +527,58 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--root", default="./data/panorama-builder")
         command.set_defaults(function=function, uses_lock=False)
 
-    panorama_upload = subparsers.add_parser("panorama-upload", help="Resume the generation upload over the private LAN SSH endpoint")
+    panorama_upload = subparsers.add_parser("panorama-upload", help="Resume the generation upload over the approved SSH endpoint")
     panorama_upload.add_argument("--root", default="./data/panorama-builder")
-    panorama_upload.add_argument("--target", default="busykoala@192.168.1.206")
+    panorama_upload.add_argument("--target", default="busykoala@api.blizzard.busykoala.io")
     panorama_upload.set_defaults(function=panorama_upload_job, uses_lock=False)
 
-    panorama_index = subparsers.add_parser("panorama-fetch-index", help="Fetch only the production bench/geometry mapping over LAN SSH")
-    panorama_index.add_argument("--target", default="busykoala@192.168.1.206")
+    repaint_index = subparsers.add_parser("panorama-repaint-index", help="Index only capsules in the sealed current activation manifest")
+    repaint_index.add_argument("--manifest", default="./data/panorama-builder/generation/manifest.json")
+    repaint_index.add_argument("--output", default="./data/panorama-repaint/index.tsv")
+    repaint_index.set_defaults(function=repaint_index_job, uses_lock=False)
+
+    repaint = subparsers.add_parser("panorama-repaint", help="Resume painting from cached view capsules, without recalculating geography")
+    repaint.add_argument("--root", default="./data/panorama-repaint")
+    repaint.add_argument("--bench-index", default="./data/panorama-repaint/index.tsv")
+    repaint.add_argument("--capsule-root", default="./data/panorama-builder/generation/capsules")
+    repaint.add_argument("--season", choices=("spring", "summer", "autumn", "winter"), default="autumn")
+    repaint.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 17))
+    repaint.add_argument("--limit", type=int, default=0)
+    repaint.add_argument("--group", type=int, default=None, help="Paint one complete 512-row production group first")
+    repaint.set_defaults(function=repaint_job, uses_lock=False)
+
+    repaint_fetch = subparsers.add_parser("panorama-repaint-fetch-capsules", help="Resume only missing production view capsules over approved SSH")
+    repaint_fetch.add_argument("--bench-index", required=True, help="Fresh production index from panorama-fetch-index")
+    repaint_fetch.add_argument("--output", default="./data/panorama-repaint/current-index.tsv")
+    repaint_fetch.add_argument("--capsule-root", default="./data/panorama-builder/generation/capsules")
+    repaint_fetch.add_argument("--target", default="busykoala@api.blizzard.busykoala.io")
+    repaint_fetch.add_argument("--remote-database", default="/srv/data/benchly/data/benchly.sqlite")
+    repaint_fetch.set_defaults(function=fetch_repaint_capsules_job, uses_lock=False)
+
+    repaint_seal = subparsers.add_parser("panorama-repaint-seal", help="Verify and seal complete coordinate-bound paint chunks")
+    repaint_seal.add_argument("--root", default="./data/panorama-repaint")
+    repaint_seal.add_argument("--bench-index", default="./data/panorama-repaint/index.tsv")
+    repaint_seal.add_argument("--capsule-root", default="./data/panorama-builder/generation/capsules")
+    repaint_seal.add_argument("--group", type=int, default=None, help="Seal one complete production group")
+    repaint_seal.set_defaults(function=seal_repaint_job, uses_lock=False)
+
+    repaint_upload = subparsers.add_parser("panorama-repaint-upload", help="Resume one verified paint chunk over approved SSH")
+    repaint_upload.add_argument("--chunk", required=True)
+    repaint_upload.add_argument("--target", default="busykoala@api.blizzard.busykoala.io")
+    repaint_upload.add_argument("--capacity-gib", type=int, default=80)
+    repaint_upload.set_defaults(function=upload_repaint_job, uses_lock=False)
+
+    repaint_activate = subparsers.add_parser("panorama-repaint-activate", help="Preview or publish one checked chunk without a rollback generation")
+    _database_argument(repaint_activate)
+    repaint_activate.add_argument("--chunk-id", required=True)
+    repaint_activate.add_argument("--server-root", default="/srv/data/benchly/panorama")
+    repaint_activate.add_argument("--artifact-root", default="/panorama")
+    repaint_activate.add_argument("--capacity-gib", type=int, default=80)
+    repaint_activate.add_argument("--apply", action="store_true")
+    repaint_activate.set_defaults(function=activate_repaint_job, uses_lock=True)
+
+    panorama_index = subparsers.add_parser("panorama-fetch-index", help="Fetch only the production bench/geometry mapping over approved SSH")
+    panorama_index.add_argument("--target", default="busykoala@api.blizzard.busykoala.io")
     panorama_index.add_argument("--remote-database", default="/srv/data/benchly/data/benchly.sqlite")
     panorama_index.add_argument("--output", default="./data/panorama-builder/bench-index.tsv")
     panorama_index.set_defaults(function=panorama_fetch_index_job, uses_lock=False)

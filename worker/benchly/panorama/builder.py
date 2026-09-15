@@ -1,4 +1,4 @@
-"""Resumable local generation, sizing, verification and LAN activation.
+"""Resumable local generation, sizing, verification and SSH activation.
 
 This is intentionally outside release CI.  The Mac keeps the authoritative
 build workspace; production keeps only the active generation plus a bounded
@@ -52,7 +52,8 @@ from benchly.panorama.watercolor import render_material_webp, render_panorama_we
 DEFAULT_ROOT = Path("data/panorama-builder")
 GENERATION_FORMAT = "benchly-panorama-generation"
 GENERATION_SCHEMA = 1
-SERVER = "busykoala@192.168.1.206"
+SERVER = "busykoala@api.blizzard.busykoala.io"
+ALLOWED_SERVER_TARGETS = frozenset((SERVER, "busykoala@192.168.1.206"))
 SERVER_ROOT = Path("/srv/data/benchly/panorama")
 STEADY_TARGET_BYTES = 40 * 1024**3
 WARNING_BYTES = 60 * 1024**3
@@ -753,18 +754,25 @@ def panorama_verify_job(args: Namespace) -> None:
     print(json.dumps({"verified": len(manifest["artifacts"]), "bytes": manifest["artifact_bytes"], "generation_id": manifest["generation_id"]}))
 
 
-def _require_lan_target(target: str) -> None:
-    if target != SERVER:
-        raise RuntimeError(f"uploads are restricted to the LAN target {SERVER}")
+def _require_upload_target(target: str) -> None:
+    if target not in ALLOWED_SERVER_TARGETS:
+        raise RuntimeError(f"uploads are restricted to approved SSH targets: {', '.join(sorted(ALLOWED_SERVER_TARGETS))}")
+
+
+def _production_index_query() -> str:
+    # SQLite's decimal-to-REAL conversion can differ by a few ULPs between
+    # imports. Keep the same coordinate tolerance as the panorama reader.
+    return ("SELECT coalesce(pg.geometry_key,''),b.row_id,b.id,b.latitude,b.longitude "
+            "FROM benches b LEFT JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id "
+            "AND pg.status='ready' AND pg.bench_id=b.id "
+            "AND abs(pg.bench_latitude-b.latitude)<=1e-9 "
+            "AND abs(pg.bench_longitude-b.longitude)<=1e-9 WHERE b.active=1;")
 
 
 def panorama_fetch_index_job(args: Namespace) -> None:
     """Fetch the small coordinate-bound production artifact index, not the DB."""
-    _require_lan_target(args.target)
-    query = ("SELECT coalesce(pg.geometry_key,''),b.row_id,b.id,b.latitude,b.longitude "
-             "FROM benches b LEFT JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id "
-             "AND pg.status='ready' AND pg.bench_id=b.id AND pg.bench_latitude=b.latitude "
-             "AND pg.bench_longitude=b.longitude WHERE b.active=1;")
+    _require_upload_target(args.target)
+    query = _production_index_query()
     remote = f"sqlite3 -separator {shlex.quote(chr(9))} {shlex.quote(args.remote_database)} {shlex.quote(query)}"
     result = subprocess.run(["ssh", args.target, remote], check=True, capture_output=True)
     lines = result.stdout.decode().splitlines()
@@ -794,7 +802,7 @@ def _rsync_command() -> str:
 
 
 def panorama_upload_job(args: Namespace) -> None:
-    _require_lan_target(args.target)
+    _require_upload_target(args.target)
     root = Path(args.root).resolve()
     manifest = json.loads((root / "generation" / "manifest.json").read_text())
     generation_id = str(manifest["generation_id"])
@@ -814,7 +822,7 @@ def panorama_upload_job(args: Namespace) -> None:
 
 
 def panorama_activate_job(args: Namespace) -> None:
-    """Verify and activate on the server; execute there after the LAN upload."""
+    """Verify and activate on the server; execute there after the SSH upload."""
     root = Path(args.server_root).resolve()
     incoming = root / "incoming" / args.generation_id
     manifest_path = incoming / "manifest.json"

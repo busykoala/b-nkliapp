@@ -34,7 +34,7 @@ export default async function BenchPage({ params, searchParams }: { params: Prom
       </div>
     </header>
     <article className="standalone-bench-card mx-auto max-w-2xl pb-12">
-      <LocalBenchLanguageProvider bench={bench}><BenchDetailContent bench={bench} user={user} /></LocalBenchLanguageProvider>
+      <LocalBenchLanguageProvider bench={bench}><BenchDetailContent bench={bench} user={user} journeyHref={`/?bank=${encodeURIComponent(bench.id)}&action=journey`} amenityMapHrefPrefix={`/?bank=${encodeURIComponent(bench.id)}&amenity=`} /></LocalBenchLanguageProvider>
     </article>
   </main>;
 }

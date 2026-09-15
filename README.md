@@ -26,17 +26,13 @@ python3 -m unittest discover -s worker -p 'test_*.py'
 
 ## Configuration and security
 
-Copy `.env.example` and replace every secret before production. Generate an admin password hash with:
-
-```bash
-npx tsx scripts/hash-password.ts 'a-long-admin-password'
-```
-
-Put the resulting `scrypt$...` value in `ADMIN_PASSWORD_HASH`. Without it, the development-only password is `benchly-admin`; production refuses that fallback. Recentring the map uses location in the browser. Explicitly requesting a route sends coordinates to our server. Footrouting is self-hosted; address and nearby-station searches use GeoAdmin and transport.opendata.ch. Personal-endpoint routes remain in bounded server memory for at most five minutes; no journey history is stored. Providers have their own request-retention policies. Anonymous contribution and daily IP identifiers are HMAC hashes, and raw IP addresses are not stored.
+Copy `.env.example` and replace every secret before production. Moderation uses the preview-first worker CLI (`benchly moderation list`, `benchly moderation hide --type moment --id ID --apply`); there is no web admin login. Recentring the map uses location in the browser. Explicitly requesting a route sends coordinates to our server. Footrouting is self-hosted; address and nearby-station searches use GeoAdmin and transport.opendata.ch. A planned walk is kept for seven days in SQLite and identified only by a random HttpOnly cookie in the same browser; ending the walk removes it. Providers have their own request-retention policies. Anonymous contribution and daily IP identifiers are HMAC hashes, and raw IP addresses are not stored.
 
 The illustrated journey planner is available via **Weg hierher** in a bench's map details. **Spaziergang entdecken** offers walks with optional maximum intervals of 5, 10 or 15 minutes between benches. GraphHopper and inference deployments live exclusively in the sibling server repository; Benchly releases use the [application chart](deploy/charts/README.md).
 
-All app reads and writes use Server Actions. There are no custom route handlers or `/api` endpoints. The browser talks directly to the public swisstopo WMTS only for map tiles.
+For an artwork-only refresh, `panorama-fetch-index` obtains the current production binding and `panorama-repaint-fetch-capsules --bench-index PATH` downloads only missing `.bpc` view capsules over SSH, then writes `data/panorama-repaint/current-index.tsv`. Use that index with `panorama-repaint --bench-index PATH` and `panorama-repaint-seal --bench-index PATH`; older sealed indices may contain stale geometry keys. `panorama-repaint-seal` checks complete groups of at most 512 benches and seals their checksums; `panorama-repaint-upload --chunk PATH` transfers one group by resumable SSH to `busykoala@api.blizzard.busykoala.io` by default (the approved LAN target remains available with `--target`). On the server, `panorama-repaint-activate --chunk-id HASH` previews the coordinate-bound changes; `--apply` switches that chunk to the new painting and removes unreferenced old images. Local SQLite-WAL checkpoints survive interruptions, and neither geography nor a server rollback generation is regenerated.
+
+App state changes use Server Actions. Same-origin media route handlers stream panorama and other stored image assets; there are no public terrain-data endpoints. The browser talks directly to the public swisstopo WMTS only for map tiles.
 
 ## One-file deployment
 

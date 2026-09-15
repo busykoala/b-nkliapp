@@ -38,5 +38,6 @@ export function BoxPlot({ groups, label, title, description, groupLabel }: {
         </g>;
       })}
     </svg>
+    <div className="box-plot-key">{groups.map((group) => <span key={group.quartile}><strong>Q{group.quartile}</strong>{groupLabel(group)}</span>)}</div>
   </figure>;
 }

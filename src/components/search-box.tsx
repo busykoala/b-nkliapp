@@ -68,7 +68,7 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
           aria-expanded={open}
           aria-controls={listId}
           aria-activedescendant={highlighted >= 0 ? `${listId}-${highlighted}` : undefined}
-          className="input calm-search min-h-12 w-full border-0 pl-10 pr-[4.8rem] text-sm placeholder:text-base-content/55"
+          className="input calm-search min-h-12 w-full border-0 pl-10 pr-12 text-sm placeholder:text-base-content/55"
           placeholder={t("map.search.placeholder")}
           value={query}
           onChange={(event) => {
@@ -94,8 +94,8 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
             }
           }}
         />
-        {query && <button type="button" aria-label={t("map.search.clear")} className="btn btn-circle btn-ghost btn-sm absolute right-11 top-0.5 z-10" onClick={clear}><X size={17} /></button>}
-        <button aria-label={t("map.location.show")} className="btn btn-circle btn-ghost absolute right-0.5 top-0.5 z-10 min-h-11 min-w-11 text-primary" onClick={() => onLocate()}><LocateFixed size={19} /></button>
+        {query ? <button type="button" aria-label={t("map.search.clear")} className="btn btn-circle btn-ghost absolute right-0.5 top-0.5 z-10 min-h-11 min-w-11" onClick={clear}><X size={17} /></button>
+          : <button aria-label={t("map.location.show")} className="btn btn-circle btn-ghost absolute right-0.5 top-0.5 z-10 min-h-11 min-w-11 text-primary" onClick={() => onLocate()}><LocateFixed size={19} /></button>}
         {open && (
           <ul id={listId} role="listbox" aria-label={t("map.search.results")} className="map-search-results storybook-panel absolute left-0 right-0 top-14 rounded-[1.25rem] p-2">
             {pending && results.length === 0 && <li className="map-search-feedback" role="status">{t("map.search.pending")}</li>}

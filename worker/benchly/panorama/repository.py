@@ -157,6 +157,22 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
         write(database, insert(BenchPanoramaRenderState).values(render_state.model_dump(exclude={"id"})))
 
 
+def publish_repaint_chunk(database, records: list[dict[str, object]], painter_key: str,
+                          artifact_prefix: str, now: str) -> None:
+    """Replace only checked image bindings; keep geometry and material intact."""
+    for record in records:
+        path = f"{artifact_prefix}/{record['relative_path']}"
+        write(database, update(BenchPanoramaRenderState).where(
+            BenchPanoramaRenderState.bench_row_id == int(record["bench_row_id"]),
+            BenchPanoramaRenderState.geometry_key == str(record["geometry_key"]),
+            BenchPanoramaRenderState.status == "ready",
+        ).values(
+            render_key=str(record["sha256"]), artifact_path=path,
+            style_version=painter_key, artifact_bytes=int(record["bytes"]),
+            artifact_sha256=str(record["sha256"]), generated_at=now, updated_at=now,
+        ))
+
+
 def activate_local_review_generation(database: Database, generation_id: str, git_commit: str) -> None:
     """Select a content-isolated generation for localhost visual iteration."""
     now = now_iso()

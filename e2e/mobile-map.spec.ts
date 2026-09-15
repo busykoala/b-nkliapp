@@ -24,7 +24,7 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   await page.goto("/bank/osm-node-101");
   const painting = page.locator(".bench-panorama");
   await expect(painting).toBeVisible();
-  await expect(painting).toHaveAttribute("data-status", /generating|unavailable|error/);
+  await expect(painting.locator(".bench-panorama-art, .panorama-paper-wash").first()).toBeVisible();
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
   await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
@@ -222,10 +222,10 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await expect(sheet).toBeVisible();
   await expect(sheet.locator(".bench-quick-preview")).toBeInViewport();
   await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
-  await expect(sheet.getByText("Details zeigen", { exact: true })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Detailhöhe ändern" })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("short-phone-bench-sheet.png") });
   await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
-  const [chrome, landscape] = await Promise.all([sheet.locator(".sheet-chrome").boundingBox(), sheet.locator(".bench-panorama").boundingBox()]);
+  const [chrome, landscape] = await Promise.all([sheet.locator(".map-sheet-chrome").boundingBox(), sheet.locator(".bench-panorama").boundingBox()]);
   expect(chrome).not.toBeNull();
   expect(landscape).not.toBeNull();
   expect(landscape!.y).toBeGreaterThanOrEqual(chrome!.y + chrome!.height - 1);
@@ -357,6 +357,7 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
   const contribution = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
+  await contribution.locator(".rating-detail-disclosure summary").click();
   await contribution.getByRole("group", { name: "Aussicht", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
   await contribution.getByRole("group", { name: "Komfort", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
   await contribution.getByRole("group", { name: "Ruhe", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
@@ -369,6 +370,36 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await features.getByRole("button", { name: /Armlehnen/ }).click();
   await features.getByRole("button", { name: "Ja", exact: true }).click();
   await expect(features.getByRole("button", { name: /Armlehnen Ja/ })).toBeVisible();
+});
+
+test("publishes an overall rating without optional detail stars", async ({ page, browserName }) => {
+  await registerUser(page, `overall-only-${browserName}`);
+  await page.goto("/bank/osm-node-101");
+  await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
+  const contribution = page.getByRole("dialog", { name: "Wie war deine Pause?" });
+  await contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
+  await expect(contribution.getByRole("group", { name: "Aussicht", exact: true })).not.toBeVisible();
+  await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
+  await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
+});
+
+test("bench, journey and walk use one mobile sheet handle with consistent snap gestures", async ({ page }) => {
+  await page.goto("/?bank=osm-node-101");
+  const shell = page.locator(".map-sheet-shell");
+  await expect(shell).toHaveAttribute("data-snap", "half");
+  await shell.locator(".map-sheet-resize").click();
+  await expect(shell).toHaveAttribute("data-snap", "full");
+  await shell.locator(".map-sheet-chrome").dispatchEvent("touchstart", { touches: [{ identifier: 1, clientY: 200 }] });
+  await shell.locator(".map-sheet-chrome").dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientY: 300 }] });
+  await expect(shell).toHaveAttribute("data-snap", "half");
+  await shell.getByRole("button", { name: "Weg hierher" }).click();
+  await expect(shell).toHaveAttribute("aria-label", "Dein Weg zum Bänkli");
+  await expect(shell.locator(".map-sheet-handle")).toBeVisible();
+  await shell.locator(".map-sheet-close").click();
+  await page.locator(".map-sheet-close").click();
+  await page.locator(".walk-entry").click();
+  await expect(shell).toHaveAttribute("aria-label", "Spaziergang entdecken");
+  await expect(shell.locator(".map-sheet-handle")).toBeVisible();
 });
 
 test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {
@@ -421,9 +452,8 @@ test("shows useful sun and view information before terrain enrichment", async ({
   await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
 });
 
-test("opens the password-protected moderation view", async ({ page }) => {
+test("does not expose a web moderation view", async ({ page }) => {
   await page.goto("/admin");
-  await page.getByLabel("Passwort").fill("benchly-admin");
-  await page.getByRole("button", { name: "Anmelden" }).click();
-  await expect(page.getByRole("heading", { name: "Bänkli App Moderation" })).toBeVisible();
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByLabel("Passwort")).toHaveCount(0);
 });

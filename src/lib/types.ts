@@ -136,9 +136,9 @@ export type BenchMedia = {
 export type CommunityRating = {
   id: number;
   overall: number;
-  view: number;
-  comfort: number;
-  quiet: number;
+  view: number | null;
+  comfort: number | null;
+  quiet: number | null;
   note: string | null;
   createdAt: string;
 };
@@ -301,8 +301,8 @@ export type BenchDetail = {
   likelyEnvironment: LikelyEnvironment | null;
   ratingAverage: number | null;
   ratingCount: number;
-  ratingBreakdown: { overall: number; view: number; comfort: number; quiet: number } | null;
-  myRating: { overall: number; view: number; comfort: number; quiet: number; note: string | null } | null;
+  ratingBreakdown: { overall: number; view: number | null; comfort: number | null; quiet: number | null; counts: { overall: number; view: number; comfort: number; quiet: number } } | null;
+  myRating: { overall: number; view: number | null; comfort: number | null; quiet: number | null; note: string | null } | null;
   recentRatings: CommunityRating[];
   corrections: CommunityCorrection[];
   observations: BenchObservationSummary;

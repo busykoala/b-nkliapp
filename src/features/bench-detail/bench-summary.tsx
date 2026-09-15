@@ -16,7 +16,7 @@ export function confirmationAge(value: string | null, t: Translator, now = Date.
 
 type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
 
-export function BenchSummary({ bench, signedIn, onSignIn, onChanged, onLocateAmenity, onEditBackrest }: { bench: BenchDetail; signedIn: boolean; onSignIn: () => void; onChanged: () => void | Promise<void>; onLocateAmenity?: (amenity: NearbyAmenity) => void; onEditBackrest?: () => void }) {
+export function BenchSummary({ bench, signedIn, onSignIn, onChanged, onLocateAmenity, amenityMapHrefPrefix, onEditBackrest }: { bench: BenchDetail; signedIn: boolean; onSignIn: () => void; onChanged: () => void | Promise<void>; onLocateAmenity?: (amenity: NearbyAmenity) => void; amenityMapHrefPrefix?: string; onEditBackrest?: () => void }) {
   const t = useTranslations();
   const [localConfirmation, setLocalConfirmation] = useState<string | null>(null);
   const confirmedAt = localConfirmation ?? bench.lastConfirmedAt;
@@ -47,7 +47,7 @@ export function BenchSummary({ bench, signedIn, onSignIn, onChanged, onLocateAme
     </ul>
     {amenities.length > 0 && <section className="bench-nearby-amenities" aria-labelledby={`nearby-${bench.id}`}>
       <header><div><h4 id={`nearby-${bench.id}`}>{t("bench.summary.nearbyTitle")}</h4><p>{t("bench.summary.nearbyHint")}</p></div><MapPin size={18} /></header>
-      <ul>{amenities.map((item) => <AmenityLocation key={item.category} amenity={item} bench={bench} onLocate={onLocateAmenity} />)}</ul>
+      <ul>{amenities.map((item) => <AmenityLocation key={item.category} amenity={item} bench={bench} onLocate={onLocateAmenity} href={amenityMapHrefPrefix ? `${amenityMapHrefPrefix}${encodeURIComponent(item.sourceId ?? item.category)}` : undefined} />)}</ul>
     </section>}
     {wheelchair !== "Unbekannt" && <p className="summary-access-note"><strong>{wheelchair === "Ja" ? t("bench.attributes.wheelchair") : t("bench.summary.noWheelchair")}</strong> · {t("bench.summary.accessNote")}</p>}
     <div className="bench-freshness"><span><small>{t("bench.summary.lastSeen")}</small><strong>{confirmationAge(confirmedAt, t)}</strong></span><button type="button" disabled={pending || mine} onClick={confirm}><Check size={16} />{pending ? t("bench.summary.confirming") : mine ? t("bench.summary.mine") : t("community.presence.confirm")}</button></div>
@@ -55,7 +55,7 @@ export function BenchSummary({ bench, signedIn, onSignIn, onChanged, onLocateAme
   </section>;
 }
 
-function AmenityLocation({ amenity, bench, onLocate }: { amenity: NearbyAmenity; bench: BenchDetail; onLocate?: (amenity: NearbyAmenity) => void }) {
+function AmenityLocation({ amenity, bench, onLocate, href }: { amenity: NearbyAmenity; bench: BenchDetail; onLocate?: (amenity: NearbyAmenity) => void; href?: string }) {
   const t = useTranslations();
   const label = t(amenity.category === "toilets" ? "knowledge.amenities.toilets" : amenity.category === "waste_basket" ? "knowledge.amenities.waste_basket" : "knowledge.amenities.drinking_water");
   const Icon = amenity.category === "toilets" ? Toilet : amenity.category === "waste_basket" ? Trash2 : Droplets;
@@ -64,8 +64,8 @@ function AmenityLocation({ amenity, bench, onLocate }: { amenity: NearbyAmenity;
   const content = <><span className="amenity-icon"><Icon size={18} /></span><span><strong>{label}</strong><small>{t("bench.summary.straightLine", {distance: Math.round(amenity.distanceMeters!)})}</small></span>{located && <span className="amenity-map-cue"><Navigation size={16} style={{transform: `rotate(${direction}deg)`}} />{t("bench.summary.showOnMap")}</span>}</>;
   if (!located) return <li><div className="amenity-location is-static">{content}</div></li>;
   if (onLocate) return <li><button type="button" className="amenity-location" aria-label={t("bench.summary.showFacilityOnMap", {facility: label})} onClick={() => onLocate(amenity)}>{content}</button></li>;
-  const href = `https://www.openstreetmap.org/?mlat=${amenity.latitude}&mlon=${amenity.longitude}#map=19/${amenity.latitude}/${amenity.longitude}`;
-  return <li><a className="amenity-location" href={href} target="_blank" rel="noreferrer" aria-label={t("bench.summary.showFacilityOnMap", {facility: label})}>{content}</a></li>;
+  const locationHref = href ?? `https://www.openstreetmap.org/?mlat=${amenity.latitude}&mlon=${amenity.longitude}#map=19/${amenity.latitude}/${amenity.longitude}`;
+  return <li><a className="amenity-location" href={locationHref} target={href ? undefined : "_blank"} rel={href ? undefined : "noreferrer"} aria-label={t("bench.summary.showFacilityOnMap", {facility: label})}>{content}</a></li>;
 }
 
 function bearing(fromLatitude: number, fromLongitude: number, toLatitude: number, toLongitude: number) {

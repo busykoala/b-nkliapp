@@ -366,7 +366,9 @@
     "panoramaControl": "Ruota la direzione dello sguardo",
     "panoramaHeading": "Direzione dello sguardo a {degrees} gradi",
     "panoramaHint": "↔ ↕ Trascina",
-    "panoramaCalculated": "Calcolato dai dati del terreno e dell’ambiente",
+    "panoramaCalculated": "Calcolato dai dati del terreno e dell'ambiente",
+    "panoramaZoomIn": "Ingrandire",
+    "panoramaZoomOut": "Ridurre",
     "panoramaGenerating": "Il panorama viene dipinto…",
     "panoramaUnavailable": "Il panorama calcolato non è ancora disponibile.",
     "panoramaRetry": "Riprova"

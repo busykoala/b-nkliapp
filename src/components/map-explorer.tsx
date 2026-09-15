@@ -6,6 +6,8 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import { Accessibility, Armchair, ChevronRight, CloudSun, Crosshair, Footprints, Info, List, MapPin, MountainSnow, Navigation, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
+import type { WalkDraftSnapshot } from "@/lib/walks/model";
+import { discardWalkDraft, getWalkDraft } from "@/app/actions/walk-draft";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getBenchDetail, getMapBenchList, getMapFeatures } from "@/app/actions/map";
@@ -101,6 +103,9 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const [facilityFocus, setFacilityFocus] = useState<{ amenity: NearbyAmenity; bench: BenchDetail } | null>(null);
   const [journeyOpen, setJourneyOpen] = useState(false);
   const [walkOpen, setWalkOpen] = useState(false);
+  const [walkDraft, setWalkDraft] = useState<WalkDraftSnapshot | null>(null);
+  const [walkDraftLoaded, setWalkDraftLoaded] = useState(false);
+  const updateWalkDraft = useCallback((draft: WalkDraftSnapshot) => setWalkDraft(draft), []);
   const [returnJourney, setReturnJourney] = useState<ReturnJourney | null>(null);
   const getJourneyMap = useCallback(() => mapRef.current, []);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -119,8 +124,15 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const pendingAdd = useRef<{ latitude: number; longitude: number } | null>(null);
   const addAccount = useRef<HTMLDialogElement>(null);
   const handledAction = useRef<string | null>(null);
+  const handledAmenity = useRef<string | null>(null);
   useEffect(() => { canAdd.current = Boolean(user); }, [user]);
   const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
+  useEffect(() => {
+    let active = true;
+    void getWalkDraft().then((draft) => { if (active) setWalkDraft(draft); }).catch(() => undefined)
+      .finally(() => { if (active) setWalkDraftLoaded(true); });
+    return () => { active = false; };
+  }, []);
 
   const loadVisible = useCallback(async (map: MapLibreMap, nextFilters: MapFilters) => {
     const sequence = ++querySequence.current;
@@ -573,14 +585,25 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   useEffect(() => {
     const action = searchParams.get("action");
     if (!mapReady || !action || handledAction.current === action) return;
+    if (action === "journey" && !bench) return;
     handledAction.current = action;
     const timer = window.setTimeout(() => {
       if (action === "filter") setFilterOpen(true);
       if (action === "walk") setWalkOpen(true);
+      if (action === "journey") setJourneyOpen(true);
       if (action === "add") { const point = mapRef.current?.getCenter(); if (point) openAddAt(point.lat, point.lng); }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [mapReady, searchParams, openAddAt]);
+  }, [mapReady, searchParams, openAddAt, bench]);
+  useEffect(() => {
+    const sourceId = searchParams.get("amenity");
+    if (!mapReady || !bench || !sourceId || handledAmenity.current === sourceId) return;
+    const amenity = bench.knowledge?.amenities.find((item) => item.sourceId === sourceId || (!item.sourceId && item.category === sourceId));
+    if (!amenity) return;
+    handledAmenity.current = sourceId;
+    const timer = window.setTimeout(() => locateAmenity(amenity), 0);
+    return () => window.clearTimeout(timer);
+  }, [mapReady, bench, searchParams, locateAmenity]);
 
   const choosePlace = (place: PlaceResult) => {
     mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: place.kind === "bench" ? 17 : 14 });
@@ -648,6 +671,10 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     setListOpen(false);
     setWalkOpen(true);
   };
+  const endWalk = () => {
+    void discardWalkDraft().then(() => { setWalkDraft(null); setWalkOpen(false); setReturnJourney(null); })
+      .catch(() => setMessage(t("walks.planner.failed")));
+  };
   const openList = () => {
     listOpenRef.current = true;
     setListOpen(true);
@@ -686,7 +713,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       {message && <div role="status" className="toast toast-center pointer-events-none top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && <button type="button" className="map-orientation-control" aria-label={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} title={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} aria-pressed={headingMode} aria-busy={headingPending} disabled={headingPending} onClick={() => void toggleHeadingMode()}><Navigation size={18} fill={headingMode ? "currentColor" : "none"} /></button>}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">
-        <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t("walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
+        <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t(walkDraft?.result ? "walks.planner.resume" : "walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>
       </div>}
       {listOpen && !selectedId && <aside className="bench-list-panel storybook-panel" aria-label={t("map.list.title")}>
@@ -710,10 +737,10 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
         </button></li>)}</ol>}
         <small className="bench-list-note">{t("map.list.distanceNote")}</small>
       </aside>}
-      {walkOpen && <WalkPlanner getMap={getJourneyMap} onClose={() => setWalkOpen(false)} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} />}
+      {walkOpen && walkDraftLoaded && <WalkPlanner getMap={getJourneyMap} initial={walkDraft} onSnapshot={updateWalkDraft} onClose={() => setWalkOpen(false)} onEnd={endWalk} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} />}
       {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
       {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
-      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} onLocateAmenity={locateAmenity} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} onResumeWalk={walkDraft?.result ? openWalk : undefined} onLocateAmenity={locateAmenity} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
       {facilityFocus && <section className="amenity-map-callout" aria-label={t("bench.summary.mapLocation")}>
         <MapPin size={20} /><div><small>{t("bench.summary.nearbyTitle")}</small><strong>{t(facilityFocus.amenity.category === "toilets" ? "knowledge.amenities.toilets" : facilityFocus.amenity.category === "waste_basket" ? "knowledge.amenities.waste_basket" : "knowledge.amenities.drinking_water")}</strong><span>{t("bench.summary.straightLine", {distance: Math.round(facilityFocus.amenity.distanceMeters!)})}</span></div>
         <button type="button" onClick={() => { const id = facilityFocus.bench.id; closeAmenity(); void selectBench(id, true); }}>{t("bench.summary.returnToBench")}</button>

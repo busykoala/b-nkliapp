@@ -37,7 +37,6 @@ export default async function MunicipalityPage({ params }: { params: Promise<{ i
     <section className="municipality-hero">
       <div className="statistics-kicker"><MapPin size={15} /> {data.canton ?? t("statistics.values.somewhere")} · BFS {data.id}</div>
       <h1>{data.name}</h1><p>{t("statistics.municipality.title")}</p>
-      <div className={`personality-card personality-${data.personality}`}><span aria-hidden="true">{data.personality === "sunny" ? <Sun /> : data.personality === "scenic" ? <Eye /> : data.personality === "waterside" ? <Waves /> : data.personality === "forest" ? <Trees /> : data.personality === "collector" ? <Armchair /> : <CircleHelp />}</span><div><small>{t("statistics.municipality.personality.eyebrow")}</small><strong>{t(`statistics.municipality.personality.${data.personality}.title`)}</strong><p>{t(`statistics.municipality.personality.${data.personality}.description`)}</p></div></div>
     </section>
 
     <section className="statistics-section portrait-metrics">
@@ -50,6 +49,7 @@ export default async function MunicipalityPage({ params }: { params: Promise<{ i
         <article><Trees /><strong>{percent(data.forestShare)}</strong><span>{t("statistics.municipality.numbers.forest")}</span><small>{t("statistics.municipality.known", { count: number(data.forestKnown) })}</small></article>
         <article><Accessibility /><strong>{percent(data.wheelchairShare)}</strong><span>{t("statistics.municipality.numbers.wheelchair")}</span><small>{t("statistics.municipality.known", { count: number(data.wheelchairKnown) })}</small></article>
       </div>
+      <div className={`personality-card personality-${data.personality}`}><span aria-hidden="true">{data.personality === "sunny" ? <Sun /> : data.personality === "scenic" ? <Eye /> : data.personality === "waterside" ? <Waves /> : data.personality === "forest" ? <Trees /> : data.personality === "collector" ? <Armchair /> : <CircleHelp />}</span><div><small>{t("statistics.municipality.personality.eyebrow")}</small><strong>{t(`statistics.municipality.personality.${data.personality}.title`)}</strong><p>{t(`statistics.municipality.personality.${data.personality}.description`)}</p></div></div>
       <p className="method-note">{t("statistics.municipality.numbers.note")}</p>
     </section>
 

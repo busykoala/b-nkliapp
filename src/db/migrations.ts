@@ -1055,4 +1055,48 @@ export const migrations: Migration[] = [
       UPDATE panorama_dirty_cells SET reason_mask=reason_mask & ~1 WHERE reason_mask & 1<>0;
     `,
   },
+  {
+    id: "0037_walk_drafts",
+    sql: `
+      CREATE TABLE walk_drafts (
+        token_hash TEXT PRIMARY KEY CHECK(length(token_hash)=64),
+        state_json TEXT NOT NULL,
+        result_blob BLOB,
+        updated_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+      ) WITHOUT ROWID;
+      CREATE INDEX walk_drafts_expiry_idx ON walk_drafts(expires_at);
+    `,
+  },
+  {
+    id: "0038_optional_rating_details",
+    sql: `
+      ALTER TABLE ratings RENAME TO ratings_before_optional_details;
+      CREATE TABLE ratings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bench_row_id INTEGER NOT NULL REFERENCES benches(row_id) ON DELETE CASCADE,
+        contributor_hash TEXT NOT NULL,
+        overall INTEGER NOT NULL CHECK(overall BETWEEN 1 AND 5),
+        view_score INTEGER CHECK(view_score BETWEEN 1 AND 5),
+        comfort INTEGER CHECK(comfort BETWEEN 1 AND 5),
+        quiet INTEGER CHECK(quiet BETWEEN 1 AND 5),
+        note TEXT,
+        visible INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        user_id INTEGER REFERENCES users(id),
+        UNIQUE(bench_row_id, contributor_hash)
+      );
+      INSERT INTO ratings(id,bench_row_id,contributor_hash,overall,view_score,comfort,quiet,note,visible,created_at,updated_at,user_id)
+        SELECT id,bench_row_id,contributor_hash,overall,view_score,comfort,quiet,note,visible,created_at,updated_at,user_id
+        FROM ratings_before_optional_details;
+      DROP TABLE ratings_before_optional_details;
+      CREATE INDEX ratings_bench_visible_idx ON ratings(bench_row_id,visible);
+      CREATE UNIQUE INDEX ratings_one_per_user ON ratings(bench_row_id,user_id) WHERE user_id IS NOT NULL;
+    `,
+  },
+  {
+    id: "0039_remove_admin_sessions",
+    sql: `DROP TABLE IF EXISTS admin_sessions;`,
+  },
 ];

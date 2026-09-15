@@ -65,6 +65,41 @@ test("offers several distinct Bänkli outings instead of one fixed route", async
   await choices.screenshot({ path: testInfo.outputPath("walk-options.png") });
 });
 
+test("chosen walk survives a bench interruption and reload until explicitly ended", async ({ page }, testInfo) => {
+  test.setTimeout(60_000);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  let panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
+  await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
+  await panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" }).click();
+  await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
+  let choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
+  await expect(choices).toBeVisible({ timeout: 18_000 });
+  await choices.getByRole("button").nth(1).click();
+  await expect(choices.getByRole("button").nth(1)).toHaveAttribute("aria-pressed", "true");
+  await panel.getByRole("button", { name: "Spaziergang schliessen" }).click();
+  await page.goto("/?bank=osm-node-101");
+  const bench = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(bench.getByRole("button", { name: "Spaziergang fortsetzen" })).toBeVisible();
+  await bench.getByRole("button", { name: "Spaziergang fortsetzen" }).click();
+  panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
+  choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
+  await expect(choices.getByRole("button").nth(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(panel.getByRole("region", { name: "Dein Spaziergang" })).toBeInViewport();
+  await panel.screenshot({ path: testInfo.outputPath("walk-resumed-after-bench.png") });
+  await page.reload();
+  await page.getByRole("complementary", { name: "Bankdetails" }).getByRole("button", { name: "Spaziergang fortsetzen" }).click();
+  panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
+  choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
+  await expect(choices.getByRole("button").nth(1)).toHaveAttribute("aria-pressed", "true");
+  await panel.getByRole("button", { name: "Spaziergang beenden" }).click();
+  await expect(panel).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("complementary", { name: "Bankdetails" }).getByRole("button", { name: "Spaziergang fortsetzen" })).toHaveCount(0);
+  await page.getByRole("complementary", { name: "Bankdetails" }).getByRole("button", { name: "Bank schliessen" }).click();
+  await expect(page.getByRole("button", { name: "Spaziergang entdecken", exact: true })).toBeVisible();
+});
+
 test("shows a Bänkli-centred route and opens a private return journey", async ({ page }, info) => {
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");

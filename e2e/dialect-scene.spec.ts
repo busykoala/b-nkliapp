@@ -30,14 +30,15 @@ test("keeps four app languages and applies dialect only to the opened bench", as
   await expect(sheet).toHaveAttribute("data-local-voice", "gsw-zurich");
   await expect(sheet).toHaveAttribute("data-snap", "half");
   const collapsed = await sheet.boundingBox();
-  expect(collapsed?.y).toBeGreaterThan(844 * .5);
+  expect(collapsed?.height).toBeGreaterThan(844 * .4);
+  expect(collapsed?.height).toBeLessThan(844 * .65);
   await expect(sheet.locator(".bench-quick-preview")).toBeInViewport();
   await expect(sheet.getByText("Züridütsch", { exact: false }).first()).toBeVisible();
   await expect(sheet.locator(".quick-preview-facts")).toBeVisible();
   await page.waitForTimeout(800);
   await sheet.screenshot({ path: testInfo.outputPath("map-first-local-preview.png"), animations: "disabled" });
 
-  await sheet.locator(".overlay-resize").click();
+  await sheet.locator(".map-sheet-resize").click();
   await expect(sheet).toHaveAttribute("data-snap", "full");
   await expect(sheet.locator(".bench-panorama-art").first()).toBeVisible();
   await sheet.locator(".bench-story-card").screenshot({ path: testInfo.outputPath("zurich-local-scene.png"), animations: "disabled" });
@@ -116,7 +117,7 @@ test("keeps the Romansh local overlay readable at 430px and desktop", async ({ p
     await expect(detail.getByText("Vallader", { exact: false }).first()).toBeVisible();
     await expect(detail.locator(".bench-summary")).toContainText("En in’egliada");
     const overflow = await detail.locator("h2,h3,p,button,strong,small").evaluateAll((elements) => elements
-      .filter((element) => element.scrollWidth > element.clientWidth + 1)
+      .filter((element) => getComputedStyle(element).clipPath !== "inset(50%)" && element.scrollWidth > element.clientWidth + 1)
       .map((element) => ({ text: element.textContent?.trim().slice(0, 80), width: element.clientWidth, scrollWidth: element.scrollWidth })));
     expect(overflow).toEqual([]);
     await detail.locator(".bench-story-card").screenshot({ path: testInfo.outputPath(`vallader-${width}.png`), animations: "disabled" });

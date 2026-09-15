@@ -30,7 +30,7 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   await page.goto("/?bank=osm-node-109");
   await expect(page.locator(".bench-quick-preview")).toBeVisible();
   installPanoramaFixture("osm-node-109", true);
-  await page.locator(".desktop-sheet .overlay-resize").click();
+  await page.locator(".desktop-sheet .map-sheet-resize").click();
 
   const panorama = page.locator(".bench-panorama");
   // A panorama completed by the worker appears in the open detail without a reload.
@@ -42,7 +42,8 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   const bearing = panorama.locator(".bench-panorama-bearing");
   await expect(bearing).toHaveText("325°");
   await expect(panorama.getByRole("slider")).toHaveCount(0);
-  await expect(panorama.locator(".bench-panorama-zoom")).toHaveText("1.0×");
+  const zoom = panorama.locator(".bench-panorama-zoom-controls span");
+  await expect(zoom).toHaveText("1.0×");
   const image = page.locator(".bench-panorama-art").first();
   await expect(image).toHaveJSProperty("complete", true);
   // Read the three rectangles in one browser task. The light-map poll can
@@ -75,7 +76,7 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   // Mobile WebKit has no mouse wheel. Double-tap/double-click exercises the
   // same touch-friendly zoom affordance on every configured browser.
   await viewport.dblclick({ position: { x: box!.width * .5, y: box!.height * .5 } });
-  await expect(panorama.locator(".bench-panorama-zoom")).not.toHaveText("1.0×");
+  await expect(zoom).not.toHaveText("1.0×");
   await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .65);
   await page.mouse.down();
   await page.mouse.move(box!.x + box!.width * .3, box!.y + box!.height * .32, { steps: 5 });
@@ -86,10 +87,13 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   const vertical = Number(after?.match(/--panorama-y:\s*(-?[\d.]+)px/)?.[1]);
   expect(Math.abs(vertical)).toBeGreaterThan(45);
   await expect(bearing).not.toHaveText("325°");
+  await expect(panorama.locator(".bench-panorama-foreground .bench-panorama-rear-bench")).toBeVisible();
+  await panorama.locator(".bench-panorama-zoom-controls button").last().click();
+  await expect(zoom).not.toHaveText("1.6×");
 
   await viewport.focus();
   await viewport.press("Home");
-  await expect(panorama.locator(".bench-panorama-zoom")).toHaveText("1.0×");
+  await expect(zoom).toHaveText("1.0×");
   await expect(bearing).toHaveText("325°");
   for (let index = 0; index < 65; index++) await viewport.press("ArrowLeft");
   await expect(bearing).toHaveText("0°");

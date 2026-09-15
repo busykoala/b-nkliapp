@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- immutable full-circle artifacts are repeated for seamless panning */
 
-import { Compass, LoaderCircle, RefreshCw } from "lucide-react";
+import { Compass, LoaderCircle, Minus, Plus, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama";
@@ -221,7 +221,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const celestial = bench.sunAltitudeDegrees > 0 && !sunBlocked && cloudCover < .8
     ? { kind: "sun" as const, azimuth: bench.sunAzimuthDegrees, altitude: bench.sunAltitudeDegrees }
     : bench.moonVisible ? { kind: "moon" as const, azimuth: bench.moonAzimuthDegrees, altitude: bench.moonAltitudeDegrees } : null;
-  const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, initialHeading);
+  const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, heading);
   const panoramaStyle = {
     "--panorama-offset": `${offset}px`,
     "--panorama-y": `${verticalOffset}px`,
@@ -235,7 +235,6 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     "--shadow-length": `${benchShadow.lengthPercent}%`,
     "--shadow-turn": `${benchShadow.turnDegrees}deg`,
   } as CSSProperties;
-  const benchPositions = panoramaWrappedPositions(initialHeading);
   const celestialPositions = celestial ? panoramaWrappedPositions(celestial.azimuth) : [];
   const celestialTop = celestial ? `${Math.max(8, Math.min(55, 55 - celestial.altitude * .72))}%` : "0%";
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -288,11 +287,12 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
             style={{ left: `${left}%`, top: celestialTop }}>
             {celestial.kind === "moon" ? <MoonDisc phase={bench.moonPhase} /> : <i />}
           </span>)}
-          {benchPositions.map((left) => <span key={`ground-${left}`} className="bench-panorama-ground-patch" style={{ left: `${left}%` }} />)}
-          {bench.sunAltitudeDegrees > 0 && benchPositions.map((left) => <span key={`shadow-${left}`} className="bench-panorama-bench-shadow" style={{ left: `${left}%` }} />)}
-          {benchPositions.map((left) => <img key={`bench-${left}`} className="bench-panorama-rear-bench" style={{ left: `${left}%` }}
-            src={benchAsset(bench)} alt="" draggable={false} />)}
         </div>)}
+      </div>
+      <div className="bench-panorama-foreground" aria-hidden="true">
+        <span className="bench-panorama-ground-patch" />
+        {bench.sunAltitudeDegrees > 0 && <span className="bench-panorama-bench-shadow" />}
+        <img className="bench-panorama-rear-bench" src={benchAsset(bench)} alt="" draggable={false} />
       </div>
       <div className="bench-panorama-sightline" aria-hidden="true" />
       {raining && <div className="bench-panorama-rain" aria-hidden="true">{Array.from({ length: rainCount }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 71) % 100}%`, "--drop-y": `${(index * 37) % 90}%`, "--drop-delay": `${-(index % 9) * .13}s` } as CSSProperties} />)}</div>}
@@ -300,7 +300,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     </div>
     {covered && <div className="bench-panorama-shelter" aria-hidden="true"><i /><i /></div>}
     {covered && <div className="bench-panorama-shelter-shade" aria-hidden="true" />}
-    <div className="bench-panorama-hud"><span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span><span className="bench-panorama-zoom">{zoom.toFixed(1)}×</span><small id={hintId}>{t("panoramaHint")}</small></div>
+    <div className="bench-panorama-hud"><span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span><div className="bench-panorama-zoom-controls"><button type="button" aria-label={t("panoramaZoomOut")} title={t("panoramaZoomOut")} disabled={zoom <= 1} onClick={() => setZoom((current) => Math.max(1, current - .2))}><Minus size={14} /></button><span aria-live="polite">{zoom.toFixed(1)}×</span><button type="button" aria-label={t("panoramaZoomIn")} title={t("panoramaZoomIn")} disabled={zoom >= 2} onClick={() => setZoom((current) => Math.min(2, current + .2))}><Plus size={14} /></button></div><small id={hintId}>{t("panoramaHint")}</small></div>
     {children}
   </figure>;
 }

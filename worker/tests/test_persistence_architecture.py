@@ -28,6 +28,9 @@ class PersistenceArchitectureTests(unittest.TestCase):
                 # Gitignored resumable build checkpoints only. Application-DB
                 # activation is delegated to the typed panorama repository.
                 Path("benchly/panorama/builder.py"),
+                # Gitignored repaint progress only. Production image-row
+                # updates use the typed panorama repository.
+                Path("benchly/panorama/refresh.py"),
                 # Gitignored local raster-build checkpoints; no application
                 # or production database is opened by this module.
                 Path("benchly/panorama/pyramid.py"),

@@ -19,6 +19,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --group test --no-install-project
 COPY config ./config
 COPY worker ./worker
+COPY scripts/prune-panorama-orphans.py ./scripts/prune-panorama-orphans.py
 COPY src/db/migrations.ts src/db/knowledge-migrations.ts ./src/db/
 RUN uv run pytest -q
 

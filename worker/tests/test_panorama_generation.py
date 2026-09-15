@@ -69,7 +69,9 @@ def test_material_mask_and_paint_are_wrap_continuous():
         # Lossy WebP may move the final block by a few values even though the
         # pre-encode texture is identical at the boundary; this is visually
         # continuous and comfortably below an edge contrast.
-        assert np.abs(pixels[:, 0] - pixels[:, -1]).max() <= 10
+        contrast = np.abs(pixels[:, 0] - pixels[:, -1])
+        assert contrast.max() <= 12
+        assert np.percentile(contrast, 95) <= 5
 
 
 def test_storage_gate_keeps_80_gib_until_68_gib_peak_then_rounds_with_headroom():

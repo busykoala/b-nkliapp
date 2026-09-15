@@ -498,7 +498,9 @@
       "panoramaControl": "Ruota la direzione dello sguardo",
       "panoramaHeading": "Direzione dello sguardo a {degrees} gradi",
       "panoramaHint": "↔ ↕ Trascina",
-      "panoramaCalculated": "Calcolato dai dati del terreno e dell’ambiente",
+      "panoramaCalculated": "Calcolato dai dati del terreno e dell'ambiente",
+      "panoramaZoomIn": "Ingrandire",
+      "panoramaZoomOut": "Ridurre",
       "panoramaGenerating": "Il panorama viene dipinto…",
       "panoramaUnavailable": "Il panorama calcolato non è ancora disponibile.",
       "panoramaRetry": "Riprova"
@@ -778,7 +780,9 @@
     "rating": {
       "eyebrow": "La tua impressione",
       "existing": "La tua valutazione precedente è già inserita: puoi modificarla.",
-      "intro": "Quattro piccole impressioni aiutano gli altri a scegliere.",
+      "intro": "Basta la tua impressione generale. Puoi aggiungere dettagli se vuoi.",
+      "moreDetails": "Aggiungi vista, comfort e quiete (facoltativo)",
+      "clearDetails": "Rimuovi le valutazioni dettagliate",
       "fields": {
         "overall": "Complessiva",
         "view": "Panorama",

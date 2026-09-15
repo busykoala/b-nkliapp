@@ -159,7 +159,9 @@
   "rating": {
     "eyebrow": "Ton impression",
     "existing": "Ton avis précédent est prérempli, tu peux le modifier.",
-    "intro": "Quatre petites impressions aident les autres à choisir.",
+    "intro": "Ton impression générale suffit. Tu peux ajouter des détails si tu veux.",
+    "moreDetails": "Ajouter vue, confort et calme (facultatif)",
+    "clearDetails": "Supprimer mes notes détaillées",
     "fields": {
       "overall": "Ensemble",
       "view": "Vue",
