@@ -18,8 +18,9 @@ describe("panorama requests", () => {
     vi.stubEnv("DATABASE_PATH", join(folder, "benchly.sqlite"));
     vi.stubEnv("BENCHLY_SEED_DEMO", "true");
     const { sqlite } = await import("@/db/client");
-    const { enqueuePanoramaRequest, readPanoramaArtifact } = await import("./repository");
+    const { enqueuePanoramaRequest, readPanoramaArtifact, readPanoramaDescriptor } = await import("./repository");
     expect(enqueuePanoramaRequest("osm-node-101")).toBe(true);
+    expect(readPanoramaDescriptor("osm-node-101")).toMatchObject({ status: "generating", retryAfterMs: 1_000 });
     sqlite.prepare("UPDATE bench_panorama_requests SET requested_at='2026-01-01T00:00:00.000Z' WHERE bench_row_id=(SELECT row_id FROM benches WHERE id='osm-node-101')").run();
     expect(enqueuePanoramaRequest("osm-node-101")).toBe(true);
     expect((sqlite.prepare("SELECT count(*) count FROM bench_panorama_requests").get() as { count: number }).count).toBe(1);

@@ -14,8 +14,15 @@ function normalizeHeading(value: number) {
 }
 
 const PANORAMA_HEIGHT_SCALE = 1.36;
-const PANORAMA_POLL_INTERVAL_MS = 5_000;
-const PANORAMA_POLL_ATTEMPTS = 60;
+const PANORAMA_FAST_POLL_MS = 1_000;
+const PANORAMA_SLOW_POLL_MS = 5_000;
+const PANORAMA_FAST_POLL_ATTEMPTS = 20;
+const PANORAMA_POLL_ATTEMPTS = 76;
+
+export function panoramaPollDelay(attempt: number, retryAfterMs?: number) {
+  return Math.max(retryAfterMs ?? 0, attempt <= PANORAMA_FAST_POLL_ATTEMPTS
+    ? PANORAMA_FAST_POLL_MS : PANORAMA_SLOW_POLL_MS);
+}
 
 export function clampPanoramaVertical(viewportHeight: number, value: number) {
   const maximum = viewportHeight * (PANORAMA_HEIGHT_SCALE - 1) / 2;
@@ -125,24 +132,31 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     let active = true;
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let attempts = 0;
+    let lightAttempts = 0;
     const poll = async () => {
       const result = await loadBenchPanorama(bench.id).catch((): PanoramaDescriptor => ({ status: "error", retryAfterMs: 30_000 }));
       if (!active) return;
       setDescriptor(result);
-      if (result.status === "ready") return;
+      if (result.status === "ready") {
+        // The optional lighting can arrive after the painting. Refresh it a
+        // few times without ever returning the UI to a loading state.
+        if (!result.lightMapUrl && lightAttempts < 3) {
+          lightAttempts += 1;
+          timeout = setTimeout(poll, PANORAMA_SLOW_POLL_MS);
+        }
+        return;
+      }
       attempts += 1;
-      if (attempts < PANORAMA_POLL_ATTEMPTS) timeout = setTimeout(poll, result.retryAfterMs ?? PANORAMA_POLL_INTERVAL_MS);
+      if (attempts < PANORAMA_POLL_ATTEMPTS) timeout = setTimeout(poll, panoramaPollDelay(attempts, result.retryAfterMs));
     };
     // The precomputed painting is the user-visible completion boundary. A
     // short-lived light map is optional enhancement data and must never turn
     // opening an otherwise ready bench into an on-demand render request.
     if (bench.panorama?.status === "ready") return () => { active = false; };
-    void loadBenchPanorama(bench.id).then((initial) => {
-      if (!active) return;
-      setDescriptor(initial);
-      if (initial.status === "ready") return;
-      void requestBenchPanorama(bench.id).then(poll, poll);
-    }, () => void requestBenchPanorama(bench.id).then(poll, poll));
+    // The server-rendered descriptor already tells us whether the painting is
+    // ready. Do not spend another action round-trip loading that same state
+    // before placing a cold bench into the priority queue.
+    void requestBenchPanorama(bench.id).then(poll, poll);
     return () => {
       active = false;
       if (timeout) clearTimeout(timeout);

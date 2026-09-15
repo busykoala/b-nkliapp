@@ -88,8 +88,10 @@ def panorama_batch_job(args: Namespace) -> None:
     border_terrain = RasterCollection(Path(args.border_terrain_dir).resolve()) if args.border_terrain_dir else None
     cache_root = Path(args.cache_dir).resolve()
     stats = {"selected": 0, "generated": 0, "cache_hits": 0, "partial": 0, "unavailable": 0, "failed": 0,
+             "lightmap_failed": 0,
              "terrain_seconds": 0.0, "semantic_seconds": 0.0, "building_seconds": 0.0,
-             "visibility_seconds": 0.0, "render_seconds": 0.0, "cache_lookup_seconds": 0.0,
+             "visibility_seconds": 0.0, "render_seconds": 0.0, "lightmap_seconds": 0.0,
+             "cache_lookup_seconds": 0.0,
              "maximum_bench_seconds": 0.0, "errors": []}
     job_started = time.perf_counter()
     try:
@@ -248,25 +250,34 @@ def panorama_batch_job(args: Namespace) -> None:
                 if not material_path.exists():
                     material_path = cache.put_material(render_key, render_material_webp(geometry))
 
-                solar_bucket, azimuth, altitude = _solar_state(float(row["latitude"]), float(row["longitude"]), datetime.now(UTC))
-                light_identity = LightMapIdentity(
-                    geometry_key=key,
-                    solar_bucket=solar_bucket,
-                    sun_azimuth_degrees=azimuth,
-                    sun_altitude_degrees=altitude,
-                )
-                light_key = lightmap_cache_key(light_identity)
-                light_path = cache.lightmap_path(light_key)
-                if not light_path.exists():
-                    light_path = cache.put_lightmap(light_key, render_lightmap_webp(
-                        geometry, azimuth, altitude, light_identity.width, light_identity.height,
-                    ))
-                mark_lightmap_ready(database, int(row["row_id"]), light_identity, light_key, str(light_path), light_path.stat().st_size)
+                # The painting is the completion boundary for the browser. A
+                # time-dependent light map must not delay or invalidate it.
                 mark_render_ready(
                     database, int(row["row_id"]), render_identity, str(render_path), render_path.stat().st_size,
                     material_path=str(material_path), material_bytes=material_path.stat().st_size,
                     generation_id=generation_id,
                 )
+                try:
+                    started = time.perf_counter()
+                    solar_bucket, azimuth, altitude = _solar_state(float(row["latitude"]), float(row["longitude"]), datetime.now(UTC))
+                    light_identity = LightMapIdentity(
+                        geometry_key=key,
+                        solar_bucket=solar_bucket,
+                        sun_azimuth_degrees=azimuth,
+                        sun_altitude_degrees=altitude,
+                    )
+                    light_key = lightmap_cache_key(light_identity)
+                    light_path = cache.lightmap_path(light_key)
+                    if not light_path.exists():
+                        light_path = cache.put_lightmap(light_key, render_lightmap_webp(
+                            geometry, azimuth, altitude, light_identity.width, light_identity.height,
+                        ))
+                    mark_lightmap_ready(database, int(row["row_id"]), light_identity, light_key, str(light_path), light_path.stat().st_size)
+                    stats["lightmap_seconds"] += time.perf_counter() - started
+                except Exception as light_error:
+                    stats["lightmap_failed"] += 1
+                    if len(stats["errors"]) < 3:
+                        stats["errors"].append({"bench_id": str(row["id"]), "stage": "lightmap", "error": str(light_error)[:400]})
             except Exception as error:
                 status = "unavailable" if "coverage" in str(error).casefold() else "error"
                 mark_failed(database, int(row["row_id"]), key, status, str(error))

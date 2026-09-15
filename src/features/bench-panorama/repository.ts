@@ -86,13 +86,13 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
     generatedAt: stale.generatedAt,
     completeness: stale.completeness,
     generationId: stale.generationId,
-    retryAfterMs: 5_000,
+    retryAfterMs: 1_000,
   };
   if (row.requested || row.geometryStatus === "generating" || row.geometryStatus === "stale") {
-    return { status: row.geometryStatus === "stale" ? "stale" : "generating", retryAfterMs: 5_000 };
+    return { status: row.geometryStatus === "stale" ? "stale" : "generating", retryAfterMs: 1_000 };
   }
   if (row.geometryStatus === "error") return { status: "error", retryAfterMs: 30_000 };
-  return { status: "unavailable", retryAfterMs: 5_000 };
+  return { status: "unavailable", retryAfterMs: 1_000 };
 }
 
 export function readArtifactByKey(key: string): { artifactPath: string; etag: string } | null {

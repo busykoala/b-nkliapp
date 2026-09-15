@@ -99,6 +99,21 @@ def test_repository_upserts_geometry_and_full_circle_render_state():
     assert connection.execute("SELECT count(*) FROM bench_panorama_requests").fetchone()[0] == 0
 
 
+def test_painting_is_publishable_before_optional_lightmap():
+    connection = database()
+    row = {"row_id": 7, "id": "osm-node-7", "latitude": 47.0, "longitude": 8.0}
+    key = "g" * 64
+    mark_generating(connection, row, key, {"algorithm": "a"})
+    mark_ready(connection, 7, key, "/cache/capsule.bpc", 123, True, ())
+    connection.execute("INSERT INTO panorama_generations(id,git_commit,state,source_versions_json,created_at) VALUES('active','abc','active','{}','now')")
+    identity = RenderIdentity(geometry_key=key, center_azimuth_degrees=0, horizontal_fov_degrees=360,
+                              width=4096, height=1024, season_bucket="dynamic")
+    mark_render_ready(connection, 7, identity, "/cache/painting.webp", 456, generation_id="active")
+    assert connection.execute("SELECT status FROM bench_panorama_renders WHERE bench_row_id=7").fetchone()[0] == "ready"
+    assert connection.execute("SELECT count(*) FROM bench_panorama_requests").fetchone()[0] == 0
+    assert connection.execute("SELECT count(*) FROM bench_panorama_lightmaps").fetchone()[0] == 0
+
+
 def test_pending_selection_tracks_source_render_and_bench_versions():
     connection = database()
     versions = {

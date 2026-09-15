@@ -72,6 +72,35 @@ describe("SQLite migrations and R*Tree", () => {
     database.close();
   });
 
+  it("prioritizes only a new or moved bench while preserving environment dirty cells", () => {
+    const database = new Database(":memory:");
+    try {
+      const priorityIndex = migrations.findIndex(({ id }) => id === "0036_panorama_bench_priority");
+      applyMigrations(database, migrations.slice(0, priorityIndex));
+      const insertBench = database.prepare(`INSERT INTO benches(id,osm_type,osm_id,latitude,longitude,source_updated_at,imported_at)
+        VALUES(?, 'node', ?, ?, ?, '2026-09-15', '2026-09-15')`);
+      insertBench.run("osm-node-901", 901, 47.1, 8.1);
+      insertBench.run("osm-node-902", 902, 47.2, 8.2);
+      database.prepare(`INSERT INTO environment_features(
+        source,source_id,kind,subtype,center_latitude,center_longitude,min_latitude,max_latitude,
+        min_longitude,max_longitude,raw_tags,imported_at
+      ) VALUES('OpenStreetMap','node-1','tree','tree',47.1,8.1,47.1,47.1,8.1,8.1,'{}','2026-09-15')`).run();
+      expect((database.prepare("SELECT count(*) count FROM panorama_dirty_cells WHERE reason_mask=1").get() as { count: number }).count).toBe(1);
+      executeMigration(database, migrations[priorityIndex]);
+      expect(database.prepare("SELECT reason_mask reasonMask FROM panorama_dirty_cells").all()).toEqual([{ reasonMask: 2 }]);
+
+      database.prepare(`INSERT INTO panorama_generations(id,git_commit,state,source_versions_json,created_at)
+        VALUES('active','abcdef0','active','{}','2026-09-15')`).run();
+      insertBench.run("osm-node-903", 903, 47.1, 8.1);
+      const queued = database.prepare("SELECT b.id,request.priority FROM bench_panorama_requests request JOIN benches b ON b.row_id=request.bench_row_id").all();
+      expect(queued).toEqual([{ id: "osm-node-903", priority: 0 }]);
+      database.prepare("UPDATE benches SET longitude=longitude+.01 WHERE id='osm-node-901'").run();
+      expect(database.prepare("SELECT b.id FROM bench_panorama_requests request JOIN benches b ON b.row_id=request.bench_row_id ORDER BY b.id").all())
+        .toEqual([{ id: "osm-node-901" }, { id: "osm-node-903" }]);
+      expect(database.prepare("SELECT reason_mask reasonMask FROM panorama_dirty_cells").all()).toEqual([{ reasonMask: 2 }]);
+    } finally { database.close(); }
+  });
+
   it("persists recoverable bench photo moderation jobs without image blobs", () => {
     const database = new Database(":memory:");
     applyMigrations(database);

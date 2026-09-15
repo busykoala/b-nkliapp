@@ -1025,4 +1025,34 @@ export const migrations: Migration[] = [
       END;
     `,
   },
+  {
+    id: "0036_panorama_bench_priority",
+    sql: `
+      DROP TRIGGER panorama_bench_insert_dirty;
+      DROP TRIGGER panorama_bench_move_dirty;
+
+      -- A bench's own viewpoint changes when it is added or moved. It does
+      -- not change the terrain or buildings seen from neighbouring benches.
+      CREATE TRIGGER panorama_bench_insert_request AFTER INSERT ON benches
+        WHEN new.active=1 AND EXISTS(SELECT 1 FROM panorama_generations WHERE state='active') BEGIN
+        INSERT INTO bench_panorama_requests(bench_row_id,requested_at,status,priority)
+        VALUES(new.row_id,strftime('%Y-%m-%dT%H:%M:%fZ','now'),'pending',0)
+        ON CONFLICT(bench_row_id) DO UPDATE SET status='pending',priority=0,
+          requested_at=excluded.requested_at,lease_owner=NULL,lease_until=NULL,next_attempt_at=NULL;
+      END;
+      CREATE TRIGGER panorama_bench_move_request AFTER UPDATE OF latitude,longitude,active ON benches
+        WHEN new.active=1 AND EXISTS(SELECT 1 FROM panorama_generations WHERE state='active')
+          AND (old.active<>new.active OR old.latitude<>new.latitude OR old.longitude<>new.longitude) BEGIN
+        INSERT INTO bench_panorama_requests(bench_row_id,requested_at,status,priority)
+        VALUES(new.row_id,strftime('%Y-%m-%dT%H:%M:%fZ','now'),'pending',0)
+        ON CONFLICT(bench_row_id) DO UPDATE SET status='pending',priority=0,
+          requested_at=excluded.requested_at,lease_owner=NULL,lease_until=NULL,next_attempt_at=NULL;
+      END;
+
+      -- Prior bench-only events need not invalidate already-painted neighbours.
+      -- Preserve cells that also contain environment changes.
+      DELETE FROM panorama_dirty_cells WHERE reason_mask=1;
+      UPDATE panorama_dirty_cells SET reason_mask=reason_mask & ~1 WHERE reason_mask & 1<>0;
+    `,
+  },
 ];

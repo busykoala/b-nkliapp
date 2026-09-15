@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { clampPanoramaVertical, moonShadowPath, panoramaBenchShadow, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
+import { clampPanoramaVertical, moonShadowPath, panoramaBenchShadow, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
 
 describe("360 degree panorama track", () => {
+  it("checks a cold painting promptly, then backs off without ignoring error retries", () => {
+    expect(panoramaPollDelay(1, 1_000)).toBe(1_000);
+    expect(panoramaPollDelay(20, 1_000)).toBe(1_000);
+    expect(panoramaPollDelay(21, 1_000)).toBe(5_000);
+    expect(panoramaPollDelay(1, 30_000)).toBe(30_000);
+  });
+
   it("centres north in the middle copy", () => {
     expect(panoramaTrackOffset(600, 500, 0)).toBe(-2420);
   });
