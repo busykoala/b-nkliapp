@@ -7,6 +7,7 @@ async function registerInOpenDialog(page: Page, prefix: string) {
   await signup.getByLabel("Benutzername").fill(`${prefix}-${Date.now().toString(36)}`);
   await signup.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await signup.getByRole("button", { name: "Konto erstellen", exact: true }).click();
+  await expect(signup).toBeHidden({ timeout: 15_000 });
 }
 
 test("filters are beside search and removable after the panel closes", async ({ page }, info) => {
@@ -23,7 +24,40 @@ test("filters are beside search and removable after the panel closes", async ({ 
   await page.screenshot({ path: info.outputPath("persistent-filters.png") });
   await page.getByRole("button", { name: "Menü öffnen" }).click();
   const items = await page.getByRole("navigation", { name: "Hauptnavigation" }).locator(":scope > a, :scope > button").allTextContents();
-  expect(items.slice(0, 4).map((text) => text.trim())).toEqual(["Bänkli eintragen", "Spaziergang", "Bänkli-Feed", "Anmelden"]);
+  expect(items.slice(0, 4).map((text) => text.trim())).toEqual(["Spaziergang", "Bänkli-Feed", "Anmelden", "Bänkli eintragen"]);
+});
+
+test("selected bench exposes a decision sheet and resumes saving after sign-in", async ({ page }, info) => {
+  await page.goto("/?bank=osm-node-101");
+  const sheet = page.getByRole("complementary", { name: "Bankdetails" });
+  const preview = sheet.locator(".bench-quick-preview");
+  await expect(preview).toBeVisible();
+  await expect(preview.getByRole("heading", { name: /Lindenhof/ })).toBeVisible();
+  await expect(preview.getByRole("button", { name: "Weg hierher" })).toBeVisible();
+  const save = preview.getByRole("button", { name: "Bänkli merken" });
+  await expect(save).toBeVisible();
+  await save.click();
+  await registerInOpenDialog(page, `save-${info.project.name.slice(-3)}`);
+  await expect(preview.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
+  await preview.screenshot({ path: info.outputPath("bench-decision-sheet.png") });
+  await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
+  await expect(sheet.locator(".calm-title")).toBeVisible();
+  const order = await page.evaluate(() => document.querySelector(".calm-title")!.compareDocumentPosition(document.querySelector(".bench-panorama")!) & Node.DOCUMENT_POSITION_FOLLOWING);
+  expect(order).toBeTruthy();
+  await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
+  await sheet.screenshot({ path: info.outputPath("bench-full-decision.png") });
+  await sheet.getByRole("button", { name: "Bänkli beschreiben: Rückenlehne" }).click();
+  const factEditor = page.getByRole("dialog", { name: "Bänkli beschreiben" });
+  await expect(factEditor.locator(".contribution-feature-list > section")).toHaveCount(1);
+  await expect(factEditor.locator(".contribution-metadata-form")).toHaveCount(0);
+  await factEditor.getByRole("button", { name: /Rückenlehne/ }).click();
+  await expect(factEditor.getByRole("button", { name: "Nein", exact: true })).toBeVisible();
+  await factEditor.getByRole("button", { name: "Beiträge schliessen" }).click();
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await expect(sheet).toHaveAttribute("data-snap", "full");
+  await expect(sheet.locator(".bench-quick-preview")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await sheet.screenshot({ path: info.outputPath("bench-tablet-rail.png") });
 });
 
 test("offers an accessible nearby list with zoom guidance and decision evidence", async ({ page }, info) => {
@@ -49,13 +83,13 @@ test("guest rating resumes directly into four tap controls after authentication"
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
   await registerInOpenDialog(page, `rate-${info.project.name.slice(-3)}`);
-  const rating = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  const rating = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await expect(rating.getByRole("group", { name: "Gesamt", exact: true })).toBeVisible();
   for (const label of ["Gesamt", "Aussicht", "Komfort", "Ruhe"]) await rating.getByRole("group", { name: label, exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
   await rating.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(rating.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
   await rating.getByRole("button", { name: "Beiträge schliessen" }).click();
-  await expect(page.getByRole("region", { name: "Auf einen Blick" }).getByText(/Ruhe [0-9.]+\/5/)).toBeVisible();
+  await expect(page.locator(".rating-summary-action strong")).toContainText("4");
   await page.screenshot({ path: info.outputPath("bench-summary.png"), fullPage: true });
 });
 
@@ -112,10 +146,10 @@ test("a logged-out map long-press resumes at the same position after sign-in", a
 
 test("freshness can be renewed inline and account actions use conventional labels", async ({ page }, info) => {
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: "Mitmachen", exact: true }).click();
+  const summary = page.getByRole("region", { name: "Auf einen Blick" });
+  await summary.getByRole("button", { name: "Ist noch da", exact: true }).click();
   await registerInOpenDialog(page, `seen-${info.project.name.slice(-3)}`);
   await page.getByRole("button", { name: "Beiträge schliessen" }).click();
-  const summary = page.getByRole("region", { name: "Auf einen Blick" });
   await summary.getByRole("button", { name: "Ist noch da", exact: true }).click();
   await expect(summary.getByRole("button", { name: "Heute von dir bestätigt" })).toBeDisabled();
   await expect(summary.getByText("Heute bestätigt", { exact: true })).toBeVisible();

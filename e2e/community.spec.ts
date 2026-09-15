@@ -72,9 +72,9 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   page.on("pageerror", (error) => pageErrors.push(error));
   const runId = `${testInfo.project.name.slice(-6)}-photo-${Date.now().toString().slice(-5)}`;
   await registerUser(page, runId);
-  await page.getByRole("button", { name: "Beitragen", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
-  await dialog.locator("summary").filter({ hasText: "Foto von diesem Platz" }).click();
+  await page.getByRole("button", { name: "Foto aufnehmen oder wählen" }).click();
+  const dialog = page.getByRole("dialog", { name: "Foto von diesem Platz" });
+  await expect(dialog.locator(".contribution-chapter")).toHaveCount(1);
 
   await expect(dialog.getByText("Das Bänkli ins Bild setzen")).toBeVisible();
   await expect(dialog.getByText(/Aus Fotomediathek, Kamera oder Dateien wählen/)).toBeVisible();

@@ -26,7 +26,7 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   await expect(painting).toBeVisible();
   await expect(painting).toHaveAttribute("data-status", /generating|unavailable|error/);
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
-  await page.getByRole("button", { name: "Mitmachen", exact: true }).click();
+  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
   await expect(page).toHaveURL(/\/bank\/osm-node-101$/);
 });
@@ -220,7 +220,8 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator(".bench-panorama")).toBeInViewport();
+  await expect(sheet.locator(".bench-quick-preview")).toBeInViewport();
+  await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
   await expect(sheet.getByText("Details zeigen", { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("short-phone-bench-sheet.png") });
   await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
@@ -354,7 +355,7 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
-  const contribution = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  const contribution = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
   await contribution.getByRole("group", { name: "Aussicht", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
   await contribution.getByRole("group", { name: "Komfort", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
@@ -362,10 +363,12 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await page.getByPlaceholder("Was hat dir hier gefallen?").fill("Playwright-Testbewertung");
   await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
-  await contribution.locator("summary").filter({ hasText: "Bänkli beschreiben" }).click();
-  await contribution.getByRole("button", { name: /Armlehnen/ }).click();
-  await contribution.getByRole("button", { name: "Ja", exact: true }).click();
-  await expect(contribution.getByRole("button", { name: /Armlehnen Ja/ })).toBeVisible();
+  await contribution.getByRole("button", { name: "Beiträge schliessen" }).click();
+  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
+  const features = page.getByRole("dialog", { name: "Bänkli beschreiben" });
+  await features.getByRole("button", { name: /Armlehnen/ }).click();
+  await features.getByRole("button", { name: "Ja", exact: true }).click();
+  await expect(features.getByRole("button", { name: /Armlehnen Ja/ })).toBeVisible();
 });
 
 test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {

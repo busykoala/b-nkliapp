@@ -57,14 +57,17 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
           <span><small>{t("common.navigation.profile")}</small><strong>{user.username}</strong></span><span aria-hidden="true">→</span>
         </Link>}
         <nav aria-label={t("common.navigation.label")}>
+          <p className="app-menu-group-label">{t("common.navigation.explore")}</p>
           {pathname !== "/" && <Link aria-label={t("common.navigation.map")} href="/" className="app-menu-row" onClick={close}><Map size={19} /> {t("common.navigation.map")}</Link>}
-          {onAdd ? <button aria-label={t("common.navigation.addBench")} className="app-menu-row" onClick={() => { close(); window.setTimeout(onAdd, 0); }}><Plus size={19} /> {t("common.navigation.addBench")}</button>
-            : <Link className="app-menu-row" href="/?action=add" onClick={close}><Plus size={19} /> {t("common.navigation.addBench")}</Link>}
           {onWalk ? <button className="app-menu-row" onClick={() => { close(); window.setTimeout(onWalk, 0); }}><Footprints size={19} /> {t("common.navigation.walk")}</button>
             : <Link className="app-menu-row" href="/?action=walk" onClick={close}><Footprints size={19} /> {t("common.navigation.walk")}</Link>}
           <Link aria-label={t("common.navigation.feed")} href="/feed" className={`app-menu-row ${pathname === "/feed" ? "is-current" : ""}`} onClick={close}><Rss size={19} /> {t("common.navigation.feed")}</Link>
+          <p className="app-menu-group-label">{t("common.navigation.personal")}</p>
           {user && <Link href="/lieblingsplaetze" className={`app-menu-row ${pathname === "/lieblingsplaetze" ? "is-current" : ""}`} aria-current={pathname === "/lieblingsplaetze" ? "page" : undefined} onClick={close}><Bookmark size={19} /> {t("common.navigation.favourites")}</Link>}
           {!user && <button aria-label={t("common.navigation.signIn")} className="app-menu-row" onClick={openAccount}><LogIn size={19} /> {t("common.navigation.signIn")}</button>}
+          <p className="app-menu-group-label">{t("common.navigation.more")}</p>
+          {onAdd ? <button aria-label={t("common.navigation.addBench")} className="app-menu-row" onClick={() => { close(); window.setTimeout(onAdd, 0); }}><Plus size={19} /> {t("common.navigation.addBench")}</button>
+            : <Link className="app-menu-row" href="/?action=add" onClick={close}><Plus size={19} /> {t("common.navigation.addBench")}</Link>}
           <Link aria-label={t("common.navigation.statistics")} href="/statistiken" className={`app-menu-row ${pathname === "/statistiken" || pathname.startsWith("/gemeinde/") ? "is-current" : ""}`} onClick={close}><BarChart3 size={19} /> {t("common.navigation.statistics")}</Link>
           {(ios || installEvent) && <button className="app-menu-row" onClick={install}><Download size={19} /> {t("common.install.button")}</button>}
           <Link aria-label={t("common.navigation.about")} href="/danke" className={`app-menu-row ${pathname === "/danke" ? "is-current" : ""}`} onClick={close}><Info size={19} /> {t("common.navigation.about")}</Link>

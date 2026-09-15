@@ -15,7 +15,7 @@ import { CorrectionForm, RatingForm } from "./contribution-forms";
 
 type Refresh = () => void | Promise<void>;
 
-export function BenchContributionHub({ bench, open, onClose, onChanged, initialChapter = "all" }: { initialChapter?: "all" | "rating" | "presence"; bench: BenchDetail; open: boolean; onClose: () => void; onChanged?: Refresh }) {
+export function BenchContributionHub({ bench, open, onClose, onChanged, initialChapter = "all", onlyFields }: { initialChapter?: "all" | "rating" | "presence" | "photo" | "features"; onlyFields?: ("backrest" | "armrest" | "covered" | "wheelchair" | "material" | "seats" | "direction")[]; bench: BenchDetail; open: boolean; onClose: () => void; onChanged?: Refresh }) {
   const t = useTranslations();
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -27,13 +27,16 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
   return <dialog ref={dialog} onCancel={onClose} onClose={onClose} aria-labelledby={titleId} className="modal modal-bottom sm:modal-middle contribution-dialog">
     <div className="modal-box storybook-sheet contribution-sheet">
       <header className="contribution-sheet-header">
-        <div><small>{t("community.hub.eyebrow")}</small><h2 id={titleId}>{t("community.hub.title")}</h2></div>
+        <div><small>{t("community.hub.eyebrow")}</small><h2 id={titleId}>{t(initialChapter === "all" ? "community.hub.title" : `community.chapters.${initialChapter}.title`)}</h2></div>
         <button type="button" className="btn btn-circle btn-ghost" onClick={onClose} aria-label={t("community.hub.close")}><X size={19} /></button>
       </header>
-      <ContributionOverview bench={bench} />
+      {initialChapter === "all" && <ContributionOverview bench={bench} />}
       {initialChapter === "rating" && <ContributionChapter open icon={<Star />} title={t("community.chapters.rating.title")} summary={t("community.chapters.rating.summary")}><RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} /></ContributionChapter>}
       {initialChapter === "presence" && <ContributionChapter open icon={<Check />} title={t("community.chapters.presence.title")} summary={t("community.chapters.presence.summary")}><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></ContributionChapter>}
+      {initialChapter === "photo" && <ContributionChapter open icon={<Camera />} title={t("community.chapters.photo.title")} summary={t("community.chapters.photo.summary")}><BenchPhotoCapture benchId={bench.id} onChanged={onChanged} /></ContributionChapter>}
+      {initialChapter === "features" && <ContributionChapter open icon={<ListChecks />} title={t("community.chapters.features.title")} summary={t("community.chapters.features.summary")}>{!onlyFields && <MetadataEditor bench={bench} onChanged={onChanged} />}<BenchFeatureEditor bench={bench} onlyFields={onlyFields} onChanged={onChanged} /></ContributionChapter>}
 
+      {initialChapter === "all" && <>
       <ContributionChapter icon={<ListChecks />} title={t("community.chapters.features.title")} summary={t("community.chapters.features.summary")}>
         <MetadataEditor bench={bench} onChanged={onChanged} />
         <BenchFeatureEditor bench={bench} onChanged={onChanged} />
@@ -53,16 +56,17 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
         <aside className="community-theme"><Sparkles size={17} aria-hidden="true" /><div><small>{t("community.theme.month")}</small><strong>{theme.title}</strong><p>{theme.prompt}</p></div></aside>
         <MomentForm bench={bench} onChanged={onChanged} />
       </ContributionChapter>
-      {initialChapter !== "rating" && <ContributionChapter icon={<Star />} title={t("community.chapters.rating.title")} summary={bench.myRating ? t("community.chapters.rating.mine", { rating: bench.myRating.overall }) : t("community.chapters.rating.prompt")}>
+      <ContributionChapter icon={<Star />} title={t("community.chapters.rating.title")} summary={bench.myRating ? t("community.chapters.rating.mine", { rating: bench.myRating.overall }) : t("community.chapters.rating.prompt")}>
         <RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} />
-      </ContributionChapter>}
-      <ContributionChapter open={initialChapter === "presence"} icon={<HeartHandshake />} title={t("community.chapters.care.title")} summary={bench.care.mine.length ? t("community.chapters.care.mine", { count: bench.care.mine.length }) : t("community.chapters.care.summary")}>
+      </ContributionChapter>
+      <ContributionChapter icon={<HeartHandshake />} title={t("community.chapters.care.title")} summary={bench.care.mine.length ? t("community.chapters.care.mine", { count: bench.care.mine.length }) : t("community.chapters.care.summary")}>
         <CareActions bench={bench} onChanged={onChanged} />
-        {initialChapter !== "presence" && <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />}
+        <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />
       </ContributionChapter>
       <ContributionChapter icon={<AlertTriangle />} title={t("community.chapters.correction.title")} summary={t("community.chapters.correction.summary")}>
         <CorrectionForm benchId={bench.id} onChanged={onChanged} />
       </ContributionChapter>
+      </>}
     </div>
     <form method="dialog" className="modal-backdrop"><button onClick={onClose}>{t("common.actions.close")}</button></form>
   </dialog>;

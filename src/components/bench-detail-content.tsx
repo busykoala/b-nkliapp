@@ -6,7 +6,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import type { MessageKey, Translator } from "@/i18n/types";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Flag, Languages, MessageCircleHeart, Navigation, Star } from "lucide-react";
+import { ArrowLeft, Camera, Flag, Languages, MessageCircleHeart, Navigation, Pencil, Star } from "lucide-react";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
@@ -17,6 +17,7 @@ import { BenchSummary } from "@/features/bench-detail/bench-summary";
 import { BenchFeatureEditor } from "./bench-feature-editor";
 import { BenchDetails } from "@/features/bench-detail/bench-details";
 import { BenchPanorama } from "./bench-panorama";
+import { BenchSaveButton } from "./bench-save-button";
 import { VerificationQuestion } from "@/features/bench-knowledge/verification-question";
 import { PhotoGallery } from "./photo-gallery";
 import { galleryImageUrl } from "@/features/bench-photos/media-source";
@@ -38,7 +39,8 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
   const router = useRouter();
   const [community, setCommunity] = useState(false);
   const [contributeOpen, setContributeOpen] = useState(false);
-  const [contributionMode, setContributionMode] = useState<"all" | "rating" | "presence">("all");
+  const [contributionMode, setContributionMode] = useState<"all" | "rating" | "presence" | "photo" | "features">("all");
+  const [focusedField, setFocusedField] = useState<"backrest" | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [reported, setReported] = useState<Set<string>>(new Set());
@@ -51,8 +53,15 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
   const refreshTimeSensitiveDetail = useEffectEvent(() => {
     if (document.visibilityState !== "hidden") void refreshBench();
   });
-  const contribute = (mode: "all" | "rating" | "presence" = "all") => {
+  const contribute = (mode: "all" | "rating" | "presence" | "photo" | "features" = "all") => {
     setContributionMode(mode);
+    setFocusedField(null);
+    if (signedIn) setContributeOpen(true);
+    else accountDialog.current?.showModal();
+  };
+  const editBackrest = () => {
+    setContributionMode("features");
+    setFocusedField("backrest");
     if (signedIn) setContributeOpen(true);
     else accountDialog.current?.showModal();
   };
@@ -95,22 +104,21 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
       <Community bench={bench} report={report} reported={reported} user={user} onContribute={() => contribute("rating")} />
     </> : <>
       <section className="bench-story-card">
-        <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaStatus}`} bench={bench}><RatingEntry bench={bench} onOpen={() => contribute("rating")} /></BenchPanorama>
         <header className="calm-title">
           {created ? <p role="status" className="bench-created-status">{t("bench.story.created")}{bench.verificationStatus === "unverified" ? t("bench.story.remaining", {count: Math.max(0, bench.verificationThreshold - bench.confirmationCount)}) : t("bench.story.confirmed")}</p>
             : bench.verificationStatus === "unverified" && <p className="unverified-note">{t("bench.story.unverified")}</p>}
-          <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2></div>
+          <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2><button type="button" className="title-edit-action" title={t("community.chapters.features.title")} aria-label={t("community.chapters.features.title")} onClick={() => contribute("features")}><Pencil size={17} /></button></div>
           <div className="calm-title-meta"><p>{placeLine(bench, t)}</p></div>
           {localVoice && <p className="local-language-badge"><Languages size={14} /> {t("common.language.localActive", { region: localVoice.regionLabel })}</p>}
-          <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} onLocateAmenity={onLocateAmenity} />
+          <RatingEntry bench={bench} onOpen={() => contribute("rating")} />
           <div className="bench-primary-actions">
             {onJourney && <button className="journey-entry" onClick={onJourney}><Navigation size={18} />{t("bench.story.directions")}</button>}
-            <div className="bench-secondary-actions">
-              <button className="contribution-entry" onClick={() => contribute()}><MessageCircleHeart size={17} /> {signedIn ? t("bench.story.contribute") : t("bench.story.join")}</button>
-              <button className="contribution-entry" onClick={() => setCommunity(true)}><Star size={17} />{t("bench.story.ratings")}</button>
-            </div>
+            <BenchSaveButton key={bench.id} bench={bench} user={user} onChanged={refreshBench} />
           </div>
+          <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} onLocateAmenity={onLocateAmenity} onEditBackrest={editBackrest} />
+          <div className="bench-secondary-actions"><button className="contribution-entry is-quiet" onClick={() => contribute()}><MessageCircleHeart size={17} />{t("bench.story.contribute")}</button><button className="contribution-entry is-quiet" onClick={() => setCommunity(true)}><Star size={17} />{t("bench.story.ratings")}</button></div>
         </header>
+        <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaStatus}`} bench={bench} />
       </section>
       <div className="calm-story-body">
         {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>{t("bench.story.nextTitle")}</h3><p>{t("bench.story.nextDescription")}</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
@@ -119,13 +127,13 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, onLo
         </div>
         {signedIn && bench.knowledge?.question && <VerificationQuestion benchId={bench.id} question={bench.knowledge.question} onChanged={refreshBench} />}
         <BenchDetails bench={bench} signedIn={signedIn} onChanged={refreshBench} />
+        <PhotoStory bench={bench} onAdd={() => contribute("photo")} />
         <BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refreshBench} />
-        <PhotoStory bench={bench} />
       </div>
     </>}
     {status && <p role="status" className="contribution-inline-status">{status}</p>}
-    {signedIn && contributeOpen && <BenchContributionHub key={`${bench.id}-${contributionMode}`} bench={bench} open initialChapter={contributionMode} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
-    <AccountDialog dialogRef={accountDialog} intent={contributionMode === "rating" ? t("bench.story.rateIntent") : contributionMode === "presence" ? t("community.chapters.presence.title") : t("community.hub.title")} onAuthenticated={() => { setAuthenticated(true); setContributeOpen(true); void refreshBench(); }} />
+    {signedIn && contributeOpen && <BenchContributionHub key={`${bench.id}-${contributionMode}-${focusedField ?? "all"}`} bench={bench} open initialChapter={contributionMode} onlyFields={focusedField ? [focusedField] : undefined} onClose={() => setContributeOpen(false)} onChanged={refreshBench} />}
+    <AccountDialog dialogRef={accountDialog} intent={contributionMode === "rating" ? t("bench.story.rateIntent") : contributionMode === "presence" ? t("community.chapters.presence.title") : contributionMode === "photo" ? t("community.chapters.photo.title") : contributionMode === "features" ? t("community.chapters.features.title") : t("community.hub.title")} onAuthenticated={() => { setAuthenticated(true); setContributeOpen(true); void refreshBench(); }} />
   </div>;
 }
 
@@ -139,25 +147,24 @@ function RatingEntry({ bench, onOpen }: { bench: BenchDetail; onOpen: () => void
       ? t("bench.story.ratingEmpty")
       : t("bench.story.ratingSummary", {score: format.number(bench.ratingAverage, {minimumFractionDigits: 1, maximumFractionDigits: 1}), count: bench.ratingCount});
 
-  return <button type="button" className={`landscape-rating-action${rounded === 0 ? " is-empty" : ""}`} aria-label={label} title={label} onClick={onOpen}>
-    <span className="landscape-rating-stars" aria-hidden="true">
-      {Array.from({ length: 5 }, (_, index) => <Star key={index} className={index < rounded ? "is-filled" : undefined} />)}
-    </span>
-    {bench.ratingAverage !== null && <strong>{format.number(bench.ratingAverage, {minimumFractionDigits: 1, maximumFractionDigits: 1})}</strong>}
+  return <button type="button" className="rating-summary-action" aria-label={label} title={label} onClick={onOpen}>
+    <Star size={17} fill={rounded > 0 ? "currentColor" : "none"} aria-hidden="true" />
+    <span>{bench.myRating ? t("community.reviews.edit") : t("community.reviews.add")}</span>
+    {bench.ratingAverage !== null && <strong>{format.number(bench.ratingAverage, {minimumFractionDigits: 1, maximumFractionDigits: 1})} · {bench.ratingCount}</strong>}
   </button>;
 }
 
-function PhotoStory({ bench }: { bench: BenchDetail }) {
+function PhotoStory({ bench, onAdd }: { bench: BenchDetail; onAdd: () => void }) {
   const t = useTranslations();
   const media = [...bench.media.filter((item) => item.relation === "exact"), ...bench.media.filter((item) => item.relation === "nearby")];
-  if (!media.length) return null;
-  const photos = media.flatMap((item) => {
+  const userPhotos = bench.moments.filter((item) => item.hasPhoto).map((item) => ({ id: `moment-${item.id}`, src: item.photoUrl, momentId: item.id, caption: t("photos.gallery.by", { username: item.username }), credit: item.username }));
+  const photos = [...userPhotos, ...media.flatMap((item) => {
     const src = galleryImageUrl(item.thumbnailUrl);
     return src ? [{ id: String(item.id), src, caption: item.relation === "nearby" ? t("photos.story.nearby") : item.title ?? t("photos.story.place"), credit: `${item.author ?? item.provider} · ${item.license ?? t("photos.story.license")}`, sourceUrl: item.sourceUrl }] : [];
-  });
+  })];
   const links = media.filter((item) => !galleryImageUrl(item.thumbnailUrl) && /^https?:\/\//.test(item.sourceUrl));
   return <section className="photo-story">
-    <h3>{t("photos.story.title")}</h3>
+    <header><h3>{photos.length || links.length ? t("photos.story.title") : t("photos.capture.title")}</h3><button type="button" onClick={onAdd}><Camera size={17} />{t("photos.capture.choose")}</button></header>
     {photos.length > 0 && <PhotoGallery photos={photos} />}
     {links.map((item) => <p key={item.id}><a href={item.sourceUrl} target="_blank" rel="noreferrer">{t("photos.story.external")}</a></p>)}
   </section>;

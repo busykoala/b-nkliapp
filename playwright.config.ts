@@ -44,6 +44,9 @@ export default defineConfig({
       DATABASE_PATH: testDatabase,
       PANORAMA_CACHE_DIR: panoramaCache,
       BENCHLY_PHOTO_LOCAL_PATH: photoStore,
+      // The developer's read-only production photo snapshot must not disable
+      // writes to Playwright's isolated temporary photo store.
+      BENCHLY_PHOTO_ARCHIVE_PATH: "",
       BENCHLY_SEED_DEMO: "true",
       CONTRIBUTOR_SECRET: "playwright-contributor-secret-with-more-than-32-characters",
       RATE_LIMIT_SECRET: "playwright-rate-limit-secret-with-more-than-32-characters",
