@@ -79,6 +79,28 @@ def _progress(root: Path) -> sqlite3.Connection:
     return database
 
 
+def publication_ledger(root: Path) -> sqlite3.Connection:
+    """Durable local publication checkpoint; never opens the app database."""
+    root.mkdir(parents=True, exist_ok=True)
+    database = sqlite3.connect(root / "publish-progress.sqlite", timeout=30)
+    database.execute("PRAGMA journal_mode=WAL")
+    database.execute("PRAGMA synchronous=FULL")
+    database.execute("""CREATE TABLE IF NOT EXISTS published(
+      group_id INTEGER PRIMARY KEY, chunk_id TEXT NOT NULL, status TEXT NOT NULL,
+      updated_at TEXT NOT NULL)""")
+    return database
+
+
+def publication_mark(database: sqlite3.Connection, group: int, chunk_id: str, status: str) -> None:
+    if status not in {"uploaded", "applied"}:
+        raise ValueError("invalid repaint publication checkpoint")
+    database.execute("""INSERT INTO published VALUES(?,?,?,?)
+      ON CONFLICT(group_id) DO UPDATE SET chunk_id=excluded.chunk_id,
+      status=excluded.status, updated_at=excluded.updated_at""",
+                     (group, chunk_id, status, datetime.now(UTC).isoformat()))
+    database.commit()
+
+
 def _index(path: Path, capsule_root: Path):
     seen: set[int] = set()
     with path.open(encoding="utf-8") as handle:
