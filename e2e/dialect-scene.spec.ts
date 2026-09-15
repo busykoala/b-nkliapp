@@ -123,7 +123,7 @@ test("keeps the Romansh local overlay readable at 430px and desktop", async ({ p
   }
 
   await page.setViewportSize({ width: 430, height: 932 });
-  await page.getByRole("button", { name: "Sa participar" }).click();
+  await page.getByRole("button", { name: "Contribuir", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   expect(await dialog.evaluate((element) => element.closest("[lang]")?.getAttribute("lang"))).toBe("rm-CH");
