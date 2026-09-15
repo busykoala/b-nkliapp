@@ -852,6 +852,39 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
     forest = Image.blend(forest, _wrap_blur(forest, max(2.2, width / 340)), .78)
     rng = np.random.default_rng(seed)
 
+    # Woodland cover is geographically known, but its raster silhouette is a
+    # bare terrain ray. Lay an uneven crown edge immediately above that ray;
+    # otherwise a distant wood reads as a flat-topped green building. Keep the
+    # brush inside mapped forest azimuths, not on neighbouring hills or water.
+    pixels = np.asarray(forest, dtype=np.uint8)
+    crest = Image.new("L", base.size)
+    crest_draw = ImageDraw.Draw(crest)
+    # A correlated brush-pressure field bends the continuous tree line. A
+    # fixed row of circles looked like procedural buttons on the hillside.
+    pressure = rng.normal(0, 1, width).astype(np.float32)
+    radius = max(9, width // 115)
+    offsets = np.arange(-radius, radius + 1, dtype=np.float32)
+    kernel = np.exp(-.5 * (offsets / max(1, radius / 2.7)) ** 2)
+    kernel /= kernel.sum()
+    pressure = np.convolve(np.concatenate((pressure[-radius:], pressure, pressure[:radius])),
+                           kernel, mode="same")[radius:-radius]
+    pressure /= max(.01, float(np.max(np.abs(pressure))))
+    side = max(3, width // 500)
+    for x in range(width):
+        visible = np.flatnonzero(pixels[:, x] > 120)
+        if not visible.size:
+            continue
+        top = int(visible[0])
+        # Require woodland on both sides of the dab. This prevents a crown
+        # from bridging a genuine clearing or spilling into an adjacent lake.
+        if not np.any(pixels[:, (x - side) % width] > 120) or not np.any(pixels[:, (x + side) % width] > 120):
+            continue
+        lift = round(height * (.016 + .013 * (1 + pressure[x])))
+        crest_draw.line((x, max(0, top - lift), x, top + 3), fill=125, width=1)
+    crown_fringe = _wrap_blur(crest, max(.8, width / 3300))
+    crown_fringe = ImageChops.subtract(crown_fringe, forest)
+    base.paste(Image.new("RGB", base.size, (92, 132, 91)), (0, 0), crown_fringe)
+
     # The land-cover class is one continuous woodland, but the visible depth
     # intervals are not one flat green plane. Glaze the more distant canopies
     # cool and the foreground warm through very broad, circular wet edges.
@@ -1115,6 +1148,9 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
                                 fill=int(rng.uniform(65, 135)), width=int(rng.integers(3, 9)))
         trunks = ImageChops.multiply(near_forest, _wrap_blur(trunks, .38))
         branches = ImageChops.multiply(near_forest, _wrap_blur(branches, .25))
+        # The twig scaffold should disappear into the crown wash. At display
+        # size its old opacity made trees look like vertical circuit traces.
+        branches = _scaled_alpha(branches, .42)
         # A crown naturally projects slightly above the footprint's sampled
         # forest silhouette. Clipping every leaf to the terrain ray left only
         # bare vertical trunks; a soft, shallow canopy fringe fixes that
@@ -1127,7 +1163,7 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
         crown_accents = ImageChops.multiply(crown_envelope, _wrap_blur(crown_accents, 1.2))
         base.paste(Image.new("RGB", base.size, (70, 63, 45)), (0, 0), trunks)
         base.paste(Image.new("RGB", base.size, (54, 67, 42)), (0, 0), branches)
-        base.paste(Image.new("RGB", base.size, (25, 71, 43)), (0, 0), _scaled_alpha(crown_accents, 1.50))
+        base.paste(Image.new("RGB", base.size, (25, 71, 43)), (0, 0), _scaled_alpha(crown_accents, 1.75))
         crown_shadow = ImageChops.multiply(near_forest, ImageChops.offset(crown_accents, 3, 3))
         crown_highlight = ImageChops.multiply(near_forest, ImageChops.offset(crown_accents, -4, -3))
         base.paste(Image.new("RGB", base.size, (25, 57, 39)), (0, 0), _scaled_alpha(crown_shadow, .72))
@@ -1150,6 +1186,32 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
                             fill=int(rng.uniform(14, 36)), width=max(1, height // 240))
         forest_floor = ImageChops.multiply(near_forest, _wrap_blur(forest_floor, .55))
         base.paste(Image.new("RGB", base.size, (116, 75, 48)), (0, 0), forest_floor)
+
+
+def _paint_forest_relief(base: Image.Image, geometry: PanoramaGeometry,
+                         forest: Image.Image) -> None:
+    """Restore the hill's turning planes after foliage has been washed on."""
+    if not forest.getbbox():
+        return
+    width, height = base.size
+    crest = _painted_skyline(geometry, width, height)
+    slope = np.gradient(crest)
+    curvature = np.gradient(slope)
+    # This is a painter's ambient light judgement, not a second solar model.
+    # The wash bends across measured landform turns and fades down each face;
+    # no azimuth bin is painted as a full-height green or blue column.
+    turn = np.clip(slope * 1.35 + curvature * 3.8, -.9, .9)
+    y = np.arange(height, dtype=np.float32)[:, None]
+    reach = np.exp(-((y - crest[None, :] - height * .22) / (height * .27)) ** 2)
+    face = np.asarray(forest, dtype=np.float32) / 255
+    cool = Image.fromarray(np.rint(np.clip(turn, 0, 1)[None, :] * reach * face * 118).astype(np.uint8), "L")
+    warm = Image.fromarray(np.rint(np.clip(-turn, 0, 1)[None, :] * reach * face * 91).astype(np.uint8), "L")
+    cool = _wrap_blur(cool, max(10, width / 88))
+    warm = _wrap_blur(warm, max(10, width / 95))
+    cool = ImageChops.multiply(forest, cool)
+    warm = ImageChops.multiply(forest, warm)
+    base.paste(Image.new("RGB", base.size, (39, 66, 80)), (0, 0), cool)
+    base.paste(Image.new("RGB", base.size, (201, 189, 121)), (0, 0), warm)
 
 
 def _paint_surface_blooms(base: Image.Image, masks, pigment_field: Image.Image,
@@ -1304,6 +1366,13 @@ def _paint_edges(base: Image.Image, geometry: PanoramaGeometry) -> None:
     section = max(8, len(skyline) // 95)
     for start in range(0, len(skyline), section):
         if rng.random() < .22:
+            continue
+        columns = geometry.columns[start:min(len(skyline), start + section + 2)]
+        # A dark straight terrain line through the newly brushed tree crowns
+        # would reinstate the GIS silhouette beneath them.
+        if any(any(span.semantic == SemanticClass.FOREST and
+                   abs(span.upper_angle_degrees - column.skyline_angle_degrees) < 1.5
+                   for span in column.spans) for column in columns):
             continue
         points = skyline[start:min(len(skyline), start + section + 2)]
         jitter = rng.uniform(-.8, .8)
@@ -1531,6 +1600,9 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     _paint_land_brushwork(base, visual_masks, seed + 47)
     _paint_perspective_sweeps(base, visual_masks, seed + 53)
     _paint_forest_details(base, visual_masks, canopy_field, artist_pigment, seed + 59, masks)
+    forest_surface = surfaces.get(SemanticClass.FOREST)
+    if forest_surface is not None:
+        _paint_forest_relief(base, geometry, forest_surface)
     _paint_measured_slope_volume(base, geometry, surfaces)
     _paint_water_details(base, water, seed + 71, broad_pigment)
     _paint_buildings(base, geometry, seed + 113, medium_pigment)

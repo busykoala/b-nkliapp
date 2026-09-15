@@ -107,7 +107,7 @@ def test_repaint_index_uses_sealed_capsules_not_an_older_tsv(tmp_path: Path) -> 
     assert output.read_text() == f"{'c' * 64}\t5\tosm-node-5\t47.1000000000\t8.2000000000\n"
 
 
-def test_interrupted_repaint_reuses_completed_image(tmp_path: Path, monkeypatch) -> None:
+def test_interrupted_repaint_reuses_completed_image(tmp_path: Path, monkeypatch, capsys) -> None:
     root = tmp_path / "repaint"
     capsules = tmp_path / "capsules"
     index = tmp_path / "index.tsv"
@@ -159,6 +159,16 @@ def test_interrupted_repaint_reuses_completed_image(tmp_path: Path, monkeypatch)
     interrupt[0] = False
     refresh.repaint_job(args)
     assert calls == [1, 2]
+    args.bench_id = "osm-node-2"
+    refresh.repaint_job(args)
+    assert calls == [1, 2]
+    assert json.loads(capsys.readouterr().out.splitlines()[-1]) == {
+        "painted_now": 0, "ready": 1, "total": 1, "remaining": 0,
+    }
+    args.bench_id = "osm-node-missing"
+    with pytest.raises(ValueError, match="match the requested paint selection"):
+        refresh.repaint_job(args)
+    args.bench_id = None
     refresh.seal_repaint_job(args)
     manifest = json.loads((root / "chunks" / "0" / "manifest.json").read_text())
     assert len(manifest["records"]) == 2

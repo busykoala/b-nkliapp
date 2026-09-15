@@ -545,6 +545,7 @@ def build_parser() -> argparse.ArgumentParser:
     repaint.add_argument("--cpu-workers", type=int, default=12, choices=range(1, 17))
     repaint.add_argument("--limit", type=int, default=0)
     repaint.add_argument("--group", type=int, default=None, help="Paint one complete 512-row production group first")
+    repaint.add_argument("--bench-id", default=None, help="Repaint one cached bench for fast local visual review")
     repaint.set_defaults(function=repaint_job, uses_lock=False)
 
     repaint_fetch = subparsers.add_parser("panorama-repaint-fetch-capsules", help="Resume only missing production view capsules over approved SSH")

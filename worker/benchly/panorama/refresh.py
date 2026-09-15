@@ -213,9 +213,10 @@ def repaint_job(args: Namespace) -> None:
     progress = _progress(root)
     group = getattr(args, "group", None)
     rows = [row for row in _index(Path(args.bench_index).resolve(), capsule_root)
-            if group is None or row[0] // 512 == group]
-    if group is not None and not rows:
-        raise ValueError(f"no current production benches in paint group {group}")
+            if (group is None or row[0] // 512 == group) and
+            (getattr(args, "bench_id", None) is None or row[1] == args.bench_id)]
+    if (group is not None or getattr(args, "bench_id", None) is not None) and not rows:
+        raise ValueError("no current production benches match the requested paint selection")
     pending = []
     for row, bench_id, lat, lon, key, source in rows:
         stat = source.stat()
@@ -249,7 +250,10 @@ def repaint_job(args: Namespace) -> None:
                 completed += 1
                 if completed % 512 == 0:
                     print(json.dumps({"painted": completed, "total": len(rows)}), flush=True)
-    if group is None:
+    if getattr(args, "bench_id", None) is not None:
+        ready = int(progress.execute("SELECT count(*) FROM painted WHERE painter_key=? AND season=? AND bench_id=?",
+                                     (painter, args.season, args.bench_id)).fetchone()[0])
+    elif group is None:
         ready = int(progress.execute("SELECT count(*) FROM painted WHERE painter_key=? AND season=?", (painter, args.season)).fetchone()[0])
     else:
         ready = int(progress.execute("SELECT count(*) FROM painted WHERE painter_key=? AND season=? AND bench_row_id>=? AND bench_row_id<?",
