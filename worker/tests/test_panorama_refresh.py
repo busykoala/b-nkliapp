@@ -209,6 +209,12 @@ def test_chunk_rejects_duplicate_benches_and_oversize_manifest(tmp_path: Path) -
     (folder / "manifest.sha256").write_text(refresh._digest(folder / "manifest.json") + "  manifest.json\n")
     with pytest.raises(ValueError, match="512-MiB"):
         refresh._verify_chunk(folder, manifest)
+    manifest = _seal(folder, record)
+    assert refresh._upload_file_list(manifest) == "renders/1-good.webp\n"
+    (folder / "renders" / "stale-intermediate.webp").write_bytes(b"unsealed")
+    refresh._verify_chunk(folder, manifest)
+    with pytest.raises(ValueError, match="unsealed artifacts"):
+        refresh._verify_chunk(folder, manifest, strict=True)
 
 
 def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, monkeypatch) -> None:

@@ -326,13 +326,23 @@ def upload_repaint_job(args: Namespace) -> None:
     subprocess.run(["ssh", args.target, "mkdir", "-p", str(remote_folder)], check=True)
     rsync = _rsync_command()
     target = f"{args.target}:{remote_folder}/"
-    subprocess.run([rsync, "-a", "--partial", "--append-verify", "--exclude=manifest.json",
-                    "--exclude=manifest.sha256", f"{folder}/", target], check=True)
+    # The local group retains older content-addressed renders for forward
+    # iteration. Transfer only the coordinates-and-hashes sealed in this
+    # manifest, never every file that happens to share its renders directory.
+    subprocess.run([rsync, "-a", "--partial", "--append-verify", "--files-from=-",
+                    f"{folder}/", target], input=_upload_file_list(manifest), text=True, check=True)
     subprocess.run([rsync, "-a", str(folder / "manifest.json"), str(folder / "manifest.sha256"), target], check=True)
     print(json.dumps({"uploaded_chunk": manifest["chunk_id"], "benches": len(manifest["records"])}))
 
 
-def _verify_chunk(folder: Path, manifest: dict[str, object]) -> None:
+def _upload_file_list(manifest: dict[str, object]) -> str:
+    # Do not list the parent directory: rsync treats it as a recursive source
+    # on some versions and would pull every superseded image beside the 511
+    # sealed files. Each explicit child creates its own parent remotely.
+    return "".join(f"{record['relative_path']}\n" for record in manifest["records"])
+
+
+def _verify_chunk(folder: Path, manifest: dict[str, object], *, strict: bool = False) -> None:
     if manifest.get("format") != FORMAT or manifest.get("schema") != SCHEMA:
         raise ValueError("invalid paint chunk format")
     content = {key: value for key, value in manifest.items() if key != "chunk_id"}
@@ -346,6 +356,7 @@ def _verify_chunk(folder: Path, manifest: dict[str, object]) -> None:
         raise ValueError("paint chunk exceeds the 512-MiB bound")
     total = 0
     seen: set[int] = set()
+    expected_files: set[str] = set()
     for record in records:
         row = record["bench_row_id"]
         if not isinstance(row, int) or row in seen:
@@ -354,12 +365,17 @@ def _verify_chunk(folder: Path, manifest: dict[str, object]) -> None:
         relative = Path(record["relative_path"])
         if len(relative.parts) != 2 or relative.parts[0] != "renders" or relative.suffix != ".webp":
             raise ValueError("invalid paint artifact path")
+        expected_files.add(relative.as_posix())
         file = (folder / record["relative_path"]).resolve()
         if not file.is_relative_to(folder) or not file.is_file() or file.stat().st_size != record["bytes"] or _digest(file) != record["sha256"]:
             raise ValueError(f"invalid paint artifact {record['relative_path']}")
         total += int(record["bytes"])
     if total != manifest["artifact_bytes"]:
         raise ValueError("paint chunk byte count mismatch")
+    if strict:
+        actual_files = {file.relative_to(folder).as_posix() for file in (folder / "renders").iterdir()}
+        if actual_files != expected_files:
+            raise ValueError("incoming paint chunk contains unsealed artifacts")
 
 
 def activate_repaint_job(args: Namespace) -> None:
@@ -367,7 +383,7 @@ def activate_repaint_job(args: Namespace) -> None:
     artifact_root = Path(args.artifact_root).resolve()
     incoming = root / "incoming" / "paint" / args.chunk_id
     manifest = json.loads((incoming / "manifest.json").read_text())
-    _verify_chunk(incoming, manifest)
+    _verify_chunk(incoming, manifest, strict=True)
     if manifest["chunk_id"] != args.chunk_id:
         raise ValueError("incorrect paint chunk ID")
     if manifest["painter_key"] != _painter_key():
