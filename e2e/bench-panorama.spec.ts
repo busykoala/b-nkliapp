@@ -58,13 +58,17 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
     const benchBox = bench.getBoundingClientRect();
     return {
       panorama: { width: panoramaBox.width, height: panoramaBox.height, y: panoramaBox.y },
-      ground: { width: groundBox.width },
+      ground: { width: groundBox.width, height: groundBox.height, y: groundBox.y },
       bench: { width: benchBox.width, height: benchBox.height, y: benchBox.y },
     };
   });
   expect(layout).not.toBeNull();
   expect(layout!.ground.width).toBeGreaterThan(layout!.bench.width);
-  expect(layout!.ground.width).toBeLessThan(layout!.panorama.width);
+  // A broad, low soil wash reaches past both crop edges so lake-facing
+  // benches have land under their legs without a visible oval island.
+  expect(layout!.ground.width).toBeGreaterThan(layout!.panorama.width);
+  expect(layout!.ground.y).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height * .75);
+  expect(layout!.ground.height).toBeLessThan(layout!.panorama.height * .25);
   expect(layout!.bench.width).toBeLessThan(layout!.panorama.width * .62);
   expect(layout!.bench.y + layout!.bench.height).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height * .9);
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });

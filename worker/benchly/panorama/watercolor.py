@@ -68,7 +68,7 @@ _MOUNTAIN = {
 PAINT_SCALE = .72
 
 
-def _close_seam(image: Image.Image, width: int = 12) -> Image.Image:
+def _close_seam(image: Image.Image, width: int = 24) -> Image.Image:
     """Make the circular texture C0-continuous without a visible feather band."""
     pixels = np.asarray(image).astype(np.float32)
     # Geographic columns already meet at adjacent 359.9/0.0 degrees. Ease only
