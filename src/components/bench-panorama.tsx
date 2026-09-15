@@ -3,7 +3,7 @@
 
 import { Compass, LoaderCircle, Minus, Plus, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama";
 import type { PanoramaDescriptor } from "@/features/bench-panorama/types";
 import type { BenchDetail } from "@/lib/types";
@@ -41,6 +41,18 @@ export function panoramaTrackOffset(viewportWidth: number, viewportHeight: numbe
 export function panoramaWrappedPositions(heading: number) {
   const position = normalizeHeading(heading) / 360 * 100;
   return [position, position + 100];
+}
+
+export function panoramaCelestialTop(altitude: number) {
+  // The geographic image spans -32° to +58° and the track overscans its
+  // viewport by 18% on each side. The body must use that same projection.
+  return Math.max(-18, Math.min(118, -18 + (58 - altitude) / 90 * 136));
+}
+
+export function panoramaMaterialIsSky(pixel: Uint8ClampedArray) {
+  // Material G is the semantic ID; clear sky is exactly zero in the lossless
+  // mask. A small allowance avoids sampling a filtered horizon edge.
+  return pixel[1] < 12;
 }
 
 export function panoramaShadowContrast(cloudCover: number) {
@@ -114,6 +126,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const [dragging, setDragging] = useState(false);
   const [verticalOffset, setVerticalOffset] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [celestialSample, setCelestialSample] = useState<{ url: string; azimuth: number; altitude: number; clear: boolean } | null>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const drag = useRef<{ pointer: number; x: number; y: number; heading: number; verticalOffset: number } | null>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -173,6 +186,36 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     return () => observer.disconnect();
   }, [descriptor.artifactUrl]);
 
+  const cloudCover = bench.weather?.cloudCover ?? 0;
+  const sunBlocked = bench.sunnyNow === false && ["gebäude", "vegetation", "gelände", "überdacht"].includes(bench.shadeCause);
+  const celestial = useMemo(() => bench.sunAltitudeDegrees > 0 && !sunBlocked && cloudCover < .8
+    ? { kind: "sun" as const, azimuth: bench.sunAzimuthDegrees, altitude: bench.sunAltitudeDegrees }
+    : bench.moonVisible ? { kind: "moon" as const, azimuth: bench.moonAzimuthDegrees, altitude: bench.moonAltitudeDegrees } : null,
+  [bench.sunAltitudeDegrees, sunBlocked, cloudCover, bench.sunAzimuthDegrees,
+    bench.moonVisible, bench.moonAzimuthDegrees, bench.moonAltitudeDegrees]);
+
+  useEffect(() => {
+    let active = true;
+    if (!celestial || !descriptor.materialUrl) return () => { active = false; };
+    const url = descriptor.materialUrl;
+    const image = new Image();
+    image.onload = () => {
+      if (!active) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) return;
+      context.drawImage(image, 0, 0);
+      const x = Math.min(canvas.width - 1, Math.floor(normalizeHeading(celestial.azimuth) / 360 * canvas.width));
+      const y = Math.max(0, Math.min(canvas.height - 1, Math.floor((58 - celestial.altitude) / 90 * canvas.height)));
+      setCelestialSample({ url, azimuth: celestial.azimuth, altitude: celestial.altitude,
+        clear: panoramaMaterialIsSky(context.getImageData(x, y, 1, 1).data) });
+    };
+    image.src = url;
+    return () => { active = false; image.onload = null; image.onerror = null; };
+  }, [celestial, descriptor.materialUrl]);
+
   if (failed || !descriptor.artifactUrl) {
     return <PanoramaPlaceholder bench={bench} status={failed ? "error" : descriptor.status} onRetry={request}>{children}</PanoramaPlaceholder>;
   }
@@ -204,7 +247,6 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   };
   const offset = panoramaTrackOffset(size.width, size.height, heading, zoom);
   const degrees = Math.round(heading) % 360;
-  const cloudCover = bench.weather?.cloudCover ?? 0;
   const cloudHigh = bench.weather?.cloudHigh ?? cloudCover * .58;
   const cloudMid = bench.weather?.cloudMid ?? cloudCover * .72;
   const cloudLow = bench.weather?.cloudLow ?? cloudCover * .46;
@@ -217,10 +259,6 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const snowCount = Math.round(Math.max(12, Math.min(46, 16 + precipitationRate * 7)));
   const snowGround = (bench.weather?.snowDepthCm ?? 0) >= 1 || (bench.weather?.snowCoverPercent ?? 0) >= .2;
   const covered = bench.covered;
-  const sunBlocked = bench.sunnyNow === false && ["gebäude", "vegetation", "gelände", "überdacht"].includes(bench.shadeCause);
-  const celestial = bench.sunAltitudeDegrees > 0 && !sunBlocked && cloudCover < .8
-    ? { kind: "sun" as const, azimuth: bench.sunAzimuthDegrees, altitude: bench.sunAltitudeDegrees }
-    : bench.moonVisible ? { kind: "moon" as const, azimuth: bench.moonAzimuthDegrees, altitude: bench.moonAltitudeDegrees } : null;
   const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, heading);
   const panoramaStyle = {
     "--panorama-offset": `${offset}px`,
@@ -235,8 +273,10 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     "--shadow-length": `${benchShadow.lengthPercent}%`,
     "--shadow-turn": `${benchShadow.turnDegrees}deg`,
   } as CSSProperties;
-  const celestialPositions = celestial ? panoramaWrappedPositions(celestial.azimuth) : [];
-  const celestialTop = celestial ? `${Math.max(8, Math.min(55, 55 - celestial.altitude * .72))}%` : "0%";
+  const celestialPositions = celestial && celestialSample && celestialSample.url === descriptor.materialUrl
+    && celestialSample.azimuth === celestial.azimuth && celestialSample.altitude === celestial.altitude
+    && celestialSample.clear ? panoramaWrappedPositions(celestial.azimuth) : [];
+  const celestialTop = celestial ? `${panoramaCelestialTop(celestial.altitude)}%` : "0%";
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
@@ -294,7 +334,6 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
         {bench.sunAltitudeDegrees > 0 && <span className="bench-panorama-bench-shadow" />}
         <img className="bench-panorama-rear-bench" src={benchAsset(bench)} alt="" draggable={false} />
       </div>
-      <div className="bench-panorama-sightline" aria-hidden="true" />
       {raining && <div className="bench-panorama-rain" aria-hidden="true">{Array.from({ length: rainCount }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 71) % 100}%`, "--drop-y": `${(index * 37) % 90}%`, "--drop-delay": `${-(index % 9) * .13}s` } as CSSProperties} />)}</div>}
       {snowing && <div className="bench-panorama-snow" aria-hidden="true">{Array.from({ length: snowCount }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 61) % 100}%`, "--drop-y": `${(index * 29) % 90}%`, "--drop-delay": `${-(index % 11) * .24}s` } as CSSProperties} />)}</div>}
     </div>

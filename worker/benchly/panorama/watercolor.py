@@ -852,6 +852,59 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
     forest = Image.blend(forest, _wrap_blur(forest, max(2.2, width / 340)), .78)
     rng = np.random.default_rng(seed)
 
+    # The land-cover class is one continuous woodland, but the visible depth
+    # intervals are not one flat green plane. Glaze the more distant canopies
+    # cool and the foreground warm through very broad, circular wet edges.
+    # Individual polar interval borders remain invisible in the painting.
+    if near_masks:
+        distant = Image.new("L", base.size)
+        nearby = Image.new("L", base.size)
+        for layer in _LAYERS:
+            measured = near_masks.get((SemanticClass.FOREST, layer))
+            if measured is None:
+                continue
+            if layer >= 2:
+                distant = ImageChops.lighter(distant, measured)
+            elif layer == 0:
+                nearby = ImageChops.lighter(nearby, measured)
+        if distant.getbbox():
+            distance_glaze = ImageChops.multiply(forest, _wrap_blur(distant, max(22.0, width / 62)))
+            base.paste(Image.new("RGB", base.size, (132, 165, 189)), (0, 0), _scaled_alpha(distance_glaze, .46))
+        if nearby.getbbox():
+            near_glaze = ImageChops.multiply(forest, _wrap_blur(nearby, max(18.0, width / 88)))
+            # The warm ground reflected through close crowns is broken by
+            # watercolor pigment instead of laid as an opaque olive stripe.
+            warm = ImageChops.multiply(near_glaze, artist_field)
+            base.paste(Image.new("RGB", base.size, (172, 171, 101)), (0, 0), _scaled_alpha(warm, .28))
+
+    downward = np.clip((np.arange(height, dtype=np.float32) / height - .38) / .58, 0, 1)
+    grounding = Image.fromarray(np.rint(np.asarray(forest, dtype=np.float32) * downward[:, None] * .12).astype(np.uint8), "L")
+    base.paste(Image.new("RGB", base.size, (71, 95, 58)), (0, 0), grounding)
+
+    # Wet-on-wet value masses curl across mapped woodland. Their boundaries
+    # are brushwork, not additional surveyed trees or invented landforms; the
+    # forest silhouette and measured foreground trunks stay geographic.
+    cool_mass = Image.new("L", base.size)
+    warm_mass = Image.new("L", base.size)
+    cool_draw, warm_draw = ImageDraw.Draw(cool_mass), ImageDraw.Draw(warm_mass)
+    bounds = forest.getbbox()
+    if bounds:
+        left, top, right, bottom = bounds
+        for _ in range(max(18, width // 175)):
+            x = float(rng.uniform(left, right))
+            y = float(rng.uniform(top + (bottom - top) * .13, bottom - (bottom - top) * .10))
+            reach_x = float(rng.uniform(width * .026, width * .069))
+            reach_y = float(rng.uniform(height * .055, height * .19))
+            for wrap in (-width, 0, width):
+                cool_draw.ellipse((x + wrap - reach_x, y - reach_y * .62,
+                                   x + wrap + reach_x, y + reach_y), fill=int(rng.uniform(78, 126)))
+                warm_draw.ellipse((x + wrap - reach_x * 1.25, y - reach_y * 1.22,
+                                   x + wrap + reach_x * .20, y + reach_y * .20), fill=int(rng.uniform(58, 100)))
+        cool = ImageChops.multiply(forest, _wrap_blur(cool_mass, max(18.0, width / 105)))
+        warm = ImageChops.multiply(forest, _wrap_blur(warm_mass, max(18.0, width / 112)))
+        base.paste(Image.new("RGB", base.size, (39, 70, 79)), (0, 0), _scaled_alpha(cool, .93))
+        base.paste(Image.new("RGB", base.size, (214, 199, 119)), (0, 0), _scaled_alpha(warm, .70))
+
     # Pale, overlapping apertures separate foreground foliage from the cool
     # woodland behind it. They are expressive light within a mapped forest
     # mass, not assertions that a surveyed clearing exists at an exact point.
@@ -992,7 +1045,7 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
                 fraction = segment / 7
                 center_points.append((x + lean * fraction + rng.uniform(-1.8, 1.8),
                                       foot - length * fraction))
-            foot_width = rng.uniform(3.5, 8.5)
+            foot_width = rng.uniform(6.5, 15)
             left_edge = []
             right_edge = []
             for segment, (point_x, point_y) in enumerate(center_points):
@@ -1004,7 +1057,7 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
             for fraction in (.32, .47, .61, .74, .84):
                 branch_x = x + lean * fraction
                 branch_y = foot - length * fraction
-                reach = rng.uniform(11, 30) * (-1 if rng.random() < .5 else 1)
+                reach = rng.uniform(20, 48) * (-1 if rng.random() < .5 else 1)
                 branch_draw.line((branch_x, branch_y, branch_x + reach * .65, branch_y - rng.uniform(2, 6),
                                   branch_x + reach, branch_y - rng.uniform(5, 13)),
                                  fill=min(235, int(ink * 1.04)), width=max(1, width // 1150), joint="curve")
@@ -1017,7 +1070,7 @@ def _paint_forest_details(base: Image.Image, masks, canopy_field: Image.Image,
                         foliage_x = branch_x + reach * rng.uniform(.48, 1.08)
                         foliage_y = branch_y - rng.uniform(5, 20)
                         for touch in range(3):
-                            extent = rng.uniform(7, 20)
+                            extent = rng.uniform(13, 35)
                             crown_draw.line((foliage_x - extent * .5, foliage_y + touch * 2,
                                              foliage_x + extent * .2, foliage_y - rng.uniform(1, 5),
                                              foliage_x + extent, foliage_y + rng.uniform(-3, 3)),
@@ -1497,7 +1550,7 @@ def render_panorama_webp(geometry: PanoramaGeometry, width: int = 4096, height: 
     output = io.BytesIO()
     # Slightly higher quality also keeps the lossy encoder's boundary blocks
     # visually continuous after the circular edge has been matched above.
-    base.save(output, format="WEBP", quality=91, method=1, exact=True)
+    base.save(output, format="WEBP", quality=85, method=1, exact=True)
     return output.getvalue()
 
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampPanoramaVertical, moonShadowPath, panoramaBenchShadow, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
+import { clampPanoramaVertical, moonShadowPath, panoramaBenchShadow, panoramaCelestialTop, panoramaMaterialIsSky, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
 
 describe("360 degree panorama track", () => {
   it("checks a cold painting promptly, then backs off without ignoring error retries", () => {
@@ -42,6 +42,12 @@ describe("360 degree panorama track", () => {
 });
 
 describe("panorama light", () => {
+  it("projects celestial bodies like the geographic raster and hides material occluders", () => {
+    expect(panoramaCelestialTop(13)).toBeCloseTo(50);
+    expect(panoramaCelestialTop(58)).toBe(-18);
+    expect(panoramaMaterialIsSky(new Uint8ClampedArray([0, 0, 0, 255]))).toBe(true);
+    expect(panoramaMaterialIsSky(new Uint8ClampedArray([44, 68, 122, 255]))).toBe(false);
+  });
   it("builds a valid closed moon shadow from two absolute arcs", () => {
     expect(moonShadowPath(.25)).toBe("M 24 6 A 18 18 0 0 0 24 42 A 5.5 18 0 0 0 24 6 Z");
     expect(moonShadowPath(.75)).toBe("M 24 6 A 18 18 0 0 1 24 42 A 5.5 18 0 0 1 24 6 Z");
