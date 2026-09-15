@@ -84,14 +84,24 @@ for (const language of ["de", "fr", "it", "rm"] as const) {
   test(`${language}: translates information pages, bench details, form errors and installed-app metadata`, async ({ page, context, baseURL }) => {
     const t = testTranslator(language);
     await context.addCookies([{ name: "benchly_language", value: language, url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
+    let requestedPath = "";
     // Drain prefetches before deliberately replacing each document. WebKit reports
     // a cancelled prefetch as an access-control error during hard navigation.
     const visit = async (path: string) => {
       await page.waitForLoadState("networkidle");
+      requestedPath = path;
       await page.goto(path);
     };
     const errors: string[] = [];
-    page.on("pageerror", error => errors.push(error.message));
+    page.on("pageerror", error => {
+      // WebKit can report an aborted prefetch from the bench page as a page
+      // exception while we deliberately replace it with the not-found page.
+      // The destination has rendered correctly; keep every other exception.
+      if (requestedPath === "/bank/does-not-exist" &&
+          error.message.includes("/bank/osm-node-101") &&
+          error.message.includes("due to access control checks")) return;
+      errors.push(error.message);
+    });
     await visit("/danke");
     await expect(page.locator("html")).toHaveAttribute("lang", `${language}-CH`);
     await expect(page.getByRole("heading", { name: t("about.methods.sun.title"), exact: true })).toBeVisible();
