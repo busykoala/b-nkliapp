@@ -428,7 +428,13 @@ def activate_repaint_job(args: Namespace) -> None:
               JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id AND pr.geometry_key=pg.geometry_key
               WHERE b.row_id=? AND b.active=1 AND pg.status='ready' AND pr.status='ready'""",
               (record["bench_row_id"],)).fetchone()
-            if not current or current[:4] != (record["bench_id"], record["latitude"], record["longitude"], record["geometry_key"]):
+            # Manifests deliberately store compact decimal coordinates.  Do
+            # not reject a geographically unchanged bench merely because a
+            # SQLite float has more digits than the sealed 10-decimal value.
+            if (not current or current[0] != record["bench_id"]
+                    or abs(float(current[1]) - float(record["latitude"])) > 1e-7
+                    or abs(float(current[2]) - float(record["longitude"])) > 1e-7
+                    or current[3] != record["geometry_key"]):
                 raise ValueError(f"bench changed since repaint: {record['bench_id']}")
             if current[4]:
                 old_paths.add(current[4])
