@@ -59,7 +59,8 @@ def _remote_worker(pod: str, chunk_id: str, *, apply: bool) -> str:
             + " -- python3 /worker/benchly_worker.py panorama-repaint-activate"
             + " --database /data/benchly.sqlite --server-root /panorama"
             + " --artifact-root /panorama --chunk-id " + shlex.quote(chunk_id)
-            + " --capacity-gib 80" + (" --apply" if apply else ""))
+            + " --capacity-gib 80 --lock-wait-seconds 15"
+            + (" --apply" if apply else ""))
     return _run([*SSH, argv], timeout=180)
 
 

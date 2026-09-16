@@ -575,6 +575,10 @@ def build_parser() -> argparse.ArgumentParser:
     repaint_activate.add_argument("--server-root", default="/srv/data/benchly/panorama")
     repaint_activate.add_argument("--artifact-root", default="/panorama")
     repaint_activate.add_argument("--capacity-gib", type=int, default=80)
+    repaint_activate.add_argument(
+        "--lock-wait-seconds", type=float, default=15,
+        help="Wait briefly for the continuous panorama worker instead of skipping immediately",
+    )
     repaint_activate.add_argument("--apply", action="store_true")
     repaint_activate.set_defaults(function=activate_repaint_job, uses_lock=True)
 
