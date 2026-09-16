@@ -162,12 +162,17 @@ def publish_repaint_chunk(database, records: list[dict[str, object]], painter_ke
     """Replace only checked image bindings; keep geometry and material intact."""
     for record in records:
         path = f"{artifact_prefix}/{record['relative_path']}"
+        # ``render_key`` is the row identity, not the image digest: two
+        # benches may legitimately produce byte-identical paintings.
+        render_key = hashlib.sha256(
+            f"{record['sha256']}:{int(record['bench_row_id'])}".encode()
+        ).hexdigest()
         write(database, update(BenchPanoramaRenderState).where(
             BenchPanoramaRenderState.bench_row_id == int(record["bench_row_id"]),
             BenchPanoramaRenderState.geometry_key == str(record["geometry_key"]),
             BenchPanoramaRenderState.status == "ready",
         ).values(
-            render_key=str(record["sha256"]), artifact_path=path,
+            render_key=render_key, artifact_path=path,
             style_version=painter_key, artifact_bytes=int(record["bytes"]),
             artifact_sha256=str(record["sha256"]), generated_at=now, updated_at=now,
         ))
