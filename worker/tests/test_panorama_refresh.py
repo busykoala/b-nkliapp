@@ -261,5 +261,6 @@ def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, mo
     assert not old.exists()
     assert (root / "active" / "render-chunks" / manifest["chunk_id"] / record["relative_path"]).read_bytes() == image
     database = sqlite3.connect(database_path)
-    assert database.execute("SELECT render_key FROM bench_panorama_renders").fetchone()[0] == record["sha256"]
+    expected_key = hashlib.sha256(f"{record['sha256']}:1".encode()).hexdigest()
+    assert database.execute("SELECT render_key FROM bench_panorama_renders").fetchone()[0] == expected_key
     database.close()
