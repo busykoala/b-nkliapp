@@ -37,6 +37,7 @@ from benchly.panorama.datasets import (
     sample_terrain_rays,
 )
 from benchly.panorama.identity import implementation_key
+from benchly.panorama.ground_elevation import sample_ground_elevation
 from benchly.panorama.models import (
     GEOMETRY_IMPLEMENTATION,
     RENDER_IMPLEMENTATION,
@@ -278,9 +279,9 @@ def _extract_one(row: dict[str, object]) -> Extracted:
     config = _EXTRACT_CONFIG
     source_versions = _EXTRACT_SOURCE_VERSIONS
     latitude, longitude = float(row["latitude"]), float(row["longitude"])
-    ground = float(row["elevation_meters"]) if row.get("elevation_meters") is not None else terrain.sample(latitude, longitude)
-    if ground is None and _EXTRACT_BORDER_TERRAIN:
-        ground = _EXTRACT_BORDER_TERRAIN.sample(latitude, longitude)
+    ground = sample_ground_elevation(row.get("elevation_meters"), latitude, longitude,
+                                     terrain, _EXTRACT_NEAR_TERRAIN, _EXTRACT_FAR_TERRAIN,
+                                     _EXTRACT_BORDER_TERRAIN)
     if ground is None:
         raise RuntimeError("terrain elevation unavailable")
     identity = GeometryIdentity(

@@ -69,6 +69,12 @@ async function main() {
               phaseClass: document.querySelector(".bench-panorama")?.className };
           });
           const screenshot = `${name}-${viewport.label}.png`;
+          // The panorama is intentionally visible before the interactive map
+          // finishes hydrating. Measure that latency above, then give map
+          // tiles and bench markers their own settling window for the visual
+          // UI screenshot; a blank map is not a valid UX review capture.
+          await page.locator("[data-map-ready=true]").waitFor({ timeout: 15_000 });
+          await page.waitForTimeout(1_000);
           await page.screenshot({ path: join(output, screenshot) });
           if (selectedBench) {
             const canvas = page.locator("canvas.bench-panorama-webgl").first();

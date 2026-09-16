@@ -25,6 +25,7 @@ from benchly.panorama.datasets import (
     raster_source_version,
     sample_terrain_rays,
 )
+from benchly.panorama.ground_elevation import sample_ground_elevation
 from benchly.panorama.models import (
     GEOMETRY_IMPLEMENTATION,
     BuildingGeometry,
@@ -158,8 +159,9 @@ def panorama_batch_job(args: Namespace) -> None:
             if time.monotonic() >= deadline:
                 break
             bench_started = time.perf_counter()
-            ground_elevation = float(row["elevation_meters"]) if row["elevation_meters"] is not None else terrain.sample(
-                float(row["latitude"]), float(row["longitude"]),
+            ground_elevation = sample_ground_elevation(
+                row["elevation_meters"], float(row["latitude"]), float(row["longitude"]),
+                terrain, near_terrain, regional_terrain, border_terrain,
             )
             if ground_elevation is None:
                 stats["unavailable"] += 1
