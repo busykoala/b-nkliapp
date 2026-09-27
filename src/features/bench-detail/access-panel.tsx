@@ -1,6 +1,6 @@
 import { ChartNoAxesColumnIncreasing as StepsIcon, Check, CircleHelp, Footprints, Mountain, MoveHorizontal, PersonStanding, Route, Ruler, TrendingUp, TriangleAlert } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { BenchDetail } from "@/lib/types";
 import { benchFact } from "@/lib/presentation";
 import { smoothnessLabel, surfaceLabel } from "@/i18n/approach-labels";
@@ -22,7 +22,7 @@ export function AccessPanel({ bench }: { bench: Pick<BenchDetail, "properties" |
       <AccessStatus icon={approach?.steps === true ? <StepsIcon /> : <Footprints />} label={t("bench.access.localApproach")} value={approachLabel} state={approach?.steps === true ? "blocked" : approach?.steps === false ? "clear" : "unknown"} />
     </div>
     {approach && <div className="access-visuals">
-      {approach.maximumSlopePercent !== null && <SlopeGauge value={approach.maximumSlopePercent} />}
+      {approach.maximumSlopePercent !== null && <SlopeValue value={approach.maximumSlopePercent} />}
       {approach.surface && <SurfaceSwatch surface={approach.surface} label={surfaceLabel(approach.surface, t)} />}
     </div>}
     {approach && <div className="access-metrics">
@@ -31,12 +31,13 @@ export function AccessPanel({ bench }: { bench: Pick<BenchDetail, "properties" |
       {approach.widthMeters !== null && <AccessMetric icon={<MoveHorizontal />} label={t("knowledge.approach.width")} value={`${format.number(approach.widthMeters)} m`} />}
       {approach.smoothness && <AccessMetric icon={<Footprints />} label={t("knowledge.approach.smoothness")} value={smoothnessLabel(approach.smoothness, t)} />}
     </div>}
-    {approach?.sampleCoverage && approach.sampleCoverage.expected > 0 && <div className="access-coverage" aria-label={t("knowledge.approach.sampleCoverage", approach.sampleCoverage)} title={t("knowledge.approach.sampleCoverage", approach.sampleCoverage)}>
-      <Ruler size={15} aria-hidden="true" /><i aria-hidden="true"><b style={{width: `${Math.min(100, approach.sampleCoverage.sampled / approach.sampleCoverage.expected * 100)}%`}} /></i><small>{approach.sampleCoverage.sampled}/{approach.sampleCoverage.expected}</small>
+    {approach?.sampleCoverage && approach.sampleCoverage.expected > 0 && <div className="access-coverage">
+      <Ruler size={15} aria-hidden="true" /><small>{t("knowledge.approach.sampleCoverage", approach.sampleCoverage)}</small>
     </div>}
     {approach && <div className="access-scope-strip" aria-label={t("bench.access.scopeNote")} title={t("bench.access.scopeNote")}>
       <span><PersonStanding aria-hidden="true" /><small>{t("bench.access.atBench")}</small></span><i aria-hidden="true" /><span><Footprints aria-hidden="true" /><small>{t("bench.access.localApproach")}</small></span><i aria-hidden="true" /><span><Route aria-hidden="true" /><small>{t("walks.planner.route")}</small></span>
     </div>}
+    {approach && <p className="access-scope-note">{t("bench.access.scopeNote")}</p>}
   </section>;
 }
 
@@ -47,12 +48,11 @@ function AccessStatus({icon, label, value, state}: {icon: ReactNode; label: stri
   </div>;
 }
 
-function SlopeGauge({value}: {value: number}) {
+function SlopeValue({value}: {value: number}) {
   const t = useTranslations();
-  const ratio = Math.max(0, Math.min(1, Math.abs(value) / 25));
   const formatted = useFormatter().number(value, {maximumFractionDigits: 1});
-  return <div className="slope-gauge" style={{"--slope": ratio} as CSSProperties} aria-label={`${t("knowledge.approach.maxSlope")}: ${formatted}%`}>
-    <span aria-hidden="true"><TrendingUp size={17} /><i><b /></i></span><small>{t("knowledge.approach.maxSlope")}</small><strong>{formatted}%</strong>
+  return <div className="slope-gauge" aria-label={`${t("knowledge.approach.maxSlope")}: ${formatted}%`}>
+    <span aria-hidden="true"><TrendingUp size={17} /></span><small>{t("knowledge.approach.maxSlope")}</small><strong>{formatted}%</strong>
   </div>;
 }
 
