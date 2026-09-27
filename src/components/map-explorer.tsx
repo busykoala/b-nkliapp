@@ -22,6 +22,7 @@ import { AppMenu } from "./app-menu";
 import { AccountDialog } from "./account-controls";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/lib/watercolor-map";
 import { featureCollection, selectedAmenityFeature, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/lib/map-renderer";
+import { captureMapCamera, restoreMapCamera, type ActiveMapTask, type BenchReturnContext } from "@/lib/map-navigation";
 
 const WalkPlanner = dynamic(() => import("./walks/walk-planner").then((m) => m.WalkPlanner), { ssr: false, loading: WalkLoading });
 const JourneyPlanner = dynamic(() => import("./journey/journey-planner").then((m) => m.JourneyPlanner), {
@@ -91,6 +92,8 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const initialFocusDone = useRef(false);
   const filtersRef = useRef<MapFilters>({});
   const listOpenRef = useRef(false);
+  const listRef = useRef<HTMLOListElement>(null);
+  const mapInteraction = useRef(0);
   const [features, setFeatures] = useState<MapFeature[]>([]);
   const [filters, setFilters] = useState<MapFilters>({});
   const [filterOpen, setFilterOpen] = useState(false);
@@ -125,7 +128,21 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const addAccount = useRef<HTMLDialogElement>(null);
   const handledAction = useRef<string | null>(null);
   const handledAmenity = useRef<string | null>(null);
-  const benchOrigin = useRef<"map" | "walk">("map");
+  const [benchReturn, setBenchReturn] = useState<BenchReturnContext>({ kind: "map", cameraInteraction: 0 });
+  const benchReturnRef = useRef(benchReturn);
+  useEffect(() => { benchReturnRef.current = benchReturn; }, [benchReturn]);
+  const updateBenchReturn = useCallback((context: BenchReturnContext) => {
+    benchReturnRef.current = context;
+    setBenchReturn(context);
+  }, []);
+  const rememberMapReturn = useCallback(() => {
+    const map = mapRef.current;
+    updateBenchReturn({
+      kind: "map",
+      camera: map ? captureMapCamera(map) : undefined,
+      cameraInteraction: mapInteraction.current,
+    });
+  }, [updateBenchReturn]);
   useEffect(() => { canAdd.current = Boolean(user); }, [user]);
   const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
   useEffect(() => {
@@ -345,6 +362,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
             map.easeTo({ center: camera?.center ?? [item.longitude, item.latitude], zoom: nextZoom, duration: 560 });
           }
           else {
+            updateBenchReturn({ kind: "map", camera: captureMapCamera(map), cameraInteraction: mapInteraction.current });
             map.easeTo({ center: [item.longitude, item.latitude], offset: [0, -100], duration: 450 });
             selectBench(item.id);
           }
@@ -362,6 +380,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
         const beginPress = (event: PointerEvent) => {
           if (placingRef.current) return;
           if (event.pointerType === "mouse" && event.button !== 0) return;
+          mapInteraction.current += 1;
           pressStart = { x: event.offsetX, y: event.offsetY };
           pressTimer = window.setTimeout(() => {
             if (!pressStart) return;
@@ -503,8 +522,9 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     }
     if (openedFromUrl.current === requestedBench) return;
     openedFromUrl.current = requestedBench;
+    rememberMapReturn();
     void selectBench(requestedBench, true);
-  }, [mapReady, searchParams, selectBench]);
+  }, [mapReady, searchParams, selectBench, rememberMapReturn]);
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -613,6 +633,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   }, [mapReady, bench, searchParams, locateAmenity]);
 
   const choosePlace = (place: PlaceResult) => {
+    if (!placingRef.current && place.kind === "bench" && place.benchId) updateBenchReturn({ kind: "map", cameraInteraction: mapInteraction.current });
     mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: place.kind === "bench" ? 17 : 14 });
     if (!placingRef.current && place.kind === "bench" && place.benchId) void selectBench(place.benchId);
   };
@@ -693,6 +714,35 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     listOpenRef.current = false;
     setListOpen(false);
   };
+  const restoreListContext = (context: Extract<BenchReturnContext, { kind: "list" }>) => {
+    if (mapRef.current && context.cameraInteraction === mapInteraction.current) restoreMapCamera(mapRef.current, context.camera);
+    listOpenRef.current = true;
+    setListOpen(true);
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      if (listRef.current) listRef.current.scrollTop = context.scrollTop;
+      const trigger = [...(listRef.current?.querySelectorAll<HTMLButtonElement>("button[data-bench-list-id]") ?? [])]
+        .find((button) => button.dataset.benchListId === context.benchId);
+      trigger?.focus({ preventScroll: true });
+    }));
+  };
+  const closeBench = () => {
+    detailSequence.current += 1;
+    (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature());
+    setSelectedId(null);
+    setBench(null);
+    setDetailError(false);
+    const context = benchReturnRef.current;
+    if (context.kind === "walk") {
+      updateBenchReturn({ kind: "map", cameraInteraction: mapInteraction.current });
+      openWalk();
+      return;
+    }
+    if (context.kind === "list") {
+      restoreListContext(context);
+      return;
+    }
+    if (context.camera && context.cameraInteraction === mapInteraction.current && mapRef.current) restoreMapCamera(mapRef.current, context.camera);
+  };
   const closeAdd = () => {
     const source = mapRef.current?.getSource("add-position") as GeoJSONSource | undefined;
     source?.setData({ type: "FeatureCollection", features: [] });
@@ -700,8 +750,23 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     setAddStage(null);
   };
   const activeFilterCount = activeMapFilterCount(filters);
+  const activeTask: ActiveMapTask = addStage
+    ? { kind: "add", stage: addStage }
+    : facilityFocus
+      ? { kind: "facility", benchId: facilityFocus.bench.id }
+      : returnJourney
+        ? { kind: "return-journey" }
+        : walkOpen
+          ? { kind: "walk" }
+          : journeyOpen && selectedId
+            ? { kind: "journey", benchId: selectedId }
+            : selectedId
+              ? { kind: "bench", benchId: selectedId, origin: benchReturn.kind }
+              : listOpen
+                ? { kind: "list" }
+                : { kind: "browse" };
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-base-200">
+    <main className="relative h-dvh w-full overflow-hidden bg-base-200" data-active-task={activeTask.kind}>
       <div ref={containerRef} className="benchly-map absolute inset-0" aria-label={t("map.canvas.label")} aria-busy={mapLoading} />
       <header className="map-topbar safe-top pointer-events-none absolute inset-x-0 top-0 z-20 px-3 md:max-w-xl md:px-4">
         <div className="pointer-events-auto flex items-center gap-2">
@@ -730,7 +795,12 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
         {!listLoading && listError && <p role="alert">{t("map.list.failed")} <button type="button" onClick={() => { const map = mapRef.current; if (map) void loadBenchList(map, filtersRef.current); }}>{t("map.list.retry")}</button></p>}
         {!listLoading && !listError && listResult.zoomRequired && <div className="bench-list-empty"><p>{t("map.list.zoom")}</p><button type="button" onClick={() => mapRef.current?.zoomTo(14, {duration: 450})}>{t("map.list.zoomAction")}</button></div>}
         {!listLoading && !listError && !listResult.zoomRequired && listResult.items.length === 0 && <p className="bench-list-empty">{t(activeFilterCount ? "map.list.emptyFiltered" : "map.list.empty")}</p>}
-        {!listError && !listResult.zoomRequired && listResult.items.length > 0 && <ol>{listResult.items.map((item) => <li key={item.id}><button type="button" onClick={() => { closeList(); void selectBench(item.id, true); }}>
+        {!listError && !listResult.zoomRequired && listResult.items.length > 0 && <ol ref={listRef}>{listResult.items.map((item) => <li key={item.id}><button type="button" data-bench-list-id={item.id} onClick={() => {
+          const map = mapRef.current;
+          if (map) updateBenchReturn({ kind: "list", benchId: item.id, scrollTop: listRef.current?.scrollTop ?? 0, camera: captureMapCamera(map), cameraInteraction: mapInteraction.current });
+          closeList();
+          void selectBench(item.id, true);
+        }}>
           <span className={`bench-list-appeal is-${item.sunnyNow === true ? "sun" : item.sunnyNow === false ? "shade" : item.viewType ?? "plain"}`} aria-hidden="true">{item.sunnyNow === true ? <Sun size={18} /> : item.sunnyNow === false ? <CloudSun size={18} /> : item.viewType === "mountain" || item.viewType === "hill" ? <MountainSnow size={18} /> : item.viewType === "lake" ? <Waves size={18} /> : item.viewType === "open" ? <Telescope size={18} /> : <MapPin size={18} />}</span>
           <span className="bench-list-distance">{item.distanceMeters >= 1000 ? t("map.list.kilometres", {distance: format.number(item.distanceMeters / 1000, {maximumFractionDigits: 1})}) : t("map.list.metres", {distance: Math.round(item.distanceMeters)})}</span>
           <strong>{item.title || t("common.values.bench")}</strong><ChevronRight className="bench-list-open" size={17} aria-hidden="true" />
@@ -744,16 +814,16 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
         </button></li>)}</ol>}
         <small className="bench-list-note">{t("map.list.distanceNote")}</small>
       </aside>}
-      {walkOpen && walkDraftLoaded && <WalkPlanner getMap={getJourneyMap} initial={walkDraft} onSnapshot={updateWalkDraft} onClose={() => setWalkOpen(false)} onEnd={endWalk} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} onInspectBench={(id) => { benchOrigin.current = "walk"; setWalkOpen(false); void selectBench(id, true); }} />}
+      {walkOpen && walkDraftLoaded && <WalkPlanner getMap={getJourneyMap} initial={walkDraft} onSnapshot={updateWalkDraft} onClose={() => setWalkOpen(false)} onEnd={endWalk} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} onInspectBench={(id) => { updateBenchReturn({ kind: "walk" }); setWalkOpen(false); void selectBench(id, true); }} />}
       {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
       {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
-      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} initiallyExpanded={searchParams.get("bank") === selectedId} returnTarget={benchOrigin.current} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} onResumeWalk={walkDraft?.result ? openWalk : undefined} onLocateAmenity={locateAmenity} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); if (benchOrigin.current === "walk") { benchOrigin.current = "map"; openWalk(); } }} />}
+      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} initiallyExpanded={searchParams.get("bank") === selectedId} returnTarget={benchReturn.kind} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} onResumeWalk={walkDraft?.result ? openWalk : undefined} onLocateAmenity={locateAmenity} user={user} onClose={closeBench} />}
       {facilityFocus && <section className="amenity-map-callout" aria-label={t("bench.summary.mapLocation")}>
         <MapPin size={20} /><div><small>{t("bench.summary.nearbyTitle")}</small><strong>{t(facilityFocus.amenity.category === "toilets" ? "knowledge.amenities.toilets" : facilityFocus.amenity.category === "waste_basket" ? "knowledge.amenities.waste_basket" : "knowledge.amenities.drinking_water")}</strong><span>{t("bench.summary.straightLine", {distance: Math.round(facilityFocus.amenity.distanceMeters!)})}</span></div>
         <button type="button" onClick={() => { const id = facilityFocus.bench.id; closeAmenity(); void selectBench(id, true); }}>{t("bench.summary.returnToBench")}</button>
         <button type="button" className="amenity-map-close" aria-label={t("common.actions.close")} onClick={closeAmenity}><X size={18} /></button>
       </section>}
-      {addStage === "details" && <AddBenchDialog coordinates={addCoordinates} onChoosePosition={() => setAddStage("position")} onClose={closeAdd} onExisting={(id) => { closeAdd(); void selectBench(id, true); }} onCreated={(id) => { closeAdd(); setCreatedBenchId(id); void selectBench(id, true); if (mapRef.current) void loadVisible(mapRef.current, filtersRef.current); }} />}
+      {addStage === "details" && <AddBenchDialog coordinates={addCoordinates} onChoosePosition={() => setAddStage("position")} onClose={closeAdd} onExisting={(id) => { closeAdd(); rememberMapReturn(); void selectBench(id, true); }} onCreated={(id) => { closeAdd(); rememberMapReturn(); setCreatedBenchId(id); void selectBench(id, true); if (mapRef.current) void loadVisible(mapRef.current, filtersRef.current); }} />}
       <AccountDialog dialogRef={addAccount} intent={t("common.navigation.addBench")} onAuthenticated={() => { canAdd.current = true; const point = pendingAdd.current; pendingAdd.current = null; if (point) beginPlacement(point.latitude, point.longitude); }} />
     </main>
   );

@@ -73,6 +73,26 @@ test("offers an accessible nearby list with zoom guidance and decision evidence"
   await expect(list.getByText(/Ebener Platz am Bänkli/).first()).toBeVisible();
   await expect(list.getByText(/Luftlinie/)).toBeVisible();
   await list.screenshot({ path: info.outputPath("nearby-bench-list.png") });
+  const row = list.getByRole("button", { name: /Lindenhof/ }).first();
+  const cameraBefore = await page.getByLabel("Karte der Schweizer Sitzbänke").evaluate((map) => ({
+    latitude: map.getAttribute("data-center-latitude"),
+    longitude: map.getAttribute("data-center-longitude"),
+    zoom: map.getAttribute("data-zoom"),
+  }));
+  const scrollBefore = await list.locator("ol").evaluate((items) => {
+    items.scrollTop = Math.min(24, items.scrollHeight - items.clientHeight);
+    return items.scrollTop;
+  });
+  await row.click();
+  const detail = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(detail.getByRole("button", { name: "Bänkli in diesem Ausschnitt" })).toBeVisible();
+  await detail.getByRole("button", { name: "Bänkli in diesem Ausschnitt" }).click();
+  await expect(list).toBeVisible();
+  await expect(row).toBeFocused();
+  expect(await list.locator("ol").evaluate((items) => items.scrollTop)).toBe(scrollBefore);
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-center-latitude", cameraBefore.latitude!);
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-center-longitude", cameraBefore.longitude!);
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-zoom", cameraBefore.zoom!);
 });
 
 test("rating summary opens reviews and guest writing resumes after authentication", async ({ page }, info) => {
