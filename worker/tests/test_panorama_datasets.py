@@ -148,6 +148,38 @@ def test_terrain_lod_prefers_regional_overview_far_away():
     assert len(near) + len(far) < sum(primary.calls) + sum(regional.calls)
 
 
+def test_terrain_rays_use_matching_local_dem_near_the_observer_before_coarse_pyramid():
+    class Terrain:
+        datasets = [{"version": "fixture"}]
+
+        def __init__(self, value):
+            self.value = value
+            self.calls = []
+
+        def sample_many(self, locations):
+            self.calls.append(len(locations))
+            return [self.value] * len(locations)
+
+    local = Terrain(500)
+    pyramid = Terrain(520)
+    rays = sample_terrain_rays(
+        46.9, 8.2, pyramid,
+        PanoramaConfig(angular_resolution_degrees=90, maximum_distance_meters=1_000),
+        observer_ground_elevation_meters=500,
+        local_terrain=local,
+        local_terrain_distance_meters=120,
+    )
+    local_samples = [sample for ray in rays for sample in ray.samples if sample.distance_meters <= 120]
+    farther_samples = [sample for ray in rays for sample in ray.samples if sample.distance_meters > 120]
+    assert local_samples and farther_samples
+    assert {sample.elevation_meters for sample in local_samples} == {500}
+    assert {sample.terrain_source for sample in local_samples} == {"swissALTI3D-local"}
+    assert {sample.elevation_meters for sample in farther_samples} == {520}
+    distances = distance_schedule(1_000)
+    assert sum(local.calls) == 4 * int(np.count_nonzero(distances <= 120))
+    assert sum(pyramid.calls) == 4 * int(np.count_nonzero(distances > 120))
+
+
 def test_building_loader_accepts_swissbuildings_3d_footprints():
     longitude, latitude = 8.2, 46.9
     easting, northing = WGS84_TO_LV95.transform(longitude, latitude)

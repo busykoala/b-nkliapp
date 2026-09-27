@@ -1,5 +1,5 @@
 {
-  "title": "Ce que nous savons — et ce qui reste à découvrir",
+  "title": "Sources et état des données",
   "categories": {
     "physical": "Équipement",
     "location": "Lieu",
@@ -57,7 +57,7 @@
     "stepFree": "Possibilité sans marches",
     "open": "Inconnu",
     "recorded": "Recensés",
-    "noneRecorded": "Aucun recensé",
+    "noneRecorded": "Aucun escalier recensé",
     "evidence": "Indices disponibles",
     "obstacle": "Obstacle recensé",
     "maxSlope": "Pente maximale estimée",

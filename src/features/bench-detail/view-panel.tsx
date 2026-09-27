@@ -16,11 +16,13 @@ export function ViewPanel({ bench }: { bench: BenchDetail }) {
     <PanelHeading eyebrow={t("bench.view.title")} title={viewTitle(bench, t)} />
     <div className="view-summary">
       <ViewScoreIllustration bench={bench} />
-      <div><small>{t("bench.view.impression")}</small><p>{bench.viewLabels.map((value) => viewLabel(value, t)).join(" · ") || t("bench.view.empty")}</p><span>{t(`bench.view.confidence.${bench.viewConfidence}`)}</span></div>
+      <div><small>{t("bench.view.impression")}</small>{bench.viewLabels.length
+        ? <ul className="view-label-chips">{bench.viewLabels.map((value) => <li key={value}>{viewLabel(value, t)}</li>)}</ul>
+        : <p>{t("bench.view.empty")}</p>}<ViewConfidence level={bench.viewConfidence} /></div>
     </div>
-    {bench.observations.view.publicEstimate && <p className="community-evidence">
+    {bench.observations.view.publicEstimate && <p className="community-evidence" aria-label={t("bench.view.community", {count: bench.observations.view.publicEstimate.contributors, confidence: communityConfidence(bench.observations.view.publicEstimate.confidence, t)})} title={t("bench.view.community", {count: bench.observations.view.publicEstimate.contributors, confidence: communityConfidence(bench.observations.view.publicEstimate.confidence, t)})}>
       <UsersRound size={15} aria-hidden="true" />
-      {t("bench.view.community", {count: bench.observations.view.publicEstimate.contributors, confidence: communityConfidence(bench.observations.view.publicEstimate.confidence, t)})}
+      <strong>{bench.observations.view.publicEstimate.contributors}</strong><span>{communityConfidence(bench.observations.view.publicEstimate.confidence, t)}</span>
     </p>}
     <details className="technical-fold view-evidence-fold">
       <summary><span><strong>{t("bench.view.details")}</strong><small>{t("bench.view.detailsSummary")}</small></span><ChevronDown size={16} /></summary>
@@ -90,7 +92,9 @@ function DistanceFact({ icon, label, value }: { icon: ReactNode; label: string; 
   const t = useTranslations();
   const format = useFormatter();
   if (value === null) return null;
-  return <div><span aria-hidden="true">{icon}</span><small>{label}</small><strong>{value < 2 ? t("bench.view.directly") : value >= 1000 ? `${format.number(value / 1000, {maximumFractionDigits: 1})} km` : `${Math.round(value)} m`}</strong></div>;
+  const display = value < 2 ? t("bench.view.directly") : value >= 1000 ? `${format.number(value / 1000, {maximumFractionDigits: 1})} km` : `${Math.round(value)} m`;
+  const position = Math.max(0, Math.min(100, Math.log10(Math.max(1, value)) / 3 * 100));
+  return <div className="distance-scale" aria-label={`${label}: ${display}`}><span aria-hidden="true">{icon}</span><small>{label}</small><strong>{display}</strong><i aria-hidden="true"><b style={{left: `${position}%`}} /></i></div>;
 }
 
 function MetricSketch({ values }: { values: Array<[string, number | null]> }) {
@@ -100,9 +104,16 @@ function MetricSketch({ values }: { values: Array<[string, number | null]> }) {
   return <div className="metric-sketch" aria-label={t("bench.view.metrics.label")}>
     {available.map(([label, raw]) => {
       const value = Math.max(0, Math.min(1, raw));
-      return <div key={label}><span>{label}</span><i><b style={{ width: `${Math.round(value * 100)}%` }} /></i><small>{Math.round(value * 100)}</small></div>;
+      return <div key={label} aria-label={`${label}: ${Math.round(value * 100)}%`}><span>{label}</span><i aria-hidden="true"><b style={{ width: `${Math.round(value * 100)}%` }} /></i><small>{Math.round(value * 100)}%</small></div>;
     })}
   </div>;
+}
+
+function ViewConfidence({level}: {level: BenchDetail["viewConfidence"]}) {
+  const t = useTranslations();
+  const active = level === "hoch" ? 3 : level === "mittel" ? 2 : 1;
+  const label = t(`bench.view.confidence.${level}`);
+  return <span className="view-confidence" aria-label={label} title={label}><i aria-hidden="true">{[1, 2, 3].map((item) => <b className={item <= active ? "is-active" : ""} key={item} />)}</i><small>{label}</small></span>;
 }
 
 function CanopySketch({ values }: { values: Array<number | null> }) {

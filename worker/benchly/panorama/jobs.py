@@ -25,7 +25,7 @@ from benchly.panorama.datasets import (
     raster_source_version,
     sample_terrain_rays,
 )
-from benchly.panorama.ground_elevation import sample_ground_elevation
+from benchly.panorama.ground_elevation import resolve_ground_elevation
 from benchly.panorama.models import (
     GEOMETRY_IMPLEMENTATION,
     BuildingGeometry,
@@ -122,6 +122,7 @@ def panorama_batch_job(args: Namespace) -> None:
         config = PanoramaConfig(
             angular_resolution_degrees=args.angular_resolution,
             maximum_distance_meters=args.maximum_distance_meters,
+            local_terrain_distance_meters=args.local_terrain_distance_meters,
         )
         now = datetime.now(UTC)
         season = _season(now)
@@ -132,6 +133,7 @@ def panorama_batch_job(args: Namespace) -> None:
             "border_terrain": border_terrain_version or "absent",
             "lod_schedule": LOD_SCHEDULE_KEY,
             "high_resolution_distance_meters": f"{args.high_resolution_distance_meters:g}",
+            "local_terrain_distance_meters": f"{args.local_terrain_distance_meters:g}",
             "semantic": semantic_version,
             "building": building_version,
             "algorithm": GEOMETRY_IMPLEMENTATION,
@@ -159,10 +161,11 @@ def panorama_batch_job(args: Namespace) -> None:
             if time.monotonic() >= deadline:
                 break
             bench_started = time.perf_counter()
-            ground_elevation = sample_ground_elevation(
+            elevation = resolve_ground_elevation(
                 row["elevation_meters"], float(row["latitude"]), float(row["longitude"]),
                 terrain, near_terrain, regional_terrain, border_terrain,
             )
+            ground_elevation = elevation.observer_ground_elevation_meters
             if ground_elevation is None:
                 stats["unavailable"] += 1
                 mark_request_retry(database, int(row["row_id"]), "terrain elevation unavailable")
@@ -170,11 +173,17 @@ def panorama_batch_job(args: Namespace) -> None:
             identity = GeometryIdentity(
                 latitude=float(row["latitude"]), longitude=float(row["longitude"]),
                 ground_elevation_meters=float(ground_elevation),
+                display_elevation_meters=elevation.display_elevation_meters,
+                terrain_ground_elevation_meters=elevation.terrain_elevation_meters,
+                ground_elevation_provenance=elevation.provenance,
+                ground_elevation_confidence=elevation.confidence,
+                ground_elevation_disagreement_meters=elevation.disagreement_meters,
                 terrain_version=terrain_version,
                 regional_terrain_version=regional_terrain_version,
                 border_terrain_version=border_terrain_version,
                 lod_schedule_version=LOD_SCHEDULE_KEY,
                 high_resolution_distance_meters=args.high_resolution_distance_meters,
+                local_terrain_distance_meters=args.local_terrain_distance_meters,
                 semantic_version=semantic_version,
                 building_version=building_version,
                 maximum_distance_meters=config.maximum_distance_meters,
@@ -201,6 +210,8 @@ def panorama_batch_job(args: Namespace) -> None:
                         border_terrain=border_terrain,
                         high_resolution_distance_meters=args.high_resolution_distance_meters,
                         observer_ground_elevation_meters=float(ground_elevation),
+                        local_terrain=terrain if near_terrain and near_terrain.datasets else None,
+                        local_terrain_distance_meters=args.local_terrain_distance_meters,
                     )
                     stats["terrain_seconds"] += time.perf_counter() - started
                     started = time.perf_counter()

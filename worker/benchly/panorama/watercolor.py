@@ -19,6 +19,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
 from scipy.ndimage import gaussian_filter1d, maximum_filter1d, minimum_filter, minimum_filter1d
 
 from benchly.panorama.models import PanoramaGeometry, SemanticClass, TERRAIN_DEPTH_LIMITS_METERS, terrain_depth_layer
+from benchly.panorama.material import MATERIAL_SEMANTIC_IDS
 
 
 SEASON_PALETTES = {
@@ -1563,27 +1564,48 @@ def render_material_webp(geometry: PanoramaGeometry, width: int = 2048, height: 
     normal/light response proxy. Sky remains zero. The mask is deliberately
     small and lossless; it accompanies the neutral base watercolor.
     """
-    semantics = tuple(SemanticClass)
-    semantic_ids = {semantic: round((index + 1) / len(semantics) * 255) for index, semantic in enumerate(semantics)}
-    packed = np.zeros((height, width, 3), dtype=np.uint8)
+    packed = np.zeros((height, width, 4), dtype=np.uint8)
     minimum, maximum = geometry.config.minimum_elevation_angle, geometry.config.maximum_elevation_angle
     count = len(geometry.columns)
     for x in range(width):
         column = geometry.columns[min(count - 1, int((x + .5) * count / width))]
+        prepared = []
         for span in column.spans:
-            top = max(0, min(height, round((maximum - span.upper_angle_degrees) / (maximum - minimum) * height)))
-            bottom = max(0, min(height, round((maximum - span.lower_angle_degrees) / (maximum - minimum) * height)))
+            top = max(0.0, min(float(height), (maximum - span.upper_angle_degrees) / (maximum - minimum) * height))
+            bottom = max(0.0, min(float(height), (maximum - span.lower_angle_degrees) / (maximum - minimum) * height))
             if bottom <= top:
                 continue
             depth = round(max(0, min(1, math.log1p(span.distance_meters) / math.log1p(150_000))) * 255)
             edge = min(column.terrain_edges, key=lambda item: abs(item.distance_meters - span.distance_meters), default=None)
             slope = edge.slope_degrees if edge and edge.slope_degrees is not None else 0
             normal = round(max(0, min(1, .5 + slope / 180)) * 255)
-            packed[top:bottom, x] = (depth, semantic_ids[span.semantic], normal)
+            prepared.append((top, bottom, span, depth, normal))
+        if not prepared:
+            continue
+        first_row = max(0, math.floor(min(item[0] for item in prepared)))
+        last_row = min(height, math.ceil(max(item[1] for item in prepared)))
+        for y in range(first_row, last_row):
+            overlaps = [
+                (max(0.0, min(bottom, y + 1) - max(top, y)), span, depth, normal)
+                for top, bottom, span, depth, normal in prepared
+            ]
+            overlaps = [item for item in overlaps if item[0] > 0]
+            if not overlaps:
+                continue
+            center = y + .5
+            centered = [
+                (overlap, span, depth, normal)
+                for overlap, span, depth, normal in overlaps
+                if any(candidate[2] is span and candidate[0] <= center < candidate[1] for candidate in prepared)
+            ]
+            owner = centered[0] if centered else max(overlaps, key=lambda item: item[0])
+            coverage = min(1.0, sum(item[0] for item in overlaps))
+            _overlap, span, depth, normal = owner
+            packed[y, x] = (depth, MATERIAL_SEMANTIC_IDS[span.semantic], normal, round(coverage * 255))
     packed[:, -1] = packed[:, 0]
-    image = Image.fromarray(packed, "RGB")
+    image = Image.fromarray(packed, "RGBA")
     output = io.BytesIO()
-    image.save(output, format="WEBP", lossless=True, method=6)
+    image.save(output, format="WEBP", lossless=True, method=6, exact=True)
     return output.getvalue()
 
 

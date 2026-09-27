@@ -5,6 +5,7 @@ import { surfaceLabel, smoothnessLabel } from "@/i18n/approach-labels";
 import { useFormatter, useTranslations } from "next-intl";
 import type { MessageKey } from "@/i18n/types";
 import { ChevronDown } from "lucide-react";
+import type { CSSProperties } from "react";
 import type { BenchKnowledge } from "./model";
 
 const categories: Record<string, MessageKey> = { physical: "knowledge.categories.physical", location: "knowledge.categories.location", accessibility: "knowledge.categories.accessibility", imagery: "knowledge.categories.imagery", surroundings: "knowledge.attributes.land_context", amenities: "knowledge.categories.amenities", environment: "knowledge.categories.environment", recent_verification: "knowledge.categories.recent_verification" };
@@ -17,12 +18,12 @@ export function KnowledgeDetails({ knowledge }: { knowledge: BenchKnowledge }) {
   const t = useTranslations();
   const format = useFormatter();
   const nearby = knowledge.amenities.filter((item) => item.distanceMeters !== null);
+  const measuredNoise = knowledge.noise.filter((item) => item.value !== null);
   const approach = knowledge.approach;
-  const hasDetails = nearby.length || approach || knowledge.noise.length || knowledge.attributes.length || knowledge.completeness.length;
+  const hasDetails = nearby.length || approach || measuredNoise.length || knowledge.attributes.length || knowledge.completeness.length;
   if (!hasDetails) return null;
   return <details className="technical-fold knowledge-details"><summary>{t("knowledge.title")} <ChevronDown className="disclosure-chevron" size={16} /></summary>
     {nearby.length > 0 && <section><h4>{t("knowledge.nearby.title")}</h4><dl>{nearby.map((item) => <div key={item.category}><dt>{amenities[item.category] ? t(amenities[item.category]) : item.category}</dt><dd>{t("knowledge.nearby.distance", {distance: Math.round(item.distanceMeters!)})}</dd></div>)}</dl><p>{t("knowledge.nearby.explanation")}</p></section>}
-    <p>{t("knowledge.nearby.unknown")}</p>
     {approach && <section><h4>{t("knowledge.approach.title")}</h4>{approach.lengthMeters !== null ? <><dl>
       <div><dt>{t("knowledge.approach.length")}</dt><dd>{t("knowledge.nearby.distance", {distance: Math.round(approach.lengthMeters)})}</dd></div>
       {approach.unmappedLastMeters != null && <div><dt>{t("knowledge.approach.unmapped")}</dt><dd>{t("knowledge.nearby.distance", {distance: Math.round(approach.unmappedLastMeters)})}</dd></div>}
@@ -36,8 +37,21 @@ export function KnowledgeDetails({ knowledge }: { knowledge: BenchKnowledge }) {
       {approach.widthMeters !== null && <div><dt>{t("knowledge.approach.width")}</dt><dd>{format.number(approach.widthMeters)} m</dd></div>}
     </dl>{approach.terrainAmbiguity && <p>{t("knowledge.approach.structure")}</p>}{approach.sampleCoverage && approach.sampleCoverage.expected > 0 && <p>{t("knowledge.approach.sampleCoverage", approach.sampleCoverage)}</p>}<p>{t("knowledge.approach.explanation", {confidence: confidence[approach.confidence] ? t(confidence[approach.confidence]) : t("knowledge.approach.open")})}</p></> : <p>{t("knowledge.approach.empty")}</p>}</section>}
     {(knowledge.photoEstimates?.length ?? 0) > 0 && <section><h4>{t("knowledge.estimates.title")}</h4><dl>{knowledge.photoEstimates!.map((item) => <div key={item.attribute}><dt>{t(attributes[item.attribute])}</dt><dd>{propertyValue({key: item.attribute, value: typeof item.value === "boolean" ? item.value ? "Ja" : "Nein" : item.value}, t)}</dd></div>)}</dl><p>{t("knowledge.estimates.explanation")}</p>{knowledge.photoEstimates!.map((item) => <p key={item.attribute}>{t("knowledge.estimates.provenance", {model: item.modelVersion, count: item.validationSamples})} · {item.capturedAt ? formatDate(item.capturedAt, t) : t("knowledge.freshness.unknown")}</p>)}</section>}
-    {knowledge.noise.length > 0 && <section><h4>{t("knowledge.noise.title")}</h4><dl>{knowledge.noise.map((item) => <div key={`${item.mode}-${item.period}`}><dt>{item.mode === "rail" ? t("knowledge.noise.rail") : t("knowledge.noise.road")} · {item.period === "day" ? t("knowledge.noise.day") : t("knowledge.noise.night")}</dt><dd>{item.value === null ? t("knowledge.noise.empty") : `${format.number(item.value, {minimumFractionDigits: 1, maximumFractionDigits: 1})} ${item.unit}`}</dd></div>)}</dl><p>{t("knowledge.noise.explanation", {version: [...new Set(knowledge.noise.map((item) => item.datasetVersion))].join(" · ")})}</p></section>}
-    {knowledge.attributes.some((item) => attributes[item.attribute]) && <section><h4>{t("knowledge.evidence.title")}</h4><ul>{knowledge.attributes.filter((item) => attributes[item.attribute]).map((item) => <li key={item.attribute}><strong>{t(attributes[item.attribute])}</strong><span>{item.conflicting ? t("knowledge.evidence.conflicting") : t(confidence[item.confidence])} · {item.sourceTypes.map((source) => sources[source] ? t(sources[source]) : source).join(", ")}{` · ${t(`knowledge.freshness.${item.freshness ?? "unknown"}`)}`}{item.latestAt && ` · ${formatDate(item.latestAt, t)}`}</span></li>)}</ul></section>}
-    {knowledge.completeness.length > 0 && <section><h4>{t("knowledge.completeness.title")}</h4><ul>{knowledge.completeness.map((item) => <li key={item.category}><strong>{categories[item.category] ? t(categories[item.category]) : item.category}</strong><span>{t("knowledge.completeness.count", {known: item.known, total: item.total})}{item.uncertain > 0 && t("knowledge.completeness.uncertain", {count: item.uncertain})}</span></li>)}</ul><p>{t("knowledge.completeness.explanation")}</p></section>}
+    {measuredNoise.length > 0 && <section><h4>{t("knowledge.noise.title")}</h4><dl className="knowledge-noise-list">{measuredNoise.map((item) => {
+      const ratio = Math.max(0, Math.min(1, (item.value! - 35) / 45));
+      return <div key={`${item.mode}-${item.period}`}><dt>{item.mode === "rail" ? t("knowledge.noise.rail") : t("knowledge.noise.road")} · {item.period === "day" ? t("knowledge.noise.day") : t("knowledge.noise.night")}</dt><dd><i aria-hidden="true"><b style={{width: `${ratio * 100}%`}} /></i><span>{`${format.number(item.value!, {minimumFractionDigits: 1, maximumFractionDigits: 1})} ${item.unit}`}</span></dd></div>;
+    })}</dl><p>{t("knowledge.noise.explanation", {version: [...new Set(measuredNoise.map((item) => item.datasetVersion))].join(" · ")})}</p></section>}
+    {knowledge.attributes.some((item) => attributes[item.attribute]) && <section><h4>{t("knowledge.evidence.title")}</h4><ul className="knowledge-evidence-list">{knowledge.attributes.filter((item) => attributes[item.attribute]).map((item) => <li key={item.attribute}><strong>{t(attributes[item.attribute])}<ConfidenceMark level={item.confidence} conflicting={item.conflicting} /></strong><span>{item.sourceTypes.map((source) => sources[source] ? t(sources[source]) : source).join(", ")}{` · ${t(`knowledge.freshness.${item.freshness ?? "unknown"}`)}`}{item.latestAt && ` · ${formatDate(item.latestAt, t)}`}</span></li>)}</ul></section>}
+    {knowledge.completeness.length > 0 && <section><h4>{t("knowledge.completeness.title")}</h4><ul className="knowledge-completeness-list">{knowledge.completeness.map((item) => {
+      const total = Math.max(1, item.total), known = Math.max(0, Math.min(total, item.known)), uncertain = Math.max(0, Math.min(total - known, item.uncertain));
+      return <li key={item.category} style={{"--known": known / total, "--uncertain": uncertain / total} as CSSProperties}><strong>{categories[item.category] ? t(categories[item.category]) : item.category}</strong><i aria-hidden="true"><b /><em /></i><span>{t("knowledge.completeness.count", {known: item.known, total: item.total})}{item.uncertain > 0 && t("knowledge.completeness.uncertain", {count: item.uncertain})}</span></li>;
+    })}</ul><p>{t("knowledge.completeness.explanation")}</p></section>}
   </details>;
+}
+
+function ConfidenceMark({level, conflicting}: {level: "unknown" | "low" | "medium" | "high"; conflicting: boolean}) {
+  const t = useTranslations();
+  const count = conflicting ? 0 : level === "high" ? 3 : level === "medium" ? 2 : level === "low" ? 1 : 0;
+  const label = conflicting ? t("knowledge.evidence.conflicting") : t(confidence[level]);
+  return <span className={`knowledge-confidence${conflicting ? " is-conflicting" : ""}`} aria-label={label} title={label}>{[1, 2, 3].map((item) => <i className={item <= count ? "is-active" : ""} key={item} />)}</span>;
 }

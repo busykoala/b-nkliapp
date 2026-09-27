@@ -1,0 +1,66 @@
+{
+  "origin": "http://localhost:3102",
+  "bench": "community-01fc1243-4721-4b44-8f81-9fd698926d21",
+  "results": [
+    {
+      "viewport": "mobile",
+      "heading": 45,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 45 Grad",
+      "file": "docs/terrain-depth-review/before/mobile-heading-45.png"
+    },
+    {
+      "viewport": "mobile",
+      "heading": 90,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 90 Grad",
+      "file": "docs/terrain-depth-review/before/mobile-heading-90.png"
+    },
+    {
+      "viewport": "mobile",
+      "heading": 180,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 180 Grad",
+      "file": "docs/terrain-depth-review/before/mobile-heading-180.png"
+    },
+    {
+      "viewport": "mobile",
+      "heading": 270,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 270 Grad",
+      "file": "docs/terrain-depth-review/before/mobile-heading-270.png"
+    },
+    {
+      "viewport": "mobile",
+      "heading": 315,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 315 Grad",
+      "file": "docs/terrain-depth-review/before/mobile-heading-315.png"
+    },
+    {
+      "viewport": "desktop",
+      "heading": 45,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 45 Grad",
+      "file": "docs/terrain-depth-review/before/desktop-heading-45.png"
+    },
+    {
+      "viewport": "desktop",
+      "heading": 90,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 90 Grad",
+      "file": "docs/terrain-depth-review/before/desktop-heading-90.png"
+    },
+    {
+      "viewport": "desktop",
+      "heading": 180,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 180 Grad",
+      "file": "docs/terrain-depth-review/before/desktop-heading-180.png"
+    },
+    {
+      "viewport": "desktop",
+      "heading": 270,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 270 Grad",
+      "file": "docs/terrain-depth-review/before/desktop-heading-270.png"
+    },
+    {
+      "viewport": "desktop",
+      "heading": 315,
+      "label": "Berechnetes 360-Grad-Landschaftspanorama · Blickrichtung 315 Grad",
+      "file": "docs/terrain-depth-review/before/desktop-heading-315.png"
+    }
+  ]
+}

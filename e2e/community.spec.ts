@@ -46,15 +46,15 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await dialog.getByLabel("Beiträge schliessen").click();
 
   await expect(page.getByText(moment)).toBeVisible();
-  const follow = page.getByRole("button", { name: "Bänkli merken" });
+  const follow = page.getByRole("button", { name: "Merken" });
   await follow.click();
-  await expect(page.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Gemerkt" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText(/\d+× gereinigt/)).toBeVisible();
   await page.getByRole("link", { name: "Alle Lieblingsplätze" }).click();
   await expect(page.getByRole("heading", { name: "Meine Lieblingsplätze" })).toBeVisible();
   await expect(page.locator(".saved-benches a[href^='/bank/osm-node-101']")).toBeVisible();
   await page.locator(".saved-benches a[href^='/bank/osm-node-101']").click();
-  await expect(page.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Gemerkt" })).toHaveAttribute("aria-pressed", "true");
   await page.goto("/feed");
   const filters = page.getByRole("navigation", { name: "Feed-Filter" });
   await expect(filters.getByRole("link", { name: "Alle Beiträge" })).toHaveAttribute("aria-current", "page");

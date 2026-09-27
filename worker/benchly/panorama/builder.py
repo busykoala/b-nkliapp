@@ -37,7 +37,7 @@ from benchly.panorama.datasets import (
     sample_terrain_rays,
 )
 from benchly.panorama.identity import implementation_key
-from benchly.panorama.ground_elevation import sample_ground_elevation
+from benchly.panorama.ground_elevation import resolve_ground_elevation
 from benchly.panorama.models import (
     GEOMETRY_IMPLEMENTATION,
     RENDER_IMPLEMENTATION,
@@ -69,7 +69,7 @@ SHARED_MODEL_BUDGET_BYTES = 15 * 1024**3
 def _artifact_implementation() -> str:
     # Orchestration changes do not invalidate byte-identical image artifacts.
     # Only the checked-in codec, contract and painter contribute to identity.
-    return implementation_key("binary.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
+    return implementation_key("binary.py", "material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
 
 
 def _git_commit() -> str:
@@ -279,15 +279,21 @@ def _extract_one(row: dict[str, object]) -> Extracted:
     config = _EXTRACT_CONFIG
     source_versions = _EXTRACT_SOURCE_VERSIONS
     latitude, longitude = float(row["latitude"]), float(row["longitude"])
-    ground = sample_ground_elevation(row.get("elevation_meters"), latitude, longitude,
-                                     terrain, _EXTRACT_NEAR_TERRAIN, _EXTRACT_FAR_TERRAIN,
-                                     _EXTRACT_BORDER_TERRAIN)
+    elevation = resolve_ground_elevation(row.get("elevation_meters"), latitude, longitude,
+                                         terrain, _EXTRACT_NEAR_TERRAIN, _EXTRACT_FAR_TERRAIN,
+                                         _EXTRACT_BORDER_TERRAIN)
+    ground = elevation.observer_ground_elevation_meters
     if ground is None:
         raise RuntimeError("terrain elevation unavailable")
     identity = GeometryIdentity(
         latitude=latitude,
         longitude=longitude,
         ground_elevation_meters=float(ground),
+        display_elevation_meters=elevation.display_elevation_meters,
+        terrain_ground_elevation_meters=elevation.terrain_elevation_meters,
+        ground_elevation_provenance=elevation.provenance,
+        ground_elevation_confidence=elevation.confidence,
+        ground_elevation_disagreement_meters=elevation.disagreement_meters,
         terrain_version=source_versions["terrain"],
         border_terrain_version=None if source_versions["border"] == "absent" else source_versions["border"],
         lod_schedule_version=source_versions["lod_schedule"],
@@ -295,6 +301,7 @@ def _extract_one(row: dict[str, object]) -> Extracted:
         building_version=source_versions["building"],
         maximum_distance_meters=config.maximum_distance_meters,
         angular_resolution_degrees=config.angular_resolution_degrees,
+        local_terrain_distance_meters=config.local_terrain_distance_meters,
     )
     semantic_key = (math.floor(longitude * 20), math.floor(latitude * 20))
     if _EXTRACT_SEMANTIC_CELL is None or _EXTRACT_SEMANTIC_CELL[0] != semantic_key:
@@ -310,6 +317,8 @@ def _extract_one(row: dict[str, object]) -> Extracted:
         regional_terrain=_EXTRACT_FAR_TERRAIN,
         border_terrain=_EXTRACT_BORDER_TERRAIN,
         observer_ground_elevation_meters=float(ground),
+        local_terrain=terrain,
+        local_terrain_distance_meters=config.local_terrain_distance_meters,
     )
     if _EXTRACT_BUILDING_CELL is None or _EXTRACT_BUILDING_CELL[0] != semantic_key:
         center_longitude = (semantic_key[0] + .5) / 20
@@ -390,8 +399,11 @@ def panorama_extract_job(args: Namespace) -> None:
     if not terrain.datasets or not near_terrain.datasets or not far_terrain.datasets:
         raise RuntimeError("panorama extraction requires 2m source plus prepared 10m and 90m terrain")
     source_versions = _extraction_source_versions(source_database, terrain, near_terrain, far_terrain, border_terrain)
-    config = PanoramaConfig(angular_resolution_degrees=args.angular_resolution,
-                            maximum_distance_meters=args.maximum_distance_meters)
+    config = PanoramaConfig(
+        angular_resolution_degrees=args.angular_resolution,
+        maximum_distance_meters=args.maximum_distance_meters,
+        local_terrain_distance_meters=args.local_terrain_distance_meters,
+    )
     state = _open_state(root)
     rows: list[dict[str, object]] = []
     query = """SELECT b.row_id,b.id,b.latitude,b.longitude,e.elevation_meters

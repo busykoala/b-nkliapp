@@ -102,3 +102,84 @@ def test_raster_collection_uses_shared_memory_map_companion(tmp_path):
         assert len(collection.mapped) == 1
     finally:
         collection.close()
+
+
+def test_raster_collection_bilinearly_interpolates_continuous_elevation_and_renormalizes_nodata(tmp_path):
+    import numpy as np
+    import rasterio
+    from pyproj import Transformer
+    from rasterio.transform import from_origin
+
+    origin_x, origin_y = WGS84_TO_LV95.transform(7.68, 46.68)
+    path = tmp_path / "continuous.tif"
+    with rasterio.open(
+        path, "w", driver="GTiff", width=2, height=2, count=1, dtype="float32",
+        crs="EPSG:2056", transform=from_origin(origin_x - 10, origin_y + 10, 10, 10), nodata=-9999,
+    ) as target:
+        target.write(np.array([[[10, 20], [30, 40]]], dtype=np.float32))
+    to_wgs84 = Transformer.from_crs(2056, 4326, always_xy=True)
+    longitude, latitude = to_wgs84.transform(origin_x, origin_y)
+
+    collection = RasterCollection(tmp_path)
+    try:
+        assert collection.sample(latitude, longitude) == pytest.approx(25, abs=0.02)
+    finally:
+        collection.close()
+
+    with rasterio.open(path, "r+") as target:
+        target.write(np.array([[[10, 20], [30, -9999]]], dtype=np.float32))
+    collection = RasterCollection(tmp_path)
+    try:
+        assert collection.sample(latitude, longitude) == pytest.approx(20, abs=0.02)
+    finally:
+        collection.close()
+
+
+def test_raster_collection_interpolates_across_adjacent_tile_boundary(tmp_path):
+    import numpy as np
+    import rasterio
+    from pyproj import Transformer
+    from rasterio.transform import from_origin
+
+    origin_x, origin_y = WGS84_TO_LV95.transform(7.68, 46.68)
+    for name, left, value in (("west.tif", origin_x - 10, 100), ("east.tif", origin_x, 200)):
+        with rasterio.open(
+            tmp_path / name, "w", driver="GTiff", width=1, height=1, count=1, dtype="float32",
+            crs="EPSG:2056", transform=from_origin(left, origin_y + 5, 10, 10), nodata=-9999,
+        ) as target:
+            target.write(np.array([[[value]]], dtype=np.float32))
+    longitude, latitude = Transformer.from_crs(2056, 4326, always_xy=True).transform(origin_x, origin_y)
+
+    collection = RasterCollection(tmp_path)
+    try:
+        assert collection.sample(latitude, longitude) == pytest.approx(150, abs=0.02)
+    finally:
+        collection.close()
+
+
+def test_raster_collection_describes_coverage_resolution_and_missing_vertical_reference(tmp_path):
+    import numpy as np
+    import rasterio
+    from rasterio.transform import from_origin
+
+    origin_x, origin_y = WGS84_TO_LV95.transform(7.68, 46.68)
+    path = tmp_path / "described.tif"
+    with rasterio.open(
+        path, "w", driver="GTiff", width=2, height=2, count=1, dtype="float32",
+        crs="EPSG:2056", transform=from_origin(origin_x - 10, origin_y + 10, 10, 10), nodata=-9999,
+    ) as target:
+        target.write(np.ones((1, 2, 2), dtype=np.float32))
+        target.update_tags(AREA_OR_POINT="Point")
+
+    collection = RasterCollection(tmp_path)
+    try:
+        described = collection.describe_point(46.68, 7.68)
+        assert described["covered"] is True
+        assert described["horizontal_crs"] == "EPSG:2056"
+        assert described["resolution_meters"] == [10, 10]
+        assert described["pixel_resolution"] == {"x": 10, "y": 10, "unit": "metre"}
+        assert described["pixel_interpretation"] == "Point"
+        assert described["vertical_crs"] is None
+        assert collection.describe_point(0, 0) == {"covered": False}
+    finally:
+        collection.close()

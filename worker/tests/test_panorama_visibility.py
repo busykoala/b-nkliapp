@@ -237,6 +237,7 @@ def test_geometry_cache_excludes_direction_while_render_cache_tracks_crop_and_se
     assert first != geometry_cache_key(IDENTITY.model_copy(update={"border_terrain_version": "copernicus-v2"}))
     assert first != geometry_cache_key(IDENTITY.model_copy(update={"lod_schedule_version": "lod-v2"}))
     assert first != geometry_cache_key(IDENTITY.model_copy(update={"high_resolution_distance_meters": 10_000}))
+    assert first != geometry_cache_key(IDENTITY.model_copy(update={"local_terrain_distance_meters": 180}))
     base = dict(geometry_key=first, horizontal_fov_degrees=100, width=1600, height=720,
                 weather_bucket="clear", solar_lunar_bucket="day", bench_variant="wood-back", covered=False)
     north = render_cache_key(RenderIdentity(center_azimuth_degrees=0, **base))

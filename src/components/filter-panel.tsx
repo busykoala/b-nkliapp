@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { useEffect, useId, useRef } from "react";
-import { Accessibility, Armchair, CloudSun, Droplets, Flame, Hand, RotateCcw, Star, Sun, Toilet, Trash2, Umbrella, X } from "lucide-react";
+import { Armchair, CloudSun, Droplets, Flame, Footprints, Hand, RotateCcw, Star, Sun, Toilet, Umbrella, X } from "lucide-react";
 import { activeMapFilterCount } from "@/lib/map-filters";
 import type { MapFilters } from "@/lib/types";
 
@@ -64,7 +64,6 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
           <FilterToggle active={filters.backrest === true} icon={<Armchair />} label={t("bench.attributes.backrest")} onClick={() => toggle("backrest")} />
           <FilterToggle active={filters.covered === true} icon={<Umbrella />} label={t("bench.attributes.covered")} onClick={() => toggle("covered")} />
           <FilterToggle active={filters.fireplaceNearby === true} icon={<Flame />} label={t("map.filters.fireplace")} onClick={() => toggle("fireplaceNearby")} />
-          <FilterToggle active={filters.wasteBasketNearby === true} icon={<Trash2 />} label={t("map.filters.bin")} onClick={() => toggle("wasteBasketNearby")} />
         </FilterGroup>
         <FilterGroup label={t("knowledge.nearby.title")}>
           <FilterToggle active={filters.toiletsNearby === true} icon={<Toilet />} label={t("map.filters.toilets")} onClick={() => toggle("toiletsNearby")} />
@@ -79,7 +78,7 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
           <summary>{t("map.filters.more")}</summary>
           <FilterGroup label={t("map.filters.access")}>
             <FilterToggle active={filters.armrest === true} icon={<Hand />} label={t("bench.attributes.armrest")} onClick={() => toggle("armrest")} />
-            <FilterToggle active={filters.wheelchair === true} icon={<Accessibility />} label={t("bench.attributes.wheelchair")} onClick={() => toggle("wheelchair")} />
+            <FilterToggle active={filters.wheelchair === true} icon={<Footprints />} label={t("bench.attributes.wheelchair")} onClick={() => toggle("wheelchair")} />
           </FilterGroup>
           <p className="filter-intro">{t("map.filters.accessNote")}</p>
           <div className="filter-select-grid">

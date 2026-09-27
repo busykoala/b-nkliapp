@@ -81,8 +81,8 @@ function weatherLine(bench: BenchDetail, seed: number, t: Translator) {
   if (weather.precipitationType === "snow") return choose("weather.snow", seed, 2, t);
   if (weather.precipitationType === "rain") return choose("weather.rain", seed, 2, t);
   if (weather.precipitationType === "mixed") return choose("weather.mixed", seed, 2, t);
-  if (weather.cloudCover >= .78) return choose("weather.overcast", seed, 2, t);
-  if (weather.cloudCover >= .35) return choose("weather.cloudy", seed, 2, t);
+  if (weather.cloudCover !== null && weather.cloudCover >= .78) return choose("weather.overcast", seed, 2, t);
+  if (weather.cloudCover !== null && weather.cloudCover >= .35) return choose("weather.cloudy", seed, 2, t);
   if ((weather.windKmh ?? 0) >= 20) return choose("weather.wind", seed, 2, t);
   return null;
 }

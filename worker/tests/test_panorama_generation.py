@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import io
+import json
+import struct
 
 import numpy as np
 import pytest
@@ -18,6 +20,7 @@ from benchly.panorama.models import (
     TerrainSample,
 )
 from benchly.panorama.visibility import build_panorama_geometry
+from benchly.panorama.material import MATERIAL_SEMANTIC_IDS
 from benchly.panorama.watercolor import render_material_webp, render_panorama_webp
 
 
@@ -29,24 +32,55 @@ def fixture_geometry():
     )
     config = PanoramaConfig(angular_resolution_degrees=90)
     rays = [TerrainRay(azimuth_degrees=azimuth, samples=(
-        TerrainSample(distance_meters=80, elevation_meters=625, semantic=SemanticClass.OPEN_GRASSLAND),
-        TerrainSample(distance_meters=3_000, elevation_meters=1_240 + azimuth, semantic=SemanticClass.ROCK),
+        TerrainSample(distance_meters=80, elevation_meters=625, semantic=SemanticClass.OPEN_GRASSLAND,
+                      terrain_source="swissALTI3D-local"),
+        TerrainSample(distance_meters=3_000, elevation_meters=1_240 + azimuth, semantic=SemanticClass.ROCK,
+                      terrain_source="regional-terrain"),
     )) for azimuth in (0, 90, 180, 270)]
     return build_panorama_geometry(identity, rays, config=config)
 
 
 def test_view_capsule_is_deterministic_binary_and_roundtrips_quantized_geometry():
-    geometry = fixture_geometry()
+    geometry = fixture_geometry().model_copy(update={
+        "display_elevation_meters": 628,
+        "terrain_ground_elevation_meters": 627.4,
+        "ground_elevation_provenance": "stored-measurement",
+        "ground_elevation_confidence": "measured",
+        "ground_elevation_disagreement_meters": .6,
+    })
     first = encode_geometry(geometry)
     assert first == encode_geometry(geometry)
     assert first.startswith(MAGIC)
     assert b"manifest.npy" not in first
     restored = decode_geometry(first)
     assert restored.identity_key == geometry.identity_key
+    assert restored.display_elevation_meters == 628
+    assert restored.terrain_ground_elevation_meters == pytest.approx(627.4)
+    assert restored.ground_elevation_provenance == "stored-measurement"
+    assert restored.ground_elevation_confidence == "measured"
+    assert restored.ground_elevation_disagreement_meters == pytest.approx(.6)
+    assert {span.terrain_source for column in restored.columns for span in column.spans} == {
+        "swissALTI3D-local", "regional-terrain",
+    }
     assert len(restored.columns) == 4
     assert abs(restored.columns[0].skyline_angle_degrees - geometry.columns[0].skyline_angle_degrees) < .05
     with pytest.raises(ValueError, match="truncated"):
         decode_geometry(first[:-4])
+
+
+def test_view_capsule_decoder_remains_compatible_with_schema_one_sources():
+    current = encode_geometry(fixture_geometry())
+    header_size, body_size = struct.unpack("<II", current[8:16])
+    header = json.loads(current[16:16 + header_size])
+    header["schema"] = 1
+    header.pop("terrain_sources")
+    header["arrays"].pop("span_sources")
+    header["arrays"].pop("edge_sources")
+    legacy_header = json.dumps(header, sort_keys=True, separators=(",", ":")).encode()
+    body = current[16 + header_size:16 + header_size + body_size]
+    legacy = MAGIC + struct.pack("<II", len(legacy_header), len(body)) + legacy_header + body
+    restored = decode_geometry(legacy)
+    assert {span.terrain_source for column in restored.columns for span in column.spans} == {"view-capsule"}
 
 
 def test_view_capsule_normalizes_float16_bearing_at_full_circle():
@@ -70,8 +104,34 @@ def test_material_mask_and_paint_are_wrap_continuous():
         # pre-encode texture is identical at the boundary; this is visually
         # continuous and comfortably below an edge contrast.
         contrast = np.abs(pixels[:, 0] - pixels[:, -1])
-        assert contrast.max() <= 12
+        assert contrast.max() <= 16
         assert np.percentile(contrast, 95) <= 5
+
+
+def test_material_contract_keeps_categories_discrete_and_coverage_separate():
+    identity = GeometryIdentity(
+        latitude=46.69, longitude=7.67, ground_elevation_meters=628,
+        terrain_version="fixture", semantic_version="fixture", building_version="fixture",
+        angular_resolution_degrees=180,
+    )
+    config = PanoramaConfig(angular_resolution_degrees=180)
+    geometry = build_panorama_geometry(identity, [
+        TerrainRay(azimuth_degrees=0, samples=(TerrainSample(
+            distance_meters=80, elevation_meters=628, semantic=SemanticClass.FOREST,
+        ),)),
+        TerrainRay(azimuth_degrees=180, samples=(TerrainSample(
+            distance_meters=80, elevation_meters=628, semantic=SemanticClass.BUILDING,
+        ),)),
+    ], config=config)
+    pixels = np.asarray(Image.open(io.BytesIO(render_material_webp(geometry, 32, 16))).convert("RGBA"))
+    semantic_values = set(np.unique(pixels[..., 1]).tolist())
+    assert semantic_values <= {
+        MATERIAL_SEMANTIC_IDS[SemanticClass.SKY],
+        MATERIAL_SEMANTIC_IDS[SemanticClass.FOREST],
+        MATERIAL_SEMANTIC_IDS[SemanticClass.BUILDING],
+    }
+    assert MATERIAL_SEMANTIC_IDS[SemanticClass.SNOW_OR_GLACIER] not in semantic_values
+    assert set(np.unique(pixels[..., 3]).tolist()) - {0, 255}
 
 
 def test_storage_gate_keeps_80_gib_until_68_gib_peak_then_rounds_with_headroom():

@@ -8,9 +8,11 @@ import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama"
 import type { PanoramaDescriptor } from "@/features/bench-panorama/types";
 import type { BenchDetail } from "@/lib/types";
 import { PANORAMA_ARTIFACT_MAX_ALTITUDE, panoramaSkyTop, projectNightSky, type ProjectedStar } from "@/lib/night-sky";
+import { panoramaMaterialIsSkyPixel } from "@/lib/panorama-material";
 import { clampPanoramaPitch, normalizePanoramaHeading, panoramaHasSnowCover, panoramaProjection,
   precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
 import { PanoramaWebgl } from "./panorama-webgl";
+import { panoramaCloudCover } from "@/lib/presentation";
 
 const PANORAMA_FAST_POLL_MS = 1_000;
 const PANORAMA_SLOW_POLL_MS = 5_000;
@@ -42,9 +44,7 @@ export function panoramaCelestialTop(altitude: number) {
 }
 
 export function panoramaMaterialIsSky(pixel: Uint8ClampedArray) {
-  // Material G is the semantic ID; clear sky is exactly zero in the lossless
-  // mask. A small allowance avoids sampling a filtered horizon edge.
-  return pixel[1] < 12;
+  return panoramaMaterialIsSkyPixel(pixel);
 }
 
 export function panoramaShadowContrast(cloudCover: number) {
@@ -206,7 +206,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     return () => { cancelAnimationFrame(frame); document.body.style.overflow = previousOverflow; };
   }, [expanded]);
 
-  const cloudCover = bench.weather?.cloudCover ?? 0;
+  const cloudCover = panoramaCloudCover(bench.weather);
   const celestial = useMemo(() => bench.sunAltitudeDegrees > 0
     ? { kind: "sun" as const, azimuth: bench.sunAzimuthDegrees, altitude: bench.sunAltitudeDegrees }
     : bench.moonVisible ? { kind: "moon" as const, azimuth: bench.moonAzimuthDegrees, altitude: bench.moonAltitudeDegrees } : null,
@@ -252,7 +252,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const cloudMid = bench.weather?.cloudMid ?? cloudCover * .72;
   const cloudLow = bench.weather?.cloudLow ?? cloudCover * .46;
   const cloudContrast = panoramaShadowContrast(cloudCover);
-  const precipitation = bench.weather?.precipitationType ?? "none";
+  const precipitation = bench.weather?.precipitationType ?? "unknown";
   const raining = precipitation === "rain" || precipitation === "mixed";
   const snowing = precipitation === "snow" || precipitation === "mixed";
   const precipitationRate = bench.weather?.precipitationRateMmH ?? null;

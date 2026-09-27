@@ -1,5 +1,5 @@
 {
-  "title": "Was wir wissen – und was noch offen ist",
+  "title": "Quellen & Datenstand",
   "categories": {
     "physical": "Ausstattung",
     "location": "Ort",
@@ -57,7 +57,7 @@
     "stepFree": "Stufenfreie Möglichkeit",
     "open": "Offen",
     "recorded": "Erfasst",
-    "noneRecorded": "Keine erfasst",
+    "noneRecorded": "Keine Treppen erfasst",
     "evidence": "Hinweise vorhanden",
     "obstacle": "Hindernis erfasst",
     "maxSlope": "Stärkste geschätzte Steigung",

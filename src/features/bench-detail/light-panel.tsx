@@ -1,8 +1,7 @@
 import { useFormatter, useTranslations } from "next-intl";
 import type { Translator } from "@/i18n/types";
 import { compassDirection } from "@/i18n/bench-labels";
-import type { ReactNode } from "react";
-import { ChevronDown, CloudSun, Moon, Sun } from "lucide-react";
+import { ChevronDown, Clock3, CloudSun, Moon, Sun } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
 import { DetailRows, minuteClock, ObstructionSketch, PanelHeading } from "./panel-ui";
 
@@ -13,13 +12,12 @@ export function LightPanel({ bench }: { bench: BenchDetail }) {
   const sunLabel = bench.sunConfidence === "niedrig" ? t("bench.light.estimatedSun") : t("bench.light.directSun");
   return <section className="detail-panel detail-panel-light">
     <PanelHeading eyebrow={t("bench.light.today")} title={currentLight(bench, t)}><p>{lightSentence(bench, t)}</p></PanelHeading>
-    <p className="calculation-freshness">{t("bench.light.calculatedFor", {time: minuteClock(bench.localMinutesNow)})}</p>
-    <SunPath bench={bench} />
-    <div className="light-windows is-primary">
-      <IntervalStory icon={<Sun size={17} />} label={bench.sunConfidence === "niedrig" ? t("bench.light.estimatedWindows") : t("bench.light.sunWindows")} windows={bench.sunWindows} empty={t("bench.light.noSun")} />
-      <IntervalStory icon={<CloudSun size={17} />} label={t("bench.light.shadeWindows")} windows={bench.shadeWindows} empty={t("bench.light.noShade")} />
+    <div className="calculation-meta">
+      <span title={t("bench.light.calculatedFor", {time: minuteClock(bench.localMinutesNow)})}><Clock3 size={15} aria-hidden="true" />{minuteClock(bench.localMinutesNow)}</span>
+      <ConfidenceDots level={bench.sunConfidence} label={t(`bench.view.confidence.${bench.sunConfidence}`)} explanation={t(`bench.light.confidence.${bench.sunConfidence}`)} />
     </div>
-    <p className="confidence-line">{t(`bench.light.confidence.${bench.sunConfidence}`)}</p>
+    <SunPath bench={bench} />
+    <LightWindows bench={bench} />
     <details className="technical-fold">
       <summary><span><strong>{t("bench.light.durationSeasons")}</strong><small>{t("bench.light.detailsSummary")}</small></span><ChevronDown size={16} /></summary>
       <div className="light-balance" aria-label={t("bench.light.balance", {sun: sunDuration(bench.sunMinutesToday), shade: sunDuration(bench.shadeMinutesToday)})}>
@@ -66,9 +64,37 @@ function SunPath({ bench }: { bench: BenchDetail }) {
   </section>;
 }
 
-function IntervalStory({ icon, label, windows, empty }: { icon: ReactNode; label: string; windows: BenchDetail["sunWindows"]; empty: string }) {
-  const visible = windows.filter((window) => window.start !== window.end);
-  return <div><span aria-hidden="true">{icon}</span><p><small>{label}</small><strong>{visible.length ? visible.map((window) => `${window.start}–${window.end}`).join(" · ") : empty}</strong></p></div>;
+function ConfidenceDots({ level, label, explanation }: { level: BenchDetail["sunConfidence"]; label: string; explanation: string }) {
+  const active = level === "hoch" ? 3 : level === "mittel" ? 2 : 1;
+  return <span className="confidence-dots" aria-label={`${label}. ${explanation}`} title={explanation}>
+    <i aria-hidden="true">{[1, 2, 3].map((value) => <b className={value <= active ? "is-active" : ""} key={value} />)}</i><em>{label}</em>
+  </span>;
+}
+
+function LightWindows({ bench }: { bench: BenchDetail }) {
+  const t = useTranslations();
+  const rows = [
+    {kind: "sun", icon: <Sun size={17} />, label: bench.sunConfidence === "niedrig" ? t("bench.light.estimatedWindows") : t("bench.light.sunWindows"), windows: bench.sunWindows, duration: sunDuration(bench.sunMinutesToday), empty: t("bench.light.noSun")},
+    {kind: "shade", icon: <CloudSun size={17} />, label: t("bench.light.shadeWindows"), windows: bench.shadeWindows, duration: sunDuration(bench.shadeMinutesToday), empty: t("bench.light.noShade")},
+  ] as const;
+  return <div className="light-window-chart">
+    {rows.map((row) => {
+      const visible = row.windows.filter((window) => window.start !== window.end);
+      const exact = visible.length ? visible.map((window) => `${window.start}–${window.end}`).join(" · ") : row.empty;
+      return <div className={`light-window-row is-${row.kind}`} key={row.kind} aria-label={`${row.label}: ${exact}`}>
+        <span title={row.label} aria-hidden="true">{row.icon}</span>
+        <i aria-hidden="true">{visible.flatMap((window) => windowSegments(window).map((segment, index) => <b key={`${window.start}-${window.end}-${index}`} style={{left: `${segment.start / 1440 * 100}%`, width: `${(segment.end - segment.start) / 1440 * 100}%`}} />))}</i>
+        <strong>{row.duration}</strong>
+        <small>{exact}</small>
+      </div>;
+    })}
+  </div>;
+}
+
+function windowSegments(window: {start: string; end: string}) {
+  const start = clockMinutes(window.start), end = clockMinutes(window.end);
+  if (start === null || end === null || start === end) return [];
+  return end > start ? [{start, end}] : [{start, end: 1440}, {start: 0, end}];
 }
 
 function SeasonalLight({ bench }: { bench: BenchDetail }) {
@@ -118,6 +144,6 @@ function currentLight(bench: BenchDetail, t: Translator) {
 function lightSentence(bench: BenchDetail, t: Translator) {
   if (bench.shadeCause === "nacht") return t(bench.sunConfidence === "niedrig" ? "bench.light.explanation.nightEstimate" : "bench.light.explanation.night", {duration: sunDuration(bench.sunMinutesToday)});
   if (bench.sunnyNow === null) return t("bench.light.explanation.unknown");
-  if (bench.sunnyNow) return t(bench.weather && bench.weather.cloudCover > .65 ? "bench.light.explanation.clouds" : "bench.light.explanation.sun");
+  if (bench.sunnyNow) return t(bench.weather?.cloudCover !== null && bench.weather?.cloudCover !== undefined && bench.weather.cloudCover > .65 ? "bench.light.explanation.clouds" : "bench.light.explanation.sun");
   return t(`bench.light.causes.${bench.shadeCause}`);
 }

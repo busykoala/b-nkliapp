@@ -20,7 +20,11 @@
   },
   "sheet": {
     "resize": "Espandi o riduci i dettagli",
+    "expand": "Apri a tutto schermo",
+    "compact": "Vista compatta",
     "minimize": "Riduci i dettagli a una barra",
+    "minimizeAction": "Riduci",
+    "map": "Mappa",
     "showDetails": "Mostra dettagli",
     "showMap": "Mostra mappa",
     "close": "Chiudi la panchina",
@@ -53,7 +57,10 @@
     "title": "Dettagli",
     "bench": "Panchina",
     "light": "Luce",
+    "lightWeather": "Luce e meteo",
+    "access": "Accesso",
     "view": "Vista",
+    "visits": "Visite",
     "weather": "Meteo",
     "unknownFeatures": "Dotazioni ancora sconosciute",
     "night": "Ora è notte",
@@ -64,11 +71,19 @@
     "forecast": "{temperature} °C · previsione",
     "unknownWeather": "Dati meteo non ancora disponibili"
   },
+  "access": {
+    "atBench": "Accanto alla panchina",
+    "localApproach": "Ultimo tratto",
+    "scopeNote": "Lo spazio accanto alla panchina, l’ultimo tratto e l’intero percorso sono informazioni distinte. Scale e fondo del percorso appaiono dopo la pianificazione."
+  },
   "panel": {
     "eyebrow": "Sedersi qui",
     "title": "Cosa offre la panchina",
     "unknown": "Questa panchina è ancora da esplorare",
     "missing": "{count, plural, one {Una caratteristica non è ancora stata registrata.} other {# caratteristiche non sono ancora state registrate.}}",
+    "moreInfo": "Dotazione e informazioni",
+    "moreInfoKnown": "{count, plural, one {Un dato registrato} other {# dati registrati}} · aprire se necessario",
+    "moreInfoUnknown": "Nessun dato affidabile disponibile",
     "directionUnknown": "Il paesaggio viene quindi valutato in tutte le direzioni.",
     "directionKnown": "La vista viene ponderata in questa direzione."
   },
@@ -95,6 +110,7 @@
     "daysAgo": "Confermata {days, plural, one {un giorno fa} other {# giorni fa}}",
     "noBackrest": "Senza schienale",
     "unknownBackrest": "Schienale sconosciuto",
+    "conflictingBackrest": "Dati contraddittori sullo schienale",
     "night": "Notte",
     "unknownLight": "Luce sconosciuta",
     "sun": "Sole stimato",
@@ -104,6 +120,7 @@
     "uncertain": " · incerto",
     "noWheelchair": "Nessuno spazio piano presso la panchina",
     "unknownWheelchair": "Spazio piano non registrato",
+    "conflictingLevelSpace": "Dati contraddittori sullo spazio piano",
     "quiet": "Tranquillità {score}/5",
     "unknownQuiet": "Tranquillità non valutata",
     "accessNote": "Scale e condizioni del percorso sono mostrate separatamente per gli itinerari pianificati.",
@@ -208,6 +225,16 @@
     }
   },
   "weather": {
+    "conditions": {
+      "unknown": "Condizioni meteo non completamente misurate",
+      "clear": "Sereno",
+      "partlyCloudy": "Poco nuvoloso",
+      "cloudy": "Nuvoloso",
+      "overcast": "Coperto",
+      "rain": "Pioggia",
+      "snow": "Neve",
+      "mixed": "Pioggia e neve"
+    },
     "title": "Meteo e tranquillità",
     "temperatureAt": "{temperature}° a {location}",
     "unknown": "Il cielo resta da scoprire",
@@ -244,7 +271,8 @@
       "mostly": "Molto nuvoloso",
       "cloudy": "Nuvoloso",
       "few": "Poco nuvoloso",
-      "clear": "Sereno"
+      "clear": "Sereno",
+      "unknown": "Nuvolosità non misurata"
     },
     "temperatureHere": "{temperature}° presso questa panchina"
   },
@@ -346,7 +374,7 @@
     "remaining": " · ancora {count, plural, one {una conferma} other {# conferme}}",
     "confirmed": " · confermata",
     "unverified": "Appena scoperta · non ancora confermata",
-    "directions": "Percorso per arrivare qui",
+    "directions": "Pianifica il percorso",
     "contribute": "Contribuisci",
     "join": "Partecipa",
     "ratings": "Vedi le recensioni",

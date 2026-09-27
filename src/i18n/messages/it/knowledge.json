@@ -1,5 +1,5 @@
 {
-  "title": "Cosa sappiamo e cosa resta da scoprire",
+  "title": "Fonti e stato dei dati",
   "categories": {
     "physical": "Dotazioni",
     "location": "Luogo",
@@ -57,7 +57,7 @@
     "stepFree": "Possibilità senza gradini",
     "open": "Sconosciuto",
     "recorded": "Registrate",
-    "noneRecorded": "Nessuna registrata",
+    "noneRecorded": "Nessuna scala registrata",
     "evidence": "Indizi presenti",
     "obstacle": "Ostacolo registrato",
     "maxSlope": "Pendenza massima stimata",

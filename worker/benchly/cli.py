@@ -43,6 +43,7 @@ from benchly.weather.jobs import refresh_weather_job
 from benchly.direction.jobs import analyze_directions_job, import_direction_reviews_job, prepare_direction_review_job, publish_direction_estimates_job, remove_direction_estimates_job
 from benchly.panorama.jobs import panorama_batch_job, panorama_worker_job
 from benchly.panorama.fixtures import render_fixture_job
+from benchly.panorama.diagnostics import panorama_diagnostic_job
 from benchly.panorama.refresh import repaint_index_job, fetch_repaint_capsules_job, repaint_job, seal_repaint_job, upload_repaint_job, activate_repaint_job
 from benchly.panorama.builder import (
     panorama_activate_job,
@@ -394,6 +395,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama.add_argument("--regional-terrain-dir", help="Optional prepared lower-resolution terrain overview for the far field")
     panorama.add_argument("--border-terrain-dir", help="Optional cross-border DEM used only where Swiss terrain has no coverage")
     panorama.add_argument("--high-resolution-distance-meters", type=float, default=20_000)
+    panorama.add_argument("--local-terrain-distance-meters", type=float, default=120)
     panorama.add_argument("--cache-dir", default="./data/panorama-cache-v1")
     panorama.add_argument("--limit", type=int, default=10)
     panorama.add_argument("--max-runtime-hours", type=float, default=2)
@@ -415,6 +417,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_worker.add_argument("--regional-terrain-dir")
     panorama_worker.add_argument("--border-terrain-dir")
     panorama_worker.add_argument("--high-resolution-distance-meters", type=float, default=20_000)
+    panorama_worker.add_argument("--local-terrain-distance-meters", type=float, default=120)
     panorama_worker.add_argument("--cache-dir", default="./data/panorama-cache-v1")
     panorama_worker.add_argument(
         "--limit",
@@ -446,6 +449,25 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_fixtures.add_argument("--height", type=int, default=1024)
     panorama_fixtures.add_argument("--at", help="ISO timestamp for the installed local light map")
     panorama_fixtures.set_defaults(function=render_fixture_job, uses_lock=False)
+
+    panorama_diagnostic = subparsers.add_parser(
+        "panorama-diagnose", help="Write a selected-ray report and false-colour material views",
+    )
+    panorama_diagnostic.add_argument("--capsule", required=True)
+    panorama_diagnostic.add_argument("--painting", required=True)
+    panorama_diagnostic.add_argument("--material", required=True)
+    panorama_diagnostic.add_argument("--lightmap")
+    panorama_diagnostic.add_argument("--manifest")
+    panorama_diagnostic.add_argument("--output-dir", required=True)
+    panorama_diagnostic.add_argument("--azimuth", type=float, default=45)
+    panorama_diagnostic.add_argument("--elevation-angle", type=float, default=0)
+    panorama_diagnostic.add_argument("--pixel-x", type=int)
+    panorama_diagnostic.add_argument("--pixel-y", type=int)
+    panorama_diagnostic.add_argument("--terrain-dir")
+    panorama_diagnostic.add_argument("--near-terrain-dir")
+    panorama_diagnostic.add_argument("--regional-terrain-dir")
+    panorama_diagnostic.add_argument("--border-terrain-dir")
+    panorama_diagnostic.set_defaults(function=panorama_diagnostic_job, uses_lock=False)
 
     panorama_pyramid = subparsers.add_parser(
         "panorama-prepare-terrain", help="Resume the content-addressed 10/30/90-m terrain pyramid build",
@@ -492,6 +514,7 @@ def build_parser() -> argparse.ArgumentParser:
     panorama_extract.add_argument("--max-runtime-hours", type=float, default=24)
     panorama_extract.add_argument("--angular-resolution", type=float, default=.1)
     panorama_extract.add_argument("--maximum-distance-meters", type=float, default=150_000)
+    panorama_extract.add_argument("--local-terrain-distance-meters", type=float, default=120)
     panorama_extract.set_defaults(function=panorama_extract_job, uses_lock=False)
 
     panorama_pilot = subparsers.add_parser("panorama-pilot", help="Run the resumable one-percent local storage and throughput gate")

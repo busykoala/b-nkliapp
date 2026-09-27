@@ -153,7 +153,11 @@
     },
     "sheet": {
       "resize": "Engrondir u reducir ils detagls",
+      "expand": "Avrir grond",
+      "compact": "Vista compacta",
       "minimize": "Reducir ils detagls ad ina trav",
+      "minimizeAction": "Minimar",
+      "map": "Carta",
       "showDetails": "Mussar detagls",
       "showMap": "Mussar carta",
       "close": "Serrar il banc",
@@ -186,7 +190,10 @@
       "title": "Detagls",
       "bench": "Banc",
       "light": "Glisch",
+      "lightWeather": "Glisch ed aura",
+      "access": "Access",
       "view": "Vista",
+      "visits": "Visitas",
       "weather": "Aura",
       "unknownFeatures": "Equipament anc nunenconuschent",
       "night": "Ussa èsi notg",
@@ -197,11 +204,19 @@
       "forecast": "{temperature} °C · prognosa",
       "unknownWeather": "Datas da l’aura anc betg disponiblas"
     },
+    "access": {
+      "atBench": "Directamain sper il banc",
+      "localApproach": "Ultim traject",
+      "scopeNote": "Il plaz sper il banc, l’ultim traject e l’entira ruta èn indicaziuns separadas. Stgalas e cuverta da la ruta vegnan mussadas suenter la planisaziun."
+    },
     "panel": {
       "eyebrow": "Seser qua",
       "title": "Tge che quest banc porscha",
       "unknown": "Quest banc vegn anc explorà",
       "missing": "{count, plural, one {Ina caracteristica n’è anc betg registrada.} other {# caracteristicas n’èn anc betg registradas.}}",
+      "moreInfo": "Equipament ed indicaziuns",
+      "moreInfoKnown": "{count, plural, one {In punct registrà} other {# puncts registrads}} · avrir sche necessari",
+      "moreInfoUnknown": "Anc naginas indicaziuns fidablas",
       "directionUnknown": "La cuntrada vegn perquai considerada en tut las direcziuns.",
       "directionKnown": "La vista vegn valitada en questa direcziun."
     },
@@ -228,6 +243,7 @@
       "daysAgo": "Confermà avant {days, plural, one {in di} other {# dis}}",
       "noBackrest": "Senza spundal",
       "unknownBackrest": "Spundal nunenconuschent",
+      "conflictingBackrest": "Indicaziuns cuntradictoricas davart il spundal",
       "night": "Notg",
       "unknownLight": "Glisch nunenconuschenta",
       "sun": "Sulegl stimà",
@@ -237,6 +253,7 @@
       "uncertain": " · malsegir",
       "noWheelchair": "Nagin plaz plan sper il banc",
       "unknownWheelchair": "Plaz plan betg registrà",
+      "conflictingLevelSpace": "Indicaziuns cuntradictoricas davart il plaz plan",
       "quiet": "Quietezza {score}/5",
       "unknownQuiet": "Quietezza betg valitada",
       "accessNote": "Stgalas e la qualitad da la via vegnan mussadas separadamain per rutas planisadas.",
@@ -341,6 +358,16 @@
       }
     },
     "weather": {
+      "conditions": {
+        "unknown": "Situaziun da l’aura betg mesirada cumplettamain",
+        "clear": "Seren",
+        "partlyCloudy": "Pauc nivlus",
+        "cloudy": "Nivlus",
+        "overcast": "Cuvert",
+        "rain": "Plievgia",
+        "snow": "Naiv",
+        "mixed": "Plievgia e naiv"
+      },
       "title": "Aura e quietezza",
       "temperatureAt": "{temperature}° a {location}",
       "unknown": "Il tschiel resta anc zuppà",
@@ -377,7 +404,8 @@
         "mostly": "Fitg nivlus",
         "cloudy": "Nivlus",
         "few": "Pauc nivlus",
-        "clear": "Seren"
+        "clear": "Seren",
+        "unknown": "Nivladad betg mesirada"
       },
       "temperatureHere": "{temperature}° tar quest banc"
     },
@@ -479,7 +507,7 @@
       "remaining": " · anc {count, plural, one {ina conferma} other {# confermas}}",
       "confirmed": " · confermà",
       "unverified": "Nov scuvrì · anc betg confermà",
-      "directions": "Via fin qua",
+      "directions": "Planisar la via",
       "contribute": "Contribuir",
       "join": "Sa participar",
       "ratings": "Guardar las valitaziuns",
@@ -847,8 +875,8 @@
       "copied": "Colliaziun copiada, pronta per cundivider, er sin Instagram.",
       "shareUnavailable": "Cundivider n’è gist betg disponibel en quest navigatur.",
       "operator": "Tgira al lieu",
-      "favourite": "Lieu preferì",
-      "save": "Memorisar il banc",
+      "favourite": "Memorisà",
+      "save": "Memorisar",
       "saveHint": "Memorisar per pli tard",
       "followPlace": "Suandar il lieu",
       "followingPlace": "Lieu suandà",
@@ -1007,7 +1035,7 @@
     }
   },
   "knowledge": {
-    "title": "Tge che nus savain — e tge ch’è anc avert",
+    "title": "Funtaunas e stadi da las datas",
     "categories": {
       "physical": "Equipament",
       "location": "Lieu",
@@ -1065,7 +1093,7 @@
       "stepFree": "Pussaivladad senza stgalims",
       "open": "Avert",
       "recorded": "Registradas",
-      "noneRecorded": "Naginas registradas",
+      "noneRecorded": "Naginas stgalas registradas",
       "evidence": "Indizis avant maun",
       "obstacle": "Obstachel registrà",
       "maxSlope": "Pendenza maximala stimada",

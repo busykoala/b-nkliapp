@@ -142,10 +142,119 @@ class RasterCollection:
                 if item["min_lon"] <= longitude <= item["max_lon"]
                 and item["min_lat"] <= latitude <= item["max_lat"]]
 
-    def sample(self, latitude, longitude):
-        return self.sample_many([(latitude, longitude)])[0]
+    def describe_point(self, latitude: float, longitude: float) -> dict[str, object]:
+        """Return diagnostic source metadata without pretending a vertical CRS exists."""
+        candidates = self._candidates(latitude, longitude)
+        if not candidates:
+            return {"covered": False}
+        item = candidates[0]
+        try:
+            dataset, _transformer = self._open(item["path"])
+            crs = dataset.crs
+            tags = dataset.tags()
+            unit = (crs.linear_units if getattr(crs, "is_projected", False) else "degree") or "unknown"
+            resolution = [abs(float(dataset.res[0])), abs(float(dataset.res[1]))]
+            return {
+                "covered": True,
+                "asset": Path(item["path"]).name,
+                "source": next((entry.get("source") for entry in self.datasets
+                                if entry.get("asset") == Path(item["path"]).name), "supplied raster"),
+                "version": item.get("version"),
+                "horizontal_crs": str(crs),
+                "pixel_resolution": {"x": resolution[0], "y": resolution[1], "unit": unit},
+                "resolution_meters": resolution if unit.lower() in {"metre", "meter", "metres", "meters", "m"} else None,
+                "nodata": dataset.nodata,
+                "pixel_interpretation": tags.get("AREA_OR_POINT", "not declared"),
+                "vertical_crs": str(crs) if getattr(crs, "is_vertical", False) else None,
+                "height_reference_assumption": (
+                    "The GeoTIFF does not encode a vertical CRS; heights are interpreted in metres "
+                    "according to the named source dataset. No datum conversion is applied."
+                ),
+            }
+        except (OSError, ValueError, IndexError):
+            return {"covered": True, "asset": Path(item["path"]).name, "unreadable": True}
 
-    def sample_many(self, points):
+    def sample(self, latitude, longitude, interpolation="bilinear"):
+        return self.sample_many([(latitude, longitude)], interpolation=interpolation)[0]
+
+    def sample_many(self, points, interpolation="bilinear"):
+        """Sample continuous raster values with bounded, tile-safe interpolation.
+
+        Elevation is defined at pixel centres. Bilinear interpolation therefore
+        shifts inverse pixel coordinates by half a cell, samples the four cell
+        centres through the full collection, and renormalizes around nodata.
+        Resolving those neighbours through the collection (rather than one
+        dataset window) also crosses adjacent tile and edition boundaries.
+        """
+        points = list(points)
+        if interpolation == "nearest":
+            return self._sample_many_nearest(points)
+        if interpolation != "bilinear":
+            raise ValueError(f"unsupported raster interpolation: {interpolation}")
+        output = []
+        # Panorama batches contain hundreds of thousands of points. Keep the
+        # temporary four-neighbour expansion bounded for multi-process builds.
+        for offset in range(0, len(points), 32_768):
+            output.extend(self._sample_many_bilinear_chunk(points[offset:offset + 32_768]))
+        return output
+
+    def _sample_many_bilinear_chunk(self, points):
+        import numpy as np
+
+        points = list(points)
+        output = [None] * len(points)
+        if self.index is None or not points:
+            return output
+        grouped = {}
+        for index, (latitude, longitude) in enumerate(points):
+            candidates = self._candidates(latitude, longitude)
+            if candidates:
+                grouped.setdefault(candidates[0]["path"], []).append((index, latitude, longitude))
+        neighbour_points = []
+        neighbour_owners = []
+        neighbour_weights = []
+        for name, values in grouped.items():
+            try:
+                dataset, to_dataset = self._open(name)
+                to_wgs84 = Transformer.from_crs(dataset.crs, 4326, always_xy=True)
+                latitudes = np.fromiter((value[1] for value in values), dtype=np.float64)
+                longitudes = np.fromiter((value[2] for value in values), dtype=np.float64)
+                eastings, northings = to_dataset.transform(longitudes, latitudes)
+                columns, rows = (~dataset.transform) * (np.asarray(eastings), np.asarray(northings))
+                centered_columns = np.asarray(columns) - .5
+                centered_rows = np.asarray(rows) - .5
+                left = np.floor(centered_columns).astype(np.int64)
+                top = np.floor(centered_rows).astype(np.int64)
+                x_fraction = centered_columns - left
+                y_fraction = centered_rows - top
+                for position, (index, _latitude, _longitude) in enumerate(values):
+                    for row, y_weight in ((top[position], 1 - y_fraction[position]),
+                                          (top[position] + 1, y_fraction[position])):
+                        for column, x_weight in ((left[position], 1 - x_fraction[position]),
+                                                 (left[position] + 1, x_fraction[position])):
+                            weight = float(x_weight * y_weight)
+                            if weight <= 1e-12:
+                                continue
+                            easting, northing = dataset.transform * (float(column) + .5, float(row) + .5)
+                            longitude, latitude = to_wgs84.transform(easting, northing)
+                            neighbour_points.append((latitude, longitude))
+                            neighbour_owners.append(index)
+                            neighbour_weights.append(weight)
+            except (OSError, ValueError, IndexError):
+                continue
+        values = self._sample_many_nearest(neighbour_points)
+        totals = np.zeros(len(points), dtype=np.float64)
+        weights = np.zeros(len(points), dtype=np.float64)
+        for owner, weight, value in zip(neighbour_owners, neighbour_weights, values):
+            if value is None:
+                continue
+            totals[owner] += float(value) * weight
+            weights[owner] += weight
+        for index in np.flatnonzero(weights > 0):
+            output[int(index)] = float(totals[index] / weights[index])
+        return output
+
+    def _sample_many_nearest(self, points):
         """Sample a point batch while opening and transforming each tile once."""
         import numpy as np
         from rasterio.windows import Window

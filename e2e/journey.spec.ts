@@ -4,7 +4,7 @@ async function openPlanner(page: Page) {
   await page.goto("/?bank=osm-node-101");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 8000 });
   await page.getByLabel("Detailhöhe ändern").click();
-  await page.getByRole("button", { name: "Weg hierher" }).click();
+  await page.getByRole("button", { name: "Weg planen" }).click();
   const journal = page.getByRole("complementary", { name: "Dein Weg zum Bänkli" });
   await expect(journal).toBeVisible();
   await page.getByLabel("Reiseplan vergrössern oder verkleinern").click();

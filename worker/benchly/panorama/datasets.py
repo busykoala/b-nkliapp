@@ -183,6 +183,8 @@ def sample_terrain_rays(
     border_terrain: RasterCollection | None = None,
     high_resolution_distance_meters: float = 20_000,
     observer_ground_elevation_meters: float | None = None,
+    local_terrain: RasterCollection | None = None,
+    local_terrain_distance_meters: float | None = None,
 ) -> list[TerrainRay]:
     """Sample a full-circle LOD path in a few raster batches.
 
@@ -216,8 +218,14 @@ def sample_terrain_rays(
                 elevations[index] = float(value)
                 terrain_sources[index] = source
 
-    near = np.flatnonzero(flat_distances <= high_resolution_distance_meters)
+    local_limit = config.local_terrain_distance_meters if local_terrain_distance_meters is None else local_terrain_distance_meters
+    local = np.flatnonzero(flat_distances <= local_limit) if local_terrain is not None else np.asarray([], dtype=int)
+    near = np.flatnonzero(
+        (flat_distances <= high_resolution_distance_meters)
+        & ((flat_distances > local_limit) if local_terrain is not None else True)
+    )
     far = np.flatnonzero(flat_distances > high_resolution_distance_meters)
+    sample(local, local_terrain, "swissALTI3D-local")
     sample(near, terrain, "swissALTI3D")
     sample(far, regional_terrain, "regional-terrain")
     sample(far, terrain, "swissALTI3D")

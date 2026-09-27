@@ -37,6 +37,9 @@
     "stepsUnknown": "Scale non valutabili",
     "slope": "Pendenza fino a circa {value}%",
     "surfaces": "Fondo: {values}",
+    "coverageComplete": "Tutti i tratti a piedi sono stati valutati",
+    "coveragePartial": "{assessed} tratti a piedi su {total} valutati",
+    "coverageNone": "Nessun tratto a piedi valutabile",
     "note": "Stima basata sulla mappa. Piccoli gradini, irregolarità o cantieri possono mancare."
   },
   "instructions": {

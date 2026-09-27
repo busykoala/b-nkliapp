@@ -80,6 +80,8 @@ describe("panorama light", () => {
     expect(panoramaCelestialTop(58)).toBe(25);
     expect(panoramaCelestialTop(-32)).toBe(100);
     expect(panoramaMaterialIsSky(new Uint8ClampedArray([0, 0, 0, 255]))).toBe(true);
+    expect(panoramaMaterialIsSky(new Uint8ClampedArray([44, 5, 122, 255]))).toBe(false);
+    expect(panoramaMaterialIsSky(new Uint8ClampedArray([44, 5, 122, 0]))).toBe(true);
     expect(panoramaMaterialIsSky(new Uint8ClampedArray([44, 68, 122, 255]))).toBe(false);
   });
   it("paints new, quarter, full and waning moon illumination on the proper side", () => {

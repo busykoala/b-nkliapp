@@ -63,7 +63,7 @@ def _atomic(path: Path, payload: bytes) -> None:
 def _painter_key() -> str:
     # The checked-in implementation, not a hand-maintained build version,
     # decides whether a saved repaint can be reused.
-    return implementation_key("binary.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
+    return implementation_key("binary.py", "material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
 
 
 def _progress(root: Path) -> sqlite3.Connection:

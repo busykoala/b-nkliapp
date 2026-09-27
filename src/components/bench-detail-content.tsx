@@ -110,7 +110,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
     first: bench.dialectPresentation.voice.first,
     second: bench.dialectPresentation.voice.second,
   } : null;
-  const missingFields = bench.properties.filter((item) => /^(Unbekannt|Noch offen)$/i.test(item.value)).slice(0, 3).map((item) => item.key);
+  const missingFields = bench.properties.filter((item) => item.evidenceState === "unknown").slice(0, 3).map((item) => item.key);
   return <div ref={detailRef} className="calm-detail pb-8" lang={localVoice?.languageTag} data-local-language={localVoice?.uiLanguage}>
     {community ? <>
       <button className="quiet-back" onClick={() => setCommunity(false)}><ArrowLeft size={17} /> {t("bench.story.back")}</button>
@@ -120,7 +120,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
         <header className="calm-title">
           {created ? <p role="status" className="bench-created-status">{t("bench.story.created")}{bench.verificationStatus === "unverified" ? t("bench.story.remaining", {count: Math.max(0, bench.verificationThreshold - bench.confirmationCount)}) : t("bench.story.confirmed")}</p>
             : bench.verificationStatus === "unverified" && <p className="unverified-note">{t("bench.story.unverified")}</p>}
-          <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2><div className="bench-identity-actions"><button type="button" className="bench-share-action" title={t("community.place.share")} aria-label={t("community.place.share")} onClick={() => void share()}><Share2 size={18} /></button><button type="button" className="title-edit-action" title={t("community.chapters.features.title")} aria-label={t("community.chapters.features.title")} onClick={() => contribute("features")}><Pencil size={17} /></button></div></div>
+          <div className="calm-title-row"><h2>{bench.title || t("common.values.bench")}</h2></div>
           {shareNotice && <p role="status" className="bench-share-notice">{shareNotice}</p>}
           <div className="calm-title-meta"><p>{placeLine(bench, t)}</p></div>
           {localVoice && <p className="local-language-badge"><Languages size={14} /> {t("common.language.localActive", { region: localVoice.regionLabel })}</p>}
@@ -128,6 +128,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
             {onJourney && <button className="journey-entry" onClick={onJourney}><Navigation size={18} />{t("bench.story.directions")}</button>}
             {!onJourney && journeyHref && <a className="journey-entry" href={journeyHref}><Navigation size={18} />{t("bench.story.directions")}</a>}
             <BenchSaveButton key={bench.id} bench={bench} user={user} onChanged={refreshBench} />
+            <div className="bench-identity-actions"><button type="button" className="bench-share-action" title={t("community.place.share")} aria-label={t("community.place.share")} onClick={() => void share()}><Share2 size={18} /></button><button type="button" className="title-edit-action" title={t("community.chapters.features.title")} aria-label={t("community.chapters.features.title")} onClick={() => contribute("features")}><Pencil size={17} /></button></div>
           </div>
         </header>
         <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaStatus}`} bench={bench} />
@@ -139,11 +140,11 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
       </section>
       <div className="calm-story-body">
         {created && signedIn && missingFields.length > 0 && <section className="new-bench-next"><h3>{t("bench.story.nextTitle")}</h3><p>{t("bench.story.nextDescription")}</p><BenchFeatureEditor bench={bench} onlyFields={missingFields} onChanged={refreshBench} /></section>}
+        {signedIn && bench.knowledge?.question && <VerificationQuestion benchId={bench.id} question={bench.knowledge.question} onChanged={refreshBench} />}
+        <BenchDetails bench={bench} />
         <div className={`scene-caption${localVoice ? " is-local-voice" : ""}`} lang={localVoice?.languageTag} aria-label={localVoice ? `${localVoice.regionLabel}. ${localVoice.first} ${localVoice.second}` : undefined}>
           <p><span>{localVoice?.first ?? poem.first}</span>{" "}<span>{localVoice?.second ?? poem.second}</span></p>
         </div>
-        {signedIn && bench.knowledge?.question && <VerificationQuestion benchId={bench.id} question={bench.knowledge.question} onChanged={refreshBench} />}
-        <BenchDetails bench={bench} signedIn={signedIn} onChanged={refreshBench} />
         <PhotoStory bench={bench} onAdd={() => contribute("photo")} />
         <BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refreshBench} />
       </div>

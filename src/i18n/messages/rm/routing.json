@@ -37,6 +37,9 @@
     "stepsUnknown": "Stgalas betg stimablas",
     "slope": "Pendenza fin circa {value}%",
     "surfaces": "Cuverta da la via: {values}",
+    "coverageComplete": "Tut ils trajects a pe èn vegnids stimads",
+    "coveragePartial": "{assessed} da {total} trajects a pe èn vegnids stimads",
+    "coverageNone": "Nagin traject a pe po vegnir stimà",
     "note": "Stimà tenor la carta. Stgalims pitschens, irregularitads u plazzals pon mancar."
   },
   "instructions": {

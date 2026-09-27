@@ -4,7 +4,7 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Accessibility, Armchair, ChevronRight, CloudSun, Crosshair, Footprints, Info, List, MapPin, MountainSnow, Navigation, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
+import { Armchair, ChevronRight, CloudSun, Crosshair, Footprints, Info, List, MapPin, MountainSnow, Navigation, PersonStanding, SlidersHorizontal, Star, Sun, Telescope, Waves, X } from "lucide-react";
 import type { ReturnJourney } from "@/lib/journey";
 import type { WalkDraftSnapshot } from "@/lib/walks/model";
 import { discardWalkDraft, getWalkDraft } from "@/app/actions/walk-draft";
@@ -735,7 +735,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
           <strong>{item.title || t("common.values.bench")}</strong><ChevronRight className="bench-list-open" size={17} aria-hidden="true" />
           <span className="bench-list-evidence">
             {item.backrest === true && <small><Armchair size={14} />{t("bench.attributes.backrest")}</small>}
-            {item.wheelchair === true && <small><Accessibility size={14} />{t("bench.attributes.wheelchair")}</small>}
+            {item.wheelchair === true && <small><PersonStanding size={14} />{t("bench.attributes.wheelchair")}</small>}
             {item.sunnyNow !== null && <small>{item.sunnyNow ? <Sun size={14} /> : <CloudSun size={14} />}{t(item.sunnyNow ? "bench.summary.sun" : "bench.summary.shade")}</small>}
             {item.rating !== null && <small><Star size={14} />{t("map.list.rating", {rating: format.number(item.rating, {maximumFractionDigits: 1}), count: item.ratingCount})}</small>}
             {item.verificationStatus === "unverified" && <small>{t("map.list.unverified")}</small>}

@@ -1,0 +1,135 @@
+{
+  "geometry": {
+    "identity": "f97789225310d8d3e922db3624b7e4cc373b6cddba4f64d31781247e8c53dee6",
+    "implementation": "41a42212198f84aae1fe907ac1b510de278b9b3399865ecd94d56c1f07e87c12",
+    "latitude": 46.55476390357538,
+    "longitude": 8.005808526871903,
+    "complete": true,
+    "warnings": []
+  },
+  "observer": {
+    "ground_elevation_meters": 3651.4,
+    "eye_elevation_meters": 3652.5,
+    "display_elevation_meters": 3651.4,
+    "sampled_dem_elevation_meters": 3651.5525448347016,
+    "provenance": "stored-measurement",
+    "confidence": "measured",
+    "disagreement_meters": 0.1525448347015299,
+    "coordinate_reference": "WGS 84 longitude/latitude (EPSG:4326)"
+  },
+  "selection": {
+    "pixel": null,
+    "azimuth_degrees": 45.0,
+    "sampled_azimuth_degrees": 45.0,
+    "elevation_angle_degrees": 0.0,
+    "skyline_angle_degrees": -0.8408203125,
+    "owner": null
+  },
+  "raster_sources_at_observer": {
+    "local_terrain": {
+      "covered": true,
+      "asset": "be127c2b208a6f46-swissalti3d_2025_2643-1156_2_2056_5728.tif",
+      "source": "ch.swisstopo.swissalti3d",
+      "version": "swissalti3d_2025_2643-1156",
+      "horizontal_crs": "EPSG:2056",
+      "pixel_resolution": {
+        "x": 2.0,
+        "y": 2.0,
+        "unit": "metre"
+      },
+      "resolution_meters": [
+        2.0,
+        2.0
+      ],
+      "nodata": -9999.0,
+      "pixel_interpretation": "Area",
+      "vertical_crs": null,
+      "height_reference_assumption": "The GeoTIFF does not encode a vertical CRS; heights are interpreted in metres according to the named source dataset. No datum conversion is applied."
+    },
+    "near_terrain": {
+      "covered": true,
+      "asset": "terrain-1ba65ac6046c1158c644-10m.tif",
+      "source": "swissALTI3D derived pyramid",
+      "version": "1ba65ac6046c1158c644482969fbbc85d5fcd83f9250f7cf766cac647a59a9c0",
+      "horizontal_crs": "EPSG:2056",
+      "pixel_resolution": {
+        "x": 10.0,
+        "y": 10.0,
+        "unit": "metre"
+      },
+      "resolution_meters": [
+        10.0,
+        10.0
+      ],
+      "nodata": 65535.0,
+      "pixel_interpretation": "Area",
+      "vertical_crs": null,
+      "height_reference_assumption": "The GeoTIFF does not encode a vertical CRS; heights are interpreted in metres according to the named source dataset. No datum conversion is applied."
+    },
+    "regional_terrain": {
+      "covered": true,
+      "asset": "terrain-1ba65ac6046c1158c644-90m.tif",
+      "source": "swissALTI3D derived pyramid",
+      "version": "1ba65ac6046c1158c644482969fbbc85d5fcd83f9250f7cf766cac647a59a9c0",
+      "horizontal_crs": "EPSG:2056",
+      "pixel_resolution": {
+        "x": 90.0,
+        "y": 90.0,
+        "unit": "metre"
+      },
+      "resolution_meters": [
+        90.0,
+        90.0
+      ],
+      "nodata": 65535.0,
+      "pixel_interpretation": "Area",
+      "vertical_crs": null,
+      "height_reference_assumption": "The GeoTIFF does not encode a vertical CRS; heights are interpreted in metres according to the named source dataset. No datum conversion is applied."
+    },
+    "border_terrain": {
+      "covered": true,
+      "asset": "Copernicus_DSM_COG_30_N46_00_E008_00_DEM.tif",
+      "source": "Copernicus DEM GLO-90",
+      "version": "Mon, 09 May 2022 13:02:47 GMT",
+      "horizontal_crs": "EPSG:4326",
+      "pixel_resolution": {
+        "x": 0.0008333333333333334,
+        "y": 0.0008333333333333334,
+        "unit": "degree"
+      },
+      "resolution_meters": null,
+      "nodata": null,
+      "pixel_interpretation": "Point",
+      "vertical_crs": null,
+      "height_reference_assumption": "The GeoTIFF does not encode a vertical CRS; heights are interpreted in metres according to the named source dataset. No datum conversion is applied."
+    }
+  },
+  "artifacts": {
+    "capsule": {
+      "path": "/private/tmp/benchly-alpine-after-builder-v2/source/f9/f97789225310d8d3e922db3624b7e4cc373b6cddba4f64d31781247e8c53dee6.bpc",
+      "bytes": 284323,
+      "sha256": "08c9a3ea99eccee7b255714a506c5d78efe16eb1896a22de0d7f8ec0d8c8042b"
+    },
+    "painting": {
+      "path": "/private/tmp/benchly-alpine-after-v2-cache/active/local-57917c6f0b76/renders/b0/b028a908f097dfc0fa29162c037f49f8415646054849b78653551f82fbd2eb48.webp",
+      "bytes": 163856,
+      "sha256": "63bd995c799987e1e8a04392dbbaff859901b65fc09363ea1e7d0064852c47e4"
+    },
+    "material": {
+      "path": "/private/tmp/benchly-alpine-after-v2-cache/active/local-57917c6f0b76/materials/b0/b028a908f097dfc0fa29162c037f49f8415646054849b78653551f82fbd2eb48.webp",
+      "bytes": 23722,
+      "sha256": "d29fdae63821ea20d3ae181d4a311cfd1b2b71ec20b24a7cecaa56054f656f62"
+    },
+    "lightmap": {
+      "path": "/private/tmp/benchly-alpine-after-v2-cache/active/local-57917c6f0b76/lightmaps/20/2088c9b679e3254aeee7495fda712a4149288098306abb5f2b4dcea19c8e36f9.webp",
+      "bytes": 24730,
+      "sha256": "4da2e0747105936d5c7223eda8fc1f697c170c878d8a17bf29c73925830bad5f"
+    }
+  },
+  "manifest_matches": [],
+  "outputs": {
+    "comparison": "/Users/speedy/Projects/benchly/docs/terrain-depth-review/diagnostic-after/comparison.png",
+    "depth": "/Users/speedy/Projects/benchly/docs/terrain-depth-review/diagnostic-after/depth.png",
+    "semantics": "/Users/speedy/Projects/benchly/docs/terrain-depth-review/diagnostic-after/semantics.png"
+  }
+}

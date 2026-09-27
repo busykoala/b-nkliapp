@@ -11,7 +11,7 @@ export type LocalWeather = {
   windKmh: number | null;
   humidityPercent: number | null;
   globalRadiationWm2: number | null;
-  cloudCover: number;
+  cloudCover: number | null;
   cloudLow: number | null;
   cloudMid: number | null;
   cloudHigh: number | null;
@@ -42,6 +42,7 @@ function precipitationKind(input: {
   elevation: number | null;
   temperature: number;
 }): PrecipitationType {
+  if (input.intensity === null && input.rain === null && input.snow === null) return "unknown";
   if (input.intensity !== null && input.intensity < .03) return "none";
   if (input.intensity === null && Math.max(input.rain ?? 0, input.snow ?? 0) <= 0) return "none";
   if ((input.snow ?? 0) > (input.rain ?? 0) * 1.25) return "snow";
@@ -87,7 +88,7 @@ export function getLocalWeather(latitude: number, longitude: number, elevationMe
     windKmh: null,
     humidityPercent: null,
     globalRadiationWm2: null,
-    cloudCover: fraction(cloudTotal?.value) ?? (precipitationRateMmH !== null && precipitationRateMmH > .03 ? .96 : .2),
+    cloudCover: fraction(cloudTotal?.value),
     cloudLow: fraction(cloudLow?.value),
     cloudMid: fraction(cloudMid?.value),
     cloudHigh: fraction(cloudHigh?.value),

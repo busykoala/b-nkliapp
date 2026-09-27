@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Accessibility, ArrowLeft, ArrowUpRight, Armchair, CircleHelp, Compass, Eye, MapPin, MountainSnow, SearchCheck, Sun, Trees, Waves } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Armchair, CircleHelp, Compass, Eye, MapPin, MountainSnow, PersonStanding, SearchCheck, Sun, Trees, Waves } from "lucide-react";
 import { AppMenu } from "@/components/app-menu";
 import type { BenchFact } from "@/features/statistics/model";
 import { readMunicipalityPortrait } from "@/features/statistics/repository";
@@ -47,7 +47,7 @@ export default async function MunicipalityPage({ params }: { params: Promise<{ i
         <article><Eye /><strong>{percent(data.scenicShare)}</strong><span>{t("statistics.municipality.numbers.scenic")}</span><small>{t("statistics.municipality.known", { count: number(data.scenicKnown) })}</small></article>
         <article><Waves /><strong>{percent(data.watersideShare)}</strong><span>{t("statistics.municipality.numbers.water")}</span><small>{t("statistics.municipality.known", { count: number(data.watersideKnown) })}</small></article>
         <article><Trees /><strong>{percent(data.forestShare)}</strong><span>{t("statistics.municipality.numbers.forest")}</span><small>{t("statistics.municipality.known", { count: number(data.forestKnown) })}</small></article>
-        <article><Accessibility /><strong>{percent(data.wheelchairShare)}</strong><span>{t("statistics.municipality.numbers.wheelchair")}</span><small>{t("statistics.municipality.known", { count: number(data.wheelchairKnown) })}</small></article>
+        <article><PersonStanding /><strong>{percent(data.wheelchairShare)}</strong><span>{t("statistics.municipality.numbers.wheelchair")}</span><small>{t("statistics.municipality.known", { count: number(data.wheelchairKnown) })}</small></article>
       </div>
       <div className={`personality-card personality-${data.personality}`}><span aria-hidden="true">{data.personality === "sunny" ? <Sun /> : data.personality === "scenic" ? <Eye /> : data.personality === "waterside" ? <Waves /> : data.personality === "forest" ? <Trees /> : data.personality === "collector" ? <Armchair /> : <CircleHelp />}</span><div><small>{t("statistics.municipality.personality.eyebrow")}</small><strong>{t(`statistics.municipality.personality.${data.personality}.title`)}</strong><p>{t(`statistics.municipality.personality.${data.personality}.description`)}</p></div></div>
       <p className="method-note">{t("statistics.municipality.numbers.note")}</p>

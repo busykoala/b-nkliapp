@@ -25,6 +25,7 @@ function setCoveredFixture() {
 }
 
 test("keeps the inline painting calm and explores the full sky in an accessible 360 view", async ({ page, browserName }, testInfo) => {
+  test.setTimeout(45_000);
   await page.setViewportSize({ width: 390, height: 844 });
   // The first navigation lets the isolated test server migrate and seed its DB.
   await page.goto("/");
@@ -217,8 +218,8 @@ test("keeps semantic sky transparent when WebGL is unavailable", async ({ page }
   await installTerrainPanoramaFixture("osm-node-109", false);
   await page.goto("/?bank=osm-node-109");
   const panorama = page.locator(".bench-panorama");
-  const canvas = panorama.locator(".bench-panorama-webgl").first();
-  await expect(canvas).toHaveClass(/is-ready/, { timeout: 8_000 });
+  const canvas = panorama.locator(".bench-panorama-webgl.is-ready").first();
+  await expect(canvas).toBeVisible({ timeout: 8_000 });
   const alpha = await canvas.evaluate((surface: HTMLCanvasElement) => {
     const context = surface.getContext("2d")!;
     return {

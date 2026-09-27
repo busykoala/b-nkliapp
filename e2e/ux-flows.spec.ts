@@ -32,15 +32,15 @@ test("direct bench link opens the painting and resumes saving after sign-in", as
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toHaveAttribute("data-snap", "full");
   await expect(sheet.locator(".calm-title")).toBeVisible();
-  await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
-  const save = sheet.getByRole("button", { name: "Bänkli merken" });
+  await expect(sheet.getByRole("button", { name: "Weg planen" })).toBeVisible();
+  const save = sheet.getByRole("button", { name: "Merken" });
   await expect(save).toBeVisible();
   await save.click();
   await registerInOpenDialog(page, `save-${info.project.name.slice(-3)}`);
-  await expect(sheet.getByRole("button", { name: "Lieblingsplatz" })).toHaveAttribute("aria-pressed", "true");
+  await expect(sheet.getByRole("button", { name: "Gemerkt" })).toHaveAttribute("aria-pressed", "true");
   const order = await page.evaluate(() => document.querySelector(".calm-title")!.compareDocumentPosition(document.querySelector(".bench-panorama")!) & Node.DOCUMENT_POSITION_FOLLOWING);
   expect(order).toBeTruthy();
-  await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Weg planen" })).toBeVisible();
   await sheet.screenshot({ path: info.outputPath("bench-full-decision.png") });
   await sheet.getByRole("button", { name: "Bänkli beschreiben: Rückenlehne" }).click();
   const factEditor = page.getByRole("dialog", { name: "Bänkli beschreiben" });
@@ -156,12 +156,13 @@ test("freshness can be renewed inline and account actions use conventional label
   await expect(page.getByRole("button", { name: "Abmelden", exact: true })).toBeVisible();
 });
 
-test("walk starts with only origin, duration and action; rest intervals are optional", async ({ page }) => {
+test("walk keeps origin, duration and route shape visible; rest intervals remain optional", async ({ page }) => {
   await page.goto("/?action=walk");
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("button", { name: "Bänkli-Spaziergang finden" })).toBeDisabled();
-  await expect(panel.getByRole("button", { name: "Einfache Strecke", exact: true })).not.toBeVisible();
+  await expect(panel.getByRole("button", { name: "Einfache Strecke", exact: true })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "5 Min.", exact: true })).not.toBeVisible();
   await panel.locator("summary").filter({ hasText: "Optionen" }).click();
   await panel.getByRole("button", { name: "5 Min.", exact: true }).click();
   await expect(panel.getByRole("button", { name: "5 Min.", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -172,8 +173,8 @@ test("functional text is readable and utility controls keep the illustration sep
   const summary = page.getByRole("region", { name: "Auf einen Blick" });
   const sizes = await summary.locator("li, .summary-access-note, .bench-freshness").evaluateAll((elements) => elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize)));
   expect(sizes.every((size) => size >= 13)).toBe(true);
-  await expect(page.locator(".detail-disclosures > details > summary")).toHaveCount(4);
-  const order = await page.evaluate(() => document.querySelector(".bench-summary")!.compareDocumentPosition(document.querySelector(".detail-disclosures")!) & Node.DOCUMENT_POSITION_FOLLOWING);
+  await expect(page.locator(".visit-section > h2")).toHaveCount(5);
+  const order = await page.evaluate(() => document.querySelector(".bench-summary")!.compareDocumentPosition(document.querySelector(".visit-sections")!) & Node.DOCUMENT_POSITION_FOLLOWING);
   expect(order).toBeTruthy();
   await expect(summary.getByText(/Für \d{2}:\d{2} Uhr geschätzt · aktualisiert sich automatisch/)).toBeVisible();
   await page.goto("/?action=walk");

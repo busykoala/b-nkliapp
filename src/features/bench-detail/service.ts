@@ -171,15 +171,19 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
   } : null;
 
   const propertySource = (field: string): BenchProperty["source"] => contributedFields.has(field) || row.osm_type === "community" ? "Bänkli App" : String(row.id).startsWith("inventory-") ? "Amtliche Daten" : "OpenStreetMap";
+  const booleanProperty = (key: BenchProperty["key"], label: string, value: number | boolean | null): BenchProperty => ({
+    key, label, value: yesNoUnknown(value), canonicalValue: value === null ? null : Boolean(value),
+    evidenceState: value === null ? "unknown" : "known", source: propertySource(key), contributedByMe: myContributedFields.has(key),
+  });
   const properties: BenchProperty[] = [
-    { key: "backrest" as const, label: "Rückenlehne", value: yesNoUnknown(row.backrest as number | null), source: propertySource("backrest"), contributedByMe: myContributedFields.has("backrest") },
-    { key: "armrest" as const, label: "Armlehnen", value: yesNoUnknown(row.armrest as number | null), source: propertySource("armrest"), contributedByMe: myContributedFields.has("armrest") },
-    { key: "covered" as const, label: "Überdacht", value: yesNoUnknown(row.covered as number | null), source: propertySource("covered"), contributedByMe: myContributedFields.has("covered") },
-    { key: "wheelchair" as const, label: "Ebener Platz am Bänkli", value: yesNoUnknown(row.wheelchair as number | null), source: propertySource("wheelchair"), contributedByMe: myContributedFields.has("wheelchair") },
-    { key: "fireplaceNearby" as const, label: "Feuerstelle nahebei", value: yesNoUnknown(row.fireplace_nearby as number | null), source: propertySource("fireplaceNearby"), contributedByMe: myContributedFields.has("fireplaceNearby") },
-    { key: "wasteBasketNearby" as const, label: "Abfalleimer nahebei", value: yesNoUnknown(row.waste_basket_nearby as number | null), source: propertySource("wasteBasketNearby"), contributedByMe: myContributedFields.has("wasteBasketNearby") },
-    { key: "material" as const, label: "Material", value: displayMaterial(row.material as string | null), source: propertySource("material"), contributedByMe: myContributedFields.has("material") },
-    { key: "seats" as const, label: "Sitzplätze", value: row.seats ? String(row.seats) : "Unbekannt", source: propertySource("seats"), contributedByMe: myContributedFields.has("seats") },
+    booleanProperty("backrest", "Rückenlehne", row.backrest as number | null),
+    booleanProperty("armrest", "Armlehnen", row.armrest as number | null),
+    booleanProperty("covered", "Überdacht", row.covered as number | null),
+    booleanProperty("wheelchair", "Ebener Platz am Bänkli", row.wheelchair as number | null),
+    booleanProperty("fireplaceNearby", "Feuerstelle nahebei", row.fireplace_nearby as number | null),
+    booleanProperty("wasteBasketNearby", "Abfalleimer nahebei", row.waste_basket_nearby as number | null),
+    { key: "material" as const, label: "Material", value: displayMaterial(row.material as string | null), canonicalValue: row.material == null ? null : String(row.material).toLowerCase(), evidenceState: (row.material == null ? "unknown" : "known") as BenchProperty["evidenceState"], source: propertySource("material"), contributedByMe: myContributedFields.has("material") },
+    { key: "seats" as const, label: "Sitzplätze", value: row.seats ? String(row.seats) : "Unbekannt", canonicalValue: row.seats == null ? null : Number(row.seats), evidenceState: (row.seats == null ? "unknown" : "known") as BenchProperty["evidenceState"], source: propertySource("seats"), contributedByMe: myContributedFields.has("seats") },
   ].map((property) => {
     const state = resolved(property.key);
     if (!state) return property;
@@ -189,7 +193,10 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
       : yesNoUnknown(Number(state.value));
     const source: BenchProperty["source"] = state.sourceTypes.length > 1 ? "Mehrere Quellen"
       : state.sourceTypes[0] === "community" ? "Bänkli App" : state.sourceTypes[0] === "official" ? "Amtliche Daten" : "OpenStreetMap";
-    return { ...property, value, source };
+    const canonicalValue = state.value == null ? null : property.key === "seats" ? Number(state.value)
+      : property.key === "material" ? String(state.value).toLowerCase() : Boolean(Number(state.value));
+    return { ...property, value, canonicalValue, evidenceState: state.conflicting ? "conflicting" : state.value == null ? "unknown" : "known",
+      confidence: state.confidence, validAt: state.latestAt, coverage: state.coverage ?? null, source };
   });
   return {
     id: String(row.id), osmType: String(row.osm_type), osmId: Number(row.osm_id),

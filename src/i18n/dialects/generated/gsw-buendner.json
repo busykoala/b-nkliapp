@@ -153,7 +153,11 @@
     },
     "sheet": {
       "resize": "Detailhöhe ändern",
+      "expand": "Ganz öffnen",
+      "compact": "Kompakter",
       "minimize": "Details uf e Leiste minimieren",
+      "minimizeAction": "Minimieren",
+      "map": "Charte",
       "showDetails": "Details zeige",
       "showMap": "Charte zeige",
       "close": "Bänkli zuemache",
@@ -186,7 +190,10 @@
       "title": "Details",
       "bench": "Bänkli",
       "light": "Liecht",
+      "lightWeather": "Liecht & Wetter",
+      "access": "Zugang",
       "view": "Ussicht",
+      "visits": "Besuche",
       "weather": "Wetter",
       "unknownFeatures": "Ausstattung no offen",
       "night": "Jetzt isch Nacht",
@@ -197,11 +204,19 @@
       "forecast": "{temperature} °C · Prognose",
       "unknownWeather": "Wetterdaten no offen"
     },
+    "access": {
+      "atBench": "Direkt am Bänkli",
+      "localApproach": "Letztes Wegstück",
+      "scopeNote": "Der Platz am Bänkli, das letzte Wegstück und e geplante Gesamtroute sind getrennte Aussagen. Treppen und Wegbeschaffenheit der Route erscheinen erst nach der Planung."
+    },
     "panel": {
       "eyebrow": "So sitzt es sich da",
       "title": "Was die Bänkli mitbringt",
       "unknown": "Die Bänkli wird no erkundet",
       "missing": "{count, plural, one {Ein Merkmal wurde noch nicht erfasst.} other {# Merkmale wurden noch nicht erfasst.}}",
+      "moreInfo": "Ausstattung & Angaben",
+      "moreInfoKnown": "{count, plural, one {Ein erfasster Punkt} other {# erfasste Punkte}} · nur bei Bedarf öffnen",
+      "moreInfoUnknown": "No kei verlässlichen Angaben",
       "directionUnknown": "Die Landschaft wird deshalb rundum betrachtet.",
       "directionKnown": "Die Ussicht wird in dieser Richtung gewichtet."
     },
@@ -228,6 +243,7 @@
       "daysAgo": "Bestätigt vor {days, plural, one {einem Tag} other {# Tagen}}",
       "noBackrest": "Ohne Ruggelehne",
       "unknownBackrest": "Ruggelehne offen",
+      "conflictingBackrest": "Ruggelehne widersprüchlich erfasst",
       "night": "Nacht",
       "unknownLight": "Liecht nid bekannt",
       "sun": "Sunne gschätzt",
@@ -237,6 +253,7 @@
       "uncertain": " · unsicher",
       "noWheelchair": "Kein ebener Platz am Bänkli",
       "unknownWheelchair": "Ebener Platz nid erfasst",
+      "conflictingLevelSpace": "Ebener Platz widersprüchlich erfasst",
       "quiet": "Rueh {score}/5",
       "unknownQuiet": "Rueh unbewertet",
       "accessNote": "Treppen und Wegbeschaffenheit werden für geplante Routen separat gezeigt.",
@@ -341,6 +358,16 @@
       }
     },
     "weather": {
+      "conditions": {
+        "unknown": "Wetterlage nid vollständig gemessen",
+        "clear": "Klar",
+        "partlyCloudy": "Leicht bewölkt",
+        "cloudy": "Wolkig",
+        "overcast": "Bedeckt",
+        "rain": "Regen",
+        "snow": "Schnee",
+        "mixed": "Schneeregen"
+      },
       "title": "Wetter & Rueh",
       "temperatureAt": "{temperature}° bei {location}",
       "unknown": "Der Himmel bleibt no verborgen",
@@ -377,7 +404,8 @@
         "mostly": "Stark bewölkt",
         "cloudy": "Wolkig",
         "few": "Leicht bewölkt",
-        "clear": "Klar"
+        "clear": "Klar",
+        "unknown": "Bewölkung nid gemessen"
       },
       "temperatureHere": "{temperature}° bei diesem Bänkli"
     },
@@ -479,7 +507,7 @@
       "remaining": " · no {count, plural, one {eine Bestätigung} other {# Bestätigungen}}",
       "confirmed": " · bestätigt",
       "unverified": "Neu entdeckt · no unbestätigt",
-      "directions": "Weg hierher",
+      "directions": "Weg planen",
       "contribute": "Beitragen",
       "join": "Mitmachen",
       "ratings": "Bewärtige ansehen",
@@ -847,8 +875,8 @@
       "copied": "Link kopiert – bereit fürs Teilen, auch uf Instagram.",
       "shareUnavailable": "Teilen isch in diesem Browser gerade nid verfügbar.",
       "operator": "Betreut vor Ort",
-      "favourite": "Lieblingsplatz",
-      "save": "Bänkli merken",
+      "favourite": "Gemerkt",
+      "save": "Merken",
       "saveHint": "Für später speichern",
       "followPlace": "Ort folgen",
       "followingPlace": "Ort abonniert",
@@ -1007,7 +1035,7 @@
     }
   },
   "knowledge": {
-    "title": "Was wir wissen – und was no offen ist",
+    "title": "Quellen & Datenstand",
     "categories": {
       "physical": "Ausstattung",
       "location": "Ort",
@@ -1065,7 +1093,7 @@
       "stepFree": "Stufenfreie Möglichkeit",
       "open": "Offen",
       "recorded": "Erfasst",
-      "noneRecorded": "Kei erfasst",
+      "noneRecorded": "Kei Treppen erfasst",
       "evidence": "Hinweise vorhanden",
       "obstacle": "Hindernis erfasst",
       "maxSlope": "Stärkste geschätzte Steigung",

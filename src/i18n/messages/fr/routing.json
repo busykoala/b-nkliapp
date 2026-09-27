@@ -37,6 +37,9 @@
     "stepsUnknown": "Escaliers impossibles à évaluer",
     "slope": "Pente jusqu’à env. {value}%",
     "surfaces": "Revêtement : {values}",
+    "coverageComplete": "Tous les tronçons à pied ont été évalués",
+    "coveragePartial": "{assessed} tronçons à pied sur {total} évalués",
+    "coverageNone": "Aucun tronçon à pied n’a pu être évalué",
     "note": "Estimation issue de la carte. De petites marches, irrégularités ou travaux peuvent manquer."
   },
   "instructions": {

@@ -77,7 +77,7 @@ This comparison is based on official help/documentation, not a usability study o
 ```text
 MAP: search, nearby markers, restrained filters
  └─ SELECTED BENCH: compact decision sheet (identity, light, one comfort/view cue)
-     ├─ PRIMARY: Weg hierher
+     ├─ PRIMARY: Weg planen
      ├─ SECONDARY: Merken; expand detail
      └─ FULL DETAIL: geographic panorama, grouped decisions, photos, ratings, evidence
          ├─ CONTEXT: rate at rating; photo at gallery; fact at fact; name at name
@@ -92,8 +92,8 @@ The map remains visible above the selected quick sheet. The quick sheet should a
 | Surface | Primary | Secondary | Contextual | Overflow |
 | --- | --- | --- | --- | --- |
 | Map | find/select bench | filters, walk discovery | add a missing bench at map position | list, project/expert destinations |
-| Selected quick sheet | Weg hierher | Merken, expand | none until the relevant fact is shown | share/report |
-| Full bench detail | Weg hierher | Merken | rate beside rating, upload beside photos, edit beside name/fact, confirm presence | share, general correction, batch editing |
+| Selected quick sheet | Weg planen | Merken, expand | none until the relevant fact is shown | share/report |
+| Full bench detail | Weg planen | Merken | rate beside rating, upload beside photos, edit beside name/fact, confirm presence | share, general correction, batch editing |
 | Rating area | one overall rating | optional breakdown/note | edit own rating | report another review |
 | Properties | resolved value and uncertainty | further facts | add/correct that field | batch editor/source details |
 
@@ -116,7 +116,7 @@ The map remains visible above the selected quick sheet. The quick sheet should a
 | `Accessibility` for `wheelchair` | Implies broad accessible arrival/seating, while path and sitting/standing are different questions | Text “Rollstuhl am Bänkli: ja/nein/unbekannt” in details; separate “Zugangsweg nicht geprüft”. Do not claim universal suitability. |
 | `MessageCircleHeart` for “Beitragen” | Conversation, like, report or generic edit | Replace ordinary entry with concrete verbs at content; expert overflow may retain text “Angaben ergänzen”. |
 | `MapPin` for place-follow and location | Can look like location correction or navigation | Pair each with its distinct text; following a locality belongs in personal collections. |
-| `Navigation` / “Weg hierher” | Clear only with text | Keep both; route is the primary selected-bench action. |
+| `Navigation` / “Weg planen” | Clear only with text | Keep both; route is the primary selected-bench action. |
 | `Share2` in a community header | Misplaces utility among moments | Move to identity overflow with “Teilen” label. |
 | `Sun` with an estimate | Could imply actual sunshine through clouds | State “Sonne möglich / Schatten geschätzt / Nacht / unbekannt”, show uncertainty when decision-relevant. |
 

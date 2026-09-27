@@ -18,8 +18,10 @@ from sqlmodel import Field as SqlField, SQLModel
 from benchly.panorama.identity import implementation_key
 
 
-GEOMETRY_IMPLEMENTATION = implementation_key("datasets.py", "models.py", "visibility.py")
-RENDER_IMPLEMENTATION = implementation_key("models.py", "watercolor.py", "assets/watercolor-pigment.png")
+GEOMETRY_IMPLEMENTATION = implementation_key(
+    "../context/rasters.py", "datasets.py", "ground_elevation.py", "models.py", "visibility.py",
+)
+RENDER_IMPLEMENTATION = implementation_key("material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
 LIGHTMAP_IMPLEMENTATION = implementation_key("models.py", "watercolor.py")
 LOD_SCHEDULE_IMPLEMENTATION = implementation_key("datasets.py")
 EARTH_RADIUS_METERS = 6_371_008.8
@@ -182,6 +184,7 @@ class PanoramaConfig(Contract):
     maximum_elevation_angle: float = Field(default=58, gt=0, le=89)
     observer_height_meters: float = Field(default=1.1, ge=.5, le=2.5)
     maximum_distance_meters: float = Field(default=150_000, ge=1_000, le=250_000)
+    local_terrain_distance_meters: float = Field(default=120, ge=2, le=1_000)
     refraction_coefficient: float = Field(default=.13, ge=0, le=.3)
 
     @model_validator(mode="after")
@@ -200,12 +203,18 @@ class GeometryIdentity(Contract):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     ground_elevation_meters: float
+    display_elevation_meters: float | None = None
+    terrain_ground_elevation_meters: float | None = None
+    ground_elevation_provenance: Literal["stored-measurement", "terrain-sample", "unavailable"] = "unavailable"
+    ground_elevation_confidence: Literal["measured", "qualified", "conflicting", "unavailable"] = "unavailable"
+    ground_elevation_disagreement_meters: float | None = Field(default=None, ge=0)
     observer_height_meters: float = Field(default=1.1, ge=.5, le=2.5)
     terrain_version: str
     regional_terrain_version: str | None = None
     border_terrain_version: str | None = None
     lod_schedule_version: str = LOD_SCHEDULE_IMPLEMENTATION
     high_resolution_distance_meters: float = Field(default=20_000, gt=0)
+    local_terrain_distance_meters: float = Field(default=120, ge=2, le=1_000)
     semantic_version: str
     building_version: str
     surface_version: str | None = None
@@ -251,6 +260,11 @@ class PanoramaGeometry(Contract):
     longitude: float
     ground_elevation_meters: float
     eye_elevation_meters: float
+    display_elevation_meters: float | None = None
+    terrain_ground_elevation_meters: float | None = None
+    ground_elevation_provenance: Literal["stored-measurement", "terrain-sample", "unavailable"] = "unavailable"
+    ground_elevation_confidence: Literal["measured", "qualified", "conflicting", "unavailable"] = "unavailable"
+    ground_elevation_disagreement_meters: float | None = Field(default=None, ge=0)
     config: PanoramaConfig
     columns: tuple[PanoramaColumn, ...]
     buildings: tuple[ProjectedBuilding, ...] = ()

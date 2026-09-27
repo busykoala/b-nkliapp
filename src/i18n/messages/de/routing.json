@@ -37,6 +37,9 @@
     "stepsUnknown": "Treppen nicht auswertbar",
     "slope": "Bis etwa {value}% Neigung",
     "surfaces": "Wegbelag: {values}",
+    "coverageComplete": "Alle Gehabschnitte ausgewertet",
+    "coveragePartial": "{assessed} von {total} Gehabschnitten ausgewertet",
+    "coverageNone": "Kein Gehabschnitt auswertbar",
     "note": "Aus Kartendaten geschätzt. Kurze Stufen, Unebenheiten und Baustellen können fehlen."
   },
   "instructions": {

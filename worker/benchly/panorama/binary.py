@@ -28,7 +28,7 @@ from benchly.panorama.models import (
 
 MAGIC = b"BNKPC\0\0\1"
 FORMAT = "benchly-view-capsule"
-FORMAT_SCHEMA = 1
+FORMAT_SCHEMA = 2
 SEMANTICS = tuple(SemanticClass)
 SEMANTIC_TO_ID = {value: index for index, value in enumerate(SEMANTICS)}
 SPAN_DTYPE = np.dtype([
@@ -70,11 +70,29 @@ def encode_geometry(geometry: PanoramaGeometry) -> bytes:
          sample.upper_angle_degrees, sample.distance_meters)
         for index, building in enumerate(geometry.buildings) for sample in building.samples
     ], dtype=BUILDING_SAMPLE_DTYPE)
-    arrays = (skyline, spans, edges, building_samples)
+    terrain_sources = sorted({
+        span.terrain_source or "unknown"
+        for column in geometry.columns for span in column.spans
+    } | {
+        edge.terrain_source or "unknown"
+        for column in geometry.columns for edge in column.terrain_edges
+    })
+    source_ids = {source: index for index, source in enumerate(terrain_sources)}
+    if len(terrain_sources) > 255:
+        raise ValueError("view capsule has too many terrain sources")
+    span_sources = np.asarray([
+        source_ids[span.terrain_source or "unknown"]
+        for column in geometry.columns for span in column.spans
+    ], dtype="u1")
+    edge_sources = np.asarray([
+        source_ids[edge.terrain_source or "unknown"]
+        for column in geometry.columns for edge in column.terrain_edges
+    ], dtype="u1")
+    arrays = (skyline, spans, edges, building_samples, span_sources, edge_sources)
     offset = 0
     descriptors: dict[str, object] = {}
     payload_parts: list[bytes] = []
-    for name, array in zip(("skyline", "spans", "edges", "building_samples"), arrays):
+    for name, array in zip(("skyline", "spans", "edges", "building_samples", "span_sources", "edge_sources"), arrays):
         descriptors[name] = _array_descriptor(offset, array)
         raw = array.tobytes(order="C")
         payload_parts.append(raw)
@@ -88,10 +106,16 @@ def encode_geometry(geometry: PanoramaGeometry) -> bytes:
         "longitude": geometry.longitude,
         "ground_elevation_meters": geometry.ground_elevation_meters,
         "eye_elevation_meters": geometry.eye_elevation_meters,
+        "display_elevation_meters": geometry.display_elevation_meters,
+        "terrain_ground_elevation_meters": geometry.terrain_ground_elevation_meters,
+        "ground_elevation_provenance": geometry.ground_elevation_provenance,
+        "ground_elevation_confidence": geometry.ground_elevation_confidence,
+        "ground_elevation_disagreement_meters": geometry.ground_elevation_disagreement_meters,
         "config": geometry.config.model_dump(mode="json"),
         "sources": [item.model_dump(mode="json") for item in geometry.sources],
         "complete": geometry.complete,
         "warnings": list(geometry.warnings),
+        "terrain_sources": terrain_sources,
         "arrays": descriptors,
         "buildings": [building.model_dump(mode="json", exclude={"samples"}) for building in geometry.buildings],
     }
@@ -115,7 +139,8 @@ def decode_geometry(data: bytes) -> PanoramaGeometry:
     if len(data) != 16 + header_size + body_size:
         raise ValueError("truncated view capsule")
     header = json.loads(data[16:16 + header_size])
-    if header.get("format") != FORMAT or header.get("schema") != FORMAT_SCHEMA:
+    schema = int(header.get("schema", 0))
+    if header.get("format") != FORMAT or schema not in (1, FORMAT_SCHEMA):
         raise ValueError("unsupported view capsule")
     payload = zlib.decompress(data[16 + header_size:])
     arrays = header["arrays"]
@@ -123,21 +148,26 @@ def decode_geometry(data: bytes) -> PanoramaGeometry:
     spans = _read_array(payload, arrays["spans"], SPAN_DTYPE)
     edges = _read_array(payload, arrays["edges"], EDGE_DTYPE)
     building_samples = _read_array(payload, arrays["building_samples"], BUILDING_SAMPLE_DTYPE)
+    terrain_sources = header.get("terrain_sources", ["view-capsule"])
+    span_sources = (_read_array(payload, arrays["span_sources"], np.dtype("u1"))
+                    if schema >= 2 else np.zeros(len(spans), dtype="u1"))
+    edge_sources = (_read_array(payload, arrays["edge_sources"], np.dtype("u1"))
+                    if schema >= 2 else np.zeros(len(edges), dtype="u1"))
     spans_by_column: list[list[VisibleSpan]] = [[] for _ in skyline]
-    for row in spans:
+    for source_index, row in zip(span_sources, spans):
         spans_by_column[int(row["column"])].append(VisibleSpan(
             lower_angle_degrees=float(row["lower"]), upper_angle_degrees=float(row["upper"]),
             distance_meters=float(row["distance"]), semantic=SEMANTICS[int(row["semantic"])],
-            source="view-capsule", terrain_source="view-capsule", confidence=float(row["confidence"]) / 255,
+            source="view-capsule", terrain_source=str(terrain_sources[int(source_index)]), confidence=float(row["confidence"]) / 255,
         ))
     edges_by_column: list[list[TerrainEdge]] = [[] for _ in skyline]
-    for row in edges:
+    for source_index, row in zip(edge_sources, edges):
         slope, relief = float(row["slope"]), float(row["relief"])
         edges_by_column[int(row["column"])].append(TerrainEdge(
             elevation_angle_degrees=float(row["angle"]), distance_meters=float(row["distance"]),
             terrain_elevation_meters=float(row["elevation"]), semantic=SEMANTICS[int(row["semantic"])],
             kind="skyline" if int(row["kind"]) else "inner-ridge", source="view-capsule",
-            terrain_source="view-capsule", confidence=float(row["confidence"]) / 255,
+            terrain_source=str(terrain_sources[int(source_index)]), confidence=float(row["confidence"]) / 255,
             slope_degrees=None if np.isnan(slope) else slope, relief_meters=None if np.isnan(relief) else relief,
         ))
     resolution = float(header["config"]["angular_resolution_degrees"])
@@ -159,7 +189,13 @@ def decode_geometry(data: bytes) -> PanoramaGeometry:
     return PanoramaGeometry(
         version=header["version"], identity_key=header["identity_key"], latitude=header["latitude"],
         longitude=header["longitude"], ground_elevation_meters=header["ground_elevation_meters"],
-        eye_elevation_meters=header["eye_elevation_meters"], config=PanoramaConfig(**header["config"]),
+        eye_elevation_meters=header["eye_elevation_meters"],
+        display_elevation_meters=header.get("display_elevation_meters"),
+        terrain_ground_elevation_meters=header.get("terrain_ground_elevation_meters"),
+        ground_elevation_provenance=header.get("ground_elevation_provenance", "unavailable"),
+        ground_elevation_confidence=header.get("ground_elevation_confidence", "unavailable"),
+        ground_elevation_disagreement_meters=header.get("ground_elevation_disagreement_meters"),
+        config=PanoramaConfig(**header["config"]),
         columns=columns, buildings=buildings,
         sources=tuple(SourceEvidence(**item) for item in header["sources"]),
         complete=bool(header["complete"]), warnings=tuple(header["warnings"]),

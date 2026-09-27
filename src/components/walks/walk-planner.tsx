@@ -29,17 +29,20 @@ export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onRet
   useEffect(() => { title.current?.focus(); }, []);
   useEffect(() => {
     if (!restoredOnOpen.current) return;
-    const frame = requestAnimationFrame(() => restoredRoute.current?.scrollIntoView({ block: "start", behavior: "instant" }));
-    return () => cancelAnimationFrame(frame);
+    let innerFrame = 0;
+    const frame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => restoredRoute.current?.scrollIntoView({ block: "start", behavior: "auto" }));
+    });
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(innerFrame); };
   }, []); // A resumed route is revealed once; later edits should not jump the sheet.
   const copy = p.chosen && p.result ? walkCopy([p.chosen.bench], p.result.query.shape, p.chosen.extraBenches.length, t) : null;
-  return <MapSheetShell label={t("walks.planner.title")} resizeLabel={t("walks.planner.resize")} minimizeLabel={t("walks.planner.minimize")} closeLabel={t("walks.planner.close")} onClose={onClose} initialSnap="half">
+  return <MapSheetShell label={t("walks.planner.title")} resizeLabel={t("walks.planner.resize")} expandLabel={t("walks.planner.expand")} compactLabel={t("walks.planner.compact")} minimizeLabel={t("walks.planner.minimize")} minimizeActionLabel={t("walks.planner.minimizeAction")} closeLabel={t("walks.planner.close")} mapLabel={t("walks.planner.map")} onClose={onClose} initialSnap="half">
     <header><span className="story-eyebrow">{t("walks.planner.eyebrow")}</span><h2 className="programmatic-focus-heading" ref={title} tabIndex={-1}>{t("walks.planner.title")}</h2><p>{t("walks.planner.intro")}</p></header>
       <section className="journey-controls" aria-label={t("walks.planner.label")}>
         <StartPicker origin={p.origin} onChange={p.chooseOrigin} getMap={getMap} />
         <fieldset className="walk-options"><legend>{t("walks.planner.duration")}</legend><div>{([30, 50, 120] as const).map((minutes) => <button key={minutes} aria-pressed={s.minutes === minutes} onClick={() => p.change({ minutes })}>{t("routing.controls.minutes", {minutes})}</button>)}</div></fieldset>
-        <details className="journey-adjust"><summary>{t("routing.controls.options")} <small>{s.shape === "loop" ? t("walks.planner.loop") : t("walks.planner.oneWay")} · {format.number(s.speed)} km/h{s.maxRestMinutes ? t("walks.rest.option", {minutes: s.maxRestMinutes}) : ""}</small></summary>
         <fieldset className="walk-options"><legend>{t("walks.planner.route")}</legend><div><button aria-pressed={s.shape === "loop"} onClick={() => p.change({ shape: "loop" })}>{t("walks.planner.loop")}</button><button aria-pressed={s.shape === "one-way"} onClick={() => p.change({ shape: "one-way" })}>{t("walks.planner.oneWay")}</button></div></fieldset>
+        <details className="journey-adjust"><summary>{t("routing.controls.options")} <small>{format.number(s.speed)} km/h{s.maxRestMinutes ? t("walks.rest.option", {minutes: s.maxRestMinutes}) : ""}</small></summary>
         <fieldset className="walk-options"><legend>{t("walks.planner.light")}</legend><div><button aria-pressed={s.light === "any"} onClick={() => p.change({ light: "any" })}>{t("routing.controls.any")}</button><button aria-pressed={s.light === "sun"} onClick={() => p.change({ light: "sun" })}><Sun size={18} /> {t("walks.planner.sun")}</button><button aria-pressed={s.light === "shade"} onClick={() => p.change({ light: "shade" })}><Trees size={18} /> {t("walks.planner.shade")}</button></div></fieldset>
           <fieldset className="walk-options"><legend>{t("routing.controls.pace")}</legend><div>{PACE_OPTIONS.map((v) => <button key={v.speed} aria-pressed={s.speed === v.speed} onClick={() => p.change({ speed: v.speed })}>{t(`routing.pace.${v.key}`)}<small>{format.number(v.speed)} km/h</small></button>)}</div></fieldset>
           <div className="journey-time"><label>{t("routing.controls.difficulty")}<select value={s.difficulty} onChange={(e) => p.change({ difficulty: e.target.value as "easy" | "t2" })}><option value="easy">{t("routing.controls.easy")}</option><option value="t2">{t("routing.controls.t2")}</option></select></label><label>{t("routing.controls.time")}<input type="datetime-local" value={s.time} onChange={(e) => p.change({ time: e.target.value })} /></label></div>

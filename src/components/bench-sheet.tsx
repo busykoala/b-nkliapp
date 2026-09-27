@@ -22,12 +22,12 @@ function BenchSheetSurface({ created = false, initiallyExpanded = false, bench, 
   const t = useTranslations();
   const localLanguage = useLocalBenchLanguage();
   return (
-    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} minimizeLabel={t("bench.sheet.minimize")} closeLabel={t("bench.sheet.close")} initialSnap={created || initiallyExpanded ? "full" : "half"} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
-      {(visibleSnap) => <>
+    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} expandLabel={t("bench.sheet.expand")} compactLabel={t("bench.sheet.compact")} minimizeLabel={t("bench.sheet.minimize")} minimizeActionLabel={t("bench.sheet.minimizeAction")} closeLabel={t("bench.sheet.close")} mapLabel={t("bench.sheet.map")} initialSnap={created || initiallyExpanded ? "full" : "half"} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
+      {(visibleSnap, setSnap) => <>
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">{t("bench.sheet.loading")}</span><span className="sr-only">{t("bench.sheet.loadingAccessible")}</span></div>}
         {!loading && bench && (visibleSnap === "full"
           ? <BenchDetailContent created={created} key={bench.id} bench={bench} user={user} onBenchChange={onBenchChange} onJourney={onJourney} onLocateAmenity={onLocateAmenity} />
-          : <BenchQuickPreview key={bench.id} bench={bench} user={user} onJourney={onJourney} onChanged={onBenchChange} />)}
+          : <BenchQuickPreview key={bench.id} bench={bench} user={user} onJourney={onJourney} onDetails={() => setSnap("full")} onChanged={onBenchChange} />)}
         {!loading && error && <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
           <span className="text-5xl" aria-hidden="true">🍃</span>
           <p className="max-w-64 text-lg font-semibold text-primary">{t("bench.sheet.unavailable")}</p>

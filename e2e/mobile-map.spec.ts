@@ -86,7 +86,7 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   const backrest = filters.getByRole("button", { name: "Rückenlehne" });
   await expect(backrest).toBeVisible();
   await expect(filters.getByRole("button", { name: "Feuerstelle" })).toBeVisible();
-  await expect(filters.getByRole("button", { name: "Abfalleimer" })).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Abfalleimer" })).toHaveCount(0);
   await filters.getByText("Mehr Wünsche", { exact: true }).click();
   await expect(filters.getByRole("button", { name: "Ebener Platz am Bänkli" })).toBeVisible();
   await backrest.click();
@@ -222,7 +222,7 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute("data-snap", "full");
   await expect(sheet.locator(".bench-panorama")).toBeInViewport();
-  await expect(sheet.getByRole("button", { name: "Weg hierher" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Weg planen" })).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Detailhöhe ändern" })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("short-phone-full-bench-sheet.png") });
   const [chrome, landscape] = await Promise.all([sheet.locator(".map-sheet-chrome").boundingBox(), sheet.locator(".bench-panorama").boundingBox()]);
@@ -403,12 +403,16 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await page.goto("/?bank=osm-node-101");
   const shell = page.locator(".map-sheet-shell");
   await expect(shell).toHaveAttribute("data-snap", "full");
+  await expect(shell.locator(".map-sheet-close")).toContainText("Karte");
+  await expect(shell.locator(".map-sheet-minimize")).toHaveText("Minimieren");
+  await expect(shell.locator(".map-sheet-resize .map-sheet-action-label")).toHaveCount(0);
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "full");
   await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
   await expect(shell).toHaveAttribute("data-snap", "peek");
+  await expect(shell.locator(".map-sheet-action-label")).toHaveText("Ganz öffnen");
   await expect(shell.locator(".map-sheet-content")).not.toBeVisible();
   await expect.poll(async () => (await shell.boundingBox())?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(90);
   await page.screenshot({ path: testInfo.outputPath("minimized-detail-bar.png") });
@@ -419,7 +423,7 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await expect(shell).toHaveAttribute("data-snap", "peek");
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
-  await shell.getByRole("button", { name: "Weg hierher" }).click();
+  await shell.getByRole("button", { name: "Weg planen" }).click();
   await expect(shell).toHaveAttribute("aria-label", "Dein Weg zum Bänkli");
   await expect(shell.locator(".map-sheet-handle")).toBeVisible();
   await shell.locator(".map-sheet-close").click();
@@ -480,10 +484,8 @@ test("lets a user compose and persist a watercolor avatar", async ({ page, brows
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   await expect(page.getByRole("figure")).toBeVisible();
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Licht" }).click();
   await expect(page.getByText(/Direkte Sonne|Geschätzte Sonne/).first()).toBeVisible();
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
-  await page.getByText("Aussicht im Detail").click();
+  await page.locator(".detail-panel-view .view-evidence-fold > summary").click();
   await expect(page.locator(".detail-panel-view").getByText("Was den Horizont prägt")).toBeVisible();
   await expect(page.locator(".distance-ribbon")).toContainText("Weg oder Strasse");
   await expect(page.locator(".distance-ribbon")).toContainText("direkt");

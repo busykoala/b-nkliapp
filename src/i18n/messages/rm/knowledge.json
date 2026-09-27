@@ -1,5 +1,5 @@
 {
-  "title": "Tge che nus savain — e tge ch’è anc avert",
+  "title": "Funtaunas e stadi da las datas",
   "categories": {
     "physical": "Equipament",
     "location": "Lieu",
@@ -57,7 +57,7 @@
     "stepFree": "Pussaivladad senza stgalims",
     "open": "Avert",
     "recorded": "Registradas",
-    "noneRecorded": "Naginas registradas",
+    "noneRecorded": "Naginas stgalas registradas",
     "evidence": "Indizis avant maun",
     "obstacle": "Obstachel registrà",
     "maxSlope": "Pendenza maximala stimada",

@@ -103,6 +103,11 @@ export type BenchProperty = {
   key: "backrest" | "armrest" | "covered" | "wheelchair" | "fireplaceNearby" | "wasteBasketNearby" | "material" | "seats";
   label: string;
   value: string;
+  canonicalValue?: boolean | string | number | null;
+  evidenceState?: "known" | "unknown" | "conflicting";
+  confidence?: "unknown" | "low" | "medium" | "high";
+  validAt?: string | null;
+  coverage?: string | null;
   source: "OpenStreetMap" | "Bänkli App" | "Amtliche Daten" | "Mehrere Quellen";
   contributedByMe?: boolean;
 };
@@ -264,7 +269,7 @@ export type BenchDetail = {
     windKmh: number | null;
     humidityPercent: number | null;
     globalRadiationWm2: number | null;
-    cloudCover: number;
+    cloudCover: number | null;
     cloudLow: number | null;
     cloudMid: number | null;
     cloudHigh: number | null;

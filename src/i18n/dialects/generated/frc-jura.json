@@ -153,7 +153,11 @@
     },
     "sheet": {
       "resize": "Agrandir ou réduire les détails",
+      "expand": "Ouvrir en grand",
+      "compact": "Vue compacte",
       "minimize": "Réduire les détails à une barre",
+      "minimizeAction": "Réduire",
+      "map": "Carte",
       "showDetails": "Afficher les détails",
       "showMap": "Afficher la carte",
       "close": "Cllôre le banc du payis",
@@ -186,7 +190,10 @@
       "title": "Détails",
       "bench": "Banc du payis",
       "light": "Lumière",
+      "lightWeather": "Lumière et météo",
+      "access": "Accès",
       "view": "Vue",
+      "visits": "Visites",
       "weather": "Météo",
       "unknownFeatures": "Équipement encore inconnu",
       "night": "Il fait nuit",
@@ -197,11 +204,19 @@
       "forecast": "{temperature} °C · prévision",
       "unknownWeather": "Données météo indisponibles"
     },
+    "access": {
+      "atBench": "Juste à côté du banc du payis",
+      "localApproach": "Dernier tronçon",
+      "scopeNote": "L’espace près du banc du payis, le dernier tronçon et l’itinéraire complet sont des informations distinctes. Les escaliers et le revêtement de l’itinéraire apparaissent après sa planification."
+    },
     "panel": {
       "eyebrow": "Pour s’asseoir ique",
       "title": "Les atouts du banc du payis",
       "unknown": "Ce banc du payis reste à découvrir",
       "missing": "{count, plural, one {Une caractéristique n’a pas encore été relevée.} other {# caractéristiques n’ont pas encore été relevées.}}",
+      "moreInfo": "Équipement et informations",
+      "moreInfoKnown": "{count, plural, one {Une information relevée} other {# informations relevées}} · ouvrir si nécessaire",
+      "moreInfoUnknown": "Pas encore d’information fiable",
       "directionUnknown": "Le paysage est donc considéré dans toutes les directions.",
       "directionKnown": "La vue est pondérée dans cette direction."
     },
@@ -228,6 +243,7 @@
       "daysAgo": "Confirmé il y a {days, plural, one {un jour} other {# jours}}",
       "noBackrest": "Sans dossier",
       "unknownBackrest": "Dossier inconnu",
+      "conflictingBackrest": "Informations contradictoires sur le dossier",
       "night": "Nuit",
       "unknownLight": "Lumière inconnue",
       "sun": "Soleil estimé",
@@ -237,6 +253,7 @@
       "uncertain": " · incertain",
       "noWheelchair": "Pas d’espace plat près du banc du payis",
       "unknownWheelchair": "Espace plat non renseigné",
+      "conflictingLevelSpace": "Informations contradictoires sur l’espace plat",
       "quiet": "Calme {score}/5",
       "unknownQuiet": "Calme non évalué",
       "accessNote": "Les escaliers et l’état du chemin sont indiqués séparément pour les itinéraires planifiés.",
@@ -341,6 +358,16 @@
       }
     },
     "weather": {
+      "conditions": {
+        "unknown": "Conditions météo incomplètement mesurées",
+        "clear": "Dégagé",
+        "partlyCloudy": "Peu nuageux",
+        "cloudy": "Nuageux",
+        "overcast": "Couvert",
+        "rain": "Pluie",
+        "snow": "Neige",
+        "mixed": "Pluie et neige"
+      },
       "title": "Météo et calme",
       "temperatureAt": "{temperature}° à {location}",
       "unknown": "Le ciel reste à découvrir",
@@ -377,7 +404,8 @@
         "mostly": "Très nuageux",
         "cloudy": "Nuageux",
         "few": "Peu nuageux",
-        "clear": "Dégagé"
+        "clear": "Dégagé",
+        "unknown": "Nébulosité non mesurée"
       },
       "temperatureHere": "{temperature}° près de ce banc du payis"
     },
@@ -479,7 +507,7 @@
       "remaining": " · encore {count, plural, one {une confirmation} other {# confirmations}}",
       "confirmed": " · confirmé",
       "unverified": "Nouvelle découverte · non confirmée",
-      "directions": "Itinéraire pour venir ique",
+      "directions": "Planifier l’itinéraire",
       "contribute": "Contribuer",
       "join": "Participer",
       "ratings": "Voir les avis",
@@ -847,8 +875,8 @@
       "copied": "Lien copié, prêt à partager, aussi sur Instagram.",
       "shareUnavailable": "Le partage n’est pas disponible dans ce navigateur pour le moment.",
       "operator": "Entretenu sur place",
-      "favourite": "Lieu favori",
-      "save": "Garder ce banc du payis",
+      "favourite": "Enregistré",
+      "save": "Enregistrer",
       "saveHint": "Enregistrer pour plus tard",
       "followPlace": "Suivre le lieu",
       "followingPlace": "Lieu suivi",
@@ -1007,7 +1035,7 @@
     }
   },
   "knowledge": {
-    "title": "Ce que nous savons — et ce qui reste à découvrir",
+    "title": "Sources et état des données",
     "categories": {
       "physical": "Équipement",
       "location": "Lieu",
@@ -1065,7 +1093,7 @@
       "stepFree": "Possibilité sans marches",
       "open": "Inconnu",
       "recorded": "Recensés",
-      "noneRecorded": "Aucun recensé",
+      "noneRecorded": "Aucun escalier recensé",
       "evidence": "Indices disponibles",
       "obstacle": "Obstacle recensé",
       "maxSlope": "Pente maximale estimée",

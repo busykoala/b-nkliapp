@@ -20,7 +20,11 @@
   },
   "sheet": {
     "resize": "Detailhöhe ändern",
+    "expand": "Ganz öffnen",
+    "compact": "Kompakter",
     "minimize": "Details auf eine Leiste minimieren",
+    "minimizeAction": "Minimieren",
+    "map": "Karte",
     "showDetails": "Details zeigen",
     "showMap": "Karte zeigen",
     "close": "Bank schliessen",
@@ -53,7 +57,10 @@
     "title": "Details",
     "bench": "Bank",
     "light": "Licht",
+    "lightWeather": "Licht & Wetter",
+    "access": "Zugang",
     "view": "Aussicht",
+    "visits": "Besuche",
     "weather": "Wetter",
     "unknownFeatures": "Ausstattung noch offen",
     "night": "Jetzt ist Nacht",
@@ -64,11 +71,19 @@
     "forecast": "{temperature} °C · Prognose",
     "unknownWeather": "Wetterdaten noch offen"
   },
+  "access": {
+    "atBench": "Direkt am Bänkli",
+    "localApproach": "Letztes Wegstück",
+    "scopeNote": "Der Platz am Bänkli, das letzte Wegstück und eine geplante Gesamtroute sind getrennte Aussagen. Treppen und Wegbeschaffenheit der Route erscheinen erst nach der Planung."
+  },
   "panel": {
     "eyebrow": "So sitzt es sich hier",
     "title": "Was die Bank mitbringt",
     "unknown": "Die Bank wird noch erkundet",
     "missing": "{count, plural, one {Ein Merkmal wurde noch nicht erfasst.} other {# Merkmale wurden noch nicht erfasst.}}",
+    "moreInfo": "Ausstattung & Angaben",
+    "moreInfoKnown": "{count, plural, one {Ein erfasster Punkt} other {# erfasste Punkte}} · nur bei Bedarf öffnen",
+    "moreInfoUnknown": "Noch keine verlässlichen Angaben",
     "directionUnknown": "Die Landschaft wird deshalb rundum betrachtet.",
     "directionKnown": "Die Aussicht wird in dieser Richtung gewichtet."
   },
@@ -95,6 +110,7 @@
     "daysAgo": "Bestätigt vor {days, plural, one {einem Tag} other {# Tagen}}",
     "noBackrest": "Ohne Rückenlehne",
     "unknownBackrest": "Rückenlehne offen",
+    "conflictingBackrest": "Rückenlehne widersprüchlich erfasst",
     "night": "Nacht",
     "unknownLight": "Licht unbekannt",
     "sun": "Sonne geschätzt",
@@ -104,6 +120,7 @@
     "uncertain": " · unsicher",
     "noWheelchair": "Kein ebener Platz am Bänkli",
     "unknownWheelchair": "Ebener Platz nicht erfasst",
+    "conflictingLevelSpace": "Ebener Platz widersprüchlich erfasst",
     "quiet": "Ruhe {score}/5",
     "unknownQuiet": "Ruhe unbewertet",
     "accessNote": "Treppen und Wegbeschaffenheit werden für geplante Routen separat gezeigt.",
@@ -208,6 +225,16 @@
     }
   },
   "weather": {
+    "conditions": {
+      "unknown": "Wetterlage nicht vollständig gemessen",
+      "clear": "Klar",
+      "partlyCloudy": "Leicht bewölkt",
+      "cloudy": "Wolkig",
+      "overcast": "Bedeckt",
+      "rain": "Regen",
+      "snow": "Schnee",
+      "mixed": "Schneeregen"
+    },
     "title": "Wetter & Ruhe",
     "temperatureAt": "{temperature}° bei {location}",
     "unknown": "Der Himmel bleibt noch verborgen",
@@ -244,7 +271,8 @@
       "mostly": "Stark bewölkt",
       "cloudy": "Wolkig",
       "few": "Leicht bewölkt",
-      "clear": "Klar"
+      "clear": "Klar",
+      "unknown": "Bewölkung nicht gemessen"
     },
     "temperatureHere": "{temperature}° bei diesem Bänkli"
   },
@@ -346,7 +374,7 @@
     "remaining": " · noch {count, plural, one {eine Bestätigung} other {# Bestätigungen}}",
     "confirmed": " · bestätigt",
     "unverified": "Neu entdeckt · noch unbestätigt",
-    "directions": "Weg hierher",
+    "directions": "Weg planen",
     "contribute": "Beitragen",
     "join": "Mitmachen",
     "ratings": "Bewertungen ansehen",

@@ -3,7 +3,7 @@ import { pointLabel } from "@/i18n/point-label";
 import { translateMessage, type UiMessage } from "@/i18n/message";
 import { useTranslations } from "next-intl";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { House, LocateFixed, MapPin, TrainFront } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { searchJourneyOrigins } from "@/app/actions/journey";
@@ -12,6 +12,7 @@ import type { JourneyOrigin } from "@/lib/journey";
 /** Shared routing UI: explicit origin selection, without journey or walk business logic. */
 export function StartPicker({ origin, onChange, getMap }: { origin: JourneyOrigin | null; onChange: (origin: JourneyOrigin | null) => void; getMap: () => MapLibreMap | null }) {
   const t = useTranslations();
+  const listboxId = useId();
   const [query, setQuery] = useState(""); const [editing, setEditing] = useState(false);
   const [results, setResults] = useState<JourneyOrigin[]>([]); const [highlighted, setHighlighted] = useState(-1);
   const [message, setMessage] = useState<UiMessage | null>(null); const [pending, startTransition] = useTransition();
@@ -53,12 +54,12 @@ export function StartPicker({ origin, onChange, getMap }: { origin: JourneyOrigi
   };
   return <div className="journey-start-card"><h3>{t("routing.origin.title")}</h3>
     {origin && !editing ? <div className="journey-start-summary"><MapPin size={20} /><strong>{pointLabel(origin, t)}</strong><button onClick={() => { sequence.current++; onChange(null); setEditing(true); setQuery(""); }}>{t("routing.origin.change")}</button></div> : <>
-      <label className="journey-search-label"><MapPin size={18} /><span className="sr-only">{t("routing.origin.input")}</span><input role="combobox" aria-controls="walk-origins" aria-expanded={results.length > 0} aria-autocomplete="list" aria-activedescendant={highlighted >= 0 ? `walk-origin-${highlighted}` : undefined} placeholder={t("routing.origin.placeholder")} value={query} onChange={(e) => { sequence.current++; setResults([]); setHighlighted(-1); setQuery(e.target.value); }} onKeyDown={(e) => {
-        if (e.key === "Escape") { sequence.current++; setResults([]); setHighlighted(-1); }
+      <label className="journey-search-label"><MapPin size={18} /><span className="sr-only">{t("routing.origin.input")}</span><input role="combobox" aria-controls={listboxId} aria-expanded={results.length > 0} aria-autocomplete="list" aria-activedescendant={highlighted >= 0 ? `${listboxId}-option-${highlighted}` : undefined} placeholder={t("routing.origin.placeholder")} value={query} onChange={(e) => { sequence.current++; setResults([]); setHighlighted(-1); setQuery(e.target.value); }} onKeyDown={(e) => {
+        if (e.key === "Escape" && results.length > 0) { e.preventDefault(); e.stopPropagation(); sequence.current++; setResults([]); setHighlighted(-1); }
         if ((e.key === "ArrowDown" || e.key === "ArrowUp") && results.length) { e.preventDefault(); setHighlighted((i) => (i + (e.key === "ArrowDown" ? 1 : -1) + results.length) % results.length); }
         if (e.key === "Enter" && results[highlighted]) { e.preventDefault(); choose(results[highlighted]); }
       }} /></label>
-      <ul id="walk-origins" role="listbox" aria-label={t("routing.origin.results")} className="journey-origins">{results.map((p, i) => <li id={`walk-origin-${i}`} key={`${p.kind}-${p.stationId ?? i}`} role="option" aria-selected={i === highlighted}><button tabIndex={-1} onClick={() => choose(p)}>{p.kind === "station" ? <TrainFront size={22} /> : <House size={22} />}<span>{pointLabel(p, t)}<small>{p.kind === "station" ? t("routing.origin.station") : t("routing.origin.address")}</small></span></button></li>)}</ul>
+      <ul id={listboxId} role="listbox" aria-label={t("routing.origin.results")} className="journey-origins">{results.map((p, i) => <li id={`${listboxId}-option-${i}`} key={`${p.kind}-${p.stationId ?? i}`} role="option" aria-selected={i === highlighted}><button tabIndex={-1} onClick={() => choose(p)}>{p.kind === "station" ? <TrainFront size={22} /> : <House size={22} />}<span>{pointLabel(p, t)}<small>{p.kind === "station" ? t("routing.origin.station") : t("routing.origin.address")}</small></span></button></li>)}</ul>
       <button className="journey-location" onClick={locate}><LocateFixed size={18} /> {t("routing.origin.current")}</button><small>{t("routing.origin.mapHint")}</small>
     </>}
     {(message || pending) && <p role="status">{message ? translateMessage(t, message) : t("routing.origin.pending")}</p>}
