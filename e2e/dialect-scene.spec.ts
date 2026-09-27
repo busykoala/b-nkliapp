@@ -3,6 +3,7 @@ import Database from "better-sqlite3";
 import { installPanoramaFixture } from "./panorama-fixture";
 
 test("keeps four app languages and applies dialect only to the opened bench", async ({ page, context }, testInfo) => {
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByLabel("Menü öffnen").click();

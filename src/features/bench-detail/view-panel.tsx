@@ -20,7 +20,7 @@ export function ViewPanel({ bench }: { bench: BenchDetail }) {
         ? <ul className="view-label-chips">{bench.viewLabels.map((value) => <li key={value}>{viewLabel(value, t)}</li>)}</ul>
         : <p>{t("bench.view.empty")}</p>}<ViewConfidence level={bench.viewConfidence} /></div>
     </div>
-    {bench.observations.view.publicEstimate && <p className="community-evidence" aria-label={t("bench.view.community", {count: bench.observations.view.publicEstimate.contributors, confidence: communityConfidence(bench.observations.view.publicEstimate.confidence, t)})} title={t("bench.view.community", {count: bench.observations.view.publicEstimate.contributors, confidence: communityConfidence(bench.observations.view.publicEstimate.confidence, t)})}>
+    {bench.observations.view.publicEstimate && <p role="note" className="community-evidence" aria-label={t("bench.view.community", {count: bench.observations.view.publicEstimate.contributors, confidence: communityConfidence(bench.observations.view.publicEstimate.confidence, t)})} title={t("bench.view.community", {count: bench.observations.view.publicEstimate.contributors, confidence: communityConfidence(bench.observations.view.publicEstimate.confidence, t)})}>
       <UsersRound size={15} aria-hidden="true" />
       <strong>{bench.observations.view.publicEstimate.contributors}</strong><span>{communityConfidence(bench.observations.view.publicEstimate.confidence, t)}</span>
     </p>}

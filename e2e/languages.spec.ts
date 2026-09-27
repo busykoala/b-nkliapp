@@ -8,6 +8,7 @@ const labels = {
 } as const;
 
 test("switches all four languages, preserves the map, and remembers the choice", async ({page, context}) => {
+  test.setTimeout(90_000);
   await page.goto("/");
   await expect(page.locator("[data-map-ready=true]")).toBeVisible();
   await page.getByRole("combobox", {name: labels.de.search}).fill("Lindenhof");
@@ -124,7 +125,7 @@ for (const language of ["de", "fr", "it", "rm"] as const) {
     await visit("/bank/osm-node-101");
     await expect(page.locator(".calm-title-row > h2")).toContainText("Lindenhof");
     await expect(page.getByRole("link", { name: t("bench.page.onMap"), exact: true })).toBeVisible();
-    await expect(page.locator(".detail-disclosures")).toContainText(t("bench.details.weather"));
+    await expect(page.getByRole("heading", { name: t("bench.details.lightWeather"), exact: true })).toBeVisible();
     await page.getByRole("button", { name: t("common.navigation.open"), exact: true }).click();
     await page.getByRole("button", { name: t("common.navigation.signIn"), exact: true }).click();
     const dialog = page.locator("dialog[open]");

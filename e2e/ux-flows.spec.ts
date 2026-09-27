@@ -176,7 +176,9 @@ test("functional text is readable and utility controls keep the illustration sep
   await expect(page.locator(".visit-section > h2")).toHaveCount(5);
   const order = await page.evaluate(() => document.querySelector(".bench-summary")!.compareDocumentPosition(document.querySelector(".visit-sections")!) & Node.DOCUMENT_POSITION_FOLLOWING);
   expect(order).toBeTruthy();
-  await expect(summary.getByText(/Für \d{2}:\d{2} Uhr geschätzt · aktualisiert sich automatisch/)).toBeVisible();
+  const lightFreshness = summary.locator(".summary-light-freshness");
+  await expect(lightFreshness).toHaveText(/^\d{2}:\d{2}$/);
+  await expect(lightFreshness.locator("xpath=ancestor::li[1]")).toHaveAttribute("title", /Gelände und Umgebung|Geringe Sicherheit/);
   await page.goto("/?action=walk");
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await expect(panel).toBeVisible();

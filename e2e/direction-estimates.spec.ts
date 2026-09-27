@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { fixtureDatabase } from "./support/database";
 
 async function openDirectionCard(page: import("@playwright/test").Page) {
-  const benchChapter = page.locator(".detail-disclosures > details").first();
+  const benchChapter = page.locator(".fact-info-fold");
   await benchChapter.locator(":scope > summary").click();
   const card = benchChapter.locator(".bearing-card");
   await card.scrollIntoViewIfNeeded();

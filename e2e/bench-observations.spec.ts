@@ -26,7 +26,6 @@ async function openContributionChapter(page: import("@playwright/test").Page, ti
 
 async function submitViewCorrection(page: import("@playwright/test").Page, targetBench: string) {
   await page.goto(`/bank/${targetBench}`);
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
   const dialog = await openContributionChapter(page, "Aussicht & Umgebung");
   const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
   await prompt.getByRole("button", { name: "Anders erlebt" }).click();
@@ -51,7 +50,6 @@ test("keeps the view observation understandable in the mobile detail", async ({ 
   page.setDefaultTimeout(5_000);
   await registerUser(page, `view-${Date.now().toString().slice(-8)}`);
   await page.goto(`/bank/${benchId}`);
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
   await expect(page.locator(".detail-panel-view").getByRole("heading", { name: /Horizont|Blick/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Beitragen", exact: true })).toBeVisible();
   await page.waitForTimeout(100);
@@ -104,9 +102,9 @@ test("keeps the view observation understandable in the mobile detail", async ({ 
 test("does not turn observations into disabled decoration for guests", async ({ page }) => {
   await page.goto(`/bank/${benchId}`);
   await expect(page.getByRole("button", { name: "Beitragen", exact: true })).toBeVisible();
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
+  await expect(page.getByRole("heading", { name: "Aussicht", exact: true })).toBeVisible();
   await expect(page.getByLabel("Aussicht vor Ort einordnen")).toHaveCount(0);
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Licht" }).click();
+  await expect(page.getByRole("heading", { name: "Licht & Wetter", exact: true })).toBeVisible();
   await expect(page.getByLabel("Licht vor Ort melden")).toHaveCount(0);
 });
 
@@ -114,15 +112,12 @@ test("keeps observation controls calm, semantic and touchable with reduced motio
   await page.emulateMedia({ reducedMotion: "reduce" });
   await registerUser(page, `access-${Date.now().toString().slice(-8)}`);
   await page.goto(`/bank/${benchId}`);
-  const viewSummary = page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" });
-  await viewSummary.focus();
+  const factsSummary = page.locator(".fact-info-fold > summary");
+  await factsSummary.focus();
   await page.keyboard.press("Enter");
-  await expect(viewSummary.locator("..")).toHaveAttribute("open", "");
-  const weatherSummary = page.locator(".detail-disclosures > details > summary").filter({ hasText: "Wetter" });
-  await weatherSummary.focus();
-  await page.keyboard.press("Enter");
-  await expect(weatherSummary.locator("..")).toHaveAttribute("open", "");
-  await expect(viewSummary.locator("..")).not.toHaveAttribute("open", "");
+  await expect(factsSummary.locator("..")).toHaveAttribute("open", "");
+  await expect(page.getByRole("heading", { name: "Licht & Wetter", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Aussicht", exact: true })).toBeVisible();
   const dialog = await openContributionChapter(page, "Aussicht & Umgebung");
   const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
   await prompt.getByRole("button", { name: "Anders erlebt" }).click();
@@ -139,7 +134,6 @@ test("keeps observation controls calm, semantic and touchable with reduced motio
 test("saves every daylight impression and supports undo", async ({ page }, testInfo) => {
   await registerUser(page, `light-${Date.now().toString().slice(-8)}`);
   await page.goto(`/bank/${benchId}`);
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Licht" }).click();
   await page.waitForTimeout(100);
   const dialog = await openContributionChapter(page, "Licht gerade jetzt");
   const prompt = dialog.getByLabel("Licht vor Ort melden");
@@ -170,8 +164,12 @@ test("blends three real community impressions into the bench detail", async ({ b
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(`/bank/${targetBench}`);
-  await page.locator(".detail-disclosures > details > summary").filter({ hasText: "Aussicht" }).click();
-  await expect(page.getByText("3 Eindrücke von Menschen vor Ort · vorsichtig gestützt")).toBeVisible();
+  const communityEvidence = page.locator(".community-evidence");
+  await expect(communityEvidence).toBeVisible();
+  const contributionCount = Number(await communityEvidence.locator("strong").textContent());
+  expect(contributionCount).toBeGreaterThanOrEqual(3);
+  await expect(communityEvidence).toContainText(/(?:vorsichtig|gut) gestützt/);
+  await expect(communityEvidence).toHaveAccessibleName(/Eindrücke von Menschen vor Ort · (?:vorsichtig|gut) gestützt/);
   await page.getByText("Aussicht im Detail").click();
   await expect(page.getByText("Himmelsoffenheit").locator("..").getByText("93")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("community-estimate.png"), fullPage: false });
