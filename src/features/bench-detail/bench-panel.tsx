@@ -13,42 +13,33 @@ export function BenchPanel({ bench }: { bench: BenchDetail }) {
   const missingCount = visitorProperties.length - known.length;
   return <section className="detail-panel detail-panel-bench">
     {(bench.dedication || bench.description) && <blockquote className="bench-note">{bench.dedication || bench.description}</blockquote>}
-    <details className="fact-info-fold">
-      <summary>
-        <span className="fact-info-icon" aria-hidden="true"><Info size={19} /></span>
-        <span><strong>{t("bench.panel.moreInfo")}</strong><small>{known.length > 0 ? t("bench.panel.moreInfoKnown", {count: known.length}) : t("bench.panel.moreInfoUnknown")}</small></span>
-        <ChevronDown className="fact-info-chevron" size={18} aria-hidden="true" />
-      </summary>
-      <div className="fact-info-body">
-        {known.length > 0 && <dl className="bench-fact-list">
-          {known.map((property) => <div className={property.source === "Bänkli App" ? "is-community" : ""} key={property.label}>
-            <dt><PropertyIcon attribute={property.key} /><span>{propertyLabel(property, t)}</span></dt>
-            <dd><FactValue property={property} /></dd>
-          </div>)}
-        </dl>}
-        {missingCount > 0 && <p className="missing-whisper">{t("bench.panel.missing", {count: missingCount})}</p>}
-        <div className="bearing-card">
-          <div className="bearing-dial" aria-hidden="true"><Compass size={36} />{bench.directionDegrees !== null && <i style={{ transform: `rotate(${bench.directionDegrees}deg)` }} />}</div>
-          <div><small>{t("bench.attributes.direction")}</small><strong>{bench.directionDegrees === null ? t("common.values.notRecorded") : `${compassDirection(bench.directionDegrees, t)} · ${Math.round(bench.directionDegrees)}°`}</strong></div>
-        </div>
-        <details className="technical-fold">
-          <summary>{t("bench.location.title")} <ChevronDown size={16} /></summary>
-          <DetailRows title={t("bench.location.title")} rows={[
-            [t("bench.location.elevation"), bench.elevationMeters === null ? null : t("bench.location.metresAboveSea", {value: Math.round(bench.elevationMeters)})],
-            [t("bench.location.place"), [bench.locationPostcode, bench.locationName, bench.locationCanton].filter(Boolean).join(" ") || null],
-            [t("bench.location.municipality"), bench.knowledge?.geography?.municipalityName ? t("bench.location.municipalityValue", {name: bench.knowledge.geography.municipalityName, id: bench.knowledge.geography.municipalityId ?? t("common.values.open")}) : null],
-            [t("bench.location.canton"), bench.knowledge?.geography?.cantonName ?? null],
-            [t("bench.location.district"), bench.knowledge?.geography?.districtName ?? null],
-            [t("bench.location.nearbyName"), bench.knowledge?.geography?.localityName ?? null],
-            [t("bench.location.sourceUpdated"), bench.sourceUpdatedAt ? formatDate(bench.sourceUpdatedAt, t) : t("common.values.unknown")],
-            [t("bench.location.imported"), bench.importedAt ? formatDate(bench.importedAt, t) : null],
-            [t("bench.location.osmVersion"), bench.osmVersion == null ? null : String(bench.osmVersion)],
-            [t("bench.location.coordinates"), `${bench.latitude.toFixed(6)}, ${bench.longitude.toFixed(6)}`],
-          ]} />
-        </details>
-        {bench.knowledge && <KnowledgeDetails knowledge={bench.knowledge} />}
-      </div>
+    {known.length > 0 && <dl className="bench-fact-list" aria-label={t("bench.panel.moreInfo")}>
+      {known.map((property) => <div className={property.source === "Bänkli App" ? "is-community" : ""} key={property.label}>
+        <dt><PropertyIcon attribute={property.key} /><span>{propertyLabel(property, t)}</span></dt>
+        <dd><FactValue property={property} /></dd>
+      </div>)}
+    </dl>}
+    {missingCount > 0 && <p className="missing-whisper">{t("bench.panel.missing", {count: missingCount})}</p>}
+    <div className="bearing-card">
+      <div className="bearing-dial" aria-hidden="true"><Compass size={36} />{bench.directionDegrees !== null && <i style={{ transform: `rotate(${bench.directionDegrees}deg)` }} />}</div>
+      <div><small>{t("bench.attributes.direction")}</small><strong>{bench.directionDegrees === null ? t("common.values.notRecorded") : `${compassDirection(bench.directionDegrees, t)} · ${Math.round(bench.directionDegrees)}°`}</strong></div>
+    </div>
+    <details className="technical-fold bench-technical-fold">
+      <summary><span className="fact-info-icon" aria-hidden="true"><Info size={17} /></span>{t("bench.location.title")} <ChevronDown size={16} /></summary>
+      <DetailRows title={t("bench.location.title")} rows={[
+        [t("bench.location.elevation"), bench.elevationMeters === null ? null : t("bench.location.metresAboveSea", {value: Math.round(bench.elevationMeters)})],
+        [t("bench.location.place"), [bench.locationPostcode, bench.locationName, bench.locationCanton].filter(Boolean).join(" ") || null],
+        [t("bench.location.municipality"), bench.knowledge?.geography?.municipalityName ? t("bench.location.municipalityValue", {name: bench.knowledge.geography.municipalityName, id: bench.knowledge.geography.municipalityId ?? t("common.values.open")}) : null],
+        [t("bench.location.canton"), bench.knowledge?.geography?.cantonName ?? null],
+        [t("bench.location.district"), bench.knowledge?.geography?.districtName ?? null],
+        [t("bench.location.nearbyName"), bench.knowledge?.geography?.localityName ?? null],
+        [t("bench.location.sourceUpdated"), bench.sourceUpdatedAt ? formatDate(bench.sourceUpdatedAt, t) : t("common.values.unknown")],
+        [t("bench.location.imported"), bench.importedAt ? formatDate(bench.importedAt, t) : null],
+        [t("bench.location.osmVersion"), bench.osmVersion == null ? null : String(bench.osmVersion)],
+        [t("bench.location.coordinates"), `${bench.latitude.toFixed(6)}, ${bench.longitude.toFixed(6)}`],
+      ]} />
     </details>
+    {bench.knowledge && <KnowledgeDetails knowledge={bench.knowledge} />}
   </section>;
 }
 

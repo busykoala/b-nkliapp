@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { Armchair, Check, Clock3, Droplets, MapPin, Navigation, Pencil, PersonStanding, Sun, Toilet } from "lucide-react";
+import { Armchair, Check, Clock3, Droplets, MapPin, Navigation, Pencil, PersonStanding, Sun, Toilet, Umbrella } from "lucide-react";
 import { useState, useTransition } from "react";
 import { confirmBench } from "@/app/actions/benches";
 import type { Translator } from "@/i18n/types";
@@ -25,7 +25,7 @@ export function BenchSummary({ bench, signedIn, onSignIn, onChanged, onLocateAme
   const mine = Boolean(localConfirmation) || bench.myLastConfirmedAt?.slice(0, 10) === new Date().toISOString().slice(0, 10);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const backrest = benchFact<boolean>(bench, "backrest"), levelSpace = benchFact<boolean>(bench, "wheelchair");
+  const backrest = benchFact<boolean>(bench, "backrest"), covered = benchFact<boolean>(bench, "covered"), levelSpace = benchFact<boolean>(bench, "wheelchair");
   const light = bench.dayPhase === "night" ? t("bench.summary.night") : bench.sunnyNow === null ? t("bench.summary.unknownLight") : t(bench.sunnyNow ? "bench.summary.sun" : "bench.summary.shade");
   const amenities = (bench.knowledge?.amenities ?? [])
     .filter((item) => ["toilets", "drinking_water"].includes(item.category) && item.distanceMeters !== null)
@@ -45,6 +45,7 @@ export function BenchSummary({ bench, signedIn, onSignIn, onChanged, onLocateAme
     <WeatherSummary weather={bench.weather} dayPhase={bench.dayPhase} />
     <ul className="summary-facts">
       <li><span className="summary-fact-icon"><Armchair size={18} /></span><span><small>{t("bench.details.bench")}</small><strong>{backrest.state === "conflicting" ? t("bench.summary.conflictingBackrest") : backrest.value === true ? t("bench.attributes.backrest") : backrest.value === false ? t("bench.summary.noBackrest") : t("bench.summary.unknownBackrest")}</strong></span>{onEditBackrest && <button type="button" className="summary-fact-edit" aria-label={`${t("community.chapters.features.title")}: ${t("bench.attributes.backrest")}`} onClick={onEditBackrest}><Pencil size={16} /></button>}</li>
+      <li><span className="summary-fact-icon"><Umbrella size={18} /></span><span><small>{t("bench.attributes.covered")}</small><strong>{covered.state === "conflicting" ? t("knowledge.evidence.conflicting") : covered.value === true ? t("bench.attributes.covered") : covered.value === false ? t("common.values.no") : t("common.values.unknown")}</strong></span></li>
       <li title={bench.sunConfidence === "niedrig" ? t("bench.summary.lowConfidence") : t("bench.summary.lightMethod")}><span className="summary-fact-icon"><Sun size={18} /></span><span><small>{t("bench.details.light")}</small><strong>{light}{bench.sunConfidence === "niedrig" && bench.dayPhase !== "night" && bench.sunnyNow !== null ? t("bench.summary.uncertain") : ""}</strong><small className="summary-light-freshness"><Clock3 size={12} aria-hidden="true" />{minuteClock(bench.localMinutesNow)}</small></span></li>
       {levelSpace.state !== "unknown" && <li><span className="summary-fact-icon"><PersonStanding size={18} /></span><span><small>{t("bench.access.atBench")}</small><strong>{levelSpace.state === "conflicting" ? t("bench.summary.conflictingLevelSpace") : levelSpace.value ? t("bench.attributes.wheelchair") : t("bench.summary.noWheelchair")}</strong></span></li>}
     </ul>

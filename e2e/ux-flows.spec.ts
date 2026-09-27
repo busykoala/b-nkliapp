@@ -75,9 +75,11 @@ test("offers an accessible nearby list with zoom guidance and decision evidence"
   await list.screenshot({ path: info.outputPath("nearby-bench-list.png") });
 });
 
-test("guest rating resumes directly into four tap controls after authentication", async ({ page }, info) => {
+test("rating summary opens reviews and guest writing resumes after authentication", async ({ page }, info) => {
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
+  await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
+  await expect(page.getByRole("heading", { name: "Wie war die Pause?" })).toBeVisible();
+  await page.getByRole("button", { name: "Zum Mitmachen kurz anmelden" }).click();
   await registerInOpenDialog(page, `rate-${info.project.name.slice(-3)}`);
   const rating = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await expect(rating.getByRole("group", { name: "Gesamt", exact: true })).toBeVisible();
@@ -87,6 +89,7 @@ test("guest rating resumes directly into four tap controls after authentication"
   await rating.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(rating.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
   await rating.getByRole("button", { name: "Beiträge schliessen" }).click();
+  await page.getByRole("button", { name: "Zum Platz" }).click();
   await expect(page.locator(".rating-summary-action strong")).toContainText("4");
   await page.screenshot({ path: info.outputPath("bench-summary.png"), fullPage: true });
 });

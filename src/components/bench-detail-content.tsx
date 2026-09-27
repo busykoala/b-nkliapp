@@ -133,7 +133,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
         </header>
         <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaStatus}`} bench={bench} />
         <div className="bench-below-art">
-          <RatingEntry bench={bench} onOpen={() => contribute("rating")} />
+          <RatingEntry bench={bench} onOpen={() => setCommunity(true)} />
           <BenchSummary bench={bench} signedIn={signedIn} onSignIn={() => contribute("presence")} onChanged={refreshBench} onLocateAmenity={onLocateAmenity} amenityMapHrefPrefix={amenityMapHrefPrefix} onEditBackrest={editBackrest} />
           <div className="bench-secondary-actions"><button className="contribution-entry is-quiet" onClick={() => contribute()}><MessageCircleHeart size={17} />{t("bench.story.contribute")}</button><button className="contribution-entry is-quiet" onClick={() => setCommunity(true)}><Star size={17} />{t("bench.story.ratings")}</button></div>
         </div>
@@ -159,15 +159,10 @@ function RatingEntry({ bench, onOpen }: { bench: BenchDetail; onOpen: () => void
   const t = useTranslations();
   const format = useFormatter();
   const rounded = bench.ratingAverage === null ? 0 : Math.max(1, Math.min(5, Math.round(bench.ratingAverage)));
-  const label = bench.myRating
-    ? t("bench.story.ratingMine", {score: bench.myRating.overall})
-    : bench.ratingAverage === null
-      ? t("bench.story.ratingEmpty")
-      : t("bench.story.ratingSummary", {score: format.number(bench.ratingAverage, {minimumFractionDigits: 1, maximumFractionDigits: 1}), count: bench.ratingCount});
 
-  return <button type="button" className="rating-summary-action" aria-label={label} title={label} onClick={onOpen}>
+  return <button type="button" className="rating-summary-action" title={t("bench.story.ratings")} onClick={onOpen}>
     <Star size={17} fill={rounded > 0 ? "currentColor" : "none"} aria-hidden="true" />
-    <span>{bench.myRating ? t("community.reviews.edit") : t("community.reviews.add")}</span>
+    <span>{t("bench.story.ratings")}</span>
     {bench.ratingAverage !== null && <strong>{format.number(bench.ratingAverage, {minimumFractionDigits: 1, maximumFractionDigits: 1})} · {bench.ratingCount}</strong>}
   </button>;
 }

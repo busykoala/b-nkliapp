@@ -112,7 +112,7 @@ test("keeps observation controls calm, semantic and touchable with reduced motio
   await page.emulateMedia({ reducedMotion: "reduce" });
   await registerUser(page, `access-${Date.now().toString().slice(-8)}`);
   await page.goto(`/bank/${benchId}`);
-  const factsSummary = page.locator(".fact-info-fold > summary");
+  const factsSummary = page.locator(".bench-technical-fold > summary");
   await factsSummary.focus();
   await page.keyboard.press("Enter");
   await expect(factsSummary.locator("..")).toHaveAttribute("open", "");

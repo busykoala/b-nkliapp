@@ -225,10 +225,12 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   await expect(sheet.getByRole("button", { name: "Weg planen" })).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Detailhöhe ändern" })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("short-phone-full-bench-sheet.png") });
-  const [chrome, landscape] = await Promise.all([sheet.locator(".map-sheet-chrome").boundingBox(), sheet.locator(".bench-panorama").boundingBox()]);
-  expect(chrome).not.toBeNull();
-  expect(landscape).not.toBeNull();
-  expect(landscape!.y).toBeGreaterThanOrEqual(chrome!.y + chrome!.height - 1);
+  const positions = await sheet.evaluate((element) => {
+    const chrome = element.querySelector(".map-sheet-chrome")!.getBoundingClientRect();
+    const landscape = element.querySelector(".bench-panorama")!.getBoundingClientRect();
+    return { chromeBottom: chrome.bottom, landscapeTop: landscape.top };
+  });
+  expect(positions.landscapeTop).toBeGreaterThanOrEqual(positions.chromeBottom - 1);
   await sheet.getByRole("button", { name: "Detailhöhe ändern" }).click();
   await expect(sheet).toHaveAttribute("data-snap", "half");
   await page.screenshot({ path: testInfo.outputPath("short-phone-collapsed-bench-sheet.png") });
@@ -347,7 +349,8 @@ test("location denial leaves the map usable", async ({ page, context }) => {
 
 test("keeps browsing public but requires an account for contributions", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
+  await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
+  await page.getByRole("button", { name: "Zum Mitmachen kurz anmelden" }).click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
   await expect(page.getByText("Danach geht es weiter: Bewertung abgeben.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Bewertung veröffentlichen" })).toHaveCount(0);
@@ -356,7 +359,8 @@ test("keeps browsing public but requires an account for contributions", async ({
 test("registers and writes a rating plus structured bench metadata", async ({ page, browserName }) => {
   await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
+  await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
+  await page.getByRole("button", { name: /Einen Eindruck beitragen|Meinen Beitrag bearbeiten/ }).click();
   const contribution = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
   await contribution.locator(".rating-detail-disclosure summary").click();
@@ -367,6 +371,7 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
   await contribution.getByRole("button", { name: "Beiträge schliessen" }).click();
+  await page.getByRole("button", { name: "Zum Platz" }).click();
   await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
   const features = page.getByRole("dialog", { name: "Bänkli beschreiben" });
   await features.getByRole("button", { name: /Armlehnen/ }).click();
@@ -377,7 +382,8 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
 test("publishes an overall rating without optional detail stars", async ({ page, browserName }) => {
   await registerUser(page, `overall-only-${browserName}`);
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: /Noch unbewertet|Bewertung .* von 5|Deine Bewertung/ }).click();
+  await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
+  await page.getByRole("button", { name: /Einen Eindruck beitragen|Meinen Beitrag bearbeiten/ }).click();
   const contribution = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
   await expect(contribution.getByRole("group", { name: "Aussicht", exact: true })).not.toBeVisible();
@@ -404,23 +410,27 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   const shell = page.locator(".map-sheet-shell");
   await expect(shell).toHaveAttribute("data-snap", "full");
   await expect(shell.locator(".map-sheet-close")).toContainText("Karte");
-  await expect(shell.locator(".map-sheet-minimize")).toHaveText("Minimieren");
-  await expect(shell.locator(".map-sheet-resize .map-sheet-action-label")).toHaveCount(0);
+  await expect(shell.locator(".map-sheet-minimize")).toHaveAccessibleName("Details auf eine Leiste minimieren");
+  await expect(shell.locator(".map-sheet-resize")).toHaveAccessibleName("Kompakter. Detailhöhe ändern");
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "full");
   await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
   await expect(shell).toHaveAttribute("data-snap", "peek");
-  await expect(shell.locator(".map-sheet-action-label")).toHaveText("Ganz öffnen");
+  await expect(shell.locator(".map-sheet-resize")).toHaveAccessibleName("Ganz öffnen. Detailhöhe ändern");
+  await expect(shell.locator(".map-sheet-collapsed-title")).toHaveText("Bankdetails");
   await expect(shell.locator(".map-sheet-content")).not.toBeVisible();
   await expect.poll(async () => (await shell.boundingBox())?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(90);
   await page.screenshot({ path: testInfo.outputPath("minimized-detail-bar.png") });
   await shell.locator(".map-sheet-resize").click();
+  await expect(shell).toHaveAttribute("data-snap", "full");
+  await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
-  await shell.locator(".map-sheet-chrome").dispatchEvent("touchstart", { touches: [{ identifier: 1, clientY: 200 }] });
-  await shell.locator(".map-sheet-chrome").dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientY: 300 }] });
+  await shell.locator(".map-sheet-resize").dispatchEvent("touchstart", { touches: [{ identifier: 1, clientY: 200 }] });
+  await shell.locator(".map-sheet-resize").dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientY: 300 }] });
   await expect(shell).toHaveAttribute("data-snap", "peek");
+  await page.waitForTimeout(400);
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.getByRole("button", { name: "Weg planen" }).click();
