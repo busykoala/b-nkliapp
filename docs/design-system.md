@@ -34,14 +34,14 @@ The same card treatment is not reused for unrelated measurements. Each visual mu
 | --- | --- | --- |
 | State | Familiar icon + short value; shape/text as well as colour | backrest, level space, steps |
 | Time | Shared 24-hour axis and interval tracks | sun/moon paths, direct sun and shade windows |
-| Proportion | Segmented scale, bar, or ring with the exact percentage | clouds, humidity, horizon, confidence, completeness |
-| Magnitude | Small gauge with value and unit | rain, wind, snow, slope, noise |
-| Distance | Logarithmic near-to-far track plus exact metres/kilometres | building, water, and path proximity |
-| Profile | Aligned small multiples | seasonal sun, view components, canopy by radius |
+| Proportion | Segmented scale only when the bounded whole helps the decision; always include the exact percentage | cloud cover, assessed-route coverage |
+| Magnitude | Exact rounded value and unit; add a chart only for a real comparison or time series | rain, wind, snow, slope, noise |
+| Distance | Exact rounded distance plus scope (“Luftlinie” or routed) | building, water, path, and facility proximity |
+| Profile | Aligned small multiples only when several comparable samples exist | seasonal sun or canopy by radius |
 | Status from people | Five fixed marks plus score and response count | quietness and ratings |
 | Provenance | Compact description list behind a disclosure | source, freshness, coverage, conflicts |
 
-Do not add a chart merely to decorate a single value. Use progressive disclosure for provenance, not for visit-critical information. Visual encodings use labels and accessible names, never colour alone.
+Do not normalize a lone measurement into an unexplained bar, ring, percentage, or score. Do not add a chart merely to decorate a single value. Use progressive disclosure for provenance, not for visit-critical information. Visual encodings use labels and accessible names, never colour alone.
 
 This grammar was checked against:
 
