@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, mkdirSync, statSync } from "node:fs";
+import { copyFileSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import Database from "better-sqlite3";
 
@@ -30,7 +30,10 @@ export function installPanoramaFixture(benchId: string, covered?: boolean) {
   mkdirSync(materialDirectory, { recursive: true });
   copyFileSync(join(process.cwd(), "public/map-art/textures/mountain.webp"), artifact);
   copyFileSync(join(process.cwd(), "public/map-art/textures/paper.webp"), lightArtifact);
-  copyFileSync(join(process.cwd(), "public/map-art/textures/paper.webp"), materialArtifact);
+  // One transparent pixel is a truthful all-sky semantic mask (material G=0).
+  // A decorative paper texture marked every pixel as solid terrain and made
+  // celestial occlusion impossible to exercise in the browser fixture.
+  writeFileSync(materialArtifact, Buffer.from("UklGRhoAAABXRUJQVlA4TA4AAAAvAAAAAAcQEf0PRET/Aw==", "base64"));
   database.prepare(`INSERT OR IGNORE INTO panorama_generations
     (id,git_commit,state,source_versions_json,created_at,activated_at)
     VALUES(?,'0123456789abcdef','active','{}',?,?)`).run(generationId, now, now);

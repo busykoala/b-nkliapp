@@ -719,10 +719,15 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 6 / 5; margin: 0; border-radius: 2rem 2rem 0 0; background: #dce3d8; }
 .bench-panorama::after { position: absolute; inset: 0; z-index: 2; pointer-events: none; content: ""; background: url("/map-art/textures/paper.webp") repeat; background-size: 256px; mix-blend-mode: multiply; opacity: .11; }
 .bench-panorama-viewport { position: absolute; inset: 0; z-index: 0; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
+.bench-panorama.is-static .bench-panorama-viewport { cursor: default; touch-action: pan-y; }
 .bench-panorama-viewport:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: -4px; }
 .bench-panorama.is-dragging .bench-panorama-viewport { cursor: grabbing; }
-.bench-panorama-track { position: absolute; top: -18%; left: 0; display: flex; height: 136%; max-width: none; transform: translate3d(var(--panorama-offset), var(--panorama-y), 0); will-change: transform; }
-.bench-panorama-copy { position: relative; width: var(--panorama-copy-width); height: 100%; flex: none; }
+.bench-panorama-track { position: absolute; top: var(--panorama-track-top); left: 0; display: flex; height: var(--panorama-track-height); max-width: none; transform: translate3d(var(--panorama-offset), var(--panorama-y), 0); will-change: transform; }
+.bench-panorama-copy { position: relative; width: var(--panorama-copy-width); height: 100%; flex: none; background: #94bad0; }
+.bench-panorama-sky-cap { position: absolute; inset: 0 0 auto; z-index: 1; height: calc(103% - var(--panorama-raster-height)); pointer-events: none; background: radial-gradient(ellipse at 18% 27%, rgb(235 244 239 / 30%), transparent 24%), radial-gradient(ellipse at 73% 52%, rgb(247 232 196 / 19%), transparent 28%), linear-gradient(180deg, #759fc0, #a9cad8 68%, #d6d9c4); -webkit-mask-image: linear-gradient(#000 0 88%, transparent); mask-image: linear-gradient(#000 0 88%, transparent); }
+.bench-panorama-sky-cap::before { position: absolute; inset: -8% -3%; content: ""; background: url("/map-art/textures/palette-wash.webp") 7% 12% / 38% 72% no-repeat, url("/map-art/textures/palette-wash.webp") 91% 45% / 34% 64% no-repeat; filter: hue-rotate(143deg) saturate(.28) brightness(1.23); mix-blend-mode: soft-light; opacity: .2; transform: rotate(-1deg); }
+.bench-panorama-sky-cap::after { position: absolute; inset: 0; content: ""; background: url("/map-art/textures/paper.webp") repeat; background-size: 256px; mix-blend-mode: multiply; opacity: .16; }
+.bench-panorama-raster { position: absolute; inset: auto 0 0; z-index: 0; height: var(--panorama-raster-height); overflow: hidden; }
 .bench-panorama-art { display: block; width: calc(100% + 2px); max-width: none; height: 100%; margin-left: -1px; pointer-events: none; }
 .bench-panorama-celestial { position: absolute; max-width: none; height: auto; pointer-events: none; transform: translate(-50%, -50%); }
 .bench-panorama-rain, .bench-panorama-snow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -757,17 +762,24 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-zoom-controls button { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 999px; }
 .bench-panorama-zoom-controls button:disabled { opacity: .4; }
 .bench-panorama-zoom-controls button:focus-visible { outline: 2px solid #bb8e40; }
+.bench-panorama-expand { display: inline-flex; min-height: 36px; flex: none; align-items: center; gap: .35rem; border: 1px solid rgb(43 67 57 / 15%); border-radius: 999px; background: rgb(251 245 224 / 90%); padding: .35rem .65rem; color: #315649; box-shadow: 0 4px 14px rgb(27 48 41 / 10%); font-size: .72rem; font-weight: 760; pointer-events: auto; backdrop-filter: blur(8px); }
+.bench-panorama-expand:focus-visible { outline: 2px solid #bb8e40; outline-offset: 2px; }
 .bench-panorama-lightmap { position: absolute; inset: 0; z-index: 1; width: calc(100% + 2px); height: 100%; margin-left: -1px; opacity: var(--lightmap-opacity); mix-blend-mode: soft-light; filter: contrast(1.05) sepia(.08) blur(.55px); transition: opacity .6s ease; }
 .bench-panorama-clouds { position: absolute; z-index: 2; inset-inline: -2%; pointer-events: none; opacity: var(--cloud-opacity); background-repeat: no-repeat; mix-blend-mode: screen; filter: blur(6px); }
-.bench-panorama-clouds.is-high { top: 1%; height: 18%; opacity: var(--cloud-high-opacity); background-image: radial-gradient(ellipse at 12% 55%, rgb(250 242 222 / 42%) 0 11%, transparent 30%), radial-gradient(ellipse at 45% 38%, rgb(245 238 218 / 36%) 0 14%, transparent 35%), radial-gradient(ellipse at 83% 52%, rgb(246 240 224 / 38%) 0 12%, transparent 32%); transform: scaleX(1.12); }
-.bench-panorama-clouds.is-mid { top: 9%; height: 27%; opacity: var(--cloud-mid-opacity); background-image: radial-gradient(ellipse at 7% 48%, rgb(235 232 216 / 54%) 0 13%, transparent 33%), radial-gradient(ellipse at 29% 57%, rgb(242 235 215 / 62%) 0 17%, transparent 38%), radial-gradient(ellipse at 62% 43%, rgb(233 229 215 / 52%) 0 18%, transparent 39%), radial-gradient(ellipse at 95% 58%, rgb(239 234 218 / 55%) 0 15%, transparent 36%); mix-blend-mode: normal; }
-.bench-panorama-clouds.is-low { top: 20%; height: 22%; opacity: var(--cloud-low-opacity); background-image: radial-gradient(ellipse at 18% 45%, rgb(205 211 204 / 46%) 0 16%, transparent 37%), radial-gradient(ellipse at 54% 62%, rgb(211 214 205 / 48%) 0 19%, transparent 40%), radial-gradient(ellipse at 87% 46%, rgb(207 212 205 / 42%) 0 15%, transparent 36%); mix-blend-mode: multiply; }
+.bench-panorama-clouds.is-high { top: 2%; height: 24%; opacity: var(--cloud-high-opacity); background-image: radial-gradient(ellipse at 12% 55%, rgb(250 242 222 / 42%) 0 11%, transparent 30%), radial-gradient(ellipse at 45% 38%, rgb(245 238 218 / 36%) 0 14%, transparent 35%), radial-gradient(ellipse at 83% 52%, rgb(246 240 224 / 38%) 0 12%, transparent 32%); transform: scaleX(1.12); }
+.bench-panorama-clouds.is-mid { top: 12%; height: 31%; opacity: var(--cloud-mid-opacity); background-image: radial-gradient(ellipse at 7% 48%, rgb(235 232 216 / 54%) 0 13%, transparent 33%), radial-gradient(ellipse at 29% 57%, rgb(242 235 215 / 62%) 0 17%, transparent 38%), radial-gradient(ellipse at 62% 43%, rgb(233 229 215 / 52%) 0 18%, transparent 39%), radial-gradient(ellipse at 95% 58%, rgb(239 234 218 / 55%) 0 15%, transparent 36%); mix-blend-mode: normal; }
+.bench-panorama-clouds.is-low { top: 28%; height: 26%; opacity: var(--cloud-low-opacity); background-image: radial-gradient(ellipse at 18% 45%, rgb(205 211 204 / 46%) 0 16%, transparent 37%), radial-gradient(ellipse at 54% 62%, rgb(211 214 205 / 48%) 0 19%, transparent 40%), radial-gradient(ellipse at 87% 46%, rgb(207 212 205 / 42%) 0 15%, transparent 36%); mix-blend-mode: multiply; }
 .bench-panorama-snow-ground { position: absolute; inset: 72% 0 0; z-index: 3; pointer-events: none; background: linear-gradient(180deg, transparent, rgb(247 246 233 / 52%) 34%, rgb(244 244 234 / 68%)); mix-blend-mode: screen; }
-.bench-panorama-celestial { z-index: 3; display: grid; width: 4.2%; aspect-ratio: 1; place-items: center; border-radius: 50%; transform: translate(-50%, -50%); }
+.bench-panorama-stars { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: var(--star-opacity); }
+.bench-panorama-stars i { position: absolute; width: var(--star-size); height: var(--star-size); border-radius: 50%; background: #fffbe2; box-shadow: 0 0 calc(var(--star-size) * 1.8) rgb(223 235 228 / 58%); opacity: var(--star-alpha); filter: sepia(calc(var(--star-tone) * .36)) hue-rotate(calc(var(--star-tone) * -18deg)); transform: translate(-50%, -50%); animation: panorama-star-breathe 5.8s ease-in-out infinite alternate; }
+.bench-panorama-stars i:nth-child(5n) { animation-delay: -2.1s; }
+.bench-panorama-stars i:nth-child(7n) { animation-delay: -4.2s; }
+.bench-panorama-stars i.is-guide { box-shadow: 0 0 calc(var(--star-size) * 2.8) rgb(238 239 208 / 72%); }
+.bench-panorama-celestial { z-index: 2; display: grid; width: .6%; aspect-ratio: 1; place-items: center; border-radius: 50%; opacity: var(--celestial-opacity); transform: translate(-50%, -50%); }
 .bench-panorama-celestial.is-sun { mix-blend-mode: screen; }
 .bench-panorama-celestial.is-sun i { position: relative; width: 60%; height: 57%; border-radius: 53% 47% 49% 51%; background: radial-gradient(circle at 42% 38%, #fff2bb 0 18%, #f3cd72 44%, rgb(224 165 64 / 76%) 70%, transparent 73%); box-shadow: 0 0 11px 6px rgb(248 211 120 / 22%), 0 0 35px 17px rgb(247 224 161 / 14%); filter: blur(.25px); transform: rotate(-7deg); }
 .bench-panorama-celestial.is-sun i::after { position: absolute; inset: -18% -25%; border-radius: 47% 53% 44% 56%; background: rgb(246 218 145 / 17%); content: ""; filter: blur(3px); transform: rotate(18deg); }
-.bench-panorama-celestial.is-moon { opacity: .82; mix-blend-mode: screen; }
+.bench-panorama-celestial.is-moon { mix-blend-mode: screen; }
 .bench-panorama-celestial svg { width: 100%; height: 100%; opacity: .86; filter: blur(.15px) drop-shadow(0 0 7px rgb(239 233 204 / 20%)); }
 .bench-panorama-foreground { position: absolute; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
 .bench-panorama-rear-bench { position: absolute; z-index: 5; bottom: -4%; left: 50%; width: 35%; max-width: none; height: auto; pointer-events: none; opacity: .98; transform: translateX(-50%); filter: drop-shadow(0 4px 3px rgb(39 50 42 / 22%)); }
@@ -778,6 +790,10 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-bench-shadow { position: absolute; z-index: 4; bottom: 1%; left: 50%; width: var(--shadow-length); height: 2.2%; border-radius: 50%; background: rgb(38 62 53 / 18%); filter: blur(5px); transform: translateX(-8%) rotate(var(--shadow-turn)); transform-origin: left center; opacity: var(--lightmap-opacity); }
 .bench-panorama.is-shaded .bench-panorama-bench-shadow, .bench-panorama.has-shelter .bench-panorama-bench-shadow { opacity: .035; }
 .bench-panorama.phase-night::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: rgb(31 52 67 / 20%); mix-blend-mode: multiply; }
+.bench-panorama.phase-night .bench-panorama-sky-cap { background: radial-gradient(ellipse at 62% 82%, rgb(97 119 137 / 52%), transparent 34%), linear-gradient(180deg, #1f3549, #496474 72%, #8a8980); }
+.bench-panorama.phase-night .bench-panorama-sky-cap::before { filter: hue-rotate(168deg) saturate(.18) brightness(.7); opacity: .14; }
+.bench-panorama.phase-dawn .bench-panorama-sky-cap { background: linear-gradient(180deg, #758da9, #d5a78f 72%, #ead1aa); }
+.bench-panorama.phase-dusk .bench-panorama-sky-cap { background: linear-gradient(180deg, #526c89, #be8175 70%, #e0b58f); }
 .bench-panorama.phase-night .bench-panorama-ground-patch { filter: saturate(.72) brightness(.77) blur(2px); }
 .bench-panorama.phase-night .bench-panorama-rear-bench { filter: saturate(.62) brightness(.73) drop-shadow(0 4px 3px rgb(30 44 43 / 18%)); }
 .bench-panorama.phase-dawn::before, .bench-panorama.phase-dusk::before { position: absolute; inset: 0; z-index: 5; pointer-events: none; content: ""; background: linear-gradient(180deg, rgb(214 143 113 / 16%), rgb(80 99 90 / 8%)); mix-blend-mode: multiply; }
@@ -787,6 +803,19 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-snow i { animation: panorama-snow 3.4s ease-in-out infinite; animation-delay: var(--drop-delay); }
 @keyframes panorama-rain { to { translate: -4px 24px; opacity: .14; } }
 @keyframes panorama-snow { 50% { translate: 5px 12px; } to { translate: -3px 25px; opacity: .22; } }
+@keyframes panorama-star-breathe { from { filter: sepia(calc(var(--star-tone) * .36)) brightness(.88); } to { filter: sepia(calc(var(--star-tone) * .36)) brightness(1.15); } }
+.bench-panorama-rain::after, .bench-panorama-snow::after { position: absolute; right: -8%; bottom: -3%; left: -8%; height: 20%; pointer-events: none; content: ""; background: linear-gradient(180deg, transparent, rgb(213 225 220 / 17%)); filter: blur(8px); }
+.bench-panorama-snow::after { background: radial-gradient(ellipse at 50% 100%, rgb(250 248 231 / 28%), transparent 66%); }
+.bench-panorama.is-expanded { position: fixed; inset: 0; z-index: 100; width: 100vw; height: 100dvh; aspect-ratio: auto; border-radius: 0; background: #243b4a; box-shadow: 0 0 0 100vmax rgb(20 31 35 / 78%); }
+.bench-panorama.is-expanded::after { opacity: .1; }
+.bench-panorama.is-expanded .bench-panorama-hud { top: max(.75rem, env(safe-area-inset-top)); right: max(.75rem, env(safe-area-inset-right)); left: max(.75rem, env(safe-area-inset-left)); max-width: none; }
+.bench-panorama.is-expanded .bench-panorama-hud small { margin-right: auto; }
+.bench-panorama.is-expanded > .landscape-rating-action { display: none; }
+@media (max-width: 600px) {
+  .bench-panorama-expand span { display: none; }
+  .bench-panorama.is-expanded .bench-panorama-hud small { position: fixed; bottom: max(.75rem, env(safe-area-inset-bottom)); left: 50%; display: block; width: max-content; max-width: calc(100vw - 2rem); height: auto; overflow: visible; padding: .36rem .58rem; clip-path: none; text-align: center; text-overflow: ellipsis; transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) { .bench-panorama-stars i, .bench-panorama-rain i, .bench-panorama-snow i { animation: none; } }
 .bench-panorama-shelter, .bench-panorama-shelter-shade { z-index: 7; }
 .bench-panorama-hud, .bench-panorama > .landscape-rating-action { z-index: 8; }
 .bench-panorama > .landscape-rating-action { top: .8rem; bottom: auto; }

@@ -23,7 +23,7 @@ function setCoveredFixture() {
   database.close();
 }
 
-test("starts in bench direction and pans the panorama in both axes on mobile", async ({ page }, testInfo) => {
+test("keeps the inline painting calm and explores the full sky in an accessible 360 view", async ({ page }, testInfo) => {
   // The first navigation lets the isolated test server migrate and seed its DB.
   await page.goto("/");
   setCoveredFixture();
@@ -42,7 +42,10 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   await expect(bearing).toHaveText("325°");
   await expect(panorama.getByRole("slider")).toHaveCount(0);
   const zoom = panorama.locator(".bench-panorama-zoom-controls span");
-  await expect(zoom).toHaveText("1.0×");
+  await expect(zoom).toHaveCount(0);
+  await expect(panorama).toHaveClass(/is-static/);
+  await expect(panorama.locator(".bench-panorama-sky-cap").first()).toBeAttached();
+  await expect(panorama.locator(".bench-panorama-viewport")).toHaveCSS("touch-action", "pan-y");
   const image = page.locator(".bench-panorama-art").first();
   await expect(image).toHaveJSProperty("complete", true);
   // Read the three rectangles in one browser task. The light-map poll can
@@ -71,6 +74,14 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   expect(layout!.bench.width).toBeLessThan(layout!.panorama.width * .62);
   expect(layout!.bench.y + layout!.bench.height).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height * .9);
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
+
+  const open = panorama.getByRole("button", { name: "Panorama gross im 360-Grad-Modus öffnen" });
+  await open.click();
+  await expect(panorama).toHaveClass(/is-expanded/);
+  await expect(panorama).toHaveAttribute("role", "dialog");
+  await expect(panorama).toHaveAttribute("aria-modal", "true");
+  await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+  await expect(zoom).toHaveText("1.0×");
 
   const viewport = page.locator(".bench-panorama-viewport");
   const box = await viewport.boundingBox();
@@ -102,5 +113,33 @@ test("starts in bench direction and pans the panorama in both axes on mobile", a
   await expect(bearing).toHaveText("0°");
   await viewport.press("ArrowLeft");
   await expect(bearing).toHaveText("355°");
-  await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-rotated.png") });
+
+  // Centre the actual sun or moon before looking up. Its percentage is the
+  // projected geographic azimuth, so this works for both the day CI fixture
+  // and the manually exercised night fixture.
+  const celestial = panorama.locator(".bench-panorama-celestial");
+  await expect(celestial).toHaveCount(3);
+  const celestialAzimuth = Number.parseFloat((await celestial.first().getAttribute("style"))!.match(/left:\s*([\d.]+)%/)![1]) * 3.6;
+  const currentHeading = Number.parseInt((await bearing.textContent())!, 10);
+  const headingDelta = ((celestialAzimuth - currentHeading + 540) % 360) - 180;
+  const turnKey = headingDelta < 0 ? "Shift+ArrowLeft" : "Shift+ArrowRight";
+  for (let index = 0; index < Math.round(Math.abs(headingDelta) / 30); index++) await viewport.press(turnKey);
+
+  const skyBox = await viewport.boundingBox();
+  await page.mouse.move(skyBox!.x + skyBox!.width * .5, skyBox!.y + skyBox!.height * .12);
+  await page.mouse.down();
+  await page.mouse.move(skyBox!.x + skyBox!.width * .5, skyBox!.y + skyBox!.height * .9, { steps: 6 });
+  await page.mouse.up();
+  const skyStyle = await page.locator(".bench-panorama-track").getAttribute("style");
+  const skyVertical = Number(skyStyle?.match(/--panorama-y:\s*(-?[\d.]+)px/)?.[1]);
+  expect(skyVertical).toBeGreaterThan(skyBox!.height * .5);
+  await expect(celestial.nth(1)).toBeInViewport({ ratio: .5 });
+  await page.screenshot({ path: testInfo.outputPath("panorama-mobile-high-sky.png") });
+
+  const close = panorama.getByRole("button", { name: "360-Grad-Grossansicht schliessen" });
+  await close.click();
+  await expect(panorama).toHaveClass(/is-static/);
+  await expect(zoom).toHaveCount(0);
+  await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+  await expect(open).toBeFocused();
 });

@@ -54,7 +54,7 @@ export default defineConfig({
       BENCH_VERIFICATION_THRESHOLD: "3",
       BENCHLY_DISABLE_ELEVATION_FETCH: "true",
       BENCHLY_JOURNEY_TEST_FIXTURES: "true",
-      BENCHLY_E2E_NOW: "2026-09-05T12:00:00+02:00",
+      BENCHLY_E2E_NOW: process.env.BENCHLY_E2E_NOW ?? "2026-09-05T12:00:00+02:00",
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=tsx --import=${join(process.cwd(), "scripts/journey-test-providers.ts")}`,
     },
   },

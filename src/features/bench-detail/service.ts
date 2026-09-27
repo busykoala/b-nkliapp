@@ -230,6 +230,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     sunAzimuthDegrees: daylight.azimuth,
     daylightProgress: daylight.progress,
     localMinutesNow: zurichMinutes(now),
+    skyObservedAt: now.toISOString(),
     dayPhase: daylight.phase,
     season,
     moonAltitudeDegrees: moon.altitude,

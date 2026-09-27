@@ -244,6 +244,7 @@ export type BenchDetail = {
   sunAzimuthDegrees: number;
   daylightProgress: number;
   localMinutesNow: number;
+  skyObservedAt?: string;
   dayPhase: "dawn" | "day" | "dusk" | "night";
   season: "spring" | "summer" | "autumn" | "winter";
   moonAltitudeDegrees: number;

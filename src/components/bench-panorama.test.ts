@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampPanoramaVertical, moonShadowPath, panoramaBenchShadow, panoramaCelestialTop, panoramaMaterialIsSky, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
+import { clampPanoramaVertical, moonLightPath, panoramaBenchShadow, panoramaCelestialTop, panoramaMaterialIsSky, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
 
 describe("360 degree panorama track", () => {
   it("checks a cold painting promptly, then backs off without ignoring error retries", () => {
@@ -34,8 +34,8 @@ describe("360 degree panorama track", () => {
     expect(wrapped).toBeCloseTo(359 / 3.6 + 100);
   });
 
-  it("limits vertical map-style movement to the overscan", () => {
-    expect(clampPanoramaVertical(500, 200)).toBeCloseTo(90);
+  it("lets the expanded view reach the zenith while retaining lower-scene overscan", () => {
+    expect(clampPanoramaVertical(500, 400)).toBeCloseTo(316.6667);
     expect(clampPanoramaVertical(500, -200)).toBeCloseTo(-90);
     expect(clampPanoramaVertical(500, 12)).toBe(12);
   });
@@ -43,14 +43,22 @@ describe("360 degree panorama track", () => {
 
 describe("panorama light", () => {
   it("projects celestial bodies like the geographic raster and hides material occluders", () => {
-    expect(panoramaCelestialTop(13)).toBeCloseTo(50);
-    expect(panoramaCelestialTop(58)).toBe(-18);
+    expect(panoramaCelestialTop(88)).toBe(0);
+    expect(panoramaCelestialTop(58)).toBe(25);
+    expect(panoramaCelestialTop(-32)).toBe(100);
     expect(panoramaMaterialIsSky(new Uint8ClampedArray([0, 0, 0, 255]))).toBe(true);
     expect(panoramaMaterialIsSky(new Uint8ClampedArray([44, 68, 122, 255]))).toBe(false);
   });
-  it("builds a valid closed moon shadow from two absolute arcs", () => {
-    expect(moonShadowPath(.25)).toBe("M 24 6 A 18 18 0 0 0 24 42 A 5.5 18 0 0 0 24 6 Z");
-    expect(moonShadowPath(.75)).toBe("M 24 6 A 18 18 0 0 1 24 42 A 5.5 18 0 0 1 24 6 Z");
+  it("paints new, quarter, full and waning moon illumination on the proper side", () => {
+    const newMoon = moonLightPath(0);
+    const waxingQuarter = moonLightPath(.25);
+    const fullMoon = moonLightPath(.5);
+    const waningQuarter = moonLightPath(.75);
+    expect(newMoon).toMatch(/^M .* Z$/);
+    expect(newMoon).not.toBe(fullMoon);
+    expect(waxingQuarter).not.toBe(waningQuarter);
+    expect(waxingQuarter).toContain("L 42.00 24.00");
+    expect(waningQuarter).toContain("L 6.00 24.00");
   });
 
   it("projects a longer bench shadow away from a low sun", () => {
