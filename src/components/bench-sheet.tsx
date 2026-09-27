@@ -8,10 +8,10 @@ import { BenchDetailContent } from "./bench-detail-content";
 import { BenchQuickPreview } from "./bench-quick-preview";
 import type { CurrentUser } from "@/lib/security";
 import { LocalBenchLanguageProvider, useLocalBenchLanguage } from "./local-bench-language-provider";
-import { MapSheetShell } from "./map-sheet-shell";
+import { MapSheetShell, type MapSheetPresentation } from "./map-sheet-shell";
 
 type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
-type BenchSheetProps = { created?: boolean; initiallyExpanded?: boolean; returnTarget?: "map" | "list" | "walk"; bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; onResumeWalk?: () => void; onLocateAmenity?: (amenity: NearbyAmenity) => void; user: CurrentUser | null };
+type BenchSheetProps = { created?: boolean; initiallyExpanded?: boolean; returnTarget?: "map" | "list" | "walk"; presentation?: MapSheetPresentation | null; onPresentationChange?: (presentation: MapSheetPresentation) => void; bench: BenchDetail | null; loading: boolean; error: boolean; onRetry: () => void; onClose: () => void; onBenchChange?: () => void | Promise<void>; onJourney?: () => void; onResumeWalk?: () => void; onLocateAmenity?: (amenity: NearbyAmenity) => void; user: CurrentUser | null };
 
 export function BenchSheet(props: BenchSheetProps) {
   return props.bench && !props.loading
@@ -19,12 +19,12 @@ export function BenchSheet(props: BenchSheetProps) {
     : <BenchSheetSurface key="empty" {...props} />;
 }
 
-function BenchSheetSurface({ created = false, initiallyExpanded = false, returnTarget = "map", bench, loading, error, onRetry, onClose, onBenchChange, onJourney, onResumeWalk, onLocateAmenity, user }: BenchSheetProps) {
+function BenchSheetSurface({ created = false, initiallyExpanded = false, returnTarget = "map", presentation, onPresentationChange, bench, loading, error, onRetry, onClose, onBenchChange, onJourney, onResumeWalk, onLocateAmenity, user }: BenchSheetProps) {
   const t = useTranslations();
   const localLanguage = useLocalBenchLanguage();
   const detailWasOpen = useRef(created || initiallyExpanded);
   return (
-    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} expandLabel={t("bench.sheet.expand")} compactLabel={t("bench.sheet.compact")} minimizeLabel={t("bench.sheet.minimize")} minimizeActionLabel={t("bench.sheet.minimizeAction")} closeLabel={returnTarget === "walk" ? t("walks.planner.resume") : returnTarget === "list" ? t("map.list.title") : t("bench.sheet.close")} mapLabel={returnTarget === "walk" ? t("walks.planner.resume") : returnTarget === "list" ? t("map.list.button") : t("bench.sheet.map")} initialSnap={created || initiallyExpanded ? "full" : "half"} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={returnTarget !== "walk" && onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
+    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} expandLabel={t("bench.sheet.expand")} compactLabel={t("bench.sheet.compact")} minimizeLabel={t("bench.sheet.minimize")} minimizeActionLabel={t("bench.sheet.minimizeAction")} closeLabel={returnTarget === "walk" ? t("walks.planner.resume") : returnTarget === "list" ? t("map.list.title") : t("bench.sheet.close")} mapLabel={returnTarget === "walk" ? t("walks.planner.resume") : returnTarget === "list" ? t("map.list.button") : t("bench.sheet.map")} initialSnap={created || initiallyExpanded ? "full" : "half"} initialPresentation={presentation} onPresentationChange={onPresentationChange} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={returnTarget !== "walk" && onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
       {(visibleSnap, setSnap) => {
         if (visibleSnap === "full") detailWasOpen.current = true;
         const showDetail = visibleSnap === "full" || (visibleSnap === "peek" && detailWasOpen.current);

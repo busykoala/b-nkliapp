@@ -28,6 +28,22 @@ export type ActiveMapTask =
   | { kind: "facility"; benchId: string }
   | { kind: "add"; stage: "position" | "details" };
 
+export type BenchHistoryEntry = {
+  version: 1;
+  task: "bench";
+  benchId: string;
+  returnContext: BenchReturnContext;
+};
+
+export function readBenchHistoryEntry(state: unknown): BenchHistoryEntry | null {
+  if (!state || typeof state !== "object" || !("benchly" in state)) return null;
+  const entry = (state as { benchly?: unknown }).benchly;
+  if (!entry || typeof entry !== "object") return null;
+  const candidate = entry as Partial<BenchHistoryEntry>;
+  if (candidate.version !== 1 || candidate.task !== "bench" || typeof candidate.benchId !== "string" || !candidate.returnContext) return null;
+  return candidate as BenchHistoryEntry;
+}
+
 export function captureMapCamera(map: MapLibreMap): MapCameraSnapshot {
   const center = map.getCenter();
   return {

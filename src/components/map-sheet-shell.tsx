@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { registerOverlayDismissal } from "@/lib/overlay-dismissal";
 
 export type MapSheetSnap = "peek" | "half" | "full";
+export type MapSheetPresentation = { snap: MapSheetSnap; scrollTop: number };
 
 type Props = {
   label: string;
@@ -21,20 +22,25 @@ type Props = {
   languageTag?: string;
   voiceId?: string;
   headerAction?: ReactNode;
+  initialPresentation?: MapSheetPresentation | null;
+  onPresentationChange?: (presentation: MapSheetPresentation) => void;
   children: ReactNode | ((snap: MapSheetSnap, setSnap: (snap: MapSheetSnap) => void) => ReactNode);
 };
 
 const nextUp: Record<MapSheetSnap, MapSheetSnap> = { peek: "half", half: "full", full: "full" };
 const nextDown: Record<MapSheetSnap, MapSheetSnap> = { peek: "peek", half: "peek", full: "half" };
 
-export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, minimizeLabel, minimizeActionLabel, closeLabel, mapLabel, onClose, initialSnap = "half", variant = "planner", languageTag, voiceId, headerAction, children }: Props) {
-  const [snap, setSnap] = useState<MapSheetSnap>(initialSnap);
-  const [resumeSnap, setResumeSnap] = useState<Exclude<MapSheetSnap, "peek">>(initialSnap === "full" ? "full" : "half");
+export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, minimizeLabel, minimizeActionLabel, closeLabel, mapLabel, onClose, initialSnap = "half", variant = "planner", languageTag, voiceId, headerAction, initialPresentation, onPresentationChange, children }: Props) {
+  const startingSnap = initialPresentation?.snap ?? initialSnap;
+  const [snap, setSnap] = useState<MapSheetSnap>(startingSnap);
+  const [resumeSnap, setResumeSnap] = useState<Exclude<MapSheetSnap, "peek">>(startingSnap === "full" ? "full" : "half");
   const [desktop, setDesktop] = useState(false);
   const startY = useRef<number | null>(null);
   const suppressClickUntil = useRef(0);
   const returnFocus = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const presentationRef = useRef<MapSheetPresentation>({ snap: startingSnap, scrollTop: initialPresentation?.scrollTop ?? 0 });
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
     returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -46,9 +52,17 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
   useEffect(() => {
     return registerOverlayDismissal(() => onCloseRef.current());
   }, []);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (contentRef.current) contentRef.current.scrollTop = presentationRef.current.scrollTop;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const visibleSnap = desktop ? (snap === "peek" ? "peek" : "full") : snap;
   const changeSnap = (next: MapSheetSnap) => {
     if (next !== "peek") setResumeSnap(next);
+    presentationRef.current = { snap: next, scrollTop: contentRef.current?.scrollTop ?? presentationRef.current.scrollTop };
+    onPresentationChange?.(presentationRef.current);
     setSnap(next);
   };
   const resize = () => {
@@ -57,7 +71,7 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
   };
   const minimize = () => {
     if (snap !== "peek") setResumeSnap(snap);
-    setSnap("peek");
+    changeSnap("peek");
   };
   const resizeActionLabel = visibleSnap === "full" ? compactLabel : expandLabel;
   const release = (endY: number) => {
@@ -87,7 +101,10 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
       </button> : <span className="map-sheet-chrome-title">{label}</span>}
       {visibleSnap !== "peek" && <button type="button" className="map-sheet-minimize" aria-label={minimizeLabel} title={minimizeLabel} onClick={minimize}><PanelBottomClose size={18} aria-hidden="true" /><span className="sr-only">{minimizeActionLabel}</span></button>}
     </div>
-    <div className={variant === "bench" ? "map-sheet-content map-sheet-bench-content safe-bottom" : "map-sheet-content journey-scroll"}>
+    <div ref={contentRef} onScroll={(event) => {
+      presentationRef.current = { snap, scrollTop: event.currentTarget.scrollTop };
+      onPresentationChange?.(presentationRef.current);
+    }} className={variant === "bench" ? "map-sheet-content map-sheet-bench-content safe-bottom" : "map-sheet-content journey-scroll"}>
       {typeof children === "function" ? children(visibleSnap, setSnap) : children}
     </div>
   </aside>;

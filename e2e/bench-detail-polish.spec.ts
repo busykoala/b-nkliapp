@@ -38,6 +38,15 @@ test("shows nearby practical places on the map and keeps bench details readable"
     expect(icon!.x + icon!.width).toBeLessThan(cue!.x);
   }
   await sheet.getByRole("button", {name: "Toilette auf der Karte zeigen"}).scrollIntoViewIfNeeded();
+  const content = sheet.locator(".map-sheet-content");
+  const scrollBefore = await content.evaluate((node) => node.scrollTop);
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-zoom", /\d/);
+  const cameraBefore = await map.evaluate((node) => ({
+    latitude: node.getAttribute("data-center-latitude"),
+    longitude: node.getAttribute("data-center-longitude"),
+    zoom: node.getAttribute("data-zoom"),
+  }));
   await page.screenshot({path: testInfo.outputPath("01-structured-bench-detail.png")});
   await sheet.getByRole("button", {name: "Toilette auf der Karte zeigen"}).click();
   const callout = page.getByRole("region", {name: "Ort einer Einrichtung auf der Karte"});
@@ -46,5 +55,11 @@ test("shows nearby practical places on the map and keeps bench details readable"
   await page.waitForTimeout(800); // Let the 650 ms map camera transition reveal both markers.
   await page.screenshot({path: testInfo.outputPath("02-toilet-on-map.png")});
   await callout.getByRole("button", {name: "Zurück zum Bänkli"}).click();
-  await expect(page.getByRole("complementary", {name: "Bankdetails"})).toBeVisible();
+  const restored = page.getByRole("complementary", {name: "Bankdetails"});
+  await expect(restored).toBeVisible();
+  await expect(restored).toHaveAttribute("data-snap", "full");
+  await expect.poll(() => restored.locator(".map-sheet-content").evaluate((node) => node.scrollTop)).toBe(scrollBefore);
+  await expect(map).toHaveAttribute("data-center-latitude", cameraBefore.latitude!);
+  await expect(map).toHaveAttribute("data-center-longitude", cameraBefore.longitude!);
+  await expect(map).toHaveAttribute("data-zoom", cameraBefore.zoom!);
 });

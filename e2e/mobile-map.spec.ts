@@ -111,6 +111,36 @@ test("Escape closes a filter over a bench without dismissing the bench", async (
   await expect(page).toHaveURL(/bank=osm-node-101/);
 });
 
+test("browser Back and Forward restore an internally opened bench", async ({ page }) => {
+  await page.goto("/");
+  const search = page.getByRole("combobox", { name: "Ort suchen" });
+  await search.fill("Lindenhof");
+  await page.locator(".map-search-results").getByRole("option").first().click();
+  const bench = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(bench).toBeVisible();
+  await expect(page).toHaveURL(/bank=osm-node-101/);
+
+  await page.goBack();
+  await expect(bench).toHaveCount(0);
+  await expect(page).not.toHaveURL(/bank=/);
+
+  await page.goForward();
+  await expect(bench).toBeVisible();
+  await expect(page).toHaveURL(/bank=osm-node-101/);
+});
+
+test("closing a directly linked bench clears its URL without a stale reopen", async ({ page }) => {
+  await page.goto("/?bank=osm-node-101");
+  const bench = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(bench).toBeVisible();
+  await bench.getByRole("button", { name: "Bank schliessen" }).click();
+  await expect(bench).toHaveCount(0);
+  await expect(page).not.toHaveURL(/bank=/);
+
+  await page.reload();
+  await expect(bench).toHaveCount(0);
+});
+
 test("keeps core pages contained from tablet to large desktop", async ({ page }, testInfo) => {
   for (const viewport of [{ width: 768, height: 1024 }, { width: 1280, height: 800 }, { width: 1600, height: 900 }]) {
     await page.setViewportSize(viewport);
