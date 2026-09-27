@@ -3,22 +3,15 @@
 
 import { Compass, LoaderCircle, Maximize2, Minimize2, Minus, Plus, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama";
 import type { PanoramaDescriptor } from "@/features/bench-panorama/types";
 import type { BenchDetail } from "@/lib/types";
-import { PANORAMA_ARTIFACT_MAX_ALTITUDE, PANORAMA_MIN_ALTITUDE, PANORAMA_SKY_SPAN, panoramaSkyTop, projectNightSky, type ProjectedStar } from "@/lib/night-sky";
+import { PANORAMA_ARTIFACT_MAX_ALTITUDE, panoramaSkyTop, projectNightSky, type ProjectedStar } from "@/lib/night-sky";
+import { clampPanoramaPitch, normalizePanoramaHeading, panoramaHasSnowCover, panoramaProjection,
+  precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
 import { PanoramaWebgl } from "./panorama-webgl";
 
-function normalizeHeading(value: number) {
-  return ((value % 360) + 360) % 360;
-}
-
-const PANORAMA_ARTIFACT_HEIGHT_SCALE = 1.36;
-const PANORAMA_ARTIFACT_SPAN = PANORAMA_ARTIFACT_MAX_ALTITUDE - PANORAMA_MIN_ALTITUDE;
-const PANORAMA_SKY_HEIGHT_SCALE = PANORAMA_ARTIFACT_HEIGHT_SCALE * PANORAMA_SKY_SPAN / PANORAMA_ARTIFACT_SPAN;
-const PANORAMA_SKY_CAP_SCALE = PANORAMA_SKY_HEIGHT_SCALE - PANORAMA_ARTIFACT_HEIGHT_SCALE;
-const PANORAMA_ARTIFACT_OVERSCAN = (PANORAMA_ARTIFACT_HEIGHT_SCALE - 1) / 2;
 const PANORAMA_FAST_POLL_MS = 1_000;
 const PANORAMA_SLOW_POLL_MS = 5_000;
 const PANORAMA_FAST_POLL_ATTEMPTS = 20;
@@ -29,23 +22,18 @@ export function panoramaPollDelay(attempt: number, retryAfterMs?: number) {
     ? PANORAMA_FAST_POLL_MS : PANORAMA_SLOW_POLL_MS);
 }
 
-export function clampPanoramaVertical(viewportHeight: number, value: number) {
-  const minimum = -viewportHeight * PANORAMA_ARTIFACT_OVERSCAN;
-  const maximum = viewportHeight * (PANORAMA_SKY_CAP_SCALE + PANORAMA_ARTIFACT_OVERSCAN);
-  return Math.max(minimum, Math.min(maximum, value));
-}
+export const clampPanoramaVertical = clampPanoramaPitch;
 
 function property(bench: BenchDetail, key: string) {
   return bench.properties.find((item) => item.key === key)?.value ?? "";
 }
 
 export function panoramaTrackOffset(viewportWidth: number, viewportHeight: number, heading: number, zoom = 1) {
-  const panoramaWidth = Math.round(viewportHeight * PANORAMA_ARTIFACT_HEIGHT_SCALE * 4 * zoom);
-  return Math.round(viewportWidth / 2 - panoramaWidth * (1 + normalizeHeading(heading) / 360));
+  return panoramaProjection(viewportWidth, viewportHeight, heading, 0, zoom).left;
 }
 
 export function panoramaWrappedPositions(heading: number) {
-  const position = normalizeHeading(heading) / 360 * 100;
+  const position = normalizePanoramaHeading(heading) / 360 * 100;
   return [position, position + 100];
 }
 
@@ -88,6 +76,7 @@ function benchAsset(bench: BenchDetail) {
 
 export function moonLightPath(phase: number, steps = 28) {
   const cycle = ((phase % 1) + 1) % 1;
+  if (cycle < .008 || cycle > .992) return "";
   const waxing = cycle <= .5;
   const cosine = Math.cos(cycle * Math.PI * 2);
   const rows = Array.from({ length: steps + 1 }, (_, index) => {
@@ -100,12 +89,18 @@ export function moonLightPath(phase: number, steps = 28) {
   return `M ${rows.map(({ first, y }) => `${first.toFixed(2)} ${y.toFixed(2)}`).join(" L ")} L ${[...rows].reverse().map(({ second, y }) => `${second.toFixed(2)} ${y.toFixed(2)}`).join(" L ")} Z`;
 }
 
-function MoonDisc({ phase }: { phase: number }) {
+function MoonDisc({ phase, illumination }: { phase: number; illumination: number }) {
+  const clipId = useId().replaceAll(":", "");
+  if (illumination < .015) return null;
+  const path = moonLightPath(phase);
   return <svg viewBox="0 0 48 48" aria-hidden="true">
-    <circle cx="24" cy="24" r="18" fill="#536470" opacity=".78" />
-    <path d={moonLightPath(phase)} fill="#f5ecc8" opacity=".96" />
-    <circle cx="18" cy="18" r="2.2" fill="#9d9d8b" opacity=".2" />
-    <circle cx="29" cy="29" r="3.1" fill="#9d9d8b" opacity=".16" />
+    <defs><clipPath id={clipId}><path d={path} /></clipPath></defs>
+    <path d={path} fill="#f5ecc8" opacity=".96" />
+    <g clipPath={`url(#${clipId})`} fill="#908d7c">
+      <circle cx="18" cy="18" r="2.2" opacity=".24" />
+      <circle cx="29" cy="29" r="3.1" opacity=".18" />
+      <circle cx="31" cy="16" r="1.5" opacity=".14" />
+    </g>
   </svg>;
 }
 
@@ -131,23 +126,24 @@ function PanoramaPlaceholder({ bench, status, children, onRetry }: {
 
 export function BenchPanorama({ bench, children }: { bench: BenchDetail; children?: ReactNode }) {
   const t = useTranslations("bench.landscape");
-  const initialHeading = normalizeHeading(bench.directionDegrees ?? 0);
+  const initialHeading = normalizePanoramaHeading(bench.directionDegrees ?? 0);
   const [heading, setHeading] = useState(initialHeading);
   const [descriptor, setDescriptor] = useState<PanoramaDescriptor>(bench.panorama ?? { status: bench.panoramaStatus });
   const [failed, setFailed] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [dragging, setDragging] = useState(false);
-  const [verticalOffset, setVerticalOffset] = useState(0);
+  const [pitch, setPitch] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [expanded, setExpanded] = useState(false);
-  const [skyVisibility, setSkyVisibility] = useState<{ url: string; celestialClear: boolean; starIds: Set<string> } | null>(null);
+  const [terrainReadyUrl, setTerrainReadyUrl] = useState<string | null>(null);
   const figure = useRef<HTMLElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const expandButton = useRef<HTMLButtonElement>(null);
-  const drag = useRef<{ pointer: number; x: number; y: number; heading: number; verticalOffset: number } | null>(null);
+  const drag = useRef<{ pointer: number; x: number; y: number; heading: number; pitch: number } | null>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ distance: number; zoom: number } | null>(null);
   const hintId = useId();
+  const markTerrainReady = useCallback(() => setTerrainReadyUrl(descriptor.materialUrl ?? null), [descriptor.materialUrl]);
 
   const load = async () => {
     const result = await loadBenchPanorama(bench.id).catch((): PanoramaDescriptor => ({ status: "error", retryAfterMs: 30_000 }));
@@ -221,38 +217,6 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     : projectNightSky(new Date(observationTime), bench.latitude, bench.longitude),
   [bench.dayPhase, bench.latitude, bench.longitude, observationTime]);
 
-  useEffect(() => {
-    let active = true;
-    if (!descriptor.materialUrl) return () => { active = false; };
-    const url = descriptor.materialUrl;
-    const image = new Image();
-    image.onload = () => {
-      if (!active) return;
-      const canvas = document.createElement("canvas");
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      if (!context) return;
-      context.drawImage(image, 0, 0);
-      const clear = ({ azimuthDegrees, altitudeDegrees }: { azimuthDegrees: number; altitudeDegrees: number }) => {
-        if (altitudeDegrees > PANORAMA_ARTIFACT_MAX_ALTITUDE) return true;
-        if (altitudeDegrees < PANORAMA_MIN_ALTITUDE) return false;
-        const x = Math.min(canvas.width - 1, Math.floor(normalizeHeading(azimuthDegrees) / 360 * canvas.width));
-        const y = Math.max(0, Math.min(canvas.height - 1, Math.floor(
-          (PANORAMA_ARTIFACT_MAX_ALTITUDE - altitudeDegrees) / PANORAMA_ARTIFACT_SPAN * canvas.height)));
-        return panoramaMaterialIsSky(context.getImageData(x, y, 1, 1).data);
-      };
-      const celestialClear = celestial ? [-1, 0, 1].every((vertical) => [-1, 0, 1].every((horizontal) => clear({
-        azimuthDegrees: celestial.azimuth + horizontal * 1.15 / Math.max(.2, Math.cos(celestial.altitude * Math.PI / 180)),
-        altitudeDegrees: celestial.altitude + vertical * 1.15,
-      }))) : false;
-      setSkyVisibility({ url, celestialClear,
-        starIds: new Set(stars.filter(clear).map((star) => star.id)) });
-    };
-    image.src = url;
-    return () => { active = false; image.onload = null; image.onerror = null; };
-  }, [celestial, descriptor.materialUrl, stars]);
-
   if (failed || !descriptor.artifactUrl) {
     return <PanoramaPlaceholder bench={bench} status={failed ? "error" : descriptor.status} onRetry={request}>{children}</PanoramaPlaceholder>;
   }
@@ -270,9 +234,9 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       else setZoom(Math.max(1, Math.min(2, pinch.current.zoom * distance / pinch.current.distance)));
       return;
     }
-    const panoramaWidth = Math.round(size.height * PANORAMA_ARTIFACT_HEIGHT_SCALE * 4 * zoom);
-    setHeading(normalizeHeading(active.heading - (event.clientX - active.x) / panoramaWidth * 360));
-    setVerticalOffset(clampPanoramaVertical(size.height, active.verticalOffset + event.clientY - active.y));
+    const projection = panoramaProjection(size.width, size.height, active.heading, active.pitch, zoom);
+    setHeading(normalizePanoramaHeading(active.heading - (event.clientX - active.x) / projection.copyWidth * 360));
+    setPitch(clampPanoramaPitch(size.height, active.pitch + (event.clientY - active.y) / projection.pixelsPerDegree, zoom));
   };
   const finish = (event: PointerEvent<HTMLDivElement>) => {
     pointers.current.delete(event.pointerId);
@@ -282,7 +246,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  const offset = panoramaTrackOffset(size.width, size.height, heading, zoom);
+  const projection = panoramaProjection(size.width, size.height, heading, pitch, zoom);
   const degrees = Math.round(heading) % 360;
   const cloudHigh = bench.weather?.cloudHigh ?? cloudCover * .58;
   const cloudMid = bench.weather?.cloudMid ?? cloudCover * .72;
@@ -291,52 +255,56 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const precipitation = bench.weather?.precipitationType ?? "none";
   const raining = precipitation === "rain" || precipitation === "mixed";
   const snowing = precipitation === "snow" || precipitation === "mixed";
-  const precipitationRate = bench.weather?.precipitationRateMmH ?? 0;
-  const rainCount = Math.round(Math.max(12, Math.min(58, 14 + precipitationRate * 11)));
-  const snowCount = Math.round(Math.max(12, Math.min(46, 16 + precipitationRate * 7)));
-  const snowGround = (bench.weather?.snowDepthCm ?? 0) >= 1 || (bench.weather?.snowCoverPercent ?? 0) >= .2;
+  const precipitationRate = bench.weather?.precipitationRateMmH ?? null;
+  const mixed = precipitation === "mixed";
+  const rainCount = precipitationParticleCount("rain", size.width, size.height, precipitationRate, mixed);
+  const snowCount = precipitationParticleCount("snow", size.width, size.height, precipitationRate, mixed);
+  const rainParticles = raining ? precipitationParticles("rain", rainCount, `${bench.id}:rain`) : [];
+  const snowParticles = snowing ? precipitationParticles("snow", snowCount, `${bench.id}:snow`) : [];
+  const snowGround = panoramaHasSnowCover(bench.weather?.snowDepthCm, bench.weather?.snowCoverPercent);
   const covered = bench.covered;
   const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, heading);
   const twilightOpacity = bench.dayPhase === "day" ? 0 : Math.max(.08, Math.min(1, (-bench.sunAltitudeDegrees + 2) / 10));
   const starOpacity = twilightOpacity * Math.max(.05, 1 - cloudCover * .96);
   const celestialOpacity = Math.max(.12, 1 - cloudCover * .88);
   const panoramaStyle = {
-    "--panorama-offset": `${offset}px`,
-    "--panorama-y": `${verticalOffset}px`,
-    "--panorama-copy-width": `${Math.round(size.height * PANORAMA_ARTIFACT_HEIGHT_SCALE * 4 * zoom)}px`,
-    "--panorama-track-height": `${PANORAMA_SKY_HEIGHT_SCALE * 100}%`,
-    "--panorama-track-top": `${-(PANORAMA_SKY_CAP_SCALE + PANORAMA_ARTIFACT_OVERSCAN) * 100}%`,
-    "--panorama-raster-height": `${PANORAMA_ARTIFACT_SPAN / PANORAMA_SKY_SPAN * 100}%`,
-    "--cloud-opacity": Math.min(.76, cloudCover * .78).toFixed(3),
+    "--panorama-offset": `${projection.left}px`,
+    "--panorama-copy-width": `${projection.copyWidth}px`,
+    "--panorama-track-height": `${projection.trackHeight}px`,
+    "--panorama-track-top": `${projection.top}px`,
+    "--panorama-raster-height": `${projection.rasterHeight}px`,
+    "--foreground-shift": `${projection.maximumPitch ? Math.min(132, projection.pitch / projection.maximumPitch * 132) : 0}%`,
     "--cloud-high-opacity": Math.min(.68, cloudHigh * .74).toFixed(3),
     "--cloud-mid-opacity": Math.min(.78, cloudMid * .82).toFixed(3),
     "--cloud-low-opacity": Math.min(.7, cloudLow * .78).toFixed(3),
-    "--precip-opacity": Math.max(.08, Math.min(.32, .08 + precipitationRate * .045)).toFixed(3),
+    "--precip-opacity": Math.max(.5, Math.min(.94, .58 + (precipitationRate ?? 1.1) * .08)).toFixed(3),
     "--lightmap-opacity": (cloudContrast * .32).toFixed(3),
     "--star-opacity": starOpacity.toFixed(3),
     "--celestial-opacity": celestialOpacity.toFixed(3),
     "--shadow-length": `${benchShadow.lengthPercent.toFixed(3)}%`,
     "--shadow-turn": `${benchShadow.turnDegrees.toFixed(3)}deg`,
   } as CSSProperties;
-  const activeSkyVisibility = skyVisibility?.url === descriptor.materialUrl ? skyVisibility : null;
-  const celestialPositions = celestial && activeSkyVisibility?.celestialClear
-    ? [normalizeHeading(celestial.azimuth) / 3.6] : [];
-  const visibleStars = activeSkyVisibility
-    ? stars.filter((star) => activeSkyVisibility.starIds.has(star.id)) : [];
+  // With a material map, the alpha terrain canvas performs pixel-perfect
+  // occlusion. Without one we only expose the conservative sky extension.
+  const materialReady = Boolean(descriptor.materialUrl && terrainReadyUrl === descriptor.materialUrl);
+  const celestialPositions = celestial && (materialReady || celestial.altitude > PANORAMA_ARTIFACT_MAX_ALTITUDE)
+    ? [normalizePanoramaHeading(celestial.azimuth) / 3.6] : [];
+  const visibleStars = materialReady ? stars
+    : stars.filter((star) => star.altitudeDegrees > PANORAMA_ARTIFACT_MAX_ALTITUDE);
   const celestialTop = celestial ? `${panoramaCelestialTop(celestial.altitude).toFixed(3)}%` : "0%";
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!expanded) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       const step = event.shiftKey ? 30 : 5;
-      setHeading((current) => normalizeHeading(current + (event.key === "ArrowRight" ? step : -step)));
+      setHeading((current) => normalizePanoramaHeading(current + (event.key === "ArrowRight" ? step : -step)));
     } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
-      setVerticalOffset((current) => clampPanoramaVertical(size.height, current + (event.key === "ArrowDown" ? -8 : 8)));
+      setPitch((current) => clampPanoramaPitch(size.height, current + (event.key === "ArrowUp" ? 3 : -3), zoom));
     } else if (event.key === "Home") {
       event.preventDefault();
       setHeading(initialHeading);
-      setVerticalOffset(0);
+      setPitch(0);
       setZoom(1);
     } else if (event.key === "+" || event.key === "=") {
       event.preventDefault(); setZoom((current) => Math.min(2, current + .1));
@@ -346,10 +314,9 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   };
   const wheel = (event: WheelEvent<HTMLDivElement>) => {
     if (!expanded) return;
-    const direction = Math.sign(event.deltaY);
-    if ((zoom <= 1 && direction > 0) || (zoom >= 2 && direction < 0)) return;
     event.preventDefault();
-    setZoom((current) => Math.max(1, Math.min(2, current - direction * .1)));
+    const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? size.height : 1;
+    setPitch((current) => clampPanoramaPitch(size.height, current - event.deltaY * units / 18, zoom));
   };
 
   const closeExpanded = () => {
@@ -375,32 +342,31 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       aria-label={`${t("panoramaDescription")} · ${t("panoramaHeading", { degrees })}`} aria-describedby={hintId}
       onKeyDown={keyDown}
       onWheel={wheel}
-      onDoubleClick={expanded ? () => setZoom((current) => current > 1 ? 1 : 1.6) : undefined}
+      onDoubleClick={expanded ? () => setZoom((current) => current > 1 ? 1 : 1.5) : undefined}
       onPointerDown={expanded ? (event) => {
         if (event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);
-        drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, heading, verticalOffset };
+        drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, heading, pitch: projection.pitch };
         pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
         setDragging(true);
       } : undefined}
       onPointerMove={expanded ? move : undefined} onPointerUp={expanded ? finish : undefined} onPointerCancel={expanded ? finish : undefined}>
       <div className="bench-panorama-track" style={panoramaStyle} aria-hidden="true">
         {[0, 1, 2].map((copy) => <div className="bench-panorama-copy" key={copy}>
-          <span className="bench-panorama-sky-cap" />
-          <div className="bench-panorama-raster">
-            <PanoramaWebgl imageUrl={artifactUrl} materialUrl={descriptor.materialUrl} season={bench.season}
-              sunAltitude={bench.sunAltitudeDegrees} cloudCover={cloudCover} dayPhase={bench.dayPhase} onError={() => setFailed(true)} />
-            {descriptor.lightMapUrl && <img className="bench-panorama-lightmap" src={descriptor.lightMapUrl} alt="" draggable={false} />}
-            {snowGround && <span className="bench-panorama-snow-ground" />}
-          </div>
+          <span className="bench-panorama-sky" />
           {visibleStars.length > 0 && <span className="bench-panorama-stars">{visibleStars.map((star: ProjectedStar) => <i key={star.id}
             className={star.important ? "is-guide" : undefined} style={{ left: `${star.leftPercent.toFixed(3)}%`, top: `${star.topPercent.toFixed(3)}%`,
               "--star-size": `${star.sizePixels.toFixed(3)}px`, "--star-alpha": star.opacity.toFixed(3), "--star-tone": star.tone.toFixed(3) } as CSSProperties} />)}</span>}
           {celestial && celestialPositions.map((left) => <span key={left} className={`bench-panorama-celestial is-${celestial.kind}`}
             style={{ left: `${left.toFixed(3)}%`, top: celestialTop }}>
-            {celestial.kind === "moon" ? <MoonDisc phase={bench.moonPhase} /> : <i />}
+            {celestial.kind === "moon" ? <MoonDisc phase={bench.moonPhase} illumination={bench.moonIllumination} /> : <i />}
           </span>)}
           {cloudCover > .08 && <><span className="bench-panorama-clouds is-high" /><span className="bench-panorama-clouds is-mid" /><span className="bench-panorama-clouds is-low" /></>}
+          <div className="bench-panorama-raster">
+            <PanoramaWebgl imageUrl={artifactUrl} materialUrl={descriptor.materialUrl} season={bench.season}
+              sunAltitude={bench.sunAltitudeDegrees} cloudCover={cloudCover} dayPhase={bench.dayPhase}
+              snowCover={snowGround} onReady={markTerrainReady} onError={() => setFailed(true)} />
+          </div>
         </div>)}
       </div>
       <div className="bench-panorama-foreground" aria-hidden="true">
@@ -408,8 +374,8 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
         {bench.sunAltitudeDegrees > 0 && <span className="bench-panorama-bench-shadow" />}
         <img className="bench-panorama-rear-bench" src={benchAsset(bench)} alt="" draggable={false} />
       </div>
-      {raining && <div className="bench-panorama-rain" aria-hidden="true">{Array.from({ length: rainCount }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 71) % 100}%`, "--drop-y": `${(index * 37) % 90}%`, "--drop-delay": `${-(index % 9) * .13}s` } as CSSProperties} />)}</div>}
-      {snowing && <div className="bench-panorama-snow" aria-hidden="true">{Array.from({ length: snowCount }, (_, index) => <i key={index} style={{ "--drop-x": `${(index * 61) % 100}%`, "--drop-y": `${(index * 29) % 90}%`, "--drop-delay": `${-(index % 11) * .24}s` } as CSSProperties} />)}</div>}
+      {raining && <div className="bench-panorama-rain" aria-hidden="true">{rainParticles.map((particle, index) => <i key={index} style={{ "--drop-x": `${particle.x.toFixed(3)}%`, "--drop-y": `${particle.y.toFixed(3)}%`, "--drop-delay": `${particle.delay.toFixed(3)}s`, "--drop-duration": `${particle.duration.toFixed(3)}s`, "--drop-size": `${particle.size.toFixed(2)}px`, "--drop-length": `${particle.length.toFixed(2)}px`, "--drop-drift": `${particle.drift.toFixed(2)}px`, "--drop-alpha": particle.alpha.toFixed(3) } as CSSProperties} />)}</div>}
+      {snowing && <div className="bench-panorama-snow" aria-hidden="true">{snowParticles.map((particle, index) => <i key={index} style={{ "--drop-x": `${particle.x.toFixed(3)}%`, "--drop-y": `${particle.y.toFixed(3)}%`, "--drop-delay": `${particle.delay.toFixed(3)}s`, "--drop-duration": `${particle.duration.toFixed(3)}s`, "--drop-size": `${particle.size.toFixed(2)}px`, "--drop-drift": `${particle.drift.toFixed(2)}px`, "--drop-alpha": particle.alpha.toFixed(3) } as CSSProperties} />)}</div>}
     </div>
     {covered && <div className="bench-panorama-shelter" aria-hidden="true"><i /><i /></div>}
     {covered && <div className="bench-panorama-shelter-shade" aria-hidden="true" />}

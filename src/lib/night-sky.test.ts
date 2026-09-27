@@ -21,6 +21,8 @@ describe("night sky projection", () => {
     expect(visible.length).toBeGreaterThan(300);
     expect(visible.length).toBeLessThan(400);
     expect(visible.some((star) => star.important)).toBe(true);
+    expect(visible.filter((star) => !star.important).every((star) => star.sizePixels >= 1.2 && star.sizePixels <= 1.6)).toBe(true);
+    expect(visible.filter((star) => star.important).every((star) => star.sizePixels >= 2 && star.sizePixels <= 3)).toBe(true);
     for (const star of visible) {
       expect(star.leftPercent).toBeGreaterThanOrEqual(0);
       expect(star.leftPercent).toBeLessThan(100);

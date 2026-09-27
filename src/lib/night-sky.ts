@@ -103,7 +103,7 @@ export function projectNightSky(date: Date, latitude: number, longitude: number)
     const strength = Math.max(.06, Math.min(1, (6.35 - star.magnitude) / 6.2));
     return [{ ...star, ...position, leftPercent: position.azimuthDegrees / 3.6,
       topPercent: panoramaSkyTop(position.altitudeDegrees),
-      sizePixels: .85 + Math.pow(strength, 1.7) * 2.35,
-      opacity: .24 + Math.pow(strength, 1.22) * .72 }];
+      sizePixels: star.important ? 2 + Math.pow(strength, 1.4) : 1.2 + Math.pow(strength, 1.8) * .4,
+      opacity: .28 + Math.pow(strength, 1.22) * .7 }];
   });
 }

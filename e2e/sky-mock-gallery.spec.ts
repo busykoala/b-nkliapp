@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import Database from "better-sqlite3";
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import sharp from "sharp";
 import { installPanoramaFixture } from "./panorama-fixture";
 
 type Scenario = "day-rain" | "day-snow" | "night-full-rain" | "night-new" | "night-waning";
@@ -18,6 +19,7 @@ const scenarioName = process.env.BENCHLY_SKY_GALLERY_SCENARIO as Scenario;
 const scenario = scenarios[scenarioName];
 
 test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+test.skip(!scenario, "Set BENCHLY_SKY_GALLERY_SCENARIO to generate a gallery image");
 
 function floatBlob(value: number) {
   const blob = Buffer.alloc(4);
@@ -53,18 +55,38 @@ function installWeatherFixture(kind: "rain" | "night-rain" | "snow" | "clear") {
 }
 
 function installGalleryPanorama() {
-  installPanoramaFixture("osm-node-109", false);
+  const source = resolve("data/panorama-cache-v1/active/local-b1041b661b39");
+  const key = "f390a46eadfe872da181311837d225e6f5557bd70d714a3d5d09eb93786f79d3";
+  installPanoramaFixture("osm-node-109", false, {
+    painting: readFileSync(resolve(source, "renders/f3", `${key}.webp`)),
+    material: readFileSync(resolve(source, "materials/f3", `${key}.webp`)),
+  });
   const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
   const files = database.prepare(`SELECT pr.artifact_path painting,pr.material_path material,pl.artifact_path light
     FROM benches b JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id
     LEFT JOIN bench_panorama_lightmaps pl ON pl.bench_row_id=b.row_id
     WHERE b.id='osm-node-109'`).get() as { painting: string; material: string; light: string };
-  const source = resolve("data/panorama-cache-v1/active/local-b1041b661b39");
-  const key = "f390a46eadfe872da181311837d225e6f5557bd70d714a3d5d09eb93786f79d3";
-  copyFileSync(resolve(source, "renders/f3", `${key}.webp`), files.painting);
-  copyFileSync(resolve(source, "materials/f3", `${key}.webp`), files.material);
   copyFileSync(resolve("data/panorama-fixtures/art-review-8/osm-node-768598470", scenario.light), files.light);
   database.close();
+}
+
+async function changedPixelShares(first: Buffer, second: Buffer) {
+  const [{ data: before, info }, { data: after }] = await Promise.all([
+    sharp(first).removeAlpha().raw().toBuffer({ resolveWithObject: true }),
+    sharp(second).removeAlpha().raw().toBuffer({ resolveWithObject: true }),
+  ]);
+  const changed = [0, 0, 0];
+  const totals = [0, 0, 0];
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      const third = Math.min(2, Math.floor(x / info.width * 3));
+      const cursor = (y * info.width + x) * info.channels;
+      totals[third] += 1;
+      if (Math.abs(before[cursor] - after[cursor]) + Math.abs(before[cursor + 1] - after[cursor + 1])
+        + Math.abs(before[cursor + 2] - after[cursor + 2]) > 18) changed[third] += 1;
+    }
+  }
+  return changed.map((value, index) => value / totals[index]);
 }
 
 test("renders the selected sky mock", async ({ page }) => {
@@ -97,6 +119,58 @@ test("renders the selected sky mock", async ({ page }) => {
   await page.mouse.move(box!.x + box!.width * .5, box!.y + box!.height * .9, { steps: 5 });
   await page.mouse.up();
   await page.addStyleTag({ content: ".bench-panorama-hud{display:none!important} nextjs-portal{display:none!important}" });
-  mkdirSync(resolve("docs/sky-mock-gallery"), { recursive: true });
-  await panorama.screenshot({ path: resolve("docs/sky-mock-gallery", scenario.file), animations: "disabled" });
+  const clouds = panorama.locator(".bench-panorama-clouds");
+  if (scenario.weather === "clear") await expect(clouds).toHaveCount(0);
+  else {
+    await expect(clouds).toHaveCount(9);
+    const atmosphere = await panorama.screenshot({ animations: "disabled" });
+    await clouds.evaluateAll((layers) => layers.forEach((cloud) => {
+      (cloud as HTMLElement).style.visibility = "hidden";
+    }));
+    const withoutClouds = await panorama.screenshot({ animations: "disabled" });
+    for (const share of await changedPixelShares(atmosphere, withoutClouds)) expect(share).toBeGreaterThan(.01);
+    await clouds.evaluateAll((layers) => layers.forEach((cloud) => {
+      (cloud as HTMLElement).style.visibility = "";
+    }));
+  }
+  const precipitationSelector = scenario.weather === "snow" ? ".bench-panorama-snow"
+    : scenario.weather === "rain" || scenario.weather === "night-rain" ? ".bench-panorama-rain" : null;
+  if (precipitationSelector) {
+    const particles = panorama.locator(`${precipitationSelector} i`);
+    const count = await particles.count();
+    if (scenario.weather === "snow") expect(count).toBeGreaterThanOrEqual(70);
+    else expect(count).toBeGreaterThanOrEqual(110);
+    expect(count).toBeLessThanOrEqual(scenario.weather === "snow" ? 110 : 180);
+    const withPrecipitation = await panorama.screenshot({ animations: "disabled" });
+    await panorama.locator(precipitationSelector).evaluate((layer: HTMLElement) => { layer.style.visibility = "hidden"; });
+    const withoutPrecipitation = await panorama.screenshot({ animations: "disabled" });
+    for (const share of await changedPixelShares(withPrecipitation, withoutPrecipitation)) expect(share).toBeGreaterThan(.001);
+    await panorama.locator(precipitationSelector).evaluate((layer: HTMLElement) => { layer.style.visibility = ""; });
+  }
+  if (scenarioName === "night-new") await expect(panorama.locator(".bench-panorama-celestial svg")).toHaveCount(0);
+  if (scenarioName === "night-waning" || scenarioName === "night-full-rain") {
+    await expect(panorama.locator(".bench-panorama-celestial svg").first()).toBeVisible();
+  }
+  if (scenarioName === "night-new" || scenarioName === "night-waning") {
+    expect(await panorama.locator(".bench-panorama-stars i").count()).toBeGreaterThan(60);
+  }
+  const outputDirectory = resolve(process.env.BENCHLY_SKY_GALLERY_OUTPUT ?? "docs/sky-mock-gallery/after");
+  mkdirSync(outputDirectory, { recursive: true });
+  const finalImage = await panorama.screenshot({ path: resolve(outputDirectory, scenario.file), animations: "disabled" });
+  if (scenarioName === "night-new") {
+    const seam = await panorama.evaluate((figure) => {
+      const frame = figure.getBoundingClientRect();
+      return [...figure.querySelectorAll(".bench-panorama-copy")].map((copy) => copy.getBoundingClientRect().right - frame.left)
+        .find((right) => right > 4 && right < frame.width - 4) ?? null;
+    });
+    expect(seam).not.toBeNull();
+    const { data, info } = await sharp(finalImage).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const left = Math.floor(seam!) - 2; const right = Math.floor(seam!) + 2;
+    let contrast = 0;
+    for (let y = 0; y < info.height; y += 1) for (let channel = 0; channel < 3; channel += 1) {
+      contrast += Math.abs(data[(y * info.width + left) * info.channels + channel]
+        - data[(y * info.width + right) * info.channels + channel]);
+    }
+    expect(contrast / (info.height * 3)).toBeLessThan(8);
+  }
 });

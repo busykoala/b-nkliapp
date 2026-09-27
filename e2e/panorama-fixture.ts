@@ -2,12 +2,14 @@ import { createHash } from "node:crypto";
 import { copyFileSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import Database from "better-sqlite3";
+import sharp from "sharp";
 
 function key(kind: string, benchId: string) {
   return createHash("sha256").update(`${kind}:${benchId}`).digest("hex");
 }
 
-export function installPanoramaFixture(benchId: string, covered?: boolean) {
+export function installPanoramaFixture(benchId: string, covered?: boolean,
+  assets?: { painting: Buffer; material: Buffer }) {
   const databasePath = process.env.BENCHLY_E2E_DATABASE!;
   const cacheRoot = process.env.BENCHLY_E2E_PANORAMA_CACHE!;
   const database = new Database(databasePath);
@@ -28,12 +30,14 @@ export function installPanoramaFixture(benchId: string, covered?: boolean) {
   mkdirSync(renderDirectory, { recursive: true });
   mkdirSync(lightDirectory, { recursive: true });
   mkdirSync(materialDirectory, { recursive: true });
-  copyFileSync(join(process.cwd(), "public/map-art/textures/mountain.webp"), artifact);
+  if (assets) writeFileSync(artifact, assets.painting);
+  else copyFileSync(join(process.cwd(), "public/map-art/textures/mountain.webp"), artifact);
   copyFileSync(join(process.cwd(), "public/map-art/textures/paper.webp"), lightArtifact);
   // One transparent pixel is a truthful all-sky semantic mask (material G=0).
   // A decorative paper texture marked every pixel as solid terrain and made
   // celestial occlusion impossible to exercise in the browser fixture.
-  writeFileSync(materialArtifact, Buffer.from("UklGRhoAAABXRUJQVlA4TA4AAAAvAAAAAAcQEf0PRET/Aw==", "base64"));
+  writeFileSync(materialArtifact, assets?.material
+    ?? Buffer.from("UklGRhoAAABXRUJQVlA4TA4AAAAvAAAAAAcQEf0PRET/Aw==", "base64"));
   database.prepare(`INSERT OR IGNORE INTO panorama_generations
     (id,git_commit,state,source_versions_json,created_at,activated_at)
     VALUES(?,'0123456789abcdef','active','{}',?,?)`).run(generationId, now, now);
@@ -62,4 +66,32 @@ export function installPanoramaFixture(benchId: string, covered?: boolean) {
     bench.row_id, geometryKey, lightKey, now, lightArtifact, statSync(lightArtifact).size, now, now,
   );
   database.close();
+}
+
+export async function installTerrainPanoramaFixture(benchId: string, covered?: boolean) {
+  // The narrow 149° summit crosses the fixed daytime fixture's solar disc.
+  // It is intentional: browser screenshots can prove partial-disc occlusion,
+  // not merely that the canvas has a higher z-index than the body.
+  const ridge = "M0 184 C95 153 151 173 226 151 C322 121 376 179 455 163 C474 155 484 54 497 42 C510 54 522 154 545 163 C566 166 588 156 612 149 C705 115 770 175 846 158 C925 140 1017 178 1100 153 C1144 140 1173 163 1200 184 L1200 300 L0 300 Z";
+  const painting = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+    <rect width="1200" height="300" fill="#a8c8d2"/>
+    <path d="${ridge}" fill="#758c79"/>
+    <path d="M0 217 C145 180 248 230 373 190 C509 154 615 226 748 188 C900 151 1016 221 1200 181 L1200 300 L0 300 Z" fill="#657b63" opacity=".84"/>
+    <path d="M545 147 L545 111 L575 111 L575 153 Z" fill="#887b68"/>
+    <path d="M539 112 L560 93 L582 112 Z" fill="#6b6257"/>
+    <path d="M0 270 C210 249 387 287 591 260 C808 233 978 285 1200 255 L1200 300 L0 300 Z" fill="#9b9870" opacity=".7"/>
+  </svg>`;
+  const material = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+    <rect width="1200" height="300" fill="rgb(0,0,0)"/>
+    <path d="${ridge}" fill="rgb(74,128,150)"/>
+    <path d="M545 147 L545 111 L575 111 L575 153 Z M539 112 L560 93 L582 112 Z" fill="rgb(42,230,128)"/>
+  </svg>`;
+  // Finish the comparatively slow SVG rasterisation before making the DB row
+  // visible. This prevents the polling browser from caching the all-sky seed
+  // asset in the few milliseconds before the matching mask replaces it.
+  const [paintingBuffer, materialBuffer] = await Promise.all([
+    sharp(Buffer.from(painting)).webp({ quality: 92 }).toBuffer(),
+    sharp(Buffer.from(material)).webp({ lossless: true }).toBuffer(),
+  ]);
+  installPanoramaFixture(benchId, covered, { painting: paintingBuffer, material: materialBuffer });
 }

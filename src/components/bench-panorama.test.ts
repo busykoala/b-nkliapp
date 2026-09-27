@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clampPanoramaVertical, moonLightPath, panoramaBenchShadow, panoramaCelestialTop, panoramaMaterialIsSky, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "./bench-panorama";
+import { panoramaHasSnowCover, panoramaMaximumPitch, panoramaProjection, precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
 
 describe("360 degree panorama track", () => {
   it("checks a cold painting promptly, then backs off without ignoring error retries", () => {
@@ -34,10 +35,42 @@ describe("360 degree panorama track", () => {
     expect(wrapped).toBeCloseTo(359 / 3.6 + 100);
   });
 
-  it("lets the expanded view reach the zenith while retaining lower-scene overscan", () => {
-    expect(clampPanoramaVertical(500, 400)).toBeCloseTo(316.6667);
-    expect(clampPanoramaVertical(500, -200)).toBeCloseTo(-90);
+  it("uses one pitch clamp that never looks below the resting composition", () => {
+    expect(clampPanoramaVertical(500, 400)).toBeCloseTo(41.9118);
+    expect(clampPanoramaVertical(500, -200)).toBe(0);
     expect(clampPanoramaVertical(500, 12)).toBe(12);
+    expect(panoramaMaximumPitch(500, 2)).toBeGreaterThan(panoramaMaximumPitch(500, 1));
+    const rest = panoramaProjection(600, 500, 0);
+    const zenith = panoramaProjection(600, 500, 0, 400);
+    expect(rest.top).toBeCloseTo(-316.6667);
+    expect(zenith.top).toBeCloseTo(0);
+    expect(zenith.pitch).toBeCloseTo(panoramaMaximumPitch(500));
+  });
+
+  it("scales deterministic precipitation with area, rate and explicit bounds", () => {
+    expect(precipitationParticleCount("rain", 390, 325, 2)).toBe(36);
+    expect(precipitationParticleCount("snow", 390, 325, 2)).toBe(26);
+    expect(precipitationParticleCount("rain", 1440, 900, 2)).toBeGreaterThanOrEqual(110);
+    expect(precipitationParticleCount("rain", 1440, 900, 2)).toBeLessThanOrEqual(160);
+    expect(precipitationParticleCount("snow", 1440, 900, 2)).toBeGreaterThanOrEqual(70);
+    expect(precipitationParticleCount("snow", 1440, 900, 2)).toBeLessThanOrEqual(110);
+    expect(precipitationParticleCount("rain", 8000, 8000, 80)).toBe(220);
+    expect(precipitationParticleCount("snow", 8000, 8000, 80)).toBe(150);
+    expect(precipitationParticleCount("rain", 390, 325, null)).toBeLessThan(36);
+    expect(precipitationParticleCount("rain", 1440, 900, 2, true)).toBeLessThan(110);
+    expect(precipitationParticleCount("snow", 1440, 900, 2, true)).toBeLessThan(70);
+    const first = precipitationParticles("rain", 80, "bench");
+    expect(precipitationParticles("rain", 80, "bench")).toEqual(first);
+    expect(new Set(first.map((particle) => Math.floor(particle.x / (100 / 3))))).toEqual(new Set([0, 1, 2]));
+    expect(new Set(first.map((particle) => Math.floor(particle.y / (100 / 3))))).toEqual(new Set([0, 1, 2]));
+    expect(first.every((particle) => particle.length >= 12 && particle.duration < 1.2)).toBe(true);
+    expect(precipitationParticles("snow", 80, "bench").every((particle) => particle.size >= 2.2 && particle.duration >= 3.6)).toBe(true);
+  });
+
+  it("interprets snow cover as percent rather than a zero-to-one fraction", () => {
+    expect(panoramaHasSnowCover(0, .2)).toBe(false);
+    expect(panoramaHasSnowCover(0, 20)).toBe(true);
+    expect(panoramaHasSnowCover(1, 0)).toBe(true);
   });
 });
 
@@ -54,7 +87,7 @@ describe("panorama light", () => {
     const waxingQuarter = moonLightPath(.25);
     const fullMoon = moonLightPath(.5);
     const waningQuarter = moonLightPath(.75);
-    expect(newMoon).toMatch(/^M .* Z$/);
+    expect(newMoon).toBe("");
     expect(newMoon).not.toBe(fullMoon);
     expect(waxingQuarter).not.toBe(waningQuarter);
     expect(waxingQuarter).toContain("L 42.00 24.00");
