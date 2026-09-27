@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Maximize2, PanelBottomClose } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { registerOverlayDismissal } from "@/lib/overlay-dismissal";
 
 export type MapSheetSnap = "peek" | "half" | "full";
 
@@ -33,6 +34,8 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
   const startY = useRef<number | null>(null);
   const suppressClickUntil = useRef(0);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
     returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const media = window.matchMedia("(min-width: 768px)");
@@ -41,14 +44,8 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
     return () => { media.removeEventListener("change", update); if (returnFocus.current?.isConnected) returnFocus.current.focus(); };
   }, []);
   useEffect(() => {
-    const escape = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented || document.querySelector("dialog[open]")) return;
-      event.preventDefault();
-      onClose();
-    };
-    document.addEventListener("keydown", escape);
-    return () => document.removeEventListener("keydown", escape);
-  }, [onClose]);
+    return registerOverlayDismissal(() => onCloseRef.current());
+  }, []);
   const visibleSnap = desktop ? (snap === "peek" ? "peek" : "full") : snap;
   const changeSnap = (next: MapSheetSnap) => {
     if (next !== "peek") setResumeSnap(next);

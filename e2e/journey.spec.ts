@@ -52,7 +52,16 @@ test("uses location only on request and keeps origins out of storage and URLs", 
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("47.3769");
   // No route is submitted here: browser tests never load the public walking service.
   await journal.getByRole("button", { name: "Ändern", exact: true }).click();
-  await journal.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).focus();
+  const originInput = journal.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" });
+  await originInput.fill("Bern");
+  await expect(journal.getByRole("option", { name: "Bern Haltestelle" })).toBeVisible();
+  await originInput.press("Escape");
+  await expect(journal.getByRole("option", { name: "Bern Haltestelle" })).toHaveCount(0);
+  await expect(originInput).toBeVisible();
+  await originInput.press("Escape");
+  await expect(journal.locator(".journey-start-summary")).toContainText("Mein Standort");
+  await journal.getByRole("button", { name: "Ändern", exact: true }).click();
+  await originInput.focus();
   // Safari's native full keyboard navigation uses Option-Tab for buttons.
   await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
   await expect(journal.getByRole("button", { name: "Mein Standort", exact: true })).toBeFocused();

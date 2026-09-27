@@ -98,6 +98,19 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await expect(page.getByLabel("Filter öffnen")).toBeFocused();
 });
 
+test("Escape closes a filter over a bench without dismissing the bench", async ({ page }) => {
+  await page.goto("/?bank=osm-node-101");
+  const bench = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(bench).toBeVisible();
+  await page.getByRole("button", { name: "Filter öffnen" }).click();
+  const filter = page.getByRole("dialog", { name: "Was brauchst du?" });
+  await expect(filter).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(filter).toHaveCount(0);
+  await expect(bench).toBeVisible();
+  await expect(page).toHaveURL(/bank=osm-node-101/);
+});
+
 test("keeps core pages contained from tablet to large desktop", async ({ page }, testInfo) => {
   for (const viewport of [{ width: 768, height: 1024 }, { width: 1280, height: 800 }, { width: 1600, height: 900 }]) {
     await page.setViewportSize(viewport);

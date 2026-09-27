@@ -213,4 +213,11 @@ test("a selected rest interval reaches the routing result", async ({ page }, inf
   expect(minutes).toBeGreaterThan(0);
   expect(minutes).toBeLessThanOrEqual(5);
   await pauses.screenshot({ path: info.outputPath("rest-interval-result.png") });
+  await panel.locator(".journey-thread .journey-leg").first().click();
+  const bench = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(bench).toBeVisible();
+  await expect(bench.getByRole("button", { name: "Spaziergang fortsetzen" }).first()).toBeVisible();
+  await bench.getByRole("button", { name: "Spaziergang fortsetzen" }).first().click();
+  await expect(panel.getByRole("region", { name: "Dein Spaziergang" })).toBeVisible();
+  await expect(pauses).toBeVisible();
 });

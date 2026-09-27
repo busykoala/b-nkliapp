@@ -5,6 +5,7 @@ import { useEffect, useId, useRef } from "react";
 import { Armchair, CloudSun, Droplets, Flame, Footprints, Hand, RotateCcw, Star, Sun, Toilet, Umbrella, X } from "lucide-react";
 import { activeMapFilterCount } from "@/lib/map-filters";
 import type { MapFilters } from "@/lib/types";
+import { registerOverlayDismissal } from "@/lib/overlay-dismissal";
 
 type Props = { filters: MapFilters; onChange: (filters: MapFilters) => void; onClose: () => void };
 
@@ -23,11 +24,8 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
       // Keep the user's focus if they already started navigating the filter.
       if (!panelRef.current?.contains(document.activeElement)) closeRef.current?.focus();
     }, 60);
+    const unregisterDismissal = registerOverlayDismissal(() => onCloseRef.current());
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onCloseRef.current();
-        return;
-      }
       if (event.key !== "Tab") return;
       const focusable = [...(panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), select:not([disabled]), summary, input:not([disabled])') ?? [])];
       if (!focusable.length) return;
@@ -41,10 +39,11 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
         first.focus();
       }
     };
-    window.addEventListener("keydown", handleKey);
+    document.addEventListener("keydown", handleKey);
     return () => {
       window.clearTimeout(focusTimer);
-      window.removeEventListener("keydown", handleKey);
+      unregisterDismissal();
+      document.removeEventListener("keydown", handleKey);
       window.setTimeout(() => document.querySelector<HTMLButtonElement>('#map-filter-toggle')?.focus(), 0);
     };
   }, []);

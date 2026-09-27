@@ -7,7 +7,7 @@ import { useFormatter, useTranslations } from "next-intl";
 /* eslint-disable @next/next/no-img-element */
 import { translateMessage } from "@/i18n/message";
 import { routeInstruction } from "@/i18n/route-instructions";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Footprints, Sun, Trees, MapPin } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { journeyMinutes, PACE_OPTIONS } from "@/lib/journey";
@@ -19,12 +19,13 @@ import type { WalkDraftSnapshot } from "@/lib/walks/model";
 import { MapSheetShell } from "../map-sheet-shell";
 import { RouteAccessibilitySummary } from "../routing/route-accessibility";
 
-export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onReturn }: { getMap: () => MapLibreMap | null; initial: WalkDraftSnapshot | null; onSnapshot: (draft: WalkDraftSnapshot) => void; onClose: () => void; onEnd: () => void; onReturn: (journey: ReturnJourney) => void }) {
+export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onReturn, onInspectBench }: { getMap: () => MapLibreMap | null; initial: WalkDraftSnapshot | null; onSnapshot: (draft: WalkDraftSnapshot) => void; onClose: () => void; onEnd: () => void; onReturn: (journey: ReturnJourney) => void; onInspectBench: (benchId: string) => void }) {
   const t = useTranslations();
   const format = useFormatter();
   const title = useRef<HTMLHeadingElement>(null);
   const restoredRoute = useRef<HTMLElement>(null);
   const restoredOnOpen = useRef(Boolean(initial?.result));
+  const [ending, setEnding] = useState(false);
   const p = useWalkPlanner(getMap, initial, onSnapshot), s = p.settings;
   useEffect(() => { title.current?.focus(); }, []);
   useEffect(() => {
@@ -59,15 +60,15 @@ export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onRet
           return <button type="button" key={suggestion.id} aria-pressed={suggestion.id === p.chosen?.id} onClick={() => p.select(suggestion)}><span>{index === 0 ? t("walks.results.recommended") : t("walks.results.variant", {number: index + 1})}</span><strong>{format.number(suggestion.path.distance / 1000, { maximumFractionDigits: 1 })} km</strong><small>{t("walks.results.summary", {duration: journeyMinutes(suggestion.durationSeconds), ascent: Math.round(suggestion.path.ascent)})}</small></button>;
         })}</div></fieldset>}
         <div className="journey-recommendation"><span className="story-eyebrow">{t("walks.results.eyebrow")}</span><h2>{copy.title}</h2><p>{t("walks.results.routeSummary", {duration: journeyMinutes(p.chosen.durationSeconds), shape: p.result.query.shape === "loop" ? p.chosen.repeated ? t("walks.planner.outAndBack") : t("walks.planner.loop") : t("walks.planner.oneWay"), ascent: Math.round(p.chosen.path.ascent)})}</p><p>{p.chosen.evidence.reasons.map(reason => translateMessage(t, reason)).join(" · ")}</p><p className="walk-pause">{copy.pause}</p>{copy.discover && <button className="walk-discover" aria-pressed={p.extras} onClick={p.toggleExtras}>{copy.discover}</button>}</div>
-        {p.chosen.rest && <section className="walk-rest-summary" aria-label={t("walks.rest.title")}><h3>{t("walks.rest.title")}</h3><p>{t("walks.rest.maximum", {minutes: Math.ceil(p.chosen.rest.maxGapSeconds / 60)})}</p><ol>{p.chosen.rest.stops.map((stop, index) => <li key={`${stop.bench.id}-${index}`}><a href={`/bank/${stop.bench.id}`} target="_blank" rel="noreferrer">{pointLabel(stop.bench, t)}</a><span>{t("walks.rest.after", {minutes: Math.round(stop.routeSeconds / 60)})}</span></li>)}</ol></section>}
+        {p.chosen.rest && <section className="walk-rest-summary" aria-label={t("walks.rest.title")}><h3>{t("walks.rest.title")}</h3><p>{t("walks.rest.maximum", {minutes: Math.ceil(p.chosen.rest.maxGapSeconds / 60)})}</p><ol>{p.chosen.rest.stops.map((stop, index) => <li key={`${stop.bench.id}-${index}`}><button type="button" onClick={() => onInspectBench(stop.bench.id)}>{pointLabel(stop.bench, t)}</button><span>{t("walks.rest.after", {minutes: Math.round(stop.routeSeconds / 60)})}</span></li>)}</ol></section>}
         {p.result.query.difficulty === "t2" && <p className="journey-warning">{t("walks.results.t2")}</p>}
         {p.chosen.path.warnings.map((warning, index) => <p className="journey-warning" key={`${warning.key}-${index}`}>{translateMessage(t, warning)}</p>)}
         <RouteAccessibilitySummary values={[p.chosen.path.accessibility]} />
-        <ol className="journey-thread"><li><MapPin size={20} /><strong>{pointLabel(p.result.query.origin, t)}</strong><small>{t("walks.results.start")}</small></li>{walkLegs(p.chosen, p.result.query).map((leg, i) => <li key={leg.id}><button className="journey-leg" onClick={() => p.focusLeg(leg)}><span className="journey-stamp">{i === 0 ? <img src="/map-art/markers/bench.webp" width="44" height="44" alt="" /> : <Footprints size={24} />}</span><span><strong>{i === 0 ? copy.pause : t("walks.results.return")}</strong><span>{pointLabel(leg.to, t)}</span></span></button></li>)}</ol>
+        <ol className="journey-thread"><li><MapPin size={20} /><strong>{pointLabel(p.result.query.origin, t)}</strong><small>{t("walks.results.start")}</small></li>{walkLegs(p.chosen, p.result.query).map((leg, i) => <li key={leg.id}><button className="journey-leg" onClick={() => i === 0 ? onInspectBench(p.chosen!.bench.id) : p.focusLeg(leg)}><span className="journey-stamp">{i === 0 ? <img src="/map-art/markers/bench.webp" width="44" height="44" alt="" /> : <Footprints size={24} />}</span><span><strong>{i === 0 ? copy.pause : t("walks.results.return")}</strong><span>{pointLabel(leg.to, t)}</span></span></button></li>)}</ol>
         <details><summary>{t("routing.controls.directions")}</summary><ol className="walk-instructions">{p.chosen.path.instructions.map((step, i) => <li key={i}>{routeInstruction(step, t)}{step.distance > 0 && <small>{Math.round(step.distance)} m</small>}</li>)}</ol></details>
         <details><summary>{t("walks.results.why")}</summary><p>{t("walks.results.explanation")}</p>{p.chosen.evidence.warnings.map((warning, index) => <p key={`${warning.key}-${index}`}>{translateMessage(t, warning)}</p>)}{p.chosen.evidence.noise?.map((layer) => <p key={`${layer.mode}-${layer.period}`}>{layer.meanDb != null ? t("walks.evidence.noiseCoverage", {mode: t(`knowledge.noise.${layer.mode}`), period: t(`knowledge.noise.${layer.period}`), coverage: Math.round(layer.coverage * 100), value: Math.round(layer.meanDb)}) : `${t(`knowledge.noise.${layer.mode}`)} · ${t(`knowledge.noise.${layer.period}`)}: ${t("knowledge.noise.empty")}`}</p>)}<p>{p.chosen.evidence.updatedAt ? t("walks.results.updated", {date: formatDate(p.chosen.evidence.updatedAt, t)}) : t("walks.results.noData")}  {t("walks.results.extrasNote")}</p></details>
         {p.result.query.shape === "one-way" && <button className="journey-submit" onClick={() => { const journey = p.returnJourney(); if (journey) onReturn(journey); }}>{t("walks.results.planReturn")}</button>}
       </section>}
-      <footer className="journey-sources"><details><summary>{t("routing.controls.goodToKnow")}</summary><p>{t("walks.information.estimates")}</p><p>{t("walks.information.privacy")}</p></details><button type="button" className="walk-end-action" onClick={onEnd}>{t("walks.planner.end")}</button></footer>
+      <footer className="journey-sources"><details><summary>{t("routing.controls.goodToKnow")}</summary><p>{t("walks.information.estimates")}</p><p>{t("walks.information.privacy")}</p></details><button type="button" className="walk-end-action" disabled={ending} onClick={() => { setEnding(true); void p.settleSaves().then(onEnd).catch(() => setEnding(false)); }}>{t("walks.planner.end")}</button></footer>
   </MapSheetShell>;
 }

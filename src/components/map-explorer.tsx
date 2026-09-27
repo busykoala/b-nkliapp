@@ -125,6 +125,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const addAccount = useRef<HTMLDialogElement>(null);
   const handledAction = useRef<string | null>(null);
   const handledAmenity = useRef<string | null>(null);
+  const benchOrigin = useRef<"map" | "walk">("map");
   useEffect(() => { canAdd.current = Boolean(user); }, [user]);
   const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
   useEffect(() => {
@@ -743,10 +744,10 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
         </button></li>)}</ol>}
         <small className="bench-list-note">{t("map.list.distanceNote")}</small>
       </aside>}
-      {walkOpen && walkDraftLoaded && <WalkPlanner getMap={getJourneyMap} initial={walkDraft} onSnapshot={updateWalkDraft} onClose={() => setWalkOpen(false)} onEnd={endWalk} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} />}
+      {walkOpen && walkDraftLoaded && <WalkPlanner getMap={getJourneyMap} initial={walkDraft} onSnapshot={updateWalkDraft} onClose={() => setWalkOpen(false)} onEnd={endWalk} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} onInspectBench={(id) => { benchOrigin.current = "walk"; setWalkOpen(false); void selectBench(id, true); }} />}
       {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} onClose={() => setReturnJourney(null)} />}
       {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
-      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} initiallyExpanded={searchParams.get("bank") === selectedId} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} onResumeWalk={walkDraft?.result ? openWalk : undefined} onLocateAmenity={locateAmenity} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); }} />}
+      {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} initiallyExpanded={searchParams.get("bank") === selectedId} returnTarget={benchOrigin.current} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => setJourneyOpen(true)} onResumeWalk={walkDraft?.result ? openWalk : undefined} onLocateAmenity={locateAmenity} user={user} onClose={() => { detailSequence.current += 1; (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature()); setSelectedId(null); setBench(null); setDetailError(false); if (benchOrigin.current === "walk") { benchOrigin.current = "map"; openWalk(); } }} />}
       {facilityFocus && <section className="amenity-map-callout" aria-label={t("bench.summary.mapLocation")}>
         <MapPin size={20} /><div><small>{t("bench.summary.nearbyTitle")}</small><strong>{t(facilityFocus.amenity.category === "toilets" ? "knowledge.amenities.toilets" : facilityFocus.amenity.category === "waste_basket" ? "knowledge.amenities.waste_basket" : "knowledge.amenities.drinking_water")}</strong><span>{t("bench.summary.straightLine", {distance: Math.round(facilityFocus.amenity.distanceMeters!)})}</span></div>
         <button type="button" onClick={() => { const id = facilityFocus.bench.id; closeAmenity(); void selectBench(id, true); }}>{t("bench.summary.returnToBench")}</button>

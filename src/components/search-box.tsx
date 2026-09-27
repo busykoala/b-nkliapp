@@ -83,7 +83,7 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
             }
           }}
           onKeyDown={(event) => {
-            if (event.key === "Escape") { clear(); return; }
+            if (event.key === "Escape" && open) { event.preventDefault(); event.stopPropagation(); clear(); return; }
             if ((event.key === "ArrowDown" || event.key === "ArrowUp") && results.length) {
               event.preventDefault();
               setHighlighted((current) => (current + (event.key === "ArrowDown" ? 1 : -1) + results.length) % results.length);

@@ -12,6 +12,7 @@ import { journeyBounds, parsePreferences, PREFERENCES_KEY } from "@/lib/journey-
 import type { ReturnJourney } from "@/lib/journey";
 import type { WalkDraftSnapshot, WalkQuery, WalkResult, WalkSuggestion } from "@/lib/walks/model";
 import { pathTimes } from "@/lib/walking";
+import { createSerializedSaveQueue } from "@/lib/serialized-save-queue";
 
 export function walkLegs(s: WalkSuggestion, query: WalkQuery): JourneyLeg[] {
   const times = pathTimes(s.path, query.speed);
@@ -36,14 +37,14 @@ export function useWalkPlanner(getMap: () => MapLibreMap | null, initial: WalkDr
   const [active, setActive] = useState<string | null>(null), [extras, setExtras] = useState(initial?.extras ?? false);
   const sequence = useRef(0);
   const firstSnapshot = useRef(true);
-  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const saveQueue = useRef(createSerializedSaveQueue());
   const chosen = result?.suggestions.find((s) => s.id === selected);
   useEffect(() => {
     const snapshot = { origin, settings, result, selected, extras, dirty };
     onSnapshot(snapshot);
     if (firstSnapshot.current) { firstSnapshot.current = false; return; }
     // Serialize writes so rapid option changes cannot restore an older choice.
-    saveQueue.current = saveQueue.current.catch(() => undefined).then(() => saveWalkDraft({ origin, settings, selected, extras, dirty }));
+    saveQueue.current.enqueue(() => saveWalkDraft({ origin, settings, selected, extras, dirty }));
   }, [origin, settings, result, selected, extras, dirty, onSnapshot]);
   const change = (patch: Partial<typeof settings>) => { sequence.current++; setSettings((s) => ({ ...s, ...patch })); setDirty(true); };
   const chooseOrigin = (p: JourneyOrigin | null) => { sequence.current++; setOrigin(p); setDirty(true); };
@@ -82,6 +83,7 @@ export function useWalkPlanner(getMap: () => MapLibreMap | null, initial: WalkDr
     });
   };
   return { origin, chooseOrigin, settings, change, result, chosen, error, dirty, pending, submit, extras, toggleExtras: () => setExtras(!extras),
+    settleSaves: () => saveQueue.current.settle(),
     select: (s: WalkSuggestion) => { setSelected(s.id); setExtras(false); setActive(null); if (result) focus(walkLegs(s, result.query)); },
     focusLeg: (leg: JourneyLeg) => { setActive(leg.id); focus([leg]); },
     returnJourney: (): ReturnJourney | null => chosen && result ? { origin: { ...chosen.bench, kind: "address" }, destination: result.query.origin, time: swissWallTime(new Date(Date.parse(result.query.time) + chosen.durationSeconds * 1000).toISOString()) } : null,

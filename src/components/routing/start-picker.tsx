@@ -53,14 +53,15 @@ export function StartPicker({ origin, onChange, getMap }: { origin: JourneyOrigi
     }, () => { if (token === sequence.current) setMessage({ key: "routing.origin.unavailable" }); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
   };
   return <div className="journey-start-card"><h3>{t("routing.origin.title")}</h3>
-    {origin && !editing ? <div className="journey-start-summary"><MapPin size={20} /><strong>{pointLabel(origin, t)}</strong><button onClick={() => { sequence.current++; onChange(null); setEditing(true); setQuery(""); }}>{t("routing.origin.change")}</button></div> : <>
+    {origin && !editing ? <div className="journey-start-summary"><MapPin size={20} /><strong>{pointLabel(origin, t)}</strong><button onClick={() => { sequence.current++; setEditing(true); setQuery(""); setResults([]); setMessage(null); }}>{t("routing.origin.change")}</button></div> : <>
       <label className="journey-search-label"><MapPin size={18} /><span className="sr-only">{t("routing.origin.input")}</span><input role="combobox" aria-controls={listboxId} aria-expanded={results.length > 0} aria-autocomplete="list" aria-activedescendant={highlighted >= 0 ? `${listboxId}-option-${highlighted}` : undefined} placeholder={t("routing.origin.placeholder")} value={query} onChange={(e) => { sequence.current++; setResults([]); setHighlighted(-1); setQuery(e.target.value); }} onKeyDown={(e) => {
         if (e.key === "Escape" && results.length > 0) { e.preventDefault(); e.stopPropagation(); sequence.current++; setResults([]); setHighlighted(-1); }
+        else if (e.key === "Escape" && editing && origin) { e.preventDefault(); e.stopPropagation(); sequence.current++; setEditing(false); setQuery(""); setMessage(null); }
         if ((e.key === "ArrowDown" || e.key === "ArrowUp") && results.length) { e.preventDefault(); setHighlighted((i) => (i + (e.key === "ArrowDown" ? 1 : -1) + results.length) % results.length); }
         if (e.key === "Enter" && results[highlighted]) { e.preventDefault(); choose(results[highlighted]); }
       }} /></label>
       <ul id={listboxId} role="listbox" aria-label={t("routing.origin.results")} className="journey-origins">{results.map((p, i) => <li id={`${listboxId}-option-${i}`} key={`${p.kind}-${p.stationId ?? i}`} role="option" aria-selected={i === highlighted}><button tabIndex={-1} onClick={() => choose(p)}>{p.kind === "station" ? <TrainFront size={22} /> : <House size={22} />}<span>{pointLabel(p, t)}<small>{p.kind === "station" ? t("routing.origin.station") : t("routing.origin.address")}</small></span></button></li>)}</ul>
-      <button className="journey-location" onClick={locate}><LocateFixed size={18} /> {t("routing.origin.current")}</button><small>{t("routing.origin.mapHint")}</small>
+      <div className="journey-origin-actions"><button className="journey-location" onClick={locate}><LocateFixed size={18} /> {t("routing.origin.current")}</button>{editing && origin && <button type="button" className="journey-origin-cancel" onClick={() => { sequence.current++; setEditing(false); setQuery(""); setResults([]); setMessage(null); }}>{t("common.actions.cancel")}</button>}</div><small>{t("routing.origin.mapHint")}</small>
     </>}
     {(message || pending) && <p role="status">{message ? translateMessage(t, message) : t("routing.origin.pending")}</p>}
   </div>;
