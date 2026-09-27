@@ -1703,6 +1703,9 @@ details[open] > summary .disclosure-chevron { transform: rotate(180deg); }
 .saved-bench-item, .saved-bench-unavailable { margin-bottom: .75rem; border: 1px solid #bac5bc; border-radius: 1rem; background: #fffdf7; }
 .saved-bench-item > a:first-child, .saved-bench-unavailable { display: flex; align-items: center; gap: .8rem; padding: 1rem; }
 .saved-bench-item > a:first-child > span:nth-child(2) { flex: 1; }.saved-benches strong, .saved-benches small { display: block; }.saved-benches small { color: #485c50; margin-top: .3rem; }
+.saved-bench-unavailable > span { flex: 1; min-width: 0; }
+.saved-bench-unavailable > button { display: inline-flex; min-height: 44px; align-items: center; gap: .35rem; padding: .45rem .65rem; border-radius: .75rem; color: #2d604b; font-weight: 700; }
+.saved-bench-unavailable.is-removed { border-style: dashed; background: #f5f0e4; }
 .saved-bench-route { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; margin: 0 1rem .5rem 3.8rem; color: #315e50; font-weight: 700; }
 .feed-bench-group { padding: 1.1rem; margin-bottom: 1rem; border: 1px solid #bac5bc; border-radius: 1rem; background: #fffdf7; }
 .feed-bench-group > header { display: flex; align-items: center; gap: .75rem; }.feed-bench-group header > div { flex: 1; }.feed-bench-group h2 { font-size: 1.25rem; font-weight: 700; }.feed-bench-group time, .feed-participants { font-size: .875rem; color: #485c50; }

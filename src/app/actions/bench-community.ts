@@ -35,7 +35,23 @@ async function actor(key: string, limit: number) {
 function refresh(benchId: string) {
   revalidatePath("/");
   revalidatePath("/feed");
+  revalidatePath("/lieblingsplaetze");
   revalidatePath(`/bank/${benchId}`);
+}
+
+export async function setBenchFollow(benchId: string, following: boolean): Promise<ActionResult & { following?: boolean }> {
+  const t = await getTranslations();
+  try {
+    const user = await requireUser();
+    const bench = sqlite.prepare("SELECT row_id FROM benches WHERE id=?").get(benchId) as { row_id: number } | undefined;
+    if (!bench) return { ok: false, message: t("common.errors.benchNotFound") };
+    if (following) sqlite.prepare("INSERT OR IGNORE INTO bench_follows(bench_row_id,user_id,created_at) VALUES(?,?,?)").run(bench.row_id, user.id, new Date().toISOString());
+    else sqlite.prepare("DELETE FROM bench_follows WHERE bench_row_id=? AND user_id=?").run(bench.row_id, user.id);
+    refresh(benchId);
+    return { ok: true, following, message: t(following ? "community.result.favourited" : "community.result.unfavourited") };
+  } catch (error) {
+    return { ok: false, message: actionError(t, error, "community.result.followFailed") };
+  }
 }
 
 export async function submitBenchMoment(benchId: string, _previous: ActionResult | null, formData: FormData): Promise<ActionResult> {
@@ -101,10 +117,7 @@ export async function toggleBenchFollow(benchId: string, scope: "bench" | "place
     const now = new Date().toISOString();
     if (scope === "bench") {
       const current = sqlite.prepare("SELECT 1 FROM bench_follows WHERE bench_row_id=? AND user_id=?").get(bench.row_id, user.id);
-      if (current) sqlite.prepare("DELETE FROM bench_follows WHERE bench_row_id=? AND user_id=?").run(bench.row_id, user.id);
-      else sqlite.prepare("INSERT INTO bench_follows(bench_row_id,user_id,created_at) VALUES(?,?,?)").run(bench.row_id, user.id, now);
-      refresh(benchId);
-      return { ok: true, following: !current, message: current ? t("community.result.unfavourited") : t("community.result.favourited") };
+      return setBenchFollow(benchId, !current);
     }
     if (!bench.location_key || !bench.location_name) return { ok: false, message: t("community.result.placeUnnamed") };
     const current = sqlite.prepare("SELECT 1 FROM place_follows WHERE location_key=? AND user_id=?").get(bench.location_key, user.id);
