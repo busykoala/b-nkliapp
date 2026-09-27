@@ -8,7 +8,7 @@ import { Armchair, ChevronRight, CloudSun, Crosshair, Footprints, Info, List, Ma
 import type { ReturnJourney } from "@/lib/journey";
 import type { WalkDraftSnapshot } from "@/lib/walks/model";
 import { discardWalkDraft, getWalkDraft } from "@/app/actions/walk-draft";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getBenchDetail, getMapBenchList, getMapFeatures } from "@/app/actions/map";
 import type { CurrentUser } from "@/lib/security";
@@ -85,6 +85,7 @@ function visibleMapQuery(map: MapLibreMap, filters: MapFilters): MapQuery {
 export function MapExplorer({ user, initialBench = null }: { user: CurrentUser | null; initialBench?: BenchDetail | null }) {
   const t = useTranslations();
   const format = useFormatter();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -294,13 +295,18 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const beginPlacement = useCallback((latitude: number, longitude: number) => {
     placingRef.current = true;
     detailSequence.current += 1;
+    openedFromUrl.current = null;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("bank");
+    url.searchParams.delete("amenity");
+    router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
     setSelectedId(null); setBench(null); setJourneyOpen(false); setWalkOpen(false); setReturnJourney(null); setFilterOpen(false);
     (mapRef.current?.getSource("selected-bench") as GeoJSONSource | undefined)?.setData(selectedBenchFeature());
     setAddCoordinates({ latitude, longitude });
     setAddStage("position");
     mapRef.current?.stop();
     mapRef.current?.jumpTo({ center: [longitude, latitude], zoom: Math.max(17, mapRef.current.getZoom()) });
-  }, []);
+  }, [router]);
 
   const openAddAt = useCallback((latitude: number, longitude: number) => {
     if (!canAdd.current) {
@@ -776,10 +782,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     openedFromUrl.current = null;
     const url = new URL(window.location.href);
     url.searchParams.delete("bank");
-    const currentState = window.history.state && typeof window.history.state === "object" ? window.history.state as Record<string, unknown> : {};
-    const { benchly: _discarded, ...rest } = currentState;
-    void _discarded;
-    window.history.replaceState(rest, "", `${url.pathname}${url.search}${url.hash}`);
+    router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
   };
   useEffect(() => {
     // Native history updates window.location synchronously; useSearchParams can
@@ -787,6 +790,18 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     const requestedBench = new URL(window.location.href).searchParams.get("bank");
     const map = mapRef.current;
     if (!mapReady || !map) return;
+    // Auth refreshes may complete from a route tree captured before placement
+    // started. Placement owns the foreground until it is cancelled or saved.
+    if (placingRef.current) {
+      openedFromUrl.current = null;
+      if (requestedBench) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("bank");
+        url.searchParams.delete("amenity");
+        router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
+      }
+      return;
+    }
     if (!requestedBench) {
       const hadUrlSelection = Boolean(openedFromUrl.current);
       openedFromUrl.current = null;
@@ -858,7 +873,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
       {message && <div role="status" className="toast toast-center pointer-events-none top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
-      {!addStage && !journeyOpen && !walkOpen && !returnJourney && <button type="button" className="map-orientation-control" aria-label={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} title={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} aria-pressed={headingMode} aria-busy={headingPending} disabled={headingPending} onClick={() => void toggleHeadingMode()}><Navigation size={18} fill={headingMode ? "currentColor" : "none"} /></button>}
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && !filterOpen && <button type="button" className="map-orientation-control" aria-label={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} title={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} aria-pressed={headingMode} aria-busy={headingPending} disabled={headingPending} onClick={() => void toggleHeadingMode()}><Navigation size={18} fill={headingMode ? "currentColor" : "none"} /></button>}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">
         <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t(walkDraft?.result ? "walks.planner.resume" : "walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>

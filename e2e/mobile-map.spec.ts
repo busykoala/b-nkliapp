@@ -472,6 +472,7 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await expect(shell.locator(".map-sheet-resize")).toHaveAccessibleName("Ganz öffnen. Detailhöhe ändern");
   await expect(shell.locator(".map-sheet-collapsed-title")).toHaveText("Bankdetails");
   await expect(shell.locator(".map-sheet-content")).not.toBeVisible();
+  await expect(page.locator(".map-orientation-control")).toHaveCount(0);
   await expect.poll(async () => (await shell.boundingBox())?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(90);
   await page.screenshot({ path: testInfo.outputPath("minimized-detail-bar.png") });
   await shell.locator(".map-sheet-resize").click();
@@ -488,7 +489,9 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await expect(shell).toHaveAttribute("aria-label", "Dein Weg zum Bänkli");
   await expect(shell.locator(".map-sheet-handle")).toBeVisible();
   await shell.locator(".map-sheet-close").click();
-  await page.locator(".map-sheet-close").click();
+  await expect(shell).toHaveAttribute("aria-label", "Bankdetails");
+  await shell.locator(".map-sheet-close").click();
+  await expect(page.getByRole("complementary", { name: "Bankdetails" })).toHaveCount(0);
   await page.locator(".walk-entry").click();
   await expect(shell).toHaveAttribute("aria-label", "Spaziergang entdecken");
   await expect(shell.locator(".map-sheet-handle")).toBeVisible();
