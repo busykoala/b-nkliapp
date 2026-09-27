@@ -8,7 +8,7 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.getByLabel("Benutzername").fill(username);
   await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await page.getByRole("button", { name: "Konto erstellen" }).click();
-  await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeHidden({ timeout: 15_000 });
+  await expect(page.getByRole("dialog", { name: "Dein Bänkli-Konto" })).toBeHidden({ timeout: 15_000 });
   await page.getByLabel("Menü öffnen").click();
   await expect(page.getByText("Mein Profil")).toBeVisible();
   await page.getByLabel("Menü schliessen").click();
