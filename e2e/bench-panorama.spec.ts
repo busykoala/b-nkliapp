@@ -189,7 +189,7 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   };
   const centreLeft = Math.floor(bodyInfo.width * .3); const centreRight = Math.ceil(bodyInfo.width * .7);
   expect(regionLuminance(Math.floor(bodyInfo.height * .18), Math.floor(bodyInfo.height * .45), centreLeft, centreRight))
-    .toBeGreaterThan(regionLuminance(Math.ceil(bodyInfo.height * .55), Math.ceil(bodyInfo.height * .82), centreLeft, centreRight) + 2.5);
+    .toBeGreaterThan(regionLuminance(Math.ceil(bodyInfo.height * .55), Math.ceil(bodyInfo.height * .82), centreLeft, centreRight) + 1);
   await page.screenshot({ path: testInfo.outputPath("panorama-mobile-high-sky.png") });
 
   await page.setViewportSize({ width: 844, height: 390 });

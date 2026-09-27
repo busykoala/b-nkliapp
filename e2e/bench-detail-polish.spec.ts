@@ -24,7 +24,8 @@ test("shows nearby practical places on the map and keeps bench details readable"
   await expect(sheet.getByRole("region", {name: "Auf einen Blick"})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   const amenityItems = sheet.locator(".bench-nearby-amenities li");
-  await expect(amenityItems).toHaveCount(3);
+  await expect(amenityItems).toHaveCount(2);
+  await expect(sheet.locator(".bench-nearby-amenities").getByText("Abfalleimer", { exact: true })).toHaveCount(0);
   const itemBoxes = await amenityItems.evaluateAll((items) => items.map((item) => {
     const box = item.getBoundingClientRect();
     return {top: box.top, bottom: box.bottom};
