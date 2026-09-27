@@ -118,15 +118,18 @@ test("browser Back and Forward restore an internally opened bench", async ({ pag
   await page.locator(".map-search-results").getByRole("option").first().click();
   const bench = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(bench).toBeVisible();
+  await expect(bench.getByRole("heading", { name: "Lindenhof, Zürich" })).toBeVisible();
   await expect(page).toHaveURL(/bank=osm-node-101/);
 
   await page.goBack();
   await expect(bench).toHaveCount(0);
   await expect(page).not.toHaveURL(/bank=/);
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-last-inspected-bench", "osm-node-101");
 
   await page.goForward();
   await expect(bench).toBeVisible();
   await expect(page).toHaveURL(/bank=osm-node-101/);
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).not.toHaveAttribute("data-last-inspected-bench", "osm-node-101");
 });
 
 test("closing a directly linked bench clears its URL without a stale reopen", async ({ page }) => {

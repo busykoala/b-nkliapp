@@ -7,7 +7,7 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import { getWalkSuggestions } from "@/app/actions/walks";
 import { saveWalkDraft } from "@/app/actions/walk-draft";
 import { summarizeJourney, swissWallTime, swissWallTimeToIso, type JourneyLeg, type JourneyOrigin, type JourneyPoint } from "@/lib/journey";
-import { clearJourneyMap, paintJourney } from "@/lib/journey-map";
+import { claimJourneyMap, journeyMapPadding, paintJourney, releaseJourneyMap, type JourneyMapOwner } from "@/lib/journey-map";
 import { journeyBounds, parsePreferences, PREFERENCES_KEY } from "@/lib/journey-planner";
 import type { ReturnJourney } from "@/lib/journey";
 import type { WalkDraftSnapshot, WalkQuery, WalkResult, WalkSuggestion } from "@/lib/walks/model";
@@ -38,6 +38,7 @@ export function useWalkPlanner(getMap: () => MapLibreMap | null, initial: WalkDr
   const sequence = useRef(0);
   const firstSnapshot = useRef(true);
   const saveQueue = useRef(createSerializedSaveQueue());
+  const mapOwner = useRef<JourneyMapOwner | null>(null);
   const chosen = result?.suggestions.find((s) => s.id === selected);
   useEffect(() => {
     const snapshot = { origin, settings, result, selected, extras, dirty };
@@ -48,18 +49,21 @@ export function useWalkPlanner(getMap: () => MapLibreMap | null, initial: WalkDr
   }, [origin, settings, result, selected, extras, dirty, onSnapshot]);
   const change = (patch: Partial<typeof settings>) => { sequence.current++; setSettings((s) => ({ ...s, ...patch })); setDirty(true); };
   const chooseOrigin = (p: JourneyOrigin | null) => { sequence.current++; setOrigin(p); setDirty(true); };
-  const focus = (legs: JourneyLeg[]) => { const bounds = journeyBounds(legs); if (bounds) getMap()?.fitBounds(bounds, { padding: { top: 100, left: 30, right: innerWidth >= 768 ? 485 : 30, bottom: innerWidth >= 768 ? 45 : innerHeight * .5 }, maxZoom: 17, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400 }); };
+  const focus = (legs: JourneyLeg[]) => { const bounds = journeyBounds(legs), map = getMap(); if (bounds && map) map.fitBounds(bounds, { padding: journeyMapPadding(map), maxZoom: 17, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400 }); };
   useEffect(() => {
     const map = getMap(), seq = sequence;
+    const owner = map ? claimJourneyMap(map) : null;
+    mapOwner.current = owner;
     const camera = map ? { center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch() } : null;
-    return () => { seq.current++; if (map) { clearJourneyMap(map); for (const id of ["walk-extra-benches", "walk-labels"]) if (map.getLayer(id)) map.removeLayer(id); for (const id of ["walk-extra-benches", "walk-labels"]) if (map.getSource(id)) map.removeSource(id); if (camera) map.jumpTo(camera); } };
+    return () => { seq.current++; if (map && owner && releaseJourneyMap(map, owner) && camera) map.jumpTo(camera); };
   }, [getMap]);
   useEffect(() => {
     const map = getMap(); if (!map || !result || !chosen) return;
     let painted = false;
     const paint = () => {
       if (painted || !map.isStyleLoaded()) return;
-      painted = paintJourney(map, result.suggestions.map((s) => summarizeJourney(s.id, walkLegs(s, result.query))), selected, active);
+      if (!mapOwner.current) return;
+      painted = paintJourney(map, result.suggestions.map((s) => summarizeJourney(s.id, walkLegs(s, result.query))), selected, active, mapOwner.current);
       const data: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: extras || chosen.rest ? chosen.extraBenches.map((b) => ({ type: "Feature", properties: { title: pointLabel(b, t) }, geometry: { type: "Point", coordinates: [b.longitude, b.latitude] } })) : [] };
       if (map.getSource("walk-extra-benches")) (map.getSource("walk-extra-benches") as GeoJSONSource).setData(data);
       else { map.addSource("walk-extra-benches", { type: "geojson", data }); map.addLayer({ id: "walk-extra-benches", type: "circle", source: "walk-extra-benches", paint: { "circle-radius": 15, "circle-color": "#71855b", "circle-opacity": .45, "circle-blur": .5 } }); }

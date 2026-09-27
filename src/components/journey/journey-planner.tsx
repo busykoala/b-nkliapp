@@ -14,13 +14,13 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import type { JourneyOrigin, JourneyPoint } from "@/lib/journey";
 import { StartPicker } from "../routing/start-picker";
 import { journeyClock, journeyMinutes, PACE_OPTIONS, type JourneyLeg } from "@/lib/journey";
-import { useJourneyPlanner } from "./use-journey-planner";
+import { useJourneyPlanner, type JourneyDraftSnapshot } from "./use-journey-planner";
 import { finalWalkingLeg, journeyExternalLinks } from "@/lib/journey-links";
 import { tightestTransfer, type JourneySettings } from "@/lib/journey-planner";
-import { MapSheetShell } from "../map-sheet-shell";
+import { MapSheetShell, type MapSheetPresentation } from "../map-sheet-shell";
 import { RouteAccessibilitySummary } from "../routing/route-accessibility";
 
-export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { id: string; title: string }; initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string }; getMap: () => MapLibreMap | null; onClose: () => void }) {
+export function JourneyPlanner({ bench, initial, draft, onSnapshot, presentation, onPresentationChange, getMap, onClose }: { bench: { id: string; title: string }; initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string }; draft?: JourneyDraftSnapshot | null; onSnapshot?: (draft: JourneyDraftSnapshot) => void; presentation?: MapSheetPresentation | null; onPresentationChange?: (presentation: MapSheetPresentation) => void; getMap: () => MapLibreMap | null; onClose: () => void }) {
   const t = useTranslations();
   const format = useFormatter();
   const title = useRef<HTMLHeadingElement>(null);
@@ -29,13 +29,13 @@ export function JourneyPlanner({ bench, initial, getMap, onClose }: { bench: { i
     origin, chooseOrigin,
     settings, updateSettings,
     result, selected, activeLeg, option, error, dirty, pending, submit, selectOption, selectLeg,
-  } = useJourneyPlanner(bench.id, getMap, initial);
+  } = useJourneyPlanner(bench.id, getMap, initial, draft, onSnapshot);
   const links = option ? journeyExternalLinks(option) : null;
   const finalWalk = option ? finalWalkingLeg(option) : null;
   const { mode, timeMode, time, speed, buffer } = settings;
   useEffect(() => { title.current?.focus(); }, []);
   useEffect(() => { if (result) resultSection.current?.scrollIntoView({ block: "start", behavior: "instant" }); }, [result]);
-  return <MapSheetShell label={t("journey.planner.title")} resizeLabel={t("journey.planner.resize")} expandLabel={t("journey.planner.expand")} compactLabel={t("journey.planner.compact")} minimizeLabel={t("journey.planner.minimize")} minimizeActionLabel={t("journey.planner.minimizeAction")} closeLabel={t("journey.planner.close")} mapLabel={t("journey.planner.map")} onClose={onClose} initialSnap="half">
+  return <MapSheetShell label={t("journey.planner.title")} resizeLabel={t("journey.planner.resize")} expandLabel={t("journey.planner.expand")} compactLabel={t("journey.planner.compact")} minimizeLabel={t("journey.planner.minimize")} minimizeActionLabel={t("journey.planner.minimizeAction")} closeLabel={t("journey.planner.close")} mapLabel={t("journey.planner.map")} onClose={onClose} initialSnap="half" initialPresentation={presentation} onPresentationChange={onPresentationChange}>
       <header><span className="story-eyebrow">{t("journey.planner.eyebrow")}</span><h2 tabIndex={-1} ref={title}>{initial ? t("journey.planner.return") : t("journey.planner.title")}</h2><p className="journey-destination"><MapPin size={15} /> {bench.title || t("common.values.bench")}</p></header>
       <section className="journey-controls" aria-label={t("journey.planner.label")}>
         <StartPicker origin={origin} onChange={chooseOrigin} getMap={getMap} />

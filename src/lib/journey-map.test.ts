@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { clearJourneyMap, paintJourney } from "./journey-map";
+import { calculateJourneyPadding, claimJourneyMap, clearJourneyMap, paintJourney, releaseJourneyMap } from "./journey-map";
 import { summarizeJourney, type JourneyLeg } from "./journey";
 
 const point = { label: "Spiez", latitude: 46.68844, longitude: 7.68949 };
@@ -37,5 +37,32 @@ describe("journey map layers", () => {
     const { map, sources } = mapFixture(false);
     expect(paintJourney(map, [summarizeJourney("a", [leg])], "a", null)).toBe(false);
     expect(sources.size).toBe(0);
+  });
+  it("prevents an obsolete planner from clearing a newer route", () => {
+    const { map, sources } = mapFixture();
+    const option = summarizeJourney("a", [leg]);
+    const older = claimJourneyMap(map);
+    expect(paintJourney(map, [option], "a", null, older)).toBe(true);
+
+    const newer = claimJourneyMap(map);
+    expect(paintJourney(map, [option], "a", null, newer)).toBe(true);
+    expect(releaseJourneyMap(map, older)).toBe(false);
+    expect(sources.has("journey-route")).toBe(true);
+    expect(paintJourney(map, [option], "a", null, older)).toBe(false);
+
+    expect(releaseJourneyMap(map, newer)).toBe(true);
+    expect(sources.size).toBe(0);
+  });
+  it("derives route padding from the rendered sheet instead of viewport fractions", () => {
+    const map = { top: 0, right: 400, bottom: 800, left: 0, width: 400, height: 800 };
+    expect(calculateJourneyPadding(map, { top: 480, right: 400, bottom: 800, left: 0, width: 400, height: 320 }, { top: 0, right: 400, bottom: 72, left: 0, width: 400, height: 72 })).toEqual({ top: 88, right: 24, bottom: 344, left: 24 });
+    expect(calculateJourneyPadding(map, { top: 72, right: 400, bottom: 800, left: 200, width: 200, height: 728 })).toEqual({ top: 24, right: 224, bottom: 24, left: 24 });
+  });
+  it("retains a valid drawable area when a full sheet overlaps the toolbar", () => {
+    expect(calculateJourneyPadding(
+      { top: 0, left: 0, right: 390, bottom: 664, width: 390, height: 664 },
+      { top: 72, left: 0, right: 390, bottom: 664, width: 390, height: 592 },
+      { top: 0, left: 0, right: 390, bottom: 112, width: 390, height: 112 },
+    )).toEqual({ top: 128, right: 24, bottom: 408, left: 24 });
   });
 });

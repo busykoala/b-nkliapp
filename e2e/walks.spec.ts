@@ -124,8 +124,11 @@ test("shows a Bänkli-centred route and opens a private return journey", async (
   await expect(route.getByText(/Landschaftsdaten noch unvollständig/)).toBeVisible();
   await explanation.click();
   await route.getByRole("button", { name: "Rückweg planen", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Dein Rückweg" })).toBeVisible();
+  const returnPlanner = page.getByRole("complementary", { name: "Dein Weg zum Bänkli" });
+  await expect(returnPlanner.getByRole("heading", { name: "Dein Rückweg" })).toBeVisible();
   expect(page.url()).not.toContain("47.378");
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("47.378");
+  await returnPlanner.getByLabel("Reiseplan schliessen").click();
+  await expect(panel.getByRole("region", { name: "Dein Spaziergang" })).toBeVisible();
   expect(errors).toEqual([]);
 });

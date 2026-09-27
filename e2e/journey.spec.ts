@@ -28,6 +28,23 @@ test("opens a lazy illustrated planner and returns to the selected bench", async
   await expect(journal).toHaveCount(0);
 });
 
+test("suspends and resumes a journey without losing the committed query", async ({ page }) => {
+  const journal = await openPlanner(page);
+  const origin = journal.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" });
+  await origin.fill("Bern");
+  await journal.getByRole("option", { name: "Bern Haltestelle" }).click();
+  await journal.locator("summary").filter({ hasText: "Anpassen" }).click();
+  await journal.getByRole("button", { name: "+6 min", exact: true }).click();
+  await page.getByLabel("Reiseplan schliessen").click();
+  await expect(page.getByRole("complementary", { name: "Bankdetails" })).toBeVisible();
+  await page.getByRole("button", { name: "Weg planen" }).first().click();
+  const resumed = page.getByRole("complementary", { name: "Dein Weg zum Bänkli" });
+  await expect(resumed.locator(".journey-start-summary")).toContainText("Bern");
+  await expect(resumed.locator("summary").filter({ hasText: "Anpassen" })).toContainText("+6 min");
+  await resumed.locator("summary").filter({ hasText: "Anpassen" }).click();
+  await expect(resumed.getByRole("button", { name: "+6 min", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("denied journey location leaves address input and map usable", async ({ page }) => {
   await page.addInitScript(() => {
     navigator.geolocation.getCurrentPosition = (_success, failure) => failure?.({ code: 1, message: "denied", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });

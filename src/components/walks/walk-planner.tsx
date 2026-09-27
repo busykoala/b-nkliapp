@@ -16,10 +16,10 @@ import { StartPicker } from "../routing/start-picker";
 import { useWalkPlanner, walkLegs } from "./use-walk-planner";
 import type { ReturnJourney } from "@/lib/journey";
 import type { WalkDraftSnapshot } from "@/lib/walks/model";
-import { MapSheetShell } from "../map-sheet-shell";
+import { MapSheetShell, type MapSheetPresentation } from "../map-sheet-shell";
 import { RouteAccessibilitySummary } from "../routing/route-accessibility";
 
-export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onReturn, onInspectBench }: { getMap: () => MapLibreMap | null; initial: WalkDraftSnapshot | null; onSnapshot: (draft: WalkDraftSnapshot) => void; onClose: () => void; onEnd: () => void; onReturn: (journey: ReturnJourney) => void; onInspectBench: (benchId: string) => void }) {
+export function WalkPlanner({ getMap, initial, onSnapshot, presentation, onPresentationChange, onClose, onEnd, onReturn, onInspectBench }: { getMap: () => MapLibreMap | null; initial: WalkDraftSnapshot | null; onSnapshot: (draft: WalkDraftSnapshot) => void; presentation?: MapSheetPresentation | null; onPresentationChange?: (presentation: MapSheetPresentation) => void; onClose: () => void; onEnd: () => void; onReturn: (journey: ReturnJourney) => void; onInspectBench: (benchId: string) => void }) {
   const t = useTranslations();
   const format = useFormatter();
   const title = useRef<HTMLHeadingElement>(null);
@@ -37,7 +37,7 @@ export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onRet
     return () => { cancelAnimationFrame(frame); cancelAnimationFrame(innerFrame); };
   }, []); // A resumed route is revealed once; later edits should not jump the sheet.
   const copy = p.chosen && p.result ? walkCopy([p.chosen.bench], p.result.query.shape, p.chosen.extraBenches.length, t) : null;
-  return <MapSheetShell label={t("walks.planner.title")} resizeLabel={t("walks.planner.resize")} expandLabel={t("walks.planner.expand")} compactLabel={t("walks.planner.compact")} minimizeLabel={t("walks.planner.minimize")} minimizeActionLabel={t("walks.planner.minimizeAction")} closeLabel={t("walks.planner.close")} mapLabel={t("walks.planner.map")} onClose={onClose} initialSnap="half">
+  return <MapSheetShell label={t("walks.planner.title")} resizeLabel={t("walks.planner.resize")} expandLabel={t("walks.planner.expand")} compactLabel={t("walks.planner.compact")} minimizeLabel={t("walks.planner.minimize")} minimizeActionLabel={t("walks.planner.minimizeAction")} closeLabel={t("walks.planner.close")} mapLabel={t("walks.planner.map")} onClose={onClose} initialSnap="half" initialPresentation={presentation} onPresentationChange={onPresentationChange}>
     <header><span className="story-eyebrow">{t("walks.planner.eyebrow")}</span><h2 className="programmatic-focus-heading" ref={title} tabIndex={-1}>{t("walks.planner.title")}</h2><p>{t("walks.planner.intro")}</p></header>
       <section className="journey-controls" aria-label={t("walks.planner.label")}>
         <StartPicker origin={p.origin} onChange={p.chooseOrigin} getMap={getMap} />

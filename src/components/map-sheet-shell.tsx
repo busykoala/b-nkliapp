@@ -58,6 +58,11 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
+  useEffect(() => {
+    if (presentationRef.current.snap === snap) return;
+    presentationRef.current = { snap, scrollTop: contentRef.current?.scrollTop ?? presentationRef.current.scrollTop };
+    onPresentationChange?.(presentationRef.current);
+  }, [snap, onPresentationChange]);
   const visibleSnap = desktop ? (snap === "peek" ? "peek" : "full") : snap;
   const changeSnap = (next: MapSheetSnap) => {
     if (next !== "peek") setResumeSnap(next);

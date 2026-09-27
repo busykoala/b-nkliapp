@@ -5,21 +5,36 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { getJourney } from "@/app/actions/journey";
 import { swissWallTime, swissWallTimeToIso, type JourneyLeg, type JourneyOption, type JourneyOrigin, type JourneyPoint, type JourneyResult } from "@/lib/journey";
-import { clearJourneyMap, paintJourney } from "@/lib/journey-map";
+import { claimJourneyMap, journeyMapPadding, paintJourney, releaseJourneyMap, type JourneyMapOwner } from "@/lib/journey-map";
 import { journeyBounds, parsePreferences, PREFERENCES_KEY, type JourneySettings } from "@/lib/journey-planner";
 
+export type JourneyDraftSnapshot = {
+  benchId: string;
+  origin: JourneyOrigin | null;
+  settings: JourneySettings;
+  result: JourneyResult | null;
+  selected: string;
+  activeLeg: string | null;
+  dirty: boolean;
+};
+
 // Owns requests and map effects; the journal component owns rendering and focus.
-export function useJourneyPlanner(benchId: string, getMap: () => MapLibreMap | null, initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string }) {
+export function useJourneyPlanner(benchId: string, getMap: () => MapLibreMap | null, initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string }, draft?: JourneyDraftSnapshot | null, onSnapshot?: (draft: JourneyDraftSnapshot) => void) {
   const t = useTranslations();
-  const [origin, setOrigin] = useState<JourneyOrigin | null>(initial?.origin ?? null);
-  const [settings, setSettings] = useState<JourneySettings>(() => ({
+  const restored = draft?.benchId === benchId ? draft : null;
+  const [origin, setOrigin] = useState<JourneyOrigin | null>(restored?.origin ?? initial?.origin ?? null);
+  const [settings, setSettings] = useState<JourneySettings>(() => restored?.settings ?? ({
     ...readPreferences(), mode: "transit", timeMode: initial ? "departure" : "now", time: initial?.time ?? swissWallTime(new Date().toISOString()),
   }));
   const { mode, timeMode, time, speed, buffer } = settings;
-  const [result, setResult] = useState<JourneyResult | null>(null); const [selected, setSelected] = useState(""); const [activeLeg, setActiveLeg] = useState<string | null>(null);
-  const [error, setError] = useState(""); const [dirty, setDirty] = useState(false);
+  const [result, setResult] = useState<JourneyResult | null>(restored?.result ?? null); const [selected, setSelected] = useState(restored?.selected ?? ""); const [activeLeg, setActiveLeg] = useState<string | null>(restored?.activeLeg ?? null);
+  const [error, setError] = useState(""); const [dirty, setDirty] = useState(restored?.dirty ?? false);
   const [pending, startTransition] = useTransition();
   const sequence = useRef(0);
+  const mapOwner = useRef<JourneyMapOwner | null>(null);
+  useEffect(() => {
+    onSnapshot?.({ benchId, origin, settings, result, selected, activeLeg, dirty });
+  }, [benchId, origin, settings, result, selected, activeLeg, dirty, onSnapshot]);
   const chooseOrigin = (p: JourneyOrigin | null) => { sequence.current++; setOrigin(p); setDirty(true); };
   useEffect(() => {
     const requestRef = sequence;
@@ -27,13 +42,15 @@ export function useJourneyPlanner(benchId: string, getMap: () => MapLibreMap | n
   }, []);
   useEffect(() => {
     const map = getMap(); if (!map) return;
+    const owner = claimJourneyMap(map);
+    mapOwner.current = owner;
     const camera = { center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch() };
-    return () => { clearJourneyMap(map); map.jumpTo(camera); };
+    return () => { if (releaseJourneyMap(map, owner)) map.jumpTo(camera); };
   }, [getMap]);
   useEffect(() => {
     const map = getMap(); if (!map || !result) return;
     let painted = false;
-    const paint = () => { if (!painted) painted = paintJourney(map, result.options, selected, activeLeg); };
+    const paint = () => { if (!painted && mapOwner.current) painted = paintJourney(map, result.options, selected, activeLeg, mapOwner.current); };
     const reload = () => { painted = false; paint(); };
     paint(); map.on("style.load", reload); map.on("idle", paint);
     return () => { map.off("style.load", reload); map.off("idle", paint); };
@@ -46,8 +63,9 @@ export function useJourneyPlanner(benchId: string, getMap: () => MapLibreMap | n
   const focus = (legs: JourneyLeg[]) => {
     const bounds = journeyBounds(legs);
     if (!bounds) return;
-    const desktop = window.innerWidth >= 768;
-    getMap()?.fitBounds(bounds, { padding: { top: 90, left: 35, right: desktop ? 485 : 35, bottom: desktop ? 45 : window.innerHeight * .48 }, maxZoom: 17, duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450 });
+    const map = getMap();
+    if (!map) return;
+    map.fitBounds(bounds, { padding: journeyMapPadding(map), maxZoom: 17, duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450 });
   };
   const submit = (offset = 0) => {
     if (!origin) { setError(t("journey.planner.chooseStart")); return; }

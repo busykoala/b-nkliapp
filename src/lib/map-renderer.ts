@@ -61,6 +61,17 @@ export function selectedBenchFeature(bench?: BenchDetail | null) {
   };
 }
 
+export function lastInspectedBenchFeature(bench?: Pick<BenchDetail, "id" | "longitude" | "latitude"> | null) {
+  return {
+    type: "FeatureCollection" as const,
+    features: bench ? [{
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [bench.longitude, bench.latitude] },
+      properties: { id: bench.id },
+    }] : [],
+  };
+}
+
 export function selectedAmenityFeature(amenity?: { latitude: number; longitude: number; marker: string } | null) {
   return {
     type: "FeatureCollection" as const,
@@ -369,6 +380,8 @@ export function addCoreMapLayers(map: MapLibreMap, initialFeatures: MapFeature[]
   map.addSource("selected-bench", { type: "geojson", data: selectedBenchFeature() });
   map.addLayer({ id: "selected-bench-halo", type: "circle", source: "selected-bench", paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 18, 18, 25], "circle-color": "#fff1c9", "circle-opacity": .62, "circle-stroke-width": 3, "circle-stroke-color": "#654d39", "circle-blur": .1 } });
   map.addLayer({ id: "selected-bench-core", type: "circle", source: "selected-bench", paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 9, 18, 15], "circle-color": benchStatusColor, "circle-stroke-width": 4, "circle-stroke-color": "#fff4d8" } });
+  map.addSource("last-inspected-bench", { type: "geojson", data: lastInspectedBenchFeature() });
+  map.addLayer({ id: "last-inspected-bench", type: "circle", source: "last-inspected-bench", paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 13, 7, 18, 11], "circle-color": "#f8eed7", "circle-opacity": .28, "circle-stroke-width": 2, "circle-stroke-color": "#526b5e", "circle-stroke-opacity": .55 } });
   map.addSource("selected-amenity", { type: "geojson", data: selectedAmenityFeature() });
   map.addLayer({ id: "selected-amenity-halo", type: "circle", source: "selected-amenity", paint: { "circle-radius": 21, "circle-color": "#fffdf7", "circle-opacity": .92, "circle-stroke-width": 3, "circle-stroke-color": "#315f50", "circle-blur": .04 } });
   map.addLayer({ id: "selected-amenity-label", type: "symbol", source: "selected-amenity", layout: { "text-field": ["get", "marker"], "text-font": ["Frutiger Neue Regular"], "text-size": 11, "text-allow-overlap": true }, paint: { "text-color": "#234d3d" } });

@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
-import { addCoreArtLayers, addCoreMapLayers, clusterExpansionZoom, featureCollection, loadMapArt, selectedAmenityFeature, selectedBenchFeature } from "./map-renderer";
+import { addCoreArtLayers, addCoreMapLayers, clusterExpansionZoom, featureCollection, lastInspectedBenchFeature, loadMapArt, selectedAmenityFeature, selectedBenchFeature } from "./map-renderer";
 import type { BenchDetail, MapFeature } from "./types";
 
 describe("map rendering", () => {
@@ -28,6 +28,15 @@ describe("map rendering", () => {
     expect(selectedBenchFeature(bench).features[0].properties).toEqual({ sunnyNow: null, verificationStatus: "verified" });
   });
 
+  it("models a last-inspected bench separately from an active selection", () => {
+    expect(lastInspectedBenchFeature().features).toEqual([]);
+    const bench = { id: "bench-1", longitude: 7.69, latitude: 46.69 } as BenchDetail;
+    expect(lastInspectedBenchFeature(bench).features[0]).toMatchObject({
+      geometry: { type: "Point", coordinates: [7.69, 46.69] },
+      properties: { id: "bench-1" },
+    });
+  });
+
   it("renders an exact nearby facility marker in longitude/latitude order", () => {
     expect(selectedAmenityFeature()).toEqual({type: "FeatureCollection", features: []});
     expect(selectedAmenityFeature({latitude: 47.376, longitude: 8.541, marker: "WC"}).features[0]).toMatchObject({
@@ -45,6 +54,7 @@ describe("map rendering", () => {
     expect(layer("bench-hits").paint["circle-radius"]).toBe(22);
     expect(layer("cluster-hits").paint["circle-radius"]).toEqual(["interpolate", ["linear"], ["get", "count"], 2, 24, 50, 29, 500, 36]);
     expect(layer("benches").paint["circle-color"]).toEqual(layer("selected-bench-core").paint["circle-color"]);
+    expect(layer("last-inspected-bench").paint["circle-opacity"]).toBeLessThan(.5);
   });
 
   it("removes hard fallback rings after watercolor markers load", () => {
