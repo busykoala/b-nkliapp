@@ -42,7 +42,7 @@ if (process.env.BENCHLY_JOURNEY_TEST_FIXTURES === "true") {
         ? [origin, ...loopCorners, origin]
         : body.points;
       const longWalk = roundTrip || Boolean(body.custom_model && body.points.length > 2);
-      return Response.json({ paths: [{ distance: longWalk ? 3_350 : 140, time: longWalk ? 2_520_000 : 100_800, ascend: longWalk ? 35 : 0, instructions: [{sign: 0, street_name: "Lindenhofweg", text: "Continue onto Lindenhofweg", distance: longWalk ? 3350 : 140, interval: [0, coordinates.length - 1]}, {sign: 4, text: "Arrive at destination", distance: 0, interval: [coordinates.length - 1, coordinates.length - 1]}], points: { coordinates }, snapped_waypoints: { coordinates: roundTrip ? [origin, origin] : body.points } }] });
+      return Response.json({ paths: [{ distance: longWalk ? 3_350 : 140, time: longWalk ? 2_520_000 : 100_800, ascend: longWalk ? 35 : 0, instructions: [{sign: 0, street_name: "Lindenhofweg", text: "Continue onto Lindenhofweg", distance: longWalk ? 3350 : 140, interval: [0, coordinates.length - 1]}, {sign: 4, text: "Arrive at destination", distance: 0, interval: [coordinates.length - 1, coordinates.length - 1]}], details: { road_class: [[0, coordinates.length - 1, "steps"]], average_slope: [[0, coordinates.length - 1, 8]], surface: [[0, coordinates.length - 1, "paving_stones"]] }, points: { coordinates }, snapped_waypoints: { coordinates: roundTrip ? [origin, origin] : body.points } }] });
     }
     if (url.hostname === "api3.geo.admin.ch" && url.searchParams.get("origins") === "address") {
       return Response.json({ results: [{ id: "journey-test-address", attrs: { origin: "address", label: "Bahnhofplatz 1, Zürich", lat: 47.378, lon: 8.538 } }] });

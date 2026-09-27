@@ -3,7 +3,7 @@
     "backrest": "Schienale",
     "armrest": "Braccioli",
     "covered": "Coperta",
-    "wheelchair": "Utilizzabile in sedia a rotelle",
+    "wheelchair": "Spazio piano presso la panchina",
     "fireplaceNearby": "Focolare vicino",
     "wasteBasketNearby": "Cestino nelle vicinanze",
     "material": "Materiale",
@@ -20,6 +20,7 @@
   },
   "sheet": {
     "resize": "Espandi o riduci i dettagli",
+    "minimize": "Riduci i dettagli a una barra",
     "showDetails": "Mostra dettagli",
     "showMap": "Mostra mappa",
     "close": "Chiudi la panchina",
@@ -38,6 +39,15 @@
     "sw": "SO",
     "w": "O",
     "nw": "NO"
+  },
+  "directionEditor": {
+    "intro": "Allinea il centro alla direzione dello sguardo quando ti trovi davanti alla panchina.",
+    "slider": "Regola con precisione la direzione",
+    "minus": "Ruota la direzione di 5 gradi a sinistra",
+    "plus": "Ruota la direzione di 5 gradi a destra",
+    "imageHint": "Il paesaggio calcolato aiuta a orientarsi; sul posto conta la tua osservazione.",
+    "compassHint": "Il nord è 0°. Piccoli passi rendono l’indicazione più precisa.",
+    "save": "Salva la direzione"
   },
   "details": {
     "title": "Dettagli",
@@ -92,11 +102,11 @@
     "lowConfidence": "Bassa affidabilità della stima della luce",
     "lightMethod": "Calcolato dal terreno e dai dintorni; le nuvole possono cambiare la luce",
     "uncertain": " · incerto",
-    "noWheelchair": "Non utilizzabile in sedia a rotelle",
-    "unknownWheelchair": "Uso in sedia a rotelle sconosciuto",
+    "noWheelchair": "Nessuno spazio piano presso la panchina",
+    "unknownWheelchair": "Spazio piano non registrato",
     "quiet": "Tranquillità {score}/5",
     "unknownQuiet": "Tranquillità non valutata",
-    "accessNote": "Accesso: idoneità per sedie a rotelle non verificata.",
+    "accessNote": "Scale e condizioni del percorso sono mostrate separatamente per gli itinerari pianificati.",
     "nearbyTitle": "Servizi nelle vicinanze",
     "nearbyHint": "Tocca per vedere il punto esatto sulla mappa.",
     "straightLine": "ca. {distance} m in linea d’aria",

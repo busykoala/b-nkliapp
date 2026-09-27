@@ -13,6 +13,7 @@
     },
     "fields": {
       "username": "Benutzername",
+      "usernamePublicHint": "Dieser Name erscheint öffentlich im Feed. Bitte kei E-Mail-Adresse und keinen echten Namen verwenden.",
       "password": "Passwort",
       "showPassword": "Passwort zeige",
       "hidePassword": "Passwort ausblenden"
@@ -135,7 +136,7 @@
       "backrest": "Ruggelehne",
       "armrest": "Armlehnen",
       "covered": "Überdacht",
-      "wheelchair": "Mit Rollstuhl nutzbar",
+      "wheelchair": "Ebener Platz am Bänki",
       "fireplaceNearby": "Feuerstelle nahebei",
       "wasteBasketNearby": "Abfalleimer nahebei",
       "material": "Material",
@@ -152,6 +153,7 @@
     },
     "sheet": {
       "resize": "Detailhöhe ändern",
+      "minimize": "Details uf e Leiste minimieren",
       "showDetails": "Details zeige",
       "showMap": "Charte zeige",
       "close": "Bänki zuemache",
@@ -170,6 +172,15 @@
       "sw": "SW",
       "w": "W",
       "nw": "NW"
+    },
+    "directionEditor": {
+      "intro": "Richte die Mitte uf die Blickrichtung aus, wenn du vor der Bänki stehst.",
+      "slider": "Blickrichtung feinjustieren",
+      "minus": "Blickrichtung 5 Grad nach links",
+      "plus": "Blickrichtung 5 Grad nach rechts",
+      "imageHint": "Das berechnete Landschaftsbild hilft bei der Orientierung; vor Ort bleibt deine Beobachtung entscheidend.",
+      "compassHint": "Nord isch 0°. Kleine Schritte machen die Angabe genauer.",
+      "save": "Ausrichtung speichern"
     },
     "details": {
       "title": "Details",
@@ -224,11 +235,11 @@
       "lowConfidence": "Geringe Sicherheit der Lichtschätzung",
       "lightMethod": "Aus Gländ und Umgebung berechnet; Wolken chönd das Liecht ändern",
       "uncertain": " · unsicher",
-      "noWheelchair": "Mit Rollstuhl nit nutzbar",
-      "unknownWheelchair": "Rollstuhlnutzung offen",
+      "noWheelchair": "Kein ebener Platz am Bänki",
+      "unknownWheelchair": "Ebener Platz nit erfasst",
       "quiet": "Rueh {score}/5",
       "unknownQuiet": "Rueh unbewertet",
-      "accessNote": "Zuegang: nit uf Rollstuhltauglichkeit prüeft.",
+      "accessNote": "Treppen und Wegbeschaffenheit werden für geplante Routen separat gezeigt.",
       "nearbyTitle": "Praktisches in der Nähe",
       "nearbyHint": "Antippen zeigt den genauen Ort uf de Charte.",
       "straightLine": "ca. {distance} m Luftlinie",
@@ -1012,7 +1023,7 @@
     },
     "attributes": {
       "covered": "Überdachung",
-      "wheelchair": "Rollstuhlnutzung",
+      "wheelchair": "Ebener Platz am Bänki",
       "land_context": "Umgebung",
       "canopy_context": "Baumdach",
       "waterfront": "Am Wasser",
@@ -1235,7 +1246,7 @@
       "dedication": "Widmung",
       "features": "Ausstattung ergänzen (freiwillig)",
       "observation": "Was siehst du am Bänki?",
-      "accessNote": "Rollstuhlnutzung am Bänki und Zuegang bitte getrennt beurteilen."
+      "accessNote": "Ebenen Platz am Bänki und die Beschaffenheit des Zugangswegs bitte getrennt beurteilen."
     },
     "form": {
       "pending": "Wird eingetragen …",

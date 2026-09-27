@@ -113,7 +113,7 @@ async function nearby(p: JourneyPoint, signal: AbortSignal): Promise<JourneyPoin
 function walkLeg(id: string, a: JourneyPoint, b: JourneyPoint, path: Walk, time: number, speed: number, arriveBy = false): JourneyLeg {
   const durationSeconds = pathSeconds(path, speed);
   const start = arriveBy ? time - durationSeconds * 1000 : time;
-  return { id, mode: "walk", from: a, to: b, departure: new Date(start).toISOString(), arrival: new Date(start + durationSeconds * 1000).toISOString(), predicted: false, distanceMeters: path.distance, durationSeconds, geometry: path.geometry, geometryQuality: "routed", warnings: path.warnings };
+  return { id, mode: "walk", from: a, to: b, departure: new Date(start).toISOString(), arrival: new Date(start + durationSeconds * 1000).toISOString(), predicted: false, distanceMeters: path.distance, durationSeconds, geometry: path.geometry, geometryQuality: "routed", warnings: path.warnings, accessibility: path.accessibility };
 }
 function vehicleMode(category: string): JourneyLeg["mode"] {
   if (/ship|bat|bav|fae|kat|boat|ferry/i.test(category)) return "ferry";

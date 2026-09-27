@@ -65,10 +65,11 @@ function AccountForm({ mode, onSuccess, referralToken }: { mode: "login" | "regi
   }, null);
   const statusId = useId();
   const passwordId = useId();
+  const usernameHintId = useId();
   return <>
     <form action={formAction} className="mt-5 space-y-3" aria-busy={pending}>
       {referralToken && <input type="hidden" name="referralToken" value={referralToken} />}
-      <label className="form-control"><span className="label text-sm font-bold">{t("account.fields.username")}</span><input autoFocus name="username" autoComplete="username" required minLength={3} maxLength={24} aria-describedby={state && !state.ok ? statusId : undefined} className="input story-card min-h-12 w-full" /></label>
+      <label className="form-control"><span className="label text-sm font-bold">{t("account.fields.username")}</span><input autoFocus name="username" autoComplete="username" required minLength={3} maxLength={24} aria-describedby={[mode === "register" ? usernameHintId : null, state && !state.ok ? statusId : null].filter(Boolean).join(" ") || undefined} className="input story-card min-h-12 w-full" />{mode === "register" && <small id={usernameHintId} className="account-field-hint">{t("account.fields.usernamePublicHint")}</small>}</label>
       <div className="form-control"><label htmlFor={passwordId} className="label text-sm font-bold">{t("account.fields.password")}</label><span className="account-password-field"><input id={passwordId} type={showPassword ? "text" : "password"} name="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={8} aria-describedby={state && !state.ok ? statusId : mode === "register" ? `${statusId}-hint` : undefined} className="input story-card min-h-12 w-full" /><button type="button" aria-label={showPassword ? t("account.fields.hidePassword") : t("account.fields.showPassword")} aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span>{mode === "register" && <small id={`${statusId}-hint`} className="account-field-hint">{t("account.validation.passwordShort")}</small>}</div>
       <button disabled={pending} className="btn btn-primary min-h-12 w-full rounded-2xl">{pending && <span className="loading loading-spinner loading-sm" aria-hidden="true" />}{pending ? mode === "login" ? t("account.form.signingIn") : t("account.form.registering") : mode === "login" ? t("common.navigation.signIn") : t("account.form.register")}</button>
     </form>

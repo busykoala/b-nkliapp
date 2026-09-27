@@ -30,6 +30,15 @@
     "departurePlatform": "Départ : voie/quai {actual} au lieu de {scheduled} (prévision).",
     "arrivalPlatform": "Arrivée : voie/quai {actual} au lieu de {scheduled} (prévision)."
   },
+  "accessibility": {
+    "title": "Accès sur cet itinéraire",
+    "steps": "Escaliers sur env. {distance} m",
+    "noSteps": "Aucun escalier dans les données cartographiques",
+    "stepsUnknown": "Escaliers impossibles à évaluer",
+    "slope": "Pente jusqu’à env. {value}%",
+    "surfaces": "Revêtement : {values}",
+    "note": "Estimation issue de la carte. De petites marches, irrégularités ou travaux peuvent manquer."
+  },
   "instructions": {
     "continue": "Continuer tout droit",
     "left": "Tourner à gauche",

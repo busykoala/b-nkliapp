@@ -1,5 +1,5 @@
 import type { UiMessage } from "@/i18n/message";
-import { distanceMeters, type JourneyPoint } from "./journey";
+import { distanceMeters, type JourneyPoint, type RouteAccessibility } from "./journey";
 
 export type WalkPath = {
   geometry: [number, number][]; distance: number; ascent: number;
@@ -11,7 +11,29 @@ export type WalkPath = {
     distance: number; interval: [number, number];
   }[];
   details: Record<string, [number, number, string | number | null][]>;
+  accessibility?: RouteAccessibility;
 };
+
+function detailDistance(path: Pick<WalkPath, "geometry">, from: number, to: number) {
+  let distance = 0;
+  for (let index = Math.max(1, from + 1); index <= Math.min(to, path.geometry.length - 1); index++) {
+    distance += distanceMeters(routePoint(path.geometry[index - 1]), routePoint(path.geometry[index]));
+  }
+  return distance;
+}
+
+export function routeAccessibility(path: Pick<WalkPath, "geometry" | "details">): RouteAccessibility {
+  const roadClass = path.details.road_class;
+  const stepsSegments = roadClass?.filter(([, , value]) => String(value).toLowerCase() === "steps") ?? [];
+  const slopes = (path.details.average_slope ?? []).flatMap(([, , value]) => typeof value === "number" && Number.isFinite(value) ? [Math.abs(value)] : []);
+  const surfaces = [...new Set((path.details.surface ?? []).flatMap(([, , value]) => typeof value === "string" && value && value !== "missing" ? value.split(";").map((part) => part.trim()).filter(Boolean) : []))].slice(0, 3);
+  return {
+    steps: !roadClass?.length ? "unknown" : stepsSegments.length ? "present" : "none",
+    stepsDistanceMeters: Math.round(stepsSegments.reduce((sum, [from, to]) => sum + detailDistance(path, from, to), 0)),
+    maximumSlopePercent: slopes.length ? Math.round(Math.max(...slopes) * 10) / 10 : null,
+    surfaces,
+  };
+}
 export function pathSeconds(path: WalkPath, speed: number) { return Math.ceil(path.referenceSeconds * 5 / speed - 1e-9); }
 /** Cumulative slope-aware times, using path-detail intervals rather than vertex count. */
 export function pathTimes(path: WalkPath, speed: number): number[] {

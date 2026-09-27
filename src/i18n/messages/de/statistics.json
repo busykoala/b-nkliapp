@@ -235,7 +235,7 @@
       "scenic": "mit Aussichtswert ab 75",
       "water": "höchstens 250 m vom Wasser",
       "forest": "im Wald",
-      "wheelchair": "als rollstuhlgerecht erfasst",
+      "wheelchair": "mit ebenem Platz am Bänkli erfasst",
       "note": "Prozentwerte verwenden nur Bänkli, bei denen das jeweilige Merkmal bekannt ist. Darum zeigen wir darunter stets die Stichprobengrösse."
     },
     "known": "von {count} ausgewertet",

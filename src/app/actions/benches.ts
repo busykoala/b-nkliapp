@@ -31,7 +31,7 @@ const addSchema = z.object({
   wasteBasketNearby: z.enum(["", "yes", "no"]).optional(),
   material: z.enum(["", "wood", "metal", "stone", "concrete", "plastic", "mixed"]).optional(),
   seats: z.union([z.literal(""), z.coerce.number().int().min(1).max(20)]).optional(),
-  direction: z.union([z.literal(""), z.coerce.number().int().min(0).max(359).refine((value) => value % 45 === 0)]).optional(),
+  direction: z.union([z.literal(""), z.coerce.number().int().min(0).max(359)]).optional(),
 });
 const editSchema = z.object({
   name: z.string().trim().max(80).optional(),
@@ -205,7 +205,7 @@ export async function editBenchField(benchId: string, fieldInput: unknown, value
     value = parsed.data;
     column = "seats";
   } else {
-    const parsed = z.coerce.number().int().min(0).max(359).refine((degrees) => degrees % 45 === 0).safeParse(valueInput);
+    const parsed = z.coerce.number().int().min(0).max(359).safeParse(valueInput);
     if (!parsed.success) return { ok: false, message: t("submission.result.chooseDirection") };
     value = parsed.data;
     column = "direction_degrees";

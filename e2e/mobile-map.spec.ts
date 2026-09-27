@@ -88,7 +88,7 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await expect(filters.getByRole("button", { name: "Feuerstelle" })).toBeVisible();
   await expect(filters.getByRole("button", { name: "Abfalleimer" })).toBeVisible();
   await filters.getByText("Mehr Wünsche", { exact: true }).click();
-  await expect(filters.getByRole("button", { name: "Mit Rollstuhl nutzbar" })).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Ebener Platz am Bänkli" })).toBeVisible();
   await backrest.click();
   await expect(filters.getByText("2 Filter aktiv")).toBeVisible();
   await expect(page.getByText("Bänke konnten nicht geladen werden.")).toHaveCount(0);
@@ -385,7 +385,21 @@ test("publishes an overall rating without optional detail stars", async ({ page,
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
 });
 
-test("bench, journey and walk use one mobile sheet handle with consistent snap gestures", async ({ page }) => {
+test("fine-tunes the bench direction to one degree using the landscape preview", async ({ page, browserName }, testInfo) => {
+  await registerUser(page, `bearing-${browserName}-${Date.now().toString().slice(-5)}`);
+  await page.goto("/bank/osm-node-101");
+  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
+  const features = page.getByRole("dialog", { name: "Bänkli beschreiben" });
+  await features.getByRole("button", { name: /Blickrichtung/ }).click();
+  const slider = features.getByRole("slider", { name: "Blickrichtung feinjustieren" });
+  await slider.fill("213");
+  await expect(features.locator("output")).toHaveText("SW · 213°");
+  await page.screenshot({ path: testInfo.outputPath("direction-fine-tuner.png") });
+  await features.getByRole("button", { name: "Ausrichtung speichern" }).click();
+  await expect(features.getByRole("button", { name: /Blickrichtung SW · 213°/ })).toBeVisible();
+});
+
+test("bench, journey and walk use one mobile sheet handle with consistent snap gestures", async ({ page }, testInfo) => {
   await page.goto("/?bank=osm-node-101");
   const shell = page.locator(".map-sheet-shell");
   await expect(shell).toHaveAttribute("data-snap", "full");
@@ -393,8 +407,17 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "full");
+  await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
+  await expect(shell).toHaveAttribute("data-snap", "peek");
+  await expect(shell.locator(".map-sheet-content")).not.toBeVisible();
+  await expect.poll(async () => (await shell.boundingBox())?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(90);
+  await page.screenshot({ path: testInfo.outputPath("minimized-detail-bar.png") });
+  await shell.locator(".map-sheet-resize").click();
+  await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.locator(".map-sheet-chrome").dispatchEvent("touchstart", { touches: [{ identifier: 1, clientY: 200 }] });
   await shell.locator(".map-sheet-chrome").dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientY: 300 }] });
+  await expect(shell).toHaveAttribute("data-snap", "peek");
+  await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.getByRole("button", { name: "Weg hierher" }).click();
   await expect(shell).toHaveAttribute("aria-label", "Dein Weg zum Bänkli");
@@ -404,6 +427,17 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await page.locator(".walk-entry").click();
   await expect(shell).toHaveAttribute("aria-label", "Spaziergang entdecken");
   await expect(shell.locator(".map-sheet-handle")).toBeVisible();
+});
+
+test("opens a shared bench with the map already focused underneath", async ({ page }) => {
+  await page.goto("/?bank=osm-node-101");
+  const map = page.getByLabel("Karte der Schweizer Sitzbänke");
+  await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 8_000 });
+  await expect(map).toHaveAttribute("data-focus-bench", "osm-node-101");
+  await expect.poll(async () => Number(await map.getAttribute("data-zoom"))).toBeGreaterThan(16);
+  const center = await map.evaluate((element) => ({ latitude: Number((element as HTMLElement).dataset.centerLatitude), longitude: Number((element as HTMLElement).dataset.centerLongitude) }));
+  expect(Math.abs(center.latitude - 47.37674)).toBeLessThan(.01);
+  expect(Math.abs(center.longitude - 8.54183)).toBeLessThan(.01);
 });
 
 test("lets an authenticated user add an unverified Bänkli", async ({ page, browserName }) => {

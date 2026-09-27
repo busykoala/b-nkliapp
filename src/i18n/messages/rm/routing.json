@@ -30,6 +30,15 @@
     "departurePlatform": "Partenza: binari/perrun {actual} enstagl da {scheduled} (prognosa).",
     "arrivalPlatform": "Arrivada: binari/perrun {actual} enstagl da {scheduled} (prognosa)."
   },
+  "accessibility": {
+    "title": "Access sin questa ruta",
+    "steps": "Stgalas sin circa {distance} m",
+    "noSteps": "Naginas stgalas en las datas da la carta",
+    "stepsUnknown": "Stgalas betg stimablas",
+    "slope": "Pendenza fin circa {value}%",
+    "surfaces": "Cuverta da la via: {values}",
+    "note": "Stimà tenor la carta. Stgalims pitschens, irregularitads u plazzals pon mancar."
+  },
   "instructions": {
     "continue": "Ir vinavant a dretg or",
     "left": "Volver a sanestra",

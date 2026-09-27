@@ -70,7 +70,7 @@ test("offers an accessible nearby list with zoom guidance and decision evidence"
   await page.getByRole("button", { name: "Liste", exact: true }).click();
   await expect(list.getByRole("button", { name: /Lindenhof/ })).toBeVisible();
   await expect(list.getByText(/Rückenlehne/).first()).toBeVisible();
-  await expect(list.getByText(/Mit Rollstuhl nutzbar/).first()).toBeVisible();
+  await expect(list.getByText(/Ebener Platz am Bänkli/).first()).toBeVisible();
   await expect(list.getByText(/Luftlinie/)).toBeVisible();
   await list.screenshot({ path: info.outputPath("nearby-bench-list.png") });
 });
@@ -201,6 +201,7 @@ test("a selected rest interval reaches the routing result", async ({ page }, inf
   await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
   const pauses = panel.getByRole("region", { name: "Sitzpausen unterwegs" });
   await expect(pauses).toBeVisible({ timeout: 18_000 });
+  await expect(panel.getByRole("region", { name: "Zugang auf dieser Route" })).toContainText("Treppen auf ca.");
   const text = await pauses.textContent();
   const minutes = Number(text!.match(/Höchstens ca\. (\d+) Min\./)![1]);
   expect(minutes).toBeGreaterThan(0);

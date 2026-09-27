@@ -74,6 +74,8 @@ test("draws a complete journal with real-provider-shaped walking and transfer da
   await expect(connections.getByText("Verlauf schematisch", { exact: false }).first()).toBeVisible();
   await expect(connections.getByText(/zu Fuss insgesamt/)).toBeVisible();
   await expect(connections.getByText(/Letzter Fussweg:/)).toBeVisible();
+  await expect(connections.getByRole("region", { name: "Zugang auf dieser Route" })).toContainText("Treppen auf ca.");
+  await expect(connections.getByRole("region", { name: "Zugang auf dieser Route" })).toContainText("Pflastersteine");
   await expect(connections.getByRole("link", { name: "In SBB öffnen" })).toHaveAttribute("href", /^https:\/\/www\.sbb\.ch\/de\?/);
   await expect(connections.getByRole("link", { name: "In Karten öffnen" })).toHaveAttribute("href", /destination=/);
 

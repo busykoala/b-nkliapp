@@ -3,7 +3,7 @@
     "backrest": "Dossier",
     "armrest": "Accoudoirs",
     "covered": "Couvert",
-    "wheelchair": "Utilisable en fauteuil roulant",
+    "wheelchair": "Espace plat près du banc",
     "fireplaceNearby": "Foyer à proximité",
     "wasteBasketNearby": "Poubelle à proximité",
     "material": "Matériau",
@@ -20,6 +20,7 @@
   },
   "sheet": {
     "resize": "Agrandir ou réduire les détails",
+    "minimize": "Réduire les détails à une barre",
     "showDetails": "Afficher les détails",
     "showMap": "Afficher la carte",
     "close": "Fermer le banc",
@@ -38,6 +39,15 @@
     "sw": "SO",
     "w": "O",
     "nw": "NO"
+  },
+  "directionEditor": {
+    "intro": "Aligne le centre avec la direction du regard lorsque tu te tiens devant le banc.",
+    "slider": "Ajuster précisément la direction",
+    "minus": "Tourner la direction de 5 degrés à gauche",
+    "plus": "Tourner la direction de 5 degrés à droite",
+    "imageHint": "Le paysage calculé aide à s’orienter ; ton observation sur place reste décisive.",
+    "compassHint": "Le nord vaut 0°. Les petits pas rendent l’indication plus précise.",
+    "save": "Enregistrer la direction"
   },
   "details": {
     "title": "Détails",
@@ -92,11 +102,11 @@
     "lowConfidence": "Faible fiabilité de l’estimation de lumière",
     "lightMethod": "Calculé selon le terrain et les environs ; les nuages peuvent modifier la lumière",
     "uncertain": " · incertain",
-    "noWheelchair": "Non utilisable en fauteuil roulant",
-    "unknownWheelchair": "Usage en fauteuil roulant inconnu",
+    "noWheelchair": "Pas d’espace plat près du banc",
+    "unknownWheelchair": "Espace plat non renseigné",
     "quiet": "Calme {score}/5",
     "unknownQuiet": "Calme non évalué",
-    "accessNote": "Accès : non vérifié pour les fauteuils roulants.",
+    "accessNote": "Les escaliers et l’état du chemin sont indiqués séparément pour les itinéraires planifiés.",
     "nearbyTitle": "Pratique à proximité",
     "nearbyHint": "Touche pour voir l’emplacement exact sur la carte.",
     "straightLine": "env. {distance} m à vol d’oiseau",

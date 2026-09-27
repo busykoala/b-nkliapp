@@ -3,7 +3,7 @@
     "backrest": "Rückenlehne",
     "armrest": "Armlehnen",
     "covered": "Überdacht",
-    "wheelchair": "Mit Rollstuhl nutzbar",
+    "wheelchair": "Ebener Platz am Bänkli",
     "fireplaceNearby": "Feuerstelle nahebei",
     "wasteBasketNearby": "Abfalleimer nahebei",
     "material": "Material",
@@ -20,6 +20,7 @@
   },
   "sheet": {
     "resize": "Detailhöhe ändern",
+    "minimize": "Details auf eine Leiste minimieren",
     "showDetails": "Details zeigen",
     "showMap": "Karte zeigen",
     "close": "Bank schliessen",
@@ -38,6 +39,15 @@
     "sw": "SW",
     "w": "W",
     "nw": "NW"
+  },
+  "directionEditor": {
+    "intro": "Richte die Mitte auf die Blickrichtung aus, wenn du vor der Bank stehst.",
+    "slider": "Blickrichtung feinjustieren",
+    "minus": "Blickrichtung 5 Grad nach links",
+    "plus": "Blickrichtung 5 Grad nach rechts",
+    "imageHint": "Das berechnete Landschaftsbild hilft bei der Orientierung; vor Ort bleibt deine Beobachtung entscheidend.",
+    "compassHint": "Nord ist 0°. Kleine Schritte machen die Angabe genauer.",
+    "save": "Ausrichtung speichern"
   },
   "details": {
     "title": "Details",
@@ -92,11 +102,11 @@
     "lowConfidence": "Geringe Sicherheit der Lichtschätzung",
     "lightMethod": "Aus Gelände und Umgebung berechnet; Wolken können das Licht ändern",
     "uncertain": " · unsicher",
-    "noWheelchair": "Mit Rollstuhl nicht nutzbar",
-    "unknownWheelchair": "Rollstuhlnutzung offen",
+    "noWheelchair": "Kein ebener Platz am Bänkli",
+    "unknownWheelchair": "Ebener Platz nicht erfasst",
     "quiet": "Ruhe {score}/5",
     "unknownQuiet": "Ruhe unbewertet",
-    "accessNote": "Zugangsweg: nicht auf Rollstuhltauglichkeit geprüft.",
+    "accessNote": "Treppen und Wegbeschaffenheit werden für geplante Routen separat gezeigt.",
     "nearbyTitle": "Praktisches in der Nähe",
     "nearbyHint": "Antippen zeigt den genauen Ort auf der Karte.",
     "straightLine": "ca. {distance} m Luftlinie",

@@ -17,6 +17,7 @@ import { useWalkPlanner, walkLegs } from "./use-walk-planner";
 import type { ReturnJourney } from "@/lib/journey";
 import type { WalkDraftSnapshot } from "@/lib/walks/model";
 import { MapSheetShell } from "../map-sheet-shell";
+import { RouteAccessibilitySummary } from "../routing/route-accessibility";
 
 export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onReturn }: { getMap: () => MapLibreMap | null; initial: WalkDraftSnapshot | null; onSnapshot: (draft: WalkDraftSnapshot) => void; onClose: () => void; onEnd: () => void; onReturn: (journey: ReturnJourney) => void }) {
   const t = useTranslations();
@@ -32,7 +33,7 @@ export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onRet
     return () => cancelAnimationFrame(frame);
   }, []); // A resumed route is revealed once; later edits should not jump the sheet.
   const copy = p.chosen && p.result ? walkCopy([p.chosen.bench], p.result.query.shape, p.chosen.extraBenches.length, t) : null;
-  return <MapSheetShell label={t("walks.planner.title")} resizeLabel={t("walks.planner.resize")} closeLabel={t("walks.planner.close")} onClose={onClose} initialSnap="half">
+  return <MapSheetShell label={t("walks.planner.title")} resizeLabel={t("walks.planner.resize")} minimizeLabel={t("walks.planner.minimize")} closeLabel={t("walks.planner.close")} onClose={onClose} initialSnap="half">
     <header><span className="story-eyebrow">{t("walks.planner.eyebrow")}</span><h2 className="programmatic-focus-heading" ref={title} tabIndex={-1}>{t("walks.planner.title")}</h2><p>{t("walks.planner.intro")}</p></header>
       <section className="journey-controls" aria-label={t("walks.planner.label")}>
         <StartPicker origin={p.origin} onChange={p.chooseOrigin} getMap={getMap} />
@@ -58,6 +59,7 @@ export function WalkPlanner({ getMap, initial, onSnapshot, onClose, onEnd, onRet
         {p.chosen.rest && <section className="walk-rest-summary" aria-label={t("walks.rest.title")}><h3>{t("walks.rest.title")}</h3><p>{t("walks.rest.maximum", {minutes: Math.ceil(p.chosen.rest.maxGapSeconds / 60)})}</p><ol>{p.chosen.rest.stops.map((stop, index) => <li key={`${stop.bench.id}-${index}`}><a href={`/bank/${stop.bench.id}`} target="_blank" rel="noreferrer">{pointLabel(stop.bench, t)}</a><span>{t("walks.rest.after", {minutes: Math.round(stop.routeSeconds / 60)})}</span></li>)}</ol></section>}
         {p.result.query.difficulty === "t2" && <p className="journey-warning">{t("walks.results.t2")}</p>}
         {p.chosen.path.warnings.map((warning, index) => <p className="journey-warning" key={`${warning.key}-${index}`}>{translateMessage(t, warning)}</p>)}
+        <RouteAccessibilitySummary values={[p.chosen.path.accessibility]} />
         <ol className="journey-thread"><li><MapPin size={20} /><strong>{pointLabel(p.result.query.origin, t)}</strong><small>{t("walks.results.start")}</small></li>{walkLegs(p.chosen, p.result.query).map((leg, i) => <li key={leg.id}><button className="journey-leg" onClick={() => p.focusLeg(leg)}><span className="journey-stamp">{i === 0 ? <img src="/map-art/markers/bench.webp" width="44" height="44" alt="" /> : <Footprints size={24} />}</span><span><strong>{i === 0 ? copy.pause : t("walks.results.return")}</strong><span>{pointLabel(leg.to, t)}</span></span></button></li>)}</ol>
         <details><summary>{t("routing.controls.directions")}</summary><ol className="walk-instructions">{p.chosen.path.instructions.map((step, i) => <li key={i}>{routeInstruction(step, t)}{step.distance > 0 && <small>{Math.round(step.distance)} m</small>}</li>)}</ol></details>
         <details><summary>{t("walks.results.why")}</summary><p>{t("walks.results.explanation")}</p>{p.chosen.evidence.warnings.map((warning, index) => <p key={`${warning.key}-${index}`}>{translateMessage(t, warning)}</p>)}{p.chosen.evidence.noise?.map((layer) => <p key={`${layer.mode}-${layer.period}`}>{layer.meanDb != null ? t("walks.evidence.noiseCoverage", {mode: t(`knowledge.noise.${layer.mode}`), period: t(`knowledge.noise.${layer.period}`), coverage: Math.round(layer.coverage * 100), value: Math.round(layer.meanDb)}) : `${t(`knowledge.noise.${layer.mode}`)} · ${t(`knowledge.noise.${layer.period}`)}: ${t("knowledge.noise.empty")}`}</p>)}<p>{p.chosen.evidence.updatedAt ? t("walks.results.updated", {date: formatDate(p.chosen.evidence.updatedAt, t)}) : t("walks.results.noData")}  {t("walks.results.extrasNote")}</p></details>

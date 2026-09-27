@@ -26,7 +26,7 @@
     "dedication": "Dédicace",
     "features": "Ajouter l’équipement (facultatif)",
     "observation": "Que vois-tu sur ce banc ?",
-    "accessNote": "Évalue séparément l’utilisation du banc en fauteuil roulant et son chemin d’accès."
+    "accessNote": "Évalue séparément l’espace plat près du banc et l’état du chemin d’accès."
   },
   "form": {
     "pending": "Ajout en cours…",

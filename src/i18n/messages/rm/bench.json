@@ -3,7 +3,7 @@
     "backrest": "Spundal",
     "armrest": "Posabratscha",
     "covered": "Cun tetg",
-    "wheelchair": "Utilisabel cun sutga cun rodas",
+    "wheelchair": "Plaz plan sper il banc",
     "fireplaceNearby": "Fieu en la vischinanza",
     "wasteBasketNearby": "Recipient da rument en vischinanza",
     "material": "Material",
@@ -20,6 +20,7 @@
   },
   "sheet": {
     "resize": "Engrondir u reducir ils detagls",
+    "minimize": "Reducir ils detagls ad ina trav",
     "showDetails": "Mussar detagls",
     "showMap": "Mussar carta",
     "close": "Serrar il banc",
@@ -38,6 +39,15 @@
     "sw": "SO",
     "w": "O",
     "nw": "NO"
+  },
+  "directionEditor": {
+    "intro": "Drizza il center sin la direcziun da la vista cura che ti stas davant il banc.",
+    "slider": "Ajustar exactamain la direcziun",
+    "minus": "Volver la direcziun 5 grads a sanestra",
+    "plus": "Volver la direcziun 5 grads a dretga",
+    "imageHint": "La cuntrada calculada gida a s’orientar; al lieu quinta tia observaziun.",
+    "compassHint": "Nord è 0°. Pass pitschens rendan l’indicaziun pli precisa.",
+    "save": "Memorisar la direcziun"
   },
   "details": {
     "title": "Detagls",
@@ -92,11 +102,11 @@
     "lowConfidence": "Pitschnas segirezzas da la stimaziun da glisch",
     "lightMethod": "Calculà a basa dal terren e dals conturns; nivels pon midar la glisch",
     "uncertain": " · malsegir",
-    "noWheelchair": "Betg utilisabel cun sutga cun rodas",
-    "unknownWheelchair": "Utilisaziun cun sutga cun rodas nunenconuschenta",
+    "noWheelchair": "Nagin plaz plan sper il banc",
+    "unknownWheelchair": "Plaz plan betg registrà",
     "quiet": "Quietezza {score}/5",
     "unknownQuiet": "Quietezza betg valitada",
-    "accessNote": "Via d’access: adattaziun per sutgas cun rodas betg controllada.",
+    "accessNote": "Stgalas e la qualitad da la via vegnan mussadas separadamain per rutas planisadas.",
     "nearbyTitle": "Pratic en la vischinanza",
     "nearbyHint": "Tutgar mussa il lieu exact sin la charta.",
     "straightLine": "ca. {distance} m lingia directa",

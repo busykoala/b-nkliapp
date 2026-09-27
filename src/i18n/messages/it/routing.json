@@ -30,6 +30,15 @@
     "departurePlatform": "Partenza: binario/marciapiede {actual} anziché {scheduled} (previsione).",
     "arrivalPlatform": "Arrivo: binario/marciapiede {actual} anziché {scheduled} (previsione)."
   },
+  "accessibility": {
+    "title": "Accesso su questo percorso",
+    "steps": "Scale per circa {distance} m",
+    "noSteps": "Nessuna scala nei dati cartografici",
+    "stepsUnknown": "Scale non valutabili",
+    "slope": "Pendenza fino a circa {value}%",
+    "surfaces": "Fondo: {values}",
+    "note": "Stima basata sulla mappa. Piccoli gradini, irregolarità o cantieri possono mancare."
+  },
   "instructions": {
     "continue": "Prosegui dritto",
     "left": "Gira a sinistra",

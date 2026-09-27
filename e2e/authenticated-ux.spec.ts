@@ -20,6 +20,7 @@ async function registerUser(page: import("@playwright/test").Page, username: str
 test("keeps the complete signed-in journey clear on a phone", async ({ page }, testInfo) => {
   await openRegistration(page);
   await expect(page.getByRole("button", { name: "Registrieren" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Dieser Name erscheint öffentlich im Feed. Bitte keine E-Mail-Adresse und keinen echten Namen verwenden.")).toBeVisible();
   await expect(page.getByText("Mindestens 8 Zeichen")).toBeVisible();
   const password = page.getByLabel("Passwort", { exact: true });
   await expect(password).toHaveAttribute("type", "password");

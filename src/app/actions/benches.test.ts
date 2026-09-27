@@ -52,6 +52,13 @@ it("excludes inactive benches and points outside the true 25 metre circle", asyn
   expect(await getNearbyBenches(47.376938, 8.542122)).not.toEqual(expect.arrayContaining([expect.objectContaining({ id: "osm-node-101" })]));
 });
 
+it("stores a precisely observed bench direction instead of rounding to compass octants", async () => {
+  const { editBenchField } = await import("./benches");
+  expect(await editBenchField("osm-node-101", "direction", "213")).toMatchObject({ ok: true });
+  expect(database.prepare("SELECT direction_degrees FROM benches WHERE id='osm-node-101'").get()).toEqual({ direction_degrees: 213 });
+  expect(database.prepare("SELECT new_value FROM bench_metadata_edits WHERE field='direction' ORDER BY id DESC LIMIT 1").get()).toEqual({ new_value: "213" });
+});
+
 it("isolates simultaneous request languages and translates validation without writing data", async () => {
   const { addBench } = await import("./benches");
   const { withTestLanguage } = await import("@/test/next-intl-server");

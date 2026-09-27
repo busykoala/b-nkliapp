@@ -30,6 +30,15 @@
     "departurePlatform": "Abfahrt: Gleis/Haltekante {actual} statt {scheduled} (Prognose).",
     "arrivalPlatform": "Ankunft: Gleis/Haltekante {actual} statt {scheduled} (Prognose)."
   },
+  "accessibility": {
+    "title": "Zugang auf dieser Route",
+    "steps": "Treppen auf ca. {distance} m",
+    "noSteps": "Keine Treppen in den Kartendaten",
+    "stepsUnknown": "Treppen nicht auswertbar",
+    "slope": "Bis etwa {value}% Neigung",
+    "surfaces": "Wegbelag: {values}",
+    "note": "Aus Kartendaten geschätzt. Kurze Stufen, Unebenheiten und Baustellen können fehlen."
+  },
   "instructions": {
     "continue": "Geradeaus weitergehen",
     "left": "Links abbiegen",

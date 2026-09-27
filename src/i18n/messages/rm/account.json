@@ -12,6 +12,7 @@
   },
   "fields": {
     "username": "Num d’utilisader",
+    "usernamePublicHint": "Quest num cumpara publicamain en il feed. Betg duvrar l’adressa dad e-mail u tes vair num.",
     "password": "Pled-clav",
     "showPassword": "Mussar il pled-clav",
     "hidePassword": "Zuppentar il pled-clav"

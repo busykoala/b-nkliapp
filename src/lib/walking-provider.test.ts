@@ -2,19 +2,20 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const a = { label: "Start", latitude: 46.6, longitude: 7.6 }, b = { label: "Bänkli", latitude: 46.61, longitude: 7.61 };
 beforeEach(() => { vi.resetModules(); Reflect.deleteProperty(globalThis, "benchlyWalking"); });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers(); });
-const answer = { paths: [{ distance: 1000, time: 900000, ascend: 50, points: { coordinates: [[7.6, 46.6, 600], [7.61, 46.61, 650]] }, snapped_waypoints: { coordinates: [[7.6, 46.6], [7.61, 46.61]] } }] };
+const answer = { paths: [{ distance: 1000, time: 900000, ascend: 50, details: { road_class: [[0, 1, "steps"]], average_slope: [[0, 1, 9]], surface: [[0, 1, "paved"]] }, points: { coordinates: [[7.6, 46.6, 600], [7.61, 46.61, 650]] }, snapped_waypoints: { coordinates: [[7.6, 46.6], [7.61, 46.61]] } }] };
 it("uses a server-configured POST endpoint, slope time, and privacy-separated bounded caches", async () => {
   const fetcher = vi.fn(async () => Response.json(answer)); vi.stubGlobal("fetch", fetcher);
   vi.stubEnv("WALK_ROUTER_URL", "http://graphhopper.routing.svc.cluster.local:8989");
   const { routeWalk } = await import("./walking-provider");
   const signal = new AbortController().signal;
-  expect((await routeWalk({ points: [a, b] }, signal))[0]).toMatchObject({ ascent: 50, referenceSeconds: 900 });
+  expect((await routeWalk({ points: [a, b] }, signal))[0]).toMatchObject({ ascent: 50, referenceSeconds: 900, accessibility: { steps: "present", maximumSlopePercent: 9, surfaces: ["paved"] } });
   await routeWalk({ points: [a, b] }, signal);
   expect(fetcher).toHaveBeenCalledTimes(1);
   await routeWalk({ points: [a, b] }, signal, false);
   expect(fetcher).toHaveBeenCalledTimes(2);
   expect(String((fetcher.mock.calls as unknown[][])[0][0])).toBe("http://graphhopper.routing.svc.cluster.local:8989/route");
   expect((fetcher.mock.calls as unknown as [URL, RequestInit][])[0][1]).toMatchObject({ method: "POST", cache: "no-store", redirect: "error" });
+  expect(JSON.parse(String((fetcher.mock.calls as unknown as [URL, RequestInit][])[0][1].body)).details).toContain("average_slope");
 });
 it("expires personal coordinate caches even without subsequent traffic", async () => {
   vi.useFakeTimers(); const fetcher = vi.fn(async () => Response.json(answer)); vi.stubGlobal("fetch", fetcher);

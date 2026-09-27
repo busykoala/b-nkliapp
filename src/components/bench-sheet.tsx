@@ -22,7 +22,7 @@ function BenchSheetSurface({ created = false, initiallyExpanded = false, bench, 
   const t = useTranslations();
   const localLanguage = useLocalBenchLanguage();
   return (
-    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} closeLabel={t("bench.sheet.close")} initialSnap={created || initiallyExpanded ? "full" : "half"} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
+    <MapSheetShell variant="bench" label={t("bench.sheet.label")} resizeLabel={t("bench.sheet.resize")} minimizeLabel={t("bench.sheet.minimize")} closeLabel={t("bench.sheet.close")} initialSnap={created || initiallyExpanded ? "full" : "half"} languageTag={localLanguage.profile?.languageTag} voiceId={localLanguage.profile?.voiceId} onClose={onClose} headerAction={onResumeWalk && <button type="button" className="map-sheet-walk-resume" aria-label={t("walks.planner.resume")} title={t("walks.planner.resume")} onClick={onResumeWalk}><Footprints size={18} /><span>{t("walks.planner.resume")}</span></button>}>
       {(visibleSnap) => <>
         {loading && <div className="flex h-48 flex-col items-center justify-center gap-3"><span className="loading loading-ring loading-lg text-primary" /><span className="story-eyebrow">{t("bench.sheet.loading")}</span><span className="sr-only">{t("bench.sheet.loadingAccessible")}</span></div>}
         {!loading && bench && (visibleSnap === "full"

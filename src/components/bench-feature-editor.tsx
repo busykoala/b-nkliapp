@@ -1,8 +1,9 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- repeated panoramic artifact used as an orientation strip */
 
 import { useTranslations } from "next-intl";
 import { compassDirection, propertyLabel, propertyValue } from "@/i18n/bench-labels";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Compass, Minus, Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { editBenchField } from "@/app/actions/benches";
 import type { BenchDetail, BenchProperty } from "@/lib/types";
@@ -20,6 +21,7 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
     direction: [0, 45, 90, 135, 180, 225, 270, 315].map(degrees => ({value: String(degrees), label: compassDirection(degrees, t), display: compassDirection(degrees, t)})),
   };
   const [active, setActive] = useState<Field | null>(null);
+  const [directionDraft, setDirectionDraft] = useState(Math.round(bench.directionDegrees ?? 0));
   const sourceValues: Record<string, string> = Object.fromEntries([
     ...bench.properties.map((item) => [item.key, propertyValue(item, t)]),
     ["direction", bench.directionDegrees === null ? t("common.values.open") : compassDirection(bench.directionDegrees, t)],
@@ -54,17 +56,42 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
   return <div className="contribution-feature-list">
     <p className="feature-progress" role="status">{t("community.features.progress", {known, total: fields.length})}</p>
     {visibleFields.map(({ field, label }) => <section key={field} className={active === field ? "is-open" : undefined}>
-      <button type="button" aria-expanded={active === field} onClick={() => setActive(active === field ? null : field)}>
+      <button type="button" aria-expanded={active === field} onClick={() => { setActive(active === field ? null : field); if (field === "direction") setDirectionDraft(Math.round(bench.directionDegrees ?? 0)); }}>
         <span><small>{label}</small><strong>{values[field] === t("common.values.unknown") ? t("common.values.open") : values[field]}</strong></span>
         {mine.has(field) && <em><Check size={12} /> {t("community.features.mine")}</em>}
         <ChevronDown size={16} aria-hidden="true" />
       </button>
-      {active === field && <div className={`field-choice-grid is-${field}`}>
+      {active === field && field === "direction" && <DirectionFineTuner bench={bench} value={directionDraft} pending={pending} onChange={setDirectionDraft} onSave={() => choose("direction", { value: String(directionDraft), label: compassDirection(directionDraft, t), display: compassDirection(directionDraft, t) })} />}
+      {active === field && field !== "direction" && <div className={`field-choice-grid is-${field}`}>
         {choices[field].map((choice) => <button type="button" key={choice.value} disabled={pending}
           aria-pressed={values[field] === (choice.display ?? choice.label)} onClick={() => choose(field, choice)}
         >{values[field] === (choice.display ?? choice.label) && <Check size={13} />}{choice.label}</button>)}
       </div>}
     </section>)}
     {message && <p role="status" className="contribution-inline-status">{message}</p>}
+  </div>;
+}
+
+function DirectionFineTuner({ bench, value, pending, onChange, onSave }: { bench: BenchDetail; value: number; pending: boolean; onChange: (value: number) => void; onSave: () => void }) {
+  const t = useTranslations();
+  const preview = bench.panorama?.artifactUrl;
+  const adjust = (difference: number) => onChange((value + difference + 360) % 360);
+  // Mirror the full panorama's projection: each 360° copy is four times the
+  // overscanned preview height, with the chosen bearing under the centre line.
+  const trackTransform = `translateX(-${43.52 * (1 + value / 360)}rem)`;
+  return <div className="direction-fine-tuner">
+    <p>{t("bench.directionEditor.intro")}</p>
+    <div className={`direction-photo-preview${preview ? " has-image" : ""}`} aria-hidden="true">
+      {preview ? <div className="direction-photo-track" style={{ transform: trackTransform }}>{[0, 1, 2].map((copy) => <img key={copy} src={preview} alt="" />)}</div> : <Compass size={54} />}
+      <i /><strong>{value}°</strong>
+    </div>
+    <label><span>{t("bench.directionEditor.slider")}</span><input type="range" min="0" max="359" step="1" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>
+    <div className="direction-fine-actions">
+      <button type="button" disabled={pending} aria-label={t("bench.directionEditor.minus")} onClick={() => adjust(-5)}><Minus size={16} />5°</button>
+      <output>{compassDirection(value, t)}</output>
+      <button type="button" disabled={pending} aria-label={t("bench.directionEditor.plus")} onClick={() => adjust(5)}><Plus size={16} />5°</button>
+    </div>
+    <small>{t(preview ? "bench.directionEditor.imageHint" : "bench.directionEditor.compassHint")}</small>
+    <button type="button" className="direction-save" disabled={pending} onClick={onSave}><Check size={15} />{pending ? t("common.actions.saving") : t("bench.directionEditor.save")}</button>
   </div>;
 }

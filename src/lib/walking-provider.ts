@@ -3,7 +3,7 @@ import { message } from "@/i18n/message";
 import { z } from "zod";
 import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { distanceMeters, type JourneyPoint } from "./journey";
-import { routePoint, type WalkPath } from "./walking";
+import { routeAccessibility, routePoint, type WalkPath } from "./walking";
 
 const coordinate = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90), z.number().finite().optional()]);
 const line = z.object({ coordinates: z.array(coordinate).min(1).max(100000) });
@@ -36,7 +36,7 @@ export async function routeWalk(request: WalkRequest, signal: AbortSignal, perso
   const body = {
     profile: request.difficulty === "t2" ? "walk_t2" : "walk", points: request.points.map((p) => [p.longitude, p.latitude]),
     points_encoded: false, elevation: true, instructions: true, "ch.disable": true, timeout_ms: 10000,
-    details: ["road_class", "road_environment", "hike_rating", "surface", "time", "edge_id"],
+    details: ["road_class", "road_environment", "hike_rating", "average_slope", "surface", "time", "edge_id"],
     ...(request.scenic ? { custom_model: { priority: [{ if: "road_class == PRIMARY || road_class == SECONDARY", multiply_by: .15 }, { if: "road_class == TERTIARY", multiply_by: .5 }] } } : {}),
     ...(request.roundTrip ? { algorithm: "round_trip", "round_trip.distance": request.roundTrip.meters, "round_trip.seed": request.roundTrip.seed } : request.alternatives ? { algorithm: "alternative_route", "alternative_route.max_paths": 2 } : {}),
   };
@@ -72,7 +72,8 @@ export async function routeWalk(request: WalkRequest, signal: AbortSignal, perso
         const gap = distanceMeters(routePoint([c[0], c[1]]), requested[i]);
         return gap > 15 ? [message(i === 0 ? "routing.warnings.start" : i === requested.length - 1 ? "routing.warnings.end" : "routing.warnings.via", {distance: Math.round(gap)})] : [];
       });
-      return { geometry: p.points.coordinates.map(([lon, lat]) => [lon, lat]), distance: p.distance, ascent: p.ascend, referenceSeconds: p.time / 1000, instructions: p.instructions, details: p.details, warnings };
+      const path = { geometry: p.points.coordinates.map(([lon, lat]): [number, number] => [lon, lat]), distance: p.distance, ascent: p.ascend, referenceSeconds: p.time / 1000, instructions: p.instructions, details: p.details, warnings };
+      return { ...path, accessibility: routeAccessibility(path) };
     });
     evict(key);
     while (state.cache.size >= 100 || state.bytes + bytes > 8_000_000) evict(state.cache.keys().next().value!);

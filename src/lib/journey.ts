@@ -13,13 +13,19 @@ export type TransferAssessment = {
   walkingSeconds: number | null; officialMinimumSeconds: number | null;
   bufferMinutes: number; tone: TransferTone; evidence: "official" | "walk" | "unknown"; guaranteed: boolean; staySeated: boolean;
 };
+export type RouteAccessibility = {
+  steps: "present" | "none" | "unknown";
+  stepsDistanceMeters: number;
+  maximumSlopePercent: number | null;
+  surfaces: string[];
+};
 export type JourneyLeg = {
   id: string; mode: "walk" | "rail" | "bus" | "tram" | "metro" | "ferry" | "funicular" | "cable-car";
   from: JourneyPoint; to: JourneyPoint; departure: string; arrival: string;
   scheduledDeparture?: string; scheduledArrival?: string; predicted: boolean;
   line?: string; direction?: string; distanceMeters?: number; durationSeconds: number;
   geometry: [number, number][]; geometryQuality: "routed" | "schematic" | "missing";
-  warnings: UiMessage[]; platformChanges?: UiMessage[]; transfer?: TransferAssessment;
+  warnings: UiMessage[]; accessibility?: RouteAccessibility; platformChanges?: UiMessage[]; transfer?: TransferAssessment;
 };
 export type JourneyOption = {
   id: string; legs: JourneyLeg[]; departure: string; arrival: string; durationSeconds: number;

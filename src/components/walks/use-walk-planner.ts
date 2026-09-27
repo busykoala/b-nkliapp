@@ -17,7 +17,7 @@ export function walkLegs(s: WalkSuggestion, query: WalkQuery): JourneyLeg[] {
   const times = pathTimes(s.path, query.speed);
   const make = (id: string, start: number, end: number, from: JourneyPoint, to: JourneyPoint): JourneyLeg => ({
     id: `${s.id}-${id}`, from, to, mode: "walk", departure: new Date(Date.parse(query.time) + times[start] * 1000).toISOString(), arrival: new Date(Date.parse(query.time) + times[end] * 1000).toISOString(), predicted: false,
-    durationSeconds: times[end] - times[start], geometry: s.path.geometry.slice(start, end + 1), geometryQuality: "routed", warnings: s.path.warnings,
+    durationSeconds: times[end] - times[start], geometry: s.path.geometry.slice(start, end + 1), geometryQuality: "routed", warnings: s.path.warnings, accessibility: s.path.accessibility,
   });
   const last = s.path.geometry.length - 1;
   return query.shape === "loop" ? [make("bench", 0, s.benchIndex, query.origin, s.bench), make("return", s.benchIndex, last, s.bench, query.origin)] : [make("bench", 0, last, query.origin, s.bench)];

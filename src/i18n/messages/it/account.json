@@ -12,6 +12,7 @@
   },
   "fields": {
     "username": "Nome utente",
+    "usernamePublicHint": "Questo nome appare pubblicamente nel feed. Non usare l’indirizzo e-mail né il tuo vero nome.",
     "password": "Password",
     "showPassword": "Mostra password",
     "hidePassword": "Nascondi password"

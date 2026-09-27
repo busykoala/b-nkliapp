@@ -290,10 +290,11 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       if (disposed || !containerRef.current) return;
       // Bundling changes import.meta.url, so MapLibre cannot locate its own worker.
       setWorkerUrl(`/maplibre/${getVersion()}/maplibre-gl-worker.mjs`);
+      const sharedBench = initialBenchRef.current;
       const map = new Map({
         container: containerRef.current,
-        center: [8.25, 46.82],
-        zoom: 7.2,
+        center: sharedBench ? [sharedBench.longitude, sharedBench.latitude] : [8.25, 46.82],
+        zoom: sharedBench ? 17 : 7.2,
         minZoom: 6,
         maxZoom: 19,
         maxBounds: [[5.45, 45.55], [10.9, 48.05]],
@@ -308,6 +309,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       }), "bottom-right");
       mapRef.current = map;
       map.getContainer().dataset.orientationMode = "north";
+      if (sharedBench) map.getContainer().dataset.focusBench = sharedBench.id;
 
       map.getContainer().dataset.basemap = "loading";
       map.getContainer().dataset.mapReady = "false";
@@ -434,6 +436,10 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       });
 
       map.on("moveend", () => {
+        const center = map.getCenter();
+        map.getContainer().dataset.centerLatitude = center.lat.toFixed(6);
+        map.getContainer().dataset.centerLongitude = center.lng.toFixed(6);
+        map.getContainer().dataset.zoom = map.getZoom().toFixed(2);
         if (placingRef.current) { const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); }
         if (!map.getSource("benchly")) return;
         window.clearTimeout(moveTimeout);
