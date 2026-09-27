@@ -303,10 +303,15 @@ test("keeps long-page navigation available and returns to the calling section", 
   await page.screenshot({ path: testInfo.outputPath("sticky-about-source-catalog.png") });
 
   await page.goto("/statistiken");
-  await page.locator(".daily-bench-link").click();
-  await expect(page).toHaveURL(/\/bank\/[^?]+\?from=statistics$/);
-  await page.getByRole("link", { name: "Zurück", exact: true }).click();
+  const dailyBench = page.locator(".daily-bench-link");
+  await dailyBench.scrollIntoViewIfNeeded();
+  const sourceScroll = await page.evaluate(() => window.scrollY);
+  await dailyBench.click();
+  await expect(page).toHaveURL(/\/bank\/[^?]+\?from=statistics&return=/);
+  await page.getByRole("button", { name: "Zurück", exact: true }).click();
   await expect(page).toHaveURL(/\/statistiken$/);
+  await expect(dailyBench).toBeFocused();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(sourceScroll);
 });
 
 test("activates the raster fallback when the vector style fails", async ({ page }) => {

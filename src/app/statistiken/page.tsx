@@ -9,6 +9,7 @@ import { CorrelationPlot } from "@/components/statistics/correlation-plot";
 import type { BenchFact, StatisticsRecordKey } from "@/features/statistics/model";
 import { readStatisticsDashboard, statisticsDate } from "@/features/statistics/repository";
 import { getCurrentUser } from "@/lib/security";
+import { RestoreSourceReturn, SourceReturnLink } from "@/components/source-return-link";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
   };
 
   return <main className="statistics-page min-h-dvh safe-bottom">
+    <RestoreSourceReturn />
     <header className="statistics-nav safe-top"><Link href="/" aria-label={t("common.navigation.map")} className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
     <section className="statistics-hero">
       <div className="statistics-kicker"><Sparkles size={15} /> {t("statistics.hero.eyebrow")}</div>
@@ -68,7 +70,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
     <section className="statistics-section daily-and-roulette">
       <article className="daily-bench-card">
         <div className="section-heading"><div><small>{t("statistics.daily.eyebrow")}</small><h2>{t("statistics.daily.title")}</h2></div><span className="daily-date">{date}</span></div>
-        {data.benchOfTheDay ? <Link href={`/bank/${data.benchOfTheDay.id}?from=statistics`} className="daily-bench-link"><span className="daily-bench-illustration"><Trees /><span /></span><span><strong>{data.benchOfTheDay.title ?? t("common.values.bench")}</strong><small><MapPin size={14} /> {data.benchOfTheDay.place ?? t("statistics.values.somewhere")}</small></span><ArrowUpRight /></Link> : <p>{t("statistics.values.noData")}</p>}
+        {data.benchOfTheDay ? <SourceReturnLink focusId={`statistics-daily-${data.benchOfTheDay.id}`} href={`/bank/${data.benchOfTheDay.id}?from=statistics`} className="daily-bench-link"><span className="daily-bench-illustration"><Trees /><span /></span><span><strong>{data.benchOfTheDay.title ?? t("common.values.bench")}</strong><small><MapPin size={14} /> {data.benchOfTheDay.place ?? t("statistics.values.somewhere")}</small></span><ArrowUpRight /></SourceReturnLink> : <p>{t("statistics.values.noData")}</p>}
         <p className="card-note">{t("statistics.daily.note")}</p>
       </article>
       <article className="roulette-card">
@@ -84,7 +86,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
       <div className="section-heading"><div><small>{t("statistics.records.eyebrow")}</small><h2>{t("statistics.records.title")}</h2></div><BarChart3 /></div>
       <div className="record-grid">{data.records.map(({ key, fact: item }) => <article key={key}>
         <span className="record-icon">{recordPresentation[key].icon}</span><small>{t(`statistics.records.${key}`)}</small>
-        <><strong>{recordPresentation[key].value(item)}</strong><Link href={`/bank/${item.id}?from=statistics`}>{item.title ?? t("common.values.bench")} <ArrowUpRight size={15} /></Link><p>{item.place ?? t("statistics.values.somewhere")}</p></>
+        <><strong>{recordPresentation[key].value(item)}</strong><SourceReturnLink focusId={`statistics-record-${key}`} href={`/bank/${item.id}?from=statistics`}>{item.title ?? t("common.values.bench")} <ArrowUpRight size={15} /></SourceReturnLink><p>{item.place ?? t("statistics.values.somewhere")}</p></>
       </article>)}</div>
       <p className="record-scroll-cue"><ArrowRight /> {t("statistics.records.scrollCue")}</p>
       <p className="method-note">{t("statistics.records.note")}</p>

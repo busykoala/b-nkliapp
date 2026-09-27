@@ -9,6 +9,7 @@ import { CheckCircle2, ChevronDown, HeartHandshake, MessageCircleHeart, Pencil, 
 import { getFeedPage } from "@/app/actions/feed";
 import { groupBenchActivity, groupFeed, type FeedEntry, type FeedPage, type FeedScope } from "./model";
 import { TrailAvatar } from "@/components/trail-avatar";
+import { SourceReturnLink } from "@/components/source-return-link";
 
 const eventIcons = {
   added: Plus,
@@ -50,8 +51,9 @@ export function FeedStream({ initial, scope }: { initial: FeedPage; scope: FeedS
       const Icon = eventIcons[dominant];
       const featured = group.entries.find((entry) => entry.detail && ["moment", "rated"].includes(entry.kind));
       const routine = !featured && group.entries.every((entry) => ["edited", "confirmed", "missing"].includes(entry.kind));
+      const returnId = `feed-bench-${group.benchId}-${group.date}`;
       return <article className={`feed-bench-group feed-kind-${dominant}${routine ? " is-routine" : ""}${featured?.kind === "moment" ? " has-moment" : ""}`} key={group.key}>
-        <header><span className="feed-event-mark"><Icon size={18} /></span><div><h3><Link href={`/bank/${group.benchId}?from=feed`}>{group.benchName ?? t("common.values.bench")}</Link></h3><time dateTime={group.date}>{formatDate(group.entries[0].createdAt, t, "long")}</time></div><Link className="feed-arrow" href={`/bank/${group.benchId}?from=feed`} aria-label={t("feed.stream.openBench", { name: group.benchName ?? t("common.values.bench") })}>→</Link></header>
+        <header><span className="feed-event-mark"><Icon size={18} /></span><div><h3><SourceReturnLink focusId={returnId} href={`/bank/${group.benchId}?from=feed`}>{group.benchName ?? t("common.values.bench")}</SourceReturnLink></h3><time dateTime={group.date}>{formatDate(group.entries[0].createdAt, t, "long")}</time></div><SourceReturnLink focusId={`${returnId}-arrow`} className="feed-arrow" href={`/bank/${group.benchId}?from=feed`} ariaLabel={t("feed.stream.openBench", { name: group.benchName ?? t("common.values.bench") })}>→</SourceReturnLink></header>
         {!routine && <div className="feed-event-chips">{[...counts].map(([kind, count]) => { const EventIcon = eventIcons[kind]; return <span key={kind}><EventIcon size={14} />{count > 1 && <b>{count}×</b>}{t(`feed.events.${kind}`)}</span>; })}</div>}
         {routine && <p className="feed-routine-line">{[...counts].map(([kind, count]) => `${count > 1 ? `${count}× ` : ""}${t(`feed.events.${kind}`)}`).join(" · ")}</p>}
         {featured && <blockquote>{featured.detail}</blockquote>}

@@ -53,8 +53,12 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await page.getByRole("link", { name: "Alle Lieblingsplätze" }).click();
   await expect(page.getByRole("heading", { name: "Meine Lieblingsplätze" })).toBeVisible();
   await expect(page.locator(".saved-benches a[href^='/bank/osm-node-101']")).toBeVisible();
-  await page.locator(".saved-benches a[href^='/bank/osm-node-101']").click();
+  const savedBench = page.locator(".saved-benches a[href^='/bank/osm-node-101']");
+  await savedBench.click();
   await expect(page.getByRole("button", { name: "Gemerkt" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Zurück", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Meine Lieblingsplätze" })).toBeVisible();
+  await expect(savedBench).toBeFocused();
   await page.goto("/feed");
   const filters = page.getByRole("navigation", { name: "Feed-Filter" });
   await expect(filters.getByRole("link", { name: "Alle Beiträge" })).toHaveAttribute("aria-current", "page");
