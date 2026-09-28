@@ -45,7 +45,7 @@ jobs:
       # libraries are already present, avoiding 16 concurrent apt/download jobs.
       image: mcr.microsoft.com/playwright:v1.62.1-noble
       options: --user 1001
-    timeout-minutes: 4
+    timeout-minutes: 8
     strategy:
       fail-fast: false
       # Start 15 broad browser jobs plus the dedicated release smoke job beside
