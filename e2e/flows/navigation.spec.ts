@@ -23,8 +23,23 @@ test("filters are beside search and removable after the panel closes", async ({ 
   await expect(page.getByRole("button", { name: "Rückenlehne entfernen" })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath("persistent-filters.png") });
   await page.getByRole("button", { name: "Menü öffnen" }).click();
-  const items = await page.getByRole("navigation", { name: "Hauptnavigation" }).locator(":scope > a, :scope > button").allTextContents();
-  expect(items.slice(0, 4).map((text) => text.trim())).toEqual(["Spaziergang", "Bänkli-Feed", "Anmelden", "Bänkli eintragen"]);
+  const menu = page.getByRole("dialog", { name: "Bänkli App", exact: true });
+  const navigation = menu.getByRole("navigation", { name: "Hauptnavigation" });
+  // The grouped menu keeps practical navigation separate from reading and account actions.
+  const outside = navigation.getByRole("region", { name: "Unterwegs", exact: true });
+  await expect(outside.getByRole("button", { name: "Spaziergang", exact: true })).toBeVisible();
+  const reading = navigation.getByRole("button", { name: /Gedanken am Bänkli/ });
+  await expect(reading).toBeVisible();
+  await expect(reading).toHaveAttribute("aria-haspopup", "dialog");
+  const community = navigation.getByRole("region", { name: "Rund ums Bänkli", exact: true });
+  await expect(community.getByRole("link").or(community.getByRole("button"))).toHaveText([
+    "Bänkli-Feed", "Bänkli eintragen", "Bänklilogie", "Über die Bänkli App",
+  ]);
+  await expect(community.getByRole("link", { name: "Bänkli-Feed", exact: true })).toHaveAttribute("href", "/feed");
+  await expect(community.getByRole("button", { name: "Bänkli eintragen", exact: true })).toBeVisible();
+  await expect(menu.getByRole("button", { name: "Anmelden", exact: true })).toBeVisible();
+  await menu.getByRole("button", { name: "Menü schliessen", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sonne geschätzt entfernen" })).toBeVisible();
 });
 
 test("direct bench link opens the painting and resumes saving after sign-in", async ({ page }, info) => {

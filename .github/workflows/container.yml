@@ -32,6 +32,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Collect browser tests
+        run: npm run test:e2e:list
       - name: Audit production JavaScript dependencies
         run: npm audit --omit=dev --audit-level=high
       - run: npm test

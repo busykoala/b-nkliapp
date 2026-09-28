@@ -617,9 +617,15 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
   await expect(page.getByText("Bestehende Bänkli in der Nähe werden geprüft …")).toHaveCount(0, { timeout: 15_000 });
   const duplicateCheck = page.getByLabel("Geprüft: Meins ist ein weiteres Bänkli.");
   if (await duplicateCheck.isVisible()) await duplicateCheck.check();
+  await page.evaluate(() => { (window as Window & { benchCreationDocument?: boolean }).benchCreationDocument = true; });
   await page.getByRole("button", { name: "Eintragen", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Bänkli eintragen", exact: true })).toBeHidden();
   await expect(page.getByText("Bänkli eingetragen", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: benchName, exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/[?&]bank=community-[^&#]+/);
+  expect(await page.evaluate(() => (window as Window & { benchCreationDocument?: boolean }).benchCreationDocument)).toBe(true);
+  // Keep the hard navigation: creation must commit before success is exposed,
+  // and a fresh page must find the persisted bench, not just optimistic state.
   await page.goto("/");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
   await page.getByLabel("Ort suchen").fill(benchName);

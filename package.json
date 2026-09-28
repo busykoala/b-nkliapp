@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:list": "playwright test --list",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "data:refresh": "uv run python worker/benchly_worker.py refresh",
@@ -27,7 +28,7 @@
     "dialects:geography:generate": "uv run python scripts/generate_dialect_geography.py",
     "dialects:audit": "uv run python scripts/audit_dialect_coverage.py",
     "typecheck": "next typegen && tsc --noEmit",
-    "check": "npm run data:catalog:check && npm run typecheck && npm run lint && npm test",
+    "check": "npm run data:catalog:check && npm run typecheck && npm run lint && npm test && npm run test:e2e:list",
     "test:bench": "vitest run src/features/bench-detail src/features/weather src/features/routing/accessibility.test.ts",
     "test:e2e:bench": "playwright test e2e/bench e2e/flows/navigation.spec.ts"
   },

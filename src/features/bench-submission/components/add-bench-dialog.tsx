@@ -24,12 +24,19 @@ export function AddBenchDialog({ coordinates, onChoosePosition, onClose, onCreat
   const [lookupError, setLookupError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [reviewed, setReviewed] = useState(false);
+  const notifiedBenchId = useRef<string | null>(null);
   const [state, formAction, pending] = useActionState(async (_previous: AddBenchResult | null, data: FormData) => {
     const result = await addBench(null, data);
-    if (result.ok && result.benchId) onCreated(result.benchId);
-    else if (result.nearby) { setNearby(result.nearby); setReviewed(false); }
+    if (!result.ok && result.nearby) { setNearby(result.nearby); setReviewed(false); }
     return result;
   }, null);
+  useEffect(() => {
+    // Let the action and its route revalidation commit before opening another
+    // history entry. Notifying inside the action can race Next's RSC refresh.
+    if (pending || !state?.ok || !state.benchId || notifiedBenchId.current === state.benchId) return;
+    notifiedBenchId.current = state.benchId;
+    onCreated(state.benchId);
+  }, [state, pending, onCreated]);
   useEffect(() => { ref.current?.showModal(); }, []);
   useEffect(() => {
     let current = true;
