@@ -101,12 +101,25 @@ export function PanoramaWebgl({ imageUrl, materialUrl, season, sunAltitude, clou
   const fallbackCanvas = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState<{ kind: "webgl" | "fallback"; key: string } | null>(null);
   const [contextRevision, setContextRevision] = useState(0);
-  const renderKey = `${imageUrl}\n${materialUrl ?? ""}\n${season}\n${sunAltitude}\n${cloudCover}\n${dayPhase}\n${snowCover}\n${contextRevision}`;
+  const [displayWidth, setDisplayWidth] = useState(0);
+  useEffect(() => {
+    const surface = canvas.current;
+    if (!surface || !materialUrl) return;
+    const observer = new ResizeObserver(() => {
+      const width = surface.getBoundingClientRect().width;
+      // Cached images can decode before the parent has measured its projection.
+      // Do not lock the backing store to the initial 2px seam overlap.
+      if (width > 2) setDisplayWidth(2 ** Math.ceil(Math.log2(width)));
+    });
+    observer.observe(surface);
+    return () => observer.disconnect();
+  }, [materialUrl]);
+  const renderKey = `${imageUrl}\n${materialUrl ?? ""}\n${season}\n${sunAltitude}\n${cloudCover}\n${dayPhase}\n${snowCover}\n${contextRevision}\n${displayWidth}`;
   useEffect(() => {
     let active = true;
     const surface = canvas.current;
     const fallback = fallbackCanvas.current;
-    if (!materialUrl || !surface || !fallback) return;
+    if (!materialUrl || !surface || !fallback || displayWidth === 0) return;
     const gl = surface.getContext("webgl", { alpha: true, antialias: false, depth: false,
       premultipliedAlpha: true, preserveDrawingBuffer: false });
     let paintingImage: HTMLImageElement | null = null;
@@ -118,7 +131,7 @@ export function PanoramaWebgl({ imageUrl, materialUrl, season, sunAltitude, clou
       const dpr = Math.min(3, window.devicePixelRatio || 1);
       const maximum = gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) as number : 4096;
       const dimensions = panoramaTextureDimensions(painting.naturalWidth, painting.naturalHeight,
-        surface.getBoundingClientRect().width || 1024, dpr, maximum);
+        displayWidth, dpr, maximum);
       surface.width = dimensions.width; surface.height = dimensions.height;
       fallback.width = dimensions.width; fallback.height = dimensions.height;
       return dimensions;
@@ -180,7 +193,7 @@ export function PanoramaWebgl({ imageUrl, materialUrl, season, sunAltitude, clou
         if (resources.fragment) gl.deleteShader(resources.fragment);
       }
     };
-  }, [cloudCover, contextRevision, dayPhase, imageUrl, materialUrl, onReady, renderKey, season, snowCover, sunAltitude]);
+  }, [cloudCover, contextRevision, dayPhase, displayWidth, imageUrl, materialUrl, onReady, renderKey, season, snowCover, sunAltitude]);
   const readyKind = ready?.key === renderKey ? ready.kind : null;
   return <><img className={`bench-panorama-art${materialUrl ? " has-material" : ""}${readyKind ? " is-painted" : ""}`} src={imageUrl} alt="" draggable={false}
     loading="eager" fetchPriority="high" onError={onError} />

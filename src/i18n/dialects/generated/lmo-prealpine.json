@@ -1260,15 +1260,19 @@
       "caption": "Qualche parola",
       "captionPlaceholder": "Cosa si vede da questa banchina?",
       "checking": "Verifica della foto…",
-      "publish": "Pubblica la foto"
+      "publish": "Pubblica la foto",
+      "preparing": "Preparazione della foto…",
+      "retry": "Ricontrolla lo stato"
     },
     "errors": {
       "prepare": "Impossibile preparare la foto.",
       "originalTooLarge": "La foto originale è troppo grande. Scegli un’immagine fino a 24 MB.",
-      "decode": "Impossibile leggere la foto.",
+      "decode": "Questo formato non è leggibile sul tuo dispositivo. Scegli una foto JPEG o PNG, oppure esporta la foto HEIC in JPEG.",
       "tooDetailed": "La foto contiene troppi dettagli. Scegli un’inquadratura un po’ più piccola.",
       "read": "Impossibile leggere la foto.",
-      "upload": "Impossibile inviare la foto. Riprova."
+      "upload": "Impossibile inviare la foto. Riprova.",
+      "status": "Lo stato della verifica non è ancora disponibile. Riprova oppure riprendi chì più tardi. Non caricare nuovamente la foto.",
+      "refresh": "La foto è salvata. Riapri la banchina per caricare la vista aggiornata."
     },
     "story": {
       "nearby": "Nei dintorni · non necessariamente questa banchina",

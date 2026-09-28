@@ -12,6 +12,7 @@ import { panoramaMaterialIsSkyPixel } from "@/lib/panorama-material";
 import { clampPanoramaPitch, normalizePanoramaHeading, panoramaHasSnowCover, panoramaProjection,
   precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
 import { PanoramaWebgl } from "@/features/bench-panorama/components/panorama-webgl";
+import { PanoramaClouds } from "./panorama-clouds";
 import { panoramaCloudCover } from "@/features/weather/conditions";
 
 const PANORAMA_FAST_POLL_MS = 1_000;
@@ -248,9 +249,6 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   };
   const projection = panoramaProjection(size.width, size.height, heading, pitch, zoom);
   const degrees = Math.round(heading) % 360;
-  const cloudHigh = bench.weather?.cloudHigh ?? cloudCover * .58;
-  const cloudMid = bench.weather?.cloudMid ?? cloudCover * .72;
-  const cloudLow = bench.weather?.cloudLow ?? cloudCover * .46;
   const cloudContrast = panoramaShadowContrast(cloudCover);
   const precipitation = bench.weather?.precipitationType ?? "unknown";
   const raining = precipitation === "rain" || precipitation === "mixed";
@@ -265,8 +263,9 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const covered = bench.covered;
   const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, heading);
   const twilightOpacity = bench.dayPhase === "day" ? 0 : Math.max(.08, Math.min(1, (-bench.sunAltitudeDegrees + 2) / 10));
-  const starOpacity = twilightOpacity * Math.max(.05, 1 - cloudCover * .96);
-  const celestialOpacity = Math.max(.12, 1 - cloudCover * .88);
+  // Actual cloud pixels occlude the stars; clear openings should not be globally washed out.
+  const starOpacity = twilightOpacity * (bench.moonVisible ? 1 - bench.moonIllumination * .25 : 1);
+  const celestialOpacity = 1;
   const panoramaStyle = {
     "--panorama-offset": `${projection.left}px`,
     "--panorama-copy-width": `${projection.copyWidth}px`,
@@ -274,9 +273,6 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     "--panorama-track-top": `${projection.top}px`,
     "--panorama-raster-height": `${projection.rasterHeight}px`,
     "--foreground-shift": `${projection.maximumPitch ? Math.min(132, projection.pitch / projection.maximumPitch * 132) : 0}%`,
-    "--cloud-high-opacity": Math.min(.68, cloudHigh * .74).toFixed(3),
-    "--cloud-mid-opacity": Math.min(.78, cloudMid * .82).toFixed(3),
-    "--cloud-low-opacity": Math.min(.7, cloudLow * .78).toFixed(3),
     "--precip-opacity": Math.max(.5, Math.min(.94, .58 + (precipitationRate ?? 1.1) * .08)).toFixed(3),
     "--lightmap-opacity": (cloudContrast * .32).toFixed(3),
     "--star-opacity": starOpacity.toFixed(3),
@@ -361,7 +357,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
             style={{ left: `${left.toFixed(3)}%`, top: celestialTop }}>
             {celestial.kind === "moon" ? <MoonDisc phase={bench.moonPhase} illumination={bench.moonIllumination} /> : <i />}
           </span>)}
-          {cloudCover > .08 && <><span className="bench-panorama-clouds is-high" /><span className="bench-panorama-clouds is-mid" /><span className="bench-panorama-clouds is-low" /></>}
+          {cloudCover > .08 && <PanoramaClouds cover={cloudCover} night={bench.dayPhase === "night"} />}
           <div className="bench-panorama-raster">
             <PanoramaWebgl imageUrl={artifactUrl} materialUrl={descriptor.materialUrl} season={bench.season}
               sunAltitude={bench.sunAltitudeDegrees} cloudCover={cloudCover} dayPhase={bench.dayPhase}

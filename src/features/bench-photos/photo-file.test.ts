@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isPhotoUploadSize, PREPARED_PHOTO_MAX_BYTES, UPLOADED_PHOTO_MAX_BYTES } from "./upload-limits";
 import { validateBenchPhoto } from "./photo-file";
 
 describe("bench photo files", () => {
@@ -14,4 +15,12 @@ describe("bench photo files", () => {
     expect(() => validateBenchPhoto(new Uint8Array([0xff, 0xd8, 0xff]), "image/gif"))
       .toThrow("photos.server.format");
   });
+  it("does not reject a valid compressed photo just because it is below 8 kB", () => {
+    for (const size of [1, 750, 7999, PREPARED_PHOTO_MAX_BYTES, UPLOADED_PHOTO_MAX_BYTES]) expect(isPhotoUploadSize(size)).toBe(true);
+    for (const size of [0, -1, NaN, Infinity, UPLOADED_PHOTO_MAX_BYTES + 1]) expect(isPhotoUploadSize(size)).toBe(false);
+    expect(PREPARED_PHOTO_MAX_BYTES).toBeLessThan(UPLOADED_PHOTO_MAX_BYTES);
+    expect(UPLOADED_PHOTO_MAX_BYTES + 20_000).toBeLessThan(2 * 1024 * 1024);
+    expect(() => validateBenchPhoto(new Uint8Array([1]), "toString")).toThrow("photos.server.format");
+  });
+
 });

@@ -14,7 +14,14 @@
     "unavailable": "Position indisponible. Tu peux continuer à utiliser la carte.",
     "show": "Afficher ma position",
     "use": "Utiliser ma position",
-    "accuracy": "Position précise à environ {meters} m."
+    "accuracy": "Position précise à environ {meters} m.",
+    "searchHint": "Centrer la carte sur ma position",
+    "outside": "Votre position se trouve hors de la zone couverte par la carte. Vous pouvez rechercher un lieu.",
+    "modes": {
+      "browse": "Déplacez librement la carte. Touchez pour afficher votre position.",
+      "north": "La carte suit votre position, le nord reste en haut. Touchez pour activer la boussole.",
+      "heading": "La carte suit votre position et l’orientation du téléphone. Touchez pour remettre le nord en haut."
+    }
   },
   "orientation": {
     "follow": "Orienter la carte comme le téléphone",
@@ -22,7 +29,8 @@
     "requesting": "Activation de la boussole…",
     "unsupported": "Cet appareil ne fournit pas de direction de boussole.",
     "denied": "L’accès à la boussole est bloqué. Autorise les mouvements et l’orientation dans les réglages du site.",
-    "unavailable": "L’orientation du téléphone est indisponible pour le moment."
+    "unavailable": "L’orientation du téléphone est indisponible pour le moment.",
+    "reset": "Orienter la carte vers le nord"
   },
   "search": {
     "label": "Chercher un lieu",

@@ -2,6 +2,7 @@
 import { pointLabel } from "@/i18n/point-label";
 import { translateMessage, type UiMessage } from "@/i18n/message";
 import { useTranslations } from "next-intl";
+import { requestUserPosition } from "@/lib/geolocation";
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { House, LocateFixed, MapPin, TrainFront } from "lucide-react";
@@ -46,11 +47,11 @@ export function StartPicker({ origin, onChange, getMap }: { origin: JourneyOrigi
   const locate = () => {
     const token = ++sequence.current; setMessage({ key: "routing.origin.locating" });
     if (!navigator.geolocation) { setMessage({ key: "routing.origin.choose" }); return; }
-    navigator.geolocation.getCurrentPosition((p) => {
+    void requestUserPosition().then((p) => {
       if (token !== sequence.current) return;
       choose({ kind: "location", label: "location", labelKind: "location", latitude: p.coords.latitude, longitude: p.coords.longitude });
       if (p.coords.accuracy > 100) setMessage({ key: "routing.origin.accuracy", values: {meters: Math.round(p.coords.accuracy)} });
-    }, () => { if (token === sequence.current) setMessage({ key: "routing.origin.unavailable" }); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    }).catch(() => { if (token === sequence.current) setMessage({ key: "routing.origin.unavailable" }); });
   };
   return <div className="journey-start-card"><h3>{t("routing.origin.title")}</h3>
     {origin && !editing ? <div className="journey-start-summary"><MapPin size={20} /><strong>{pointLabel(origin, t)}</strong><button onClick={() => { sequence.current++; setEditing(true); setQuery(""); setResults([]); setMessage(null); }}>{t("routing.origin.change")}</button></div> : <>

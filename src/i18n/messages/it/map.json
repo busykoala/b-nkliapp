@@ -14,7 +14,14 @@
     "unavailable": "Posizione non disponibile. Puoi continuare a usare la mappa.",
     "show": "Mostra la mia posizione",
     "use": "Usa la mia posizione",
-    "accuracy": "Posizione precisa a circa {meters} m."
+    "accuracy": "Posizione precisa a circa {meters} m.",
+    "searchHint": "Centra la mappa sulla mia posizione",
+    "outside": "La tua posizione è fuori dall’area coperta dalla mappa. Puoi cercare un luogo.",
+    "modes": {
+      "browse": "Sposta liberamente la mappa. Tocca per mostrare la tua posizione.",
+      "north": "La mappa segue la tua posizione con il nord in alto. Tocca per attivare la bussola.",
+      "heading": "La mappa segue la tua posizione e l’orientamento del telefono. Tocca per riportare il nord in alto."
+    }
   },
   "orientation": {
     "follow": "Orientare la mappa come il telefono",
@@ -22,7 +29,8 @@
     "requesting": "Attivazione della bussola…",
     "unsupported": "Questo dispositivo non fornisce la direzione della bussola.",
     "denied": "L’accesso alla bussola è bloccato. Consenti movimento e orientamento nelle impostazioni del sito.",
-    "unavailable": "L’orientamento del telefono non è disponibile al momento."
+    "unavailable": "L’orientamento del telefono non è disponibile al momento.",
+    "reset": "Orienta la mappa verso nord"
   },
   "search": {
     "label": "Cerca un luogo",

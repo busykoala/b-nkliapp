@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 async function registerInOpenDialog(page: Page, prefix: string) {
   const account = page.getByRole("dialog", { name: "Willkommen zurück" });
@@ -8,6 +8,29 @@ async function registerInOpenDialog(page: Page, prefix: string) {
   await signup.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await signup.getByRole("button", { name: "Konto erstellen", exact: true }).click();
   await expect(signup).toBeHidden({ timeout: 15_000 });
+}
+
+// Each browser/repeat gets a different seeded neighbour. The add-bench action
+// intentionally rejects a stale 25 m neighbour snapshot, so sharing one point
+// between parallel Playwright workers makes the test invalidate itself. These
+// fixtures preserve that production guard while keeping the E2E data isolated.
+const ADD_BENCH_FIXTURES = [
+  { latitude: 47.37674, longitude: 8.54183, nearbyName: "Lindenhof" },
+  { latitude: 46.94812, longitude: 7.45131, nearbyName: "Rosengarten" },
+  { latitude: 46.51973, longitude: 6.63263, nearbyName: "Esplanade de Montbenon" },
+  { latitude: 47.05202, longitude: 8.30741, nearbyName: "Musegg" },
+  { latitude: 46.68654, longitude: 7.86468, nearbyName: "Höhematte" },
+  { latitude: 46.99809, longitude: 6.93833, nearbyName: "Chaumont" },
+  { latitude: 46.20157, longitude: 6.14747, nearbyName: "Promenade de la Treille" },
+  { latitude: 47.55911, longitude: 7.58915, nearbyName: "Pfalz" },
+  { latitude: 47.42382, longitude: 9.37821, nearbyName: "Drei Weieren" },
+  { latitude: 46.00672, longitude: 8.95234, nearbyName: "Parco Ciani" },
+] as const;
+
+function isolatedAddBenchFixture(info: TestInfo) {
+  const projectLane = info.project.name === "mobile-safari" ? 1 : 0;
+  const index = info.repeatEachIndex * 2 + projectLane;
+  return ADD_BENCH_FIXTURES[index % ADD_BENCH_FIXTURES.length];
 }
 
 test("filters are beside search and removable after the panel closes", async ({ page }, info) => {
@@ -146,24 +169,28 @@ test("rating summary opens reviews and guest writing resumes after authenticatio
 });
 
 test("guest adding resumes into pin placement, catches neighbours and opens the saved bench without navigation", async ({ page, context }, info) => {
+  const placement = isolatedAddBenchFixture(info);
   await page.goto("/?bank=osm-node-101");
   await expect(page.getByRole("heading", { name: /Lindenhof/ })).toBeVisible();
   await page.getByRole("button", { name: "Bank schliessen" }).click();
   await page.getByRole("button", { name: "Menü öffnen" }).click();
   await page.getByRole("button", { name: "Bänkli eintragen" }).click();
-  await registerInOpenDialog(page, `add-${info.project.name.slice(-3)}`);
+  await registerInOpenDialog(page, `add-${info.project.name.slice(-3)}-${info.repeatEachIndex}`);
   await expect(page.getByRole("heading", { name: "Position wählen" })).toBeVisible();
   await expect(page.locator(".placement-crosshair")).toBeVisible();
-  await context.setGeolocation({ latitude: 47.37674, longitude: 8.54183 });
+  await context.setGeolocation({ latitude: placement.latitude, longitude: placement.longitude, accuracy: 12.4 });
   await context.grantPermissions(["geolocation"]);
   await page.getByRole("button", { name: "Meinen Standort verwenden" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /Standort auf etwa/ })).toBeVisible();
+  const locationStatus = page.getByRole("status").filter({ hasText: /Standort auf etwa/ });
+  await expect(locationStatus).toHaveText("Standort auf etwa 12 m genau.");
+  await expect(locationStatus).toBeVisible();
+  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-location-mode", "browse");
   await page.getByRole("button", { name: "Hier eintragen" }).click();
   const dialog = page.getByRole("dialog", { name: "Bänkli eintragen", exact: true });
-  await expect(dialog.getByRole("region", { name: "Bänkli in der Nähe" })).toContainText("Lindenhof");
+  await expect(dialog.getByRole("region", { name: "Bänkli in der Nähe" })).toContainText(placement.nearbyName);
   await expect(dialog.getByRole("button", { name: "Eintragen", exact: true })).toBeDisabled();
   await dialog.getByLabel("Geprüft: Meins ist ein weiteres Bänkli.").check();
-  const title = `UX-Bänkli ${info.project.name} ${Date.now()}`;
+  const title = `UX-Bänkli ${info.project.name} ${info.repeatEachIndex}-${Date.now()}`;
   await dialog.getByLabel("Name", { exact: false }).fill(title);
   await page.evaluate(() => { (window as Window & { uxMarker?: boolean }).uxMarker = true; });
   await dialog.getByRole("button", { name: "Eintragen", exact: true }).click();

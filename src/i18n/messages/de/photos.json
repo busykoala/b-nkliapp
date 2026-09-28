@@ -24,15 +24,19 @@
     "caption": "Ein Satz dazu",
     "captionPlaceholder": "Was sieht man von diesem Bänkli?",
     "checking": "Foto wird geprüft …",
-    "publish": "Foto veröffentlichen"
+    "publish": "Foto veröffentlichen",
+    "preparing": "Foto wird vorbereitet …",
+    "retry": "Prüfung erneut abrufen"
   },
   "errors": {
     "prepare": "Das Foto liess sich nicht vorbereiten.",
     "originalTooLarge": "Das Originalfoto ist zu gross. Bitte wähle ein Bild bis 24 MB.",
-    "decode": "Das Foto liess sich nicht lesen.",
+    "decode": "Dieses Bildformat lässt sich auf deinem Gerät nicht lesen. Bitte wähle ein JPEG- oder PNG-Foto oder exportiere das HEIC-Foto als JPEG.",
     "tooDetailed": "Das Foto enthält zu viele Details. Bitte wähle einen etwas kleineren Bildausschnitt.",
     "read": "Foto konnte nicht gelesen werden.",
-    "upload": "Das Foto konnte nicht übertragen werden. Bitte versuche es nochmals."
+    "upload": "Das Foto konnte nicht übertragen werden. Bitte versuche es nochmals.",
+    "status": "Der Prüfstatus ist noch nicht verfügbar. Du kannst ihn erneut abrufen oder später hier weitermachen. Bitte lade das Foto nicht nochmals hoch.",
+    "refresh": "Dein Foto ist gespeichert. Öffne das Bänkli erneut, um die aktualisierte Ansicht zu laden."
   },
   "story": {
     "nearby": "Aus der Umgebung · nicht zwingend diese Bank",

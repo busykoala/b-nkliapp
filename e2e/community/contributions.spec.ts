@@ -113,6 +113,19 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   await dialog.getByRole("button", { name: "Foto veröffentlichen" }).click();
   await expect(dialog.getByRole("status")).toHaveText("Foto wird geprüft …");
   await expect(dialog.getByRole("status")).toHaveText("Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.");
+  await input.evaluate(async (element) => {
+    const canvas = document.createElement("canvas"); canvas.width = 120; canvas.height = 80;
+    const ctx = canvas.getContext("2d")!; ctx.fillStyle = "#456859"; ctx.fillRect(0, 0, 120, 80);
+    const blob = await new Promise<Blob>((resolve) => canvas.toBlob(value => resolve(value!), "image/png"));
+    const transfer = new DataTransfer(); transfer.items.add(new File([blob], "small.png", { type: "image/png" }));
+    (element as HTMLInputElement).files = transfer.files;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await expect(dialog.getByRole("button", { name: "Foto veröffentlichen" })).toBeEnabled();
+  await dialog.getByRole("button", { name: "Foto veröffentlichen" }).click();
+  // It must reach moderation, not fail the old 8 kB compressed-size floor.
+  await expect(dialog.getByRole("status")).toHaveText("Foto wird geprüft …");
+  await expect(dialog.getByRole("status")).toHaveText("Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.");
   expect(pageErrors).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("bench-photo-flow.png"), fullPage: true });
 });

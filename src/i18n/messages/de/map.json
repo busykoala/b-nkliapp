@@ -14,7 +14,14 @@
     "unavailable": "Standort nicht verfügbar. Du kannst die Karte weiterhin verwenden.",
     "show": "Meinen Standort anzeigen",
     "use": "Meinen Standort verwenden",
-    "accuracy": "Standort auf etwa {meters} m genau."
+    "accuracy": "Standort auf etwa {meters} m genau.",
+    "searchHint": "Karte auf meinen Standort zentrieren",
+    "outside": "Dein Standort liegt ausserhalb des unterstützten Kartengebiets. Du kannst einen Ort suchen.",
+    "modes": {
+      "browse": "Karte frei bewegen. Tippen zeigt deinen Standort.",
+      "north": "Die Karte folgt deinem Standort, Norden bleibt oben. Tippen aktiviert den Kompass.",
+      "heading": "Die Karte folgt deinem Standort und deiner Handyrichtung. Tippen zeigt Norden oben."
+    }
   },
   "orientation": {
     "follow": "Karte nach Handyrichtung ausrichten",
@@ -22,7 +29,8 @@
     "requesting": "Kompass wird aktiviert …",
     "unsupported": "Dieses Gerät stellt keine Kompassrichtung bereit.",
     "denied": "Der Kompasszugriff ist blockiert. Erlaube Bewegung & Ausrichtung in den Website-Einstellungen.",
-    "unavailable": "Die Handyrichtung ist gerade nicht verfügbar."
+    "unavailable": "Die Handyrichtung ist gerade nicht verfügbar.",
+    "reset": "Karte nach Norden ausrichten"
   },
   "search": {
     "label": "Ort suchen",

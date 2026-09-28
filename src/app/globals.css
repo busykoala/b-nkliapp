@@ -791,13 +791,10 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama-expand { display: inline-flex; min-height: 36px; flex: none; align-items: center; gap: .35rem; border: 1px solid rgb(43 67 57 / 15%); border-radius: 999px; background: rgb(251 245 224 / 90%); padding: .35rem .65rem; color: #315649; box-shadow: 0 4px 14px rgb(27 48 41 / 10%); font-size: .72rem; font-weight: 760; pointer-events: auto; backdrop-filter: blur(8px); }
 .bench-panorama-expand:focus-visible { outline: 2px solid #bb8e40; outline-offset: 2px; }
 .bench-panorama-lightmap { position: absolute; inset: 0; z-index: 1; width: calc(100% + 2px); height: 100%; margin-left: -1px; opacity: var(--lightmap-opacity); mix-blend-mode: soft-light; filter: contrast(1.05) sepia(.08) blur(.55px); transition: opacity .6s ease; }
-.bench-panorama-clouds { position: absolute; inset: 0; z-index: 3; pointer-events: none; background-repeat: repeat-x; filter: blur(7px); }
-.bench-panorama-clouds.is-high { opacity: var(--cloud-high-opacity); background-image: radial-gradient(ellipse 35% 6% at 50% 18%, rgb(249 245 232 / 68%) 0 42%, transparent 79%), radial-gradient(ellipse 31% 6% at 50% 32%, rgb(245 240 226 / 61%) 0 41%, transparent 80%), radial-gradient(ellipse 36% 5% at 50% 11%, rgb(250 246 234 / 64%) 0 41%, transparent 78%); background-position: 0 0, 17% 0, 37% 0; background-size: 50% 100%, 33.333% 100%, 25% 100%; mix-blend-mode: screen; }
-.bench-panorama-clouds.is-mid { opacity: var(--cloud-mid-opacity); background-image: radial-gradient(ellipse 39% 9% at 50% 42%, rgb(232 231 219 / 91%) 0 47%, transparent 82%), radial-gradient(ellipse 35% 10% at 50% 58%, rgb(240 236 220 / 94%) 0 44%, transparent 82%), radial-gradient(ellipse 38% 8% at 50% 34%, rgb(226 228 218 / 89%) 0 45%, transparent 83%), radial-gradient(ellipse 34% 9% at 50% 66%, rgb(237 233 218 / 87%) 0 45%, transparent 83%); background-position: 0 0, 13% 0, 31% 0, 43% 0; background-size: 50% 100%, 33.333% 100%, 25% 100%, 20% 100%; mix-blend-mode: normal; }
-.bench-panorama-clouds.is-low { opacity: var(--cloud-low-opacity); background-image: radial-gradient(ellipse 41% 12% at 50% 69%, rgb(165 183 187 / 75%) 0 47%, transparent 83%), radial-gradient(ellipse 37% 13% at 50% 81%, rgb(184 196 194 / 81%) 0 49%, transparent 84%), radial-gradient(ellipse 40% 11% at 50% 58%, rgb(178 192 192 / 79%) 0 47%, transparent 84%); background-position: 0 0, 19% 0, 39% 0; background-size: 50% 100%, 33.333% 100%, 25% 100%; mix-blend-mode: multiply; }
+.bench-panorama-clouds { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; z-index: 3; pointer-events: none; mix-blend-mode: normal; }
 .bench-panorama-stars { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: var(--star-opacity); }
-.bench-panorama-stars i { position: absolute; width: var(--star-size); height: var(--star-size); border-radius: 50%; background: #fffbe2; box-shadow: 0 0 calc(var(--star-size) * 1.3) rgb(223 235 228 / 42%); opacity: var(--star-alpha); filter: sepia(calc(var(--star-tone) * .36)) hue-rotate(calc(var(--star-tone) * -18deg)); transform: translate(-50%, -50%); }
-.bench-panorama-stars i.is-guide { box-shadow: 0 0 calc(var(--star-size) * 2.8) rgb(238 239 208 / 72%); }
+.bench-panorama-stars i { position: absolute; width: var(--star-size); height: var(--star-size); border-radius: 50%; background: #fffbe2; box-shadow: 0 0 2px rgb(223 235 228 / 25%); opacity: var(--star-alpha); filter: sepia(calc(var(--star-tone) * .36)) hue-rotate(calc(var(--star-tone) * -18deg)); transform: translate(-50%, -50%); }
+.bench-panorama-stars i.is-guide { box-shadow: 0 0 4px rgb(238 239 208 / 38%); }
 .bench-panorama-celestial { z-index: 2; display: grid; width: clamp(24px, .65%, 32px); aspect-ratio: 1; place-items: center; border-radius: 50%; opacity: var(--celestial-opacity); transform: translate(-50%, -50%); }
 .bench-panorama-celestial.is-sun { mix-blend-mode: screen; }
 .bench-panorama-celestial.is-sun i { position: relative; width: 82%; height: 78%; border-radius: 53% 47% 49% 51%; background: radial-gradient(circle at 42% 38%, #fff2bb 0 18%, #f3cd72 44%, rgb(224 165 64 / 76%) 70%, transparent 73%); box-shadow: 0 0 11px 6px rgb(248 211 120 / 22%), 0 0 35px 17px rgb(247 224 161 / 14%); filter: blur(.25px); transform: rotate(-7deg); }
@@ -811,7 +808,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-panorama.is-shaded .bench-panorama-rear-bench, .bench-panorama.has-shelter .bench-panorama-rear-bench { filter: saturate(.75) brightness(.88) drop-shadow(0 6px 5px rgb(35 48 43 / 20%)); }
 .bench-panorama-bench-shadow { position: absolute; z-index: 4; bottom: 1%; left: 50%; width: var(--shadow-length); height: 2.2%; border-radius: 50%; background: rgb(38 62 53 / 18%); filter: blur(5px); transform: translateX(-8%) rotate(var(--shadow-turn)); transform-origin: left center; opacity: var(--lightmap-opacity); }
 .bench-panorama.is-shaded .bench-panorama-bench-shadow, .bench-panorama.has-shelter .bench-panorama-bench-shadow { opacity: .035; }
-.bench-panorama.phase-night .bench-panorama-sky { background: linear-gradient(180deg, #172b42, #314d63 50%, #778186 77%, #78776d); }
+.bench-panorama.phase-night .bench-panorama-sky { background: linear-gradient(180deg, #122337, #213b50 48%, #4c616b 78%, #626a65); }
 .bench-panorama.phase-night .bench-panorama-sky::before { filter: hue-rotate(168deg) saturate(.18) brightness(.65); opacity: .12; }
 .bench-panorama.phase-dawn .bench-panorama-sky { background: linear-gradient(180deg, #647e9d, #bd9e9a 58%, #ead1aa 78%, #c1b28f); }
 .bench-panorama.phase-dusk .bench-panorama-sky { background: linear-gradient(180deg, #415b79, #946f78 58%, #dfaf8d 78%, #b49a7d); }
@@ -1591,13 +1588,6 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .map-filter-button { display: inline-flex; align-items: center; justify-content: center; gap: .3rem; min-height: 48px; padding: 0 .65rem; flex-shrink: 0; border: 1px solid #8b9a8f; border-radius: .7rem; background: #fffdf7; color: #294239; font-size: .875rem; font-weight: 650; }
 .map-filter-button b { font-size: .875rem; }
 .map-filter-button[aria-expanded="true"] { background: #e4ecdf; }
-.map-orientation-control { position: absolute; right: 1rem; bottom: calc(6rem + env(safe-area-inset-bottom)); z-index: 20; display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 1px solid rgb(64 66 52 / 20%); border-radius: 50%; background: rgb(255 253 247 / 92%); color: #315f50; box-shadow: 0 3px 10px rgb(26 47 43 / 12%); }
-.map-orientation-control[aria-pressed="true"] { border-color: #789183; background: #edf2e9; color: #285b45; }
-.map-orientation-control[aria-busy="true"] svg { animation: compass-wait .9s ease-in-out infinite alternate; }
-.map-orientation-control:disabled { cursor: wait; opacity: .72; }
-.map-orientation-control:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 3px; }
-@keyframes compass-wait { to { transform: rotate(20deg); } }
-@media (prefers-reduced-motion: reduce) { .map-orientation-control[aria-busy="true"] svg { animation: none; } }
 .active-filter-chips { display: flex; gap: .4rem; overflow-x: auto; padding: .5rem 0; scrollbar-width: thin; }
 .active-filter-chips button { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; flex-shrink: 0; padding: .4rem .65rem; border: 1px solid #7e9384; border-radius: 2rem; background: #fffdf7; color: #294239; font-size: .875rem; box-shadow: 0 2px 6px #263e3414; }
 .account-settings summary { min-height: 44px; padding: .65rem .8rem; cursor: pointer; font-size: .875rem; }

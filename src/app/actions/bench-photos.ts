@@ -1,12 +1,13 @@
 "use server";
 
-import { actionError } from "@/i18n/action-error";
+import { actionError, UserFacingError } from "@/i18n/action-error";
 
 import { getTranslations } from "next-intl/server";
 
 import { randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { sqlite } from "@/db/client";
+import { isPhotoUploadSize } from "@/features/bench-photos/upload-limits";
 import { validateBenchPhoto } from "@/features/bench-photos/photo-file";
 import { findOwnedSubmission, needsSubmissionWork, processBenchPhotoSubmission, submissionFailureKey } from "@/features/bench-photos/submissions";
 import { deleteBenchPhoto, readBenchPhoto, storeBenchPhoto } from "@/features/bench-photos/storage";
@@ -46,7 +47,7 @@ export async function uploadBenchPhoto(benchId: string, formData: FormData): Pro
     const id = benchIdSchema.parse(benchId);
     const parsed = inputSchema.parse({ caption: formData.get("caption") ?? "", website: formData.get("website") ?? "" });
     const photo = formData.get("photo");
-    if (!(photo instanceof File) || !allowedTypes.has(photo.type) || photo.size < 8_000 || photo.size > 1_800_000) {
+    if (!(photo instanceof File) || !allowedTypes.has(photo.type) || !isPhotoUploadSize(photo.size)) {
       return { ok: false, status: "rejected", message: t("photos.server.choose") };
     }
     const user = await requireUser();
@@ -74,6 +75,7 @@ export async function uploadBenchPhoto(benchId: string, formData: FormData): Pro
     after(() => processBenchPhotoSubmission(submissionId));
     return { ok: true, status: "pending", submissionId, message: t("photos.capture.checking") };
   } catch (error) {
+    if (!(error instanceof UserFacingError)) console.error("bench-photo-upload", { stage: "save", error: error instanceof Error ? error.name : "UnknownError" });
     return { ok: false, status: "rejected", message: actionError(t, error, "photos.server.saveFailed") };
   }
 }

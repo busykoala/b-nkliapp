@@ -90,9 +90,21 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await page.screenshot({ path: testInfo.outputPath("map-search-results.png"), fullPage: false });
   await search.press("ArrowDown");
   await expect(firstResult).toHaveAttribute("aria-selected", "true");
+  // Dismissing suggestions keeps the query; only the explicit clear action erases it.
   await search.press("Escape");
-  await expect(search).toHaveValue("");
+  await expect(search).toHaveValue("Lindenhof");
   await expect(search).toHaveAttribute("aria-expanded", "false");
+  await expect(search).toBeFocused();
+  await search.press("ArrowDown");
+  await expect(search).toHaveAttribute("aria-expanded", "true");
+  await expect(firstResult).toHaveAttribute("aria-selected", "true");
+  await search.press("Escape");
+  await page.getByRole("button", { name: "Suche leeren", exact: true }).click();
+  await expect(search).toHaveValue("");
+  await expect(search).toBeFocused();
+  const locationSuggestion = page.getByRole("listbox", { name: "Suchergebnisse" }).getByRole("option");
+  await expect(locationSuggestion).toHaveCount(1);
+  await expect(locationSuggestion).toContainText("Meinen Standort anzeigen");
 
   await page.getByRole("button", { name: "Filter öffnen" }).click();
   const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
@@ -198,7 +210,9 @@ test("keeps core pages contained from tablet to large desktop", async ({ page },
   expect(box!.y + box!.height).toBeLessThanOrEqual(900);
 });
 
-test("keeps primary map decisions usable on a narrow phone", async ({ page }, testInfo) => {
+test("keeps primary map decisions usable on a narrow phone", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ longitude: 8.5417, latitude: 47.3769 });
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
   const map = page.getByLabel("Karte der Schweizer Sitzbänke");
@@ -222,9 +236,11 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
     }
     Object.defineProperty(window, "DeviceOrientationEvent", { configurable: true, value: TestOrientationEvent });
   });
+  await page.getByRole("button", { name: "Meinen Standort anzeigen" }).click();
+  await expect(map).toHaveAttribute("data-location-mode", "north");
   const orientation = page.getByRole("button", { name: "Karte nach Handyrichtung ausrichten" });
   await orientation.click();
-  await expect(page.locator(".map-orientation-control")).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator(".map-location-control")).toHaveAttribute("aria-busy", "true");
   expect(await page.evaluate(() => (window as Window & { __orientationPermissionAbsolute?: boolean }).__orientationPermissionAbsolute)).toBe(true);
   const expectedHeading = await page.evaluate(() => {
     const event = new Event("deviceorientationabsolute");
@@ -233,11 +249,11 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
     const angle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
     return String((90 + angle) % 360);
   });
-  await expect(page.locator(".map-orientation-control")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".map-location-control")).toHaveAttribute("data-mode", "heading");
   await expect(map).toHaveAttribute("data-device-heading", expectedHeading);
 
-  // Holding or dragging the map pauses sensor updates instead of fighting the
-  // gesture. Direction following resumes as soon as the pointer is released.
+  // Holding the map pauses sensor updates. An actual pan releases following
+  // until the location button is pressed again (tested below).
   const canvas = page.locator(".maplibregl-canvas");
   await canvas.dispatchEvent("pointerdown", { pointerId: 7, pointerType: "mouse", button: 1, bubbles: true });
   await page.evaluate(() => {
@@ -255,11 +271,23 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
     const angle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
     return String((180 + angle) % 360);
   });
-  await expect(map).toHaveAttribute("data-device-heading", resumedHeading);
+  // One accepted reading must settle even when the sensor then becomes quiet.
+  // Do not feed more samples from the assertion to drive the application.
+  await expect.poll(async () => {
+    const heading = Number(await map.getAttribute("data-device-heading"));
+    return Math.abs(((heading - Number(resumedHeading) + 540) % 360) - 180);
+  }, { intervals: [100, 150, 200] }).toBeLessThanOrEqual(1);
+  await expect(map).toHaveAttribute("data-location-mode", "heading");
   await page.screenshot({ path: testInfo.outputPath("narrow-heading-active.png") });
   await page.getByRole("button", { name: "Norden wieder oben anzeigen" }).click();
   await expect(map).toHaveAttribute("data-orientation-mode", "north");
 
+  // Moving the map releases tracking and its sensor subscription.
+  await canvas.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(map).toHaveAttribute("data-location-mode", "browse");
+  await page.getByRole("button", { name: "Meinen Standort anzeigen" }).click();
+  await expect(map).toHaveAttribute("data-location-mode", "north");
   await page.evaluate(() => {
     Object.defineProperty(window.DeviceOrientationEvent, "requestPermission", {
       configurable: true,
@@ -270,7 +298,7 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page }, te
   const orientationStatus = page.getByRole("status");
   await expect(orientationStatus).toContainText("Der Kompasszugriff ist blockiert.");
   await expect(orientation).toBeEnabled();
-  await expect(orientation).toHaveAttribute("aria-pressed", "false");
+  await expect(orientation).toHaveAttribute("data-mode", "north");
   await expect(map).toHaveAttribute("data-orientation-mode", "north");
   const statusBox = await orientationStatus.boundingBox();
   expect(statusBox).not.toBeNull();
@@ -521,7 +549,7 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await expect(shell.locator(".map-sheet-resize")).toHaveAccessibleName("Ganz öffnen. Detailhöhe ändern");
   await expect(shell.locator(".map-sheet-collapsed-title")).toHaveText("Bankdetails");
   await expect(shell.locator(".map-sheet-content")).not.toBeVisible();
-  await expect(page.locator(".map-orientation-control")).toHaveCount(0);
+  await expect(page.locator(".map-location-control")).toHaveCount(0);
   await expect.poll(async () => (await shell.boundingBox())?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(90);
   await page.screenshot({ path: testInfo.outputPath("minimized-detail-bar.png") });
   await shell.locator(".map-sheet-resize").click();

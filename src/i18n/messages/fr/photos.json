@@ -24,15 +24,19 @@
     "caption": "Quelques mots",
     "captionPlaceholder": "Que voit-on depuis ce banc ?",
     "checking": "Vérification de la photo…",
-    "publish": "Publier la photo"
+    "publish": "Publier la photo",
+    "preparing": "Préparation de la photo…",
+    "retry": "Vérifier à nouveau le statut"
   },
   "errors": {
     "prepare": "La photo n’a pas pu être préparée.",
     "originalTooLarge": "La photo originale est trop volumineuse. Choisis une image de 24 Mo maximum.",
-    "decode": "La photo n’a pas pu être lue.",
+    "decode": "Votre appareil ne peut pas lire ce format. Choisissez une photo JPEG ou PNG, ou exportez la photo HEIC au format JPEG.",
     "tooDetailed": "La photo contient trop de détails. Choisis un cadrage un peu plus petit.",
     "read": "Impossible de lire la photo.",
-    "upload": "La photo n’a pas pu être envoyée. Réessaie."
+    "upload": "La photo n’a pas pu être envoyée. Réessaie.",
+    "status": "Le statut de la vérification n’est pas encore disponible. Réessayez ou reprenez ici plus tard. Ne renvoyez pas la photo.",
+    "refresh": "Votre photo est enregistrée. Rouvrez le banc pour charger la vue actualisée."
   },
   "story": {
     "nearby": "Dans les environs · pas forcément ce banc",

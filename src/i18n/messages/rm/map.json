@@ -14,7 +14,14 @@
     "unavailable": "Posiziun betg disponibla. Ti pos utilisar vinavant la carta.",
     "show": "Mussar mia posiziun",
     "use": "Utilisar mia posiziun",
-    "accuracy": "Posiziun precisa fin a circa {meters} m."
+    "accuracy": "Posiziun precisa fin a circa {meters} m.",
+    "searchHint": "Centrar la charta sin mia posiziun",
+    "outside": "Tia posiziun è ordaifer il territori cuvert da la charta. Ti pos tschertgar in lieu.",
+    "modes": {
+      "browse": "Spustar libramain la charta. Tutgar per mussar tia posiziun.",
+      "north": "La charta suonda tia posiziun, il nord resta sisum. Tutgar per activar il cumpass.",
+      "heading": "La charta suonda tia posiziun e la direcziun dal telefon. Tutgar per mussar puspè il nord sisum."
+    }
   },
   "orientation": {
     "follow": "Drizzar la charta tenor il telefonin",
@@ -22,7 +29,8 @@
     "requesting": "Il cumpass vegn activà …",
     "unsupported": "Quest apparat na furnescha nagina direcziun dal cumpass.",
     "denied": "L’access al cumpass è bloccà. Permetta moviment ed orientaziun en las configuraziuns da la pagina.",
-    "unavailable": "La direcziun dal telefonin n’è actualmain betg disponibla."
+    "unavailable": "La direcziun dal telefonin n’è actualmain betg disponibla.",
+    "reset": "Orientar la charta vers nord"
   },
   "search": {
     "label": "Tschertgar in lieu",

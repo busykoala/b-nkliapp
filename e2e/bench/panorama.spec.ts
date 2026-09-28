@@ -55,6 +55,8 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   const canvasBudget = await panorama.locator(".bench-panorama-webgl").first().evaluate((canvas: HTMLCanvasElement) => ({
     width: canvas.width, height: canvas.height,
   }));
+  expect(canvasBudget.width).toBeGreaterThanOrEqual(512);
+  expect(canvasBudget.height).toBeGreaterThanOrEqual(128);
   expect(canvasBudget.width).toBeLessThanOrEqual(2048);
   expect(canvasBudget.height).toBeLessThanOrEqual(512);
   // Read the three rectangles in one browser task. The light-map poll can

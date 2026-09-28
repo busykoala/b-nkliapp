@@ -1260,15 +1260,19 @@
       "caption": "Es Satz dazu",
       "captionPlaceholder": "Was sieht man von diesem Bänki?",
       "checking": "Foto wird prüeft …",
-      "publish": "Foto veröffentlichen"
+      "publish": "Foto veröffentlichen",
+      "preparing": "Foto wird vorbereitet …",
+      "retry": "Prüfung erneut abrufen"
     },
     "errors": {
       "prepare": "Das Foto liess sich nit vorbereiten.",
       "originalTooLarge": "Das Originalfoto isch zu gross. Bitte wähle ein Bild bis 24 MB.",
-      "decode": "Das Foto liess sich nit lesen.",
+      "decode": "Dieses Bildformat lässt sich uf deinem Gerät nit lesen. Bitte wähle ein JPEG- oder PNG-Foto oder exportiere das HEIC-Foto als JPEG.",
       "tooDetailed": "Das Foto enthält zu viele Details. Bitte wähle en etwas kleineren Bildausschnitt.",
       "read": "Foto konnte nit gelesen werden.",
-      "upload": "Das Foto konnte nit übertragen werden. Bitte versuche es nochmals."
+      "upload": "Das Foto konnte nit übertragen werden. Bitte versuche es nochmals.",
+      "status": "Der Prüfstatus isch no nit verfügbar. Du kannst ihn erneut abrufen oder später da weitermachen. Bitte lade das Foto nit nochmals hoch.",
+      "refresh": "Dein Foto isch gspeicheret. Öffne das Bänki erneut, um die aktualisierte Ansicht zu laden."
     },
     "story": {
       "nearby": "Aus der Umgebung · nit zwingend diese Bänki",

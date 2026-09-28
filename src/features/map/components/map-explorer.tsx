@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Crosshair, Footprints, Info, List, MapPin, Navigation, SlidersHorizontal, X } from "lucide-react";
+import { Crosshair, Footprints, Info, List, MapPin, SlidersHorizontal, X } from "lucide-react";
 import type { ReturnJourney } from "@/features/journey/model";
 import type { WalkDraftSnapshot } from "@/features/walks/model";
 import { discardWalkDraft, getWalkDraft } from "@/app/actions/walk-draft";
@@ -32,7 +32,10 @@ const JourneyPlanner = dynamic(() => import("@/features/journey/components/journ
 });
 
 import type { NearbyAmenity } from "@/features/bench-detail/overview";
-import { compassHeading, waitForCompassHeading, type OrientationConstructor } from "../compass";
+import { useMapLocation } from "./use-map-location";
+import { LocationControl } from "./location-control";
+import { requestUserPosition } from "@/lib/geolocation";
+import { translateMessage } from "@/i18n/message";
 import { BenchResultsList } from "./bench-results-list";
 type LastInspectedBench = Pick<BenchDetail, "id" | "longitude" | "latitude">;
 
@@ -93,10 +96,6 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const [detailError, setDetailError] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
-  const [headingMode, setHeadingMode] = useState(false);
-  const [headingPending, setHeadingPending] = useState(false);
-  const headingRequest = useRef(0);
-  const orientationMessageTimer = useRef<number | undefined>(undefined);
   const [message, setMessage] = useState<string | null>(null);
   const [addStage, setAddStage] = useState<"position" | "details" | null>(null);
   const [createdBenchId, setCreatedBenchId] = useState<string | null>(null);
@@ -277,22 +276,46 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     beginPlacement(latitude, longitude);
   }, [beginPlacement]);
 
-  const locate = (onFound?: (position: UserPosition) => void) => {
-    if (!navigator.geolocation) { setMessage(t("map.location.unsupported")); return; }
+  const locationNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mapLocation = useMapLocation(getJourneyMap, mapReady,
+    Boolean(selectedId || journeyOpen || walkOpen || returnJourney || addStage || listOpen || facilityFocus || filterOpen),
+    (notice) => {
+      if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current);
+      const text = translateMessage(t, notice);
+      setMessage(text);
+      locationNoticeTimer.current = setTimeout(() => setMessage((current) => current === text ? null : current), 4_000);
+    });
+  useEffect(() => () => { if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current); }, []);
+  const locateForPlacement = async () => {
     setMessage(t("map.location.searching"));
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { longitude, latitude, accuracy } = position.coords;
-      const nextPosition = { longitude, latitude, accuracy };
-      const map = mapRef.current;
-      if (!map || !showUserPosition(map, nextPosition)) pendingPosition.current = nextPosition;
-      if (typeof onFound === "function") onFound(nextPosition);
-      window.localStorage.setItem("benchly_location_enabled", "1");
-      setMessage(t("map.location.accuracy", { meters: Math.round(accuracy) }));
-      window.setTimeout(() => setMessage(null), 3500);
-    }, () => {
-      window.localStorage.removeItem("benchly_location_enabled");
-      setMessage(t("map.location.unavailable"));
-    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    try {
+      const { coords } = await requestUserPosition();
+      if (!placingRef.current) return;
+      const position = { longitude: coords.longitude, latitude: coords.latitude, accuracy: coords.accuracy };
+      if (!mapRef.current || !showUserPosition(mapRef.current, position)) pendingPosition.current = position;
+      beginPlacement(coords.latitude, coords.longitude);
+      setMessage(t("map.location.accuracy", { meters: Math.round(coords.accuracy) }));
+    } catch { if (placingRef.current) setMessage(t("map.location.unavailable")); }
+  };
+
+  const locateFromSearch = () => {
+    if (addStage === "position") { void locateForPlacement(); return; }
+    if (selectedId || journeyOpen || walkOpen || returnJourney || listOpen || facilityFocus) {
+      const interaction = mapInteraction.current;
+      const detail = detailSequence.current;
+      setMessage(t("map.location.searching"));
+      void requestUserPosition().then(({ coords }) => {
+        const map = mapRef.current;
+        if (!map || mapInteraction.current !== interaction || detailSequence.current !== detail) return;
+        const bounds = map.getMaxBounds();
+        if (bounds && !bounds.contains([coords.longitude, coords.latitude])) { setMessage(t("map.location.outside")); return; }
+        showUserPosition(map, { longitude: coords.longitude, latitude: coords.latitude, accuracy: coords.accuracy });
+        map.easeTo({ center: [coords.longitude, coords.latitude], zoom: Math.max(map.getZoom(), 15) });
+        setMessage(null);
+      }).catch(() => setMessage(t("map.location.unavailable")));
+      return;
+    }
+    mapLocation.locate();
   };
 
   useEffect(() => {
@@ -548,57 +571,6 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   }, []);
 
   useEffect(() => {
-    if (!headingMode) return;
-    const map = mapRef.current;
-    if (!map) return;
-    let animationFrame: number | undefined;
-    let lastHeading = map.getBearing();
-    const activePointers = new Set<number>();
-    map.getContainer().dataset.orientationMode = "heading";
-    const orient = (event: Event) => {
-      if (activePointers.size > 0) return;
-      const heading = compassHeading(event);
-      if (heading === null) return;
-      const change = Math.abs(((heading - lastHeading + 540) % 360) - 180);
-      if (change < 1) return;
-      lastHeading = heading;
-      window.cancelAnimationFrame(animationFrame ?? 0);
-      animationFrame = window.requestAnimationFrame(() => {
-        map.getContainer().dataset.deviceHeading = String(Math.round(heading));
-        map.setBearing(heading);
-      });
-    };
-    const beginGesture = (event: PointerEvent) => activePointers.add(event.pointerId);
-    const endGesture = (event: PointerEvent) => activePointers.delete(event.pointerId);
-    const canvas = map.getCanvas();
-    window.addEventListener("deviceorientationabsolute", orient);
-    window.addEventListener("deviceorientation", orient);
-    canvas.addEventListener("pointerdown", beginGesture);
-    window.addEventListener("pointerup", endGesture);
-    window.addEventListener("pointercancel", endGesture);
-    return () => {
-      window.cancelAnimationFrame(animationFrame ?? 0);
-      window.removeEventListener("deviceorientationabsolute", orient);
-      window.removeEventListener("deviceorientation", orient);
-      canvas.removeEventListener("pointerdown", beginGesture);
-      window.removeEventListener("pointerup", endGesture);
-      window.removeEventListener("pointercancel", endGesture);
-      map.getContainer().dataset.orientationMode = "north";
-      delete map.getContainer().dataset.deviceHeading;
-    };
-  }, [headingMode]);
-
-  const autoLocate = useEffectEvent(() => locate());
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    if (window.localStorage.getItem("benchly_location_enabled") === "1") {
-      const timer = window.setTimeout(() => autoLocate(), 0);
-      return () => window.clearTimeout(timer);
-    }
-    navigator.permissions?.query({ name: "geolocation" }).then((permission) => { if (permission.state === "granted") autoLocate(); }).catch(() => undefined);
-  }, []);
-
-  useEffect(() => {
     const action = searchParams.get("action");
     if (!mapReady || !action || handledAction.current === action) return;
     if (action === "journey" && !bench) return;
@@ -627,60 +599,14 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   };
   const openAdd = () => {
     const center = mapRef.current?.getCenter();
-    if (center) openAddAt(center.lat, center.lng);
-  };
-  const showOrientationMessage = (value: string) => {
-    window.clearTimeout(orientationMessageTimer.current);
-    setMessage(value);
-    orientationMessageTimer.current = window.setTimeout(() => {
-      setMessage((current) => current === value ? null : current);
-    }, 4000);
-  };
-  const toggleHeadingMode = async () => {
-    const map = mapRef.current;
-    if (!map || headingPending) return;
-    if (headingMode) {
-      headingRequest.current += 1;
-      setHeadingMode(false);
-      map.stop();
-      map.easeTo({ bearing: 0, duration: 300 });
-      return;
-    }
-    const Orientation = window.DeviceOrientationEvent as OrientationConstructor | undefined;
-    if (!Orientation) {
-      showOrientationMessage(t("map.orientation.unsupported"));
-      return;
-    }
-    const request = ++headingRequest.current;
-    let activated = false;
-    setHeadingPending(true);
-    window.clearTimeout(orientationMessageTimer.current);
-    setMessage(null);
-    map.getContainer().dataset.orientationMode = "requesting";
-    try {
-      if (typeof Orientation.requestPermission === "function" && await Orientation.requestPermission(true) !== "granted") {
-        showOrientationMessage(t("map.orientation.denied"));
-        return;
-      }
-      const initialHeading = await waitForCompassHeading();
-      if (request !== headingRequest.current) return;
-      if (initialHeading === null) {
-        showOrientationMessage(t("map.orientation.unavailable"));
-        return;
-      }
-      map.stop();
-      map.setBearing(initialHeading);
-      map.getContainer().dataset.deviceHeading = String(Math.round(initialHeading));
-      activated = true;
-      setHeadingMode(true);
-    } catch {
-      showOrientationMessage(t("map.orientation.unavailable"));
-    } finally {
-      if (request === headingRequest.current) {
-        setHeadingPending(false);
-        if (!activated) map.getContainer().dataset.orientationMode = "north";
-      }
-    }
+    const fallback = selectedPointRef.current ?? initialBenchRef.current;
+    // The menu is usable before the async MapLibre import has finished. Do not
+    // make “Bänkli eintragen” a no-op during that short startup window: use the
+    // last meaningful place, or the same Swiss centre used by placement state.
+    openAddAt(
+      center?.lat ?? fallback?.latitude ?? addCoordinates.latitude,
+      center?.lng ?? fallback?.longitude ?? addCoordinates.longitude,
+    );
   };
   const openWalk = () => {
     listOpenRef.current = false;
@@ -835,7 +761,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       <div ref={containerRef} className="benchly-map absolute inset-0" aria-label={t("map.canvas.label")} aria-busy={mapLoading} />
       <header className="map-topbar safe-top pointer-events-none absolute inset-x-0 top-0 z-20 px-3 md:max-w-xl md:px-4">
         <div className="pointer-events-auto flex items-center gap-2">
-          <SearchBox onSelect={choosePlace} onLocate={locate} />
+          <SearchBox onSelect={choosePlace} onLocate={locateFromSearch} />
           <button id="map-filter-toggle" aria-label={t("map.filters.open")} aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>{t("map.filters.button")}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
           <AppMenu user={user} onAdd={openAdd} onWalk={openWalk} />
         </div>
@@ -843,12 +769,12 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       </header>
       {addStage === "position" && <>
         <div className="placement-crosshair" aria-hidden="true"><Crosshair size={38} /></div>
-        <section className="placement-controls" aria-label={t("map.placement.title")}><h2>{t("map.placement.title")}</h2><p>{t("map.placement.instructions")}</p><button type="button" onClick={() => locate((point) => beginPlacement(point.latitude, point.longitude))}><Crosshair size={18} /> {t("map.location.use")}</button><div><button type="button" onClick={closeAdd}>{t("common.actions.cancel")}</button><button type="button" className="btn btn-primary" onClick={() => { const map = mapRef.current; if (!map) return; map.stop(); const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); setAddStage("details"); }}>{t("map.placement.confirm")}</button></div></section>
+        <section className="placement-controls" aria-label={t("map.placement.title")}><h2>{t("map.placement.title")}</h2><p>{t("map.placement.instructions")}</p><button type="button" onClick={() => void locateForPlacement()}><Crosshair size={18} /> {t("map.location.use")}</button><div><button type="button" onClick={closeAdd}>{t("common.actions.cancel")}</button><button type="button" className="btn btn-primary" onClick={() => { const map = mapRef.current; if (!map) return; map.stop(); const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); setAddStage("details"); }}>{t("map.placement.confirm")}</button></div></section>
       </>}
       {filterOpen && <FilterPanel filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} />}
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
       {message && <div role="status" className="toast toast-center pointer-events-none top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
-      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && !filterOpen && <button type="button" className="map-orientation-control" aria-label={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} title={t(headingPending ? "map.orientation.requesting" : headingMode ? "map.orientation.north" : "map.orientation.follow")} aria-pressed={headingMode} aria-busy={headingPending} disabled={headingPending} onClick={() => void toggleHeadingMode()}><Navigation size={18} fill={headingMode ? "currentColor" : "none"} /></button>}
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && !filterOpen && <LocationControl state={mapLocation.state} onToggle={mapLocation.toggle} onNorth={mapLocation.north} />}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">
         <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t(walkDraft?.result ? "walks.planner.resume" : "walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>

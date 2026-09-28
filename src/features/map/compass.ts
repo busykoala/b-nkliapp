@@ -1,31 +1,40 @@
-export type OrientationConstructor = typeof DeviceOrientationEvent & { requestPermission?: (absolute?: boolean) => Promise<"granted" | "denied"> };
-type CompassOrientationEvent = DeviceOrientationEvent & { webkitCompassHeading?: number };
+export type OrientationConstructor = typeof DeviceOrientationEvent & {
+  requestPermission?: (absolute?: boolean) => Promise<"granted" | "denied">;
+};
+type CompassReading = DeviceOrientationEvent & { webkitCompassHeading?: number; webkitCompassAccuracy?: number };
 
-export function compassHeading(event: Event) {
-  const reading = event as CompassOrientationEvent;
-  const screenAngle = window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
+export function normalizeHeading(value: number) { return ((value % 360) + 360) % 360; }
+export function headingDelta(from: number, to: number) { return ((to - from + 540) % 360) - 180; }
+
+/** A relative alpha is NOT a compass bearing. Zero is a valid north reading. */
+export function compassHeading(event: Event, screenAngle = window.screen.orientation?.angle
+  ?? (window as Window & { orientation?: number }).orientation ?? 0): number | null {
+  const reading = event as CompassReading;
+  if (typeof reading.webkitCompassAccuracy === "number"
+    && (!Number.isFinite(reading.webkitCompassAccuracy) || reading.webkitCompassAccuracy < 0 || reading.webkitCompassAccuracy > 45)) return null;
   const heading = typeof reading.webkitCompassHeading === "number"
-    ? reading.webkitCompassHeading
+    ? reading.webkitCompassHeading + screenAngle
     : typeof reading.alpha === "number" && (reading.absolute || event.type === "deviceorientationabsolute")
-      ? (360 - reading.alpha + screenAngle) % 360
-      : null;
-  return heading !== null && Number.isFinite(heading) ? heading : null;
+      ? 360 - reading.alpha + screenAngle : null;
+  return heading !== null && Number.isFinite(heading) ? normalizeHeading(heading) : null;
 }
 
-export function waitForCompassHeading(timeoutMs = 2500) {
+/** Cancellation removes listeners immediately, including an outstanding permission request. */
+export function waitForCompassHeading(signal: AbortSignal, timeoutMs = 3_000) {
   return new Promise<number | null>((resolve) => {
     const finish = (heading: number | null) => {
       window.removeEventListener("deviceorientationabsolute", orient);
       window.removeEventListener("deviceorientation", orient);
-      window.clearTimeout(timer);
+      signal.removeEventListener("abort", cancel);
+      clearTimeout(timer);
       resolve(heading);
     };
-    const orient = (event: Event) => {
-      const heading = compassHeading(event);
-      if (heading !== null) finish(heading);
-    };
+    const cancel = () => finish(null);
+    const orient = (event: Event) => { const heading = compassHeading(event); if (heading !== null) finish(heading); };
+    if (signal.aborted) { resolve(null); return; }
     window.addEventListener("deviceorientationabsolute", orient);
     window.addEventListener("deviceorientation", orient);
-    const timer = window.setTimeout(() => finish(null), timeoutMs);
+    signal.addEventListener("abort", cancel, { once: true });
+    const timer = setTimeout(cancel, timeoutMs);
   });
 }

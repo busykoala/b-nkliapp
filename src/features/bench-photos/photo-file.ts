@@ -12,7 +12,7 @@ function ascii(bytes: Uint8Array, start: number, end: number) {
 export type BenchPhotoType = keyof typeof formats;
 
 export function validateBenchPhoto(bytes: Uint8Array, declaredType: string) {
-  if (!(declaredType in formats)) throw new UserFacingError("photos.server.format");
+  if (!Object.hasOwn(formats, declaredType)) throw new UserFacingError("photos.server.format");
   const type = declaredType as BenchPhotoType;
   if (!formats[type].matches(bytes)) throw new UserFacingError("photos.server.formatMismatch");
   return { type, extension: formats[type].extension };

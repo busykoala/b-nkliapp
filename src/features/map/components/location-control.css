@@ -1,0 +1,9 @@
+.map-location-controls { position: absolute; z-index: 20; right: max(1rem, env(safe-area-inset-right)); bottom: calc(5.5rem + env(safe-area-inset-bottom)); display: grid; gap: .625rem; }
+.map-location-control, .map-north-control { display: grid; place-content: center; width: 3rem; height: 3rem; border-radius: 1rem; border: 1px solid var(--color-control-border, #6e8375); color: var(--color-primary, #2c5d4b); background: var(--color-surface, #fffcf5); box-shadow: 0 3px 12px #243f351a; touch-action: manipulation; }
+.map-location-control[data-mode="north"] { background: var(--color-sage-wash, #e5eddf); border-width: 2px; }
+.map-location-control[data-mode="heading"] { background: var(--color-primary, #2c5d4b); color: var(--color-surface, #fffcf5); }
+.map-location-control:focus-visible, .map-north-control:focus-visible { outline: 3px solid var(--color-focus, #2f6475); outline-offset: 3px; }
+.map-location-control:disabled { cursor: progress; }
+.map-north-control { position: relative; }
+.map-north-control span { position: absolute; top: .125rem; right: .3rem; font: 600 .625rem/1.2 var(--font-body, sans-serif); }
+@media (min-width: 768px) { .map-location-controls { bottom: 2.5rem; } }

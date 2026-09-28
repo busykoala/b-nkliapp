@@ -1260,15 +1260,19 @@
       "caption": "Insaquants pleds",
       "captionPlaceholder": "Tge ves’ins da quest banc?",
       "checking": "La fotografia vegn controllada …",
-      "publish": "Publitgar la fotografia"
+      "publish": "Publitgar la fotografia",
+      "preparing": "La foto vegn preparada …",
+      "retry": "Consultar puspè il stadi da controlla"
     },
     "errors": {
       "prepare": "La fotografia n’ha betg pudì vegnir preparada.",
       "originalTooLarge": "La fotografia originala è memia gronda. Tscherna in maletg da maximalmain 24 MB.",
-      "decode": "La fotografia n’ha betg pudì vegnir legida.",
+      "decode": "Quest format na sa lascha betg leger sin tes apparat. Tscherna ina foto JPEG u PNG, u exportescha la foto HEIC sco JPEG.",
       "tooDetailed": "La fotografia cuntegna memia blers detagls. Tscherna in tagl in pau pli pitschen.",
       "read": "La fotografia n’ha betg pudì vegnir legida.",
-      "upload": "La fotografia n’ha betg pudì vegnir transmessa. Emprova auncha ina giada."
+      "upload": "La fotografia n’ha betg pudì vegnir transmessa. Emprova auncha ina giada.",
+      "status": "Il stadi da la controlla n’è auncha betg disponibel. Emprova puspè u cuntinuescha qua pli tard. Na chargia betg si auncha ina giada la foto.",
+      "refresh": "Tia foto è memorisada. Avra puspè il banc per chargiar la vista actualisada."
     },
     "story": {
       "nearby": "Dals conturns · betg exnum quest banc",

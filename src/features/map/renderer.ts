@@ -386,9 +386,11 @@ export function addCoreMapLayers(map: MapLibreMap, initialFeatures: MapFeature[]
   map.addLayer({ id: "selected-amenity-halo", type: "circle", source: "selected-amenity", paint: { "circle-radius": 21, "circle-color": "#fffdf7", "circle-opacity": .92, "circle-stroke-width": 3, "circle-stroke-color": "#315f50", "circle-blur": .04 } });
   map.addLayer({ id: "selected-amenity-label", type: "symbol", source: "selected-amenity", layout: { "text-field": ["get", "marker"], "text-font": ["Frutiger Neue Regular"], "text-size": 11, "text-allow-overlap": true }, paint: { "text-color": "#234d3d" } });
   map.addSource("user-accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("user-heading", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addSource("user-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addSource("add-position", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addLayer({ id: "user-accuracy", type: "fill", source: "user-accuracy", paint: { "fill-color": "#2d79c7", "fill-opacity": .12 } });
+  map.addLayer({ id: "user-heading", type: "fill", source: "user-heading", paint: { "fill-color": "#2878c8", "fill-opacity": .16 } });
   map.addLayer({ id: "user-position", type: "circle", source: "user-position", paint: { "circle-color": "#2878c8", "circle-radius": 7, "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
   map.addLayer({ id: "add-position", type: "circle", source: "add-position", paint: { "circle-color": "#d58a32", "circle-radius": 10, "circle-stroke-width": 3, "circle-stroke-color": "#fff4d8" } });
 }
@@ -443,6 +445,28 @@ export function showUserPosition(map: MapLibreMap, position: UserPosition) {
   if (!positionSource || !accuracySource) return false;
   positionSource.setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [position.longitude, position.latitude] } });
   accuracySource.setData(circlePolygon(position.longitude, position.latitude, position.accuracy));
-  map.easeTo({ center: [position.longitude, position.latitude], zoom: Math.max(map.getZoom(), 15) });
   return true;
+}
+
+/** Approximate device direction, not a measured field of view or GPS accuracy. */
+export function userHeadingFeature(position: UserPosition | null, heading: number | null, zoom: number) {
+  const features: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+  if (position && heading !== null && Number.isFinite(heading)) {
+    const latitudeScale = Math.cos(position.latitude * Math.PI / 180);
+    const metres = 48 * 40_075_016.686 * latitudeScale / (512 * 2 ** zoom);
+    const origin = [position.longitude, position.latitude];
+    const ring = [origin];
+    for (let offset = -30; offset <= 30; offset += 5) {
+      const angle = (heading + offset) * Math.PI / 180;
+      ring.push([position.longitude + Math.sin(angle) * metres / (111_320 * latitudeScale),
+        position.latitude + Math.cos(angle) * metres / 111_320]);
+    }
+    ring.push(origin);
+    features.push({ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } });
+  }
+  return { type: "FeatureCollection" as const, features };
+}
+
+export function showUserHeading(map: MapLibreMap, position: UserPosition | null, heading: number | null) {
+  (map.getSource("user-heading") as GeoJSONSource | undefined)?.setData(userHeadingFeature(position, heading, map.getZoom()));
 }
