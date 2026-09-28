@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ProfileJournal } from "@/components/profile-journal";
+import { ProfileJournal } from "@/features/account/components/profile-journal";
 import { getUserBadges } from "@/lib/badges";
 import { getTrailProfile } from "@/lib/profile";
 import { getCurrentUser } from "@/lib/security";

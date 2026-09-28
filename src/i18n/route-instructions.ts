@@ -1,4 +1,4 @@
-import type { WalkPath } from "@/lib/walking";
+import type { WalkPath } from "@/features/routing/walking";
 import type { MessageKey, Translator } from "./types";
 
 // GraphHopper's stable instruction signs; names and destinations are source data.

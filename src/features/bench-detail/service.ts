@@ -7,7 +7,7 @@ import { calculateSunState, getDaylightState, getLocalSunSchedule, getMoonState,
 import type { BenchDetail, BenchProperty, LikelyEnvironment } from "@/lib/types";
 import { visionLabelsEnabled } from "@/lib/vision-gate";
 import { getLocalWeather } from "@/integrations/weather/service";
-import { nearestMappedWayDistance } from "@/lib/walking-provider";
+import { nearestMappedWayDistance } from "@/features/routing/walking-provider";
 import type { CurrentUser } from "@/lib/security";
 import { readBenchObservationSummary } from "@/features/bench-observations/repository";
 import { readPanoramaDescriptor } from "@/features/bench-panorama/repository";

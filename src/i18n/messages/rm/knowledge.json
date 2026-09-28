@@ -156,5 +156,26 @@
   },
   "view": {
     "distinctions": "Aua en vischinanza na garantescha betg ina vista sin l’aua. In conturn avert na garantescha betg ina vista lontana en seser. Fotografias mussan mo in detagl e na cumprovan ni sumbriva permanenta ni ina direcziun da vista nunenconuschenta."
+  },
+  "details": {
+    "intro": "Qua chattas ti las funtaunas, las datas e las basas dals calculs.",
+    "entry": "Endataziun e posiziun",
+    "access": "Access e stabiliments",
+    "environment": "Conturn e canera dal traffic",
+    "coverage": "Cuverta da las datas e models da maletgs",
+    "versions": "Versiuns tecnicas da las datas",
+    "processingVersion": "Versiun da l’elavuraziun",
+    "multipleSources": "Pliras funtaunas",
+    "evidenceIntro": "La valur, la funtauna e la data tutgan ensemen. Infurmaziuns contradictoricas restan avertas.",
+    "moonFraction": "Part illuminada da la glina",
+    "temperature": "Temperatura",
+    "cloudCover": "Cuverta da nivels",
+    "snowDepth": "Autezza da la naiv",
+    "communityContributors": "{count, plural, one {impressiun al lieu} other {impressiuns al lieu}}",
+    "openness": "Parts stimadas, betg ina valitaziun da la vista. Direcziuns libras ed in tschiel avert descrivan chaussas differentas.",
+    "surroundings": "Distanza e vegetaziun",
+    "straightLine": "Distanzas en lingia directa, betg vias a pe.",
+    "canopyRadius": "Cuverta da plantas en in radius da {radius} m",
+    "noise": "Valurs uffizialas da giudicament, naginas mesiraziuns en temp real. Valurs betg inditgadas mancan; quai na munta betg ch’il lieu è quiet."
   }
 }

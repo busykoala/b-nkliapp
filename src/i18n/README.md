@@ -55,8 +55,8 @@ they must never be compared with translated labels to make a routing/filtering
 decision. Router instructions use structured turn signs and retain street names.
 
 `catalogs.test.ts` checks complete catalogs, ICU syntax, matching placeholders
-and plural behavior. `e2e/languages.spec.ts` checks browser detection, switching,
-remembered preference and map preservation. `e2e/dialect-scene.spec.ts` checks
+and plural behavior. `e2e/platform/languages.spec.ts` checks browser detection, switching,
+remembered preference and map preservation. `e2e/bench/dialect.spec.ts` checks
 the independent toggle, the four-choice language menu and location-dependent
 bench languages on mobile browsers.
 

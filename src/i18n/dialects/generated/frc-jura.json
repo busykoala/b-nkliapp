@@ -556,6 +556,25 @@
       "ratedDescription": "Banc du payis avec vue notée {score}/5 dans Bänkli App.",
       "backToFeed": "Retô au fil des bancs",
       "onMap": "Sur la carte"
+    },
+    "overview": {
+      "light": "Soleil et ombre",
+      "sun": "Soleil",
+      "shade": "Ombre",
+      "sunWindow": "Soleil {start}–{end}",
+      "uncovered": "Sans abri",
+      "seats": "{count} places",
+      "access": "Accès au banc du payis",
+      "steps": "Marches sur l’accès",
+      "quietRatings": "{count, plural, one {# avis sur le calme} other {# avis sur le calme}}",
+      "modelNoise": "{mode} · modèle de bruit",
+      "noRatings": "Pas encore d’avis",
+      "ratings": "{count, plural, one {# avis} other {# avis}}",
+      "contribute": "Contribuer à ce lieu",
+      "improve": "Améliorer",
+      "addPhoto": "Ajouter une photo",
+      "addThought": "Partager une pensée",
+      "sources": "Sources et mise à jour"
     }
   },
   "common": {
@@ -1192,6 +1211,27 @@
     },
     "view": {
       "distinctions": "De l’eau à proximité ne garantit pas une vue sur l’eau. Un espace ouvert ne garantit pas une vue lointaine en position assise. Les photos ne montrent qu’un cadrage et ne prouvent ni une ombre permanente ni une direction de vue inconnue."
+    },
+    "details": {
+      "intro": "Vous trouverez ique les sources, les dates des données et les bases des calculs.",
+      "entry": "Fiche et situation",
+      "access": "Accès et équipements",
+      "environment": "Environnement et bruit des transports",
+      "coverage": "Couverture des données et modèles d’images",
+      "versions": "Versions techniques des données",
+      "processingVersion": "Version du traitement",
+      "multipleSources": "Plusieurs sources",
+      "evidenceIntro": "Chaque valeur est accompagnée de sa source et de sa date. Les informations contradictoires restent non résolues.",
+      "moonFraction": "Fraction éclairée de la Lune",
+      "temperature": "Température",
+      "cloudCover": "Couverture nuageuse",
+      "snowDepth": "Hauteur de neige",
+      "communityContributors": "{count, plural, one {impression sur place} other {impressions sur place}}",
+      "openness": "Proportions estimées, et non une note de la vue. Les directions dégagées et le ciel ouvert décrivent des aspects différents.",
+      "surroundings": "Distances et végétation",
+      "straightLine": "Distances à vol d’oiseau, et non à pied.",
+      "canopyRadius": "Couverture arborée dans un rayon de {radius} m",
+      "noise": "Niveaux d’évaluation officiels, pas de mesure en direct. Les valeurs absentes ne permettent pas de conclure que le lieu est calme."
     }
   },
   "photos": {

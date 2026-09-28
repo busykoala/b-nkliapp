@@ -423,5 +423,24 @@
     "ratedDescription": "Banc avec vue notée {score}/5 dans Bänkli App.",
     "backToFeed": "Retour au fil des bancs",
     "onMap": "Sur la carte"
+  },
+  "overview": {
+    "light": "Soleil et ombre",
+    "sun": "Soleil",
+    "shade": "Ombre",
+    "sunWindow": "Soleil {start}–{end}",
+    "uncovered": "Sans abri",
+    "seats": "{count} places",
+    "access": "Accès au banc",
+    "steps": "Marches sur l’accès",
+    "quietRatings": "{count, plural, one {# avis sur le calme} other {# avis sur le calme}}",
+    "modelNoise": "{mode} · modèle de bruit",
+    "noRatings": "Pas encore d’avis",
+    "ratings": "{count, plural, one {# avis} other {# avis}}",
+    "contribute": "Contribuer à ce lieu",
+    "improve": "Améliorer",
+    "addPhoto": "Ajouter une photo",
+    "addThought": "Partager une pensée",
+    "sources": "Sources et mise à jour"
   }
 }

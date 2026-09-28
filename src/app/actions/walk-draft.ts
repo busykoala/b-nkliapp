@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { loadStoredWalkDraft, removeStoredWalkDraft, storeWalkDraftState } from "@/lib/walk-draft-store";
+import { loadStoredWalkDraft, removeStoredWalkDraft, storeWalkDraftState } from "@/features/walks/draft-store";
 
 const origin = z.object({
   kind: z.enum(["location", "address", "station"]), label: z.string().min(1).max(180),

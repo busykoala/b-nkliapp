@@ -25,7 +25,11 @@
     "dialects:generate": "tsx scripts/generate-dialect-packs.ts",
     "dialects:check": "tsx scripts/generate-dialect-packs.ts --check",
     "dialects:geography:generate": "uv run python scripts/generate_dialect_geography.py",
-    "dialects:audit": "uv run python scripts/audit_dialect_coverage.py"
+    "dialects:audit": "uv run python scripts/audit_dialect_coverage.py",
+    "typecheck": "next typegen && tsc --noEmit",
+    "check": "npm run data:catalog:check && npm run typecheck && npm run lint && npm test",
+    "test:bench": "vitest run src/features/bench-detail src/features/weather src/features/routing/accessibility.test.ts",
+    "test:e2e:bench": "playwright test e2e/bench e2e/flows/navigation.spec.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
@@ -57,5 +61,8 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.3"
+  },
+  "engines": {
+    "node": ">=24 <25"
   }
 }

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { AppMenu } from "@/components/app-menu";
 import { sqlite } from "@/db/client";
 import { getCurrentUser } from "@/lib/security";
-import { SavedBenchUnavailable } from "@/components/saved-bench-unavailable";
+import { SavedBenchUnavailable } from "@/features/saved-benches/components/saved-bench-unavailable";
 import { RestoreSourceReturn, SourceReturnLink } from "@/components/source-return-link";
 
 export const dynamic = "force-dynamic";

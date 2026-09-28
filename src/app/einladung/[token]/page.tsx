@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Armchair, ArrowLeft, UserPlus } from "lucide-react";
-import { ReferralSignup } from "@/components/account-controls";
+import { ReferralSignup } from "@/features/account/components/account-controls";
 import { getReferralInvite } from "@/features/referrals/service";
 import { getCurrentUser } from "@/lib/security";
 

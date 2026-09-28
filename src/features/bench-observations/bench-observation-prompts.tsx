@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { Translator } from "@/i18n/types";
-import { communityConfidence } from "@/features/bench-detail/view-panel";
+import { communityConfidence } from "@/features/bench-detail/components/view-panel";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Check, ChevronLeft, ChevronRight, Eye, RotateCcw, SunMedium, Trash2 } from "lucide-react";
 import type { BenchObservationSummary, LightObservationChoice, ViewObservationChoice } from "@/lib/types";

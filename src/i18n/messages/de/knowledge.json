@@ -156,5 +156,26 @@
   },
   "view": {
     "distinctions": "Wasser in der Nähe ist noch kein Wasserblick. Offene Umgebung ist noch keine Weitsicht im Sitzen. Fotos zeigen nur einen Ausschnitt und belegen weder dauerhaften Schatten noch eine unbekannte Blickrichtung."
+  },
+  "details": {
+    "intro": "Hier stehen die Herkunft der Angaben, ihre Zeitstände und die Grundlagen der Berechnungen.",
+    "entry": "Eintrag & Lage",
+    "access": "Zugang & Einrichtungen",
+    "environment": "Umgebung & Verkehrslärm",
+    "coverage": "Datenabdeckung & Bildmodelle",
+    "versions": "Technische Datenstände",
+    "processingVersion": "Verarbeitungsversion",
+    "multipleSources": "Mehrere Quellen",
+    "evidenceIntro": "Wert, Beleg und Datum gehören zusammen. Widersprüchliche Hinweise bleiben offen.",
+    "moonFraction": "Beleuchteter Mondanteil",
+    "temperature": "Temperatur",
+    "cloudCover": "Bewölkung",
+    "snowDepth": "Schneehöhe",
+    "communityContributors": "{count, plural, one {Eindruck vor Ort} other {Eindrücke vor Ort}}",
+    "openness": "Geschätzte Anteile, keine Bewertung der Aussicht. Freie Blickrichtungen und offener Himmel beschreiben unterschiedliche Dinge.",
+    "surroundings": "Abstände & Bewuchs",
+    "straightLine": "Abstände in Luftlinie, keine Gehstrecken.",
+    "canopyRadius": "Baumdeckung im Umkreis von {radius} m",
+    "noise": "Amtliche Beurteilungspegel, keine Live-Messung. Nicht aufgeführte Werte fehlen; das bedeutet nicht, dass es dort ruhig ist."
   }
 }

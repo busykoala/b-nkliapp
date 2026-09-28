@@ -5,7 +5,7 @@ import { attributeValueSql } from "@/features/bench-knowledge/attribute-sql";
 import { sqlite } from "@/db/client";
 import { DATA_RUNTIME } from "@/data/runtime.generated";
 import { benchObservationNow } from "@/features/bench-observations/context";
-import { matchesLightFilter } from "@/lib/map-filters";
+import { matchesLightFilter } from "@/features/map/filters";
 import { calculateSunState, type ObstructionType } from "@/lib/sun";
 import type { BenchViewType, MapBenchListResult, MapFeature, MapFilters, MapQuery } from "@/lib/types";
 

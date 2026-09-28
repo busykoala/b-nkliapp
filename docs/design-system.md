@@ -21,10 +21,10 @@ Access is split into three scopes: space directly at the bench, the mapped local
 
 - Primary buttons use the action color, a small shared radius, a 44 px minimum target, and a verb matching the actual behavior.
 - Icon buttons always have an accessible name. Lucide icons use the default outline convention; emoji are not production controls.
-- `WeatherSummary` owns condition resolution and compact/illustrated variants.
+- `WeatherSummary` uses the weather feature’s shared condition resolver and compact/illustrated variants.
 - `BenchSaveButton`, `StartPicker`, `MapSheetShell`, and route accessibility summaries are shared rather than restyled per flow.
 - Map sheets have peek, preview, and full states. In an open sheet the chrome is reduced to “Karte”, a central drag/tap handle, and “Minimieren”; the minimized bar names the sheet and exposes “Ganz öffnen”.
-- Bench detail follows identity → decision summary → primary actions → panorama → visible sections. Technical provenance is collected under “Quellen & Datenstand.”
+- Bench detail follows identity and a compact action row → six concise visit facts and a rating link → nearby facilities → a short lyrical sentence → panorama/photos → contribution actions. Technical provenance is collected in one closed “Quellen & Datenstand” disclosure at the very bottom. Missing values use an accessible dash; verification/confidence labels stay in the detailed sources rather than crowding the visitor summary.
 
 ## Data display grammar
 
@@ -54,5 +54,7 @@ This grammar was checked against:
 ## Usage
 
 Use grouped surfaces only when elements form one decision. Prefer a divider and whitespace over a card, shadow, or pill. Do not put texture behind dense text. Keep poetic copy below visit-critical conditions and access information. Avoid showing low-priority unknown facts; preserve their evidence in the source view.
+
+`src/features/bench-detail/bench-detail.css` owns the compact preview/detail layout; use `BenchHeader`, `BenchOverview`, and `NearbyAmenities` in both rather than making separate fact cards.
 
 The development-only `/design-system` route shows palette, type, controls, states, and deterministic weather conditions. It intentionally returns 404 in production.

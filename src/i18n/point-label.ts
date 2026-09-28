@@ -1,4 +1,4 @@
-import type { JourneyPoint } from "@/lib/journey";
+import type { JourneyPoint } from "@/features/journey/model";
 import type { Translator } from "./types";
 
 /** Generated labels follow the viewer's language; names stay exactly as supplied. */

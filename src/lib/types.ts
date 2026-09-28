@@ -289,6 +289,7 @@ export type BenchDetail = {
   waterfront: boolean | null;
   canopyContext: CanopyContext | null;
   canopyPercent: number | null;
+  /** Fraction of sampled canopy within each radius, in [0, 1], not a percentage. */
   canopyShare3m: number | null;
   canopyShare10m: number | null;
   canopyShare25m: number | null;

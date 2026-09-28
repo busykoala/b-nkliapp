@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { AlertTriangle, Bookmark, Check, HelpCircle } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
-import { WeatherSummary } from "@/components/weather-summary";
-import { WeatherPanel } from "@/features/bench-detail/weather-panel";
-import { AccessPanel } from "@/features/bench-detail/access-panel";
+import { WeatherSummary } from "@/features/weather/components/weather-summary";
+import { WeatherPanel } from "@/features/bench-detail/components/weather-panel";
+import { AccessPanel } from "@/features/bench-detail/components/access-panel";
 
 const baseWeather: NonNullable<BenchDetail["weather"]> = {
   temperatureC: 8,

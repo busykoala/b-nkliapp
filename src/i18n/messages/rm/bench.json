@@ -423,5 +423,24 @@
     "ratedDescription": "Banc cun vista valitada {score}/5 en Bänkli App.",
     "backToFeed": "Enavos al feed dals bancs",
     "onMap": "Sin la charta"
+  },
+  "overview": {
+    "light": "Sulet e sumbriva",
+    "sun": "Sulet",
+    "shade": "Sumbriva",
+    "sunWindow": "Sulet {start}–{end}",
+    "uncovered": "Senza tetg",
+    "seats": "{count} plazzas",
+    "access": "Access al banc",
+    "steps": "Stgalims tar l’access",
+    "quietRatings": "{count, plural, one {# valitaziun da la quietezza} other {# valitaziuns da la quietezza}}",
+    "modelNoise": "{mode} · model da canera",
+    "noRatings": "Anc naginas valitaziuns",
+    "ratings": "{count, plural, one {# valitaziun} other {# valitaziuns}}",
+    "contribute": "Contribuir a quest lieu",
+    "improve": "Meglierar",
+    "addPhoto": "Agiuntar ina foto",
+    "addThought": "Parter in patratg",
+    "sources": "Funtaunas e stadi da las datas"
   }
 }

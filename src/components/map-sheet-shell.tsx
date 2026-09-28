@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Maximize2, PanelBottomClose } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { registerOverlayDismissal } from "@/lib/overlay-dismissal";
 
 export type MapSheetSnap = "peek" | "half" | "full";
@@ -27,6 +27,18 @@ type Props = {
   children: ReactNode | ((snap: MapSheetSnap, setSnap: (snap: MapSheetSnap) => void) => ReactNode);
 };
 
+type SheetContentProps = {
+  children: Props["children"];
+  snap: MapSheetSnap;
+  onSnapChange: (snap: MapSheetSnap) => void;
+};
+
+// Pass the ref-backed event handler through JSX, not to a render-time call in
+// MapSheetShell. A stable component boundary also preserves child state.
+function SheetContent({ children, snap, onSnapChange }: SheetContentProps) {
+  return <>{typeof children === "function" ? children(snap, onSnapChange) : children}</>;
+}
+
 const nextUp: Record<MapSheetSnap, MapSheetSnap> = { peek: "half", half: "full", full: "full" };
 const nextDown: Record<MapSheetSnap, MapSheetSnap> = { peek: "peek", half: "peek", full: "half" };
 
@@ -40,6 +52,7 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
   const returnFocus = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   const contentRef = useRef<HTMLDivElement>(null);
+  const restoringScroll = useRef(false);
   const presentationRef = useRef<MapSheetPresentation>({ snap: startingSnap, scrollTop: initialPresentation?.scrollTop ?? 0 });
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
@@ -52,21 +65,32 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
   useEffect(() => {
     return registerOverlayDismissal(() => onCloseRef.current());
   }, []);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (snap === "peek") return;
+    const content = contentRef.current;
+    if (!content) return;
+    const scrollTop = presentationRef.current.scrollTop;
+    // display:none may discard the native scroll position. Restore from the
+    // saved visible state before paint, then after the first expanded layout.
+    restoringScroll.current = true;
+    content.scrollTop = scrollTop;
     const frame = window.requestAnimationFrame(() => {
-      if (contentRef.current) contentRef.current.scrollTop = presentationRef.current.scrollTop;
+      content.scrollTop = scrollTop;
+      restoringScroll.current = false;
     });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-  useEffect(() => {
-    if (presentationRef.current.snap === snap) return;
-    presentationRef.current = { snap, scrollTop: contentRef.current?.scrollTop ?? presentationRef.current.scrollTop };
-    onPresentationChange?.(presentationRef.current);
-  }, [snap, onPresentationChange]);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      restoringScroll.current = false;
+    };
+  }, [snap, desktop]);
   const visibleSnap = desktop ? (snap === "peek" ? "peek" : "full") : snap;
   const changeSnap = (next: MapSheetSnap) => {
     if (next !== "peek") setResumeSnap(next);
-    presentationRef.current = { snap: next, scrollTop: contentRef.current?.scrollTop ?? presentationRef.current.scrollTop };
+    const content = contentRef.current;
+    // Never replace the saved position with the zero reported by a hidden box.
+    const canReadScroll = presentationRef.current.snap !== "peek" && !restoringScroll.current && content && content.clientHeight > 0;
+    const scrollTop = canReadScroll ? content.scrollTop : presentationRef.current.scrollTop;
+    presentationRef.current = { snap: next, scrollTop };
     onPresentationChange?.(presentationRef.current);
     setSnap(next);
   };
@@ -107,10 +131,11 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
       {visibleSnap !== "peek" && <button type="button" className="map-sheet-minimize" aria-label={minimizeLabel} title={minimizeLabel} onClick={minimize}><PanelBottomClose size={18} aria-hidden="true" /><span className="sr-only">{minimizeActionLabel}</span></button>}
     </div>
     <div ref={contentRef} onScroll={(event) => {
+      if (presentationRef.current.snap === "peek" || restoringScroll.current || event.currentTarget.clientHeight === 0) return;
       presentationRef.current = { snap, scrollTop: event.currentTarget.scrollTop };
       onPresentationChange?.(presentationRef.current);
     }} className={variant === "bench" ? "map-sheet-content map-sheet-bench-content safe-bottom" : "map-sheet-content journey-scroll"}>
-      {typeof children === "function" ? children(visibleSnap, setSnap) : children}
+      <SheetContent snap={visibleSnap} onSnapChange={changeSnap}>{children}</SheetContent>
     </div>
   </aside>;
 }

@@ -423,5 +423,24 @@
     "ratedDescription": "Panchina con vista valutata {score}/5 in Bänkli App.",
     "backToFeed": "Torna al feed delle panchine",
     "onMap": "Sulla mappa"
+  },
+  "overview": {
+    "light": "Sole e ombra",
+    "sun": "Sole",
+    "shade": "Ombra",
+    "sunWindow": "Sole {start}–{end}",
+    "uncovered": "Senza copertura",
+    "seats": "{count} posti",
+    "access": "Accesso alla panchina",
+    "steps": "Gradini all’accesso",
+    "quietRatings": "{count, plural, one {# giudizio sulla quiete} other {# giudizi sulla quiete}}",
+    "modelNoise": "{mode} · modello del rumore",
+    "noRatings": "Ancora nessuna recensione",
+    "ratings": "{count, plural, one {# recensione} other {# recensioni}}",
+    "contribute": "Contribuisci a questo luogo",
+    "improve": "Migliora",
+    "addPhoto": "Aggiungi una foto",
+    "addThought": "Condividi un pensiero",
+    "sources": "Fonti e aggiornamento"
   }
 }

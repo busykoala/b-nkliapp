@@ -7,8 +7,8 @@ import { BarChart3, Bookmark, Download, Footprints, Info, LogIn, LogOut, Map, Me
 import { usePathname } from "next/navigation";
 import type { CurrentUser } from "@/lib/security";
 import { logout } from "@/app/actions/account";
-import { AccountDialog } from "./account-controls";
-import { TrailAvatar } from "./trail-avatar";
+import { AccountDialog } from "@/features/account/components/account-controls";
+import { TrailAvatar } from "@/features/account/components/trail-avatar";
 import { LanguageSwitcher } from "./language-switcher";
 import { DialectToggle } from "./dialect-toggle";
 

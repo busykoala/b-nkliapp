@@ -556,6 +556,25 @@
       "ratedDescription": "Banchina con vista valutata {score}/5 in Bänkli App.",
       "backToFeed": "Torna al feed delle panchine",
       "onMap": "Sulla mappa"
+    },
+    "overview": {
+      "light": "Sole e ombra",
+      "sun": "Sole",
+      "shade": "Ombra",
+      "sunWindow": "Sole {start}–{end}",
+      "uncovered": "Senza copertura",
+      "seats": "{count} posti",
+      "access": "Accesso alla banchina",
+      "steps": "Gradini all’accesso",
+      "quietRatings": "{count, plural, one {# giudizio sulla quiete} other {# giudizi sulla quiete}}",
+      "modelNoise": "{mode} · modello del rumore",
+      "noRatings": "Ancora nessuna recensione",
+      "ratings": "{count, plural, one {# recensione} other {# recensioni}}",
+      "contribute": "Contribuisci a questo luogo",
+      "improve": "Migliora",
+      "addPhoto": "Aggiungi una foto",
+      "addThought": "Condividi un pensiero",
+      "sources": "Fonti e aggiornamento"
     }
   },
   "common": {
@@ -1192,6 +1211,27 @@
     },
     "view": {
       "distinctions": "L’acqua vicina non garantisce una vista sull’acqua. Un ambiente aperto non garantisce una vista lontana da seduti. Le foto mostrano solo un’inquadratura e non dimostrano né ombra permanente né una direzione di vista sconosciuta."
+    },
+    "details": {
+      "intro": "Chì trovi le fonti, le date dei dati e le basi dei calcoli.",
+      "entry": "Scheda e posizione",
+      "access": "Accesso e servizi",
+      "environment": "Ambiente e rumore del traffico",
+      "coverage": "Copertura dei dati e modelli di immagini",
+      "versions": "Versioni tecniche dei dati",
+      "processingVersion": "Versione di elaborazione",
+      "multipleSources": "Più fonti",
+      "evidenceIntro": "Ogni valore è accompagnato dalla fonte e dalla data. Le informazioni contraddittorie restano irrisolte.",
+      "moonFraction": "Frazione illuminata della Luna",
+      "temperature": "Temperatura",
+      "cloudCover": "Copertura nuvolosa",
+      "snowDepth": "Altezza della neve",
+      "communityContributors": "{count, plural, one {impressione sul posto} other {impressioni sul posto}}",
+      "openness": "Proporzioni stimate, non un voto al panorama. Le direzioni libere e il cielo aperto descrivono aspetti diversi.",
+      "surroundings": "Distanze e vegetazione",
+      "straightLine": "Distanze in linea d’aria, non percorsi a piedi.",
+      "canopyRadius": "Copertura arborea entro {radius} m",
+      "noise": "Livelli di valutazione ufficiali, non misurazioni in tempo reale. I valori non elencati mancano: non significa che il luogo sia silenzioso."
     }
   },
   "photos": {

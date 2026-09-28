@@ -556,6 +556,25 @@
       "ratedDescription": "Bankl mit Ussicht {score}/5 in der Bankl App.",
       "backToFeed": "Zrugg zum Bankl-Feed",
       "onMap": "Auf der Charte"
+    },
+    "overview": {
+      "light": "Sunne & Schatte",
+      "sun": "Sunne",
+      "shade": "Schatte",
+      "sunWindow": "Sunne {start}–{end}",
+      "uncovered": "Ohne Dach",
+      "seats": "{count} Sitzplätze",
+      "access": "Zugang am Bankl",
+      "steps": "Stufen am Zugang",
+      "quietRatings": "{count, plural, one {# Ruhe-Bewertung} other {# Ruhe-Bewertungen}}",
+      "modelNoise": "{mode} · Lärmmodell",
+      "noRatings": "No kei Bewärtige",
+      "ratings": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
+      "contribute": "Diesen Ort mitgestalten",
+      "improve": "Verbessern",
+      "addPhoto": "Foto hinzufügen",
+      "addThought": "Gedanken teilen",
+      "sources": "Quellen & Datenstand"
     }
   },
   "common": {
@@ -1192,6 +1211,27 @@
     },
     "view": {
       "distinctions": "Wasser in der Nähe isch no kein Wasserblick. Offene Umgebung isch no kei Weitsicht im Sitzen. Fotos zeige nur en Ausschnitt und belegen weder dauerhaften Schatte no e unbekannte Blickrichtung."
+    },
+    "details": {
+      "intro": "Da stehen die Herkunft der Angaben, ihre Zeitstände und die Grundlagen der Berechnungen.",
+      "entry": "Eintrag & Lage",
+      "access": "Zugang & Einrichtungen",
+      "environment": "Umgebung & Verkehrslärm",
+      "coverage": "Datenabdeckung & Bildmodelle",
+      "versions": "Technische Datenstände",
+      "processingVersion": "Verarbeitungsversion",
+      "multipleSources": "Mehrere Quellen",
+      "evidenceIntro": "Wert, Beleg und Datum gehören zusammen. Widersprüchliche Hinweise bleiben offen.",
+      "moonFraction": "Beleuchteter Mondanteil",
+      "temperature": "Temperatur",
+      "cloudCover": "Bewölkung",
+      "snowDepth": "Schneehöhe",
+      "communityContributors": "{count, plural, one {Eindruck vor Ort} other {Eindrücke vor Ort}}",
+      "openness": "Geschätzte Anteile, kei Bewertung der Ussicht. Freie Blickrichtungen und offener Himmel beschreiben unterschiedliche Dinge.",
+      "surroundings": "Abstände & Bewuchs",
+      "straightLine": "Abstände in Luftlinie, kei Gehstrecken.",
+      "canopyRadius": "Baumdeckung im Umkreis von {radius} m",
+      "noise": "Amtliche Beurteilungspegel, kei Live-Messung. Nit aufgeführte Werte fehlen; das bedeutet nit, dass es dort ruhig ist."
     }
   },
   "photos": {

@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, MapPinned } from "lucide-react";
 import { notFound } from "next/navigation";
-import { BenchDetailContent } from "@/components/bench-detail-content";
+import { BenchDetailContent } from "@/features/bench-detail/components/bench-detail-content";
 import { getCurrentUser } from "@/lib/security";
 import { AppMenu } from "@/components/app-menu";
 import { readBenchPageMetadata, readVerifiedBenchDetail } from "@/features/bench-detail/service";
-import { LocalBenchLanguageProvider } from "@/components/local-bench-language-provider";
+import { LocalBenchLanguageProvider } from "@/features/bench-detail/components/local-bench-language-provider";
 import { withRequestDialect } from "@/lib/dialects/presentation";
 import { BenchReturnButton } from "@/components/source-return-link";
 

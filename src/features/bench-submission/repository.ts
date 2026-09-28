@@ -1,7 +1,7 @@
 import "server-only";
 
 import { sqlite } from "@/db/client";
-import { distanceMeters } from "@/lib/journey";
+import { distanceMeters } from "@/features/journey/model";
 import type { NearbyBench } from "@/lib/types";
 
 export function readNearbyBenches(latitude: number, longitude: number): NearbyBench[] {

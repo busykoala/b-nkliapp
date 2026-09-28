@@ -1,0 +1,123 @@
+import { message } from "@/i18n/message";
+import { beforeEach, expect, it, vi } from "vitest";
+import type { WalkQuery } from "@/features/walks/model";
+import type { WalkPath } from "@/features/routing/walking";
+const mocks = vi.hoisted(() => ({ route: vi.fn(), rows: vi.fn() }));
+vi.mock("@/db/client", () => ({ sqlite: { prepare: () => ({ all: mocks.rows }) } }));
+vi.mock("@/features/routing/walking-provider", () => ({ routeWalk: mocks.route }));
+vi.mock("@/features/walks/evidence", () => ({ evaluateRoute: () => ({ quiet: 1, nature: .8, view: null, water: null, light: null, coverage: 1, lightCoverage: 0, sources: ["OpenStreetMap"], reasons: [message("walks.evidence.quiet")], warnings: [], updatedAt: null }) }));
+import { discoverWalks } from "@/features/walks/provider";
+const query: WalkQuery = { origin: { label: "Start", kind: "location", latitude: 46.68, longitude: 7.68 }, minutes: 30, shape: "one-way", light: "any", speed: 4.2, difficulty: "easy", time: new Date().toISOString() };
+beforeEach(() => { mocks.route.mockReset(); mocks.rows.mockReturnValue([{ id: "bench", name: "Hafenbänkli", latitude: 46.685, longitude: 7.685, waterfront: 1, view_score: 80, view_confidence: "mittel" }]); });
+it("returns honest no-result state without inventing missing geometry", async () => {
+  mocks.route.mockRejectedValue(new Error("offline"));
+  expect(await discoverWalks(query)).toMatchObject({ suggestions: [], partial: true });
+});
+it("uses actual slope-aware duration and labels budget mismatch", async () => {
+  const path: WalkPath = { geometry: [[7.68, 46.68], [7.685, 46.685]], distance: 850, referenceSeconds: 600, ascent: 20, warnings: [], instructions: [], details: {} };
+  mocks.route.mockResolvedValue([path]);
+  const result = await discoverWalks(query);
+  expect(result.suggestions[0]).toMatchObject({ durationSeconds: 715, withinBudget: false, extraBenches: [] });
+  expect(result.message).toEqual(message("walks.result.nearest"));
+});
+it("excludes unresolved access and stays within routing budget", async () => {
+  mocks.rows.mockReturnValue(Array.from({ length: 40 }, (_, i) => ({ id: `bench-${i}`, name: null, latitude: 46.685 + i / 100000, longitude: 7.685, waterfront: 0, view_score: null })));
+  mocks.route.mockResolvedValue([{ geometry: [[7.68, 46.68], [7.685, 46.685]], distance: 850, referenceSeconds: 600, ascent: 20, warnings: [message("routing.warnings.walkUnverified")], instructions: [], details: {} }]);
+  const result = await discoverWalks(query);
+  expect(result.suggestions).toHaveLength(0);
+  expect(mocks.route.mock.calls.length).toBeLessThanOrEqual(24);
+});
+it("does not call routing when no active bench candidates exist", async () => {
+  mocks.rows.mockReturnValue([]);
+  expect((await discoverWalks(query)).message).toEqual(message("walks.result.noBenches"));
+  expect(mocks.route).not.toHaveBeenCalled();
+});
+it("keeps an origin snap gap visible without inventing access to the planned bench", async () => {
+  const warning = message("routing.warnings.start", {distance: 24});
+  const path: WalkPath = { geometry: [[7.68, 46.68], [7.685, 46.685]], distance: 850, referenceSeconds: 600, ascent: 20, warnings: [warning], instructions: [], details: {} };
+  mocks.route.mockResolvedValue([path]);
+  expect((await discoverWalks(query)).suggestions[0].path.warnings).toEqual([warning]);
+  mocks.route.mockResolvedValue([{ ...path, warnings: [message("routing.warnings.end", {distance: 24})] }]);
+  expect((await discoverWalks(query)).suggestions).toEqual([]);
+});
+
+it("keeps several genuinely different Bänkli outings", async () => {
+  const benches = [
+    { id: "north", name: "Nordbänkli", latitude: 46.691, longitude: 7.68, waterfront: 0, view_score: 70, view_confidence: "mittel" },
+    { id: "east", name: "Ostbänkli", latitude: 46.68, longitude: 7.695, waterfront: 0, view_score: 75, view_confidence: "mittel" },
+    { id: "west", name: "Westbänkli", latitude: 46.68, longitude: 7.665, waterfront: 0, view_score: 80, view_confidence: "mittel" },
+  ];
+  mocks.rows.mockReturnValue(benches);
+  mocks.route.mockImplementation(async (request: { points: { latitude: number; longitude: number }[] }) => {
+    const end = request.points.at(-1)!;
+    return [{
+      geometry: [[query.origin.longitude, query.origin.latitude], [end.longitude, end.latitude]],
+      distance: 1_200,
+      referenceSeconds: 900,
+      ascent: 15,
+      warnings: [],
+      instructions: [],
+      details: {},
+    } satisfies WalkPath];
+  });
+
+  const result = await discoverWalks(query);
+  expect(result.suggestions).toHaveLength(3);
+  expect(new Set(result.suggestions.map(({ bench }) => bench.id))).toEqual(new Set(["north", "east", "west"]));
+});
+
+it("offers several honest out-and-back choices when generated loops miss every bench", async () => {
+  const loopQuery = { ...query, shape: "loop" as const };
+  const benches = [
+    { id: "north", name: "Nordbänkli", latitude: 46.69, longitude: 7.68, waterfront: 0, view_score: 70, view_confidence: "mittel" },
+    { id: "east", name: "Ostbänkli", latitude: 46.68, longitude: 7.693, waterfront: 0, view_score: 75, view_confidence: "mittel" },
+    { id: "west", name: "Westbänkli", latitude: 46.68, longitude: 7.667, waterfront: 0, view_score: 80, view_confidence: "mittel" },
+  ];
+  mocks.rows.mockReturnValue(benches);
+  mocks.route.mockImplementation(async (request: { points: { latitude: number; longitude: number }[]; roundTrip?: object }) => {
+    if (request.roundTrip) return [{
+      geometry: [[7.68, 46.68], [7.72, 46.72], [7.68, 46.68]], distance: 2_000,
+      referenceSeconds: 1_500, ascent: 20, warnings: [], instructions: [], details: {},
+    } satisfies WalkPath];
+    const bench = request.points[1];
+    return [{
+      geometry: [[7.68, 46.68], [bench.longitude, bench.latitude], [7.68, 46.68]], distance: 2_000,
+      referenceSeconds: 1_500, ascent: 20, warnings: [], instructions: [], details: {},
+    } satisfies WalkPath];
+  });
+
+  const result = await discoverWalks(loopQuery);
+  expect(result.suggestions).toHaveLength(3);
+  expect(result.suggestions.every(({ repeated }) => repeated)).toBe(true);
+  expect(mocks.route.mock.calls.length).toBeLessThanOrEqual(21);
+});
+
+it("never relaxes the requested rest interval when benches cannot be reached frequently enough", async () => {
+  mocks.route.mockResolvedValue([{ geometry: [[7.68, 46.68], [7.685, 46.685]], distance: 850, referenceSeconds: 600, ascent: 20, warnings: [], instructions: [], details: {} }]);
+  expect((await discoverWalks({ ...query, maxRestMinutes: 5 })).suggestions).toEqual([]);
+  const longer = await discoverWalks({ ...query, maxRestMinutes: 15 });
+  expect(longer.suggestions.length).toBeGreaterThan(0);
+  expect(longer.suggestions.every((suggestion) => suggestion.rest && suggestion.rest.maxGapSeconds <= 900)).toBe(true);
+});
+
+it("adds real waypoints for nearby rest seats and rechecks the resulting walking times", async () => {
+  const { distanceMeters } = await import("@/features/journey/model");
+  mocks.rows.mockReturnValue(Array.from({ length: 6 }, (_, index) => ({
+    id: `rest-${index}`, name: `Pause ${index}`, latitude: query.origin.latitude + (index % 2 ? .0001 : -.0001),
+    longitude: query.origin.longitude + (index + 1) * .003,
+    waterfront: 0, view_score: null, view_confidence: null,
+  })));
+  mocks.route.mockImplementation(async (request: { points: { label: string; latitude: number; longitude: number }[] }) => {
+    const points = request.points;
+    const distance = points.slice(1).reduce((total, point, index) => total + distanceMeters(points[index], point), 0);
+    return [{ geometry: points.map((point) => [point.longitude, point.latitude]), distance, referenceSeconds: distance / (5 / 3.6), ascent: 0, warnings: [], instructions: [], details: {} }];
+  });
+  const result = await discoverWalks({ ...query, maxRestMinutes: 5 });
+  expect(result.suggestions.length).toBeGreaterThan(0);
+  expect(mocks.route.mock.calls.some(([request]) => request.points.length > 2)).toBe(true);
+  for (const suggestion of result.suggestions) {
+    expect(suggestion.rest?.maxGapSeconds).toBeLessThanOrEqual(300.001);
+    expect(suggestion.rest?.stops.length).toBeGreaterThan(0);
+  }
+  expect(mocks.route.mock.calls.length).toBeLessThanOrEqual(24);
+});

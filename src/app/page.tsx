@@ -1,4 +1,4 @@
-import { MapExplorer } from "@/components/map-explorer";
+import { MapExplorer } from "@/features/map/components/map-explorer";
 import { readBenchDetail } from "@/features/bench-detail/service";
 import { withRequestDialect } from "@/lib/dialects/presentation";
 import { getCurrentUser } from "@/lib/security";

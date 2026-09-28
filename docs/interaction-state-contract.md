@@ -1,6 +1,6 @@
 # Interaction and state contract
 
-This contract describes production behavior, not a proposal. The typed task and return models live in `src/lib/map-navigation.ts`; planner snapshots stay in the map screen and the walk draft store.
+This contract describes production behavior, not a proposal. The typed task and return models live in `src/features/map/navigation.ts`; planner snapshots stay in the map screen and the walk draft store.
 
 ## Foreground task
 

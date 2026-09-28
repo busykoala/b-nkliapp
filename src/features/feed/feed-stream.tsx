@@ -8,7 +8,7 @@ import { useState, useTransition } from "react";
 import { CheckCircle2, ChevronDown, HeartHandshake, MessageCircleHeart, Pencil, Plus, Star, XCircle } from "lucide-react";
 import { getFeedPage } from "@/app/actions/feed";
 import { groupBenchActivity, groupFeed, type FeedEntry, type FeedPage, type FeedScope } from "./model";
-import { TrailAvatar } from "@/components/trail-avatar";
+import { TrailAvatar } from "@/features/account/components/trail-avatar";
 import { SourceReturnLink } from "@/components/source-return-link";
 
 const eventIcons = {

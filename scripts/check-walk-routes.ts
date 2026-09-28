@@ -1,15 +1,15 @@
 /** Read-only release checks at public Swiss landmarks; never use personal origins. */
 import Database from "better-sqlite3";
 import { performance } from "node:perf_hooks";
-import { pathSeconds } from "../src/lib/walking";
-import type { WalkQuery } from "../src/lib/walks/model";
+import { pathSeconds } from "@/features/routing/walking";
+import type { WalkQuery } from "@/features/walks/model";
 
 async function main() {
   const db = new Database(process.env.DATABASE_PATH ?? "data/benchly.sqlite", { readonly: true, fileMustExist: true });
   // Reuse a read-only connection instead of invoking app migrations or seeding.
   (globalThis as typeof globalThis & { benchlySqlite?: Database.Database }).benchlySqlite = db;
-  const { discoverWalks } = await import("../src/lib/walks/provider");
-  const { routeWalk } = await import("../src/lib/walking-provider");
+  const { discoverWalks } = await import("@/features/walks/provider");
+  const { routeWalk } = await import("@/features/routing/walking-provider");
   const places = [
     ["Spiez Hafen", 46.68844, 7.68949], ["Zürich HB", 47.3782, 8.5402],
     ["Sihlwald", 47.2688, 8.5575], ["Wimmis", 46.674, 7.629], ["Kandersteg", 46.495, 7.674],

@@ -423,5 +423,24 @@
     "ratedDescription": "Sitzbank mit Aussicht {score}/5 in der Bänkli App.",
     "backToFeed": "Zurück zum Bänkli-Feed",
     "onMap": "Auf der Karte"
+  },
+  "overview": {
+    "light": "Sonne & Schatten",
+    "sun": "Sonne",
+    "shade": "Schatten",
+    "sunWindow": "Sonne {start}–{end}",
+    "uncovered": "Ohne Dach",
+    "seats": "{count} Sitzplätze",
+    "access": "Zugang am Bänkli",
+    "steps": "Stufen am Zugang",
+    "quietRatings": "{count, plural, one {# Ruhe-Bewertung} other {# Ruhe-Bewertungen}}",
+    "modelNoise": "{mode} · Lärmmodell",
+    "noRatings": "Noch keine Bewertungen",
+    "ratings": "{count, plural, one {# Bewertung} other {# Bewertungen}}",
+    "contribute": "Diesen Ort mitgestalten",
+    "improve": "Verbessern",
+    "addPhoto": "Foto hinzufügen",
+    "addThought": "Gedanken teilen",
+    "sources": "Quellen & Datenstand"
   }
 }

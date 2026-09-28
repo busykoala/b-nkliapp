@@ -1,9 +1,9 @@
 "use server";
 import { z } from "zod";
 import { consumeRateLimit, getContributorIdentity } from "@/lib/security";
-import { discoverWalks } from "@/lib/walks/provider";
-import type { WalkResult } from "@/lib/walks/model";
-import { storeWalkResult } from "@/lib/walk-draft-store";
+import { discoverWalks } from "@/features/walks/provider";
+import type { WalkResult } from "@/features/walks/model";
+import { storeWalkResult } from "@/features/walks/draft-store";
 
 const querySchema = z.object({
   origin: z.object({ kind: z.enum(["location", "address", "station"]), label: z.string().min(1).max(180), labelKind: z.enum(["location", "station", "bench", "waypoint"]).optional(), latitude: z.number().min(45.7).max(47.9), longitude: z.number().min(5.9).max(10.6), stationId: z.string().regex(/^\d{1,12}$/).optional() }),

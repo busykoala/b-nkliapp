@@ -3,9 +3,9 @@
 import { z } from "zod";
 import { sqlite } from "@/db/client";
 import { consumeRateLimit, getContributorIdentity } from "@/lib/security";
-import { findStations, planJourney } from "@/lib/journey-provider";
+import { findStations, planJourney } from "@/features/journey/provider";
 import { searchGeoAdminLocations } from "@/integrations/geoadmin/client";
-import type { JourneyOrigin, JourneyResult } from "@/lib/journey";
+import type { JourneyOrigin, JourneyResult } from "@/features/journey/model";
 
 const origin = z.object({ kind: z.enum(["location", "address", "station"]), label: z.string().min(1).max(180), labelKind: z.enum(["location", "station", "bench", "waypoint"]).optional(), latitude: z.number().min(45.7).max(47.9), longitude: z.number().min(5.9).max(10.6), stationId: z.string().regex(/^\d{1,12}$/).optional() });
 const destination = origin.omit({ kind: true, stationId: true });
