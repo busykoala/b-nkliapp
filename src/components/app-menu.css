@@ -1,0 +1,137 @@
+/* Menu: useful destinations first, one illustrated invitation, preferences last. */
+.app-menu-dialog {
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+}
+.app-menu-dialog::backdrop { background: rgb(25 38 35 / 30%); backdrop-filter: blur(3px); }
+.app-menu-dialog > .modal-backdrop { position: absolute; inset: 0; z-index: 0; }
+.app-menu-dialog > .modal-backdrop button { width: 100%; height: 100%; cursor: default; }
+.app-menu-sheet {
+  position: absolute;
+  z-index: 1;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  width: min(25rem, calc(100% - 24px));
+  max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom)));
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-divider) 40%, transparent);
+  border-radius: var(--radius-surface);
+  background: var(--color-surface);
+  box-shadow: 0 20px 64px rgb(22 39 35 / 22%);
+}
+.app-menu-sheet > header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 12px 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-divider) 25%, transparent);
+  background: linear-gradient(115deg, var(--color-sage-wash), var(--color-surface) 75%);
+}
+.app-menu-sheet > header > div { min-width: 0; }
+.app-menu-sheet > header h2 { margin: 0; font: 600 1.3rem/1.25 var(--font-display); overflow-wrap: anywhere; }
+.app-menu-sheet > header p { margin: .3rem 0 0; font-size: .875rem; line-height: 1.4; color: var(--color-text-muted); }
+.app-menu-sheet > header button {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-divider) 50%, transparent);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.app-menu-sheet > header h2:focus { outline: none; }
+.app-menu-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 7px 12px 12px; }
+.app-menu-group-label { margin: .55rem .4rem .2rem; color: var(--color-text-muted); font-size: .8125rem; font-weight: 600; letter-spacing: .055em; text-transform: uppercase; }
+.app-menu-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  gap: 12px;
+  padding: 8px;
+  border-radius: .5rem;
+  color: var(--color-ink);
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.app-menu-row > svg, .app-menu-reading > svg { flex-shrink: 0; color: var(--color-action); }
+.app-menu-row[aria-current="page"] { background: var(--color-sage-wash); box-shadow: inset 3px 0 var(--color-action); }
+.app-menu-reading {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  margin: .65rem 0 .875rem;
+  padding: 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-divider) 35%, transparent);
+  border-radius: .8rem 1.15rem .85rem 1rem;
+  background: linear-gradient(120deg, var(--color-sage-wash), var(--color-paper) 65%, var(--color-surface));
+  text-align: left;
+}
+.app-menu-reading-art { display: grid; place-items: center; }
+.app-menu-reading-art img { width: 100%; height: auto; }
+.app-menu-reading-copy { display: grid; gap: .18rem; min-width: 0; overflow-wrap: anywhere; }
+.app-menu-reading-copy small { font-size: .8125rem; line-height: 1.4; color: var(--color-text-muted); }
+.app-menu-reading-copy strong { font: 600 1.05rem/1.25 var(--font-display); color: var(--color-ink); }
+.app-menu-reading-copy > span { font-size: .875rem; line-height: 1.4; color: var(--color-text-muted); }
+.app-menu-account {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .65rem;
+  margin-top: .75rem;
+  padding: .625rem .5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-divider) 35%, transparent);
+  border-radius: .5rem;
+}
+.app-menu-account[aria-current="page"] { background: var(--color-sage-wash); }
+.app-menu-account-avatar, .app-menu-account-avatar .trail-avatar { display: block; width: 2.5rem; height: 2.5rem; }
+.app-menu-account small, .app-menu-account strong { display: block; overflow-wrap: anywhere; }
+.app-menu-account small { font-size: .8125rem; color: var(--color-text-muted); }
+.app-menu-account strong { font-size: 1rem; font-weight: 600; }
+.app-menu-login { margin-top: .65rem; }
+.app-menu-preferences { margin-top: .45rem; border-top: 1px solid color-mix(in srgb, var(--color-divider) 35%, transparent); padding: .65rem .4rem .35rem; }
+.app-menu-preferences .language-preference, .app-menu-preferences .dialect-preference { margin: 0; padding: 0; border: 0; }
+.app-menu-preferences .language-switcher { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-menu-preferences .language-switcher > svg { flex: 0 0 19px; }
+.app-menu-preferences .language-switcher span { flex: 1 1 5em; min-width: 0; font-size: .875rem; overflow-wrap: anywhere; }
+.app-menu-preferences .language-switcher select { flex: 1 1 8em; min-width: 0; max-width: 100%; min-height: 44px; background: var(--color-surface); border-color: var(--color-control-border); font-size: 1rem; }
+.app-menu-preferences .dialect-preference > button { min-height: 44px; margin-top: .55rem; padding: .35rem 0; gap: .5rem; }
+.app-menu-preferences .dialect-preference-copy strong { font-size: .875rem; line-height: 1.4; }
+.app-menu-preferences .dialect-preference-copy small { font-size: .8125rem; line-height: 1.4; color: var(--color-text-muted); }
+.app-menu-install { margin-top: .25rem; font-size: .875rem; }
+.app-menu-install:disabled { opacity: .65; cursor: wait; }
+.app-menu-signout { margin-top: .35rem; }
+.app-menu-signout button { display: flex; align-items: center; gap: .65rem; min-height: 44px; padding: .5rem; color: var(--color-danger-text); font-size: .875rem; }
+.app-menu-sheet :is(a, button, select):focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.app-menu-sheet :is(a, button, select) { scroll-margin-block: .75rem; }
+@media (hover: hover) {
+  .app-menu-row:hover, .app-menu-account:hover { background: var(--color-sage-wash); }
+  .app-menu-reading:hover { border-color: var(--color-action); }
+}
+/* Decorative spacing stays compact while text can grow and controls wrap. */
+@media (max-width: 24rem) {
+  .app-menu-reading { grid-template-columns: 48px minmax(0, 1fr) auto; gap: 8px; }
+}
+@media (max-height: 36rem) and (max-width: 30rem) {
+  .app-menu-sheet > header p { display: none; }
+}
+body:has(.app-menu-dialog[open], .reading-dialog[open]) { overflow: hidden; }

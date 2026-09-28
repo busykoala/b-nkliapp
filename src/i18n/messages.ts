@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Language } from './config';
 
-export const namespaces = ["about","account","avatar","bench","common","community","favourites","feed","journey","knowledge","legal","map","photos","poetry","privacy","profile","routing","statistics","submission","walks"] as const;
+export const namespaces = ["about","account","avatar","bench","common","community","favourites","feed","journey","knowledge","legal","map","photos","poetry","privacy","profile","reading","routing","statistics","submission","walks"] as const;
 export type Messages = {
   about: typeof import('./messages/de/about.json');
   account: typeof import('./messages/de/account.json');
@@ -19,6 +19,7 @@ export type Messages = {
   poetry: typeof import('./messages/de/poetry.json');
   privacy: typeof import('./messages/de/privacy.json');
   profile: typeof import('./messages/de/profile.json');
+  reading: typeof import('./messages/de/reading.json');
   routing: typeof import('./messages/de/routing.json');
   statistics: typeof import('./messages/de/statistics.json');
   submission: typeof import('./messages/de/submission.json');

@@ -1,0 +1,68 @@
+/* Quiet editorial type; the existing watercolor bench is a vignette, not a control. */
+.reading-dialog {
+  width: min(48rem, calc(100vw - 1.5rem));
+  height: min(56rem, calc(100dvh - max(.75rem, env(safe-area-inset-top)) - max(.75rem, env(safe-area-inset-bottom))));
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-divider) 50%, transparent);
+  border-radius: var(--radius-surface);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  box-shadow: 0 24px 70px rgb(22 39 35 / 26%);
+}
+.reading-dialog[open] { display: flex; flex-direction: column; }
+.reading-dialog::backdrop { background: rgb(25 38 35 / 38%); }
+.reading-dialog-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .5rem .75rem .5rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-divider) 30%, transparent);
+}
+.reading-dialog-bar h2 { margin: 0; font: 600 1rem/1.4 var(--font-interface); overflow-wrap: anywhere; }
+.reading-dialog-bar h2:focus { outline: none; }
+.reading-dialog-bar > button { display: grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); }
+.reading-dialog-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 1rem; }
+.reading-view { padding: 1rem clamp(1rem, 4vw, 2.5rem) 1.5rem; }
+.reading-language { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem .75rem; margin-bottom: 1.75rem; color: var(--color-text-muted); font-size: .875rem; }
+.reading-language select { max-width: 100%; min-height: 44px; padding: .35rem .65rem; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-ink); font: inherit; }
+.reading-article { width: 100%; max-width: 62ch; margin-inline: auto; }
+.reading-heading { text-align: center; }
+.reading-eyebrow { margin: 0 0 .75rem; color: var(--color-text-muted); font-size: .8125rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.reading-heading :is(h1, h3) { margin: 0; font: 500 clamp(1.65rem, 4.5vw, 2.4rem)/1.2 var(--font-display); text-wrap: balance; overflow-wrap: anywhere; }
+.reading-heading :is(h1, h3):focus { outline: none; }
+.reading-heading :is(h1, h3) { scroll-margin-block: 1rem; }
+.reading-byline { margin: .875rem 0 0; color: var(--color-text-muted); font-size: .9375rem; }
+.reading-vignette { position: relative; display: grid; place-items: center; margin: 1.25rem auto 1.75rem; width: min(100%, 14rem); }
+.reading-vignette::before { position: absolute; content: ""; width: 100%; height: 90%; border-radius: 43% 57% 48% 52%; background: radial-gradient(ellipse, var(--color-sage-wash), var(--color-paper) 55%, transparent 72%); }
+.reading-vignette img { position: relative; width: min(100%, 9.5rem); height: auto; }
+.reading-prose { font: 400 1.0625rem/1.85 var(--font-display); }
+.reading-prose p { margin: 0 0 1.4em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.reading-footer { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; margin-top: 2rem; border-top: 1px solid color-mix(in srgb, var(--color-divider) 40%, transparent); padding-top: 1rem; font-size: .875rem; }
+.reading-footer > p { flex-basis: 100%; margin: 0; color: var(--color-text-muted); line-height: 1.5; }
+.reading-footer :is(a, button) { display: inline-flex; align-items: center; gap: .3rem; min-height: 44px; text-align: left; text-decoration: underline; text-underline-offset: .2em; color: var(--color-action); }
+.reading-footer svg { flex-shrink: 0; }
+.reading-return { display: block; min-height: 44px; margin: 0 auto; padding: .5rem .75rem; text-decoration: underline; text-underline-offset: .2em; color: var(--color-action); font-size: .9375rem; }
+.reading-page { min-height: 100dvh; background: var(--color-surface); }
+.reading-page > .reading-view { max-width: 48rem; margin-inline: auto; padding-block: 1.5rem 3rem; }
+.reading-page-bar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; max-width: 64rem; margin-inline: auto; padding: max(.75rem, env(safe-area-inset-top)) 1rem .75rem; border-bottom: 1px solid color-mix(in srgb, var(--color-divider) 25%, transparent); }
+.reading-map-link { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; color: var(--color-action); }
+:is(.reading-dialog, .reading-page) :is(a, button, select):focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+:is(.reading-dialog, .reading-page) :is(a, button, select) { scroll-margin-block: 1rem; }
+@media (max-width: 30rem) {
+  .reading-dialog { width: 100%; height: 100dvh; margin: 0; border: 0; border-radius: 0; }
+  .reading-dialog-bar { padding-top: max(.5rem, env(safe-area-inset-top)); }
+  .reading-dialog-scroll { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .reading-language { justify-content: flex-start; }
+}
+@media print {
+  .reading-page-bar, .reading-language, .reading-footer > :not(p) { display: none; }
+  .reading-page, .reading-page > .reading-view { background: white; padding: 0; }
+  .reading-prose { font-size: 11pt; line-height: 1.6; }
+  .reading-prose p { orphans: 3; widows: 3; }
+}

@@ -58,3 +58,29 @@ Use grouped surfaces only when elements form one decision. Prefer a divider and 
 `src/features/bench-detail/bench-detail.css` owns the compact preview/detail layout; use `BenchHeader`, `BenchOverview`, and `NearbyAmenities` in both rather than making separate fact cards.
 
 The development-only `/design-system` route shows palette, type, controls, states, and deterministic weather conditions. It intentionally returns 404 in production.
+
+## Menu and reading
+
+The menu separates being outdoors (walks and saved places), an optional literary pause,
+and community/about destinations. Account and language preferences stay visible in the
+scrolling area; its close control stays outside that area. Avoid a separate oversized card
+for every destination. Keep familiar functional names and visible keyboard focus.
+
+`src/components/app-menu.css` owns the menu. `src/features/reading/` owns Urs’s essay,
+its four versions (de/fr/it/rm), and one reading component used in the menu dialog and at
+`/gedanken/baenkli?lang=de`. The reading dialog keeps the underlying menu and map task
+mounted. The small static essay ships with the menu, so opening it needs no extra
+network request. Escape closes only the top dialog and returns focus to its opener. Reading does
+not change the application's language preference or record reading activity.
+
+Editorial prose uses Lora with a bounded line length on an untextured paper surface.
+Reuse the existing watercolor bench as a quiet vignette; do not replace control icons
+with miniature paintings. There is no autoplay, animation, progress score, or forced
+reading detour. Language can be changed for this text independently of the interface.
+
+The German contribution is author-supplied and must not be copy-edited or passed through
+the location-dialect generator. Its wording is protected by a content hash test. Preserve
+five paragraph boundaries and the supplied punctuation/spacing. French, Italian and
+Rumantsch Grischun versions credit Urs and are labelled as AI translations; they have not received
+independent native-speaker review. Review translations in their respective content files,
+not by altering the German original. Do not add English as an application or essay option.

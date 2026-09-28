@@ -1,0 +1,18 @@
+{
+  "tagline": "Découvrir des lieux. Faire une pause.",
+  "outside": "En chemin",
+  "around": "Autour des bancs",
+  "pause": "Un temps de pause",
+  "essay": "Pensées sur un banc",
+  "essayHint": "Un essai d’Urs",
+  "closeReading": "Fermer le texte",
+  "installFailed": "L’installation n’a pas pu démarrer. Veuillez réessayer.",
+  "article": {
+    "language": "Langue du texte",
+    "eyebrow": "Un temps de pause",
+    "page": "Ouvrir la page de lecture",
+    "original": "Lire l’original allemand",
+    "note": "Traduction du texte allemand par intelligence artificielle.",
+    "back": "Retour au menu"
+  }
+}

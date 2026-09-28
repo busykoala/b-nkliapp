@@ -1,0 +1,18 @@
+{
+  "tagline": "Scuvrir lieus. Far ina pausa.",
+  "outside": "Sin via",
+  "around": "Entuorn ils bancs",
+  "pause": "In mument da pausa",
+  "essay": "Patratgs sin in banc",
+  "essayHint": "In essai dad Urs",
+  "closeReading": "Serrar il text",
+  "installFailed": "L’installaziun n’ha betg pudì cumenzar. Emprova anc ina giada.",
+  "article": {
+    "language": "Lingua dal text",
+    "eyebrow": "In mument da pausa",
+    "page": "Avrir la pagina da lectura",
+    "original": "Leger l’original tudestg",
+    "note": "Translaziun dal tudestg en rumantsch grischun cun intelligenza artifiziala.",
+    "back": "Enavos al menu"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "tagline": "Orte entdecken. Innehalten.",
+  "outside": "Unterwegs",
+  "around": "Rund ums Bänkli",
+  "pause": "Zum Innehalten",
+  "essay": "Gedanken am Bänkli",
+  "essayHint": "Ein Essay von Urs",
+  "closeReading": "Lesetext schliessen",
+  "installFailed": "Die Installation konnte nicht gestartet werden. Bitte versuche es erneut.",
+  "article": {
+    "language": "Sprache des Textes",
+    "eyebrow": "Zum Innehalten",
+    "page": "Eigene Leseseite öffnen",
+    "original": "Deutsches Original lesen",
+    "note": "Ein Beitrag von Urs für die Bänkli App.",
+    "back": "Zurück zum Menü"
+  }
+}

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "../features/bench-detail/bench-detail.css";
+@import "../components/app-menu.css";
+@import "../features/reading/reading.css";
 
 @font-face {
   font-family: "Source Sans 3";
@@ -649,23 +651,6 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
   color: #315d51;
 }
 .menu-dot { position: absolute; top: .45rem; right: .4rem; width: .45rem; height: .45rem; border-radius: 50%; background: #d89c2e; box-shadow: 0 0 0 2px #faf5e5; }
-.app-menu-dialog { width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; }
-.app-menu-dialog::backdrop { background: rgb(25 38 35 / 30%); backdrop-filter: blur(3px); }
-.app-menu-sheet {
-  position: absolute;
-  right: .75rem;
-  top: max(.75rem, env(safe-area-inset-top));
-  width: min(20rem, calc(100vw - 1.5rem));
-  overflow: hidden;
-  border: 1px solid rgb(68 64 50 / 14%);
-  border-radius: 1.6rem;
-  background: #faf3df;
-  box-shadow: 0 24px 70px rgb(22 39 35 / 26%);
-}
-.app-menu-sheet > header { display: flex; min-height: 3.5rem; align-items: center; justify-content: space-between; padding: .55rem .7rem .35rem 1.1rem; font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; }
-.app-menu-sheet > header h2 { font: inherit; }
-.app-menu-sheet > header button { display: grid; min-width: 2.75rem; min-height: 2.75rem; place-items: center; border-radius: 999px; }
-.app-menu-sheet nav { padding: .25rem .6rem; }
 .language-preference { margin: .3rem .75rem .15rem; border-top: 1px solid rgb(65 69 54 / 12%); padding-top: .6rem; }
 .language-switcher { display: flex; min-height: 2.75rem; align-items: center; gap: .6rem; color: #30483f; }
 .language-switcher svg { flex-shrink: 0; }
@@ -686,10 +671,6 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .dialect-switch.is-on { background: #356f5c; }
 .dialect-switch.is-on > span { transform: translateX(1.12rem); }
 .dialect-preference > p { margin: .1rem 0 .4rem 1.6rem; color: #8a3328; font-size: .75rem; }
-.app-menu-row { display: flex; width: 100%; min-height: 3.35rem; align-items: center; gap: .8rem; border-top: 1px solid rgb(65 69 54 / 9%); padding: .65rem .65rem; color: #30483f; text-align: left; }
-.app-menu-group-label { margin: .55rem .65rem .1rem; color: #536e5b; font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.app-menu-row.is-current { border-radius: .9rem; background: rgb(74 111 86 / 9%); }
-.app-menu-row small { margin-left: auto; min-width: 1.45rem; border-radius: 999px; background: #e6d6ab; padding: .1rem .35rem; text-align: center; }
 .ios-help { display: flex; gap: .6rem; margin: .5rem .75rem; border-radius: 1rem; background: rgb(224 212 179 / 55%); padding: .75rem; font-size: .875rem; line-height: 1.35; }
 
 .calm-filter-panel { border: 1px solid rgb(70 66 52 / 13%); border-radius: 1.65rem; background: rgb(250 244 226 / 97%); box-shadow: 0 20px 60px rgb(24 42 38 / 22%); backdrop-filter: blur(18px); }
@@ -963,9 +944,6 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .profile-nav-actions { display: flex; align-items: center; gap: .45rem; }
 .profile-logout { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .35rem; border-radius: 999px; padding: 0 .7rem; color: rgb(41 66 57 / 85%); font-size: .875rem; font-weight: 700; }
 .profile-logout:hover, .profile-logout:focus-visible { background: rgb(255 249 232 / 66%); color: #315e50; outline: none; }
-.app-menu-avatar { display: grid; width: 1.8rem; height: 1.8rem; flex: 0 0 1.8rem; place-items: center; overflow: hidden; border-radius: 50%; }
-.app-menu-avatar .trail-avatar,
-.app-menu-avatar .trail-avatar.is-compact { display: block; width: 1.8rem; height: 1.8rem; }
 .marker-light-key { display: flex; min-height: 2.5rem; align-items: center; gap: .85rem; margin: -.35rem 0 .85rem; padding: .45rem .15rem .65rem; border-bottom: 1px solid rgb(44 69 59 / 9%); color: rgb(41 66 57 / 85%); font-size: .875rem; }
 .marker-light-key span { display: inline-flex; align-items: center; gap: .32rem; white-space: nowrap; }
 .marker-light-key i { width: .65rem; height: .65rem; border: 2px solid #fff4d8; border-radius: 50%; box-shadow: 0 0 0 1px rgb(66 58 43 / 16%); }
@@ -1586,7 +1564,7 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 }
 
 /* Utility surfaces stay quiet; the illustrated place and story retain their paper. */
-.utility-sheet, .journey-panel, .contribution-sheet, .calm-filter-panel, .app-menu-sheet {
+.utility-sheet, .journey-panel, .contribution-sheet, .calm-filter-panel {
   background: #fffdf7; background-image: none; border-radius: 1rem; color: #294239;
 }
 .contribution-sheet::before, .utility-sheet::before { display: none; }
@@ -1811,16 +1789,6 @@ details[open] > summary .disclosure-chevron { transform: rotate(180deg); }
 .account-password-field button:focus-visible { outline: 3px solid #326b58; outline-offset: -2px; }
 .account-field-hint { display: block; margin-top: .3rem; color: #52665b; }
 
-.app-menu-sheet { max-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top))); overflow-y: auto; overscroll-behavior: contain; }
-.app-menu-account { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto; align-items: center; gap: .7rem; margin: .15rem .65rem .35rem; border-radius: .85rem; background: #edf0e5; padding: .65rem; color: #294239; }
-.app-menu-account.is-current { box-shadow: inset 0 0 0 2px rgb(49 95 78 / 24%); }
-.app-menu-account-avatar { display: grid; width: 3rem; height: 3rem; place-items: center; overflow: hidden; border-radius: 50%; }
-.app-menu-account-avatar .trail-avatar { width: 3rem; height: 3rem; }
-.app-menu-account small, .app-menu-account strong { display: block; min-width: 0; overflow-wrap: anywhere; }
-.app-menu-account small { color: #52675d; font-size: .75rem; }
-.app-menu-account strong { margin-top: .1rem; font-size: .9rem; }
-.app-menu-signout { margin: .15rem .75rem .75rem; border-top: 1px solid rgb(65 69 54 / 12%); padding-top: .45rem; }
-.app-menu-signout button { display: inline-flex; min-height: 44px; align-items: center; gap: .45rem; padding: .45rem .65rem; color: #7d4a43; font-size: .875rem; font-weight: 650; }
 
 .profile-journal { overflow-x: clip; }
 .profile-jump-links { display: flex; gap: .45rem; overflow-x: auto; margin: -.25rem 0 .2rem; padding: .25rem 0; scroll-snap-type: x proximity; }

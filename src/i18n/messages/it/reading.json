@@ -1,0 +1,18 @@
+{
+  "tagline": "Scoprire luoghi. Fermarsi.",
+  "outside": "In cammino",
+  "around": "Intorno alle panchine",
+  "pause": "Un momento di pausa",
+  "essay": "Pensieri su una panchina",
+  "essayHint": "Un saggio di Urs",
+  "closeReading": "Chiudi il testo",
+  "installFailed": "Non è stato possibile avviare l’installazione. Riprova.",
+  "article": {
+    "language": "Lingua del testo",
+    "eyebrow": "Un momento di pausa",
+    "page": "Apri la pagina di lettura",
+    "original": "Leggi l’originale tedesco",
+    "note": "Traduzione dal tedesco con intelligenza artificiale.",
+    "back": "Torna al menu"
+  }
+}
