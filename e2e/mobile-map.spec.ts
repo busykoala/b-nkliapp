@@ -142,8 +142,13 @@ test("Escape closes a filter over a bench without dismissing the bench", async (
 test("browser Back and Forward restore an internally opened bench", async ({ page }) => {
   await page.goto("/");
   const search = page.getByRole("combobox", { name: "Ort suchen" });
-  await search.fill("Lindenhof");
-  await page.locator(".map-search-results").getByRole("option").first().click();
+  const firstResult = page.locator(".map-search-results").getByRole("option").first();
+  await expect(async () => {
+    await search.fill("");
+    await search.fill("Lindenhof");
+    await expect(firstResult).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 20_000 });
+  await firstResult.click();
   const bench = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(bench).toBeVisible();
   await expect(bench.getByRole("heading", { name: "Lindenhof, Zürich" })).toBeVisible();
