@@ -59,6 +59,7 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await page.getByRole("button", { name: "Zurück", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Meine Lieblingsplätze" })).toBeVisible();
   await expect(savedBench).toBeFocused();
+  await page.screenshot({ path: testInfo.outputPath("saved-places-restored.png"), fullPage: true });
   await page.goto("/feed");
   const filters = page.getByRole("navigation", { name: "Feed-Filter" });
   await expect(filters.getByRole("link", { name: "Alle Beiträge" })).toHaveAttribute("aria-current", "page");

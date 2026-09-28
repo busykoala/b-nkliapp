@@ -1,5 +1,33 @@
 import { devices, expect, test } from "@playwright/test";
 
+async function renderedContrast(locator: import("@playwright/test").Locator) {
+  return locator.evaluate((element) => {
+    const parse = (value: string) => {
+      const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+      return { red: channels[0] ?? 0, green: channels[1] ?? 0, blue: channels[2] ?? 0, alpha: channels[3] ?? 1 };
+    };
+    const composite = (foreground: ReturnType<typeof parse>, background: ReturnType<typeof parse>) => {
+      const alpha = foreground.alpha + background.alpha * (1 - foreground.alpha);
+      const channel = (front: number, back: number) => alpha === 0 ? 0 : (front * foreground.alpha + back * background.alpha * (1 - foreground.alpha)) / alpha;
+      return { red: channel(foreground.red, background.red), green: channel(foreground.green, background.green), blue: channel(foreground.blue, background.blue), alpha };
+    };
+    let background = { red: 255, green: 255, blue: 255, alpha: 1 };
+    const layers = [];
+    for (let node: Element | null = element; node; node = node.parentElement) layers.unshift(parse(getComputedStyle(node).backgroundColor));
+    for (const layer of layers) background = composite(layer, background);
+    const foreground = composite(parse(getComputedStyle(element).color), background);
+    const luminance = (color: typeof background) => {
+      const linear = [color.red, color.green, color.blue].map((channel) => {
+        const value = channel / 255;
+        return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+      });
+      return .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
+    };
+    const [light, dark] = [luminance(foreground), luminance(background)].sort((left, right) => right - left);
+    return (light + .05) / (dark + .05);
+  });
+}
+
 async function registerUser(page: import("@playwright/test").Page, username: string) {
   await page.goto("/");
   await page.getByLabel("Menü öffnen").click();
@@ -317,13 +345,14 @@ test("keeps long-page navigation available and returns to the calling section", 
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(sourceScroll);
 });
 
-test("activates the raster fallback when the vector style fails", async ({ page }) => {
+test("activates the raster fallback when the vector style fails", async ({ page }, testInfo) => {
   await page.route("https://vectortiles.geo.admin.ch/styles/**", (route) => route.abort("failed"));
   await page.goto("/");
   const map = page.getByLabel("Karte der Schweizer Sitzbänke");
   await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 5_000 });
   await expect(map).toHaveAttribute("data-map-ready", "true");
   await expect(page.getByLabel("Ort suchen")).toBeEnabled();
+  await page.screenshot({ path: testInfo.outputPath("map-raster-fallback.png"), fullPage: false });
 });
 
 test("stops waiting for a delayed vector style after three seconds", async ({ page }) => {
@@ -467,6 +496,12 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "full");
+  const content = shell.locator(".map-sheet-content");
+  const readingPosition = await content.evaluate((node) => {
+    node.scrollTop = Math.min(240, node.scrollHeight - node.clientHeight);
+    return node.scrollTop;
+  });
+  expect(readingPosition).toBeGreaterThan(0);
   await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
   await expect(shell).toHaveAttribute("data-snap", "peek");
   await expect(shell.locator(".map-sheet-resize")).toHaveAccessibleName("Ganz öffnen. Detailhöhe ändern");
@@ -477,6 +512,7 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await page.screenshot({ path: testInfo.outputPath("minimized-detail-bar.png") });
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "full");
+  await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBe(readingPosition);
   await shell.locator(".map-sheet-resize").click();
   await expect(shell).toHaveAttribute("data-snap", "half");
   await shell.locator(".map-sheet-resize").dispatchEvent("touchstart", { touches: [{ identifier: 1, clientY: 200 }] });
@@ -495,6 +531,44 @@ test("bench, journey and walk use one mobile sheet handle with consistent snap g
   await page.locator(".walk-entry").click();
   await expect(shell).toHaveAttribute("aria-label", "Spaziergang entdecken");
   await expect(shell.locator(".map-sheet-handle")).toBeVisible();
+});
+
+test("keeps the bench task readable at 200% text on a 320 CSS-pixel viewport", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/?bank=osm-node-101");
+  await page.addStyleTag({ content: ":root { font-size: 200% !important; }" });
+
+  const shell = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(shell.getByRole("heading", { name: "Lindenhof, Zürich" })).toBeVisible();
+  await expect(shell.getByRole("button", { name: "Weg planen" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+
+  await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
+  await expect(shell).toHaveAttribute("data-snap", "peek");
+  const chrome = shell.locator(".map-sheet-chrome");
+  const bounds = await chrome.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(-2);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(322);
+  await expect(shell.getByRole("button", { name: "Bank schliessen" })).toBeVisible();
+  await expect(shell.getByRole("button", { name: "Ganz öffnen. Detailhöhe ändern" })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("bench-task-200-percent-text.png") });
+});
+
+test("renders task, selected-filter, muted, and watercolor text with sufficient contrast", async ({ page }) => {
+  await page.goto("/?bank=osm-node-101");
+  const shell = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(shell.getByRole("heading", { name: "Lindenhof, Zürich" })).toBeVisible();
+  expect(await renderedContrast(shell.getByRole("heading", { name: "Lindenhof, Zürich" }))).toBeGreaterThanOrEqual(4.5);
+  const muted = shell.locator(".bench-freshness").first();
+  if (await muted.isVisible()) expect(await renderedContrast(muted)).toBeGreaterThanOrEqual(4.5);
+
+  await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
+  expect(await renderedContrast(shell.locator(".map-sheet-collapsed-title"))).toBeGreaterThanOrEqual(4.5);
+  await page.getByRole("button", { name: "Filter öffnen" }).click();
+  const shade = page.getByRole("dialog", { name: "Was brauchst du?" }).getByRole("button", { name: "Schatten", exact: true });
+  await shade.click();
+  expect(await renderedContrast(shade)).toBeGreaterThanOrEqual(4.5);
 });
 
 test("opens a shared bench with the map already focused underneath", async ({ page }) => {

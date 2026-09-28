@@ -10,6 +10,7 @@ async function openDirectionCard(page: import("@playwright/test").Page) {
 
 test("renders observed, estimated and missing directions at mobile and desktop sizes", async ({ page }, testInfo) => {
   const database = fixtureDatabase();
+  let reviewRowId: number | null = null;
   try {
     const unknown = database.prepare(
       "SELECT row_id,id,latitude,longitude FROM benches WHERE id='osm-node-112'",
@@ -38,7 +39,19 @@ test("renders observed, estimated and missing directions at mobile and desktop s
     card = await openDirectionCard(page);
     await expect(card.locator("strong")).toContainText(/nicht erfasst/i);
     await card.screenshot({ path: testInfo.outputPath("missing-direction-mobile.png"), animations: "disabled" });
+
+    expect(database.prepare("SELECT 1 FROM bench_attribute_state WHERE bench_row_id=? AND attribute='backrest'").get(unknown.row_id)).toBeUndefined();
+    database.prepare(`INSERT OR REPLACE INTO bench_attribute_state(
+      bench_row_id,attribute,value_json,confidence,conflicting,evidence_count,source_types_json,
+      latest_at,method_version,resolved_at
+    ) VALUES(?,'backrest','true','low',1,2,'["osm","community"]','2026-09-05','e2e-review','2999-01-01')`).run(unknown.row_id);
+    reviewRowId = unknown.row_id;
+    await page.goto("/bank/osm-node-112");
+    const summary = page.locator(".bench-summary").first();
+    await expect(summary).toContainText(/widersprüch/i);
+    await summary.screenshot({ path: testInfo.outputPath("conflicting-evidence-mobile.png"), animations: "disabled" });
   } finally {
+    if (reviewRowId !== null) database.prepare("DELETE FROM bench_attribute_state WHERE bench_row_id=? AND attribute='backrest' AND method_version='e2e-review'").run(reviewRowId);
     database.close();
   }
 });

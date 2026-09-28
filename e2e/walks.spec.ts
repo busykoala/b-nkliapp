@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("opens a separate calm walk planner without requesting location or routing", async ({ page }) => {
+test("opens a separate calm walk planner without requesting location or routing", async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = () => { throw new Error("Unexpected location request"); }; });
   await page.goto("/");
@@ -20,6 +20,7 @@ test("opens a separate calm walk planner without requesting location or routing"
   await expect(panel.getByText(/Keine Zusage zu Barrierefreiheit/)).toBeVisible();
   await notes.click();
   await expect(panel.getByRole("combobox", { name: "Schwierigkeit" })).toHaveValue("easy");
+  await page.screenshot({ path: testInfo.outputPath("walk-input.png"), fullPage: false });
   await panel.getByLabel("Spaziergang schliessen").click();
   await expect(panel).toHaveCount(0);
 });
