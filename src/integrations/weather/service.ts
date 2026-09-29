@@ -1,6 +1,7 @@
 import { readWeatherSample } from "./repository";
 import { wgs84ToLv95 } from "@/lib/elevation";
 import type { PrecipitationType } from "@/lib/types";
+import { iconCloudPercentToFraction } from "./units";
 
 export type LocalWeather = {
   temperatureC: number;
@@ -27,11 +28,6 @@ function snapshotValue(parameter: string, easting: number, northing: number, max
   const sample = readWeatherSample(parameter, easting, northing);
   if (!sample || Date.now() - new Date(sample.validAt).getTime() > maximumAgeHours * 3_600_000) return null;
   return sample;
-}
-
-function fraction(value: number | null | undefined) {
-  if (value == null) return null;
-  return Math.max(0, Math.min(1, value > 1 ? value / 100 : value));
 }
 
 function precipitationKind(input: {
@@ -88,10 +84,10 @@ export function getLocalWeather(latitude: number, longitude: number, elevationMe
     windKmh: null,
     humidityPercent: null,
     globalRadiationWm2: null,
-    cloudCover: fraction(cloudTotal?.value),
-    cloudLow: fraction(cloudLow?.value),
-    cloudMid: fraction(cloudMid?.value),
-    cloudHigh: fraction(cloudHigh?.value),
+    cloudCover: iconCloudPercentToFraction(cloudTotal?.value),
+    cloudLow: iconCloudPercentToFraction(cloudLow?.value),
+    cloudMid: iconCloudPercentToFraction(cloudMid?.value),
+    cloudHigh: iconCloudPercentToFraction(cloudHigh?.value),
     snowCoverPercent: snowCover?.value == null ? null : Math.max(0, Math.min(100, snowCover.value)),
     snowDepthCm: snowDepth?.value == null ? null : Math.max(0, snowDepth.value * 100),
     snowfallLimitMeters: snowfallLimit?.value ?? null,

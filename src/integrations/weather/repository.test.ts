@@ -33,10 +33,20 @@ describe("stored weather", () => {
       VALUES('test',?,?,?, ?,?,100,2,2,?,NULL,?)
     `);
     insert.run("T_2M", now, now, point.easting, point.northing, values, now);
+    for (const [parameter, value] of [["CLCT", 1], ["CLCL", .5], ["CLCM", 25], ["CLCH", 100]] as const) {
+      const clouds = Buffer.alloc(16);
+      for (let index = 0; index < 4; index++) clouds.writeFloatLE(value, index * 4);
+      insert.run(parameter, now, now, point.easting, point.northing, clouds, now);
+    }
     const fetcher = vi.spyOn(globalThis, "fetch");
 
     expect(readWeatherSample("T_2M", point.easting + 100, point.northing + 100)).toEqual({ value: 283, validAt: now });
-    expect(getLocalWeather(47.37674, 8.54183)?.temperatureC).toBeCloseTo(6.85, 2);
+    const weather = getLocalWeather(47.37674, 8.54183);
+    expect(weather?.temperatureC).toBeCloseTo(6.85, 2);
+    expect(weather?.cloudCover).toBeCloseTo(.01, 5);
+    expect(weather?.cloudLow).toBeCloseTo(.005, 5);
+    expect(weather?.cloudMid).toBeCloseTo(.25, 5);
+    expect(weather?.cloudHigh).toBe(1);
     expect(fetcher).not.toHaveBeenCalled();
     sqlite.close();
   });

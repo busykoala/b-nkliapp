@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sqlite } from "@/db/client";
 import { readWeatherSample } from "@/integrations/weather/repository";
+import { iconCloudPercentToFraction } from "@/integrations/weather/units";
 import { wgs84ToLv95 } from "@/lib/elevation";
 import { assertContributorAllowed, consumeRateLimit, contributorHashForUser, getContributorIdentity, requireUser } from "@/lib/security";
 import type { ActionResult } from "@/lib/types";
@@ -60,7 +61,7 @@ export async function submitLightObservation(benchId: string, choiceInput: unkno
     if (!context) return { ok: false, message: t("community.result.lightNight") };
     const { season, dayPhase } = context;
     const { easting, northing } = wgs84ToLv95(bench.latitude, bench.longitude);
-    const cloudCover = readWeatherSample("CLCT", easting, northing)?.value ?? null;
+    const cloudCover = iconCloudPercentToFraction(readWeatherSample("CLCT", easting, northing)?.value);
     const recent = sqlite.prepare(`
       SELECT id FROM bench_light_observations WHERE bench_row_id=? AND user_id=? AND retracted_at IS NULL
         AND observed_at>=datetime('now','-30 minutes') ORDER BY observed_at DESC LIMIT 1

@@ -24,7 +24,7 @@ import type { MapSheetPresentation } from "@/components/map-sheet-shell";
 import type { JourneyDraftSnapshot } from "@/features/journey/components/use-journey-planner";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/features/map/watercolor-style";
 import { featureCollection, lastInspectedBenchFeature, selectedAmenityFeature, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/features/map/renderer";
-import { visibleMapQuery, captureMapCamera, pushBenchHistoryEntry, readBenchHistoryEntry, restoreMapCamera, type ActiveMapTask, type BenchReturnContext } from "@/features/map/navigation";
+import { benchHistoryCloseAction, visibleMapQuery, captureMapCamera, pushBenchHistoryEntry, readBenchHistoryEntry, restoreMapCamera, type ActiveMapTask, type BenchReturnContext, type PendingBenchHistoryClose } from "@/features/map/navigation";
 
 const WalkPlanner = dynamic(() => import("@/features/walks/components/walk-planner").then((m) => m.WalkPlanner), { ssr: false, loading: WalkLoading });
 const JourneyPlanner = dynamic(() => import("@/features/journey/components/journey-planner").then((m) => m.JourneyPlanner), {
@@ -65,6 +65,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const lastInspectedRef = useRef<LastInspectedBench | null>(initialBench ? null : sessionLastInspectedBench);
   const pendingPosition = useRef<UserPosition | null>(null);
   const openedFromUrl = useRef<string | null>(initialBench?.id ?? null);
+  const pendingHistoryClose = useRef<PendingBenchHistoryClose | null>(null);
   const initialBenchRef = useRef(initialBench);
   const initialFocusDone = useRef(false);
   const filtersRef = useRef<MapFilters>({});
@@ -491,7 +492,14 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
         dataset.centerLatitude = center.lat.toFixed(6);
         dataset.centerLongitude = center.lng.toFixed(6);
         dataset.zoom = map.getZoom().toFixed(2);
-        dataset.cameraMoving = String(map.isMoving());
+        // A shared/deep-linked bench is focused in the URL-sync effect after
+        // the map becomes interactive. Until that first focus has actually
+        // started, exposing `cameraMoving=false` creates a false settled frame:
+        // callers can snapshot the constructor camera while the bench-offset
+        // animation is about to move it. Keep the public camera contract busy
+        // through that hand-off; the normal move/moveend events then take over.
+        const initialBenchFocusPending = Boolean(sharedBench && !initialFocusDone.current);
+        dataset.cameraMoving = String(initialBenchFocusPending || map.isMoving());
       };
       syncCameraState();
       map.on("movestart", syncCameraState);
@@ -594,8 +602,19 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   }, [mapReady, bench, searchParams, locateAmenity]);
 
   const choosePlace = (place: PlaceResult) => {
-    mapRef.current?.easeTo({ center: [place.longitude, place.latitude], zoom: place.kind === "bench" ? 17 : 14 });
-    if (!placingRef.current && place.kind === "bench" && place.benchId) openBenchTask(place.benchId, { kind: "map", cameraInteraction: mapInteraction.current }, false, place);
+    const map = mapRef.current;
+    const zoom = place.kind === "bench" ? 17 : 14;
+    if (!placingRef.current && place.kind === "bench" && place.benchId) {
+      const camera = map ? {
+        ...captureMapCamera(map),
+        center: [place.longitude, place.latitude] as [number, number],
+        zoom,
+      } : undefined;
+      map?.easeTo({ center: [place.longitude, place.latitude], zoom });
+      openBenchTask(place.benchId, { kind: "map", camera, cameraInteraction: mapInteraction.current }, false, place);
+      return;
+    }
+    map?.easeTo({ center: [place.longitude, place.latitude], zoom });
   };
   const openAdd = () => {
     const center = mapRef.current?.getCenter();
@@ -669,15 +688,19 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const closeBenchFromUi = () => {
     const selected = selectedId;
     const historyEntry = readBenchHistoryEntry(window.history.state);
-    closeBench();
     if (selected && historyEntry?.benchId === selected) {
-      // Keep the current URL selection marked as handled until Back has
-      // actually committed. WebKit may deliver that navigation after React
-      // has rendered the local close; clearing this early would let the
-      // still-current ?bank= URL immediately reopen the sheet.
-      window.history.back();
+      // Bench entries opened inside the app own one history entry. Keep the
+      // sheet mounted until that entry is actually left: closing local state
+      // first lets WebKit and Next disagree about which camera/return context
+      // belongs to the visible URL. If Next has not committed the pushed URL
+      // yet, the URL-sync effect starts Back as soon as both views agree.
+      const pending = { benchId: selected, backStarted: searchParams.get("bank") === selected };
+      pendingHistoryClose.current = pending;
+      if (pending.backStarted) window.history.back();
       return;
     }
+    pendingHistoryClose.current = null;
+    closeBench();
     openedFromUrl.current = null;
     const url = new URL(window.location.href);
     url.searchParams.delete("bank");
@@ -689,6 +712,27 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     // Native history updates window.location synchronously; useSearchParams can
     // lag by one render while the local task state has already changed.
     const requestedBench = new URL(window.location.href).searchParams.get("bank");
+    const routerRequestedBench = searchParams.get("bank");
+    const pendingClose = pendingHistoryClose.current;
+    if (pendingClose) {
+      const action = benchHistoryCloseAction(pendingClose, requestedBench, routerRequestedBench);
+      if (action === "back") {
+        pendingClose.backStarted = true;
+        window.history.back();
+        return;
+      }
+      if (action === "complete") {
+        pendingHistoryClose.current = null;
+        openedFromUrl.current = null;
+        if (selectedId === pendingClose.benchId) closeBench();
+        return;
+      }
+      if (action === "wait") return;
+      // Another navigation replaced the bench before the pending close
+      // completed. Abandon the stale close and let the normal URL branch below
+      // open the new task.
+      pendingHistoryClose.current = null;
+    }
     const map = mapRef.current;
     if (!mapReady || !map) return;
     // Auth refreshes may complete from a route tree captured before placement

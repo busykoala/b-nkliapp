@@ -7,6 +7,7 @@ import { distanceMeters } from "@/features/journey/model";
 import { pathTimes, routePoint, type WalkPath } from "@/features/routing/walking";
 import type { RouteEvidence, WalkQuery } from "@/features/walks/model";
 import { loadWeatherGrid, sampleWeatherGrid } from "@/integrations/weather/repository";
+import { iconCloudPercentToFraction } from "@/integrations/weather/units";
 
 type Cell = { quiet: number; road_noise_db?: number | null; road_night_noise_db?: number | null; rail_day_noise_db?: number | null; rail_night_noise_db?: number | null; noise_versions?: string | null; nature: number; water: number; view: number | null; canopy: number; horizon: string | null; latitude: number; longitude: number; updated_at: string };
 // Internal preference contribution, not an acoustic sum or a peacefulness measurement.
@@ -69,7 +70,8 @@ export function evaluateRoute(path: WalkPath, query: WalkQuery): RouteEvidence {
           const direct = blocked ? 0 : 1 - c.canopy * leaf;
           const cloudValue = clouds && Math.abs(at.getTime() - Date.parse(clouds.valid_at)) <= 3600000 ? sampleWeatherGrid(clouds, latitude, longitude) : null;
           if (cloudValue === null) continue;
-          const cloud = Math.max(0, Math.min(1, cloudValue > 1 ? cloudValue / 100 : cloudValue));
+          const cloud = iconCloudPercentToFraction(cloudValue);
+          if (cloud === null) continue;
           lightKnown += weight; lit += (query.light === "shade" ? 1 - direct : direct) * (1 - cloud) * weight;
         }
       }

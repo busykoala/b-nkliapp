@@ -36,6 +36,32 @@ export type BenchHistoryEntry = {
   returnContext: BenchReturnContext;
 };
 
+export type PendingBenchHistoryClose = {
+  benchId: string;
+  backStarted: boolean;
+};
+
+export type BenchHistoryCloseAction = "wait" | "back" | "complete" | "abandon";
+
+/**
+ * Reconciles the synchronous History API URL with Next's asynchronous
+ * useSearchParams view while an app-owned bench entry is being closed.
+ */
+export function benchHistoryCloseAction(
+  pending: PendingBenchHistoryClose,
+  browserBenchId: string | null,
+  routerBenchId: string | null,
+): BenchHistoryCloseAction {
+  if (browserBenchId === null && routerBenchId === null) return "complete";
+  if (!pending.backStarted) {
+    if (browserBenchId === pending.benchId && routerBenchId === pending.benchId) return "back";
+    if (browserBenchId !== null && browserBenchId !== pending.benchId) return "abandon";
+    return "wait";
+  }
+  if (browserBenchId !== null && browserBenchId !== pending.benchId) return "abandon";
+  return "wait";
+}
+
 /** Push application data only; Next.js adds its own private history state. */
 export function pushBenchHistoryEntry(benchId: string, returnContext: BenchReturnContext) {
   const url = new URL(window.location.href);

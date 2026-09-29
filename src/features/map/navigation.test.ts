@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { pushBenchHistoryEntry, readBenchHistoryEntry, type BenchReturnContext } from "./navigation";
+import { benchHistoryCloseAction, pushBenchHistoryEntry, readBenchHistoryEntry, type BenchReturnContext } from "./navigation";
 
 // No DOM runtime is needed: only the public History API boundary is mocked.
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -39,4 +39,18 @@ describe("bench history", () => {
     expect(readBenchHistoryEntry(state)).toEqual({ version: 1, task: "bench", benchId: "bench / 1", returnContext });
     expect(new URL(path, "https://benchly.example").searchParams.get("bank")).toBe("bench / 1");
   });
+  it("waits for Next to commit an owned bench URL before traversing history", () => {
+    const pending = { benchId: "osm-node-101", backStarted: false };
+    expect(benchHistoryCloseAction(pending, "osm-node-101", null)).toBe("wait");
+    expect(benchHistoryCloseAction(pending, "osm-node-101", "osm-node-101")).toBe("back");
+    expect(benchHistoryCloseAction(pending, null, null)).toBe("complete");
+  });
+
+  it("completes an owned close only after both URL views reached the return entry", () => {
+    const pending = { benchId: "osm-node-101", backStarted: true };
+    expect(benchHistoryCloseAction(pending, null, "osm-node-101")).toBe("wait");
+    expect(benchHistoryCloseAction(pending, null, null)).toBe("complete");
+    expect(benchHistoryCloseAction(pending, "osm-node-202", "osm-node-202")).toBe("abandon");
+  });
+
 });
