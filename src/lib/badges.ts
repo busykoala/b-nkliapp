@@ -1,4 +1,3 @@
-import { sqlite } from "@/db/client";
 import type Database from "better-sqlite3";
 
 export const badgeCatalog = [
@@ -17,7 +16,7 @@ export const badgeCatalog = [
 export type BadgeKey = typeof badgeCatalog[number]["key"];
 export type BadgeMetric = typeof badgeCatalog[number]["metric"];
 
-export function getUserActivity(userId: number, database: Database.Database = sqlite) {
+export function getUserActivity(userId: number, database: Database.Database) {
   const row = database.prepare(`
     SELECT
       (SELECT count(*) FROM benches WHERE created_by_user_id=@userId) added,
@@ -32,14 +31,14 @@ export function getUserActivity(userId: number, database: Database.Database = sq
   return { ...row, total } as Record<BadgeMetric, number> & { edited: number };
 }
 
-export function refreshUserBadges(userId: number, database: Database.Database = sqlite) {
+export function refreshUserBadges(userId: number, database: Database.Database) {
   const activity = getUserActivity(userId, database);
   const now = new Date().toISOString();
   const insert = database.prepare("INSERT OR IGNORE INTO user_badges(user_id,badge_key,awarded_at) VALUES(?,?,?)");
   for (const badge of badgeCatalog) if (activity[badge.metric] >= badge.target) insert.run(userId, badge.key, now);
 }
 
-export function getUserBadges(userId: number, database: Database.Database = sqlite) {
+export function getUserBadges(userId: number, database: Database.Database) {
   const activity = getUserActivity(userId, database);
   const earned = new Set((database.prepare("SELECT badge_key FROM user_badges WHERE user_id=?").all(userId) as Array<{ badge_key: string }>).map((row) => row.badge_key));
   return badgeCatalog.map((badge) => ({ ...badge, earned: earned.has(badge.key), progress: Math.min(activity[badge.metric], badge.target) }));

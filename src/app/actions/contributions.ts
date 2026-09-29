@@ -73,7 +73,7 @@ export async function submitRating(benchId: string, _previous: ActionResult | nu
       parsed.data.clearDetails ? null : parsed.data.quiet ?? null,
       parsed.data.note || null, now, now, user.id,
       parsed.data.clearDetails ? 1 : 0, parsed.data.clearDetails ? 1 : 0, parsed.data.clearDetails ? 1 : 0);
-    refreshUserBadges(user.id);
+    refreshUserBadges(user.id, sqlite);
     revalidatePath("/");
     revalidatePath(`/bank/${benchId}`);
     return { ok: true, message: t("community.result.ratingSaved") };
@@ -98,7 +98,7 @@ export async function submitCorrection(benchId: string, _previous: ActionResult 
       .run(rowId, contributorHash, parsed.data.field);
     sqlite.prepare(`INSERT INTO corrections (bench_row_id, contributor_hash, field, proposed_value, note, visible, created_at, user_id) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`)
       .run(rowId, contributorHash, parsed.data.field, correctionValues[parsed.data.field], parsed.data.note || null, new Date().toISOString(), user.id);
-    refreshUserBadges(user.id);
+    refreshUserBadges(user.id, sqlite);
     revalidatePath("/");
     revalidatePath(`/bank/${benchId}`);
     return { ok: true, message: t("community.result.correctionSaved") };

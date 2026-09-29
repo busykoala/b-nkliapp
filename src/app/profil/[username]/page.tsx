@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { sqlite } from "@/db/client";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProfileJournal } from "@/features/account/components/profile-journal";
@@ -18,5 +19,5 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const profile = getTrailProfileByUsername((await params).username);
   if (!profile) notFound();
   const viewer = await getCurrentUser();
-  return <ProfileJournal profile={profile} badges={[...getUserBadges(profile.id)]} viewer={viewer} own={viewer?.id === profile.id} />;
+  return <ProfileJournal profile={profile} badges={[...getUserBadges(profile.id, sqlite)]} viewer={viewer} own={viewer?.id === profile.id} />;
 }

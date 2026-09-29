@@ -127,7 +127,7 @@ export async function addBench(_previous: AddBenchResult | null, formData: FormD
     });
     const result = transaction.immediate();
     if (!result.ok) return result;
-    refreshUserBadges(user.id);
+    refreshUserBadges(user.id, sqlite);
     refresh(id);
     return result;
   } catch (error) { return { ok: false, message: actionError(t, error, "submission.result.addFailed") }; }
@@ -140,8 +140,8 @@ export async function confirmBench(benchId: string): Promise<ActionResult> {
     const rowId = rowFor(benchId);
     const now = new Date().toISOString();
     const result = recordBenchPresence(sqlite, rowId, user.id, threshold, now);
-    if (result.added) refreshUserBadges(user.id);
-    if (result.verified && result.creatorUserId) refreshUserBadges(result.creatorUserId);
+    if (result.added) refreshUserBadges(user.id, sqlite);
+    if (result.verified && result.creatorUserId) refreshUserBadges(result.creatorUserId, sqlite);
     refresh(benchId);
     if (!result.refreshed) return { ok: true, message: t("submission.result.alreadyConfirmed") };
     if (result.alreadyVerified) return { ok: true, message: t("submission.result.presenceConfirmed") };
@@ -154,7 +154,7 @@ export async function requestBenchRemoval(benchId: string): Promise<ActionResult
   try {
     const user = await writeActor("remove-bench", 30, 100); const rowId = rowFor(benchId); const now = new Date().toISOString();
     const result = recordRemovalConfirmation(sqlite, rowId, user.id, threshold, now);
-    if (result.added) refreshUserBadges(user.id);
+    if (result.added) refreshUserBadges(user.id, sqlite);
     refresh(benchId);
     if (!result.added) return { ok: false, message: t("submission.result.alreadyMissing") };
     return { ok: true, message: result.removed ? t("submission.result.removed") : t("submission.result.removalVotes", { count: threshold - result.count }) };
@@ -177,7 +177,7 @@ export async function editBenchMetadata(benchId: string, _previous: ActionResult
         if (old[field] !== next[field]) insert.run(rowId, user.id, field, old[field], next[field], now);
       }
     });
-    transaction(); refreshUserBadges(user.id); refresh(benchId);
+    transaction(); refreshUserBadges(user.id, sqlite); refresh(benchId);
     return { ok: true, message: t("submission.result.metadataUpdated") };
   } catch (error) { return { ok: false, message: actionError(t, error, "submission.result.metadataFailed") }; }
 }
@@ -223,7 +223,7 @@ export async function editBenchField(benchId: string, fieldInput: unknown, value
         .run(rowId, user.id, field.data, previous.value === null ? null : String(previous.value), String(value), now);
     });
     transaction();
-    refreshUserBadges(user.id);
+    refreshUserBadges(user.id, sqlite);
     refresh(benchId);
     return { ok: true, message: t("submission.result.fieldSaved") };
   } catch (error) {

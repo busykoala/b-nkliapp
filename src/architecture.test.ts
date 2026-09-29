@@ -20,6 +20,11 @@ describe("application boundaries", () => {
     expect(handlers).toEqual(["app/media/panorama/[renderKey]/route.ts"]);
   });
 
+  it("keeps badge calculations independent of the application database singleton", () => {
+    const badges = readFileSync(join(sourceRoot, "lib/badges.ts"), "utf8");
+    expect(badges).not.toContain("@/db/client");
+  });
+
   it("keeps shared libraries independent of UI and application features", () => {
     const invalidImports = filesBelow(join(sourceRoot, "lib"))
       .filter((path) => /\.[jt]sx?$/.test(path))

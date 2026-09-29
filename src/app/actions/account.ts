@@ -42,7 +42,7 @@ export async function register(_previous: ActionResult | null, formData: FormDat
       if (currentInvite) recordReferral(currentInvite, createdUserId, sqlite, now);
       return createdUserId;
     })();
-    if (invite) refreshUserBadges(invite.inviterUserId);
+    if (invite) refreshUserBadges(invite.inviterUserId, sqlite);
     await createUserSession(userId);
     revalidatePath("/", "layout");
     return { ok: true, message: t("account.result.welcome") };

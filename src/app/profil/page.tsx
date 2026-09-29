@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { sqlite } from "@/db/client";
 import { ProfileJournal } from "@/features/account/components/profile-journal";
 import { getUserBadges } from "@/lib/badges";
 import { getTrailProfile } from "@/lib/profile";
@@ -9,6 +10,6 @@ export const dynamic = "force-dynamic";
 export default async function ProfilePage() {
   const user = await getCurrentUser(); if (!user) redirect("/");
   const profile = getTrailProfile(user.id); if (!profile) redirect("/");
-  const badges = getUserBadges(user.id);
+  const badges = getUserBadges(user.id, sqlite);
   return <ProfileJournal profile={profile} badges={[...badges]} viewer={user} own />;
 }
