@@ -76,17 +76,18 @@ test("renders calm watercolor markers from overview to close range", async ({ pa
 
 test("keeps map search and filters clear with keyboard input", async ({ page }, testInfo) => {
   await page.goto("/");
-  await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
   const search = page.getByRole("combobox", { name: "Ort suchen" });
-  // The dev server can finish its first search-action compilation after the
-  // initial page is interactive. If that cold reload clears the field, repeat
-  // the real user action instead of failing a compatibility check.
+  const firstResult = page.locator(".map-search-results").getByRole("option").first();
+  // This scenario exercises the search/filter UI, not basemap startup. On a
+  // cold CI shard MapLibre and the server action can compile after the page is
+  // already interactive. Wait for the user-visible search result itself and
+  // repeat the input if a cold dev reload clears it. Dedicated rendering tests
+  // cover map readiness and the three-second basemap fallback separately.
   await expect(async () => {
+    await search.fill("");
     await search.fill("Lindenhof");
-    await expect(search).toHaveAttribute("aria-expanded", "true");
-  }).toPass({ timeout: 15_000 });
-  const firstResult = page.getByRole("option").first();
-  await expect(firstResult).toBeVisible();
+    await expect(firstResult).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 20_000 });
   await page.screenshot({ path: testInfo.outputPath("map-search-results.png"), fullPage: false });
   await search.press("ArrowDown");
   await expect(firstResult).toHaveAttribute("aria-selected", "true");
