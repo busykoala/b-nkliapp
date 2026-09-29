@@ -17,10 +17,17 @@ import { journeyClock, journeyMinutes, PACE_OPTIONS, type JourneyLeg } from "@/f
 import { useJourneyPlanner, type JourneyDraftSnapshot } from "@/features/journey/components/use-journey-planner";
 import { finalWalkingLeg, journeyExternalLinks } from "@/features/journey/links";
 import { tightestTransfer, type JourneySettings } from "@/features/journey/planner";
-import { MapSheetShell, type MapSheetPresentation } from "@/components/map-sheet-shell";
 import { RouteAccessibilitySummary } from "@/features/routing/components/route-accessibility";
 
-export function JourneyPlanner({ bench, initial, draft, onSnapshot, presentation, onPresentationChange, getMap, onClose }: { bench: { id: string; title: string }; initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string }; draft?: JourneyDraftSnapshot | null; onSnapshot?: (draft: JourneyDraftSnapshot) => void; presentation?: MapSheetPresentation | null; onPresentationChange?: (presentation: MapSheetPresentation) => void; getMap: () => MapLibreMap | null; onClose: () => void }) {
+export type JourneyPlannerBodyProps = {
+  bench: { id: string; title: string };
+  initial?: { origin: JourneyOrigin; destination: JourneyPoint; time: string };
+  draft?: JourneyDraftSnapshot | null;
+  onSnapshot?: (draft: JourneyDraftSnapshot) => void;
+  getMap: () => MapLibreMap | null;
+};
+
+export function JourneyPlannerBody({ bench, initial, draft, onSnapshot, getMap }: JourneyPlannerBodyProps) {
   const t = useTranslations();
   const format = useFormatter();
   const title = useRef<HTMLHeadingElement>(null);
@@ -35,7 +42,7 @@ export function JourneyPlanner({ bench, initial, draft, onSnapshot, presentation
   const { mode, timeMode, time, speed, buffer } = settings;
   useEffect(() => { title.current?.focus(); }, []);
   useEffect(() => { if (result) resultSection.current?.scrollIntoView({ block: "start", behavior: "instant" }); }, [result]);
-  return <MapSheetShell label={t("journey.planner.title")} resizeLabel={t("journey.planner.resize")} expandLabel={t("journey.planner.expand")} compactLabel={t("journey.planner.compact")} minimizeLabel={t("journey.planner.minimize")} minimizeActionLabel={t("journey.planner.minimizeAction")} closeLabel={t("journey.planner.close")} mapLabel={t("journey.planner.map")} onClose={onClose} initialSnap="half" initialPresentation={presentation} onPresentationChange={onPresentationChange}>
+  return <>
       <header><span className="story-eyebrow">{t("journey.planner.eyebrow")}</span><h2 tabIndex={-1} ref={title}>{initial ? t("journey.planner.return") : t("journey.planner.title")}</h2><p className="journey-destination"><MapPin size={15} /> {bench.title || t("common.values.bench")}</p></header>
       <section className="journey-controls" aria-label={t("journey.planner.label")}>
         <StartPicker origin={origin} onChange={chooseOrigin} getMap={getMap} />
@@ -68,7 +75,7 @@ export function JourneyPlanner({ bench, initial, draft, onSnapshot, presentation
         <small>{t("journey.results.fetched", {time: journeyClock(result.fetchedAt), feed: result.feedUpdatedAt ? t("journey.results.feedDate", {date: formatDate(result.feedUpdatedAt, t)}) : t("journey.results.noFeed")})}</small>
       </section>}
       <footer className="journey-sources"><details><summary>{t("routing.controls.goodToKnow")}</summary><p>{t("journey.information.estimates")}</p><p>{t("journey.information.privacy")}</p><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer">{t("journey.information.mapError")}</a></details></footer>
-  </MapSheetShell>;
+  </>;
 }
 function TransportArt({ mode }: { mode: JourneyLeg["mode"] }) {
   return mode === "walk" ? <Footprints size={26} /> : <img src={`/map-art/transit/${mode}.png`} alt="" width="42" height="42" />;

@@ -54,6 +54,7 @@ test.describe("browser language", () => {
 import { testTranslator } from "../../src/test/translations";
 
 test("keeps a highlighted origin through translation updates without repeating its search", async ({ page }) => {
+  await page.clock.install();
   await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = (_ok, fail) => fail?.({ code: 1, message: "denied", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }); });
   let searches = 0;
   page.on("request", request => { if (request.method() === "POST" && request.postData() === '["Bern"]') searches++; });
@@ -72,11 +73,12 @@ test("keeps a highlighted origin through translation updates without repeating i
   await page.getByRole("combobox", { name: labels.de.language, exact: true }).selectOption("fr");
   await expect(page.locator("html")).toHaveAttribute("lang", "fr-CH");
   await page.getByRole("button", { name: labels.fr.close, exact: true }).click();
-  // Wait beyond the search debounce and any response it would incorrectly start.
-  await page.waitForLoadState("networkidle");
+  await expect(panel.getByRole("status")).toContainText(testTranslator("fr")("routing.origin.unavailable"));
+  // Exercise the 350 ms search debounce after the translated UI has committed.
+  // Map tiles and background refreshes are unrelated and need not become idle.
+  await page.clock.runFor(1_000);
   expect(searches).toBe(1);
   await expect(station).toHaveAttribute("aria-selected", "true");
-  await expect(panel.getByRole("status")).toContainText(testTranslator("fr")("routing.origin.unavailable"));
   await input.press("Enter");
   await expect(panel.locator(".journey-start-summary")).toContainText("Bern");
 });

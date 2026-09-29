@@ -2,7 +2,7 @@
 import { pointLabel } from "@/i18n/point-label";
 import { useTranslations } from "next-intl";
 
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import { Crosshair, Footprints, Info, List, MapPin, SlidersHorizontal, X } from "lucide-react";
 import type { ReturnJourney } from "@/features/journey/model";
@@ -20,14 +20,14 @@ import { SearchBox } from "@/features/map/components/search-box";
 import { AddBenchDialog } from "@/features/bench-submission/components/add-bench-dialog";
 import { AppMenu } from "@/components/app-menu";
 import { AccountDialog } from "@/features/account/components/account-controls";
-import type { MapSheetPresentation } from "@/components/map-sheet-shell";
+import { MapSheetShell, type MapSheetPresentation } from "@/components/map-sheet-shell";
 import type { JourneyDraftSnapshot } from "@/features/journey/components/use-journey-planner";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/features/map/watercolor-style";
 import { featureCollection, lastInspectedBenchFeature, selectedAmenityFeature, selectedBenchFeature, loadMapArt, addDecorativeMapLayers, addPainterlyVectorLayers, addTransitLayers, addCoreArtLayers, addCoreMapLayers, applyMapAtmosphere, clusterExpansionZoom, showUserPosition, type UserPosition } from "@/features/map/renderer";
 import { benchHistoryCloseAction, visibleMapQuery, captureMapCamera, pushBenchHistoryEntry, readBenchHistoryEntry, restoreMapCamera, type ActiveMapTask, type BenchReturnContext, type PendingBenchHistoryClose } from "@/features/map/navigation";
 
-const WalkPlanner = dynamic(() => import("@/features/walks/components/walk-planner").then((m) => m.WalkPlanner), { ssr: false, loading: WalkLoading });
-const JourneyPlanner = dynamic(() => import("@/features/journey/components/journey-planner").then((m) => m.JourneyPlanner), {
+const WalkPlannerBody = dynamic(() => import("@/features/walks/components/walk-planner").then((m) => m.WalkPlannerBody), { ssr: false, loading: WalkLoading });
+const JourneyPlannerBody = dynamic(() => import("@/features/journey/components/journey-planner").then((m) => m.JourneyPlannerBody), {
   ssr: false, loading: JourneyLoading,
 });
 
@@ -43,12 +43,25 @@ type LastInspectedBench = Pick<BenchDetail, "id" | "longitude" | "latitude">;
 let sessionLastInspectedBench: LastInspectedBench | null = null;
 
 function WalkLoading() {
-  const t = useTranslations("map.loading");
-  return <aside className="journey-panel storybook-panel" role="status">{t("walk")}</aside>;
+  const t = useTranslations();
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { title.current?.focus(); }, []);
+  return <header aria-busy="true"><span className="story-eyebrow">{t("walks.planner.eyebrow")}</span><h2 className="programmatic-focus-heading" ref={title} tabIndex={-1}>{t("walks.planner.title")}</h2><p role="status">{t("map.loading.walk")}</p></header>;
 }
 function JourneyLoading() {
-  const t = useTranslations("map.loading");
-  return <aside className="journey-panel storybook-panel" role="status">{t("journey")}</aside>;
+  const t = useTranslations();
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { title.current?.focus(); }, []);
+  return <header aria-busy="true"><span className="story-eyebrow">{t("journey.planner.eyebrow")}</span><h2 ref={title} tabIndex={-1}>{t("journey.planner.title")}</h2><p role="status">{t("map.loading.journey")}</p></header>;
+}
+
+function WalkPlannerShell({ children, presentation, onPresentationChange, onClose }: { children: ReactNode; presentation?: MapSheetPresentation | null; onPresentationChange?: (presentation: MapSheetPresentation) => void; onClose: () => void }) {
+  const t = useTranslations();
+  return <MapSheetShell label={t("walks.planner.title")} resizeLabel={t("walks.planner.resize")} expandLabel={t("walks.planner.expand")} compactLabel={t("walks.planner.compact")} minimizeLabel={t("walks.planner.minimize")} minimizeActionLabel={t("walks.planner.minimizeAction")} closeLabel={t("walks.planner.close")} mapLabel={t("walks.planner.map")} onClose={onClose} initialSnap="half" initialPresentation={presentation} onPresentationChange={onPresentationChange}>{children}</MapSheetShell>;
+}
+function JourneyPlannerShell({ children, presentation, onPresentationChange, onClose }: { children: ReactNode; presentation?: MapSheetPresentation | null; onPresentationChange?: (presentation: MapSheetPresentation) => void; onClose: () => void }) {
+  const t = useTranslations();
+  return <MapSheetShell label={t("journey.planner.title")} resizeLabel={t("journey.planner.resize")} expandLabel={t("journey.planner.expand")} compactLabel={t("journey.planner.compact")} minimizeLabel={t("journey.planner.minimize")} minimizeActionLabel={t("journey.planner.minimizeAction")} closeLabel={t("journey.planner.close")} mapLabel={t("journey.planner.map")} onClose={onClose} initialSnap="half" initialPresentation={presentation} onPresentationChange={onPresentationChange}>{children}</MapSheetShell>;
 }
 
 export function MapExplorer({ user, initialBench = null }: { user: CurrentUser | null; initialBench?: BenchDetail | null }) {
@@ -578,19 +591,25 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
     };
   }, []);
 
+  const requestedAction = searchParams.get("action");
   useEffect(() => {
-    const action = searchParams.get("action");
-    if (!mapReady || !action || handledAction.current === action) return;
+    const action = requestedAction;
+    if (!action) { handledAction.current = null; return; }
+    if (handledAction.current === action) return;
+    // Walk/filter UI does not need a loaded basemap. Placement does.
+    if (action === "add" && !mapReady) return;
     if (action === "journey" && !bench) return;
-    handledAction.current = action;
     const timer = window.setTimeout(() => {
+      // Only consume an action when it actually runs. Dependency changes and
+      // Strict Mode can cancel a scheduled callback before its first turn.
+      handledAction.current = action;
       if (action === "filter") setFilterOpen(true);
       if (action === "walk") setWalkOpen(true);
       if (action === "journey") setJourneyOpen(true);
       if (action === "add") { const point = mapRef.current?.getCenter(); if (point) openAddAt(point.lat, point.lng); }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [mapReady, searchParams, openAddAt, bench]);
+  }, [mapReady, requestedAction, openAddAt, bench]);
   useEffect(() => {
     const sourceId = searchParams.get("amenity");
     if (!mapReady || !bench || !sourceId || handledAmenity.current === sourceId) return;
@@ -832,9 +851,9 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
           closeList();
           if (returnContext) openBenchTask(item.id, returnContext, true, item);
         }} />}
-      {walkOpen && walkDraftLoaded && <WalkPlanner getMap={getJourneyMap} initial={walkDraft} onSnapshot={updateWalkDraft} presentation={walkPresentationRef.current} onPresentationChange={(presentation) => { walkPresentationRef.current = presentation; }} onClose={() => setWalkOpen(false)} onEnd={endWalk} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} onInspectBench={(id) => { setWalkOpen(false); openBenchTask(id, { kind: "walk" }, true); }} />}
-      {returnJourney && <JourneyPlanner key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} onClose={() => { setReturnJourney(null); setWalkOpen(true); }} />}
-      {journeyOpen && bench && <JourneyPlanner key={bench.id} bench={bench} draft={journeyDraft} onSnapshot={updateJourneyDraft} presentation={journeyPresentationRef.current} onPresentationChange={(presentation) => { journeyPresentationRef.current = presentation; }} getMap={getJourneyMap} onClose={() => setJourneyOpen(false)} />}
+      {walkOpen && walkDraftLoaded && <WalkPlannerShell presentation={walkPresentationRef.current} onPresentationChange={(presentation) => { walkPresentationRef.current = presentation; }} onClose={() => setWalkOpen(false)}><WalkPlannerBody getMap={getJourneyMap} initial={walkDraft} onSnapshot={updateWalkDraft} onEnd={endWalk} onReturn={(value) => { setWalkOpen(false); setReturnJourney(value); }} onInspectBench={(id) => { setWalkOpen(false); openBenchTask(id, { kind: "walk" }, true); }} /></WalkPlannerShell>}
+      {returnJourney && <JourneyPlannerShell onClose={() => { setReturnJourney(null); setWalkOpen(true); }}><JourneyPlannerBody key="return" bench={{ id: "return", title: pointLabel(returnJourney.destination, t) }} initial={returnJourney} getMap={getJourneyMap} /></JourneyPlannerShell>}
+      {journeyOpen && bench && <JourneyPlannerShell presentation={journeyPresentationRef.current} onPresentationChange={(presentation) => { journeyPresentationRef.current = presentation; }} onClose={() => setJourneyOpen(false)}><JourneyPlannerBody key={bench.id} bench={bench} draft={journeyDraft} onSnapshot={updateJourneyDraft} getMap={getJourneyMap} /></JourneyPlannerShell>}
       {selectedId && !journeyOpen && !walkOpen && !returnJourney && <BenchSheet created={createdBenchId === selectedId} initiallyExpanded={searchParams.get("bank") === selectedId} returnTarget={benchReturn.kind} presentation={benchPresentationRef.current} onPresentationChange={(presentation) => { benchPresentationRef.current = presentation; }} bench={bench} loading={detailLoading} error={detailError} onRetry={() => void selectBench(selectedId)} onBenchChange={refreshSelectedBench} onJourney={() => { if (journeyDraft?.benchId !== selectedId) journeyPresentationRef.current = null; setJourneyOpen(true); }} onResumeWalk={walkDraft?.result ? openWalk : undefined} onLocateAmenity={locateAmenity} user={user} onClose={closeBenchFromUi} />}
       {facilityFocus && <section className="amenity-map-callout" aria-label={t("bench.summary.mapLocation")}>
         <MapPin size={20} /><div><small>{t("bench.summary.nearbyTitle")}</small><strong>{t(facilityFocus.amenity.category === "toilets" ? "knowledge.amenities.toilets" : facilityFocus.amenity.category === "fountain" ? "knowledge.amenities.fountain" : "knowledge.amenities.drinking_water")}</strong><span>{t("bench.summary.straightLine", {distance: Math.round(facilityFocus.amenity.distanceMeters!)})}</span></div>

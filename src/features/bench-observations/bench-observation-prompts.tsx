@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import type { Translator } from "@/i18n/types";
 import { communityConfidence } from "@/features/bench-detail/components/view-panel";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { Check, ChevronLeft, ChevronRight, Eye, RotateCcw, SunMedium, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, CloudSun, Eye, RotateCcw, SunDim, SunMedium, Trash2 } from "lucide-react";
 import type { BenchObservationSummary, LightObservationChoice, ViewObservationChoice } from "@/lib/types";
 import {
   deleteOwnObservation,
@@ -13,6 +13,9 @@ import {
   submitViewObservation,
   undoLightObservation,
 } from "./actions";
+
+import { useContributionSave, useContributionWork } from "@/features/bench-community/components/contribution-session";
+import { isCompleteViewDraft } from "./view-draft";
 
 const lightChoices: LightObservationChoice[] = ["sun", "shade", "mixed"];
 type Refresh = () => void | Promise<void>;
@@ -24,30 +27,19 @@ export function LightObservationPrompt({ benchId, observations, onChanged }: {
 }) {
   const t = useTranslations();
   const [mine, setMine] = useState(observations.mine);
-  const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  const choose = (choice: LightObservationChoice) => startTransition(async () => {
-    const result = await submitLightObservation(benchId, choice);
-    setMessage(result.message);
-    if (!result.ok) return;
-    setMine({ choice, observedAt: new Date().toISOString() });
-    if (onChanged) await onChanged();
-  });
-  const undo = () => startTransition(async () => {
-    const result = await undoLightObservation(benchId);
-    setMessage(result.message);
-    if (!result.ok) return;
-    setMine(null);
-    if (onChanged) await onChanged();
-  });
+  const { state, pending, save } = useContributionSave(onChanged);
+  useContributionWork(false, pending);
+  const choose = (choice: LightObservationChoice) => save(() => submitLightObservation(benchId, choice), () => setMine({ choice, observedAt: new Date().toISOString() }));
+  const undo = () => save(() => undoLightObservation(benchId), () => setMine(null));
   return <aside className="observation-prompt" aria-label={t("community.observations.light.label")}>
     <header><SunMedium size={17} aria-hidden="true" /><div><strong>{t("community.observations.light.title")}</strong><small>{mine ? t("community.observations.light.mine", {choice: t(`community.observations.light.choices.${mine.choice}`)}) : t("community.observations.light.intro")}</small></div></header>
+    <p className="contribution-save-hint">{t("community.workspace.quickSave")}</p>
     <div className="observation-choices is-light">
       {lightChoices.map((choice) => <button
         type="button" key={choice} disabled={pending} aria-pressed={mine?.choice === choice} onClick={() => choose(choice)}
-      >{mine?.choice === choice && <Check size={14} />}{t(`community.observations.light.choices.${choice}`)}</button>)}
+      >{choice === "sun" ? <SunMedium size={24} aria-hidden="true" /> : choice === "shade" ? <SunDim size={24} aria-hidden="true" /> : <CloudSun size={24} aria-hidden="true" />}{mine?.choice === choice && <Check size={14} aria-hidden="true" />}{t(`community.observations.light.choices.${choice}`)}</button>)}
     </div>
-    <ObservationFootnote message={message} publicText={lightTrendText(observations.publicTrend, t)} onUndo={mine ? undo : undefined} pending={pending} />
+    <ObservationFootnote message={state?.message ?? null} failed={state?.ok === false} publicText={lightTrendText(observations.publicTrend, t)} onUndo={mine ? undo : undefined} pending={pending} />
   </aside>;
 }
 
@@ -56,14 +48,10 @@ function lightTrendText(trend: BenchObservationSummary["light"]["publicTrend"], 
   return t("community.observations.light.trend", {choice: t(`community.observations.light.choices.${trend.choice}`), count: trend.contributors});
 }
 
-const initialView: ViewObservationChoice = {
-  openness: "partial", sky: "partial", relief: "gentle", water: "none",
-  horizon: "mixed", naturalness: "mixed", disturbance: "some",
-};
-
-export function ViewObservationPrompt({ benchId, observations, onChanged }: {
+export function ViewObservationPrompt({ benchId, observations, onChanged, description }: {
   benchId: string;
   observations: BenchObservationSummary["view"];
+  description?: string;
   onChanged?: Refresh;
 }) {
   const t = useTranslations();
@@ -101,34 +89,23 @@ export function ViewObservationPrompt({ benchId, observations, onChanged }: {
   const [mine, setMine] = useState(observations.mine);
   const [editing, setEditing] = useState(false);
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<ViewObservationChoice>(initialView);
-  const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  const changed = async () => { if (onChanged) await onChanged(); };
-  const agree = () => startTransition(async () => {
-    const result = await submitViewAgreement(benchId);
-    setMessage(result.message);
-    if (!result.ok) return;
+  const [draft, setDraft] = useState<Partial<ViewObservationChoice>>({});
+  const { state, pending, save: submit } = useContributionSave(onChanged);
+  useContributionWork(editing && Object.keys(draft).length > 0, pending);
+  const agree = () => submit(() => submitViewAgreement(benchId), () => {
     setMine({ kind: "agreement", observedAt: new Date().toISOString() });
-    setEditing(false);
-    await changed();
+    setEditing(false); setDraft({});
   });
-  const save = () => startTransition(async () => {
-    const result = await submitViewObservation(benchId, draft);
-    setMessage(result.message);
-    if (!result.ok) return;
-    setMine({ kind: "correction", observedAt: new Date().toISOString() });
-    setEditing(false);
-    setStep(0);
-    await changed();
-  });
-  const remove = () => startTransition(async () => {
-    const result = await deleteOwnObservation(benchId, "view");
-    setMessage(result.message);
-    if (!result.ok) return;
-    setMine(null);
-    setEditing(false);
-    await changed();
+  const save = () => {
+    if (!isCompleteViewDraft(draft)) return;
+    const observation = draft;
+    submit(() => submitViewObservation(benchId, observation), () => {
+      setMine({ kind: "correction", observedAt: new Date().toISOString() });
+      setEditing(false); setDraft({}); setStep(0);
+    });
+  };
+  const remove = () => submit(() => deleteOwnObservation(benchId, "view"), () => {
+    setMine(null); setEditing(false); setDraft({}); setStep(0);
   });
   useEffect(() => {
     if (!editing) return;
@@ -139,13 +116,16 @@ export function ViewObservationPrompt({ benchId, observations, onChanged }: {
     return () => cancelAnimationFrame(frame);
   }, [editing, step]);
   const current = steps[step];
+  const answered = current.fields.every(field => draft[field.key] !== undefined);
   return <aside ref={promptRef} className="observation-prompt is-view" aria-label={t("community.observations.view.label")}>
     <header><Eye size={17} aria-hidden="true" /><div><strong>{t("community.observations.view.title")}</strong><small>{mine ? mine.kind === "agreement" ? t("community.observations.view.agreed") : t("community.observations.view.mine") : t("community.observations.view.intro")}</small></div></header>
+    {!editing && description && <p className="contribution-view-context"><small>{t("community.workspace.viewDescription")}</small><strong>{description}</strong></p>}
     {!editing && <div className="observation-choices">
       <button type="button" disabled={pending} aria-pressed={mine?.kind === "agreement"} onClick={agree}><Check size={14} />{t("community.observations.view.agree")}</button>
       <button type="button" disabled={pending} aria-expanded={editing} onClick={() => setEditing(true)}>{t("community.observations.view.edit")}</button>
     </div>}
     {editing && <div className="view-observation-editor">
+      <p className="contribution-intro">{t("community.workspace.viewIntro")}</p>
       <div ref={stepHeadingRef} className="view-step-heading" tabIndex={-1}><small>{t("community.observations.view.step", {current: step + 1, total: steps.length})}</small><strong>{current.title}</strong></div>
       {current.fields.map((field) => <fieldset key={field.key}>
         <legend>{field.label}</legend>
@@ -155,13 +135,13 @@ export function ViewObservationPrompt({ benchId, observations, onChanged }: {
         >{draft[field.key] === value && <Check size={13} />}{label}</button>)}</div>
       </fieldset>)}
       <nav aria-label={t("community.observations.view.steps")}>
-        <button type="button" disabled={pending} onClick={() => step === 0 ? setEditing(false) : setStep(step - 1)}><ChevronLeft size={15} />{step === 0 ? t("common.actions.cancel") : t("community.observations.view.back")}</button>
+        <button type="button" disabled={pending} onClick={() => { if (step === 0) { setEditing(false); setDraft({}); } else setStep(step - 1); }}><ChevronLeft size={15} />{step === 0 ? t("common.actions.cancel") : t("community.observations.view.back")}</button>
         {step < steps.length - 1
-          ? <button type="button" disabled={pending} onClick={() => setStep(step + 1)}>{t("community.observations.view.next")}<ChevronRight size={15} /></button>
-          : <button type="button" disabled={pending} onClick={save}><Check size={15} />{t("community.observations.view.save")}</button>}
+          ? <button type="button" disabled={pending || !answered} onClick={() => setStep(step + 1)}>{t("community.observations.view.next")}<ChevronRight size={15} /></button>
+          : <button type="button" disabled={pending || !isCompleteViewDraft(draft)} onClick={save}><Check size={15} />{t("community.observations.view.save")}</button>}
       </nav>
     </div>}
-    <ObservationFootnote message={message} publicText={viewTrendText(observations.publicEstimate, t)} onDelete={mine ? remove : undefined} pending={pending} />
+    <ObservationFootnote message={state?.message ?? null} failed={state?.ok === false} publicText={viewTrendText(observations.publicEstimate, t)} onDelete={mine ? remove : undefined} pending={pending} />
   </aside>;
 }
 
@@ -176,8 +156,9 @@ function viewTrendText(estimate: BenchObservationSummary["view"]["publicEstimate
   return t("community.observations.trend.summary", {description: parts.length ? t("community.observations.trend.description", {qualities: parts.join(" · ")}) : t("community.observations.trend.empty"), count: estimate.contributors, confidence});
 }
 
-function ObservationFootnote({ message, publicText, onUndo, onDelete, pending }: {
+function ObservationFootnote({ message, publicText, onUndo, onDelete, pending, failed = false }: {
   message: string | null;
+  failed?: boolean;
   publicText: string | null;
   onUndo?: () => void;
   onDelete?: () => void;
@@ -186,7 +167,7 @@ function ObservationFootnote({ message, publicText, onUndo, onDelete, pending }:
   const t = useTranslations();
   if (!message && !publicText && !onUndo && !onDelete) return null;
   return <footer>
-    <span role="status">{message ?? publicText}</span>
+    <span role={failed ? "alert" : "status"}>{message ?? publicText}</span>
     {onUndo && <button type="button" disabled={pending} onClick={onUndo}><RotateCcw size={13} />{t("community.observations.undo")}</button>}
     {onDelete && <button type="button" disabled={pending} onClick={onDelete}><Trash2 size={13} />{t("common.actions.delete")}</button>}
   </footer>;

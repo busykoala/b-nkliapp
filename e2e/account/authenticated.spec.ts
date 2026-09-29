@@ -79,19 +79,27 @@ test("keeps contribution and add-bench tasks understandable on a phone", async (
   await registerUser(page, username);
   await page.goto("/bank/osm-node-101");
   await page.getByRole("button", { name: "Verbessern", exact: true }).click();
-  const contribution = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  const contribution = page.locator(".contribution-dialog[open]");
   await expect(contribution).toBeVisible();
-  await expect(contribution.locator(".contribution-chapter-icon")).toHaveCount(8);
+  await expect(contribution.locator("[data-contribution-choice]")).toHaveCount(8);
+  await expect(contribution.locator("details")).toHaveCount(0);
   await page.waitForTimeout(400);
   await page.screenshot({ path: testInfo.outputPath("06-contribution-overview.png") });
 
-  await contribution.locator("summary").filter({ hasText: "Wie war deine Pause?" }).click();
+  await contribution.getByRole("button", { name: "Wie war deine Pause?", exact: true }).click();
   await page.waitForTimeout(200);
-  await expect(contribution.locator(".contribution-chapter[open]" )).toHaveCount(1);
+  await expect(contribution.locator("[data-contribution-task]:visible")).toHaveCount(1);
+  await expect(contribution).toHaveAccessibleName("Wie war deine Pause?");
   await contribution.getByLabel("4 Sterne").first().click();
   await expect(contribution.locator(".rating-control").first().locator("output")).toHaveText("4 Sterne");
   await page.screenshot({ path: testInfo.outputPath("07-rating-form.png") });
   await contribution.getByLabel("Beiträge schliessen").click();
+  await expect(contribution).toHaveAccessibleName("Entwurf verwerfen?");
+  await contribution.getByRole("button", { name: "Weiter bearbeiten", exact: true }).click();
+  await expect(contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "4 Sterne", exact: true })).toBeChecked();
+  await contribution.getByLabel("Beiträge schliessen").click();
+  await contribution.getByRole("button", { name: "Verwerfen und schliessen", exact: true }).click();
+  await expect(contribution).toBeHidden();
 
   await page.goto("/?action=add");
   await page.getByRole("button", { name: "Hier eintragen" }).click();
@@ -101,4 +109,37 @@ test("keeps contribution and add-bench tasks understandable on a phone", async (
   await expect(add.locator(".add-bench-steps [aria-current='step']")).toContainText("Details");
   await expect(add.getByRole("button", { name: "Eintragen", exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("08-add-bench.png") });
+});
+
+test("checks for duplicate benches before optional reverse geocoding finishes", async ({ page }, testInfo) => {
+  await registerUser(page, `nearby-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`);
+  await page.goto("/?action=add");
+  let coordinateRequests = 0;
+  let release!: () => void;
+  const pendingGeocoder = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST" && request.headers()["next-action"]) {
+      let args: unknown;
+      try { args = JSON.parse(request.postData() ?? "null"); } catch { /* Other action encodings are unrelated. */ }
+      if (Array.isArray(args) && args.length === 2 && args.every((value) => typeof value === "number")) {
+        coordinateRequests += 1;
+        // Both lookups accept two coordinates. Let the first finish and hold
+        // the second: reversing their priority leaves the nearby panel stuck.
+        if (coordinateRequests === 2) await pendingGeocoder;
+      }
+    }
+    await route.continue();
+  });
+  try {
+    await page.getByRole("button", { name: "Hier eintragen" }).click();
+    await expect.poll(() => coordinateRequests).toBe(2);
+    const add = page.getByRole("dialog", { name: "Bänkli eintragen", exact: true });
+    await expect(add.locator(".nearby-benches")).not.toContainText("werden geprüft");
+    await expect(add.locator(".add-location")).toHaveText("Ort wird gesucht …");
+    await expect(add.getByRole("button", { name: "Eintragen", exact: true })).toBeEnabled();
+  } finally {
+    release();
+    await page.unrouteAll({ behavior: "wait" });
+  }
 });

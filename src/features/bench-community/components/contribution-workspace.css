@@ -1,0 +1,121 @@
+/* A viewport-owned paper workspace. The map sheet below never controls its position. */
+.contribution-dialog {
+  --contribution-height: min(49rem, calc(var(--contribution-viewport-height, 100dvh) - 3rem));
+  position: fixed; inset: var(--contribution-viewport-top, 0) 0 auto;
+  margin: calc((var(--contribution-viewport-height, 100dvh) - var(--contribution-height)) / 2) auto 0;
+  padding: 0; border: 1px solid #c5cbbd;
+  width: min(42rem, calc(100vw - 2rem)); height: var(--contribution-height);
+  max-width: none; max-height: none; overflow: hidden; border-radius: 1.25rem;
+  color: var(--color-ink, #243f35); background: var(--color-surface, #fffcf5);
+  box-shadow: 0 12px 48px #18392b30; font-family: var(--font-body, "Source Sans 3", sans-serif);
+}
+.contribution-dialog:not([open]) { display: none; }
+.contribution-dialog::backdrop { background: rgb(27 45 38 / 44%); }
+.contribution-dialog .contribution-sheet {
+  display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0;
+  max-width: none; max-height: none; padding: 0; border-radius: inherit;
+  overflow: hidden; background: var(--color-surface, #fffcf5);
+}
+.contribution-dialog [hidden] { display: none !important; }
+.contribution-dialog .contribution-sheet-header {
+  position: static; display: block; flex: none; min-height: 0; padding: .35rem 1.25rem;
+  background: linear-gradient(125deg, #e5eddfb0, #f7f1e390 62%, #e6eef080);
+  border-bottom: 1px solid #c5cbbd; backdrop-filter: none;
+}
+.contribution-dialog .contribution-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.contribution-dialog .contribution-toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 44px; padding: .35rem .5rem; border-radius: .5rem; font-size: .875rem; }
+.contribution-dialog .contribution-toolbar button:last-child { min-width: 44px; flex: none; }
+.contribution-dialog .contribution-heading { margin-bottom: 1.25rem; }
+.contribution-dialog .contribution-place { margin: .15rem 0 .3rem; font-size: .875rem; color: #53655a; overflow-wrap: anywhere; }
+.contribution-dialog .contribution-place > span { font-weight: 400; }
+.contribution-dialog .contribution-heading h2 { margin: 0; font-family: var(--font-display, "Lora", serif); font-size: 1.5rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.contribution-dialog .contribution-scroll { min-height: 0; flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: .5rem 1.25rem 1.25rem; scroll-padding: .75rem; -webkit-overflow-scrolling: touch; }
+.contribution-dialog .contribution-intro { margin: 0 0 1rem; color: #53655a; font-size: .9375rem; line-height: 1.5; }
+.contribution-dialog .contribution-chooser > section + section { margin-top: 1rem; }
+.contribution-dialog .contribution-chooser h3 { margin: 0 0 .45rem; font: 600 .875rem/1.5 var(--font-body, "Source Sans 3", sans-serif); color: #53655a; }
+.contribution-dialog .contribution-task-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.contribution-dialog .contribution-task-grid button { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: .45rem .6rem; align-items: center; min-width: 0; min-height: 5.5rem; padding: .65rem .6rem; border: 1px solid #b6c2b2; border-radius: .8rem 1rem .85rem .7rem; text-align: left; background: #fffcf5; }
+.contribution-dialog .contribution-task-grid button > span:nth-child(2) { display: grid; gap: .15rem; min-width: 0; }
+.contribution-dialog .contribution-task-grid strong { font-size: 1rem; font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
+.contribution-dialog .contribution-task-grid small { font-size: .8125rem; line-height: 1.3; color: #53655a; overflow-wrap: anywhere; }
+.contribution-dialog .contribution-task-grid button > svg { display: none; }
+.contribution-dialog .contribution-task-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; background: radial-gradient(ellipse at 45% 45%, #c3d6bba0 10%, #e5eddf90 65%, transparent 73%); border-radius: 43% 55% 39% 56%; color: #2c5d4b; }
+.contribution-dialog .contribution-task-icon.is-light { background: radial-gradient(ellipse, #ecdba0a0 10%, #f1e7c190 65%, transparent 73%); }
+.contribution-dialog .contribution-task-icon:is(.is-photo, .is-view) { background: radial-gradient(ellipse, #bacfd8a0 10%, #e6eef090 65%, transparent 73%); }
+.contribution-dialog button { overflow-wrap: anywhere; white-space: normal; cursor: pointer; min-height: 44px; touch-action: manipulation; }
+.contribution-dialog button:disabled { cursor: default; opacity: .6; }
+.contribution-dialog button:not(:disabled):hover { background-color: #e5eddf; }
+.contribution-dialog :focus-visible { outline: 3px solid #2f6475; outline-offset: 2px; }
+.contribution-dialog h2:focus, .contribution-dialog .feature-question-title:focus { outline: none; }
+.contribution-dialog .contribution-footer { flex: none; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .35rem .7rem; padding: .5rem 1.25rem; border-top: 1px solid #c5cbbd; background: #f7f1e3; }
+.contribution-dialog .contribution-footer small { flex: 1 1 6rem; min-width: 0; overflow-wrap: anywhere; font-size: .8125rem; line-height: 1.35; color: #53655a; }
+.contribution-dialog .contribution-footer button { margin-left: auto; font-size: .875rem; flex: 0 1 auto; max-width: 100%; overflow-wrap: anywhere; padding: .45rem .65rem; color: #2c5d4b; font-weight: 600; border-radius: .5rem; }
+.contribution-dialog .contribution-primary, .contribution-dialog .direction-save,
+.contribution-dialog .moment-form > button, .contribution-dialog .contribution-metadata-form > button { display: flex; width: 100%; min-height: 46px; justify-content: center; align-items: center; gap: .5rem; padding: .65rem .85rem; background: #2c5d4b; color: #fffcf5; border: 1px solid #2c5d4b; border-radius: .6rem; font-size: 1rem; font-weight: 600; }
+.contribution-dialog .contribution-primary:not(:disabled):hover, .contribution-dialog .direction-save:not(:disabled):hover,
+.contribution-dialog .moment-form > button:not(:disabled):hover, .contribution-dialog .contribution-metadata-form > button:not(:disabled):hover { background-color: #243f35; }
+.contribution-dialog :is(input, textarea, select) { max-width: 100%; min-width: 0; border: 1px solid #6e8375; border-radius: .5rem; background: #fffcf5; font: inherit; font-size: 1rem; color: inherit; }
+.contribution-dialog :is(input:not([type="radio"]):not([type="checkbox"]):not([type="range"]):not([type="file"]), textarea, select) { width: 100%; min-height: 46px; padding: .65rem .75rem; }
+.contribution-dialog :is(input, textarea, select):focus-visible { outline-offset: 0; }
+.contribution-dialog textarea { min-height: 7rem; resize: vertical; }
+.contribution-dialog fieldset { min-width: 0; border: 0; padding: 0; }
+.contribution-dialog .contribution-text-field { display: grid; gap: .35rem; margin: 1rem 0; }
+.contribution-dialog .contribution-text-field > span { font-size: .9375rem; font-weight: 600; }
+.contribution-dialog .contribution-text-field small { font-weight: 400; }
+.contribution-dialog .contribution-metadata-form { padding-top: 1.25rem; margin-top: 1.25rem; border-top: 1px solid #c5cbbd; }
+.contribution-dialog .contribution-metadata-form fieldset { display: grid; gap: .8rem; }
+.contribution-dialog .contribution-metadata-form legend { margin-bottom: .7rem; font-size: 1rem; font-weight: 600; }
+.contribution-dialog [data-contribution-task="features"]:has(.feature-question) .contribution-metadata-form { display: none; }
+.contribution-dialog .contribution-feature-list { border: 0; }
+.contribution-dialog .contribution-feature-list > section > button { padding: .65rem .1rem; }
+.contribution-dialog .contribution-feature-list > section > button strong { font-size: 1rem; }
+.contribution-dialog .feature-question h3 { font-size: 1.25rem; line-height: 1.35; margin: .75rem 0; }
+.contribution-dialog .feature-back { display: inline-flex; align-items: center; gap: .4rem; padding: .4rem .1rem; color: #2c5d4b; }
+.contribution-dialog .feature-skip { width: 100%; margin-top: .45rem; padding: .5rem; color: #53655a; text-decoration: underline; text-underline-offset: .2em; }
+.contribution-dialog .field-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 1rem 0; }
+.contribution-dialog .field-choice-grid button { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 52px; border: 1px solid #6e8375; border-radius: .6rem; padding: .65rem; }
+.contribution-dialog .field-choice-grid.is-seats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 3.5rem), 1fr)); }
+.contribution-dialog [aria-pressed="true"] { background-color: #e5eddf; border-color: #2c5d4b; box-shadow: inset 0 0 0 1px #2c5d4b; }
+.contribution-dialog .observation-prompt { margin: 0; padding: 0; border: 0; background: none; }
+.contribution-dialog .observation-choices.is-light { gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 5rem), 1fr)); }
+.contribution-dialog .observation-choices.is-light button { flex-direction: column; gap: .35rem; padding: .85rem .4rem; }
+.contribution-dialog .contribution-save-hint { color: #53655a; font-size: .875rem; line-height: 1.5; margin: .75rem 0; }
+.contribution-dialog .contribution-view-context { display: grid; gap: .25rem; padding: .75rem; margin-top: .8rem; border-left: 3px solid #87998b; background: #e6eef070; }
+.contribution-dialog .contribution-view-context small { color: #53655a; }
+.contribution-dialog .contribution-night { display: flex; gap: .75rem; align-items: start; line-height: 1.5; }
+.contribution-dialog .contribution-night svg { flex: none; }
+.contribution-dialog .contribution-character-count { color: #53655a; text-align: right; font-size: .8125rem; }
+.contribution-dialog .contribution-feedback { margin: .8rem 0; padding: .75rem; border-left: 3px solid #2c5d4b; background: #e5eddf; font-size: .9375rem; line-height: 1.5; }
+.contribution-dialog .contribution-feedback.is-error { color: #9a4838; border-color: currentColor; background: #f7eee5; }
+.contribution-dialog .contribution-discard { display: grid; gap: 1rem; line-height: 1.5; }
+.contribution-dialog .contribution-danger { color: #9a4838; text-decoration: underline; text-underline-offset: .2em; }
+.contribution-dialog .rating-detail-disclosure { margin-top: .7rem; }
+.contribution-dialog .rating-control > div { flex-wrap: wrap; }
+.contribution-dialog .rating-control input { border: 0; }
+.contribution-dialog .bench-photo-intro > div { min-width: 0; overflow-wrap: anywhere; }
+.contribution-dialog .bench-photo-capture { min-width: 0; }
+.contribution-dialog .care-actions { margin-bottom: 1.5rem; }
+.contribution-dialog .care-actions > div { grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
+.contribution-dialog .care-actions button span { min-width: 0; }
+@media (max-width: 639px) {
+  .contribution-dialog { inset: var(--contribution-viewport-top, 0) 0 auto; width: 100%; height: var(--contribution-viewport-height, 100dvh); margin: 0; border: 0; border-radius: 0; }
+  .contribution-dialog .contribution-sheet-header { padding: max(.35rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) .35rem max(1rem, env(safe-area-inset-left)); }
+  .contribution-dialog .contribution-scroll { padding: .85rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left)); }
+  .contribution-dialog .contribution-footer { padding: .35rem 1rem max(.35rem, env(safe-area-inset-bottom)); }
+  .contribution-dialog .contribution-task-grid button { grid-template-columns: minmax(0, 1fr); gap: .4rem; align-content: start; }
+  .contribution-dialog .contribution-task-grid small { display: none; }
+  .contribution-dialog .contribution-task-grid strong { font-size: .9375rem; }
+}
+@media (max-width: 359px) {
+  .contribution-dialog .contribution-task-grid { grid-template-columns: 1fr; }
+  .contribution-dialog .contribution-task-grid button { grid-template-columns: 2.5rem minmax(0, 1fr) 1rem; min-height: 64px; align-items: center; }
+  .contribution-dialog .contribution-task-grid button > svg { display: block; }
+}
+@media (max-height: 460px) {
+  .contribution-dialog .contribution-footer small { display: none; }
+  .contribution-dialog .contribution-sheet-header { padding-bottom: .4rem; }
+  .contribution-dialog .contribution-place { margin: 0; }
+}
+
+/* The fixed toolbar remains available; avoid a redundant footer consuming a small keyboard viewport. */
+.contribution-dialog[data-compact-viewport="true"] .contribution-footer { display: none; }

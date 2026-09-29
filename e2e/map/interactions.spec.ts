@@ -499,6 +499,7 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
   const features = page.getByRole("dialog", { name: "Bänkli beschreiben" });
   await features.getByRole("button", { name: /Armlehnen/ }).click();
   await features.getByRole("button", { name: "Ja", exact: true }).click();
+  await features.getByRole("button", { name: "Speichern", exact: true }).click();
   await expect(features.getByRole("button", { name: /Armlehnen Ja/ })).toBeVisible();
 });
 

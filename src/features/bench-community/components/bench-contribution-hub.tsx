@@ -1,155 +1,176 @@
 "use client";
+
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-
-import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
-import { AlertTriangle, Binoculars, Camera, Check, Hammer, HeartHandshake, ImagePlus, ListChecks, MessageCircleHeart, Send, Sparkles, Star, Sun, X } from "lucide-react";
-import { editBenchMetadata } from "@/app/actions/benches";
-import { submitBenchCare, submitBenchMoment } from "@/app/actions/bench-community";
+import { ArrowLeft, Moon, X } from "lucide-react";
+import { viewLabel } from "@/i18n/bench-labels";
+import type { BenchDetail } from "@/lib/types";
 import { LightObservationPrompt, ViewObservationPrompt } from "@/features/bench-observations/bench-observation-prompts";
-import { communityTheme } from "@/lib/community-theme";
-import type { ActionResult, BenchCareKind, BenchDetail } from "@/lib/types";
-import { BenchFeatureEditor } from "@/features/bench-community/components/bench-feature-editor";
 import { BenchPhotoCapture } from "@/features/bench-photos/photo-capture";
-import { BenchCommunityActions } from "@/features/bench-community/components/bench-community-actions";
-import { CorrectionForm, RatingForm } from "@/features/bench-community/components/contribution-forms";
+import { BenchFeatureEditor } from "./bench-feature-editor";
+import { BenchCommunityActions } from "./bench-community-actions";
+import { CorrectionForm, RatingForm } from "./contribution-forms";
+import { CareActions } from "./contribution-care";
+import { MetadataEditor, MomentForm } from "./contribution-writing";
+import { ContributionChooser, type ContributionMode, type ContributionTask } from "./contribution-chooser";
+import { ContributionSession, type ContributionWork } from "./contribution-session";
+import "./contribution-workspace.css";
 
-type Refresh = () => void | Promise<void>;
-export type ContributionMode = "all" | "rating" | "presence" | "photo" | "features" | "moment";
+export type { ContributionMode } from "./contribution-chooser";
+type Props = {
+  bench: BenchDetail;
+  open: boolean;
+  onClose: () => void;
+  onChanged?: () => void | Promise<void>;
+  initialChapter?: ContributionMode;
+  onlyFields?: ("backrest" | "armrest" | "covered" | "wheelchair" | "material" | "seats" | "direction")[];
+};
 
-export function BenchContributionHub({ bench, open, onClose, onChanged, initialChapter = "all", onlyFields }: { initialChapter?: ContributionMode; onlyFields?: ("backrest" | "armrest" | "covered" | "wheelchair" | "material" | "seats" | "direction")[]; bench: BenchDetail; open: boolean; onClose: () => void; onChanged?: Refresh }) {
+/** One top-layer workspace: choose a task, finish it, then return to the same place. */
+export function BenchContributionHub({ bench, open, onClose, onChanged, initialChapter = "all", onlyFields }: Props) {
   const t = useTranslations();
   const dialog = useRef<HTMLDialogElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const homeScroll = useRef(0);
+  const discardReturn = useRef<{ scroll: number; focus: HTMLElement | null } | null>(null);
+  const returnTask = useRef<ContributionTask | null>(null);
   const titleId = useId();
-  const theme = communityTheme(t);
+  const [active, setActive] = useState<ContributionMode>(initialChapter);
+  const [visited, setVisited] = useState<ContributionTask[]>(initialChapter === "all" ? [] : [initialChapter]);
+  const [work, setWork] = useState<Record<string, ContributionWork>>({});
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirty = Object.values(work).some((item) => item.dirty);
+  const pending = Object.values(work).some((item) => item.pending);
+  const publish = useCallback((id: string, value: ContributionWork | null) => setWork((previous) => {
+    if (value && previous[id]?.dirty === value.dirty && previous[id]?.pending === value.pending) return previous;
+    const next = { ...previous };
+    if (value) next[id] = value; else delete next[id];
+    return next;
+  }), []);
+
+  // Keep the workspace above the keyboard without undoing pinch zoom.
   useEffect(() => {
-    if (open && !dialog.current?.open) dialog.current?.showModal();
-    if (!open && dialog.current?.open) dialog.current.close();
+    const element = dialog.current;
+    const viewport = window.visualViewport;
+    if (!element || !viewport) return;
+    let frame = 0;
+    const update = () => {
+      if (Math.abs(viewport.scale - 1) > .01) {
+        element.style.removeProperty("--contribution-viewport-height");
+        element.style.removeProperty("--contribution-viewport-top");
+        delete element.dataset.compactViewport;
+        return;
+      }
+      element.style.setProperty("--contribution-viewport-height", `${viewport.height}px`);
+      element.style.setProperty("--contribution-viewport-top", `${viewport.offsetTop}px`);
+      element.dataset.compactViewport = String(viewport.height < 460);
+    };
+    const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
+    update();
+    viewport.addEventListener("resize", schedule);
+    viewport.addEventListener("scroll", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      viewport.removeEventListener("resize", schedule);
+      viewport.removeEventListener("scroll", schedule);
+    };
+  }, []);
+
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    if (!open) { element.close(); return; }
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!element.open) element.showModal();
+    heading.current?.focus({ preventScroll: true });
+    return () => { element.close(); if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
   }, [open]);
-  return <dialog ref={dialog} onCancel={onClose} onClose={onClose} aria-labelledby={titleId} className="modal modal-bottom sm:modal-middle contribution-dialog">
-    <div className="modal-box storybook-sheet contribution-sheet">
-      <header className="contribution-sheet-header">
-        <div><small>{t("community.hub.eyebrow")}</small><h2 id={titleId}>{t(initialChapter === "all" ? "community.hub.title" : `community.chapters.${initialChapter}.title`)}</h2></div>
-        <button type="button" className="btn btn-circle btn-ghost" onClick={onClose} aria-label={t("community.hub.close")}><X size={19} /></button>
-      </header>
-      {initialChapter === "all" && <ContributionOverview bench={bench} />}
-      {initialChapter === "moment" && <ContributionChapter open icon={<MessageCircleHeart />} title={t("community.chapters.moment.title")} summary={t("community.chapters.moment.summary")}><MomentForm bench={bench} onChanged={onChanged} /></ContributionChapter>}
-      {initialChapter === "rating" && <ContributionChapter open icon={<Star />} title={t("community.chapters.rating.title")} summary={t("community.chapters.rating.summary")}><RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} /></ContributionChapter>}
-      {initialChapter === "presence" && <ContributionChapter open icon={<Check />} title={t("community.chapters.presence.title")} summary={t("community.chapters.presence.summary")}><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></ContributionChapter>}
-      {initialChapter === "photo" && <ContributionChapter open icon={<Camera />} title={t("community.chapters.photo.title")} summary={t("community.chapters.photo.summary")}><BenchPhotoCapture benchId={bench.id} onChanged={onChanged} /></ContributionChapter>}
-      {initialChapter === "features" && <ContributionChapter open icon={<ListChecks />} title={t("community.chapters.features.title")} summary={t("community.chapters.features.summary")}>{!onlyFields && <MetadataEditor bench={bench} onChanged={onChanged} />}<BenchFeatureEditor bench={bench} onlyFields={onlyFields} onChanged={onChanged} /></ContributionChapter>}
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      if (!confirmDiscard && discardReturn.current) {
+        const previous = discardReturn.current;
+        discardReturn.current = null;
+        if (scroller.current) scroller.current.scrollTop = previous.scroll;
+        (previous.focus?.isConnected ? previous.focus : heading.current)?.focus({ preventScroll: true });
+        return;
+      }
+      if (scroller.current) scroller.current.scrollTop = active === "all" && !confirmDiscard ? homeScroll.current : 0;
+      const choice = active === "all" && !confirmDiscard && returnTask.current
+        ? dialog.current?.querySelector<HTMLButtonElement>(`[data-contribution-choice="${returnTask.current}"]`) : null;
+      (choice ?? heading.current)?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [active, confirmDiscard]);
+  useEffect(() => {
+    if (!dirty && !pending) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, pending]);
 
-      {initialChapter === "all" && <>
-      <ContributionChapter icon={<ListChecks />} title={t("community.chapters.features.title")} summary={t("community.chapters.features.summary")}>
-        <MetadataEditor bench={bench} onChanged={onChanged} />
-        <BenchFeatureEditor bench={bench} onChanged={onChanged} />
-      </ContributionChapter>
-      <ContributionChapter icon={<Sun />} title={t("community.chapters.light.title")} summary={bench.observations.light.mine ? t("community.chapters.light.recorded") : t("community.chapters.light.summary")}>
-        {bench.dayPhase === "night"
-          ? <p className="observation-night-note"><Sun size={15} />{t("community.chapters.light.night")}</p>
-          : <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onChanged} />}
-      </ContributionChapter>
-      <ContributionChapter icon={<Binoculars />} title={t("community.chapters.view.title")} summary={bench.observations.view.mine ? t("community.chapters.view.recorded") : t("community.chapters.view.summary")}>
-        <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} onChanged={onChanged} />
-      </ContributionChapter>
-      <ContributionChapter icon={<Camera />} title={t("community.chapters.photo.title")} summary={t("community.chapters.photo.summary")}>
-        <BenchPhotoCapture benchId={bench.id} onChanged={onChanged} />
-      </ContributionChapter>
-      <ContributionChapter icon={<ImagePlus />} title={t("community.chapters.moment.title")} summary={t("community.chapters.moment.summary")}>
-        <aside className="community-theme"><Sparkles size={17} aria-hidden="true" /><div><small>{t("community.theme.month")}</small><strong>{theme.title}</strong><p>{theme.prompt}</p></div></aside>
-        <MomentForm bench={bench} onChanged={onChanged} />
-      </ContributionChapter>
-      <ContributionChapter icon={<Star />} title={t("community.chapters.rating.title")} summary={bench.myRating ? t("community.chapters.rating.mine", { rating: bench.myRating.overall }) : t("community.chapters.rating.prompt")}>
-        <RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} />
-      </ContributionChapter>
-      <ContributionChapter icon={<HeartHandshake />} title={t("community.chapters.care.title")} summary={bench.care.mine.length ? t("community.chapters.care.mine", { count: bench.care.mine.length }) : t("community.chapters.care.summary")}>
-        <CareActions bench={bench} onChanged={onChanged} />
-        <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />
-      </ContributionChapter>
-      <ContributionChapter icon={<AlertTriangle />} title={t("community.chapters.correction.title")} summary={t("community.chapters.correction.summary")}>
-        <CorrectionForm benchId={bench.id} onChanged={onChanged} />
-      </ContributionChapter>
-      </>}
-    </div>
-    <form method="dialog" className="modal-backdrop"><button onClick={onClose}>{t("common.actions.close")}</button></form>
-  </dialog>;
-}
-
-function ContributionOverview({ bench }: { bench: BenchDetail }) {
-  const t = useTranslations();
-  const featureCount = bench.properties.filter((item) => item.contributedByMe).length + (bench.directionContributedByMe ? 1 : 0);
-  const moments = bench.moments.filter((item) => item.mine).length;
-  const entries = [
-    featureCount ? t("community.overview.features", { count: featureCount }) : null,
-    bench.observations.light.mine ? t("bench.details.light") : null,
-    bench.observations.view.mine ? t("bench.details.view") : null,
-    bench.myRating ? t("community.overview.rating") : null,
-    moments ? t("community.overview.moments", { count: moments }) : null,
-  ].filter(Boolean);
-  return <div className="contribution-overview"><Check size={17} aria-hidden="true" /><p>{entries.length ? <>{t("community.overview.mine")} <strong>{entries.join(" · ")}</strong></> : t("community.overview.empty")}</p></div>;
-}
-
-function ContributionChapter({ title, summary, icon, open, children }: { title: string; summary: string; icon: React.ReactNode; open?: boolean; children: React.ReactNode }) {
-  return <details className="contribution-chapter" name="bench-contribution" open={open} onToggle={(event) => {
-    const chapter = event.currentTarget;
-    if (chapter.open) requestAnimationFrame(() => chapter.scrollIntoView({ block: "nearest", behavior: "smooth" }));
-  }}><summary><span className="contribution-chapter-icon" aria-hidden="true">{icon}</span><span><strong>{title}</strong><small>{summary}</small></span><span aria-hidden="true">⌄</span></summary><div>{children}</div></details>;
-}
-
-function MetadataEditor({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {
-  const t = useTranslations();
-  const save = async (_previous: ActionResult | null, formData: FormData) => {
-    const result = await editBenchMetadata(bench.id, null, formData);
-    if (result.ok && onChanged) await onChanged();
-    return result;
+  const close = () => {
+    if (pending) return;
+    if (!dirty) { dialog.current?.close(); return; }
+    if (!confirmDiscard) discardReturn.current = {
+      scroll: scroller.current?.scrollTop ?? 0,
+      focus: document.activeElement instanceof HTMLElement ? document.activeElement : null,
+    };
+    setConfirmDiscard(true);
   };
-  const [state, action, pending] = useActionState(save, null);
-  return <form action={action} className="contribution-metadata-form">
-    <label><span>{t("common.fields.name")} <small>{t("common.fields.optional")}</small></span><input name="name" maxLength={80} defaultValue={bench.name ?? ""} placeholder={t("community.metadata.placeholder")} /></label>
-    <label><span>{t("submission.fields.dedication")} <small>{t("community.metadata.dedicationHint")}</small></span><textarea name="dedication" maxLength={180} defaultValue={bench.dedication ?? ""} /></label>
-    <button disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Check size={15} />}  {t("community.metadata.save")}</button>
-    {state && <p role="status" className={state.ok ? "is-success" : "is-error"}>{state.message}</p>}
-  </form>;
-}
-
-const momentKinds = ["memory", "recommendation", "poem", "local_fact"] as const;
-
-function MomentForm({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {
-  const t = useTranslations();
-  const [kind, setKind] = useState<(typeof momentKinds)[number]>("memory");
-  const save = async (_previous: ActionResult | null, formData: FormData) => {
-    const result = await submitBenchMoment(bench.id, null, formData);
-    if (result.ok && onChanged) await onChanged();
-    return result;
+  const choose = (task: ContributionTask) => {
+    homeScroll.current = scroller.current?.scrollTop ?? 0;
+    returnTask.current = task;
+    setVisited((previous) => previous.includes(task) ? previous : [...previous, task]);
+    setActive(task);
   };
-  const [state, action, pending] = useActionState(save, null);
-  return <form action={action} className="moment-form">
-    <fieldset><legend>{t("community.moments.choose")}</legend><div>{momentKinds.map((value) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)}>{t(`community.moments.kinds.${value}`)}</button>)}</div></fieldset>
-    <input type="hidden" name="kind" value={kind} />
-    <label><span>{t("community.moments.label")}</span><textarea required name="body" minLength={2} maxLength={500} placeholder={kind === "poem" ? t("community.moments.poemPlaceholder") : t("community.moments.placeholder")} /></label>
-    <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-    <button disabled={pending}>{pending ? <span className="loading loading-spinner loading-xs" /> : <Send size={15} />}  {t("community.moments.publish")}</button>
-    {state && <p role="status" className={state.ok ? "is-success" : "is-error"}>{state.message}</p>}
-  </form>;
-}
+  const title = confirmDiscard ? t("community.workspace.discardTitle")
+    : t(active === "all" ? "community.hub.title" : `community.chapters.${active}.title`);
 
-const careActions: Array<[BenchCareKind, React.ReactNode]> = [
-  ["cleaned", <Sparkles key="cleaned" />],
-  ["good", <Check key="good" />],
-  ["repair", <Hammer key="repair" />],
-  ["beautiful", <MessageCircleHeart key="beautiful" />],
-];
-
-function CareActions({ bench, onChanged }: { bench: BenchDetail; onChanged?: Refresh }) {
-  const t = useTranslations();
-  const [mine, setMine] = useState(new Set(bench.care.mine));
-  const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  const submit = (kind: BenchCareKind) => startTransition(async () => {
-    const result = await submitBenchCare(bench.id, kind);
-    setMessage(result.message);
-    if (!result.ok) return;
-    setMine((current) => new Set(current).add(kind));
-    if (onChanged) await onChanged();
-  });
-  return <div className="care-actions"><p><HeartHandshake size={17} /> {t("community.care.description")}</p><div>{careActions.map(([kind, icon]) => <button type="button" key={kind} disabled={pending || mine.has(kind)} onClick={() => submit(kind)}>{icon}<span>{mine.has(kind) ? t("community.care.mine", { label: t(`community.care.actions.${kind}`) }) : t(`community.care.actions.${kind}`)}</span></button>)}</div>{message && <p role="status">{message}</p>}</div>;
+  return <ContributionSession value={publish}>
+    <dialog ref={dialog} aria-labelledby={titleId} className="contribution-dialog" onCancel={(event) => {
+      event.preventDefault(); event.stopPropagation();
+      if (confirmDiscard) setConfirmDiscard(false); else close();
+    }} onClose={(event) => {
+      event.stopPropagation();
+      // Strict Mode may queue a cleanup close event before reopening this same element.
+      if (!dialog.current?.open) onClose();
+    }}>
+      <div className="contribution-sheet">
+        <header className="contribution-sheet-header">
+          <div className="contribution-toolbar">
+            {active !== "all" && !confirmDiscard ? <button type="button" disabled={pending} onClick={() => setActive("all")}><ArrowLeft size={17} aria-hidden="true" />{t("community.workspace.allTasks")}</button> : <span />}
+            <button type="button" disabled={pending} onClick={close} aria-label={t("community.hub.close")}><X size={20} aria-hidden="true" /></button>
+          </div>
+        </header>
+        <div ref={scroller} className="contribution-scroll">
+          <div className="contribution-heading">
+            <p className="contribution-place">{bench.name || t("common.values.bench")}{bench.locationName && <span> · {bench.locationName}</span>}</p>
+            <h2 ref={heading} id={titleId} tabIndex={-1}>{title}</h2>
+          </div>
+          {confirmDiscard && <div className="contribution-discard">
+            <p>{t("community.workspace.discardBody")}</p>
+            <button type="button" className="contribution-primary" onClick={() => setConfirmDiscard(false)}>{t("community.workspace.keepEditing")}</button>
+            <button type="button" className="contribution-danger" onClick={() => dialog.current?.close()}>{t("community.workspace.discard")}</button>
+          </div>}
+          <div hidden={active !== "all" || confirmDiscard}><ContributionChooser bench={bench} onChoose={choose} /></div>
+          {visited.map((task) => <section key={task} data-contribution-task={task} hidden={active !== task || confirmDiscard}>
+            {task === "features" && <><p className="contribution-intro">{t("community.workspace.featureIntro")}</p><BenchFeatureEditor bench={bench} onlyFields={onlyFields} onChanged={onChanged} />{!onlyFields && <MetadataEditor bench={bench} onChanged={onChanged} />}</>}
+            {task === "light" && (bench.dayPhase === "night" ? <p className="contribution-night"><Moon size={24} aria-hidden="true" />{t("community.chapters.light.night")}</p> : <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onChanged} />)}
+            {task === "view" && <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} description={bench.viewLabels.filter(label => label !== "Aussicht noch offen").map(label => viewLabel(label, t)).join(" · ")} onChanged={onChanged} />}
+            {task === "photo" && <BenchPhotoCapture benchId={bench.id} onChanged={onChanged} />}
+            {task === "moment" && <><p className="contribution-intro">{t("community.chapters.moment.summary")}</p><MomentForm bench={bench} onChanged={onChanged} /></>}
+            {task === "rating" && <RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} />}
+            {task === "care" && <><p className="contribution-intro">{t("community.workspace.careIntro")}</p><CareActions bench={bench} onChanged={onChanged} /><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></>}
+            {task === "presence" && <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />}
+            {task === "correction" && <CorrectionForm benchId={bench.id} onChanged={onChanged} />}
+          </section>)}
+        </div>
+        {!confirmDiscard && <footer className="contribution-footer">
+          {(active === "all" || pending || dirty) && <small aria-live="polite">{t(pending ? "common.actions.saving" : dirty ? "community.workspace.unsaved" : "community.workspace.oneIsEnough")}</small>}
+          <button type="button" disabled={pending} onClick={close}>{t("community.workspace.returnToBench")}</button>
+        </footer>}
+      </div>
+    </dialog>
+  </ContributionSession>;
 }

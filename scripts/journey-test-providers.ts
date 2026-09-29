@@ -53,6 +53,11 @@ if (process.env.BENCHLY_JOURNEY_TEST_FIXTURES === "true") {
       }
       return Response.json({ results: [] });
     }
+    if (url.hostname === "api3.geo.admin.ch" && url.pathname.endsWith("/rest/services/ech/MapServer/identify")) {
+      // No live reverse-geocoder dependency in browser tests. An empty provider
+      // response exercises the real nearest-known-place fallback in benches.ts.
+      return Response.json({ results: [] });
+    }
     return originalFetch(input, init);
   };
 }

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama";
 import type { PanoramaDescriptor } from "@/features/bench-panorama/types";
+import { retainPanoramaArtifact } from "../descriptor";
 import type { BenchDetail } from "@/lib/types";
 import { PANORAMA_ARTIFACT_MAX_ALTITUDE, panoramaSkyTop, projectNightSky, type ProjectedStar } from "@/lib/night-sky";
 import { panoramaMaterialIsSkyPixel } from "@/lib/panorama-material";
@@ -148,11 +149,23 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
 
   const load = async () => {
     const result = await loadBenchPanorama(bench.id).catch((): PanoramaDescriptor => ({ status: "error", retryAfterMs: 30_000 }));
-    setDescriptor(result);
+    setDescriptor((current) => retainPanoramaArtifact(current, result));
     setFailed(false);
     return result;
   };
   const request = () => void requestBenchPanorama(bench.id).then(load, load);
+
+  useEffect(() => {
+    const incoming = bench.panorama;
+    if (!incoming?.artifactUrl) return;
+    // The parent can learn of a finished worker render before our own poll.
+    // Update its assets in-place instead of using status as a React key.
+    const frame = requestAnimationFrame(() => {
+      setDescriptor((current) => retainPanoramaArtifact(current, incoming));
+      setFailed(false);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [bench.panorama]);
 
   useEffect(() => {
     let active = true;
@@ -160,9 +173,10 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     let attempts = 0;
     let lightAttempts = 0;
     const poll = async () => {
+      if (!active) return;
       const result = await loadBenchPanorama(bench.id).catch((): PanoramaDescriptor => ({ status: "error", retryAfterMs: 30_000 }));
       if (!active) return;
-      setDescriptor(result);
+      setDescriptor((current) => retainPanoramaArtifact(current, result));
       if (result.status === "ready") {
         // The optional lighting can arrive after the painting. Refresh it a
         // few times without ever returning the UI to a loading state.
@@ -247,8 +261,11 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  const projection = panoramaProjection(size.width, size.height, heading, pitch, zoom);
-  const degrees = Math.round(heading) % 360;
+  // Inline art follows the recorded bench direction. An open 360 view belongs
+  // to the visitor; metadata refreshes must not reset their heading or zoom.
+  const visibleHeading = expanded ? heading : initialHeading;
+  const projection = panoramaProjection(size.width, size.height, visibleHeading, expanded ? pitch : 0, expanded ? zoom : 1);
+  const degrees = Math.round(visibleHeading) % 360;
   const cloudContrast = panoramaShadowContrast(cloudCover);
   const precipitation = bench.weather?.precipitationType ?? "unknown";
   const raining = precipitation === "rain" || precipitation === "mixed";
@@ -261,7 +278,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const snowParticles = snowing ? precipitationParticles("snow", snowCount, `${bench.id}:snow`) : [];
   const snowGround = panoramaHasSnowCover(bench.weather?.snowDepthCm, bench.weather?.snowCoverPercent);
   const covered = bench.covered;
-  const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, heading);
+  const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, visibleHeading);
   const twilightOpacity = bench.dayPhase === "day" ? 0 : Math.max(.08, Math.min(1, (-bench.sunAltitudeDegrees + 2) / 10));
   // Actual cloud pixels occlude the stars; clear openings should not be globally washed out.
   const starOpacity = twilightOpacity * (bench.moonVisible ? 1 - bench.moonIllumination * .25 : 1);
@@ -331,7 +348,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   };
 
-  return <figure ref={figure} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined}
+  return <figure ref={figure} data-recorded-direction={initialHeading} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined}
     aria-label={expanded ? t("panoramaExpandedTitle") : undefined} onKeyDown={modalKeyDown}
     className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${expanded ? " is-expanded" : " is-static"}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}${snowing ? " is-snowing" : ""}${covered ? " has-shelter" : ""}${bench.sunnyNow ? " is-sunny" : " is-shaded"}`} style={panoramaStyle}>
     <div ref={viewport} className="bench-panorama-viewport" role={expanded ? "group" : "img"} tabIndex={expanded ? 0 : -1}
@@ -375,7 +392,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     </div>
     {covered && <div className="bench-panorama-shelter" aria-hidden="true"><i /><i /></div>}
     {covered && <div className="bench-panorama-shelter-shade" aria-hidden="true" />}
-    <div className="bench-panorama-hud"><span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span>{expanded && <div className="bench-panorama-zoom-controls"><button type="button" aria-label={t("panoramaZoomOut")} title={t("panoramaZoomOut")} disabled={zoom <= 1} onClick={() => setZoom((current) => Math.max(1, current - .2))}><Minus size={14} /></button><span aria-live="polite">{zoom.toFixed(1)}×</span><button type="button" aria-label={t("panoramaZoomIn")} title={t("panoramaZoomIn")} disabled={zoom >= 2} onClick={() => setZoom((current) => Math.min(2, current + .2))}><Plus size={14} /></button></div>}<small id={hintId}>{t(expanded ? "panoramaExploreHint" : "panoramaStaticHint")}</small><button ref={expandButton} type="button" className="bench-panorama-expand" aria-expanded={expanded} aria-label={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} title={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} onClick={() => expanded ? closeExpanded() : setExpanded(true)}>{expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}<span>{t(expanded ? "panoramaClose" : "panorama360")}</span></button></div>
+    <div className="bench-panorama-hud"><span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span>{expanded && <div className="bench-panorama-zoom-controls"><button type="button" aria-label={t("panoramaZoomOut")} title={t("panoramaZoomOut")} disabled={zoom <= 1} onClick={() => setZoom((current) => Math.max(1, current - .2))}><Minus size={14} /></button><span aria-live="polite">{zoom.toFixed(1)}×</span><button type="button" aria-label={t("panoramaZoomIn")} title={t("panoramaZoomIn")} disabled={zoom >= 2} onClick={() => setZoom((current) => Math.min(2, current + .2))}><Plus size={14} /></button></div>}<small id={hintId}>{t(expanded ? "panoramaExploreHint" : "panoramaStaticHint")}</small><button ref={expandButton} type="button" className="bench-panorama-expand" aria-expanded={expanded} aria-label={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} title={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} onClick={() => { if (expanded) closeExpanded(); else { setHeading(initialHeading); setPitch(0); setZoom(1); setExpanded(true); } }}>{expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}<span>{t(expanded ? "panoramaClose" : "panorama360")}</span></button></div>
     {children}
   </figure>;
 }

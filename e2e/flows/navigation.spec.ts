@@ -240,8 +240,8 @@ test("confirmation is an intentional contribution, not a default-page interrupti
   await expect(page.getByRole("region", { name: "Auf einen Blick" }).getByRole("button", { name: "Ist noch da", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Verbessern", exact: true }).click();
   await registerInOpenDialog(page, `seen-${info.project.name.slice(-3)}`);
-  const hub = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
-  await hub.locator("summary").filter({ hasText: "Sich ums Bänkli kümmern" }).click();
+  const hub = page.locator(".contribution-dialog[open]");
+  await hub.getByRole("button", { name: "Sich ums Bänkli kümmern", exact: true }).click();
   await hub.getByRole("button", { name: "Ist noch da", exact: true }).click();
   await expect(hub.getByRole("button", { name: "Heute von dir bestätigt" })).toBeDisabled();
   await hub.getByRole("button", { name: "Beiträge schliessen" }).click();

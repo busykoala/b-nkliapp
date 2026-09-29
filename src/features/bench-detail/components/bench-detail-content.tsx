@@ -81,7 +81,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
       <BenchOverview bench={bench} onReviews={() => toggleReviews(true)} />
       <NearbyAmenities bench={bench} onLocate={onLocateAmenity} hrefPrefix={amenityMapHrefPrefix} />
       <p className="bench-poem">{voice?.first ?? poem.first} {voice?.second ?? poem.second}</p>
-      <BenchPanorama key={`${bench.id}-${bench.directionDegrees ?? "unknown"}-${bench.panoramaStatus}`} bench={bench} />
+      <BenchPanorama key={bench.id} bench={bench} />
       <BenchPhotos bench={bench} onAdd={() => contribute("photo")} />
       <BenchContribute onChoose={contribute} />
       <BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refresh} />

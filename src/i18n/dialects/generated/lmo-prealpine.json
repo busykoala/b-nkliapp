@@ -1060,6 +1060,56 @@
       "observationInvalid": "Osservazione sconosciuta.",
       "observationDeleted": "La tua osservazione è stata cancellata.",
       "observationDeleteFailed": "Impossibile cancellare l’osservazione."
+    },
+    "workspace": {
+      "choose": "Scegli un contributo",
+      "intro": "Una foto, un’informazione, un’impressione: scegli cosa vuoi condividere chì. Non devi sapere tutto.",
+      "groups": {
+        "place": "Mostrare il luogo",
+        "now": "Sul posto, adesso",
+        "experience": "La tua pausa",
+        "care": "Aiutare e segnalare"
+      },
+      "hints": {
+        "features": "Dotazioni, nome, orientamento",
+        "photo": "Scatta o scegli una foto",
+        "light": "Sole, ombra o alternanza",
+        "view": "Che cosa vedi da chì?",
+        "moment": "Consiglio, ricordo o poesia",
+        "rating": "Valuta la tua pausa",
+        "care": "Vista, pulita o curata",
+        "correction": "Posizione, stato o dintorni"
+      },
+      "allTasks": "Tutti i contributi",
+      "returnToBench": "Torna alla banchina",
+      "oneIsEnough": "Basta un contributo.",
+      "unsaved": "Bozza non salvata",
+      "discardTitle": "Eliminare la bozza?",
+      "discardBody": "Le informazioni non salvate e le foto selezionate andranno perse. I contributi già salvati rimarranno.",
+      "keepEditing": "Continua a modificare",
+      "discard": "Elimina e chiudi",
+      "refreshFailed": "Salvato; non è stato possibile aggiornare la vista.",
+      "featureIntro": "Scegli un’informazione. La tua scelta verrà registrata solo con «Salva». Puoi tralasciare ciò che non sai.",
+      "allFields": "Tutte le informazioni",
+      "skip": "Non lo so · indietro",
+      "draft": "Bozza",
+      "conflicting": "Informazioni discordanti",
+      "accessHint": "Si intende lo spazio pianeggiante accanto alla banchina, non l’intero percorso per raggiungerla.",
+      "nameAndDedication": "Nome e dedica",
+      "careIntro": "Segnala solo ciò che hai visto sul posto o fatto di persona.",
+      "quickSave": "Tocca per salvare la tua osservazione. Puoi annullarla.",
+      "viewIntro": "Per ogni domanda, scegli ciò che vedi di persona. Il contributo viene pubblicato solo alla fine.",
+      "questions": {
+        "backrest": "La banchina ha uno schienale?",
+        "armrest": "Ha dei braccioli?",
+        "covered": "La banchina è coperta?",
+        "seats": "Quante persone possono sedersi?",
+        "wheelchair": "C’è uno spazio pianeggiante proprio accanto alla banchina?",
+        "material": "Di che materiale è fatta la banchina?",
+        "direction": "In quale direzione si guarda da seduti?",
+        "fireplaceNearby": "C’è un focolare nelle vicinanze?"
+      },
+      "viewDescription": "Descrizione attuale"
     }
   },
   "knowledge": {

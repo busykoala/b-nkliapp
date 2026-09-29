@@ -92,3 +92,36 @@ test("renders geographic features through the packaged map worker", async ({ pag
   }, { message: "The map must paint the geographic polygon, not just initialize", timeout: 10_000 }).toBeGreaterThan(.9);
   await map.screenshot({ path: testInfo.outputPath("rendered-map.png"), animations: "disabled" });
 });
+
+test("opens a linked walk before the basemap becomes ready", async ({ page }) => {
+  const time = new Date("2026-09-05T10:00:00Z");
+  await page.clock.install({ time });
+  await page.clock.pauseAt(new Date(time.getTime() + 1_000));
+  let release!: () => void;
+  const pendingStyle = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("https://vectortiles.geo.admin.ch/styles/**", async (route) => {
+    await pendingStyle;
+    await route.fulfill({ json: {
+      version: 8, sources: {},
+      layers: [{ id: "paper", type: "background", paint: { "background-color": "#f8efdc" } }],
+    } });
+  });
+  try {
+    await page.goto("/?action=walk", { waitUntil: "domcontentloaded" });
+    const panel = page.getByRole("complementary", { name: "Spaziergang entdecken", exact: true });
+    // Run UI frames, not the three-second basemap fallback: the walk must not
+    // depend on which happens to finish first on a fast/slow runner.
+    await expect.poll(async () => {
+      await page.clock.runFor(50);
+      return panel.isVisible();
+    }).toBe(true);
+    await page.clock.runFor(32);
+    await expect(panel.getByRole("heading", { name: "Spaziergang entdecken", exact: true })).toBeFocused();
+    await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).not.toHaveAttribute("data-map-ready", "true");
+    await expect(panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true })).toBeDisabled();
+  } finally {
+    release();
+    await page.clock.resume();
+    await page.unrouteAll({ behavior: "wait" });
+  }
+});

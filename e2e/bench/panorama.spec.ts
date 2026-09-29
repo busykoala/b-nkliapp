@@ -1,38 +1,30 @@
-import { expect, test } from "@playwright/test";
+import { expect, test as base } from "@playwright/test";
 import Database from "better-sqlite3";
 import sharp from "sharp";
-import { installTerrainPanoramaFixture } from "../support/panorama-fixture";
+import { createIsolatedPanoramaBench, installTerrainPanoramaFixture, removeIsolatedPanoramaBench } from "../support/panorama-fixture";
 
-test.afterEach(() => {
-  const databasePath = process.env.BENCHLY_E2E_DATABASE;
-  if (!databasePath) return;
-  const database = new Database(databasePath);
-  const row = database.prepare("SELECT row_id FROM benches WHERE id='osm-node-109'").get() as { row_id: number } | undefined;
-  if (row) {
-    database.prepare("DELETE FROM bench_panorama_lightmaps WHERE bench_row_id=?").run(row.row_id);
-    database.prepare("DELETE FROM bench_panorama_renders WHERE bench_row_id=?").run(row.row_id);
-    database.prepare("DELETE FROM bench_panorama_geometry WHERE bench_row_id=?").run(row.row_id);
-    database.prepare("DELETE FROM bench_panorama_requests WHERE bench_row_id=?").run(row.row_id);
-    database.prepare("UPDATE benches SET covered=0 WHERE row_id=?").run(row.row_id);
-  }
-  database.close();
+const test = base.extend<{ panoramaBench: string }>({
+  panoramaBench: async ({ page }, provideBench) => {
+    // Trigger the isolated application's migrations/seed before cloning facts.
+    await page.goto("/");
+    const id = createIsolatedPanoramaBench();
+    try { await provideBench(id); } finally { removeIsolatedPanoramaBench(id); }
+  },
 });
 
-function setCoveredFixture() {
+function setCoveredFixture(id: string) {
   const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
-  database.prepare("UPDATE benches SET covered=1 WHERE id='osm-node-109'").run();
-  database.close();
+  try { database.prepare("UPDATE benches SET covered=1 WHERE id=?").run(id); }
+  finally { database.close(); }
 }
 
-test("keeps the inline painting calm and explores the full sky in an accessible 360 view", async ({ page, browserName }, testInfo) => {
+test("keeps the inline painting calm and explores the full sky in an accessible 360 view", async ({ page, browserName, panoramaBench }, testInfo) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 390, height: 844 });
-  // The first navigation lets the isolated test server migrate and seed its DB.
-  await page.goto("/");
-  setCoveredFixture();
-  await page.goto("/?bank=osm-node-109");
+  setCoveredFixture(panoramaBench);
+  await page.goto(`/?bank=${panoramaBench}`);
   await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "full");
-  await installTerrainPanoramaFixture("osm-node-109", true);
+  await installTerrainPanoramaFixture(panoramaBench, true);
 
   const panorama = page.locator(".bench-panorama");
   // A panorama completed by the worker appears in the open detail without a reload.
@@ -59,9 +51,8 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   expect(canvasBudget.height).toBeGreaterThanOrEqual(128);
   expect(canvasBudget.width).toBeLessThanOrEqual(2048);
   expect(canvasBudget.height).toBeLessThanOrEqual(512);
-  // Read the three rectangles in one browser task. The light-map poll can
-  // replace the figure between separate WebKit boundingBox calls, which made
-  // this purely visual assertion intermittently observe a detached element.
+  // Read all layout rectangles together so geometry assertions describe one
+  // rendered frame rather than separate browser layout turns.
   const layout = await panorama.evaluate((element) => {
     const ground = element.querySelector<HTMLElement>(".bench-panorama-ground-patch");
     const bench = element.querySelector<HTMLElement>(".bench-panorama-rear-bench");
@@ -208,7 +199,7 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   await expect(open).toBeFocused();
 });
 
-test("keeps semantic sky transparent when WebGL is unavailable", async ({ page }, testInfo) => {
+test("keeps semantic sky transparent when WebGL is unavailable", async ({ page, panoramaBench }, testInfo) => {
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function(this: HTMLCanvasElement, type: string, options?: unknown) {
@@ -216,9 +207,8 @@ test("keeps semantic sky transparent when WebGL is unavailable", async ({ page }
       return original.call(this, type as "2d", options as CanvasRenderingContext2DSettings);
     } as typeof HTMLCanvasElement.prototype.getContext;
   });
-  await page.goto("/");
-  await installTerrainPanoramaFixture("osm-node-109", false);
-  await page.goto("/?bank=osm-node-109");
+  await installTerrainPanoramaFixture(panoramaBench, false);
+  await page.goto(`/?bank=${panoramaBench}`);
   const panorama = page.locator(".bench-panorama");
   const canvas = panorama.locator(".bench-panorama-webgl.is-ready").first();
   await expect(canvas).toBeVisible({ timeout: 8_000 });
@@ -234,19 +224,46 @@ test("keeps semantic sky transparent when WebGL is unavailable", async ({ page }
   await panorama.screenshot({ path: testInfo.outputPath("panorama-canvas2d-fallback.png") });
 });
 
-test("keeps a conservative continuous sky when the semantic mask fails", async ({ page }) => {
-  await page.goto("/");
-  await installTerrainPanoramaFixture("osm-node-109", false);
+test("keeps a conservative continuous sky when the semantic mask fails", async ({ page, panoramaBench }) => {
+  await installTerrainPanoramaFixture(panoramaBench, false);
   const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
   const row = database.prepare(`SELECT pr.material_key materialKey FROM benches b
-    JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id WHERE b.id='osm-node-109'`)
-    .get() as { materialKey: string };
+    JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id WHERE b.id=?`)
+    .get(panoramaBench) as { materialKey: string };
   database.close();
   await page.route(`**/media/panorama/${row.materialKey}`, (route) => route.abort("failed"));
-  await page.goto("/?bank=osm-node-109");
+  await page.goto(`/?bank=${panoramaBench}`);
   const panorama = page.locator(".bench-panorama");
   await expect(panorama.locator(".bench-panorama-sky").first()).toBeVisible();
   await expect(panorama.locator(".bench-panorama-webgl.is-ready")).toHaveCount(0);
   await expect(panorama.locator(".bench-panorama-celestial")).toHaveCount(0);
   await expect(panorama.locator(".bench-panorama-art.has-material").first()).toHaveCSS("opacity", "0");
+});
+
+test("keeps an expanded panorama and its pose through a detail refresh", async ({ page, panoramaBench }) => {
+  await installTerrainPanoramaFixture(panoramaBench, true);
+  await page.goto(`/?bank=${panoramaBench}`);
+  const panorama = page.locator(".bench-panorama");
+  await panorama.getByRole("button", { name: "Panorama gross im 360-Grad-Modus öffnen" }).click();
+  const viewport = panorama.locator(".bench-panorama-viewport");
+  await viewport.press("ArrowRight");
+  await viewport.press("+");
+  await expect(panorama.locator(".bench-panorama-bearing")).toHaveText("330°");
+  await expect(panorama.locator(".bench-panorama-zoom-controls span")).toHaveText("1.1×");
+  await panorama.evaluate((element) => element.setAttribute("data-viewer-instance", "original"));
+  const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
+  try { database.prepare("UPDATE benches SET direction_degrees=90 WHERE id=?").run(panoramaBench); }
+  finally { database.close(); }
+  const refresh = page.waitForResponse((response) => response.request().method() === "POST"
+    && response.request().postData() === JSON.stringify([panoramaBench]));
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  expect((await refresh).ok()).toBe(true);
+  await expect(panorama).toHaveAttribute("data-recorded-direction", "90");
+  await expect(panorama).toHaveAttribute("data-viewer-instance", "original");
+  await expect(panorama).toHaveClass(/is-expanded/);
+  await expect(panorama.locator(".bench-panorama-bearing")).toHaveText("330°");
+  await expect(panorama.locator(".bench-panorama-zoom-controls span")).toHaveText("1.1×");
+  await panorama.getByRole("button", { name: "360-Grad-Grossansicht schliessen" }).click();
+  await expect(panorama).toHaveClass(/is-static/);
+  await expect(panorama.locator(".bench-panorama-bearing")).toHaveText("90°");
 });

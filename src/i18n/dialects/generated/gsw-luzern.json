@@ -1060,6 +1060,56 @@
       "observationInvalid": "Unbekannte Beobachtung.",
       "observationDeleted": "Deine Beobachtung wurde gelöscht.",
       "observationDeleteFailed": "Die Beobachtung konnte nid gelöscht werden."
+    },
+    "workspace": {
+      "choose": "Bitrag auswählen",
+      "intro": "Es Foto, e Angabe, ein Eindruck: Wähle, was du da beitragen möchtest. Du musst nid alles wissen.",
+      "groups": {
+        "place": "Den Platz zeige",
+        "now": "Gerade vor Ort",
+        "experience": "Deine Pause",
+        "care": "Helfen & melden"
+      },
+      "hints": {
+        "features": "Ausstattung, Name, Blickrichtung",
+        "photo": "Aufnehmen oder Bild auswählen",
+        "light": "Sunne, Schatte oder wechselhaft",
+        "view": "Was siehst du von da?",
+        "moment": "Tipp, Erinnerung oder Gedicht",
+        "rating": "Deine Pause bewerten",
+        "care": "Gesehen, gereinigt oder gepflegt",
+        "correction": "Position, Zustand oder Umgebung"
+      },
+      "allTasks": "Alle Biträg",
+      "returnToBench": "Zum Bänkli",
+      "oneIsEnough": "Es Bitrag genügt.",
+      "unsaved": "Nid gespeicherter Entwurf",
+      "discardTitle": "Entwurf verwerfen?",
+      "discardBody": "Nid gespeicherte Angaben und ausgewählte Fotos gehen verloren. Bereits gespeicherte Biträg bleiben erhalten.",
+      "keepEditing": "Weiter bearbeiten",
+      "discard": "Verwerfen und zuemache",
+      "refreshFailed": "Gespeichert; die Ansicht konnte nid aktualisiert werden.",
+      "featureIntro": "Wähle e Angabe. Deine Auswahl wird erst mit «Speichern» übernommen. Unbekanntes kannst du auslassen.",
+      "allFields": "Alle Angaben",
+      "skip": "Weiss ich nid · zurück",
+      "draft": "Entwurf",
+      "conflicting": "Unterschiedliche Angaben",
+      "accessHint": "Gemeint isch der ebene Platz direkt am Bänkli – nid die gesamte Anreise.",
+      "nameAndDedication": "Name & Widmung",
+      "careIntro": "Melde nur, was du vor Ort gesehen oder selbst gemacht hast.",
+      "quickSave": "Antippen speichert deine Beobachtung. Du kannst sie rückgängig machen.",
+      "viewIntro": "Wähle bei jeder Frage, was du selbst siehst. Veröffentlicht wird erst am Schluss.",
+      "questions": {
+        "backrest": "Hat das Bänkli e Ruggelehne?",
+        "armrest": "Hat es Armlehnen?",
+        "covered": "Isch das Bänkli überdacht?",
+        "seats": "Für wie viele Personen isch Platz?",
+        "wheelchair": "Gibt es direkt am Bänkli en ebenen Platz?",
+        "material": "Aus welchem Material isch das Bänkli?",
+        "direction": "Wohin blickt man im Sitzen?",
+        "fireplaceNearby": "Gibt es in der Nähe e Feuerstelle?"
+      },
+      "viewDescription": "Bisherige Einordnung"
     }
   },
   "knowledge": {

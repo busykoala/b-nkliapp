@@ -33,14 +33,15 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   const moment = `Die Limmat klingt hier morgens besonders ruhig (${runId}).`;
   await registerUser(page, `p-${runId}`);
   await page.getByRole("button", { name: "Verbessern", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  const dialog = page.locator(".contribution-dialog[open]");
 
-  await dialog.locator("summary").filter({ hasText: "Einen Moment hinterlassen" }).click();
+  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
   await dialog.getByLabel("Dein Bänkli-Moment").fill(moment);
   await dialog.getByRole("button", { name: "Moment veröffentlichen" }).click();
   await expect(dialog.getByText("Dein Bänkli-Moment ist jetzt am Platz zu lesen.")).toBeVisible();
 
-  await dialog.locator("summary").filter({ hasText: "Sich ums Bänkli kümmern" }).click();
+  await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
+  await dialog.getByRole("button", { name: "Sich ums Bänkli kümmern", exact: true }).click();
   await dialog.getByRole("button", { name: "Kurz gereinigt", exact: true }).click();
   await expect(dialog.getByRole("button", { name: "Kurz gereinigt · von dir" })).toBeDisabled();
   await dialog.getByLabel("Beiträge schliessen").click();
@@ -80,7 +81,8 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   await registerUser(page, runId);
   await page.getByRole("button", { name: "Foto hinzufügen", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Foto von diesem Platz" });
-  await expect(dialog.locator(".contribution-chapter")).toHaveCount(1);
+  await expect(dialog.locator("[data-contribution-task]:visible")).toHaveCount(1);
+  await expect(dialog.locator("details")).toHaveCount(0);
 
   await expect(dialog.getByText("Das Bänkli ins Bild setzen")).toBeVisible();
   await expect(dialog.getByText(/Aus Fotomediathek, Kamera oder Dateien wählen/)).toBeVisible();
@@ -128,4 +130,94 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   await expect(dialog.getByRole("status")).toHaveText("Die Bildprüfung schaut gerade woanders hin. Bitte später nochmals versuchen.");
   expect(pageErrors).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("bench-photo-flow.png"), fullPage: true });
+});
+
+test("keeps contribution drafts across tasks and protects closing the viewport-owned editor", async ({ page }, testInfo) => {
+  const runId = `draft-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
+  await registerUser(page, runId);
+  const trigger = page.getByRole("button", { name: "Verbessern", exact: true });
+  await trigger.click();
+  const dialog = page.locator(".contribution-dialog[open]");
+  await expect(dialog).toHaveAccessibleName("Zum Bänkli beitragen");
+  await expect(dialog.locator("[data-contribution-choice]")).toHaveCount(8);
+  await expect(dialog.getByText("Lindenhof", { exact: false }).first()).toBeVisible();
+  const viewport = page.viewportSize()!;
+  const box = await dialog.boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + 1);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height + 1);
+  await expect(dialog.getByRole("button", { name: "Beiträge schliessen" })).toBeInViewport();
+
+  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  const text = `Noch nicht veröffentlichter Gedanke ${runId}`;
+  await dialog.getByLabel("Dein Bänkli-Moment").fill(text);
+  await page.setViewportSize({ width: viewport.width, height: 400 });
+  await expect(dialog.getByRole("button", { name: "Beiträge schliessen" })).toBeInViewport();
+  await dialog.getByLabel("Dein Bänkli-Moment").scrollIntoViewIfNeeded();
+  await expect(dialog.getByLabel("Dein Bänkli-Moment")).toHaveValue(text);
+  await page.setViewportSize(viewport);
+  await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true })).toBeFocused();
+  await dialog.getByRole("button", { name: "Licht gerade jetzt", exact: true }).click();
+  await expect(dialog.getByLabel("Licht vor Ort melden")).toBeVisible();
+  await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
+  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  await expect(dialog.getByLabel("Dein Bänkli-Moment")).toHaveValue(text);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveAccessibleName("Entwurf verwerfen?");
+  await dialog.getByRole("button", { name: "Weiter bearbeiten", exact: true }).click();
+  await expect(dialog.getByLabel("Dein Bänkli-Moment")).toHaveValue(text);
+  await dialog.getByRole("button", { name: "Beiträge schliessen" }).click();
+  await dialog.getByRole("button", { name: "Verwerfen und schliessen", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page).toHaveURL(/\/bank\/osm-node-101$/);
+  await trigger.click();
+  await page.locator(".contribution-dialog[open]").getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  await expect(page.getByLabel("Dein Bänkli-Moment")).toHaveValue("");
+});
+
+
+test("saves chosen facts explicitly and retains a written contribution after a failed request", async ({ page }, testInfo) => {
+  const runId = `save-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
+  await registerUser(page, runId);
+  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
+  const dialog = page.locator(".contribution-dialog[open]");
+  await dialog.getByRole("button", { name: /Armlehnen/ }).click();
+  let actionRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.headers()["next-action"]) actionRequests++;
+  });
+  await dialog.getByRole("button", { name: "Nein", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Nein", exact: true })).toHaveAttribute("aria-pressed", "true");
+  expect(actionRequests).toBe(0);
+  await dialog.getByRole("button", { name: "Speichern", exact: true }).click();
+  const field = dialog.locator('[data-feature="armrest"]');
+  await expect(field).toContainText("Nein");
+  await expect(field).toBeFocused();
+  await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
+  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  const draft = `Dieser Gedanke bleibt auch nach einem Fehler erhalten (${runId}).`;
+  const body = dialog.getByLabel("Dein Bänkli-Moment");
+  await body.fill(draft);
+  let failNextAction = true;
+  const interrupt = async (route: import("@playwright/test").Route) => {
+    const request = route.request();
+    if (failNextAction && request.method() === "POST" && request.headers()["next-action"]) {
+      failNextAction = false;
+      await route.abort("failed");
+    } else await route.continue();
+  };
+  await page.route("**/*", interrupt);
+  await dialog.getByRole("button", { name: "Moment veröffentlichen", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  await expect(body).toHaveValue(draft);
+  await page.unroute("**/*", interrupt);
+  await dialog.getByRole("button", { name: "Moment veröffentlichen", exact: true }).click();
+  await expect(dialog.getByRole("status")).toHaveText("Dein Bänkli-Moment ist jetzt am Platz zu lesen.");
+  await expect(body).toHaveValue("");
+  await dialog.getByRole("button", { name: "Zum Bänkli", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText(draft, { exact: true })).toBeVisible();
 });

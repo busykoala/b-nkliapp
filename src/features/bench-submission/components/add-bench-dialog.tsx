@@ -20,14 +20,19 @@ export function AddBenchDialog({ coordinates, onChoosePosition, onClose, onCreat
   const materialOptions = (["wood", "metal", "stone", "concrete", "plastic", "mixed"] as const).map((value) => [value, t(`bench.materials.${value}`)]);
   const ref = useRef<HTMLDialogElement>(null);
   const [place, setPlace] = useState(t("submission.location.searching"));
-  const [nearby, setNearby] = useState<NearbyBench[] | null>(null);
+  const [nearbyResult, setNearbyResult] = useState<{
+    latitude: number; longitude: number; benches: NearbyBench[];
+  } | null>(null);
+  // A result for an earlier pin must never enable submitting the new one.
+  const nearby = nearbyResult?.latitude === coordinates.latitude && nearbyResult.longitude === coordinates.longitude
+    ? nearbyResult.benches : null;
   const [lookupError, setLookupError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [reviewed, setReviewed] = useState(false);
   const notifiedBenchId = useRef<string | null>(null);
   const [state, formAction, pending] = useActionState(async (_previous: AddBenchResult | null, data: FormData) => {
     const result = await addBench(null, data);
-    if (!result.ok && result.nearby) { setNearby(result.nearby); setReviewed(false); }
+    if (!result.ok && result.nearby) { setNearbyResult({ ...coordinates, benches: result.nearby }); setReviewed(false); }
     return result;
   }, null);
   useEffect(() => {
@@ -38,16 +43,33 @@ export function AddBenchDialog({ coordinates, onChoosePosition, onClose, onCreat
     onCreated(state.benchId);
   }, [state, pending, onCreated]);
   useEffect(() => { ref.current?.showModal(); }, []);
+  const { latitude, longitude } = coordinates;
   useEffect(() => {
     let current = true;
-    void resolveBenchLocation(coordinates.latitude, coordinates.longitude).then((location) => {
-      if (current) setPlace(location ? [location.name, location.postcode].filter(Boolean).join(" · ") : t("submission.location.onSave"));
-    }).catch(() => { if (current) setPlace(t("submission.location.onSave")); });
-    void getNearbyBenches(coordinates.latitude, coordinates.longitude).then((benches) => {
-      if (current) { setNearby(benches); setLookupError(false); }
-    }).catch(() => { if (current) setLookupError(true); });
-    return () => { current = false; };
-  }, [coordinates.latitude, coordinates.longitude, retry, t]);
+    // Server Actions share a client-side queue. The essential local duplicate
+    // check must finish before optional reverse geocoding joins that queue.
+    // Deferring setup also prevents Strict Mode's discarded effect from
+    // starting a geocoder ahead of the live effect's duplicate check.
+    const timer = window.setTimeout(async () => {
+      setNearbyResult(null);
+      setLookupError(false);
+      setReviewed(false);
+      setPlace(t("submission.location.searching"));
+      try {
+        const benches = await getNearbyBenches(latitude, longitude);
+        if (!current) return;
+        setNearbyResult({ latitude, longitude, benches });
+      } catch {
+        if (current) setLookupError(true);
+        return;
+      }
+      try {
+        const location = await resolveBenchLocation(latitude, longitude);
+        if (current) setPlace(location ? [location.name, location.postcode].filter(Boolean).join(" · ") : t("submission.location.onSave"));
+      } catch { if (current) setPlace(t("submission.location.onSave")); }
+    }, 0);
+    return () => { current = false; window.clearTimeout(timer); };
+  }, [latitude, longitude, retry, t]);
   return <dialog ref={ref} onCancel={onClose} aria-labelledby="add-bench-title" className="modal modal-bottom sm:modal-middle">
     <div className="modal-box utility-sheet add-bench-sheet">
       <button type="button" aria-label={t("common.actions.closeTitle")} className="btn btn-circle btn-ghost absolute right-3 top-3" onClick={onClose}><X size={19} /></button>

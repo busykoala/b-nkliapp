@@ -365,5 +365,55 @@
     "observationInvalid": "Observaziun nunenconuschenta.",
     "observationDeleted": "Tia observaziun è vegnida stizzada.",
     "observationDeleteFailed": "L’observaziun n’ha betg pudì vegnir stizzada."
+  },
+  "workspace": {
+    "choose": "Tscherner ina contribuziun",
+    "intro": "Ina fotografia, in’indicaziun, in’impressiun: tscherna tge che ti vuls contribuir qua. Ti na stos betg savair tut.",
+    "groups": {
+      "place": "Mussar il lieu",
+      "now": "Ussa al lieu",
+      "experience": "Tia pausa",
+      "care": "Gidar e segnalar"
+    },
+    "hints": {
+      "features": "Equipament, num, direcziun",
+      "photo": "Far u tscherner ina fotografia",
+      "light": "Sulegl, sumbriva u variabel",
+      "view": "Tge vesas ti da qua?",
+      "moment": "Cussegl, regurdientscha u poesia",
+      "rating": "Valitar tia pausa",
+      "care": "Vis, nettegià u tgirà",
+      "correction": "Posiziun, stadi u conturns"
+    },
+    "allTasks": "Tut las contribuziuns",
+    "returnToBench": "Enavos al banc",
+    "oneIsEnough": "Ina contribuziun basta.",
+    "unsaved": "Sboz betg memorisà",
+    "discardTitle": "Rebittar il sboz?",
+    "discardBody": "Indicaziuns betg memorisadas e fotografias tschernidas van a perder. Contribuziuns gia memorisadas restan.",
+    "keepEditing": "Cuntinuar a modifitgar",
+    "discard": "Rebittar e serrar",
+    "refreshFailed": "Memorisà; la vista n’ha betg pudì vegnir actualisada.",
+    "featureIntro": "Tscherna in’indicaziun. Tia tscherna vegn memorisada pir cun «Memorisar». Ti pos laschar davent quai che ti na sas betg.",
+    "allFields": "Tut las indicaziuns",
+    "skip": "Jau na sai betg · enavos",
+    "draft": "Sboz",
+    "conflicting": "Indicaziuns differentas",
+    "accessHint": "Manegià è il plaz planiv directamain sper il banc, betg l’entir viadi fin al banc.",
+    "nameAndDedication": "Num e dedicaziun",
+    "careIntro": "Rapporta mo quai che ti has vis al lieu u fatg sez.",
+    "quickSave": "Tutgar memorisescha tia observaziun. Ti pos la revocar.",
+    "viewIntro": "Tscherna per mintga dumonda quai che ti vesas sez. Publitgà vegn pir a la fin.",
+    "questions": {
+      "backrest": "Ha il banc in spundal?",
+      "armrest": "Ha el posabratscha?",
+      "covered": "È il banc cuvert?",
+      "seats": "Quantes persunas han plaz?",
+      "wheelchair": "Datti in plaz plan gist sper il banc?",
+      "material": "Da tge material è il banc?",
+      "direction": "En tge direcziun guard’ins sesend?",
+      "fireplaceNearby": "Datti in fieu en la vischinanza?"
+    },
+    "viewDescription": "Descripziun actuala"
   }
 }

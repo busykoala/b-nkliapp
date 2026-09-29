@@ -1060,6 +1060,56 @@
       "observationInvalid": "Observation inconnue.",
       "observationDeleted": "Ton observation a été supprimée.",
       "observationDeleteFailed": "L’observation n’a pas pu être supprimée."
+    },
+    "workspace": {
+      "choose": "Choisir une contribution",
+      "intro": "Une photo, une information, une impression : choisis ce que tu souhaites partager ique. Tu ne dois pas tout savoir.",
+      "groups": {
+        "place": "Présenter le lieu",
+        "now": "Sur place, maintenant",
+        "experience": "Ta pause",
+        "care": "Aider et signaler"
+      },
+      "hints": {
+        "features": "Équipement, nom, orientation",
+        "photo": "Prendre ou choisir une photo",
+        "light": "Soleil, ombre ou alternance",
+        "view": "Que vois-tu depuis ique ?",
+        "moment": "Conseil, souvenir ou poème",
+        "rating": "Évaluer ta pause",
+        "care": "Vu, nettoyé ou entretenu",
+        "correction": "Position, état ou alentours"
+      },
+      "allTasks": "Toutes les contributions",
+      "returnToBench": "Retô au banc du payis",
+      "oneIsEnough": "Une contribution suffit.",
+      "unsaved": "Brouillon non enregistré",
+      "discardTitle": "Abandonner le brouillon ?",
+      "discardBody": "Les informations non enregistrées et les photos sélectionnées seront perdues. Les contributions déjà enregistrées seront conservées.",
+      "keepEditing": "Continuer à modifier",
+      "discard": "Abandonner et fermer",
+      "refreshFailed": "Enregistré ; la vue n’a pas pu être actualisée.",
+      "featureIntro": "Choisis une information. Ton choix ne sera enregistré qu’en appuyant sur « Enregistrer ». Tu peux laisser de côté ce que tu ne sais pas.",
+      "allFields": "Toutes les informations",
+      "skip": "Je ne sais pas · retour",
+      "draft": "Brouillon",
+      "conflicting": "Informations divergentes",
+      "accessHint": "Il s’agit de l’espace plat juste à côté du banc du payis, pas de l’ensemble du trajet.",
+      "nameAndDedication": "Nom et dédicace",
+      "careIntro": "Indique uniquement ce que tu as vu sur place ou fait toi-même.",
+      "quickSave": "Un appui enregistre ton observation. Tu peux l’annuler.",
+      "viewIntro": "Pour chaque question, choisis ce que tu vois toi-même. Rien n’est publié avant la dernière étape.",
+      "questions": {
+        "backrest": "Le banc du payis a-t-il un dossier ?",
+        "armrest": "A-t-il des accoudoirs ?",
+        "covered": "Le banc du payis est-il couvert ?",
+        "seats": "Combien de personnes peuvent s’asseoir ?",
+        "wheelchair": "Y a-t-il un espace plat juste à côté du banc du payis ?",
+        "material": "De quel matériau est fait le banc du payis ?",
+        "direction": "Dans quelle direction regarde-t-on en étant assis ?",
+        "fireplaceNearby": "Y a-t-il un foyer à proximité ?"
+      },
+      "viewDescription": "Description actuelle"
     }
   },
   "knowledge": {

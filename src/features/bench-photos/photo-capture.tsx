@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { getBenchPhotoSubmission, uploadBenchPhoto } from "@/app/actions/bench-photos";
 import type { BenchPhotoSubmissionResult } from "@/app/actions/bench-photos";
 
+import { useContributionWork } from "@/features/bench-community/components/contribution-session";
 import { preparePhoto } from "./prepare-photo";
 
 function storedSubmission(key: string) {
@@ -43,6 +44,8 @@ function PhotoCaptureForm({ benchId, onChanged }: CaptureProps) {
   const [pending, startTransition] = useTransition();
   const storageKey = `benchly:photo-submission:${benchId}`;
   const processing = preparing || pending || Boolean(submissionId);
+  // Once uploaded, the existing submission ID can resume moderation after closing.
+  useContributionWork(Boolean(photo) && !submissionId, preparing || pending);
   useEffect(() => () => { preparation.current++; }, [benchId]);
   useEffect(() => { onChangedRef.current = onChanged; translationsRef.current = t; }, [onChanged, t]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);

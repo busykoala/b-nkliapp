@@ -1433,32 +1433,13 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .contribution-entry { display: inline-flex; min-height: 2.9rem; align-items: center; justify-content: center; gap: .4rem; margin: 0; border-radius: .9rem; font-size: .875rem; font-weight: 750; }
 .contribution-entry { border: 1px solid rgb(48 92 74 / 18%); background: rgb(223 232 210 / 58%); color: #2f6754; }
 .contribution-entry:focus-visible, .community-contribute-entry:focus-visible { outline: 2px solid #346d5a; outline-offset: 2px; }
-.contribution-dialog { color: #294239; }
-.contribution-dialog::backdrop { background: rgb(24 38 33 / 46%); backdrop-filter: blur(2px); }
-.contribution-sheet { width: min(45rem, calc(100vw - 1rem)); max-width: 100%; max-height: calc(100dvh - max(1rem, env(safe-area-inset-top))); overflow-y: auto; border-radius: 2rem 2rem 0 0; background: #f8efd9; padding: 0 1.1rem max(1.2rem, env(safe-area-inset-bottom)); }
-.contribution-sheet-header { position: sticky; top: 0; z-index: 3; display: flex; min-height: 5rem; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid rgb(49 76 64 / 10%); background: rgb(248 239 217 / 94%); backdrop-filter: blur(12px); }
-.contribution-sheet-header > div { min-width: 0; overflow-wrap: anywhere; }
-.contribution-sheet-header > button { flex-shrink: 0; min-width: 44px; min-height: 44px; }
 .contribution-sheet fieldset { min-width: 0; }
-.contribution-sheet-header small { color: rgb(41 66 57 / 85%); font-size: .875rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-.contribution-sheet-header h2 { margin-top: .15rem; font-family: var(--font-display); font-size: 1.55rem; line-height: 1.05; }
-.contribution-overview { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: .5rem; margin: 1rem .1rem; color: rgb(41 66 57 / 85%); font-size: .875rem; line-height: 1.45; }
-.contribution-overview svg { margin-top: .1rem; color: #3a745e; }
 .community-theme { display: grid; grid-template-columns: 1.7rem minmax(0, 1fr); gap: .6rem; margin: .35rem 0 1rem; padding: .85rem .9rem; border-left: 3px solid rgb(201 151 56 / 38%); background: rgb(246 226 171 / 28%); }
 .community-theme svg { color: #a27324; }
 .community-theme small, .community-theme strong { display: block; }
 .community-theme small { color: rgb(78 70 45 / 85%); font-size: .875rem; letter-spacing: .06em; text-transform: uppercase; }
 .community-theme strong { margin-top: .1rem; font-family: var(--font-display); }
 .community-theme p { margin-top: .18rem; color: rgb(55 67 54 / 85%); font-size: .875rem; line-height: 1.4; }
-.contribution-chapter { border-top: 1px solid rgb(47 73 62 / 12%); }
-.contribution-chapter > summary { display: flex; min-height: 4.25rem; align-items: center; justify-content: space-between; gap: .8rem; cursor: pointer; list-style: none; }
-.contribution-chapter > summary::-webkit-details-marker { display: none; }
-.contribution-chapter > summary > span:first-child { display: grid; gap: .08rem; }
-.contribution-chapter > summary strong { font-family: var(--font-display); font-size: 1rem; }
-.contribution-chapter > summary small { color: rgb(41 66 57 / 85%); font-size: .875rem; }
-.contribution-chapter > summary > span:last-child { transition: transform .18s ease; }
-.contribution-chapter[open] > summary > span:last-child { transform: rotate(180deg); }
-.contribution-chapter > div { padding: .15rem 0 1.2rem; }
 .contribution-metadata-form, .moment-form { display: grid; gap: .65rem; margin-bottom: 1rem; }
 .contribution-metadata-form label span, .moment-form label span, .moment-form legend { display: block; margin-bottom: .3rem; color: rgb(41 66 57 / 85%); font-size: .875rem; font-weight: 700; }
 .contribution-metadata-form label small, .moment-form label small { font-weight: 500; opacity: .7; }
@@ -1539,10 +1520,6 @@ dialog button, [role="dialog"] button { min-width: 44px; min-height: 44px; }
 .bench-moments-empty { margin-top: .8rem; color: rgb(41 66 57 / 85%); font-family: var(--font-display); font-size: .9rem; }
 .place-community-status { margin-top: .7rem; color: rgb(41 66 57 / 85%); font-size: .875rem; }
 .community-contribute-entry { width: 100%; margin-bottom: 1rem; }
-
-@media (min-width: 640px) {
-  .contribution-sheet { border-radius: 2rem; padding-inline: 1.6rem; }
-}
 
 @media (min-width: 768px) {
   .standalone-bench-card { width: min(46rem, calc(100% - 2rem)); }
@@ -1791,13 +1768,6 @@ details[open] > summary .disclosure-chevron { transform: rotate(180deg); }
 .favourites-empty { display: grid; min-height: 18rem; place-items: center; align-content: center; gap: 1rem; border: 1px dashed #9cac9d; border-radius: 1rem; padding: 1.5rem; background: rgb(255 253 247 / 55%); color: #466255; text-align: center; }
 .favourites-empty p { max-width: 26rem; }
 
-.contribution-chapter > summary { display: grid; grid-template-columns: 2.35rem minmax(0, 1fr) 1rem; }
-.contribution-chapter > summary > span:nth-child(2) { display: grid; gap: .08rem; min-width: 0; }
-.contribution-chapter > summary > span:nth-child(2) strong,
-.contribution-chapter > summary > span:nth-child(2) small { overflow-wrap: anywhere; }
-.contribution-chapter-icon { display: grid; width: 2.2rem; height: 2.2rem; place-items: center; border-radius: .65rem; background: #e7ede0; color: #356653; }
-.contribution-chapter-icon svg { width: 1.05rem; height: 1.05rem; }
-.contribution-chapter[open] .contribution-chapter-icon { background: #315f50; color: #fffdf7; }
 .rating-control > div { align-items: center; }
 .rating-control output { min-width: 4.5rem; margin-left: .4rem; color: #4c6156; font-size: .78rem; text-align: right; }
 .bench-photo-preview > div { position: absolute; right: .55rem; bottom: .55rem; display: flex; flex-wrap: wrap; justify-content: end; gap: .35rem; }

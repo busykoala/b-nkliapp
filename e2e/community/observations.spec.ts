@@ -17,9 +17,9 @@ async function registerUser(page: import("@playwright/test").Page, username: str
 
 async function openContributionChapter(page: import("@playwright/test").Page, title: string) {
   await page.getByRole("button", { name: "Verbessern", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  const dialog = page.locator(".contribution-dialog[open]");
   await expect(dialog).toBeVisible();
-  const summary = dialog.locator("summary").filter({ hasText: title });
+  const summary = dialog.getByRole("button", { name: title, exact: true });
   await summary.click();
   return dialog;
 }
@@ -55,11 +55,11 @@ test("keeps the view observation understandable in the mobile detail", async ({ 
   await page.waitForTimeout(100);
   await page.screenshot({ path: testInfo.outputPath("view-entry.png"), fullPage: false });
   await page.getByRole("button", { name: "Verbessern", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Zum Bänkli beitragen" });
+  const dialog = page.locator(".contribution-dialog[open]");
   await expect(dialog).toBeVisible();
   await page.waitForTimeout(250);
   await dialog.screenshot({ path: testInfo.outputPath("contribution-hub.png") });
-  await dialog.locator("summary").filter({ hasText: "Aussicht & Umgebung" }).click();
+  await dialog.getByRole("button", { name: "Aussicht & Umgebung", exact: true }).click();
   const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
   await expect(prompt).toBeVisible();
   await prompt.getByRole("button", { name: "Anders erlebt" }).click();
