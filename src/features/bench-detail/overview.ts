@@ -1,11 +1,11 @@
 import type { BenchDetail } from "@/lib/types";
-import type { MessageKey, Translator } from "@/i18n/types";
+import type { Translator } from "@/i18n/types";
 import { viewLabel } from "@/i18n/bench-labels";
 import { surfaceLabel } from "@/i18n/approach-labels";
 import { benchFact } from "./facts";
 
 export type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
-export type OverviewFact = { value: string; detail?: string };
+export type OverviewFact = { value: string; detail?: string; label?: string };
 
 /** Only resolved observations belong in the visitor summary. Evidence stays in Sources. */
 function knownBoolean(bench: BenchDetail, key: "backrest" | "armrest" | "covered" | "wheelchair") {
@@ -35,14 +35,27 @@ function clockMinutes(value: string) {
 }
 
 export function lightSummary(bench: BenchDetail, t: Translator): OverviewFact {
-  const value = bench.dayPhase === "night" ? t("bench.summary.night")
-    : bench.sunnyNow === null ? "–" : t(bench.sunnyNow ? "bench.overview.sun" : "bench.overview.shade");
-  // Today's windows are never presented as tomorrow's forecast, or as an interval still ahead.
-  const upcoming = bench.sunWindows
+  if (bench.dayPhase === "night") return { value: t("bench.summary.night") };
+  if (bench.sunnyNow === null) return { value: "–" };
+
+  const windows = bench.sunWindows
     .map(window => ({ ...window, startMinute: clockMinutes(window.start), endMinute: clockMinutes(window.end) }))
-    .filter(window => window.startMinute !== null && window.endMinute !== null && window.endMinute > window.startMinute && window.endMinute > bench.localMinutesNow)
-    .sort((a, b) => a.startMinute! - b.startMinute!)[0];
-  return { value, detail: upcoming ? t("bench.overview.sunWindow", { start: upcoming.start, end: upcoming.end }) : undefined };
+    .filter(window => window.startMinute !== null && window.endMinute !== null && window.endMinute > window.startMinute)
+    .sort((a, b) => a.startMinute! - b.startMinute!);
+
+  if (bench.sunnyNow) {
+    const active = windows.find(window => window.startMinute! <= bench.localMinutesNow && window.endMinute! > bench.localMinutesNow);
+    return {
+      value: t("bench.overview.sun"),
+      detail: active ? t("bench.overview.sunUntil", { time: active.end }) : undefined,
+    };
+  }
+
+  const next = windows.find(window => window.startMinute! > bench.localMinutesNow);
+  return {
+    value: t("bench.overview.shade"),
+    detail: next ? t("bench.overview.sunFrom", { time: next.start }) : undefined,
+  };
 }
 
 export function accessSummary(bench: BenchDetail, t: Translator): OverviewFact {
@@ -51,7 +64,8 @@ export function accessSummary(bench: BenchDetail, t: Translator): OverviewFact {
   // "No mapped steps" is not a whole-route accessibility assurance.
   if (approach?.steps === true) return { value: t("bench.overview.steps"), detail: approach.surface ? surfaceLabel(approach.surface, t) : undefined };
   if (space !== null) return { value: t(space ? "bench.attributes.wheelchair" : "bench.summary.noWheelchair"), detail: approach?.surface ? surfaceLabel(approach.surface, t) : undefined };
-  if (approach?.surface) return { value: surfaceLabel(approach.surface, t) };
+  // A surface observation is useful, but it must not masquerade as an access verdict.
+  if (approach?.surface) return { label: t("bench.overview.surface"), value: surfaceLabel(approach.surface, t) };
   return { value: "–" };
 }
 
@@ -72,8 +86,10 @@ export function quietSummary(bench: BenchDetail, t: Translator, number: (value: 
   const noise = bench.knowledge?.noise.filter(item => item.period === period && item.value !== null && Number.isFinite(item.value))
     .sort((a, b) => b.value! - a.value!)[0];
   if (!noise) return { value: "–" };
-  const mode: MessageKey = noise.mode === "rail" ? "knowledge.noise.rail" : "knowledge.noise.road";
-  return { value: `${number(noise.value!)} ${noise.unit}`, detail: t("bench.overview.modelNoise", { mode: t(mode) }) };
+  return {
+    value: t(noise.mode === "rail" ? "bench.overview.railNoise" : "bench.overview.roadNoise"),
+    detail: t("bench.overview.modelNoiseValue", { value: number(noise.value!), unit: noise.unit }),
+  };
 }
 
 export function nearbyAmenities(bench: Pick<BenchDetail, "knowledge">): NearbyAmenity[] {

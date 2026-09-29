@@ -265,9 +265,9 @@ test("functional text is readable and utility controls keep the illustration sep
   await page.goto("/bank/osm-node-101");
   const summary = page.getByRole("region", { name: "Auf einen Blick" });
   const facts = summary.locator(".overview-fact > strong");
-  await expect(facts).toHaveCount(5);
+  await expect(facts).toHaveCount(6);
   const sizes = await facts.evaluateAll(elements => elements.map(element => Number.parseFloat(getComputedStyle(element).fontSize)));
-  expect(sizes.length).toBe(5);
+  expect(sizes.length).toBe(6);
   expect(sizes.every(size => size >= 14)).toBe(true);
   const sources = page.locator(".bench-sources");
   await expect(sources).not.toHaveAttribute("open", "");

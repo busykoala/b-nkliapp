@@ -15,7 +15,7 @@ export type BenchHeaderProps = {
   onJourney?: () => void;
   journeyHref?: string;
   onChanged?: () => void | Promise<void>;
-  onEdit: () => void;
+  onEdit?: () => void;
 };
 
 export function BenchHeader({ bench, user, onJourney, journeyHref, onChanged, onEdit }: BenchHeaderProps) {
@@ -42,12 +42,12 @@ export function BenchHeader({ bench, user, onJourney, journeyHref, onChanged, on
     <h2>{bench.title || t("common.values.bench")}</h2>
     {location && <p className="bench-location">{location}</p>}
     {localLanguage.active && <p className="bench-local-language">{t("common.language.localActive", { region: localLanguage.profile.regionLabel })}</p>}
-    <div className="bench-actions">
+    <div className="bench-actions" data-has-edit={onEdit ? "true" : "false"}>
       {onJourney ? <button type="button" className="bench-route-action" onClick={onJourney}><Navigation size={18} aria-hidden="true" />{t("bench.story.directions")}</button>
         : journeyHref && <a className="bench-route-action" href={journeyHref}><Navigation size={18} aria-hidden="true" />{t("bench.story.directions")}</a>}
       <BenchSaveButton key={bench.id} bench={bench} user={user} onChanged={onChanged} compact />
       <button type="button" className="bench-icon-action" aria-label={t("community.place.share")} title={t("community.place.share")} onClick={() => void share()}><Share2 size={18} aria-hidden="true" /></button>
-      <button type="button" className="bench-icon-action" aria-label={t("community.chapters.features.title")} title={t("community.chapters.features.title")} onClick={onEdit}><Pencil size={18} aria-hidden="true" /></button>
+      {onEdit && <button type="button" className="bench-icon-action" aria-label={t("community.chapters.features.title")} title={t("community.chapters.features.title")} onClick={onEdit}><Pencil size={18} aria-hidden="true" /></button>}
     </div>
     {notice && <p className="bench-action-status" role="status">{notice}</p>}
   </header>;

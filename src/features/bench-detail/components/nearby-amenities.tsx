@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, MapPin, Navigation, Toilet } from "lucide-react";
+import { Droplets, MapPin, Navigation, Toilet, Waves } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { BenchDetail } from "@/lib/types";
 import { nearbyAmenities, type NearbyAmenity } from "../overview";
@@ -22,10 +22,11 @@ export function NearbyAmenities({ bench, onLocate, hrefPrefix }: {
 function AmenityLocation({ amenity, bench, onLocate, href }: { amenity: NearbyAmenity; bench: BenchDetail; onLocate?: (amenity: NearbyAmenity) => void; href?: string }) {
   const t = useTranslations();
   const label = t(amenity.category === "toilets" ? "knowledge.amenities.toilets" : amenity.category === "fountain" ? "knowledge.amenities.fountain" : "knowledge.amenities.drinking_water");
-  const Icon = amenity.category === "toilets" ? Toilet : Droplets;
+  const Icon = amenity.category === "toilets" ? Toilet : amenity.category === "fountain" ? Waves : Droplets;
+  const iconKind = amenity.category === "toilets" ? "toilets" : amenity.category === "fountain" ? "fountain" : "drinking-water";
   const located = Number.isFinite(amenity.latitude) && Number.isFinite(amenity.longitude);
   const direction = located ? bearing(bench.latitude, bench.longitude, amenity.latitude!, amenity.longitude!) : 0;
-  const content = <><span className="amenity-icon"><Icon size={18} /></span><span><strong>{label}</strong><small>{t("bench.summary.straightLine", {distance: Math.round(amenity.distanceMeters!)})}</small></span>{located && <span className="amenity-map-cue"><Navigation size={16} style={{transform: `rotate(${direction}deg)`}} />{t("bench.summary.showOnMap")}</span>}</>;
+  const content = <><span className={`amenity-icon is-${iconKind}`} data-amenity-icon={iconKind}><Icon size={18} /></span><span><strong>{label}</strong><small>{t("bench.summary.straightLine", {distance: Math.round(amenity.distanceMeters!)})}</small></span>{located && <span className="amenity-map-cue"><Navigation size={16} style={{transform: `rotate(${direction}deg)`}} />{t("bench.summary.showOnMap")}</span>}</>;
   if (!located) return <li><div className="amenity-location is-static">{content}</div></li>;
   if (onLocate) return <li><button type="button" className="amenity-location" aria-label={t("bench.summary.showFacilityOnMap", {facility: label})} onClick={() => onLocate(amenity)}>{content}</button></li>;
   const locationHref = href ?? `https://www.openstreetmap.org/?mlat=${amenity.latitude}&mlon=${amenity.longitude}#map=19/${amenity.latitude}/${amenity.longitude}`;

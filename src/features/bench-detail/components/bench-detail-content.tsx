@@ -77,7 +77,7 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
       <BenchReviews bench={bench} user={user} reported={reported} report={report} onContribute={() => contribute("rating")} />
     </> : <>
       {created && <p role="status" className="bench-created-status">{t("bench.story.created")}</p>}
-      <BenchHeader bench={bench} user={user} onJourney={onJourney} journeyHref={journeyHref} onChanged={refresh} onEdit={() => contribute("features")} />
+      <BenchHeader bench={bench} user={user} onJourney={onJourney} journeyHref={journeyHref} onChanged={refresh} />
       <BenchOverview bench={bench} onReviews={() => toggleReviews(true)} />
       <NearbyAmenities bench={bench} onLocate={onLocateAmenity} hrefPrefix={amenityMapHrefPrefix} />
       <p className="bench-poem">{voice?.first ?? poem.first} {voice?.second ?? poem.second}</p>

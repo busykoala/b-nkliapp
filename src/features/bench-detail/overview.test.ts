@@ -31,17 +31,20 @@ describe("bench overview: resolved facts, useful intervals and scoped measuremen
     expect(comfortSummary(fixture(), translate).value).toBe("–");
   });
 
-  it("ignores expired and invalid sun intervals and selects the next valid one", () => {
+  it("turns sun windows into a now/next answer without presenting expired intervals", () => {
     const bench = fixture({ sunWindows: [{ start: "18:00", end: "16:00" }, { start: "14:00", end: "16:30" }, { start: "08:00", end: "10:00" }, { start: "25:00", end: "26:00" }] });
-    expect(lightSummary(bench, translate)).toEqual({ value: "Schatten", detail: "Sonne 14:00–16:30" });
-    expect(lightSummary({ ...bench, localMinutesNow: 23 * 60, dayPhase: "night" }, translate)).toEqual({ value: "Nacht", detail: undefined });
+    expect(lightSummary(bench, translate)).toEqual({ value: "Schatten", detail: "Sonne ab 14:00" });
+    expect(lightSummary({ ...bench, sunnyNow: true, localMinutesNow: 15 * 60 }, translate)).toEqual({ value: "Sonne", detail: "bis 16:30" });
+    expect(lightSummary({ ...bench, localMinutesNow: 23 * 60, dayPhase: "night" }, translate)).toEqual({ value: "Nacht" });
   });
 
-  it("never equates a level bench space or missing route data with full accessibility", () => {
+  it("never equates a surface or level bench space with a whole-route accessibility verdict", () => {
     const bench = fixture({ properties: [fact("wheelchair", true)] });
     expect(accessSummary(bench, translate).value).toBe("Ebener Platz am Bänkli");
     const withSteps = { ...bench, knowledge: { approach: { steps: true, surface: "asphalt" } } } as BenchDetail;
     expect(accessSummary(withSteps, translate).value).toBe("Stufen am Zugang");
+    const surfaceOnly = { ...fixture(), knowledge: { approach: { steps: null, surface: "fine_gravel" } } } as BenchDetail;
+    expect(accessSummary(surfaceOnly, translate)).toMatchObject({ label: "Untergrund", value: "Feiner Kies" });
     expect(accessSummary(fixture(), translate).value).toBe("–");
   });
 
@@ -69,10 +72,10 @@ describe("bench overview: resolved facts, useful intervals and scoped measuremen
     expect(quietSummary(bench, translate, String)).toEqual({ value: "4 / 5", detail });
   });
 
-  it("keeps current-period road and rail noise measurements separate", () => {
+  it("keeps modelled noise human-readable while preserving the measurement", () => {
     const bench = fixture({ knowledge: { noise: [{ period: "day", mode: "road", value: 51, unit: "dB(A)" }, { period: "night", mode: "rail", value: 38, unit: "dB(A)" }] } as BenchDetail["knowledge"] });
-    expect(quietSummary(bench, translate, String)).toEqual({ value: "51 dB(A)", detail: "Strasse · Lärmmodell" });
-    expect(quietSummary({ ...bench, dayPhase: "night" }, translate, String).value).toBe("38 dB(A)");
+    expect(quietSummary(bench, translate, String)).toEqual({ value: "Strassenlärm", detail: "51 dB(A) · Lärmmodell" });
+    expect(quietSummary({ ...bench, dayPhase: "night" }, translate, String)).toEqual({ value: "Bahnlärm", detail: "38 dB(A) · Lärmmodell" });
   });
 
   it("sorts useful nearby facilities and never calls an ordinary fountain potable", () => {

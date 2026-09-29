@@ -26,6 +26,8 @@ test("shows nearby practical places on the map and keeps bench details readable"
   const amenityItems = sheet.locator(".bench-nearby-amenities li");
   await expect(amenityItems).toHaveCount(2);
   await expect(sheet.locator(".bench-nearby-amenities").getByText("Abfalleimer", { exact: true })).toHaveCount(0);
+  await expect(amenityItems.nth(0).locator(".amenity-icon")).toHaveAttribute("data-amenity-icon", "toilets");
+  await expect(amenityItems.nth(1).locator(".amenity-icon")).toHaveAttribute("data-amenity-icon", "drinking-water");
   const itemBoxes = await amenityItems.evaluateAll((items) => items.map((item) => {
     const box = item.getBoundingClientRect();
     return {top: box.top, bottom: box.bottom};
@@ -74,11 +76,26 @@ test("keeps the compact visit summary readable and returns from reviews", async 
   const actions = sheet.locator(".bench-actions");
   await expect(actions.getByRole("button", { name: "Weg planen", exact: true })).toBeVisible();
   await expect(actions.getByRole("button", { name: "Merken", exact: true })).toBeVisible();
-  await expect(actions.getByRole("button", { name: "Bänkli beschreiben", exact: true })).toBeVisible();
-  await expect(actions.locator(".bench-icon-action")).toHaveCount(2);
+  await expect(actions.getByRole("button", { name: "Bänkli beschreiben", exact: true })).toHaveCount(0);
+  await expect(actions.locator(".bench-icon-action")).toHaveCount(1);
+  await expect(sheet.getByRole("button", { name: "Verbessern", exact: true })).toHaveCount(1);
   await expect(sheet.locator(".bench-sources")).not.toHaveAttribute("open", "");
   await expect(sheet.locator(".bench-source-content")).toBeHidden();
   await expect(sheet.locator(".bench-overview")).not.toContainText(/unbestätigt|unsicher/i);
+  const overviewLabels = sheet.locator(".overview-label");
+  await expect(overviewLabels.nth(0)).toContainText("Wetter");
+  await expect(overviewLabels.nth(1)).toContainText("Sonne & Schatten");
+  await expect(overviewLabels.nth(2)).toContainText("Bank");
+  await expect(overviewLabels.nth(3)).toContainText(/Zugang am Bänkli|Untergrund/);
+  await expect(overviewLabels.nth(4)).toContainText("Aussicht");
+  await expect(overviewLabels.nth(5)).toContainText("Ruhe vor Ort");
+  const ratingSummary = sheet.locator(".overview-rating");
+  const ratingAction = ratingSummary.locator(".overview-rating-action");
+  // The suite intentionally shares one fixture database, so another parallel test
+  // may already have rated this bench. The action must match the rendered state:
+  // no score invites a rating, an existing score opens the reviews.
+  const hasRating = (await ratingSummary.locator(".overview-rating-copy strong").count()) > 0;
+  await expect(ratingAction).toHaveText(hasRating ? "Ansehen" : "Bewerten");
   const content = sheet.locator(".map-sheet-content");
   await sheet.locator(".overview-rating").scrollIntoViewIfNeeded();
   const before = await content.evaluate(node => node.scrollTop);
