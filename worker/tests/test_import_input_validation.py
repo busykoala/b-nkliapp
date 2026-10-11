@@ -24,7 +24,7 @@ def test_building_stream_counts_null_geometry_and_continues_importing():
         '"coordinates":[[[8,47,500],[8.001,47,510],[8.001,47.001,510],'
         '[8,47.001,500],[8,47,500]]]},"properties":{}}',
     ])
-    process = SimpleNamespace(stdout=StringIO(features), stderr=StringIO(""), wait=lambda: 0)
+    process = SimpleNamespace(stdout=StringIO(features), wait=lambda: 0, poll=lambda: 0)
     connection = sqlite3.connect(":memory:")
     imported = []
     with connection, patch("benchly.context.importer.geopackage_layers", return_value=["Building_solid"]), \
@@ -47,8 +47,11 @@ def test_malformed_geometry_is_still_rejected(geometry):
 
 
 def test_failed_geometry_conversion_is_still_reported():
-    process = SimpleNamespace(stdout=StringIO(""), stderr=StringIO("conversion failed"), wait=lambda: 1)
-    with patch("benchly.context.geometry.subprocess.Popen", return_value=process):
+    process = SimpleNamespace(stdout=StringIO(""), wait=lambda: 1, poll=lambda: 1)
+    def fail_conversion(*args, **kwargs):
+        kwargs["stderr"].write(b"conversion failed")
+        return process
+    with patch("benchly.context.geometry.subprocess.Popen", side_effect=fail_conversion):
         with pytest.raises(RuntimeError, match="conversion failed"):
             list(iter_layer_features(Path("fixture.gdb"), "Building_solid"))
 

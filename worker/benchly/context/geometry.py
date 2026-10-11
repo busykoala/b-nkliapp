@@ -6,6 +6,7 @@ import json
 import math
 import sqlite3
 import subprocess
+import tempfile
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
@@ -367,15 +368,30 @@ def geopackage_layers(path: Path) -> list[str]:
     return layers
 
 
-def iter_layer_features(path: Path, layer: str) -> Iterable[dict[str, object]]:
-    process = subprocess.Popen(
-        ["ogr2ogr", "-f", "GeoJSONSeq", "/vsistdout/", str(path), layer, "-t_srs", "EPSG:4326"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-    )
-    assert process.stdout is not None
-    for line in process.stdout:
-        if line.strip():
-            yield VectorFeature.model_validate_json(line).model_dump()
-    stderr = process.stderr.read() if process.stderr else ""
-    if process.wait() != 0:
-        raise RuntimeError(f"ogr2ogr failed for {layer}: {stderr[-1000:]}")
+def iter_layer_features(path: Path, layer: str, *, geometry_type: str | None = None) -> Iterable[dict[str, object]]:
+    command = ["ogr2ogr", "-f", "GeoJSONSeq", "/vsistdout/", str(path), layer, "-t_srs", "EPSG:4326"]
+    if geometry_type:
+        command.extend(["-nlt", geometry_type])
+    # A pipe fills when GDAL emits many warnings while stdout is still being
+    # read. Spool diagnostics to disk so neither stream can block the other.
+    with tempfile.TemporaryFile() as diagnostics:
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=diagnostics, text=True)
+        assert process.stdout is not None
+        try:
+            for line in process.stdout:
+                if line.strip():
+                    yield VectorFeature.model_validate_json(line).model_dump()
+            if process.wait() != 0:
+                diagnostics.seek(0, 2)
+                diagnostics.seek(max(0, diagnostics.tell() - 1000))
+                stderr = diagnostics.read().decode(errors="replace")
+                raise RuntimeError(f"ogr2ogr failed for {layer}: {stderr}")
+        finally:
+            process.stdout.close()
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()

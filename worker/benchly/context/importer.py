@@ -66,7 +66,9 @@ def import_swissbuildings_gdb(connection: sqlite3.Connection, geodatabase: Path,
         batch.clear()
 
     for layer in layers:
-        for offset, feature in enumerate(iter_layer_features(geodatabase, layer)):
+        # Building solids are TINs; GeoJSON cannot represent them directly.
+        # Keep the triangular faces and their Z coordinates for footprint/height.
+        for offset, feature in enumerate(iter_layer_features(geodatabase, layer, geometry_type="MULTIPOLYGON")):
             geometry_json = feature.get("geometry")
             properties = feature.get("properties") or {}
             if not geometry_json:

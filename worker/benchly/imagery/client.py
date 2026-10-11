@@ -56,19 +56,26 @@ Return one strict prediction per index."""
 
 
 def _request_json(url: str, *, data: Optional[bytes] = None,
-                  headers: Optional[dict[str, str]] = None, timeout: int = 45) -> object:
+                  headers: Optional[dict[str, str]] = None, timeout: int = 45,
+                  retry_throttled: bool = False) -> object:
     request_headers = {"User-Agent": "Benchly (open imagery metadata; contact: bänkliapp.ch)", **(headers or {})}
     request = urllib.request.Request(url, data=data, headers=request_headers)
-    for attempt in range(3):
+    attempt = 0
+    admission_deadline = time.monotonic() + 60
+    while attempt < 3:
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return json.load(response)
         except urllib.error.HTTPError as error:
             retry_after = error.headers.get("Retry-After")
             if error.code in {429, 503}:
+                delay = int(retry_after) if retry_after and retry_after.isdigit() else (2 if retry_throttled else 3600)
+                if retry_throttled and max(.1, delay) <= admission_deadline - time.monotonic():
+                    time.sleep(max(.1, delay))
+                    continue
                 raise ProviderDelay(
                     f"{error.code} from {urllib.parse.urlsplit(url).netloc}",
-                    int(retry_after) if retry_after and retry_after.isdigit() else 3600,
+                    delay,
                 ) from error
             if error.code < 500 or attempt == 2:
                 raise
@@ -76,6 +83,7 @@ def _request_json(url: str, *, data: Optional[bytes] = None,
             if attempt == 2:
                 raise
         time.sleep(2 ** attempt)
+        attempt += 1
     raise RuntimeError("unreachable provider retry state")
 
 
@@ -151,6 +159,7 @@ def _inference_request(images: Sequence[tuple[bytes, str]], endpoint: str, api_k
     return _request_json(
         endpoint.rstrip("/") + "/v1/chat/completions", data=request_payload,
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, timeout=180,
+        retry_throttled=True,
     )
 
 
