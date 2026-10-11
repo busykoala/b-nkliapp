@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import base64
+from io import BytesIO
 import json
 import math
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import warnings
 from typing import Optional, Sequence
+
+from PIL import Image, UnidentifiedImageError
 
 from benchly.catalog import load_catalog
 from benchly.imagery.prediction import prediction_schema, validate_scene_prediction
@@ -79,9 +83,6 @@ def download_image(url: str) -> tuple[bytes, str]:
     request = urllib.request.Request(url, headers={"User-Agent": "Benchly (temporary scene analysis)"})
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
-            content_type = response.headers.get_content_type()
-            if not content_type.startswith("image/"):
-                raise ValueError(f"not an image: {content_type}")
             payload = response.read(MAX_IMAGE_BYTES + 1)
     except urllib.error.HTTPError as error:
         if error.code in {429, 503}:
@@ -93,6 +94,19 @@ def download_image(url: str) -> tuple[bytes, str]:
         raise
     if len(payload) > MAX_IMAGE_BYTES:
         raise ValueError("image exceeds 8 MB")
+    # Some providers serve real photos as application/binary octet-stream.
+    # Validate the bounded body and derive its MIME type from the image itself.
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(BytesIO(payload)) as image:
+                content_type = Image.MIME.get(image.format, "")
+                image.verify()
+    except (UnidentifiedImageError, OSError, SyntaxError,
+            Image.DecompressionBombError, Image.DecompressionBombWarning) as error:
+        raise ValueError("not a valid image") from error
+    if not content_type.startswith("image/"):
+        raise ValueError("unsupported image format")
     return payload, content_type
 
 

@@ -48,5 +48,6 @@ class VectorFeature(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str | int | None = None
-    geometry: dict[str, object]
+    # GeoJSON permits geometry-less features; the importers count and skip them.
+    geometry: dict[str, object] | None
     properties: dict[str, object] = Field(default_factory=dict)
