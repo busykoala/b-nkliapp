@@ -149,7 +149,8 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble
       options: --user 1001
-    timeout-minutes: 4
+    # Include container startup and both sequential release-critical shards.
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
