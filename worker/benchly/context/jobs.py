@@ -28,6 +28,8 @@ from benchly.runs.repository import begin_run, finish_run, set_source_version
 from benchly.runtime import now_iso, sha256_file
 from benchly.settings import PROVIDERS
 
+MAX_BUILDING_TILE_BYTES = 2 * 1024 * 1024 * 1024
+
 
 def _skip_outside_first_sunday(args: Namespace, connection, run_id: int) -> bool:
     if not args.first_sunday_only or datetime.now().day <= 7:
@@ -171,7 +173,7 @@ def _import_building_cells(connection, args: Namespace, work_dir: Path) -> tuple
             asset_directory = work_dir / hashlib.sha256(asset["id"].encode()).hexdigest()[:16]
             asset_directory.mkdir(parents=True, exist_ok=True)
             archive = asset_directory / "buildings.gdb.zip"
-            download_file(asset["url"], archive)
+            download_file(asset["url"], archive, max_bytes=MAX_BUILDING_TILE_BYTES)
             extract_dir = asset_directory / "extracted"
             safe_extract_zip(archive, extract_dir)
             geodatabases = sorted(path for path in extract_dir.rglob("*.gdb") if path.is_dir())

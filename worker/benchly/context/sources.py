@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import sys
 import urllib.parse
@@ -57,6 +58,7 @@ def discover_swisstlm_asset() -> tuple[str, str]:
 
 
 def discover_swissbuildings_assets(bounds: tuple[float, float, float, float]) -> list[dict[str, str]]:
+    """Find the newest regional tiles; national editions need an explicit archive import."""
     endpoint = os.environ.get("SWISSBUILDINGS_STAC_ITEMS", str(_PROVIDERS.swissBuildingsItemsUrl))
     separator = "&" if "?" in endpoint else "?"
     bbox = ",".join(f"{value:.6f}" for value in bounds)
@@ -73,8 +75,12 @@ def discover_swissbuildings_assets(bounds: tuple[float, float, float, float]) ->
             for asset in item.assets.values():
                 href = str(asset.href)
                 filename = Path(urllib.parse.urlparse(href).path).name.lower()
-                if filename.endswith("_2056_5728.gdb.zip"):
-                    candidates[item_id] = {"id": item_id, "version": version, "url": href}
+                tile = re.search(r"_(\d{4}-\d{2})_2056_5728\.gdb\.zip$", filename)
+                if tile:
+                    candidate = {"id": item_id, "version": version, "url": href}
+                    previous = candidates.get(tile[1])
+                    if previous is None or (version, item_id) > (previous["version"], previous["id"]):
+                        candidates[tile[1]] = candidate
         url = next((str(link.href) for link in payload.links if link.rel == "next"), None)
         pages += 1
     return sorted(candidates.values(), key=lambda item: item["id"])
