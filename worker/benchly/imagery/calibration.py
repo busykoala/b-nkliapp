@@ -55,8 +55,50 @@ def split_groups(records):
     # 100-location grouped benchmark, below fit_platt's minimum of 30. Keep
     # shared imagery and coordinate clusters together, but reserve roughly a
     # third so calibration can be evaluated rather than silently skipped.
-    labels = {key: "calibration" if int(hashlib.sha256(min(ids).encode()).hexdigest()[:8], 16) % 3 == 0 else "test" for key, ids in groups.items()}
-    return [labels[root(index)] for index in range(len(records))]
+    def partition(seed=0):
+        labels = {}
+        for key, ids in groups.items():
+            identity = min(ids) if seed == 0 else f"{seed}:{min(ids)}"
+            labels[key] = "calibration" if int(hashlib.sha256(identity.encode()).hexdigest()[:8], 16) % 3 == 0 else "test"
+        return [labels[root(index)] for index in range(len(records))]
+
+    initial = partition()
+    if len(records) < 60 or any(not all(label in record.get("expected", {}) for label in LABELS) for record in records):
+        return initial
+
+    # The original grouped hash split left only two positive lake examples in
+    # the checked-in fixture, so Platt calibration could never meet its minimum.
+    # Choose a reproducible group shuffle using reviewed labels only, before
+    # predictions exist. Keep both classes in the held-out test partition too.
+    def supported(parts):
+        calibration = [record for record, part in zip(records, parts) if part == "calibration"]
+        test = [record for record, part in zip(records, parts) if part == "test"]
+        if len(calibration) < 30 or len(test) < 30:
+            return False
+        for label in LABELS:
+            positive = sum(record["expected"][label] for record in calibration)
+            test_positive = sum(record["expected"][label] for record in test)
+            if positive < 5 or len(calibration) - positive < 5 or not 0 < test_positive < len(test):
+                return False
+        return True
+
+    if supported(initial):
+        return initial
+    if any(not 6 <= sum(record["expected"][label] for record in records) <= len(records) - 6 for label in LABELS):
+        return initial
+    target = max(30, len(records) // 3)
+    best = None
+    best_distance = len(records)
+    for seed in range(1, 1025):
+        candidate = partition(seed)
+        if supported(candidate):
+            distance = abs(candidate.count("calibration") - target)
+            if distance < best_distance:
+                best, best_distance = candidate, distance
+            if distance == 0:
+                break
+    # Insufficient independent groups must still leave calibration unavailable.
+    return best if best is not None else initial
 
 
 def metrics(expected, scores, bins=10):
@@ -100,7 +142,7 @@ def calibrated_score(score, params):
 
 def evaluate_predictions(records, predictions):
     partitions = split_groups(records)
-    report = {"method": "held-out-platt-2", "coverage": benchmark_coverage(records), "labels": {}, "subgroups": {},
+    report = {"method": "held-out-platt-3", "coverage": benchmark_coverage(records), "labels": {}, "subgroups": {},
               "split": {part: sum(value == part for value in partitions) for part in ("calibration", "test")},
               "note": "Raw model scores are not calibrated probabilities; calibration is fitted only on the calibration partition."}
     for label in LABELS:

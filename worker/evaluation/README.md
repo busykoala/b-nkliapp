@@ -2,7 +2,7 @@
 
 benchly-100.jsonl contains 100 manually reviewed locations in Valais, Geneva and Bern across all seven required scene classes. It is a regression fixture, not evidence of nationwide or elevation-stratified performance. Every record keeps its open-source URL, provider, licence and reviewed image hash. Image bytes are not committed.
 
-Shared imagery and nearby coordinate groups stay in one partition. Roughly one third is reserved for held-out calibration so that the calibration partition can reach the 30-sample minimum; a model cannot pass the benchmark when calibration remains unavailable for any reported label.
+Shared imagery and nearby coordinate groups stay in one partition. Roughly one third is reserved for held-out calibration. A deterministic group shuffle uses the reviewed labels to provide at least 30 calibration locations and five positive and five negative examples per label, while retaining both classes in the test partition. Predictions do not influence the split. If the dataset cannot support these requirements, calibration remains unavailable and a model cannot pass the benchmark.
 
 Run the validator and model benchmark with:
 
