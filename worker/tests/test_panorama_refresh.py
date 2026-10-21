@@ -262,7 +262,11 @@ def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, mo
                      ("a" * 64, str(alias / "active" / "old" / "renders" / "1-old.webp")))
     old_material = root / "active" / "old" / "materials" / "old.webp"
     if with_material:
-        database.execute("UPDATE bench_panorama_geometry SET artifact_sha256=?", ("c" * 64,))
+        source = root / "active" / "old" / "capsule.bpc"
+        source.write_bytes(b"current production geometry")
+        source_sha = refresh._digest(source)
+        database.execute("UPDATE bench_panorama_geometry SET artifact_sha256=?,artifact_path=?",
+                         (source_sha, str(alias / source.relative_to(root))))
         old_material.parent.mkdir(parents=True)
         old_material.write_bytes(b"old material")
         old_binding = str(alias / old_material.relative_to(root))
@@ -287,6 +291,7 @@ def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, mo
         facts.save(material_file, format="WEBP", lossless=True)
         record["material"] = {"relative_path": "materials/1-new.webp", "bytes": material_file.stat().st_size,
                               "sha256": refresh._digest(material_file)}
+        record["capsule_sha256"] = source_sha
     manifest = _seal(staging, record, painter)
     staging.rename(staging.parent / manifest["chunk_id"])
     args = Namespace(server_root=str(root), artifact_root=str(alias), database=str(database_path),
@@ -311,7 +316,12 @@ def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, mo
             refresh.activate_repaint_job(args)
         assert old.exists()
         with sqlite3.connect(database_path) as changed:
-            changed.execute("UPDATE bench_panorama_geometry SET artifact_sha256=?", ("c" * 64,))
+            changed.execute("UPDATE bench_panorama_geometry SET artifact_sha256=?", (source_sha,))
+        source.write_bytes(b"changed on disk with unchanged database checksum")
+        with pytest.raises(ValueError, match="source capsule changed"):
+            refresh.activate_repaint_job(args)
+        assert old.exists()
+        source.write_bytes(b"current production geometry")
     refresh.activate_repaint_job(args)
     assert not old.exists()
     assert (root / "active" / "render-chunks" / manifest["chunk_id"] / record["relative_path"]).read_bytes() == image

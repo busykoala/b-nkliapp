@@ -502,14 +502,13 @@ def activate_repaint_job(args: Namespace) -> None:
                 raise ValueError(f"bench changed since repaint: {record['bench_id']}")
             if record.get("capsule_sha256"):
                 offset = 6 if record.get("material") else 5
-                source_sha = current[offset]
-                if not source_sha:
-                    relative_source = Path(current[offset + 1]).relative_to(artifact_root)
-                    source_file = (root / relative_source).resolve()
-                    if not source_file.is_relative_to(root):
-                        raise ValueError("source capsule path is outside the panorama volume")
-                    source_sha = _digest(source_file)
-                if source_sha != record["capsule_sha256"]:
+                relative_source = Path(current[offset + 1]).relative_to(artifact_root)
+                source_file = (root / relative_source).resolve()
+                if not source_file.is_relative_to(root):
+                    raise ValueError("source capsule path is outside the panorama volume")
+                source_sha = _digest(source_file)
+                if (source_sha != record["capsule_sha256"]
+                        or current[offset] and current[offset] != source_sha):
                     raise ValueError(f"source capsule changed since repaint: {record['bench_id']}")
             if current[4]:
                 old_paths.add(current[4])

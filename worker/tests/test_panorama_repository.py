@@ -112,6 +112,18 @@ def test_painting_is_publishable_before_optional_lightmap():
     mark_render_ready(connection, 7, identity, "/cache/painting.webp", 456, generation_id="active")
     assert connection.execute("SELECT status FROM bench_panorama_renders WHERE bench_row_id=7").fetchone()[0] == "ready"
     assert connection.execute("SELECT count(*) FROM bench_panorama_requests").fetchone()[0] == 0
+
+
+def test_regenerated_geometry_replaces_previous_capsule_checksum():
+    connection = database()
+    row = {"row_id": 7, "id": "osm-node-7", "latitude": 47.0, "longitude": 8.0}
+    mark_generating(connection, row, "old-key", {"algorithm": "old"})
+    mark_ready(connection, 7, "old-key", "/old.bpc", 123, True, (), artifact_sha256="a" * 64)
+    mark_generating(connection, row, "new-key", {"algorithm": "new"})
+    assert connection.execute("SELECT artifact_sha256 FROM bench_panorama_geometry").fetchone()[0] is None
+    mark_ready(connection, 7, "new-key", "/new.bpc", 456, True, (), artifact_sha256="b" * 64)
+    assert tuple(connection.execute("SELECT geometry_key,artifact_path,artifact_sha256 FROM bench_panorama_geometry").fetchone()) == (
+        "new-key", "/new.bpc", "b" * 64)
     assert connection.execute("SELECT count(*) FROM bench_panorama_lightmaps").fetchone()[0] == 0
 
 

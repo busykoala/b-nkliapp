@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import multiprocessing
 import resource
 import signal
@@ -252,7 +253,9 @@ def panorama_batch_job(args: Namespace) -> None:
                     stats["cache_hits"] += 1
                 if not geometry.complete:
                     stats["partial"] += 1
-                mark_ready(database, int(row["row_id"]), key, str(path), path.stat().st_size, geometry.complete, geometry.warnings)
+                mark_ready(database, int(row["row_id"]), key, str(path), path.stat().st_size,
+                           geometry.complete, geometry.warnings,
+                           artifact_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
 
                 render_identity = RenderIdentity(
                     geometry_key=key,

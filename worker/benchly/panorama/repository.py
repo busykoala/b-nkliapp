@@ -302,6 +302,7 @@ def mark_generating(database: Database, row, geometry_key: str, source_versions:
             "bench_longitude": excluded.bench_longitude,
             "geometry_key": excluded.geometry_key,
             "artifact_path": None,
+            "artifact_sha256": None,
             "status": "generating",
             "complete": False,
             "source_versions_json": excluded.source_versions_json,
@@ -372,13 +373,14 @@ def install_fixture_geometry(database: Database, row, geometry, artifact_path: s
 
 
 def mark_ready(database: Database, bench_row_id: int, geometry_key: str, artifact_path: str,
-               artifact_bytes: int, complete: bool, warnings: tuple[str, ...]) -> None:
+               artifact_bytes: int, complete: bool, warnings: tuple[str, ...],
+               *, artifact_sha256: str | None = None) -> None:
     now = now_iso()
     write(database, update(BenchPanoramaGeometryState).where(
         BenchPanoramaGeometryState.bench_row_id == bench_row_id,
         BenchPanoramaGeometryState.geometry_key == geometry_key,
     ).values(
-        artifact_path=artifact_path, status="ready", complete=complete,
+        artifact_path=artifact_path, artifact_sha256=artifact_sha256, status="ready", complete=complete,
         warnings_json=json.dumps(warnings, separators=(",", ":")), artifact_bytes=artifact_bytes,
         generated_at=now, updated_at=now, error=None,
     ))
