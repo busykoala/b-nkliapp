@@ -19,6 +19,7 @@ COPY scripts/generate-data-jobs.ts ./scripts/generate-data-jobs.ts
 COPY scripts/migrate.ts ./scripts/migrate.ts
 COPY scripts/prepare-map-worker.mjs ./scripts/prepare-map-worker.mjs
 COPY scripts/panorama-art/scenarios.ts ./scripts/panorama-art/scenarios.ts
+COPY scripts/panorama-review/core.ts scripts/panorama-review/report.ts ./scripts/panorama-review/
 COPY public ./public
 COPY src ./src
 RUN npm run build:container

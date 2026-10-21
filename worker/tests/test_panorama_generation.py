@@ -251,7 +251,9 @@ def test_painting_preserves_mapped_clearing_and_narrow_water_surface():
     assert surfaces[SemanticClass.WATER].getpixel((310, 420)) > 220
 
 
-def test_sealed_builder_manifest_keeps_extended_projection_and_actual_dimensions(tmp_path):
+def test_sealed_builder_manifest_keeps_extended_projection_and_actual_dimensions(tmp_path, monkeypatch):
+    # Container test stages have no Git checkout; seal against an explicit revision.
+    monkeypatch.setenv("BENCHLY_GIT_COMMIT", "1" * 40)
     geometry = fixture_geometry()
     geometry = geometry.model_copy(update={"config": geometry.config.model_copy(update={"maximum_elevation_angle": 88})})
     source = tmp_path / "source.bpc"
