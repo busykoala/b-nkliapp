@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-from benchly.panorama import builder, identity
+from benchly.panorama import builder, identity, refresh
 
 
 @pytest.mark.parametrize("changed", ["assets/foliage-masses-pigment.png", "facades.py"])
@@ -23,6 +23,7 @@ def test_changed_paint_input_invalidates_images_but_keeps_geometry(tmp_path, mon
     state.commit()
     previous_key = state.execute("SELECT value FROM metadata WHERE key='artifact_implementation'").fetchone()[0]
     state.close()
+    assert refresh._painter_key() == previous_key
 
     # Hashing is independent of image decoding; mutate only the temporary copy.
     path = source / changed
@@ -30,6 +31,7 @@ def test_changed_paint_input_invalidates_images_but_keeps_geometry(tmp_path, mon
     state = builder._open_state(root)
     try:
         assert state.execute("SELECT value FROM metadata WHERE key='artifact_implementation'").fetchone()[0] != previous_key
+        assert refresh._painter_key() != previous_key
         assert state.execute("SELECT COUNT(*) FROM artifacts").fetchone()[0] == 0
         assert state.execute("SELECT input_key FROM extractions WHERE bench_id='bench'").fetchone()[0] == "geographic-source"
     finally:

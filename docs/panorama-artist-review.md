@@ -21,13 +21,29 @@ pictures, reproducible inputs and staged archives remain. Earlier statements bel
 about no publication describe their historical review stage; this later approval
 authorizes the production rollout through the repository’s checked release workflow.
 
-The release publishes the reviewed image, material and capsule as one bounded
-update for the fixed 20 benches. The operator verifies IDs, coordinates, hashes,
-source identity and 20 GiB of logical disk headroom before an atomic transaction;
-it retains the current national generation and all other bench bindings. Client
-foreground and atmosphere changes apply throughout the app. Other cached national
-paintings require a separate bounded refresh; deploying painter code does not
-silently regenerate the national catalogue.
+The production scope was subsequently expanded to every existing panorama. The
+read-only inventory contains 125,080 active, ready locations. The first 20 reviewed
+image/material/capsule bundles are active; the national repaint retains the
+existing geometry and replaces each painting with its matching material mask.
+123,635 source capsules were already available locally and passed production
+checksums. The remaining 1,445 are rendered in place on the server; no additional
+production geometry is exported. Both paths use resumable checkpoints and bounded
+publication groups, with 20 GiB of logical panorama-volume headroom.
+
+Local painting uses `data/panorama-repaint-c30/current-index.tsv` and the existing
+`panorama-repaint` command, followed by `scripts/publish-panorama-repaint.py --apply
+--follow` against that same index. In-place painting uses
+`python -m benchly.panorama.repaint_in_place --row-ids PATH --work-dir
+/panorama/working/repaint-c30-remote --apply`, with two CPU workers. Version-2
+paint chunks publish the painting and material atomically, retain geography and
+lighting, and remove superseded assets only when no render row references them.
+The deployed painter must match the source hash before a chunk can activate.
+Progress under `test-results/production-rollout` distinguishes rendered, published
+and live-verified counts; a running repaint is not a completed national rollout.
+The national pilot exposed a sub-ulp periodic sampling address that rounded to the
+image width. Integer neighbour wrapping fixes that exception; all 20 approved
+paintings and masks reproduce byte-for-byte after the correction. The independent
+compatibility record is `test-results/production-rollout/approved-painter-compatibility.json`.
 
 ## Latest delivered pass — broad architectural plane washes
 

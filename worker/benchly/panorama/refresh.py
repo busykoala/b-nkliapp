@@ -17,13 +17,14 @@ from pathlib import Path
 from PIL import Image
 
 from benchly.panorama.binary import decode_geometry
-from benchly.panorama.builder import MINIMUM_FREE_BYTES, SERVER_ROOT, _require_upload_target, _rsync_command
-from benchly.panorama.identity import implementation_key
+from benchly.panorama.builder import MINIMUM_FREE_BYTES, SERVER_ROOT, _artifact_implementation, _require_upload_target, _rsync_command
 from benchly.panorama.repository import publish_repaint_chunk
-from benchly.panorama.watercolor import render_panorama_webp
+from benchly.panorama.material import MATERIAL_TRANSPORT_FOOTER
+from benchly.panorama.watercolor import render_material_webp, render_panorama_webp
 
 FORMAT = "benchly-panorama-paint-chunk"
 SCHEMA = 1
+MATERIAL_SCHEMA = 2
 _REMOTE_CAPSULE = re.compile(r"^/panorama/(active/[a-zA-Z0-9_-]+/capsules/([0-9a-f]{2})/([0-9a-f]{64})\.bpc)$")
 
 
@@ -64,7 +65,7 @@ def _atomic(path: Path, payload: bytes) -> None:
 def _painter_key() -> str:
     # The checked-in implementation, not a hand-maintained build version,
     # decides whether a saved repaint can be reused.
-    return implementation_key("binary.py", "material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png", "assets/foliage-pigment.png", "assets/rock-pigment.png")
+    return _artifact_implementation()
 
 
 def _progress(root: Path) -> sqlite3.Connection:
@@ -77,6 +78,11 @@ def _progress(root: Path) -> sqlite3.Connection:
       geometry_key TEXT NOT NULL,source_size INTEGER NOT NULL,source_mtime_ns INTEGER NOT NULL,
       painter_key TEXT NOT NULL,season TEXT NOT NULL,relative_path TEXT NOT NULL,sha256 TEXT NOT NULL,artifact_bytes INTEGER NOT NULL,
       finished_at TEXT NOT NULL)""")
+    columns = {row[1] for row in database.execute("PRAGMA table_info(painted)")}
+    for name, kind in (("material_relative_path", "TEXT"), ("material_sha256", "TEXT"), ("material_bytes", "INTEGER")):
+        if name not in columns:
+            database.execute(f"ALTER TABLE painted ADD COLUMN {name} {kind}")
+    database.commit()
     return database
 
 
@@ -224,10 +230,15 @@ def _render(task: tuple[int, str, float, float, str, Path, str, Path]) -> dict[s
     digest = hashlib.sha256(image).hexdigest()
     relative = Path("chunks") / str(row // 512) / "renders" / f"{row}-{digest}.webp"
     _atomic(root / relative, image)
+    material = render_material_webp(geometry)
+    material_sha = hashlib.sha256(material).hexdigest()
+    material_relative = Path("chunks") / str(row // 512) / "materials" / f"{row}-{material_sha}.webp"
+    _atomic(root / material_relative, material)
     return {"bench_row_id": row, "bench_id": bench_id, "latitude": lat, "longitude": lon,
             "geometry_key": key, "source_size": stat.st_size, "source_mtime_ns": stat.st_mtime_ns, "season": season,
             "relative_path": str(relative), "sha256": digest, "artifact_bytes": len(image),
-            "finished_at": datetime.now(UTC).isoformat()}
+            "finished_at": datetime.now(UTC).isoformat(), "material_relative_path": str(material_relative),
+            "material_sha256": material_sha, "material_bytes": len(material)}
 
 
 def repaint_job(args: Namespace) -> None:
@@ -244,10 +255,12 @@ def repaint_job(args: Namespace) -> None:
     pending = []
     for row, bench_id, lat, lon, key, source in rows:
         stat = source.stat()
-        previous = progress.execute("SELECT geometry_key,source_size,source_mtime_ns,painter_key,season,relative_path,sha256,artifact_bytes FROM painted WHERE bench_row_id=?", (row,)).fetchone()
+        previous = progress.execute("SELECT geometry_key,source_size,source_mtime_ns,painter_key,season,relative_path,sha256,artifact_bytes,material_relative_path,material_sha256,material_bytes FROM painted WHERE bench_row_id=?", (row,)).fetchone()
         if previous and previous[:5] == (key, stat.st_size, stat.st_mtime_ns, painter, args.season):
             file = root / previous[5]
-            if file.is_file() and file.stat().st_size == previous[7]:
+            if (file.is_file() and file.stat().st_size == previous[7] and previous[8]
+                    and (root / previous[8]).is_file() and (root / previous[8]).stat().st_size == previous[10]
+                    and _digest(file) == previous[6] and _digest(root / previous[8]) == previous[9]):
                 continue
         pending.append((row, bench_id, lat, lon, key, source, args.season, root))
         if args.limit and len(pending) >= args.limit:
@@ -258,18 +271,25 @@ def repaint_job(args: Namespace) -> None:
     batch_size = max(1, args.cpu_workers * 4)
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.cpu_workers) as pool:
         for start in range(0, len(pending), batch_size):
-            futures = [pool.submit(_render, task) for task in pending[start:start + batch_size]]
+            if _painter_key() != painter:
+                raise RuntimeError("Painter changed during repaint; restart with the new source")
+            futures = {pool.submit(_render, task): task for task in pending[start:start + batch_size]}
             for future in concurrent.futures.as_completed(futures):
-                record = future.result()
-                progress.execute("""INSERT INTO painted VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+                try:
+                    record = future.result()
+                except Exception as error:
+                    raise RuntimeError(f"Repaint failed for {futures[future][1]} ({futures[future][4]}): {error}") from error
+                progress.execute("""INSERT INTO painted VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                   ON CONFLICT(bench_row_id) DO UPDATE SET bench_id=excluded.bench_id,latitude=excluded.latitude,
                   longitude=excluded.longitude,geometry_key=excluded.geometry_key,source_size=excluded.source_size,
                   source_mtime_ns=excluded.source_mtime_ns,painter_key=excluded.painter_key,season=excluded.season,
                   relative_path=excluded.relative_path,sha256=excluded.sha256,
-                  artifact_bytes=excluded.artifact_bytes,finished_at=excluded.finished_at""",
+                  artifact_bytes=excluded.artifact_bytes,finished_at=excluded.finished_at,
+                  material_relative_path=excluded.material_relative_path,material_sha256=excluded.material_sha256,material_bytes=excluded.material_bytes""",
                   (record["bench_row_id"], record["bench_id"], record["latitude"], record["longitude"],
                    record["geometry_key"], record["source_size"], record["source_mtime_ns"], painter, record["season"],
-                   record["relative_path"], record["sha256"], record["artifact_bytes"], record["finished_at"]))
+                   record["relative_path"], record["sha256"], record["artifact_bytes"], record["finished_at"],
+                   record["material_relative_path"], record["material_sha256"], record["material_bytes"]))
                 progress.commit()
                 completed += 1
                 if completed % 512 == 0:
@@ -301,7 +321,7 @@ def seal_repaint_job(args: Namespace) -> None:
         records: list[dict[str, object]] = []
         group_season: str | None = None
         for row_id, bench_id, lat, lon, key, source in group_rows:
-            result = progress.execute("SELECT bench_id,latitude,longitude,geometry_key,source_size,source_mtime_ns,painter_key,season,relative_path,sha256,artifact_bytes FROM painted WHERE bench_row_id=?", (row_id,)).fetchone()
+            result = progress.execute("SELECT bench_id,latitude,longitude,geometry_key,source_size,source_mtime_ns,painter_key,season,relative_path,sha256,artifact_bytes,material_relative_path,material_sha256,material_bytes FROM painted WHERE bench_row_id=?", (row_id,)).fetchone()
             stat = source.stat()
             if not result or result[:7] != (bench_id, lat, lon, key, stat.st_size, stat.st_mtime_ns, painter):
                 break
@@ -313,13 +333,19 @@ def seal_repaint_job(args: Namespace) -> None:
                 break
             with Image.open(file) as picture:
                 width, height = picture.size
-            records.append({"bench_row_id": row_id, "bench_id": bench_id, "latitude": lat, "longitude": lon,
+            if not result[11]:
+                break
+            material_file = root / result[11]
+            if not material_file.is_file() or material_file.stat().st_size != result[13] or _digest(material_file) != result[12]:
+                break
+            records.append({"capsule_sha256": _digest(source), "material": {"relative_path": str(Path(result[11]).relative_to(Path("chunks") / str(group))),
+                                          "sha256": result[12], "bytes": result[13]}, "bench_row_id": row_id, "bench_id": bench_id, "latitude": lat, "longitude": lon,
                             "geometry_key": key, "relative_path": str(Path(result[8]).relative_to(Path("chunks") / str(group))),
                             "sha256": result[9], "bytes": result[10], "width": width, "height": height})
         if len(records) != len(group_rows):
             continue
-        content = {"format": FORMAT, "schema": SCHEMA, "painter_key": painter, "season": group_season, "group": group,
-                   "records": records, "artifact_bytes": sum(int(record["bytes"]) for record in records)}
+        content = {"format": FORMAT, "schema": MATERIAL_SCHEMA, "painter_key": painter, "season": group_season, "group": group,
+                   "records": records, "artifact_bytes": sum(int(record["bytes"]) + int(record["material"]["bytes"]) for record in records)}
         if content["artifact_bytes"] > 512 * 1024 * 1024:
             raise RuntimeError(f"paint group {group} exceeds the 512-MiB upload bound")
         canonical = json.dumps(content, sort_keys=True, separators=(",", ":")).encode()
@@ -365,11 +391,13 @@ def _upload_file_list(manifest: dict[str, object]) -> str:
     # Do not list the parent directory: rsync treats it as a recursive source
     # on some versions and would pull every superseded image beside the 511
     # sealed files. Each explicit child creates its own parent remotely.
-    return "".join(f"{record['relative_path']}\n" for record in manifest["records"])
+    return "".join(f"{record['relative_path']}\n" +
+                   (f"{record['material']['relative_path']}\n" if record.get("material") else "")
+                   for record in manifest["records"])
 
 
 def _verify_chunk(folder: Path, manifest: dict[str, object], *, strict: bool = False) -> None:
-    if manifest.get("format") != FORMAT or manifest.get("schema") != SCHEMA:
+    if manifest.get("format") != FORMAT or manifest.get("schema") not in (SCHEMA, MATERIAL_SCHEMA):
         raise ValueError("invalid paint chunk format")
     content = {key: value for key, value in manifest.items() if key != "chunk_id"}
     expected = hashlib.sha256(json.dumps(content, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
@@ -401,11 +429,35 @@ def _verify_chunk(folder: Path, manifest: dict[str, object], *, strict: bool = F
             with Image.open(file) as picture:
                 if picture.size != (record["width"], record["height"]):
                     raise ValueError("paint dimensions do not match the sealed image")
+        material = record.get("material")
+        capsule_sha = record.get("capsule_sha256", "")
+        if manifest["schema"] == MATERIAL_SCHEMA and (not isinstance(capsule_sha, str) or len(capsule_sha) != 64 or any(c not in "0123456789abcdef" for c in capsule_sha)):
+            raise ValueError("paint chunk is missing its source capsule checksum")
+        if material and manifest["schema"] != MATERIAL_SCHEMA:
+            raise ValueError("material replacement requires a version-2 paint chunk")
+        if manifest["schema"] == MATERIAL_SCHEMA and not material:
+            raise ValueError("paint chunk is missing the matching material")
+        if material:
+            relative_material = Path(material["relative_path"])
+            if len(relative_material.parts) != 2 or relative_material.parts[0] != "materials" or relative_material.suffix != ".webp":
+                raise ValueError("invalid material artifact path")
+            expected_files.add(relative_material.as_posix())
+            material_file = (folder / relative_material).resolve()
+            if not material_file.is_relative_to(folder) or not material_file.is_file() or material_file.stat().st_size != material["bytes"] or _digest(material_file) != material["sha256"]:
+                raise ValueError("invalid material artifact")
+            with Image.open(material_file) as picture:
+                picture.load()
+                if picture.width < 3 or picture.height < 3 or picture.height % 2 != 1:
+                    raise ValueError("invalid material transport dimensions")
+                if tuple(picture.getpixel((x, picture.height - 1))[:3] for x in range(3)) != MATERIAL_TRANSPORT_FOOTER:
+                    raise ValueError("invalid material transport footer")
+            total += int(material["bytes"])
         total += int(record["bytes"])
     if total != manifest["artifact_bytes"]:
         raise ValueError("paint chunk byte count mismatch")
     if strict:
-        actual_files = {file.relative_to(folder).as_posix() for file in (folder / "renders").iterdir()}
+        actual_files = {file.relative_to(folder).as_posix() for kind in ("renders", "materials")
+                        if (folder / kind).is_dir() for file in (folder / kind).iterdir()}
         if actual_files != expected_files:
             raise ValueError("incoming paint chunk contains unsealed artifacts")
 
@@ -433,7 +485,9 @@ def activate_repaint_job(args: Namespace) -> None:
     try:
         database.execute("BEGIN IMMEDIATE")
         for record in manifest["records"]:
-            current = database.execute("""SELECT b.id,b.latitude,b.longitude,pg.geometry_key,pr.artifact_path
+            material_column = ",pr.material_path" if record.get("material") else ""
+            source_column = ",pg.artifact_sha256,pg.artifact_path" if record.get("capsule_sha256") else ""
+            current = database.execute(f"""SELECT b.id,b.latitude,b.longitude,pg.geometry_key,pr.artifact_path{material_column}{source_column}
               FROM benches b JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id
               JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id AND pr.geometry_key=pg.geometry_key
               WHERE b.row_id=? AND b.active=1 AND pg.status='ready' AND pr.status='ready'""",
@@ -446,8 +500,21 @@ def activate_repaint_job(args: Namespace) -> None:
                     or abs(float(current[2]) - float(record["longitude"])) > 1e-7
                     or current[3] != record["geometry_key"]):
                 raise ValueError(f"bench changed since repaint: {record['bench_id']}")
+            if record.get("capsule_sha256"):
+                offset = 6 if record.get("material") else 5
+                source_sha = current[offset]
+                if not source_sha:
+                    relative_source = Path(current[offset + 1]).relative_to(artifact_root)
+                    source_file = (root / relative_source).resolve()
+                    if not source_file.is_relative_to(root):
+                        raise ValueError("source capsule path is outside the panorama volume")
+                    source_sha = _digest(source_file)
+                if source_sha != record["capsule_sha256"]:
+                    raise ValueError(f"source capsule changed since repaint: {record['bench_id']}")
             if current[4]:
                 old_paths.add(current[4])
+            if record.get("material") and current[5]:
+                old_paths.add(current[5])
         if not args.apply:
             print(json.dumps({"preview_chunk": args.chunk_id, "benches": len(manifest["records"]),
                               "bytes": manifest["artifact_bytes"]}))
@@ -462,10 +529,16 @@ def activate_repaint_job(args: Namespace) -> None:
         database.commit()
         committed = True
         # Never retain a rollback copy. Keep a shared old image only while an
-        # unrefreshed bench still points to it; geography and materials remain.
+        # unrefreshed bench still points to it; geography is never replaced.
+        has_material = any(record.get("material") for record in manifest["records"])
         for old in old_paths:
             try:
-                if database.execute("SELECT 1 FROM bench_panorama_renders WHERE artifact_path=? LIMIT 1", (old,)).fetchone():
+                query = "SELECT 1 FROM bench_panorama_renders WHERE artifact_path=?"
+                parameters = (old,)
+                if has_material:
+                    query += " OR material_path=?"
+                    parameters += (old,)
+                if database.execute(query + " LIMIT 1", parameters).fetchone():
                     continue
                 relative = Path(old).relative_to(artifact_root)
                 file = root / relative

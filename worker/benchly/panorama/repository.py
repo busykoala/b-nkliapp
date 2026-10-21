@@ -159,7 +159,7 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
 
 def publish_repaint_chunk(database, records: list[dict[str, object]], painter_key: str,
                           artifact_prefix: str, now: str) -> None:
-    """Replace only checked image bindings; keep geometry and material intact."""
+    """Replace the checked painting and its optional matching material atomically."""
     for record in records:
         path = f"{artifact_prefix}/{record['relative_path']}"
         # ``render_key`` is the row identity, not the image digest: two
@@ -168,6 +168,12 @@ def publish_repaint_chunk(database, records: list[dict[str, object]], painter_ke
             f"{record['sha256']}:{int(record['bench_row_id'])}".encode()
         ).hexdigest()
         dimensions = {key: int(record[key]) for key in ("width", "height") if key in record}
+        material = record.get("material")
+        if material:
+            dimensions.update(material_key=hashlib.sha256(
+                f"{material['sha256']}:{int(record['bench_row_id'])}".encode()).hexdigest(),
+                material_path=f"{artifact_prefix}/{material['relative_path']}",
+                material_sha256=material["sha256"], material_bytes=int(material["bytes"]))
         write(database, update(BenchPanoramaRenderState).where(
             BenchPanoramaRenderState.bench_row_id == int(record["bench_row_id"]),
             BenchPanoramaRenderState.geometry_key == str(record["geometry_key"]),

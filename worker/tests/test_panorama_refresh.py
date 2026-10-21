@@ -13,6 +13,7 @@ import pytest
 from PIL import Image
 
 from benchly.panorama import refresh
+from benchly.panorama.material import MATERIAL_TRANSPORT_FOOTER
 from benchly.panorama.builder import SERVER, _production_index_query, _require_upload_target
 
 
@@ -71,8 +72,10 @@ def test_capsule_fetch_skips_missing_geography_without_remote_calls(tmp_path: Pa
 
 
 def _seal(folder: Path, record: dict, painter: str = "painter") -> dict:
-    content = {"format": refresh.FORMAT, "schema": refresh.SCHEMA, "painter_key": painter,
-               "season": "autumn", "group": 0, "records": [record], "artifact_bytes": record["bytes"]}
+    if record.get("material"):
+        record.setdefault("capsule_sha256", "c" * 64)
+    content = {"format": refresh.FORMAT, "schema": refresh.MATERIAL_SCHEMA if record.get("material") else refresh.SCHEMA, "painter_key": painter,
+               "season": "autumn", "group": 0, "records": [record], "artifact_bytes": record["bytes"] + record.get("material", {}).get("bytes", 0)}
     chunk_id = hashlib.sha256(json.dumps(content, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     manifest = {**content, "chunk_id": chunk_id}
     folder.mkdir(parents=True, exist_ok=True)
@@ -135,11 +138,20 @@ def test_interrupted_repaint_reuses_completed_image(tmp_path: Path, monkeypatch,
         sha = hashlib.sha256(image).hexdigest()
         relative = Path("chunks") / str(row // 512) / "renders" / f"{row}-{sha}.webp"
         refresh._atomic(destination / relative, image)
+        material_path = Path("chunks") / str(row // 512) / "materials" / f"{row}.webp"
+        material_file = destination / material_path
+        material_file.parent.mkdir(parents=True, exist_ok=True)
+        facts = Image.new("RGB", (64, 65), (0, 0, 0))
+        for x, colour in enumerate(MATERIAL_TRANSPORT_FOOTER):
+            facts.putpixel((x, 64), colour)
+        facts.save(material_file, format="WEBP", lossless=True)
         stat = source.stat()
         return {"bench_row_id": row, "bench_id": bench_id, "latitude": lat, "longitude": lon,
                 "geometry_key": key, "source_size": stat.st_size, "source_mtime_ns": stat.st_mtime_ns,
                 "season": season, "relative_path": str(relative), "sha256": sha,
-                "artifact_bytes": len(image), "finished_at": "2026-09-15"}
+                "artifact_bytes": len(image), "finished_at": "2026-09-15",
+                "material_relative_path": str(material_path), "material_sha256": refresh._digest(material_file),
+                "material_bytes": material_file.stat().st_size}
 
     class FakePool:
         def __init__(self, **_kwargs): pass
@@ -176,6 +188,8 @@ def test_interrupted_repaint_reuses_completed_image(tmp_path: Path, monkeypatch,
     refresh.seal_repaint_job(args)
     manifest = json.loads((root / "chunks" / "0" / "manifest.json").read_text())
     assert len(manifest["records"]) == 2
+    assert manifest["schema"] == refresh.MATERIAL_SCHEMA
+    refresh._verify_chunk(root / "chunks" / "0", manifest, strict=True)
     assert {(record["width"], record["height"]) for record in manifest["records"]} == {(64, 32)}
     key = "c" * 64
     source = capsules / key[:2] / f"{key}.bpc"
@@ -222,7 +236,8 @@ def test_chunk_rejects_duplicate_benches_and_oversize_manifest(tmp_path: Path) -
         refresh._verify_chunk(folder, manifest, strict=True)
 
 
-def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, monkeypatch) -> None:
+@pytest.mark.parametrize("with_material", [False, True])
+def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, monkeypatch, with_material) -> None:
     painter = "checked-in-source-hash"
     monkeypatch.setattr(refresh, "_painter_key", lambda: painter)
     monkeypatch.setattr(refresh, "MINIMUM_FREE_BYTES", 1)
@@ -235,15 +250,24 @@ def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, mo
     database = sqlite3.connect(database_path)
     database.executescript("""
       CREATE TABLE benches(row_id INTEGER PRIMARY KEY,id TEXT,latitude REAL,longitude REAL,active INTEGER);
-      CREATE TABLE bench_panorama_geometry(bench_row_id INTEGER,geometry_key TEXT,status TEXT);
+      CREATE TABLE bench_panorama_geometry(bench_row_id INTEGER,geometry_key TEXT,status TEXT,artifact_sha256 TEXT,artifact_path TEXT);
       CREATE TABLE bench_panorama_renders(bench_row_id INTEGER,geometry_key TEXT,status TEXT,
         artifact_path TEXT,render_key TEXT,style_version TEXT,artifact_bytes INTEGER,
-        artifact_sha256 TEXT,generated_at TEXT,updated_at TEXT);
+        artifact_sha256 TEXT,generated_at TEXT,updated_at TEXT,
+        material_key TEXT,material_path TEXT,material_sha256 TEXT,material_bytes INTEGER);
     """)
     database.execute("INSERT INTO benches VALUES(1,'osm-node-1',47,8,1)")
-    database.execute("INSERT INTO bench_panorama_geometry VALUES(1,?,'ready')", ("a" * 64,))
-    database.execute("INSERT INTO bench_panorama_renders VALUES(1,?,'ready',?,'old','old',9,'old','yesterday','yesterday')",
+    database.execute("INSERT INTO bench_panorama_geometry(bench_row_id,geometry_key,status) VALUES(1,?,'ready')", ("a" * 64,))
+    database.execute("INSERT INTO bench_panorama_renders(bench_row_id,geometry_key,status,artifact_path,render_key,style_version,artifact_bytes,artifact_sha256,generated_at,updated_at) VALUES(1,?,'ready',?,'old','old',9,'old','yesterday','yesterday')",
                      ("a" * 64, str(alias / "active" / "old" / "renders" / "1-old.webp")))
+    old_material = root / "active" / "old" / "materials" / "old.webp"
+    if with_material:
+        database.execute("UPDATE bench_panorama_geometry SET artifact_sha256=?", ("c" * 64,))
+        old_material.parent.mkdir(parents=True)
+        old_material.write_bytes(b"old material")
+        old_binding = str(alias / old_material.relative_to(root))
+        database.execute("UPDATE bench_panorama_renders SET material_path=?,material_key='old-material'", (old_binding,))
+        database.execute("INSERT INTO bench_panorama_renders(bench_row_id,geometry_key,status,material_path) VALUES(2,?,'ready',?)", ("b"*64, old_binding))
     database.commit()
     database.close()
     image = b"new watercolor"
@@ -254,6 +278,15 @@ def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, mo
     staging.mkdir(parents=True)
     (staging / "renders").mkdir()
     (staging / "renders" / "1-new.webp").write_bytes(image)
+    if with_material:
+        material_file = staging / "materials" / "1-new.webp"
+        material_file.parent.mkdir()
+        facts = Image.new("RGB", (64, 65), (0, 0, 0))
+        for x, colour in enumerate(MATERIAL_TRANSPORT_FOOTER):
+            facts.putpixel((x, 64), colour)
+        facts.save(material_file, format="WEBP", lossless=True)
+        record["material"] = {"relative_path": "materials/1-new.webp", "bytes": material_file.stat().st_size,
+                              "sha256": refresh._digest(material_file)}
     manifest = _seal(staging, record, painter)
     staging.rename(staging.parent / manifest["chunk_id"])
     args = Namespace(server_root=str(root), artifact_root=str(alias), database=str(database_path),
@@ -262,10 +295,35 @@ def test_activation_previews_then_replaces_only_the_old_image(tmp_path: Path, mo
     assert old.exists()
     assert (root / "incoming" / "paint" / manifest["chunk_id"]).exists()
     args.apply = True
+    if with_material:
+        staged_material = root / "incoming" / "paint" / manifest["chunk_id"] / record["material"]["relative_path"]
+        original = staged_material.read_bytes()
+        staged_material.write_bytes(b"corrupt material")
+        with pytest.raises(ValueError, match="invalid material artifact"):
+            refresh.activate_repaint_job(args)
+        assert old.exists()
+        with sqlite3.connect(database_path) as unchanged:
+            assert unchanged.execute("SELECT render_key FROM bench_panorama_renders WHERE bench_row_id=1").fetchone()[0] == "old"
+        staged_material.write_bytes(original)
+        with sqlite3.connect(database_path) as changed:
+            changed.execute("UPDATE bench_panorama_geometry SET artifact_sha256=?", ("d" * 64,))
+        with pytest.raises(ValueError, match="source capsule changed"):
+            refresh.activate_repaint_job(args)
+        assert old.exists()
+        with sqlite3.connect(database_path) as changed:
+            changed.execute("UPDATE bench_panorama_geometry SET artifact_sha256=?", ("c" * 64,))
     refresh.activate_repaint_job(args)
     assert not old.exists()
     assert (root / "active" / "render-chunks" / manifest["chunk_id"] / record["relative_path"]).read_bytes() == image
     database = sqlite3.connect(database_path)
     expected_key = hashlib.sha256(f"{record['sha256']}:1".encode()).hexdigest()
-    assert database.execute("SELECT render_key FROM bench_panorama_renders").fetchone()[0] == expected_key
+    assert database.execute("SELECT render_key FROM bench_panorama_renders WHERE bench_row_id=1").fetchone()[0] == expected_key
+    if with_material:
+        material_key, material_path, material_sha = database.execute(
+            "SELECT material_key,material_path,material_sha256 FROM bench_panorama_renders WHERE bench_row_id=1").fetchone()
+        assert material_key == hashlib.sha256(f"{record['material']['sha256']}:1".encode()).hexdigest()
+        assert material_sha == record["material"]["sha256"]
+        assert material_path.endswith(record["material"]["relative_path"])
+        assert old_material.exists()  # The unaffected bench still references it.
+        assert database.execute("SELECT material_key FROM bench_panorama_renders WHERE bench_row_id=2").fetchone()[0] is None
     database.close()

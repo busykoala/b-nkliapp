@@ -92,6 +92,6 @@ pairs pass; 60 fields reproduce from independently extracted source and capsules
 typecheck and lint carry through exact frontend/config/assets/lockfile compatibility.
 Matched local painting medians, C29 → C30: 1: 3.576 → 3.589s; 15: 4.892 → 4.938s; 14: 4.594 → 4.658s. These development timings do
 not establish production throughput. Historical database-checksum uncertainty
-remains documented. The review stage ended with user approval for a production rollout on `main`; deployment follows the checked release workflow.
+remains documented. The reviewed changes are deployed from `main`. A subsequent full-catalogue repaint covers all 125,080 active panoramas, with matching masks and resumable batch publication. See the [rollout record](test-results/production-rollout/release.json) for progress; the first 20 have passed live checks.
 
 [Development & structure](docs/development.md) · [Design system](docs/design-system.md) · [Data/operations](docs/operations.md) · [Worker](worker/README.md) · [Deployment](deploy/charts/README.md)

@@ -88,3 +88,18 @@ def test_registration_is_small_invertible_periodic_and_resolution_consistent():
     for coarse, fine in [(dx, fine_x), (dy, fine_y)]:
         reduced = fine.reshape(240, 2, 1440, 2).mean(axis=(1, 3)) / 2
         np.testing.assert_allclose(coarse[80:160, :60], reduced[80:160, :60], atol=.03)
+
+
+def test_sub_ulp_negative_wrap_keeps_sampling_inside_the_image(monkeypatch):
+    from benchly.panorama import watercolor
+    width = 4096
+    pixels = np.full((3, width, 3), 100, dtype=np.uint8)
+    pixels[:, 0] = (25, 50, 75)
+    dx = np.zeros((3, width), dtype=np.float32)
+    dx[:, 0] = -1e-16
+    monkeypatch.setattr(watercolor, "_architecture_registration", lambda *_: (dx, np.zeros_like(dx)))
+    registered = watercolor._register_architecture(pixels, None)
+    assert np.array_equal(registered, pixels)
+    brush = np.arange(width * 3, dtype=np.float32).reshape(3, width)
+    actual = watercolor._sample_periodic_brush(brush, np.array([float(width)]), np.array([3.0]))
+    assert actual[0] == brush[0, 0]

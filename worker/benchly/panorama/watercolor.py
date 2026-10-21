@@ -257,6 +257,9 @@ def _sample_periodic_brush(values: np.ndarray, sx: np.ndarray, sy: np.ndarray) -
     x0, y0 = np.floor(sx).astype(np.int32), np.floor(sy).astype(np.int32)
     x1, y1 = (x0 + 1) % width, (y0 + 1) % height
     dx, dy = sx - x0, sy - y0
+    # Even floating-point modulo can round a tiny negative address to the
+    # exact image size. Wrap integer neighbours after retaining the fractions.
+    x0, y0 = x0 % width, y0 % height
     return ((values[y0, x0] * (1 - dx) + values[y0, x1] * dx) * (1 - dy)
             + (values[y1, x0] * (1 - dx) + values[y1, x1] * dx) * dy)
 
@@ -1451,6 +1454,8 @@ def _register_architecture(pixels: np.ndarray, geometry: PanoramaGeometry,
     x0, y0 = np.floor(x).astype(np.int32), np.floor(y).astype(np.int32)
     x1, y1 = (x0 + 1) % width, np.minimum(y0 + 1, height - 1)
     tx, ty = (x - x0).astype(np.float32)[..., None], (y - y0).astype(np.float32)[..., None]
+    # float64 can also round sub-ulp negative coordinates to width.
+    x0 %= width
     values = pixels[..., None] if pixels.ndim == 2 else pixels
     result = ((values[y0, x0] * (1 - tx) + values[y0, x1] * tx) * (1 - ty)
               + (values[y1, x0] * (1 - tx) + values[y1, x1] * tx) * ty)
