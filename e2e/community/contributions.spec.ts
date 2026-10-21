@@ -179,45 +179,50 @@ test("keeps contribution drafts across tasks and protects closing the viewport-o
 });
 
 
-test("saves chosen facts explicitly and retains a written contribution after a failed request", async ({ page }, testInfo) => {
-  const runId = `save-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
-  await registerUser(page, runId);
-  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
-  const dialog = page.locator(".contribution-dialog[open]");
-  await dialog.getByRole("button", { name: /Armlehnen/ }).click();
-  let actionRequests = 0;
-  page.on("request", (request) => {
-    if (request.method() === "POST" && request.headers()["next-action"]) actionRequests++;
+test.describe("controlled action requests", () => {
+  // A production service worker can own requests before page.route sees them.
+  test.use({ serviceWorkers: "block" });
+
+  test("saves chosen facts explicitly and retains a written contribution after a failed request", async ({ page }, testInfo) => {
+    const runId = `save-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
+    await registerUser(page, runId);
+    await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
+    const dialog = page.locator(".contribution-dialog[open]");
+    await dialog.getByRole("button", { name: /Armlehnen/ }).click();
+    let actionRequests = 0;
+    page.on("request", (request) => {
+      if (request.method() === "POST" && request.headers()["next-action"]) actionRequests++;
+    });
+    await dialog.getByRole("button", { name: "Nein", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: "Nein", exact: true })).toHaveAttribute("aria-pressed", "true");
+    expect(actionRequests).toBe(0);
+    await dialog.getByRole("button", { name: "Speichern", exact: true }).click();
+    const field = dialog.locator('[data-feature="armrest"]');
+    await expect(field).toContainText("Nein");
+    await expect(field).toBeFocused();
+    await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
+    await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+    const draft = `Dieser Gedanke bleibt auch nach einem Fehler erhalten (${runId}).`;
+    const body = dialog.getByLabel("Dein Bänkli-Moment");
+    await body.fill(draft);
+    let failNextAction = true;
+    const interrupt = async (route: import("@playwright/test").Route) => {
+      const request = route.request();
+      if (failNextAction && request.method() === "POST" && request.headers()["next-action"]) {
+        failNextAction = false;
+        await route.abort("failed");
+      } else await route.continue();
+    };
+    await page.route("**/*", interrupt);
+    await dialog.getByRole("button", { name: "Moment veröffentlichen", exact: true }).click();
+    await expect(dialog.getByRole("alert")).toBeVisible();
+    await expect(body).toHaveValue(draft);
+    await page.unroute("**/*", interrupt);
+    await dialog.getByRole("button", { name: "Moment veröffentlichen", exact: true }).click();
+    await expect(dialog.getByRole("status")).toHaveText("Dein Bänkli-Moment ist jetzt am Platz zu lesen.");
+    await expect(body).toHaveValue("");
+    await dialog.getByRole("button", { name: "Zum Bänkli", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText(draft, { exact: true })).toBeVisible();
   });
-  await dialog.getByRole("button", { name: "Nein", exact: true }).click();
-  await expect(dialog.getByRole("button", { name: "Nein", exact: true })).toHaveAttribute("aria-pressed", "true");
-  expect(actionRequests).toBe(0);
-  await dialog.getByRole("button", { name: "Speichern", exact: true }).click();
-  const field = dialog.locator('[data-feature="armrest"]');
-  await expect(field).toContainText("Nein");
-  await expect(field).toBeFocused();
-  await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
-  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
-  const draft = `Dieser Gedanke bleibt auch nach einem Fehler erhalten (${runId}).`;
-  const body = dialog.getByLabel("Dein Bänkli-Moment");
-  await body.fill(draft);
-  let failNextAction = true;
-  const interrupt = async (route: import("@playwright/test").Route) => {
-    const request = route.request();
-    if (failNextAction && request.method() === "POST" && request.headers()["next-action"]) {
-      failNextAction = false;
-      await route.abort("failed");
-    } else await route.continue();
-  };
-  await page.route("**/*", interrupt);
-  await dialog.getByRole("button", { name: "Moment veröffentlichen", exact: true }).click();
-  await expect(dialog.getByRole("alert")).toBeVisible();
-  await expect(body).toHaveValue(draft);
-  await page.unroute("**/*", interrupt);
-  await dialog.getByRole("button", { name: "Moment veröffentlichen", exact: true }).click();
-  await expect(dialog.getByRole("status")).toHaveText("Dein Bänkli-Moment ist jetzt am Platz zu lesen.");
-  await expect(body).toHaveValue("");
-  await dialog.getByRole("button", { name: "Zum Bänkli", exact: true }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByText(draft, { exact: true })).toBeVisible();
 });

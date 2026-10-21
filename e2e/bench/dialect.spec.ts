@@ -73,7 +73,8 @@ test("keeps sun and covered shade states on the panorama", async ({ page }, test
   let scene = page.locator(".bench-panorama");
   await expect(scene).toBeVisible();
   await expect(scene).toHaveClass(/is-sunny/);
-  await expect(scene.locator(".bench-panorama-bench-shadow").first()).toBeVisible();
+  await expect(scene.locator(".bench-panorama-rear-bench")).toBeVisible();
+  await expect(scene.locator(".bench-panorama-ground-patch, .bench-panorama-bench-shadow")).toHaveCount(0);
   await scene.screenshot({ path: testInfo.outputPath("scene-direct-sun.png") });
 
   try {

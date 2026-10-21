@@ -31,7 +31,7 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   await expect(panorama).toBeVisible({ timeout: 7_000 });
   await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "full");
   await expect(panorama.locator(".bench-panorama-shelter")).toBeVisible();
-  await expect(panorama.locator(".bench-panorama-ground-patch").first()).toBeVisible();
+  await expect(panorama.locator(".bench-panorama-ground-patch, .bench-panorama-bench-shadow")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("panorama-overlay-full.png") });
   const bearing = panorama.locator(".bench-panorama-bearing");
   await expect(bearing).toHaveText("325°");
@@ -54,29 +54,21 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   // Read all layout rectangles together so geometry assertions describe one
   // rendered frame rather than separate browser layout turns.
   const layout = await panorama.evaluate((element) => {
-    const ground = element.querySelector<HTMLElement>(".bench-panorama-ground-patch");
     const bench = element.querySelector<HTMLElement>(".bench-panorama-rear-bench");
-    if (!ground || !bench) return null;
+    if (!bench) return null;
     const panoramaBox = element.getBoundingClientRect();
-    const groundBox = ground.getBoundingClientRect();
     const benchBox = bench.getBoundingClientRect();
     return {
       panorama: { width: panoramaBox.width, height: panoramaBox.height, y: panoramaBox.y },
-      ground: { width: groundBox.width, height: groundBox.height, y: groundBox.y },
       bench: { width: benchBox.width, height: benchBox.height, y: benchBox.y },
     };
   });
   expect(layout).not.toBeNull();
-  expect(layout!.ground.width).toBeGreaterThan(layout!.bench.width);
-  // A broad, low soil wash reaches past both crop edges so lake-facing
-  // benches have land under their legs without a visible oval island.
-  expect(layout!.ground.width).toBeGreaterThan(layout!.panorama.width);
-  expect(layout!.ground.y).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height * .88);
-  expect(layout!.ground.y).toBeLessThan(layout!.panorama.y + layout!.panorama.height * .92);
-  expect(layout!.ground.height).toBeLessThan(layout!.panorama.height * .14);
+  // The seat meets the viewport edge; legs extend beneath its clipping boundary.
   expect(layout!.bench.width).toBeLessThan(layout!.panorama.width * .62);
   expect(layout!.bench.y + layout!.bench.height).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height * .9);
-  expect(layout!.bench.y + layout!.bench.height).toBeLessThan(layout!.panorama.y + layout!.panorama.height);
+  expect(layout!.bench.y).toBeLessThan(layout!.panorama.y + layout!.panorama.height * .95);
+  expect(layout!.bench.y + layout!.bench.height).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height);
   await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
 
   const open = panorama.getByRole("button", { name: "Panorama gross im 360-Grad-Modus öffnen" });
@@ -224,7 +216,7 @@ test("keeps semantic sky transparent when WebGL is unavailable", async ({ page, 
   await panorama.screenshot({ path: testInfo.outputPath("panorama-canvas2d-fallback.png") });
 });
 
-test("keeps a conservative continuous sky when the semantic mask fails", async ({ page, panoramaBench }) => {
+test("offers a retry without displaying an unmasked landscape when the semantic mask fails", async ({ page, panoramaBench }) => {
   await installTerrainPanoramaFixture(panoramaBench, false);
   const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
   const row = database.prepare(`SELECT pr.material_key materialKey FROM benches b
@@ -234,10 +226,10 @@ test("keeps a conservative continuous sky when the semantic mask fails", async (
   await page.route(`**/media/panorama/${row.materialKey}`, (route) => route.abort("failed"));
   await page.goto(`/?bank=${panoramaBench}`);
   const panorama = page.locator(".bench-panorama");
-  await expect(panorama.locator(".bench-panorama-sky").first()).toBeVisible();
-  await expect(panorama.locator(".bench-panorama-webgl.is-ready")).toHaveCount(0);
-  await expect(panorama.locator(".bench-panorama-celestial")).toHaveCount(0);
-  await expect(panorama.locator(".bench-panorama-art.has-material").first()).toHaveCSS("opacity", "0");
+  await expect(panorama).toHaveAttribute("data-status", "error");
+  await expect(panorama.getByRole("status")).toBeVisible();
+  await expect(panorama.getByRole("button")).toBeVisible();
+  await expect(panorama.locator(".bench-panorama-art, .bench-panorama-celestial")).toHaveCount(0);
 });
 
 test("keeps an expanded panorama and its pose through a detail refresh", async ({ page, panoramaBench }) => {

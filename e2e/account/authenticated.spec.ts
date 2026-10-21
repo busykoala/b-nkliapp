@@ -111,35 +111,40 @@ test("keeps contribution and add-bench tasks understandable on a phone", async (
   await page.screenshot({ path: testInfo.outputPath("08-add-bench.png") });
 });
 
-test("checks for duplicate benches before optional reverse geocoding finishes", async ({ page }, testInfo) => {
-  await registerUser(page, `nearby-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`);
-  await page.goto("/?action=add");
-  let coordinateRequests = 0;
-  let release!: () => void;
-  const pendingGeocoder = new Promise<void>((resolve) => { release = resolve; });
-  await page.route("**/*", async (route) => {
-    const request = route.request();
-    if (request.method() === "POST" && request.headers()["next-action"]) {
-      let args: unknown;
-      try { args = JSON.parse(request.postData() ?? "null"); } catch { /* Other action encodings are unrelated. */ }
-      if (Array.isArray(args) && args.length === 2 && args.every((value) => typeof value === "number")) {
-        coordinateRequests += 1;
-        // Both lookups accept two coordinates. Let the first finish and hold
-        // the second: reversing their priority leaves the nearby panel stuck.
-        if (coordinateRequests === 2) await pendingGeocoder;
+test.describe("controlled action requests", () => {
+  // A production service worker can own requests before page.route sees them.
+  test.use({ serviceWorkers: "block" });
+
+  test("checks for duplicate benches before optional reverse geocoding finishes", async ({ page }, testInfo) => {
+    await registerUser(page, `nearby-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`);
+    await page.goto("/?action=add");
+    let coordinateRequests = 0;
+    let release!: () => void;
+    const pendingGeocoder = new Promise<void>((resolve) => { release = resolve; });
+    await page.route("**/*", async (route) => {
+      const request = route.request();
+      if (request.method() === "POST" && request.headers()["next-action"]) {
+        let args: unknown;
+        try { args = JSON.parse(request.postData() ?? "null"); } catch { /* Other action encodings are unrelated. */ }
+        if (Array.isArray(args) && args.length === 2 && args.every((value) => typeof value === "number")) {
+          coordinateRequests += 1;
+          // Both lookups accept two coordinates. Let the first finish and hold
+          // the second: reversing their priority leaves the nearby panel stuck.
+          if (coordinateRequests === 2) await pendingGeocoder;
+        }
       }
+      await route.continue();
+    });
+    try {
+      await page.getByRole("button", { name: "Hier eintragen" }).click();
+      await expect.poll(() => coordinateRequests).toBe(2);
+      const add = page.getByRole("dialog", { name: "Bänkli eintragen", exact: true });
+      await expect(add.locator(".nearby-benches")).not.toContainText("werden geprüft");
+      await expect(add.locator(".add-location")).toHaveText("Ort wird gesucht …");
+      await expect(add.getByRole("button", { name: "Eintragen", exact: true })).toBeEnabled();
+    } finally {
+      release();
+      await page.unrouteAll({ behavior: "wait" });
     }
-    await route.continue();
   });
-  try {
-    await page.getByRole("button", { name: "Hier eintragen" }).click();
-    await expect.poll(() => coordinateRequests).toBe(2);
-    const add = page.getByRole("dialog", { name: "Bänkli eintragen", exact: true });
-    await expect(add.locator(".nearby-benches")).not.toContainText("werden geprüft");
-    await expect(add.locator(".add-location")).toHaveText("Ort wird gesucht …");
-    await expect(add.getByRole("button", { name: "Eintragen", exact: true })).toBeEnabled();
-  } finally {
-    release();
-    await page.unrouteAll({ behavior: "wait" });
-  }
 });

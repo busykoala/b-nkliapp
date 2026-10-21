@@ -3,6 +3,7 @@ import { copyFileSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import Database from "better-sqlite3";
 import sharp from "sharp";
+import * as SunCalc from "suncalc";
 
 // Cleanup is limited to IDs created by this process, not every community bench.
 const ownedPanoramaBenches = new Set<string>();
@@ -72,10 +73,19 @@ export function installPanoramaFixture(benchId: string, covered?: boolean,
 }
 
 export async function installTerrainPanoramaFixture(benchId: string, covered?: boolean) {
-  // The narrow 149° summit crosses the fixed daytime fixture's solar disc.
-  // It is intentional: browser screenshots can prove partial-disc occlusion,
-  // not merely that the canvas has a higher z-index than the body.
-  const ridge = "M0 184 C95 153 151 173 226 151 C322 121 376 179 455 163 C474 155 484 54 497 42 C510 54 522 154 545 163 C566 166 588 156 612 149 C705 115 770 175 846 158 C925 140 1017 178 1100 153 C1144 140 1173 163 1200 184 L1200 300 L0 300 Z";
+  // Place a short, flat summit through the fixed test sun's centre. This
+  // known geographic mask proves partial-disc occlusion even when the seed
+  // bench coordinates change; screenshot brightness alone is not a sky mask.
+  const db = new Database(process.env.BENCHLY_E2E_DATABASE!);
+  const location = db.prepare("SELECT latitude,longitude FROM benches WHERE id=?").get(benchId) as { latitude: number; longitude: number };
+  db.close();
+  const sun = SunCalc.getPosition(new Date(process.env.BENCHLY_E2E_NOW ?? "2026-09-05T12:00:00+02:00"), location.latitude, location.longitude);
+  const summitX = ((sun.azimuth * 180 / Math.PI + 180) % 360) / 360 * 1200;
+  const summitY = (58 - sun.altitude * 180 / Math.PI) / 90 * 300;
+  const ridge = `M0 184 C95 153 151 173 226 151 C322 121 376 179 ${summitX - 42} 163
+    L${summitX - 5} ${summitY} L${summitX + 5} ${summitY} L${summitX + 42} 163
+    C566 166 588 156 612 149 C705 115 770 175 846 158 C925 140 1017 178 1100 153
+    C1144 140 1173 163 1200 184 L1200 300 L0 300 Z`;
   const painting = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
     <rect width="1200" height="300" fill="#a8c8d2"/>
     <path d="${ridge}" fill="#758c79"/>

@@ -3,8 +3,9 @@
 The [full artist-review implementation plan](panorama-artist-review-plan.md)
 defines the ordered work, all 20 location checks, final validation and ZIP delivery.
 
-Work on `codex/panorama-artist-review`. Do not push, publish, activate a generation,
-or run the repaint publication commands as part of this review.
+The review was developed on `codex/panorama-artist-review`. During that review,
+pushing and publication were excluded. The subsequent production approval is
+recorded below.
 
 The fixed catalogue is `config/panorama-artist-review.json`. Its numbering follows
 the supplied artist review, rather than the order in the original capture manifest.
@@ -19,6 +20,14 @@ and requested deletion of the generated root `panoramas.zip`. The local report,
 pictures, reproducible inputs and staged archives remain. Earlier statements below
 about no publication describe their historical review stage; this later approval
 authorizes the production rollout through the repository’s checked release workflow.
+
+The release publishes the reviewed image, material and capsule as one bounded
+update for the fixed 20 benches. The operator verifies IDs, coordinates, hashes,
+source identity and 20 GiB of logical disk headroom before an atomic transaction;
+it retains the current national generation and all other bench bindings. Client
+foreground and atmosphere changes apply throughout the app. Other cached national
+paintings require a separate bounded refresh; deploying painter code does not
+silently regenerate the national catalogue.
 
 ## Latest delivered pass — broad architectural plane washes
 
