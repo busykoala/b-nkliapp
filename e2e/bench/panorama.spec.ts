@@ -18,6 +18,9 @@ function setCoveredFixture(id: string) {
   finally { database.close(); }
 }
 
+// These cases replace panorama requests with controlled browser fixtures.
+test.use({ serviceWorkers: "block" });
+
 test("keeps the inline painting calm and explores the full sky in an accessible 360 view", async ({ page, browserName, panoramaBench }, testInfo) => {
   test.setTimeout(45_000);
   await page.setViewportSize({ width: 390, height: 844 });

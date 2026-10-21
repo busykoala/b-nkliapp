@@ -80,8 +80,8 @@ export async function installTerrainPanoramaFixture(benchId: string, covered?: b
   const location = db.prepare("SELECT latitude,longitude FROM benches WHERE id=?").get(benchId) as { latitude: number; longitude: number };
   db.close();
   const sun = SunCalc.getPosition(new Date(process.env.BENCHLY_E2E_NOW ?? "2026-09-05T12:00:00+02:00"), location.latitude, location.longitude);
-  const summitX = ((sun.azimuth * 180 / Math.PI + 180) % 360) / 360 * 1200;
-  const summitY = (58 - sun.altitude * 180 / Math.PI) / 90 * 300;
+  const summitX = sun.azimuth / 360 * 1200;
+  const summitY = (58 - sun.altitude) / 90 * 300;
   const ridge = `M0 184 C95 153 151 173 226 151 C322 121 376 179 ${summitX - 42} 163
     L${summitX - 5} ${summitY} L${summitX + 5} ${summitY} L${summitX + 42} 163
     C566 166 588 156 612 149 C705 115 770 175 846 158 C925 140 1017 178 1100 153
