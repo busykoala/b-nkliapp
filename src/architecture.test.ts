@@ -17,7 +17,10 @@ describe("application boundaries", () => {
       .filter((path) => /^route\.(?:js|jsx|ts|tsx)$/.test(path.split("/").at(-1) ?? ""))
       .map((path) => relative(sourceRoot, path));
 
-    expect(handlers).toEqual(["app/media/panorama/[renderKey]/route.ts"]);
+    expect(handlers).toEqual([
+      "app/dev/panorama-review/assets/route.ts",
+      "app/media/panorama/[renderKey]/route.ts",
+    ]);
   });
 
   it("keeps badge calculations independent of the application database singleton", () => {

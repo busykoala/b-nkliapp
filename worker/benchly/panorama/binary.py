@@ -28,7 +28,7 @@ from benchly.panorama.models import (
 
 MAGIC = b"BNKPC\0\0\1"
 FORMAT = "benchly-view-capsule"
-FORMAT_SCHEMA = 2
+FORMAT_SCHEMA = 13
 SEMANTICS = tuple(SemanticClass)
 SEMANTIC_TO_ID = {value: index for index, value in enumerate(SEMANTICS)}
 SPAN_DTYPE = np.dtype([
@@ -40,10 +40,16 @@ EDGE_DTYPE = np.dtype([
     ("elevation", "<f4"), ("semantic", "u1"), ("kind", "u1"),
     ("confidence", "u1"), ("slope", "<f2"), ("relief", "<f2"),
 ])
-BUILDING_SAMPLE_DTYPE = np.dtype([
+LEGACY_BUILDING_SAMPLE_DTYPE = np.dtype([
     ("building", "<u2"), ("azimuth", "<f2"), ("lower", "<f4"),
     ("eaves", "<f4"), ("upper", "<f4"), ("distance", "<f4"),
 ])
+BUILDING_SAMPLE_DTYPE = np.dtype([
+    ("building", "<u2"), ("azimuth", "<f4"), ("lower", "<f4"),
+    ("eaves", "<f4"), ("upper", "<f4"), ("distance", "<f4"),
+])
+BUILDING_FACE_DTYPE = np.dtype([("index", "<i4"), ("normal", "<f4")])
+BUILDING_ROOF_DTYPE = np.dtype([("sample", "<u4"), ("lower", "<f4"), ("upper", "<f4")])
 
 
 def _array_descriptor(offset: int, array: np.ndarray) -> dict[str, object]:
@@ -58,6 +64,8 @@ def encode_geometry(geometry: PanoramaGeometry) -> bytes:
          SEMANTIC_TO_ID[span.semantic], round(span.confidence * 255))
         for column_index, column in enumerate(geometry.columns) for span in column.spans
     ], dtype=SPAN_DTYPE)
+    span_normals = np.asarray([span.surface_normal or (np.nan, np.nan, np.nan)
+        for column in geometry.columns for span in column.spans], dtype="<f2").reshape(-1, 3)
     edges = np.asarray([
         (column_index, edge.elevation_angle_degrees, edge.distance_meters, edge.terrain_elevation_meters,
          SEMANTIC_TO_ID[edge.semantic], edge.kind == "skyline", round(edge.confidence * 255),
@@ -70,6 +78,17 @@ def encode_geometry(geometry: PanoramaGeometry) -> bytes:
          sample.upper_angle_degrees, sample.distance_meters)
         for index, building in enumerate(geometry.buildings) for sample in building.samples
     ], dtype=BUILDING_SAMPLE_DTYPE)
+    building_faces = np.asarray([
+        (-1 if sample.facade_index is None else sample.facade_index,
+         np.nan if sample.facade_normal_degrees is None else sample.facade_normal_degrees)
+        for building in geometry.buildings for sample in building.samples
+    ], dtype=BUILDING_FACE_DTYPE)
+    profiles = [sample for building in geometry.buildings for sample in building.samples]
+    building_roof_known = np.asarray([sample.roof_intervals is not None for sample in profiles], dtype="u1")
+    building_roofs = np.asarray([(index, lower, upper) for index, sample in enumerate(profiles)
+                                for lower, upper in sample.roof_intervals or ()], dtype=BUILDING_ROOF_DTYPE)
+    building_part_indices = np.asarray([-1 if sample.facade_part_index is None else sample.facade_part_index
+                                       for sample in profiles], dtype="<i4")
     terrain_sources = sorted({
         span.terrain_source or "unknown"
         for column in geometry.columns for span in column.spans
@@ -88,11 +107,11 @@ def encode_geometry(geometry: PanoramaGeometry) -> bytes:
         source_ids[edge.terrain_source or "unknown"]
         for column in geometry.columns for edge in column.terrain_edges
     ], dtype="u1")
-    arrays = (skyline, spans, edges, building_samples, span_sources, edge_sources)
+    arrays = (skyline, spans, edges, building_samples, span_sources, edge_sources, building_faces, building_roof_known, building_roofs, building_part_indices, span_normals)
     offset = 0
     descriptors: dict[str, object] = {}
     payload_parts: list[bytes] = []
-    for name, array in zip(("skyline", "spans", "edges", "building_samples", "span_sources", "edge_sources"), arrays):
+    for name, array in zip(("skyline", "spans", "edges", "building_samples", "span_sources", "edge_sources", "building_faces", "building_roof_known", "building_roofs", "building_part_indices", "span_normals"), arrays):
         descriptors[name] = _array_descriptor(offset, array)
         raw = array.tobytes(order="C")
         payload_parts.append(raw)
@@ -140,25 +159,49 @@ def decode_geometry(data: bytes) -> PanoramaGeometry:
         raise ValueError("truncated view capsule")
     header = json.loads(data[16:16 + header_size])
     schema = int(header.get("schema", 0))
-    if header.get("format") != FORMAT or schema not in (1, FORMAT_SCHEMA):
+    if header.get("format") != FORMAT or schema not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, FORMAT_SCHEMA):
         raise ValueError("unsupported view capsule")
     payload = zlib.decompress(data[16 + header_size:])
     arrays = header["arrays"]
     skyline = _read_array(payload, arrays["skyline"], np.dtype("<f2"))
     spans = _read_array(payload, arrays["spans"], SPAN_DTYPE)
+    normals = _read_array(payload, arrays["span_normals"], np.dtype("<f2")) if schema >= 9 else np.full((len(spans), 3), np.nan)
+    if normals.shape != (len(spans), 3):
+        raise ValueError("view capsule normals do not match terrain spans")
     edges = _read_array(payload, arrays["edges"], EDGE_DTYPE)
-    building_samples = _read_array(payload, arrays["building_samples"], BUILDING_SAMPLE_DTYPE)
+    semantic_count = len(SEMANTICS) if schema >= 13 else 11 if schema == 12 else 10
+    if np.any(spans["semantic"] >= semantic_count) or np.any(edges["semantic"] >= semantic_count):
+        raise ValueError("view capsule semantic is not supported by its schema")
+    building_samples = _read_array(payload, arrays["building_samples"],
+                                   BUILDING_SAMPLE_DTYPE if schema >= 7 else LEGACY_BUILDING_SAMPLE_DTYPE)
+    building_faces = _read_array(payload, arrays["building_faces"], BUILDING_FACE_DTYPE) if schema >= 3 else None
+    if building_faces is not None and len(building_faces) != len(building_samples):
+        raise ValueError("view capsule facade array does not match building samples")
+    roof_known = _read_array(payload, arrays["building_roof_known"], np.dtype("u1")) if schema >= 5 else None
+    roofs_by_sample = [[] for _ in building_samples]
+    part_indices = _read_array(payload, arrays["building_part_indices"], np.dtype("<i4")) if schema >= 6 else None
+    if part_indices is not None and len(part_indices) != len(building_samples):
+        raise ValueError("view capsule part indices do not match building samples")
+    if roof_known is not None:
+        if len(roof_known) != len(building_samples) or np.any(roof_known > 1):
+            raise ValueError("view capsule roof flags do not match building samples")
+        for roof in _read_array(payload, arrays["building_roofs"], BUILDING_ROOF_DTYPE):
+            index = int(roof["sample"])
+            if index >= len(building_samples) or not roof_known[index]:
+                raise ValueError("view capsule roof interval lacks a measured sample")
+            roofs_by_sample[index].append((float(roof["lower"]), float(roof["upper"])))
     terrain_sources = header.get("terrain_sources", ["view-capsule"])
     span_sources = (_read_array(payload, arrays["span_sources"], np.dtype("u1"))
                     if schema >= 2 else np.zeros(len(spans), dtype="u1"))
     edge_sources = (_read_array(payload, arrays["edge_sources"], np.dtype("u1"))
                     if schema >= 2 else np.zeros(len(edges), dtype="u1"))
     spans_by_column: list[list[VisibleSpan]] = [[] for _ in skyline]
-    for source_index, row in zip(span_sources, spans):
+    for source_index, row, normal in zip(span_sources, spans, normals, strict=True):
         spans_by_column[int(row["column"])].append(VisibleSpan(
             lower_angle_degrees=float(row["lower"]), upper_angle_degrees=float(row["upper"]),
             distance_meters=float(row["distance"]), semantic=SEMANTICS[int(row["semantic"])],
             source="view-capsule", terrain_source=str(terrain_sources[int(source_index)]), confidence=float(row["confidence"]) / 255,
+            surface_normal=None if np.isnan(normal).all() else tuple(float(value) for value in normal),
         ))
     edges_by_column: list[list[TerrainEdge]] = [[] for _ in skyline]
     for source_index, row in zip(edge_sources, edges):
@@ -176,13 +219,21 @@ def decode_geometry(data: bytes) -> PanoramaGeometry:
         spans=tuple(spans_by_column[index]), terrain_edges=tuple(edges_by_column[index]),
     ) for index, value in enumerate(skyline))
     sample_groups: list[list[BuildingProjectionSample]] = [[] for _ in header["buildings"]]
-    for row in building_samples:
+    for index, row in enumerate(building_samples):
+        face = building_faces[index] if building_faces is not None else None
+        part_index = int(part_indices[index]) if part_indices is not None else -1
+        if part_index < -1 or part_index >= len(header["buildings"][int(row["building"])].get("facade_parts", [])):
+            raise ValueError("view capsule facade part index lacks source metadata")
         sample_groups[int(row["building"])].append(BuildingProjectionSample(
             # float16 rounds bearings immediately below 360 to 360. Normalise
             # after decoding so the circular value remains valid.
             azimuth_degrees=float(row["azimuth"]) % 360, lower_angle_degrees=float(row["lower"]),
             eaves_angle_degrees=float(row["eaves"]), upper_angle_degrees=float(row["upper"]),
             distance_meters=float(row["distance"]),
+            facade_index=int(face["index"]) if face is not None and face["index"] >= 0 else None,
+            facade_normal_degrees=float(face["normal"]) % 360 if face is not None and np.isfinite(face["normal"]) else None,
+            roof_intervals=tuple(roofs_by_sample[index]) if roof_known is not None and roof_known[index] else None,
+            facade_part_index=part_index if part_index >= 0 else None,
         ))
     buildings = tuple(ProjectedBuilding(**metadata, samples=tuple(sample_groups[index]))
                       for index, metadata in enumerate(header["buildings"]))

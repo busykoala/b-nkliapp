@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import sqlite3
 from argparse import Namespace
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 from benchly.panorama import refresh
 from benchly.panorama.builder import SERVER, _production_index_query, _require_upload_target
@@ -127,7 +129,9 @@ def test_interrupted_repaint_reuses_completed_image(tmp_path: Path, monkeypatch,
     def fake_render(task):
         row, bench_id, lat, lon, key, source, season, destination = task
         calls.append(row)
-        image = f"painted-{row}".encode()
+        stream = io.BytesIO()
+        Image.new("RGB", (64, 32), (row % 255, 128, 80)).save(stream, format="WEBP")
+        image = stream.getvalue()
         sha = hashlib.sha256(image).hexdigest()
         relative = Path("chunks") / str(row // 512) / "renders" / f"{row}-{sha}.webp"
         refresh._atomic(destination / relative, image)
@@ -172,6 +176,7 @@ def test_interrupted_repaint_reuses_completed_image(tmp_path: Path, monkeypatch,
     refresh.seal_repaint_job(args)
     manifest = json.loads((root / "chunks" / "0" / "manifest.json").read_text())
     assert len(manifest["records"]) == 2
+    assert {(record["width"], record["height"]) for record in manifest["records"]} == {(64, 32)}
     key = "c" * 64
     source = capsules / key[:2] / f"{key}.bpc"
     source.parent.mkdir(parents=True, exist_ok=True)

@@ -13,6 +13,7 @@ from benchly.panorama.repository import (
     mark_render_ready,
     mark_request_retry,
     pending_benches,
+    publish_repaint_chunk,
 )
 
 
@@ -226,6 +227,8 @@ def test_activation_publishes_verified_content_with_typed_models():
             "sha256": digest, "bytes": 10, "bench_row_id": 7, "bench_id": "osm-node-7",
             "bench_latitude": 47.0, "bench_longitude": 8.0,
         })
+    records[0]["projection"] = {"minimum_elevation_angle": -32, "maximum_elevation_angle": 88}
+    records[1].update(width=4096, height=1365)
     manifest = {
         "generation_id": "abcdef123456-content", "git_commit": "abcdef1234567890",
         "geometry_implementation": "geometry-hash", "render_implementation": "render-hash",
@@ -243,6 +246,12 @@ def test_activation_publishes_verified_content_with_typed_models():
     assert tuple(connection.execute(
         "SELECT generation_id,style_version,material_key FROM bench_panorama_renders"
     ).fetchone()) == ("abcdef123456-content", "render-hash", "d" * 64)
+    assert tuple(connection.execute("SELECT width,height FROM bench_panorama_renders").fetchone()) == (4096, 1365)
+    assert '88' in connection.execute("SELECT source_versions_json FROM bench_panorama_geometry").fetchone()[0]
+    publish_repaint_chunk(connection, [{"bench_row_id": 7, "geometry_key": geometry_key,
+        "relative_path": "renders/new.webp", "sha256": "f" * 64, "bytes": 20,
+        "width": 4096, "height": 1024}], "new-painter", "/local", "today")
+    assert tuple(connection.execute("SELECT width,height FROM bench_panorama_renders").fetchone()) == (4096, 1024)
 
 
 def test_activation_binds_shared_geometry_to_each_colocated_bench():

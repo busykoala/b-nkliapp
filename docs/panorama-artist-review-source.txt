@@ -1,0 +1,107 @@
+assessment: the 20 panoramas have a coherent, muted illustrated identity, but many are stronger as a visual theme than as fully resolved paintings. The main weakness is not insufficient realism or detail. It is that silhouettes, light–dark structure and selective details do not consistently explain what the viewer is looking at.
+The direction worth developing is simplified but specific: recognisable landscape forms, buildings with character, convincing spatial relationships, and enough quiet space to preserve the contemplative mood.
+The review contains all 20 panorama overviews, 20 selected source views and 35 numbered highlights, distinguishing elements to preserve from areas to rework. I also checked the original screenshots with the benches visible, rather than judging only the cleaned panoramas.
+1. Painting style: a promising identity, but the marks need more purpose
+Visually, these sit between cut-paper illustration, flat gouache painting and watercolour-like washes. The buildings are predominantly geometric colour shapes; the landscape has soft, mottled variation; the palette is restrained and earthy.
+That combination has several strengths. It avoids the visual overload of photography, creates a consistent atmosphere across very different locations, and supports a quiet, slightly nostalgic experience.
+The weakness is the relationship between surface treatment and underlying form. A wall can have substantial colour variation without revealing much about its construction. A hillside can contain many green and yellow patches without revealing whether we are seeing trees, exposed earth or overlapping slopes.
+In other words, there is often more information about the painted surface than about the subject.
+Artistic direction: make fewer marks do more work. A broad change of tone should establish a wall plane. A cluster of shapes should describe foliage. A directional break should suggest rock. Texture can enrich those decisions, but should not substitute for them.
+I would preserve the stylisation rather than move toward photorealism.
+2. Silhouettes: the most consequential weakness
+The clearest examples are 07 — OSM 12945467215, 11 — OSM 473679626, and 19 — OSM 8911154098.
+Their natural forms contain pronounced horizontal ledges, vertical drops and right-angled steps. As shapes, they often read more readily as fortification walls or stacked blocks than as vegetation or mountain terrain.
+The conflict is particularly noticeable because the interiors are softly mottled while the outlines are rigidly architectural. The edge and the interior seem to describe different objects.
+This is not an argument against simplified silhouettes. A landscape can be extremely abstract and still immediately recognisable. What matters is choosing an appropriate shape vocabulary:
+Subject	More expressive silhouette language
+Foliage	Unequal groups of crowns, recesses, occasional projections and irregular gaps.
+Rock and mountains	Oblique ridges, fractured planes, asymmetrical peaks and changes of slope.
+Architecture	Deliberate straight edges, distinctive roof profiles and purposeful repetition.
+
+
+Preserve the large masses, but give their contours identity. Adding leaf texture inside a wall-shaped outline will not make that outline feel like a forest.
+18 — OSM 8068577652 offers a better starting point: the off-centre summit and pale rock passage give the landform a readable large-scale gesture, even though parts still need refinement.
+3. Colour: harmonious, but often too compressed in value
+The palette is one of the set’s strongest assets: ochre and straw-coloured ground, olive vegetation, dusty rose and terracotta architecture, pale grey skies and occasional muted blue.
+The problem is not that these colours are inherently dull. It is that different materials and distances often occupy very similar light–dark ranges.
+A warm building can merge with warm ground. A distant slope can carry almost as much tonal activity as a nearer slope. Windows frequently have too little contrast—or too little structural context—to explain the facade.
+This makes the scene feel flatter even when the hues differ.
+I would not increase saturation across the whole image. Instead, I would establish clearer relationships between:
+The main light shape and main dark shape. These should be readable before the smaller details.
+Near and far. In these daylight scenes, quieter, lighter or greyer distance would often help, while the nearer forms could carry more definite accents.
+Dominant colour and accent colour. A small amount of red roof against green hills can be more effective than making every surface more colourful.
+The roof-and-hill relationships in 15 — OSM 693547093 and 20 — OSM 9159327028 demonstrate this well. 14 — OSM 645436489 also feels more spacious because its cooler sky provides a clearer counterweight to the warm settlement.
+4. Architecture: more descriptive detail, not more decoration
+Several large buildings receive essentially the same treatment as much smaller buildings: broad blank planes with a sparse row of little square openings.
+This is especially noticeable in Cossonay, Platta, and 13 — OSM 6046386898.
+The result is not merely “minimalist architecture.” The viewer often lacks enough information to understand the building’s scale or character. A large facade becomes a slab; a tall building becomes a tower-shaped token.
+The most useful additions would be structural clues, not surface ornament: an opening rhythm that suggests floors, an entrance that establishes human scale, a roof edge that explains the top, or a base that establishes contact with the ground.
+These need not appear everywhere. One clearly described principal building can carry the scene while neighbouring buildings remain simple.
+A few explanatory details would contribute more than many additional texture marks. Where the views are intended to represent actual locations, those distinguishing features should come from reference rather than invented generic architecture.
+5. Depth: the bench establishes “near,” but the space behind it needs clearer organisation
+The original screenshots do contain a foreground bench. Its absence from the cleaned images is therefore not an artistic omission.
+However, the bench often sits in front of a landscape whose internal spatial relationships are much less clearly described. There is a strong foreground object, followed by broad bands of similarly treated ground, buildings and hills.
+What is missing is frequently the connection between those layers.
+The strongest improvements would come from clearer overlaps, more deliberate ground planes, selective changes in edge sharpness and a quieter distant layer. Building bases also need enough visual weight to feel embedded in their surroundings rather than placed in front of them.
+This does not require elaborate realistic shading. Even a flat illustration can communicate depth through a handful of well-chosen relationships.
+A useful artistic test is: without the bench, can the eye still distinguish what is near, what lies behind it, and where the landscape opens into distance? Several of the current views answer that only weakly.
+6. Texture, materials and edges: different things need different treatment
+The images have plenty of surface activity, but less variety in how materials are described.
+Foliage, earth, rock and walls often share a broadly similar soft mottling. That helps unify the palette, but it also makes the world less specific.
+A more intentional treatment would give each material a different rhythm. Foliage could be grouped into clustered masses; rock could have directional planes and fractures; walls could use broad quieter washes; ground marks could help describe its slope and recession.
+The same applies to edges. At present, a distant contour can be as insistently defined as a nearby one, while internal marks are broadly soft. A more selective mixture of crisp, broken and nearly disappearing edges would make the scene feel more deliberately painted.
+The blue passages need particular attention
+In 05 — OSM 10942762655, the blue shapes read primarily as vertical columns of colour. There are some horizontal marks, but these do not establish a clearly legible water surface.
+If those passages are intended as water, a connected surface shape, readable bank or shore, and calmer horizontal rhythm would communicate it more effectively.
+The artwork alone does not establish what every blue patch represents, so I would not label all of them incorrectly painted lakes. The artistic issue is their ambiguous material identity.
+7. Composition: treat the panorama as a sequence, not one enormous framed painting
+A 360-degree scene should not be judged as though it needs one central focal point or a conventional rule-of-thirds arrangement across the entire strip.
+It needs a sequence of views: places where the eye can settle, supporting passages and quieter intervals between them.
+Some current views are dominated by large, barely articulated facades; others contain long expanses of similarly active texture. The difference between “focal passage” and “resting passage” is not always intentional enough.
+There are useful examples to build on:
+Lugnez has an effective relationship between an isolated warm building and open space. Its emptiness is worth preserving.
+10 — OSM 4573435249 contains a mountain-and-valley direction that could become a particularly strong resting view.
+20 — OSM 9159327028 has a convincing sequence from warm houses into a valley opening.
+12 — OSM 5859724001 is unusually minimal. That is not inherently a weakness; it could provide a valuable contrast to the denser locations.
+I would avoid making every direction equally detailed or equally dramatic. That would reduce the quietness that suits these scenes.
+The skies need composition too
+A grey sky is not an artistic problem. Overcast light can be subtle and atmospheric.
+What weakens several skies is the relatively even distribution of cloudy activity. There is little distinction between a principal cloud mass, a luminous opening and a quieter area.
+Larger, unequal groupings would give the sky more intention without making it brighter, bluer or more theatrical.
+8. The bench and landscape speak noticeably different drawing languages
+This becomes particularly clear in the original screenshots.
+The bench has fine outlines, visible wood grain, small hardware details and relatively definite shading. Much of the landscape consists of soft, minimally articulated, unoutlined forms.
+More detail in the foreground is appropriate. The distracting part is the abrupt change of drawing style.
+The bench can remain a strong recurring motif. But it should feel as though it belongs to the same illustrated world.
+There are two reasonable artistic directions: simplify some of the bench’s engraving-like linework and grain, or introduce a few related, carefully chosen marks into its immediate surroundings.
+I would not bring the entire background up to the bench’s detail level. That would sacrifice both depth and simplicity.
+9. Individual assessment of all 20 panoramas
+The numbering matches the annotated report. “OSM” labels refer to the corresponding osm-node-… folders.
+#	Panorama	Preserve	Main artistic revision
+01	Cossonay	Cohesive ochre/rose palette and a memorable principal mass.	Give the dominant facade human-scale and structural clues. Its sparse windows do too little to explain such a large form.
+02	Platta	Warm vertical landmark against rolling green hills.	Articulate the building’s top, base and opening rhythm so it reads as architecture rather than a slab.
+03	Lugnez	Solitary warm form and substantial quiet space.	Give the focal building a distinctive feature and clearer ground relationship without filling the open areas.
+04	Grossaffoltern	Progression from small buildings to larger forms.	Strengthen the hierarchy between principal and supporting buildings; organise the ground into a more readable plane.
+05	OSM 10942762655	Cool blue counterpoints and the broad valley opening.	Clarify what the blue shapes represent. If water, establish a connected surface and readable shoreline relationship.
+06	OSM 12710786178	Green slope framing a warmer settlement.	Group foliage into unequal masses and quieten the distant town so it recedes.
+07	OSM 12945467215	Strong rising mass and useful light–dark variation.	Rework the staircase-like natural contour into subject-appropriate foliage or terrain shapes.
+08	OSM 13713577262	Restrained ochre palette and gentle landform rhythm.	Separate near, middle and distant slopes. Currently texture is more legible than depth.
+09	Sion	Ascending chain of warm houses leading toward a summit accent.	Preserve that movement while breaking the large green plateau into more descriptive forms.
+10	OSM 4573435249	Expressive mountain ridgeline and valley destination.	Develop the valley’s depth and balance it against the much louder architectural masses elsewhere around the panorama.
+11	OSM 473679626	Strong ochre shape against pale sky.	The main natural form reads as a fortress wall. Give its ridge and internal planes a more specific rocky character.
+12	OSM 5859724001	Low horizon, spaciousness and calm.	Compose the sky into larger unequal masses or a subtle light transition. Do not solve minimalism by adding miscellaneous objects.
+13	OSM 6046386898	Varied skyline and effective rose/ochre plane relationships.	Give the tall landmark its own architectural vocabulary rather than the same sparse treatment as smaller buildings.
+14	OSM 645436489	Open blue sky and comparatively airy colour relationships.	Sustain that depth by simplifying the far settlement and defining the nearest land more clearly.
+15	OSM 693547093	Red-roof rhythm against the green hill.	Bring the bench and nearby scenery closer in drawing style; retain the strong roof/vegetation contrast.
+16	OSM 724971650	Readable gable and an opening that leads into the town.	Distinguish architecture from ground through selective tonal changes, base relationships and meaningful openings.
+17	OSM 767658293	Rising-and-falling settlement rhythm along the slope.	Give the buildings weight and the hillside clearer structure, avoiding a stacked-stage-scenery impression.
+18	OSM 8068577652	Asymmetric summit, pale rock passage and green shoulder.	Develop this promising natural composition through directional rock planes and more clearly grouped vegetation.
+19	OSM 8911154098	Enclosing masses framing an opening toward distance.	Keep the enclosure, but replace the wall-like contour language with more expressive natural forms.
+20	OSM 9159327028	Warm village-to-valley progression and red roof accents.	Separate houses from similarly coloured ground and give the oversized facade elsewhere more explanatory structure.
+
+
+What I would prioritise artistically
+First, silhouettes and large light–dark relationships. These determine whether a landscape reads clearly before the viewer notices texture.
+Second, selective structural detail and connected depth. A few well-placed openings, roof transitions, ground relationships and overlaps would make the places feel substantially more convincing.
+Third, a consistent drawing language with local variation. Bring the bench into the same world, then let each location have a small number of distinctive, reference-led characteristics.
+The strongest existing passages—the roofs in 15, the openness in 14, the peak in 18 and the village-to-valley movement in 20—already suggest the direction. The next step is not to paint more everywhere, but to make the important shapes and marks more deliberate.

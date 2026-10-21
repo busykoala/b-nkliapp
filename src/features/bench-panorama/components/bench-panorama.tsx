@@ -8,13 +8,14 @@ import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama"
 import type { PanoramaDescriptor } from "@/features/bench-panorama/types";
 import { retainPanoramaArtifact } from "../descriptor";
 import type { BenchDetail } from "@/lib/types";
-import { PANORAMA_ARTIFACT_MAX_ALTITUDE, panoramaSkyTop, projectNightSky, type ProjectedStar } from "@/lib/night-sky";
+import { panoramaSkyTop, projectNightSky, type ProjectedStar } from "@/lib/night-sky";
 import { panoramaMaterialIsSkyPixel } from "@/lib/panorama-material";
 import { clampPanoramaPitch, normalizePanoramaHeading, panoramaHasSnowCover, panoramaProjection,
-  precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
+  panoramaRasterBounds, precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
 import { PanoramaWebgl } from "@/features/bench-panorama/components/panorama-webgl";
 import { PanoramaClouds } from "./panorama-clouds";
 import { panoramaCloudCover } from "@/features/weather/conditions";
+import benchFraming from "../bench-framing.json";
 
 const PANORAMA_FAST_POLL_MS = 1_000;
 const PANORAMA_SLOW_POLL_MS = 5_000;
@@ -51,13 +52,6 @@ export function panoramaMaterialIsSky(pixel: Uint8ClampedArray) {
 
 export function panoramaShadowContrast(cloudCover: number) {
   return cloudCover < .35 ? 1 : cloudCover < .65 ? .62 : cloudCover < .8 ? .28 : .08;
-}
-
-export function panoramaBenchShadow(sunAzimuthDegrees: number, sunAltitudeDegrees: number, benchHeading: number) {
-  return {
-    lengthPercent: Math.max(4, Math.min(34, 26 / Math.max(.35, Math.tan(Math.max(4, sunAltitudeDegrees) * Math.PI / 180)))),
-    turnDegrees: ((sunAzimuthDegrees + 180 - benchHeading + 540) % 360) - 180,
-  };
 }
 
 function benchAsset(bench: BenchDetail) {
@@ -146,6 +140,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const pinch = useRef<{ distance: number; zoom: number } | null>(null);
   const hintId = useId();
   const markTerrainReady = useCallback(() => setTerrainReadyUrl(descriptor.materialUrl ?? null), [descriptor.materialUrl]);
+  const markTerrainError = useCallback(() => setFailed(true), []);
 
   const load = async () => {
     const result = await loadBenchPanorama(bench.id).catch((): PanoramaDescriptor => ({ status: "error", retryAfterMs: 30_000 }));
@@ -264,7 +259,8 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   // Inline art follows the recorded bench direction. An open 360 view belongs
   // to the visitor; metadata refreshes must not reset their heading or zoom.
   const visibleHeading = expanded ? heading : initialHeading;
-  const projection = panoramaProjection(size.width, size.height, visibleHeading, expanded ? pitch : 0, expanded ? zoom : 1);
+  const rasterBounds = panoramaRasterBounds(descriptor.rasterBounds);
+  const projection = panoramaProjection(size.width, size.height, visibleHeading, expanded ? pitch : 0, expanded ? zoom : 1, rasterBounds);
   const degrees = Math.round(visibleHeading) % 360;
   const cloudContrast = panoramaShadowContrast(cloudCover);
   const precipitation = bench.weather?.precipitationType ?? "unknown";
@@ -278,7 +274,11 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   const snowParticles = snowing ? precipitationParticles("snow", snowCount, `${bench.id}:snow`) : [];
   const snowGround = panoramaHasSnowCover(bench.weather?.snowDepthCm, bench.weather?.snowCoverPercent);
   const covered = bench.covered;
-  const benchShadow = panoramaBenchShadow(bench.sunAzimuthDegrees, bench.sunAltitudeDegrees, visibleHeading);
+  const foregroundAsset = benchAsset(bench);
+  const foregroundVariant = foregroundAsset.split("/").at(-1)!.replace(".webp", "") as keyof typeof benchFraming;
+  // Frame the seat at the viewport edge. Legs stay below the view, so the
+  // foreground needs no invented soil or detached ground-plane shadow.
+  const seatBottom = benchFraming[foregroundVariant];
   const twilightOpacity = bench.dayPhase === "day" ? 0 : Math.max(.08, Math.min(1, (-bench.sunAltitudeDegrees + 2) / 10));
   // Actual cloud pixels occlude the stars; clear openings should not be globally washed out.
   const starOpacity = twilightOpacity * (bench.moonVisible ? 1 - bench.moonIllumination * .25 : 1);
@@ -289,21 +289,20 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     "--panorama-track-height": `${projection.trackHeight}px`,
     "--panorama-track-top": `${projection.top}px`,
     "--panorama-raster-height": `${projection.rasterHeight}px`,
+    "--panorama-raster-bottom": `${projection.rasterBottom}px`,
     "--foreground-shift": `${projection.maximumPitch ? Math.min(132, projection.pitch / projection.maximumPitch * 132) : 0}%`,
     "--precip-opacity": Math.max(.5, Math.min(.94, .58 + (precipitationRate ?? 1.1) * .08)).toFixed(3),
     "--lightmap-opacity": (cloudContrast * .32).toFixed(3),
     "--star-opacity": starOpacity.toFixed(3),
     "--celestial-opacity": celestialOpacity.toFixed(3),
-    "--shadow-length": `${benchShadow.lengthPercent.toFixed(3)}%`,
-    "--shadow-turn": `${benchShadow.turnDegrees.toFixed(3)}deg`,
   } as CSSProperties;
   // With a material map, the alpha terrain canvas performs pixel-perfect
   // occlusion. Without one we only expose the conservative sky extension.
   const materialReady = Boolean(descriptor.materialUrl && terrainReadyUrl === descriptor.materialUrl);
-  const celestialPositions = celestial && (materialReady || celestial.altitude > PANORAMA_ARTIFACT_MAX_ALTITUDE)
+  const celestialPositions = celestial && (materialReady || celestial.altitude > rasterBounds.maximumAltitude)
     ? [normalizePanoramaHeading(celestial.azimuth) / 3.6] : [];
   const visibleStars = materialReady ? stars
-    : stars.filter((star) => star.altitudeDegrees > PANORAMA_ARTIFACT_MAX_ALTITUDE);
+    : stars.filter((star) => star.altitudeDegrees > rasterBounds.maximumAltitude);
   const celestialTop = celestial ? `${panoramaCelestialTop(celestial.altitude).toFixed(3)}%` : "0%";
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!expanded) return;
@@ -350,7 +349,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
 
   return <figure ref={figure} data-recorded-direction={initialHeading} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined}
     aria-label={expanded ? t("panoramaExpandedTitle") : undefined} onKeyDown={modalKeyDown}
-    className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${expanded ? " is-expanded" : " is-static"}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}${snowing ? " is-snowing" : ""}${covered ? " has-shelter" : ""}${bench.sunnyNow ? " is-sunny" : " is-shaded"}`} style={panoramaStyle}>
+    className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${expanded ? " is-expanded" : " is-static"}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}${snowing ? " is-snowing" : ""}${snowGround ? " has-snow-cover" : ""}${covered ? " has-shelter" : ""}${bench.sunnyNow ? " is-sunny" : " is-shaded"}`} style={panoramaStyle}>
     <div ref={viewport} className="bench-panorama-viewport" role={expanded ? "group" : "img"} tabIndex={expanded ? 0 : -1}
       aria-label={`${t("panoramaDescription")} · ${t("panoramaHeading", { degrees })}`} aria-describedby={hintId}
       onKeyDown={keyDown}
@@ -374,18 +373,20 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
             style={{ left: `${left.toFixed(3)}%`, top: celestialTop }}>
             {celestial.kind === "moon" ? <MoonDisc phase={bench.moonPhase} illumination={bench.moonIllumination} /> : <i />}
           </span>)}
-          {cloudCover > .08 && <PanoramaClouds cover={cloudCover} night={bench.dayPhase === "night"} />}
+          {cloudCover > .08 && <PanoramaClouds cover={cloudCover} night={bench.dayPhase === "night"} sunAltitude={bench.sunAltitudeDegrees} />}
           <div className="bench-panorama-raster">
-            <PanoramaWebgl imageUrl={artifactUrl} materialUrl={descriptor.materialUrl} season={bench.season}
+            <PanoramaWebgl imageUrl={artifactUrl} materialUrl={descriptor.materialUrl} lightMapUrl={descriptor.lightMapUrl} season={bench.season}
               sunAltitude={bench.sunAltitudeDegrees} cloudCover={cloudCover} dayPhase={bench.dayPhase}
-              snowCover={snowGround} onReady={markTerrainReady} onError={() => setFailed(true)} />
+              snowCover={snowGround} rasterAltitudeRange={rasterBounds.maximumAltitude - rasterBounds.minimumAltitude}
+              onReady={markTerrainReady} onError={markTerrainError} />
           </div>
         </div>)}
       </div>
       <div className="bench-panorama-foreground" aria-hidden="true">
-        <span className="bench-panorama-ground-patch" />
-        {bench.sunAltitudeDegrees > 0 && <span className="bench-panorama-bench-shadow" />}
-        <img className="bench-panorama-rear-bench" src={benchAsset(bench)} alt="" draggable={false} />
+        <div className="bench-panorama-bench" data-bench-variant={foregroundVariant}
+          style={{ "--bench-seat-bottom": `${seatBottom}%` } as CSSProperties}>
+          <img className="bench-panorama-rear-bench" src={foregroundAsset} alt="" draggable={false} />
+        </div>
       </div>
       {raining && <div className="bench-panorama-rain" aria-hidden="true">{rainParticles.map((particle, index) => <i key={index} style={{ "--drop-x": `${particle.x.toFixed(3)}%`, "--drop-y": `${particle.y.toFixed(3)}%`, "--drop-delay": `${particle.delay.toFixed(3)}s`, "--drop-duration": `${particle.duration.toFixed(3)}s`, "--drop-size": `${particle.size.toFixed(2)}px`, "--drop-length": `${particle.length.toFixed(2)}px`, "--drop-drift": `${particle.drift.toFixed(2)}px`, "--drop-alpha": particle.alpha.toFixed(3) } as CSSProperties} />)}</div>}
       {snowing && <div className="bench-panorama-snow" aria-hidden="true">{snowParticles.map((particle, index) => <i key={index} style={{ "--drop-x": `${particle.x.toFixed(3)}%`, "--drop-y": `${particle.y.toFixed(3)}%`, "--drop-delay": `${particle.delay.toFixed(3)}s`, "--drop-duration": `${particle.duration.toFixed(3)}s`, "--drop-size": `${particle.size.toFixed(2)}px`, "--drop-drift": `${particle.drift.toFixed(2)}px`, "--drop-alpha": particle.alpha.toFixed(3) } as CSSProperties} />)}</div>}

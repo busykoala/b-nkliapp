@@ -14,6 +14,7 @@ import subprocess
 from argparse import Namespace
 from datetime import UTC, datetime
 from pathlib import Path
+from PIL import Image
 
 from benchly.panorama.binary import decode_geometry
 from benchly.panorama.builder import MINIMUM_FREE_BYTES, SERVER_ROOT, _require_upload_target, _rsync_command
@@ -63,7 +64,7 @@ def _atomic(path: Path, payload: bytes) -> None:
 def _painter_key() -> str:
     # The checked-in implementation, not a hand-maintained build version,
     # decides whether a saved repaint can be reused.
-    return implementation_key("binary.py", "material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
+    return implementation_key("binary.py", "material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png", "assets/foliage-pigment.png", "assets/rock-pigment.png")
 
 
 def _progress(root: Path) -> sqlite3.Connection:
@@ -218,7 +219,8 @@ def _render(task: tuple[int, str, float, float, str, Path, str, Path]) -> dict[s
     geometry = decode_geometry(source.read_bytes())
     if geometry.identity_key != key or abs(geometry.latitude - lat) > 1e-7 or abs(geometry.longitude - lon) > 1e-7:
         raise ValueError(f"capsule identity or coordinates changed for {bench_id}")
-    image = render_panorama_webp(geometry, 4096, 1024, season)
+    height = round(4096 * (geometry.config.maximum_elevation_angle - geometry.config.minimum_elevation_angle) / 360)
+    image = render_panorama_webp(geometry, 4096, height, season)
     digest = hashlib.sha256(image).hexdigest()
     relative = Path("chunks") / str(row // 512) / "renders" / f"{row}-{digest}.webp"
     _atomic(root / relative, image)
@@ -309,9 +311,11 @@ def seal_repaint_job(args: Namespace) -> None:
             file = root / result[8]
             if not file.is_file() or file.stat().st_size != result[10] or _digest(file) != result[9]:
                 break
+            with Image.open(file) as picture:
+                width, height = picture.size
             records.append({"bench_row_id": row_id, "bench_id": bench_id, "latitude": lat, "longitude": lon,
                             "geometry_key": key, "relative_path": str(Path(result[8]).relative_to(Path("chunks") / str(group))),
-                            "sha256": result[9], "bytes": result[10]})
+                            "sha256": result[9], "bytes": result[10], "width": width, "height": height})
         if len(records) != len(group_rows):
             continue
         content = {"format": FORMAT, "schema": SCHEMA, "painter_key": painter, "season": group_season, "group": group,
@@ -391,6 +395,12 @@ def _verify_chunk(folder: Path, manifest: dict[str, object], *, strict: bool = F
         file = (folder / record["relative_path"]).resolve()
         if not file.is_relative_to(folder) or not file.is_file() or file.stat().st_size != record["bytes"] or _digest(file) != record["sha256"]:
             raise ValueError(f"invalid paint artifact {record['relative_path']}")
+        if "width" in record or "height" in record:
+            if not isinstance(record.get("width"), int) or not isinstance(record.get("height"), int):
+                raise ValueError("invalid paint dimensions")
+            with Image.open(file) as picture:
+                if picture.size != (record["width"], record["height"]):
+                    raise ValueError("paint dimensions do not match the sealed image")
         total += int(record["bytes"])
     if total != manifest["artifact_bytes"]:
         raise ValueError("paint chunk byte count mismatch")

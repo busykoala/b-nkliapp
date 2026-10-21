@@ -15,6 +15,7 @@ import os
 import shlex
 import shutil
 import sqlite3
+import struct
 import subprocess
 import sys
 import time
@@ -27,13 +28,14 @@ import numpy as np
 
 from benchly.context.rasters import RasterCollection
 from benchly.db import connect_database
-from benchly.panorama.binary import decode_geometry, encode_geometry
+from benchly.panorama.binary import MAGIC, decode_geometry, encode_geometry
 from benchly.panorama.datasets import (
     LOD_SCHEDULE_KEY,
     buildings_for_viewpoint,
     load_building_index,
     load_semantic_index,
     raster_source_version,
+    refine_building_contact_rays,
     sample_terrain_rays,
 )
 from benchly.panorama.identity import implementation_key
@@ -44,6 +46,7 @@ from benchly.panorama.models import (
     GeometryIdentity,
     PanoramaConfig,
     PanoramaGeometry,
+    SemanticClass,
     SourceEvidence,
 )
 from benchly.panorama.repository import activate_generation
@@ -69,7 +72,9 @@ SHARED_MODEL_BUDGET_BYTES = 15 * 1024**3
 def _artifact_implementation() -> str:
     # Orchestration changes do not invalidate byte-identical image artifacts.
     # Only the checked-in codec, contract and painter contribute to identity.
-    return implementation_key("binary.py", "material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
+    return implementation_key("binary.py", "material.py", "models.py", "watercolor.py", "facades.py",
+                              "assets/watercolor-pigment.png", "assets/foliage-pigment.png",
+                              "assets/foliage-masses-pigment.png", "assets/rock-pigment.png")
 
 
 def _git_commit() -> str:
@@ -179,7 +184,8 @@ def _build_one(source: str, generation_root: str, season: str) -> Built:
     # current. Always repaint it: files can remain from an older Git checkout
     # even after the content-derived implementation key invalidates the state.
     # Reusing those paths would silently keep the old visual style.
-    _atomic(render, render_panorama_webp(geometry, 4096, 1024, season))
+    height = round(4096 * (geometry.config.maximum_elevation_angle - geometry.config.minimum_elevation_angle) / 360)
+    _atomic(render, render_panorama_webp(geometry, 4096, height, season))
     _atomic(material, render_material_webp(geometry))
     artifacts = tuple((kind, str(path.relative_to(output)), path.stat().st_size) for kind, path in (
         ("capsule", capsule), ("render", render), ("material", material),
@@ -236,12 +242,16 @@ def _extraction_source_versions(database: sqlite3.Connection, terrain: RasterCol
     osm_key = str(osm[0]) if osm and osm[0] else "unknown"
     tlm = official("swissTLM3D")
     buildings = official("swissBUILDINGS3D")
+    registry = official("BFS-GWR")
+    facades = official("benchly-facade-references")
+    paving = official("SITG-paved-ground")
+    ground_cover = official("BE-MOPUBE-ground-cover")
     return {
         "terrain": hashlib.sha256(":".join((
             raster_source_version(terrain), raster_source_version(near_terrain), raster_source_version(far_terrain),
         )).encode()).hexdigest(),
-        "semantic": f"tlm:{tlm}:osm:{osm_key}",
-        "building": f"swiss:{buildings}:tlm:{tlm}:osm:{osm_key}",
+        "semantic": f"tlm:{tlm}:osm:{osm_key}" + (f":paving:{paving}" if paving != "absent" else "") + (f":cover:{ground_cover}" if ground_cover != "absent" else ""),
+        "building": f"swiss:{buildings}:tlm:{tlm}:osm:{osm_key}" + (f":gwr:{registry}" if registry != "absent" else "") + (f":facades:{facades}" if facades != "absent" else ""),
         "border": raster_source_version(border_terrain) if border_terrain and border_terrain.datasets else "absent",
         "algorithm": GEOMETRY_IMPLEMENTATION,
         "lod_schedule": LOD_SCHEDULE_KEY,
@@ -301,6 +311,8 @@ def _extract_one(row: dict[str, object]) -> Extracted:
         building_version=source_versions["building"],
         maximum_distance_meters=config.maximum_distance_meters,
         angular_resolution_degrees=config.angular_resolution_degrees,
+        minimum_elevation_angle=config.minimum_elevation_angle,
+        maximum_elevation_angle=config.maximum_elevation_angle,
         local_terrain_distance_meters=config.local_terrain_distance_meters,
     )
     semantic_key = (math.floor(longitude * 20), math.floor(latitude * 20))
@@ -330,11 +342,18 @@ def _extract_one(row: dict[str, object]) -> Extracted:
     buildings = buildings_for_viewpoint(
         _EXTRACT_BUILDING_CELL[1], latitude, longitude, terrain, identity.building_radius_meters,
     )
+    rays = refine_building_contact_rays(rays, buildings, latitude, longitude, terrain, config, semantics)
     evidence = [
         SourceEvidence(source="swissALTI3D", version=source_versions["terrain"], confidence=1),
         SourceEvidence(source="land semantics", version=source_versions["semantic"], confidence=.9),
         SourceEvidence(source="building hierarchy", version=source_versions["building"], confidence=.75),
     ]
+    if any(sample.terrain_source == "swissTLM3D-water-surface" for ray in rays for sample in ray.samples):
+        evidence.append(SourceEvidence(source="swissTLM3D still-water surfaces", version=source_versions["semantic"], confidence=.98))
+    if any(sample.semantic == SemanticClass.PAVED_GROUND for ray in rays for sample in ray.samples):
+        evidence.append(SourceEvidence(source="SITG ground-level paving", version=source_versions["semantic"], confidence=.9))
+    if any(sample.semantic == SemanticClass.SURFACED_GROUND for ray in rays for sample in ray.samples):
+        evidence.append(SourceEvidence(source="Bern MOPUBE measured ground cover; road finish unknown", version=source_versions["semantic"], confidence=.9))
     if source_versions["border"] != "absent":
         evidence.append(SourceEvidence(source="Copernicus DEM GLO-90", version=source_versions["border"], confidence=.86))
     geometry = build_panorama_geometry(identity, rays, buildings, evidence, config)
@@ -389,7 +408,7 @@ def panorama_extract_job(args: Namespace) -> None:
     root = Path(args.root).resolve()
     terrain_dir = Path(args.terrain_dir).resolve()
     pyramid_dir = Path(args.terrain_pyramid_dir).resolve() if args.terrain_pyramid_dir else terrain_dir.parent / "panorama-pyramid"
-    source_database = sqlite3.connect(Path(args.database).resolve())
+    source_database = sqlite3.connect(Path(args.database).resolve().as_uri() + "?mode=ro", uri=True)
     source_database.row_factory = sqlite3.Row
     terrain = RasterCollection(terrain_dir)
     near_terrain = RasterCollection(pyramid_dir / "10m")
@@ -401,6 +420,7 @@ def panorama_extract_job(args: Namespace) -> None:
     source_versions = _extraction_source_versions(source_database, terrain, near_terrain, far_terrain, border_terrain)
     config = PanoramaConfig(
         angular_resolution_degrees=args.angular_resolution,
+        maximum_elevation_angle=getattr(args, "maximum_elevation_angle", 88),
         maximum_distance_meters=args.maximum_distance_meters,
         local_terrain_distance_meters=args.local_terrain_distance_meters,
     )
@@ -726,6 +746,28 @@ def _manifest(root: Path, database_path: Path, bench_index: Path | None = None) 
         for item in records:
             item.update(bench_by_geometry[str(item["geometry_key"])])
     records.sort(key=lambda item: (str(item["kind"]), str(item["relative_path"]), str(item["bench_id"])))
+    projections = {}
+    for record in records:
+        if record["kind"] != "capsule":
+            continue
+        key = record["geometry_key"]
+        if key not in projections:
+            with (root / "generation" / str(record["relative_path"])).open("rb") as handle:
+                prefix = handle.read(16)
+                if prefix[:8] != MAGIC or len(prefix) != 16:
+                    raise ValueError("invalid sealed geometry header")
+                header_size, _ = struct.unpack("<II", prefix[8:])
+                if header_size > 16 * 1024 * 1024:
+                    raise ValueError("geometry header exceeds its bound")
+                config = json.loads(handle.read(header_size))["config"]
+            projections[key] = {"minimum_elevation_angle": config["minimum_elevation_angle"],
+                                "maximum_elevation_angle": config["maximum_elevation_angle"]}
+        record["projection"] = projections[key]
+    for record in records:
+        if record["kind"] == "render":
+            from PIL import Image
+            with Image.open(root / "generation" / str(record["relative_path"])) as image:
+                record["width"], record["height"] = image.size
     git_commit = _git_commit()
     artifact_set = hashlib.sha256(json.dumps(records, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     generation_id = f"{git_commit[:12]}-{artifact_set[:16]}"

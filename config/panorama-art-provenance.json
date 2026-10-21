@@ -1,0 +1,716 @@
+{
+  "tool": "built-in image_gen",
+  "skill": "/Users/speedy/.codex/skills/.system/imagegen/SKILL.md",
+  "assets": [
+    {
+      "path": "public/ui-art/panorama/cloud-pigment.webp",
+      "role": "Derived from the existing watercolor pigment study; only modulates cloud interior marks and edge wetness. Measured weather cover remains calibrated.",
+      "derivedFrom": "worker/benchly/panorama/assets/watercolor-pigment.png",
+      "transform": "sharp resize 1024×384, grayscale, WebP quality 90",
+      "sha256": "b480ce6a6f5feedaad4323b1e026ebfb9be25965c6b2f7bcc38a81f9c7d5e790"
+    },
+    {
+      "path": "worker/benchly/panorama/assets/rock-pigment.png",
+      "role": "Luminance brush vocabulary only, clipped to measured rock",
+      "prompt": "Use case: stylized-concept. Asset type: pigment and brush-shape study used ONLY inside measured rock masks in an illustrated landscape renderer. Create a wide 3:2 watercolor/gouache material study filling the entire canvas with a continuous exposed limestone/granite face. Deliberate large angular oblique planes, a few unequal fractured passages, quiet pale warm-grey washes alternating with cool slate-grey and restrained muted violet recesses, thin selected broken dry-brush accents along plane turns. Economical hand-painted landscape study, subtle paper tooth and mineral granulation subordinate to shape. Asymmetrical irregular composition with lost-and-found edges; avoid an evenly spaced crack network. No skyline, horizon, distinct peak, boulders, plants, buildings, objects or ground; this material will be clipped to actual source geometry. No photorealistic crag texture, no 3D render, no engraved contour drawing, no uniform speckling, no regular tessellation, no airbrush-only clouds, no text or border. Flat diffuse lighting; pale rock must read differently from dense foliage. Opaque full-bleed image."
+    },
+    {
+      "path": "worker/benchly/panorama/assets/foliage-pigment.png",
+      "role": "Luminance brush vocabulary only, clipped to measured woodland",
+      "prompt": "Use case: stylized-concept. Asset type: painterly material study used only as pigment/brush texture inside source-measured forest masks in a panorama renderer. Create a wide 3:2 watercolor and gouache study of a continuous mass of woodland foliage. Fill the entire image with connected unequal interlocking foliage shapes, broad shaded recesses, a few broken dry-brush accents and quiet resting areas. Economical deliberate brushwork by an accomplished landscape watercolor artist, muted olive/sage/ochre lights and cool deep green-grey shadow groups. Strong shape design with lost-and-found edges: some decisive broken edges, other edges bleeding into neighboring washes, never uniformly blurred. Readable broad light and dark masses before fine marks. View the woodland face from the side, not a plan-view repeating texture. No visible sky, horizon, terrain outline, trunks, individual diagrammatic trees, buildings or objects. The whole canvas is connected foliage, so it can be masked to measured geography. No detached oval dots, no polka-dot dabs, no evenly distributed speckles, no ink outlines, no airbrushed gradient, no photorealism, no repeating pattern, no text, no border. Fine paper tooth only subordinate to the broad painted shapes. Opaque background."
+    },
+    {
+      "path": "public/ui-art/panorama/benches/metal-back-arm.webp",
+      "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "stage": "surface",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target: a transparent rear-view metal park bench sprite. Image 2 is a supporting surface-style reference ONLY: borrow its quiet matte gouache washes, never its wood colour or geometry. Repaint image 1's INTERNAL surfaces with broad restrained grey-green/slate metal planes. Remove fine engraving, glistening bevels, bright rim highlights, repeated diagonal brush stripes, stippled fine grain and bolt rings. Hardware is only a muted tonal dab. Keep enough broad plane value separation to read the seat and structure. Keep exact silhouette, dimensions, framing, perspective, slat count, all transparent gaps, feet positions and support count of image1. This target has backrest and both armrests; preserve exactly. Do not redesign or add any structure. Muted contemplative landscape-painting vocabulary with a few unequal soft brush loads, nearly quiet flat interiors. Genuine transparent background. No soil, cast shadow, scenery, paper rectangle, text or background."
+        }
+      ],
+      "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/metal-back-arm-generated.png",
+      "generatedInputSha256": "7a170abb049526cc2c943c43c308d1d6157bc01130c0b03fc316eb05869cbaf2",
+      "sourceAssetSha256": "d2ffbd4a600cad84974b29555064bfbbeb23f3bc81a19ef761fc25a96169e411",
+      "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+      "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+      "sha256": "3428894dd5ceb3cd6a1742d0ae441453abd0d34fbcb35cf805d6a4a255e76d5d",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.978004379008611,
+      "upper260pxIoU": 0.9866500423030681,
+      "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+      "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+      "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+    },
+    {
+      "path": "public/ui-art/panorama/benches/metal-back.webp",
+      "role": "Quiet illustrated foreground: selective broad washes and matte hardware;reviewed seat crop hides legs without soil or shadow.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "file": "prompt-metal-back.txt",
+          "prompt": "Use case: precise-object-edit. Edit this exact rear-view all-METAL bench with backrest and NO armrests. Flatten ONLY the six modeled round rivets on the two upright straps into small matte dark grey-green dabs at their exact current centers,about two-thirds current diameter,with no highlight/ring/internal spherical shading. Quiet fine speckle and continuous bright beveled seat lines into restrained broad cool grey-green metal planes,while retaining EXISTING broad colour washes. No new texture or patches,no wood grain,no repeated diagonal marks. Geometry is invariant: original800x400,2:1 canvas,backrest top y23.5percent,seat front bottom65.25percent,feet99.25percent,outer x3.25percent..96.625percent. Preserve genuine alpha-transparent horizontal board gaps over x30percent..70percent at y38.25percent..39.25percent and y50.75percent..51.5percent;not painted dark lines. Keep exact slat count,strap/support/leg shapes,seat depth,margins,placement,perspective and silhouette. Do not center,move,zoom,rescale or redesign. Maintain subdued original grey metal palette and selective clear painted edges,not blur. True transparent background/openings;no ground,soil,contact shadow,scenery,text or new parts.\n"
+        }
+      ],
+      "generatedInput": "test-results/panorama-artist-review/bench-repaint-family-v2/prototypes/metal-back.png",
+      "generatedInputSha256": "a867290d3f86105f36c4d57007c9c8e1f9b33291ef2dd51d8e24c82698dfea43",
+      "sourceAssetSha256": "8a533e3442a126ee55623c344e22c11ee23593ca76e58f4725e1b881a824cfa2",
+      "normalization": "test-results/panorama-artist-review/bench-repaint-family-v2/normalize.mts",
+      "installer": "test-results/panorama-artist-review/bench-repaint-family-v2/install.mts",
+      "sha256": "dced7ab3b29eb7e25341a38625b3accb532ddcb47687f0dceafafba4f8a49fb9",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.985132559083149,
+      "review": "test-results/panorama-artist-review/bench-repaint-family-v2/review.json",
+      "report": "test-results/panorama-artist-review/bench-repaint-family-v2/report.html",
+      "scope": "All13variants reviewed in104paired clear/overcast/night/snow desktop/mobile scenes;16additional backless crop comparisons. Installed validation recorded separately.",
+      "previousRevision": {
+        "path": "public/ui-art/panorama/benches/metal-back.webp",
+        "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+        "tool": "built-in image_gen",
+        "prompts": [
+          {
+            "stage": "surface",
+            "prompt": "Use case: style-transfer. Image 1 is the edit target: a transparent rear-view metal park bench sprite. Image 2 is a supporting surface-style reference ONLY: borrow its quiet matte gouache washes, never its wood colour or geometry. Repaint image 1's INTERNAL surfaces with broad restrained grey-green/slate metal planes. Remove fine engraving, glistening bevels, bright rim highlights, repeated diagonal brush stripes, stippled fine grain and bolt rings. Hardware is only a muted tonal dab. Keep enough broad plane value separation to read the seat and structure. Keep exact silhouette, dimensions, framing, perspective, slat count, all transparent gaps, feet positions and support count of image1. This target has backrest and NO armrests; preserve exactly. Do not redesign or add any structure. Muted contemplative landscape-painting vocabulary with a few unequal soft brush loads, nearly quiet flat interiors. Genuine transparent background. No soil, cast shadow, scenery, paper rectangle, text or background."
+          }
+        ],
+        "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/metal-back-generated.png",
+        "generatedInputSha256": "8c1f27eab11564ec4599b894a99575c12460f890faa4bf6295d2a22459f49faf",
+        "sourceAssetSha256": "dee33d615f33403c285a8edfeb8c50f2d1704d947d7abb40f0a02b82ea1d22cd",
+        "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+        "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+        "sha256": "8a533e3442a126ee55623c344e22c11ee23593ca76e58f4725e1b881a824cfa2",
+        "dimensions": [
+          800,
+          400
+        ],
+        "silhouetteIoU": 0.9636867412226878,
+        "upper260pxIoU": 0.9662444668448964,
+        "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+        "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+        "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+      }
+    },
+    {
+      "path": "public/ui-art/panorama/benches/metal-backless.webp",
+      "role": "Quiet illustrated foreground: selective broad washes and matte hardware;reviewed seat crop hides legs without soil or shadow.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "file": "../bench-repaint-family-v1/prompt-metal-backless.txt",
+          "prompt": "Use case: style-transfer. Edit supplied transparent rear-view BACKLESS METAL bench. Paint directly over its existing surfaces; preserve geometry. Critical coordinates on original800x400,2:1 canvas: top half y0..50percent remains transparent; top of seat at y50percent,seat front bottom y64percent,feet just above y99percent;outer x3percent..97percent. Do NOT center,zoom,rescale or move it upward. Keep exact four seat slats, thin gaps, front rim, leg/support shapes, positions, proportions, perspective and transparent openings. There is no backrest and no armrest; do not add any. Change surface language only: quiet economical matte gouache/watercolor, muted cool grey-green METAL recognizable by broad adjacent planes, no wood grain,no polished specular streaks,no shiny continuous bevel stripes,no fine speckles,no uniform dark contour. Retain enough restrained selective dark edges to separate existing slats, with one or two very subtle unequal broad cool/warm grey wash pools. No repeated diagonal patches,hatching,sharp decorative grain or modeled hardware. Keep clear deliberate painted edges,not blur. Preserve original material colours and all transparent silhouette/gaps. True transparent background,no ground,soil,contact shadow,scenery or text.\n"
+        }
+      ],
+      "generatedInput": "test-results/panorama-artist-review/bench-repaint-family-v1/assets/metal-backless.png",
+      "generatedInputSha256": "06622f3109920602135d8e18adf6ac77232abc8f0dc37af93d314bc0a224cd58",
+      "sourceAssetSha256": "8172f09de5bf38fdc9ec3bc866bc5dc6c80267596a818071376a26b3b939d67a",
+      "normalization": "test-results/panorama-artist-review/bench-repaint-family-v2/normalize.mts",
+      "installer": "test-results/panorama-artist-review/bench-repaint-family-v2/install.mts",
+      "sha256": "eba90359c61b4a358fb1a7739f5b096f4b33a0110785287366f166e76784b35a",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9802392369710703,
+      "review": "test-results/panorama-artist-review/bench-repaint-family-v2/review.json",
+      "report": "test-results/panorama-artist-review/bench-repaint-family-v2/report.html",
+      "scope": "All13variants reviewed in104paired clear/overcast/night/snow desktop/mobile scenes;16additional backless crop comparisons. Installed validation recorded separately.",
+      "previousRevision": {
+        "path": "public/ui-art/panorama/benches/metal-backless.webp",
+        "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+        "tool": "built-in image_gen",
+        "prompts": [
+          {
+            "stage": "surface",
+            "prompt": "Use case: style-transfer. Image 1 is the edit target: a transparent rear-view metal park bench sprite. Image 2 is a supporting surface-style reference ONLY: borrow its quiet matte gouache washes, never its wood colour or geometry. Repaint image 1's INTERNAL surfaces with broad restrained grey-green/slate metal planes. Remove fine engraving, glistening bevels, bright rim highlights, repeated diagonal brush stripes, stippled fine grain and bolt rings. Hardware is only a muted tonal dab. Keep enough broad plane value separation to read the seat and structure. Keep exact silhouette, dimensions, framing, perspective, slat count, all transparent gaps, feet positions and support count of image1. This target has NO backrest and NO armrests; only the seat and supports; preserve exactly. Do not redesign or add any structure. Muted contemplative landscape-painting vocabulary with a few unequal soft brush loads, nearly quiet flat interiors. Genuine transparent background. No soil, cast shadow, scenery, paper rectangle, text or background."
+          }
+        ],
+        "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/metal-backless-generated.png",
+        "generatedInputSha256": "7df6575defc1ba6dba82153517b67079fc8d3387d1b631aee95fa73628fbacc0",
+        "sourceAssetSha256": "ae9b41ad2e5873b2686e90d364ff3ca0a53860e86a2e958e3baa6393907fe323",
+        "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+        "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+        "sha256": "8172f09de5bf38fdc9ec3bc866bc5dc6c80267596a818071376a26b3b939d67a",
+        "dimensions": [
+          800,
+          400
+        ],
+        "silhouetteIoU": 0.9716118197734662,
+        "upper260pxIoU": 0.9938386162868383,
+        "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+        "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+        "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+      }
+    },
+    {
+      "path": "public/ui-art/panorama/benches/neutral.webp",
+      "role": "Quiet illustrated foreground: selective broad washes and matte hardware;reviewed seat crop hides legs without soil or shadow.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "file": "../bench-repaint-study-v1/prompt-attempt2.txt",
+          "prompt": "Use case: style-transfer. Edit target: the supplied existing rear-view neutral bench sprite. Create a materially simpler painted version of THIS EXACT bench, retaining the original composition and geometry. Paint each broad wooden board with only two to four large irregular muted taupe-grey gouache wash shapes. Remove every fine grain line, scratch, engraving, tiny speckle and high-frequency paper texture. Metal straps should be quiet flat grey-green planes. Rivets are tiny flat dark dabs, with NO ring, specular dot or modeled spherical shading. Omit continuous black outlines and continuous bright bevel stripes; suggest structure through adjacent warm/cool planes with a few selective darker edges. Preserve clear board separation and the seat plane. The result must look deliberately drawn by an economical landscape painter, not blurred or photographic, not a polished product illustration and not a cartoon icon. Exact invariants: original rear-view camera and 2:1 canvas, exact board count and shapes, original support/strap/leg positions and metal material, silhouette, perspective, dimensions, transparent holes, clear top margin and overall bench placement. Keep original muted neutral palette. True transparent background and gaps. No scene, no ground, no soil, no shadow, no lettering. Reduce mark density dramatically; do not add watercolor texture as a substitute for simplifying the drawing.\n"
+        },
+        {
+          "file": "../bench-repaint-study-v2/prompt.txt",
+          "prompt": "Use case: precise-object-edit. Edit target: supplied transparent rear-view neutral bench sprite. Change only the painted wash shapes on the wooden boards and seat. Remove the repeated diagonal grey stripes entirely. Replace them with very restrained unequal irregular broad taupe-grey wash pools: mostly quiet warm-grey wood, one or two soft-edged asymmetrical cooler grey patches per board, different in placement and shape on each board. Do not align patches across boards, do not create any repeating motif, diagonal hatching, bevel shine, grain lines or fine texture. Keep deliberate matte painted plane changes; no blur. Preserve every other aspect exactly: same rear-view camera, 2:1 canvas, exact outer silhouette and placement, margins, board/seat/strap/leg geometry and dimensions, transparent gaps, all support and hardware positions and colours. Keep tiny flat dark hardware dabs without added highlights. True transparent background; no ground, no soil, no contact shadow, no background or text. The bench should belong to a quiet muted watercolor/gouache landscape, painted economically with broad masses.\n"
+        }
+      ],
+      "generatedInput": "test-results/panorama-artist-review/bench-repaint-study-v2/neutral-attempt3.png",
+      "generatedInputSha256": "882615c4e642fae05a1d65e880dc6e4d186ffd9c7279e5c48a44deeb5c989200",
+      "sourceAssetSha256": "4d6cb4ce7758652d8fe04c0bbafe7ac42cb3ab2afd0ec5e60d302503d21fda21",
+      "normalization": "test-results/panorama-artist-review/bench-repaint-family-v2/normalize.mts",
+      "installer": "test-results/panorama-artist-review/bench-repaint-family-v2/install.mts",
+      "sha256": "73bcd7b0e0adf7ab30f176c69f2d3c3bfce317c0c98426e7ea9567b320a0afc6",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9696223942460076,
+      "review": "test-results/panorama-artist-review/bench-repaint-family-v2/review.json",
+      "report": "test-results/panorama-artist-review/bench-repaint-family-v2/report.html",
+      "scope": "All13variants reviewed in104paired clear/overcast/night/snow desktop/mobile scenes;16additional backless crop comparisons. Installed validation recorded separately.",
+      "previousRevision": {
+        "path": "public/ui-art/panorama/benches/neutral.webp",
+        "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+        "tool": "built-in image_gen",
+        "prompts": [
+          {
+            "stage": "surface",
+            "prompt": "Use case: style-transfer. Image1 is the transparent rear-view bench EDIT TARGET. Image2 is a supporting matte gouache surface reference ONLY, never copy its geometry, armrests or ochre colour. Repaint only image1's internal surfaces. Keep the material weathered grey-beige neutral wood slats and grey-green metal supports. ERASE the existing diagonal stripe motif, fine engraving and stipple, glossy bevel highlights, bright edge rims and bolt rings. Use broad quiet very low-contrast uneven gouache washes instead, with only a few subdued brush loads. Keep enough plane contrast to explain the structure. EXACTLY preserve image1 silhouette, framing, rear viewpoint, perspective, proportions, slat count, supports, feet positions and every transparent opening. This target has backrest and NO armrests; preserve that exact structure. No redesigned geometry or extra parts. Muted contemplative landscape-painting vocabulary with restrained foreground detail. Genuine transparent background. No ground, soil, cast shadow, scenery, paper rectangle, text or background."
+          }
+        ],
+        "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/neutral-generated.png",
+        "generatedInputSha256": "ec48a427f04546bd824de1dd56df461161edb33bf71b07f961e77ff8d3101a0d",
+        "sourceAssetSha256": "78984a6f36885ce5f5dc6a3e7e1b5cbe14a6f9cc781370073c7b803aa7bede07",
+        "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+        "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+        "sha256": "4d6cb4ce7758652d8fe04c0bbafe7ac42cb3ab2afd0ec5e60d302503d21fda21",
+        "dimensions": [
+          800,
+          400
+        ],
+        "silhouetteIoU": 0.9685999058232616,
+        "upper260pxIoU": 0.9716021577637721,
+        "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+        "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+        "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+      }
+    },
+    {
+      "path": "public/ui-art/panorama/benches/plastic-back-arm.webp",
+      "role": "Quiet illustrated foreground: selective broad washes and matte hardware;reviewed seat crop hides legs without soil or shadow.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "file": "prompt-plastic-back-arm.txt",
+          "prompt": "Use case: precise-object-edit. Edit ONLY the six round shiny rivet heads on the two upright grey metal straps of this supplied rear-view green recycled-plastic bench WITH armrests. Make them very small flat matte dark-grey painted dabs,not outlined circles. Diameter should be half of current rivet heads,at SAME centers;no rim,no ring,no highlight,no internal shading. Keep every other surface and broad muted green wash essentially unchanged. Do not add texture,grain,speckle,patches or darker outlines. Keep green plastic boards,grey metal supports,and armrests exactly. Original800x400,2:1 canvas:backrest top y23.75percent,seat front bottom65.5percent,feet99.75percent,outer x3.125percent..96.75percent. Retain original alpha-transparent board openings across x30percent..70percent at y38.25percent..39.25percent and y51.5percent..52.5percent. These must remain transparent,not dark paint. Preserve exact board count,seat depth,armrest loops/struts,leg/support shapes,geometry,perspective,silhouette,placement and clear margins. Do not zoom,center,move,rescale,redesign,blur or change material. True transparent background and gaps;no ground,soil,contact shadow,scene,text or added objects. This narrowly reduces product-like shiny hardware to fit an economical landscape painting.\n"
+        }
+      ],
+      "generatedInput": "test-results/panorama-artist-review/bench-repaint-family-v2/prototypes/plastic-back-arm.png",
+      "generatedInputSha256": "c5464f780ebe8f4b3b76247ed2f8f2c2c235a94785b84bf435cedbcc0bcd9168",
+      "sourceAssetSha256": "ceed13d55dbd04142e7fe801af606d4000394568aa3006cb6f9f335b90c88a87",
+      "normalization": "test-results/panorama-artist-review/bench-repaint-family-v2/normalize.mts",
+      "installer": "test-results/panorama-artist-review/bench-repaint-family-v2/install.mts",
+      "sha256": "da4bfa91fd4b40a989829caa8118fea68599959819ba701744546d0d6df6554d",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9876588503450214,
+      "review": "test-results/panorama-artist-review/bench-repaint-family-v2/review.json",
+      "report": "test-results/panorama-artist-review/bench-repaint-family-v2/report.html",
+      "scope": "All13variants reviewed in104paired clear/overcast/night/snow desktop/mobile scenes;16additional backless crop comparisons. Installed validation recorded separately.",
+      "previousRevision": {
+        "path": "public/ui-art/panorama/benches/plastic-back-arm.webp",
+        "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+        "tool": "built-in image_gen",
+        "prompts": [
+          {
+            "stage": "surface",
+            "prompt": "Use case: style-transfer. Image1 is the transparent rear-view bench EDIT TARGET. Image2 is a supporting matte gouache surface reference ONLY, never copy its geometry, armrests or ochre colour. Repaint only image1's internal surfaces. Keep the material muted sage green plastic slats and dark grey supports. ERASE the existing diagonal stripe motif, fine engraving and stipple, glossy bevel highlights, bright edge rims and bolt rings. Use broad quiet very low-contrast uneven gouache washes instead, with only a few subdued brush loads. Keep enough plane contrast to explain the structure. EXACTLY preserve image1 silhouette, framing, rear viewpoint, perspective, proportions, slat count, supports, feet positions and every transparent opening. This target has backrest and both armrests; preserve that exact structure. No redesigned geometry or extra parts. Muted contemplative landscape-painting vocabulary with restrained foreground detail. Genuine transparent background. No ground, soil, cast shadow, scenery, paper rectangle, text or background."
+          }
+        ],
+        "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/plastic-back-arm-generated.png",
+        "generatedInputSha256": "ac8815db5bbadc1dff53723113fa47baeb87f5004c63e138805db8a960310c21",
+        "sourceAssetSha256": "81e7e1c382adf22ddde29269d66306f9568fd042eabaff145207e15d0e8ced73",
+        "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+        "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+        "sha256": "ceed13d55dbd04142e7fe801af606d4000394568aa3006cb6f9f335b90c88a87",
+        "dimensions": [
+          800,
+          400
+        ],
+        "silhouetteIoU": 0.9693456212516093,
+        "upper260pxIoU": 0.9787193356280391,
+        "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+        "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+        "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+      }
+    },
+    {
+      "path": "public/ui-art/panorama/benches/plastic-back.webp",
+      "role": "Quiet illustrated foreground: selective broad washes and matte hardware;reviewed seat crop hides legs without soil or shadow.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "file": "prompt-plastic-back-attempt2.txt",
+          "prompt": "Use case: precise-object-edit. On this exact transparent green plastic bench sprite,change ONLY its six silver rivet heads. Replace them with very small FLAT MATTE dark grey PAINT DABS,not outlined circles. Each dab has HALF the current rivet diameter and the exact same center. No rim,no ring,no highlight,no internal shading. Keep all other colour and surface marks essentially untouched. Absolutely do not add texture,grain,speckles,extra wash patches or darker contours. Keep original geometry and alpha:2:1 canvas,backrest top20.75percent,seat front bottom63.25percent,feet96.75percent,outer x3.25percent..96.625percent. Preserve original transparent horizontal gaps across centerx30percent..70percent at y35.5percent..36percent and y48.75percent..49.75percent;they are actual transparent openings,not dark painted lines. Same backrest,no armrests,same boards,seat,straps,supports,legs,materials,colours,perspective,dimensions,position and margins. Do not zoom,move,center,rescale,redesign or blur. True transparent background,no ground,soil,shadow,scene,text or additional objects. A very narrow hardware-only change to quiet the foreground for a muted landscape painting.\n"
+        }
+      ],
+      "generatedInput": "test-results/panorama-artist-review/bench-repaint-family-v2/prototypes/plastic-back.png",
+      "generatedInputSha256": "0598543902b348e7ee030583e4be6e947c896c960dbc040c5ea562e740cd423b",
+      "sourceAssetSha256": "176f36d2555c54d26f6c6e6ed3321653446c15ec5b64c6a385ca0544690749d8",
+      "normalization": "test-results/panorama-artist-review/bench-repaint-family-v2/normalize.mts",
+      "installer": "test-results/panorama-artist-review/bench-repaint-family-v2/install.mts",
+      "sha256": "54f95fa325d62fbe5e5adb1750602c829f56e7d8a229917e5d3ed88f4a349a08",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9589799311592089,
+      "review": "test-results/panorama-artist-review/bench-repaint-family-v2/review.json",
+      "report": "test-results/panorama-artist-review/bench-repaint-family-v2/report.html",
+      "scope": "All13variants reviewed in104paired clear/overcast/night/snow desktop/mobile scenes;16additional backless crop comparisons. Installed validation recorded separately.",
+      "previousRevision": {
+        "path": "public/ui-art/panorama/benches/plastic-back.webp",
+        "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+        "tool": "built-in image_gen",
+        "prompts": [
+          {
+            "stage": "surface",
+            "prompt": "Use case: style-transfer. Image1 is the transparent rear-view bench EDIT TARGET. Image2 is a supporting matte gouache surface reference ONLY, never copy its geometry, armrests or ochre colour. Repaint only image1's internal surfaces. Keep the material muted sage green plastic slats and dark grey supports. ERASE the existing diagonal stripe motif, fine engraving and stipple, glossy bevel highlights, bright edge rims and bolt rings. Use broad quiet very low-contrast uneven gouache washes instead, with only a few subdued brush loads. Keep enough plane contrast to explain the structure. EXACTLY preserve image1 silhouette, framing, rear viewpoint, perspective, proportions, slat count, supports, feet positions and every transparent opening. This target has backrest and NO armrests; preserve that exact structure. No redesigned geometry or extra parts. Muted contemplative landscape-painting vocabulary with restrained foreground detail. Genuine transparent background. No ground, soil, cast shadow, scenery, paper rectangle, text or background."
+          }
+        ],
+        "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/plastic-back-generated.png",
+        "generatedInputSha256": "63b65569bafe46712b0dacadb5d9b52a6380722368836bb19851887482a1bf59",
+        "sourceAssetSha256": "4ce16c728898f5b1ce02d3934d307c5f3cc379b8bfebc6ea28a5788306c4d38f",
+        "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+        "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+        "sha256": "176f36d2555c54d26f6c6e6ed3321653446c15ec5b64c6a385ca0544690749d8",
+        "dimensions": [
+          800,
+          400
+        ],
+        "silhouetteIoU": 0.9705600765916707,
+        "upper260pxIoU": 0.9751502163956469,
+        "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+        "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+        "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+      }
+    },
+    {
+      "path": "public/ui-art/panorama/benches/plastic-backless.webp",
+      "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "stage": "surface",
+          "prompt": "Use case: style-transfer. Image1 is the transparent rear-view bench EDIT TARGET. Image2 is a supporting matte gouache surface reference ONLY, never copy its geometry, armrests or ochre colour. Repaint only image1's internal surfaces. Keep the material muted sage green plastic seat slats and dark grey supports. ERASE the existing diagonal stripe motif, fine engraving and stipple, glossy bevel highlights, bright edge rims and bolt rings. Use broad quiet very low-contrast uneven gouache washes instead, with only a few subdued brush loads. Keep enough plane contrast to explain the structure. EXACTLY preserve image1 silhouette, framing, rear viewpoint, perspective, proportions, slat count, supports, feet positions and every transparent opening. This target has NO backrest and NO armrests; preserve that exact structure. No redesigned geometry or extra parts. Muted contemplative landscape-painting vocabulary with restrained foreground detail. Genuine transparent background. No ground, soil, cast shadow, scenery, paper rectangle, text or background."
+        }
+      ],
+      "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/plastic-backless-generated.png",
+      "generatedInputSha256": "c13b940191cb526dcce1146686c929c070a14f19ba9767ebb53ab9f5872add25",
+      "sourceAssetSha256": "ff9b0875713ac4c5f3c80e2fce051c4c5ccca0a6dfd7d5fb16aede4bd4394f7f",
+      "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+      "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+      "sha256": "851027e8febc01790e665e27662938162d01f086cee93de906b5c19dc8e20ae3",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9727124924933722,
+      "upper260pxIoU": 0.979421900506208,
+      "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+      "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+      "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+    },
+    {
+      "path": "public/ui-art/panorama/benches/stone-back-arm.webp",
+      "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "stage": "surface",
+          "prompt": "Use case: style-transfer. Image1 is the transparent rear-view stone bench EDIT TARGET. Image2 is a supporting matte gouache style reference ONLY, never copy its geometry or wood colour. Repaint only image1's internal surfaces as quiet warm limestone/grey-beige stone planes. ERASE existing repeated diagonal dark and light stripes, fine speckles, engraved surface scratches, shiny bevel rims and excessive white outlines. Replace them with broad unequal very low-contrast warm/cool gouache washes. Keep enough plane value contrast to distinguish the slab, supports and measured structure. EXACTLY preserve the silhouette, transparent openings, rear camera view, perspective, slab count, feet positions, frame proportions and all structural parts in image1. This target has both armrests and a backrest. Do not add or remove anything. Muted contemplative painting vocabulary, no photographic detailing. Genuine transparent background, no ground, cast shadow, scenery, paper rectangle, text or background."
+        }
+      ],
+      "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/stone-back-arm-generated.png",
+      "generatedInputSha256": "ec0beb0ae3f39edd94383424223e33f5509591db8e2e185444e71cd3813dc9b7",
+      "sourceAssetSha256": "7b24db121a982765acd448bde52e312a17a1bc3bbe0dfbde947deb12f4cc8749",
+      "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+      "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+      "sha256": "081ef515e4e5ad3140367c6fd70ccecf033823c3487c530cda832e06ea09fe75",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9700878116303548,
+      "upper260pxIoU": 0.9790223960811263,
+      "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+      "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+      "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+    },
+    {
+      "path": "public/ui-art/panorama/benches/stone-back.webp",
+      "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "stage": "surface",
+          "prompt": "Use case: style-transfer. Image1 is the transparent rear-view stone bench EDIT TARGET. Image2 is a supporting matte gouache style reference ONLY, never copy its geometry or wood colour. Repaint only image1's internal surfaces as quiet warm limestone/grey-beige stone planes. ERASE existing repeated diagonal dark and light stripes, fine speckles, engraved surface scratches, shiny bevel rims and excessive white outlines. Replace them with broad unequal very low-contrast warm/cool gouache washes. Keep enough plane value contrast to distinguish the slab, supports and measured structure. EXACTLY preserve the silhouette, transparent openings, rear camera view, perspective, slab count, feet positions, frame proportions and all structural parts in image1. This target has a backrest and NO armrests. Do not add or remove anything. Muted contemplative painting vocabulary, no photographic detailing. Genuine transparent background, no ground, cast shadow, scenery, paper rectangle, text or background."
+        }
+      ],
+      "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/stone-back-generated.png",
+      "generatedInputSha256": "4a97e3c29a4f37347821b4e18f021c6eaa273ca7f58f16c513009b06be142a2b",
+      "sourceAssetSha256": "0174d4fc272bb2c354b44d2a4c9e600ee91d87e3595b6469fa029444a572819b",
+      "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+      "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+      "sha256": "118f73e522f5140cdc1b296f6a616db530aa4fc68d5833aa35b56e1fdaaf7b59",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9662520644850114,
+      "upper260pxIoU": 0.9741827637444279,
+      "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+      "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+      "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+    },
+    {
+      "path": "public/ui-art/panorama/benches/stone-backless.webp",
+      "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "stage": "surface",
+          "prompt": "Use case: style-transfer. Image1 is the transparent rear-view stone bench EDIT TARGET. Image2 is a supporting matte gouache style reference ONLY, never copy its geometry or wood colour. Repaint only image1's internal surfaces as quiet warm limestone/grey-beige stone planes. ERASE existing repeated diagonal dark and light stripes, fine speckles, engraved surface scratches, shiny bevel rims and excessive white outlines. Replace them with broad unequal very low-contrast warm/cool gouache washes. Keep enough plane value contrast to distinguish the slab, supports and measured structure. EXACTLY preserve the silhouette, transparent openings, rear camera view, perspective, slab count, feet positions, frame proportions and all structural parts in image1. This target has only the slab seat, NO backrest and NO armrests. Do not add or remove anything. Muted contemplative painting vocabulary, no photographic detailing. Genuine transparent background, no ground, cast shadow, scenery, paper rectangle, text or background."
+        }
+      ],
+      "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/stone-backless-generated.png",
+      "generatedInputSha256": "84678ecb5f634f4d818042cf0dd355d45b71f59cc77179ac9a0bb487c6c28f32",
+      "sourceAssetSha256": "7975dcfe4ab16aab3f8148f521eea170697d293349ea03a9a7c3d2ffc9f6c24a",
+      "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+      "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+      "sha256": "c01838cc6bd02bf4791c9285e21dfb5124b419e6239f33cf49894d73a490d415",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9689302032456278,
+      "upper260pxIoU": 0.9983782494633914,
+      "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+      "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+      "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+    },
+    {
+      "path": "public/ui-art/panorama/benches/wood-back-arm.webp",
+      "role": "Quiet illustrated foreground: selective broad washes and matte hardware;reviewed seat crop hides legs without soil or shadow.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "file": "../bench-repaint-family-v1/prompt-wood-back-arm-attempt2.txt",
+          "prompt": "Use case: style-transfer. Edit the supplied 800x400 transparent rear-view wooden bench sprite. Paint directly over its existing surfaces; do not reposition or rescale the bench. CRITICAL CANVAS INVARIANTS: 2:1 wide canvas. Top25percent of canvas stays completely transparent, as in the target. Top of backrest stays at y25percent. Seat front bottom stays at y65.25percent. Feet remain just above y99percent. Left/right outer ends stay at x3percent and x97percent. Keep every board, armrest, strap, leg and transparent gap at its ORIGINAL coordinates. Do NOT center the whole bench within the canvas, do not zoom, do not move it upward. Change ONLY surface brushwork: economically painted matte gouache with broad quiet honey-ochre wood washes and restrained uneven cooler ochre patches. Remove fine grain, engraving, speckle, polished rivet highlights and uniform dark outlines. Existing rivets become tiny flat dark dabs. Metal supports stay muted green-grey metal, with quiet plane changes. Paint one or two unequal broad wash pools per board, different placement on each; no repeating diagonal stripes, hatching or added detail. Preserve readable board/seat planes without blur or continuous bright bevel shine. This is the IDENTICAL wooden bench with backrest and armrests, simplified to fit a muted landscape painting. Preserve exact perspective, proportions, placement and transparent silhouette/gaps. True transparent background; no ground, soil, shadow, scenery or text.\n"
+        },
+        {
+          "file": "../bench-repaint-family-v1/prompt-wood-back-arm-attempt3.txt",
+          "prompt": "Use case: precise-object-edit. Edit ONLY the six round rivet heads on the two upright metal straps of the supplied transparent wooden bench. Replace each shiny spherical rivet with a single small flat matte dark green-grey dab,about two-thirds of its present diameter,at its existing exact center. No highlight,no ring,no bevel,no internal shading. Do not add rivets anywhere else. Preserve every other pixel/feature as closely as possible: exact canvas2:1,margins,bench position,all boards,armrests,straps,supports,legs,transparent silhouette,gaps,perspective,existing economical ochre wood washes and metal colours. Do not move,zoom,center,rescale,repaint the boards or add texture. True transparent background,no ground,soil,shadow,scene or text. This narrowly removes product-like hardware detail so the bench belongs to a quiet landscape painting.\n"
+        },
+        {
+          "file": "../bench-repaint-family-v1/prompt-wood-back-arm-attempt4.txt",
+          "prompt": "Use case: precise-object-edit. Supplied transparent rear-view wooden bench is the edit target. Restore ONLY two genuinely TRANSPARENT horizontal gaps between its boards; preserve all other drawing. On the2:1 canvas: gap1 between upper and lower backrest boards spans y39.25percent to40percent; gap2 between lower backrest board and seat spans y51.25percent to52.25percent. Both gaps extend across the whole main board area x15percent..85percent,continuing toward the ends where not blocked by the existing metal straps/armrests. They must be real alpha-transparent openings so landscape shows through,not dark painted lines. Keep the original rear-view seat perspective,do not cut the visible seat slats. Keep all other pixels/features as close as possible: bench top y25percent,seat front bottom y65.25percent,feet99percent,all shapes/positions,margins,wood washes,flat small dark rivet dabs,armrests,metal supports,canvas size and perspective. Do not move,rescale,recenter or repaint other surfaces;no additional details. True transparent background,no ground,soil,shadow,scene or text.\n"
+        }
+      ],
+      "generatedInput": "test-results/panorama-artist-review/bench-repaint-family-v1/assets/wood-back-arm.png",
+      "generatedInputSha256": "48adf5d858e16578daa4829d8a53cea5bd86fcaf2fe9838d341e6503239798db",
+      "sourceAssetSha256": "e417b26617f047dfc0e12b62986177d2a5efe588f35e5f9ab87dd2bdf501184a",
+      "normalization": "test-results/panorama-artist-review/bench-repaint-family-v2/normalize.mts",
+      "installer": "test-results/panorama-artist-review/bench-repaint-family-v2/install.mts",
+      "sha256": "80faaeaa21f38a081b5483a453af954d1343447ab949977937497455a24a8fdd",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9524579357106981,
+      "review": "test-results/panorama-artist-review/bench-repaint-family-v2/review.json",
+      "report": "test-results/panorama-artist-review/bench-repaint-family-v2/report.html",
+      "scope": "All13variants reviewed in104paired clear/overcast/night/snow desktop/mobile scenes;16additional backless crop comparisons. Installed validation recorded separately.",
+      "previousRevision": {
+        "path": "public/ui-art/panorama/benches/wood-back-arm.webp",
+        "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+        "tool": "built-in image_gen",
+        "prompts": [
+          {
+            "stage": "surface",
+            "prompt": "Use case: style-transfer. Edit this ONE transparent rear-view wooden bench sprite. Repaint INTERNAL surfaces only; use the target geometry as a strict stencil. Keep every outer contour, transparent slat gap, armrest, support, leg and foot exactly in its current position, with identical framing, perspective and proportions. Retain both armrests and both backrest slats. Material remains muted warm ochre wood with grey-green metal supports. Erase the repeated diagonal stripe motif, fine engraving/grain, glossy bevel highlights, bright rim outlines and ringed bolt details. Replace the slat interiors with broad quiet matte gouache planes and small, soft, unequal low-contrast wash variations. Supports have restrained grey-green plane values; bolts are subdued tonal dabs. No fine texture, no repetition of diagonal brush marks, no redesigned parts or extra structures. Real transparent alpha everywhere outside the bench and in all slat gaps: do NOT paint a checkerboard to indicate transparency. No ground, soil, cast shadow, background, paper rectangle, scenery or text. The result should belong with a muted contemplative hand-painted landscape."
+          }
+        ],
+        "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/wood-back-arm-flat.png",
+        "generatedInputSha256": "bf2641faad97f2bd6d69515245941d10bc47aed1863c33e75c585ae818508ccd",
+        "sourceAssetSha256": "ec26d3f6fae55ec4273ceae935e345b85534f7c9bc9c4df1a9efb684d2d8759e",
+        "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+        "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+        "sha256": "e417b26617f047dfc0e12b62986177d2a5efe588f35e5f9ab87dd2bdf501184a",
+        "dimensions": [
+          800,
+          400
+        ],
+        "silhouetteIoU": 0.972788005840464,
+        "upper260pxIoU": 0.9807167187456014,
+        "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+        "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+        "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+      }
+    },
+    {
+      "path": "public/ui-art/panorama/benches/wood-back.webp",
+      "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "stage": "surface",
+          "prompt": "Use case: style-transfer. Edit this ONE transparent bench sprite by repainting its internal surfaces only. Its geometry and alpha are the strict stencil: every foot position, leg thickness, support count, slat gap, outer edge, perspective, image framing and proportions must remain exactly where they are. This bench has two backrest slats and seat slats, no armrests. Never move or redesign a structural part. Retain the warm muted ochre wood and grey-green metal. The only change is a simpler matte gouache surface vocabulary matching a quiet illustrated landscape: erase the repeated diagonal dark/light stripe pattern, fine wood-grain lines, bright bevel rims and engraved bolt rings. Replace each slat's interior with one broad quiet ochre plane with small soft unequal wash variations; metal has subdued grey-green planes with small muted bolt dabs. No repetitive stripe brush marks, glossy highlights, hyperreal texture or new contour decorations. Keep the full bench and all feet exactly as the target. Genuine transparent background; no ground, soil, cast shadow, paper rectangle, scenery, text or background."
+        },
+        {
+          "stage": "alpha-correction",
+          "prompt": "Use case: background-extraction / precise-object-edit. Correct ONLY the two narrow horizontal gaps between the backrest slats and between the lower backrest and seat in this transparent rear-view bench sprite. Those gaps currently contain a beige and white CHECKERBOARD that is visibly painted into the image. Remove the checkerboard pixels completely and make those entire spaces genuinely transparent alpha=0, like the other empty spaces around the bench. Preserve every wooden slat, support, muted bolt, foot, outer contour, gouache colour and texture, framing, dimensions, camera viewpoint and geometry exactly. Do not draw a new bench. Do not add ground, shadows, backdrop or any replacement material. Actual transparent background and actual transparent slat gaps, absolutely no transparency checkerboard drawn into the image."
+        }
+      ],
+      "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/wood-back-alpha-fixed.png",
+      "generatedInputSha256": "c239a706851a08b3902c08942c9f81d9d22684cf5d2640285f50690848170a76",
+      "sourceAssetSha256": "2cb8f3bf171771eb260677fd51d8d601e6053b08b8fed7f0b22103c2861907cc",
+      "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+      "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+      "sha256": "2b65de70b221327940a8ff6cdd60b79192398871f4b479784c41fe41b2bfcedd",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9647342920627083,
+      "upper260pxIoU": 0.9708184929419243,
+      "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+      "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+      "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+    },
+    {
+      "path": "public/ui-art/panorama/benches/wood-backless.webp",
+      "role": "Quieter matte illustrated foreground sprite. Full transparent source remains intact; the viewer crops legs below its seat row.",
+      "tool": "built-in image_gen",
+      "prompts": [
+        {
+          "stage": "surface",
+          "prompt": "Use case: style-transfer. Edit this ONE transparent bench sprite by repainting its internal surfaces only. Its geometry and alpha are the strict stencil: every foot position, leg thickness, support count, slat gap, outer edge, perspective, image framing and proportions must remain exactly where they are. This bench has only a flat slatted seat and its existing supports, NO backrest or armrests. Never move or redesign a structural part. Retain the warm muted ochre wood and grey-green metal. The only change is a simpler matte gouache surface vocabulary matching a quiet illustrated landscape: erase the repeated diagonal dark/light stripe pattern, fine wood-grain lines, bright bevel rims and engraved bolt rings. Replace each slat's interior with one broad quiet ochre plane with small soft unequal wash variations; metal has subdued grey-green planes with small muted bolt dabs. No repetitive stripe brush marks, glossy highlights, hyperreal texture or new contour decorations. Keep the full bench and all feet exactly as the target. Genuine transparent background; no ground, soil, cast shadow, paper rectangle, scenery, text or background."
+        }
+      ],
+      "generatedInput": "data/panorama-artist-review/bench-cohesion-v4/wood-backless-refined.png",
+      "generatedInputSha256": "0dce6090dd27daed4cb3cb0fa5813fc63615def977ddd38e1d17eb31f022b372",
+      "sourceAssetSha256": "23e6a1bbf5590b9a61abc2ff96aaa739aee30d39605efe6253cdc412f3ac87e5",
+      "normalization": "data/panorama-artist-review/bench-cohesion-v4/normalize-all.mjs",
+      "installer": "scripts/panorama-art/install-reviewed-benches.ts",
+      "sha256": "b74c6a0fbbcda6a34c379573741f9239a0019e00c9a6be749bf570fbea20092d",
+      "dimensions": [
+        800,
+        400
+      ],
+      "silhouetteIoU": 0.9586863160371808,
+      "upper260pxIoU": 0.9693655542173356,
+      "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+      "report": "test-results/panorama-artist-review/bench-cohesion-v4/delivery-v1/report.html",
+      "scope": "All13 actual proxy-viewer variants reviewed in day/snow/moon desktop/mobile.78paired projections and clean landscapes exactly equal. Branch installed only; no production release."
+    },
+    {
+      "path": "worker/benchly/panorama/assets/foliage-masses-pigment.png",
+      "role": "Candidate broad canopy luminance vocabulary; clipped to existing measured woodland. Local pilot pending, not final artistic acceptance.",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: monochrome watercolor pigment study for an illustrated Swiss landscape renderer, not a finished landscape. Primary request: fill a wide horizontal sheet edge to edge with softly interlocking, unequal abstract canopy paint masses, as if a skilled watercolor painter tested broad loaded brushes on damp paper. Larger mid-grey connected washes, a few darker recesses, selective soft broken dry-brush edges, and quiet pale intervals; restrained fine granulation. The marks should suggest the light-and-dark grouping of leafy canopy without depicting any identifiable plant, tree or scene. No stems, branches, needles, ferns, leaf outlines, repeated crowns, horizon, buildings, objects, text, signatures or border. No photograph, 3D render, engraving, stone fractures, uniform noise or cellular camouflage. Grayscale only, opaque paper surface. Keep variation mostly low-to-middle frequency, with much quieter detail inside each wash. Every region should be usable as subordinate pigment modulation; no single focal object. Wide approximately 3:1 composition, evenly distributed paint loads, no white margin. This is only a visual brush vocabulary; no geographical features are being authored.\n",
+      "generatedInput": "data/panorama-artist-review/foliage-masses-v5/generated.png",
+      "sha256": "d2e5da0dbbb1bc3305b25c67a6e924d4c4fa4cb5b9499c364d5c83f0b04420c8",
+      "normalization": "Generated opaque grayscale source retained byte-for-byte. Runtime autocontrast/circular sampling;9-cycle foliage-only scale and .55 ink.",
+      "review": "test-results/panorama-artist-review/foliage-masses-pilot-v6/review.json",
+      "status": "Local9-cycle/.55strength pilot accepted for full20 evaluation; full artistic review remains open.",
+      "report": "test-results/panorama-artist-review/foliage-masses-pilot-v6/delivery-v1/report.html"
+    }
+  ],
+  "previousBenchGenerations": [
+    {
+      "name": "normalized-v2-before-quiet-v4",
+      "assets": [
+        {
+          "path": "public/ui-art/panorama/benches/wood-back.webp",
+          "prompt": "Use case: style-transfer. Edit target: this existing transparent watercolor bench. Make one focused refinement: soften and simplify the remaining dark engraved contours on the metal supports and around the slats. Use broad quiet grey-green metal planes and warm ochre wood washes; let selected edges fade into translucent pigment, while retaining a few crisp structural joins. Turn bolts into subdued simple tonal touches, without outlined rings or highlights. Keep the purposeful broad wood strokes; reduce small surface flecks. It should feel painted with the same economical unoutlined watercolor language as a quiet landscape, with material distinction through value rather than black linework. Preserve this exact bench design, rear view, slat count, backrest, absence of armrests, all supports and feet, proportions, framing and transparency. No new objects, ground, shadow, paper background, text or border. All gaps remain truly transparent. Do not change the silhouette or foot positions.",
+          "sha256": "2cb8f3bf171771eb260677fd51d8d601e6053b08b8fed7f0b22103c2861907cc",
+          "silhouetteIoU": 0.9297601795147492,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 67622,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/wood-back-arm.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target: an existing transparent Bänkliview bench. Image 2 is ONLY the approved painting-style reference. Repaint Image 1 with the same economical watercolor/gouache treatment as Image 2: broad quiet material planes, selective dry-brush marks and softly broken pigment edges. Simplify engraved grain, black outlines, bolts and tiny hardware into subdued tonal touches. Preserve Image 1's exact rear viewpoint, silhouette, slat count, material identity, backrest and armrest configuration, support geometry, proportions, framing and foot positions. Do not copy Image 2's bench shape. Neutral diffuse illumination; truly transparent background and all openings. No ground, cast shadow, landscape, paper rectangle, border, text or extra objects. No photorealism, glossy 3D finish or uniform stippled texture. Keep its existing wooden backrest AND both armrests. Wood stays warm muted ochre, supports subdued grey-green.",
+          "sha256": "ec26d3f6fae55ec4273ceae935e345b85534f7c9bc9c4df1a9efb684d2d8759e",
+          "silhouetteIoU": 0.9405278765339057,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 67794,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/wood-backless.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target: an existing transparent Bänkliview bench. Image 2 is ONLY the approved painting-style reference. Repaint Image 1 with the same economical watercolor/gouache treatment as Image 2: broad quiet material planes, selective dry-brush marks and softly broken pigment edges. Simplify engraved grain, black outlines, bolts and tiny hardware into subdued tonal touches. Preserve Image 1's exact rear viewpoint, silhouette, slat count, material identity, backrest and armrest configuration, support geometry, proportions, framing and foot positions. Do not copy Image 2's bench shape. Neutral diffuse illumination; truly transparent background and all openings. No ground, cast shadow, landscape, paper rectangle, border, text or extra objects. No photorealism, glossy 3D finish or uniform stippled texture. Keep this bench BACKLESS and without armrests. Do not introduce any backrest. Wood stays warm muted ochre, supports subdued grey-green.",
+          "sha256": "23e6a1bbf5590b9a61abc2ff96aaa739aee30d39605efe6253cdc412f3ac87e5",
+          "silhouetteIoU": 0.9442510810770088,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 37200,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/neutral.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target: an existing transparent Bänkliview bench. Image 2 is ONLY the approved painting-style reference. Repaint Image 1 with the same economical watercolor/gouache treatment as Image 2: broad quiet material planes, selective dry-brush marks and softly broken pigment edges. Simplify engraved grain, black outlines, bolts and tiny hardware into subdued tonal touches. Preserve Image 1's exact rear viewpoint, silhouette, slat count, material identity, backrest and armrest configuration, support geometry, proportions, framing and foot positions. Do not copy Image 2's bench shape. Neutral diffuse illumination; truly transparent background and all openings. No ground, cast shadow, landscape, paper rectangle, border, text or extra objects. No photorealism, glossy 3D finish or uniform stippled texture. Keep this neutral grey-brown, unsaturated bench and its existing backrest WITHOUT armrests. Do not turn it into honey-coloured wood or a different material.",
+          "sha256": "78984a6f36885ce5f5dc6a3e7e1b5cbe14a6f9cc781370073c7b803aa7bede07",
+          "silhouetteIoU": 0.9168591403016539,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 62014,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/metal-back-arm.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target, an existing transparent ALL-METAL Bänkliview bench. Image 2 is ONLY a painting-style reference. Repaint Image 1 in the same economical watercolor/gouache language: broad quiet slate-grey and subdued grey-green metal planes, selective dry-brush touches, softly broken pigment edges. Simplify engraved pitting, black outlines, bolts and tiny hardware into subdued tonal marks. Preserve Image 1's exact rear viewpoint, silhouette, slat count, metal material, support geometry, proportions, framing and foot positions. Keep the existing backrest AND both armrests. Do not copy the wooden surfaces or shape of Image 2. Keep every surface recognisably metal: no wood grain, ochre timber or new construction. Neutral diffuse illumination. Truly transparent background and every existing opening. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. No glossy 3D finish or photorealism.",
+          "sha256": "d2ffbd4a600cad84974b29555064bfbbeb23f3bc81a19ef761fc25a96169e411",
+          "silhouetteIoU": 0.946765988372093,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 75206,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/metal-back.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target, an existing transparent ALL-METAL Bänkliview bench. Image 2 is ONLY a painting-style reference. Repaint Image 1 in the same economical watercolor/gouache language: broad quiet slate-grey and subdued grey-green metal planes, selective dry-brush touches, softly broken pigment edges. Simplify engraved pitting, black outlines, bolts and tiny hardware into subdued tonal marks. Preserve Image 1's exact rear viewpoint, silhouette, slat count, metal material, support geometry, proportions, framing and foot positions. Keep the existing backrest and absence of armrests. Do not copy the wooden surfaces or shape of Image 2. Keep every surface recognisably metal: no wood grain, ochre timber or new construction. Neutral diffuse illumination. Truly transparent background and every existing opening. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. No glossy 3D finish or photorealism.",
+          "sha256": "dee33d615f33403c285a8edfeb8c50f2d1704d947d7abb40f0a02b82ea1d22cd",
+          "silhouetteIoU": 0.9219866364211533,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 69494,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/metal-backless.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target, an existing transparent ALL-METAL Bänkliview bench. Image 2 is ONLY a painting-style reference. Repaint Image 1 in the same economical watercolor/gouache language: broad quiet slate-grey and subdued grey-green metal planes, selective dry-brush touches, softly broken pigment edges. Simplify engraved pitting, black outlines, bolts and tiny hardware into subdued tonal marks. Preserve Image 1's exact rear viewpoint, silhouette, slat count, metal material, support geometry, proportions, framing and foot positions. Keep this bench BACKLESS and without armrests. Do not copy the wooden surfaces or shape of Image 2. Keep every surface recognisably metal: no wood grain, ochre timber or new construction. Neutral diffuse illumination. Truly transparent background and every existing opening. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. No glossy 3D finish or photorealism.",
+          "sha256": "ae9b41ad2e5873b2686e90d364ff3ca0a53860e86a2e958e3baa6393907fe323",
+          "silhouetteIoU": 0.9484415029888984,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 33940,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/stone-back-arm.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target: an existing transparent STONE/CONCRETE Bänkliview bench. Image 2 is only the approved watercolor/gouache STYLE reference. Repaint Image 1 with broad quiet pale limestone, warm grey and soft taupe planes, economical broken pigment edges and a few purposeful dry-brush marks. Keep the object recognisably heavy stone/concrete. Simplify photographic speckling, tiny hardware and engraved outlines. Preserve Image 1's exact rear view, silhouette, slab count, proportions, structural joins, supports, framing, scale and foot positions. Preserve the backrest AND both armrests. Do not copy the wood, metal colours or bench shape of Image 2. Neutral diffuse illumination. Background and all existing gaps must be truly transparent. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. Avoid photographic texture, glossy 3D rendering and black contour lines.",
+          "sha256": "7b24db121a982765acd448bde52e312a17a1bc3bbe0dfbde947deb12f4cc8749",
+          "silhouetteIoU": 0.9541208492106695,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 71736,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/stone-back.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target: an existing transparent STONE/CONCRETE Bänkliview bench. Image 2 is only the approved watercolor/gouache STYLE reference. Repaint Image 1 with broad quiet pale limestone, warm grey and soft taupe planes, economical broken pigment edges and a few purposeful dry-brush marks. Keep the object recognisably heavy stone/concrete. Simplify photographic speckling, tiny hardware and engraved outlines. Preserve Image 1's exact rear view, silhouette, slab count, proportions, structural joins, supports, framing, scale and foot positions. Preserve the backrest and absence of armrests. Do not copy the wood, metal colours or bench shape of Image 2. Neutral diffuse illumination. Background and all existing gaps must be truly transparent. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. Avoid photographic texture, glossy 3D rendering and black contour lines.",
+          "sha256": "0174d4fc272bb2c354b44d2a4c9e600ee91d87e3595b6469fa029444a572819b",
+          "silhouetteIoU": 0.9402583151039975,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 70348,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/stone-backless.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target: an existing transparent STONE/CONCRETE Bänkliview bench. Image 2 is only the approved watercolor/gouache STYLE reference. Repaint Image 1 with broad quiet pale limestone, warm grey and soft taupe planes, economical broken pigment edges and a few purposeful dry-brush marks. Keep the object recognisably heavy stone/concrete. Simplify photographic speckling, tiny hardware and engraved outlines. Preserve Image 1's exact rear view, silhouette, slab count, proportions, structural joins, supports, framing, scale and foot positions. Preserve its BACKLESS design and absence of armrests. Do not copy the wood, metal colours or bench shape of Image 2. Neutral diffuse illumination. Background and all existing gaps must be truly transparent. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. Avoid photographic texture, glossy 3D rendering and black contour lines.",
+          "sha256": "7975dcfe4ab16aab3f8148f521eea170697d293349ea03a9a7c3d2ffc9f6c24a",
+          "silhouetteIoU": 0.9249766491997403,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 37138,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/plastic-back-arm.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target, an existing transparent PLASTIC Bänkliview bench with subdued green seat/slats and dark metal supports. Image 2 is only the approved watercolor/gouache STYLE reference. Repaint Image 1 with broad quiet sage-green plastic planes, simple slate-grey metal planes, a few purposeful brush marks and softly broken pigment edges. Simplify photographic stippling, engraved black outlines and tiny hardware. Preserve Image 1's exact rear viewpoint, silhouette, slat count, material identity, support geometry, proportions, framing, scale and foot positions. Keep the backrest AND both armrests. Keep plastic recognisably smooth and manufactured: no wood grain, knots, ochre timber or stone texture. Do not copy the material or bench shape of Image 2. Neutral diffuse illumination. Truly transparent background and all existing openings. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. No glossy photorealism or 3D rendering.",
+          "sha256": "81e7e1c382adf22ddde29269d66306f9568fd042eabaff145207e15d0e8ced73",
+          "silhouetteIoU": 0.9064311558961989,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 61466,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/plastic-back.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target, an existing transparent PLASTIC Bänkliview bench with subdued green seat/slats and dark metal supports. Image 2 is only the approved watercolor/gouache STYLE reference. Repaint Image 1 with broad quiet sage-green plastic planes, simple slate-grey metal planes, a few purposeful brush marks and softly broken pigment edges. Simplify photographic stippling, engraved black outlines and tiny hardware. Preserve Image 1's exact rear viewpoint, silhouette, slat count, material identity, support geometry, proportions, framing, scale and foot positions. Keep the backrest and absence of armrests. Keep plastic recognisably smooth and manufactured: no wood grain, knots, ochre timber or stone texture. Do not copy the material or bench shape of Image 2. Neutral diffuse illumination. Truly transparent background and all existing openings. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. No glossy photorealism or 3D rendering.",
+          "sha256": "4ce16c728898f5b1ce02d3934d307c5f3cc379b8bfebc6ea28a5788306c4d38f",
+          "silhouetteIoU": 0.9345667699158607,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 64668,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        },
+        {
+          "path": "public/ui-art/panorama/benches/plastic-backless.webp",
+          "prompt": "Use case: style-transfer. Image 1 is the edit target, an existing transparent PLASTIC Bänkliview bench with subdued green seat/slats and dark metal supports. Image 2 is only the approved watercolor/gouache STYLE reference. Repaint Image 1 with broad quiet sage-green plastic planes, simple slate-grey metal planes, a few purposeful brush marks and softly broken pigment edges. Simplify photographic stippling, engraved black outlines and tiny hardware. Preserve Image 1's exact rear viewpoint, silhouette, slat count, material identity, support geometry, proportions, framing, scale and foot positions. Keep this bench BACKLESS and without armrests, with its original straight supports. Keep plastic recognisably smooth and manufactured: no wood grain, knots, ochre timber or stone texture. Do not copy the material or bench shape of Image 2. Neutral diffuse illumination. Truly transparent background and all existing openings. No ground, cast shadow, landscape, paper rectangle, text, border or extra objects. No glossy photorealism or 3D rendering.",
+          "sha256": "ff9b0875713ac4c5f3c80e2fce051c4c5ccca0a6dfd7d5fb16aede4bd4394f7f",
+          "silhouetteIoU": 0.9337466098411469,
+          "normalization": "scripts/panorama-art/normalize-benches.ts",
+          "bytes": 26140,
+          "encoding": {
+            "format": "webp",
+            "quality": 92,
+            "alphaQuality": 100
+          }
+        }
+      ],
+      "scope": "Historical installed inputs; retained for reproduction, superseded locally by the reviewedv4 set."
+    }
+  ]
+}

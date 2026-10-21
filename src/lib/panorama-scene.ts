@@ -3,6 +3,14 @@ import { PANORAMA_MIN_ALTITUDE, PANORAMA_SKY_MAX_ALTITUDE } from "./night-sky";
 export const PANORAMA_REST_ALTITUDE = 13;
 export const PANORAMA_ARTIFACT_SPAN = 90;
 export const PANORAMA_HEIGHT_SCALE = 1.36;
+export type PanoramaRasterBounds = { minimumAltitude: number; maximumAltitude: number };
+
+export function panoramaRasterBounds(value?: PanoramaRasterBounds | null): PanoramaRasterBounds {
+  if (value && Number.isFinite(value.minimumAltitude) && Number.isFinite(value.maximumAltitude)
+    && value.minimumAltitude >= PANORAMA_MIN_ALTITUDE && value.minimumAltitude <= 0
+    && value.maximumAltitude > value.minimumAltitude && value.maximumAltitude <= PANORAMA_SKY_MAX_ALTITUDE) return value;
+  return { minimumAltitude: PANORAMA_MIN_ALTITUDE, maximumAltitude: 58 };
+}
 
 export function normalizePanoramaHeading(value: number) {
   return ((value % 360) + 360) % 360;
@@ -24,19 +32,21 @@ export function clampPanoramaPitch(viewportHeight: number, value: number, zoom =
 }
 
 export function panoramaProjection(viewportWidth: number, viewportHeight: number,
-  heading: number, pitch = 0, zoom = 1) {
+  heading: number, pitch = 0, zoom = 1, bounds?: PanoramaRasterBounds) {
   const pixelsPerDegree = panoramaPixelsPerDegree(viewportHeight, zoom);
   const clampedPitch = clampPanoramaPitch(viewportHeight, pitch, zoom);
   const copyWidth = Math.round(360 * pixelsPerDegree);
   const trackHeight = (PANORAMA_SKY_MAX_ALTITUDE - PANORAMA_MIN_ALTITUDE) * pixelsPerDegree;
   const centreAltitude = PANORAMA_REST_ALTITUDE + clampedPitch;
+  const raster = panoramaRasterBounds(bounds);
   return {
     pitch: clampedPitch,
     maximumPitch: panoramaMaximumPitch(viewportHeight, zoom),
     pixelsPerDegree,
     copyWidth,
     trackHeight,
-    rasterHeight: PANORAMA_ARTIFACT_SPAN * pixelsPerDegree,
+    rasterHeight: (raster.maximumAltitude - raster.minimumAltitude) * pixelsPerDegree,
+    rasterBottom: (raster.minimumAltitude - PANORAMA_MIN_ALTITUDE) * pixelsPerDegree,
     left: Math.round(viewportWidth / 2 - copyWidth * (1 + normalizePanoramaHeading(heading) / 360)),
     top: viewportHeight / 2 - (PANORAMA_SKY_MAX_ALTITUDE - centreAltitude) * pixelsPerDegree,
   };

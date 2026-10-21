@@ -1,0 +1,1658 @@
+{
+  "format": "benchly-panorama-art-review-log",
+  "status": "Source-bound20gable structure adopted after32case pilot; fresh all20verification underway",
+  "fullSampleAccepted": false,
+  "findings": [
+    {
+      "id": "ART-CONTOUR-01",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        7
+      ],
+      "headings": [
+        135
+      ],
+      "finding": "The original natural bank has artificial rectangular steps.",
+      "likelyCause": "Coarse near-observer terrain sampling plus independent paint and material contours.",
+      "change": "Resampled geographic terrain and shared the contour used for paint and material coverage.",
+      "acceptance": "No artificial ledges, retained real terrain profile, no alpha halo or wrap defect.",
+      "result": "All 20 native terrain panoramas and north boundaries inspected. The false steps at 07 are removed; the enclosing contour at 19 is more natural. Remaining distant material lanes at 19 are tracked separately.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-review/osm-node-12945467215/clean-r0-c3.png",
+          "role": "before"
+        },
+        {
+          "path": "test-results/panorama-artist-review/materials-v3/pilot/07-autumn-noon-clear-1440-clean.png",
+          "role": "after"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/inspection/07-sector-1.png",
+          "role": "The rising bank is continuous rather than stair-shaped, with connected light/dark foliage masses and retained skyline buildings.",
+          "rect": [
+            0,
+            250,
+            1500,
+            580
+          ],
+          "angles": "120–240 degrees; native panorama crop y=600…1470"
+        }
+      ],
+      "status": "partial"
+    },
+    {
+      "id": "ART-FOLIAGE-01",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        7,
+        18
+      ],
+      "headings": [
+        135,
+        180
+      ],
+      "finding": "The first foliage revision produced detached rounded dabs and was rejected.",
+      "likelyCause": "Independent ellipse stamps distributed across the forest mask.",
+      "change": "Replaced stamps with a connected painted brush study, clipped to geographic woodland and attenuated with continuous measured depth.",
+      "acceptance": "Unequal connected groups, selective edges and quieter distance; unchanged geographic coverage.",
+      "result": "Connected foliage inspected across all 20 panoramas. Detached dots remain only in the preserved rejected iteration.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/foliage-v1/pilot/18-autumn-noon-clear-1440-clean.png",
+          "role": "rejected iteration"
+        },
+        {
+          "path": "test-results/panorama-artist-review/materials-v3/pilot/18-autumn-noon-clear-1440-clean.png",
+          "role": "current pilot"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/inspection/06-sector-0.png",
+          "role": "Unequal green masses frame the warmer settlement; the smaller and quieter distant town recedes without filling the open landscape.",
+          "rect": [
+            0,
+            540,
+            1050,
+            300
+          ],
+          "angles": "0–120 degrees; native panorama crop y=600…1470"
+        }
+      ],
+      "status": "resolved"
+    },
+    {
+      "id": "ART-ROCK-01",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        18
+      ],
+      "headings": [
+        180
+      ],
+      "finding": "The exposed rock passage shared the woodland's soft mottling.",
+      "likelyCause": "Generic pigment and random hatching supplied little directional structure.",
+      "change": "Applied oblique painted planes inside mapped rock only; retained the asymmetric summit and rock footprint.",
+      "acceptance": "Rock and foliage read differently through marks and values; no invented rock coverage.",
+      "result": "Distinct pale rock and darker foliage accepted at 18; near rock at 19 is more expressive. Location 11 remains unknown terrain in the source and is not relabelled as verified rock. Official SWISSIMAGE aerial evidence at 11, traced to the measured 45-degree skyline only 137 m from the bench, shows predominantly grass with scattered exposed patches. Do not repaint that whole near form as rock; mapped grassland boundaries and the corresponding material correction are being checked.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/foliage-v2/pilot/18-autumn-noon-clear-1440-original.png",
+          "role": "before rock refinement"
+        },
+        {
+          "path": "test-results/panorama-artist-review/materials-v3/pilot/18-autumn-overcast-1440-clean.png",
+          "role": "after"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/inspection/18-sector-1.png",
+          "role": "The off-centre summit is preserved; pale directional rock and connected darker vegetation now have distinct material rhythms.",
+          "rect": [
+            200,
+            0,
+            1200,
+            500
+          ],
+          "angles": "120–240 degrees; native panorama crop y=600…1470"
+        },
+        {
+          "path": "test-results/panorama-artist-review/material-reference-11/aerial-trace.png",
+          "role": "Official aerial with bench and measured skyline ray; predominantly grassy near slope, not evidence for a whole rocky wall."
+        }
+      ],
+      "status": "partial"
+    },
+    {
+      "id": "ART-ARCHITECTURE-01",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        1,
+        2,
+        13,
+        15,
+        20
+      ],
+      "headings": [
+        270,
+        90
+      ],
+      "finding": "Prominent facades and roof profiles need source-supported structural identity.",
+      "likelyCause": "Footprint-only estimates, Z coordinates discarded during solid conversion, roof metadata reduced to a generic profile.",
+      "change": "Downloaded official source assets, retained XYZ roof triangles and projected their real ridge distances; discarded unsupported window decoration. The mesh front edge supplies the local eaves/gable profile instead of applying one global minimum roof elevation to every facade. Cached public GWR facts around all 20 locations and matched 619 storey counts to unique official footprints; ambiguous, conflicting and height-inconsistent cases are excluded. Geometry schema 4 retains per-count provenance and reads schemas 1–3. Registered total storeys are stored separately from above-ground OSM levels, because GWR includes qualifying attic/lower-ground floors.",
+      "acceptance": "Measured top, base and facade planes are readable; preserve supported roof rhythm without inventing openings.",
+      "result": "Measured XYZ roofs, local front gable/eaves and real facade planes improve silhouettes. Native all-angle candidate-v1 review still rejects blank large facades at 01, 02, 03, 10, 13, 15, 16 and 20. The public register adds 619 conservative total-storey facts (195 visible in the first experimental sample), but cannot establish facade divisions or openings. Candidate-v2 is retained as an unaccepted experiment: its GWR-derived facade bands are unsupported. A regression now prevents these in both new and experimental capsules; corrected geometry and artistic acceptance remain pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/geography-v1/pilot/02-autumn-noon-clear-1440-original.png",
+          "role": "unresolved slab baseline"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/inspection/15-sector-0.png",
+          "role": "The actual local roof edge replaces an oversized roof fill and the repainted bench is more cohesive; the long facade remains under-articulated.",
+          "rect": [
+            200,
+            320,
+            1400,
+            450
+          ],
+          "angles": "0–120 degrees; native panorama crop y=600…1470"
+        },
+        {
+          "path": "data/panorama-artist-review/building-facts/gwr-v1/matches.json",
+          "role": "619 source-supported storey-count matches, with original response checksums, dates and URLs."
+        }
+      ],
+      "status": "partial",
+      "sourceDefinition": "https://www.housing-stat.ch/files/881-2200.pdf"
+    },
+    {
+      "id": "ENG-LIGHT-01",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        2,
+        14,
+        18
+      ],
+      "headings": [],
+      "finding": "The browser received direct-light maps but did not use them to paint terrain.",
+      "likelyCause": "The descriptor URL was never passed to the terrain renderer.",
+      "change": "Connected continuous light-map sampling to WebGL and canvas, with reduced influence under clouds and absent direct sunlight.",
+      "acceptance": "Maps decode, sun direction affects land, sky remains unpainted, GPU/canvas match.",
+      "result": "Candidate GPU/canvas daylight, moon and snow cases pass with MAE 0.056/0.066/0.072 and no channel differences above 10/255. Actual direct-light responses are asserted.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/viewer-parity",
+          "role": "timestamped parity runs"
+        }
+      ],
+      "status": "resolved"
+    },
+    {
+      "id": "ART-BENCH-01",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        14,
+        18
+      ],
+      "headings": [
+        30,
+        180
+      ],
+      "finding": "Fine engraving and photographic bench surfaces contrast with the economical landscape.",
+      "likelyCause": "Separate asset drawing language.",
+      "change": "Repainted all 13 variants with broad material planes; normalized to original frame and foot baseline; optimized WebP with full alpha quality.",
+      "acceptance": "Recognizable materials and variants, stable transparency/frame/placement, cohesive in scene.",
+      "result": "The earlier 13-variant normalization and 78 in-scene cases preserve material/configuration recognition and placement. Native candidate-v8 foreground review still finds more fine engraving than in the landscape. A new one-variant broad-wash study improves cohesion in controlled daylight, snow and moonlight views but is not installed: its supports/feet shifted (IoU 0.8442; refinement 0.8363), and an exact-alpha stencil produced doubled internal supports. All13 variants need final cohesion acceptance.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/bench-assets/normalized-v2/contact.png",
+          "role": "all variants"
+        },
+        {
+          "path": "test-results/panorama-artist-review/bench-assets/in-scene-v1/foreground-contact.png",
+          "role": "in-scene comparisons"
+        },
+        {
+          "path": "config/panorama-art-provenance.json",
+          "role": "prompts, hashes and encoding"
+        },
+        {
+          "path": "test-results/panorama-artist-review/bench-cohesion-v3",
+          "role": "Current browser-only before/after study, 12 successful cases; not adopted"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v8/analysis/review-progress.json",
+          "role": "All20 current native panorama, wrap, upper-sky and foreground inspections"
+        }
+      ],
+      "status": "partial"
+    },
+    {
+      "id": "ENG-MOBILE-01",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        14
+      ],
+      "headings": [
+        30
+      ],
+      "finding": "The expanded mobile instruction label covers the foreground bench.",
+      "likelyCause": "The fixed instruction label was anchored at the bottom.",
+      "change": "Moved the expanded mobile instruction below the top controls.",
+      "acceptance": "No overlap with bench or controls at mobile width; instruction remains readable.",
+      "result": "The instruction is below the top controls in current mobile captures. All 912 seasonal/device cases completed without browser or asset failures; representative layouts inspected.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/bench-assets/in-scene-v1/14-autumn-noon-clear-390-stone-back-arm-original.png",
+          "role": "before",
+          "rect": [
+            90,
+            808,
+            211,
+            26
+          ]
+        },
+        {
+          "path": "test-results/panorama-artist-review/bench-assets/in-scene-v2/14-autumn-noon-clear-390-stone-back-arm-original.png",
+          "role": "after",
+          "rect": [
+            90,
+            60,
+            211,
+            26
+          ]
+        }
+      ],
+      "status": "resolved"
+    },
+    {
+      "id": "ART-NIGHT-01",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        14
+      ],
+      "headings": [
+        30
+      ],
+      "finding": "The night ground patch remains warm and bright relative to the cool terrain.",
+      "likelyCause": "Only brightness and saturation were adjusted on daylight ground colors.",
+      "change": "Used cool night ground washes and subdued cool bench illumination.",
+      "acceptance": "Foreground and terrain share a night palette, while bench materials remain legible.",
+      "result": "Current moonlit, cloudy-night and overcast-night views retain a cool ground/bench palette. Full overcast hides stars and the moon; phase-specific sky evidence is retained.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/bench-assets/in-scene-v1/14-autumn-moon-full-1440-wood-back-original.png",
+          "role": "before"
+        },
+        {
+          "path": "test-results/panorama-artist-review/bench-assets/in-scene-v2/14-autumn-moon-full-1440-wood-back-original.png",
+          "role": "after"
+        }
+      ],
+      "status": "resolved"
+    },
+    {
+      "id": "ART-WATER-01",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        5
+      ],
+      "headings": [
+        302,
+        322,
+        330
+      ],
+      "finding": "Water samples can colour a whole angular depth band, creating blue columns instead of bounded surfaces.",
+      "likelyCause": "Terrain compaction retained depth-shell endpoints before classifying intermediate visible materials.",
+      "change": "Classify visible samples before compaction, retain both sides of material transitions, and exclude underground waterways. Removed opacity heuristics based on angular sector width; disjoint filtered depth coverages add instead of leaving internal alpha dips.",
+      "acceptance": "Mapped water stays within source-backed banks; land transitions survive compaction; no invented lakes or added water coverage.",
+      "result": "The complete 05 panorama has a continuous source-backed pond, banks and horizontal marks. Removed legacy narrow-sector fading that created internal land-coloured stripes; preserved mapped narrow water and clearings.",
+      "sourceEvidence": {
+        "location": "Brunnenmoossee",
+        "latitude": 46.8418126,
+        "longitude": 7.9065326,
+        "sourceIds": [
+          "OpenStreetMap:area-1038278578",
+          "OpenStreetMap:way-519139289",
+          "swissTLM3D:tlm_bb_bodenbedeckung:{A82A75FE-7AE5-4B10-BE02-99EC2EF52D2B}"
+        ],
+        "note": "Downloaded polygon evidence establishes nearby surface water; actual appearance and individual geographic details remain unverified."
+      },
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/material-sample-v1/contact-autumn-2.png",
+          "role": "pre-correction water appearance"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/inspection/05-sector-2.png",
+          "role": "Source-backed Brunnenmoossee now reads as one bounded pond with banks and horizontal marks; the blue columns and internal vertical stripes are gone.",
+          "rect": [
+            120,
+            470,
+            1250,
+            380
+          ],
+          "angles": "240–360 degrees; native panorama crop y=600…1470"
+        }
+      ],
+      "status": "resolved"
+    },
+    {
+      "id": "ENG-SNOW-01",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        18
+      ],
+      "headings": [
+        180
+      ],
+      "finding": "The snow-cover condition exposes vertical rectangular material bands that are less visible in ordinary daylight.",
+      "likelyCause": "Compacted terrain material transitions and hard per-material snow eligibility; steep-surface retention also needs review.",
+      "change": "Retained semantic transitions and derived a continuous, slope-aware snow coverage field shared by GPU and canvas; made foreground snow independent of falling snow.",
+      "acceptance": "Snow follows coherent source surfaces without rectangular towers or gaps; waterfall/forest/building semantics remain valid; snow cover is independent of falling snow.",
+      "result": "Continuous slope-aware snow removes the rectangular towers at 18, with independent snowy ground cover. Four-season contacts and current GPU/canvas snow parity inspected; no categorical IDs are blurred.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/material-sample-v1/matrix-winter/18-winter-snow-cover-1440-original.png",
+          "role": "confirmed defect"
+        }
+      ],
+      "status": "resolved"
+    },
+    {
+      "id": "ENG-GROUND-02",
+      "status": "partial",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        17,
+        20
+      ],
+      "headings": [
+        0,
+        225
+      ],
+      "finding": "Several building bases hover or cut across sloping terrain, leaving a stage-scenery impression.",
+      "likelyCause": "Official solids used one scalar ground attribute and skipped DEM sampling along the footprint; this cannot describe terrain contact on every facade.",
+      "change": "Sample local terrain along all building footprints while preserving absolute measured roofs/eaves. The regression passes and all 20 corrected capsules are extracted; image acceptance is pending.",
+      "acceptance": "Building bases follow the local slope with no hovering gap or exposed underground facade, while measured roofs and genuine openings remain unchanged.",
+      "result": "Matched summer desktop/mobile comparisons completed for 03, 10, 13, 15, 17 and 20 with no browser/asset failures. Native review at 17 and 20 confirms that the hovering gap and scalar-base cut-out are removed. All-angle/full-sample acceptance of the new geometry remains pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/ground-comparison-before/20-summer-noon-clear-1440-original.png",
+          "role": "Matched before: suspended base on slope",
+          "rect": [
+            330,
+            310,
+            560,
+            330
+          ],
+          "angles": "225 degrees, summer clear noon"
+        },
+        {
+          "path": "test-results/panorama-artist-review/ground-pilots-v1/pilot/20-summer-noon-clear-1440-original.png",
+          "role": "After: facade contact follows measured local terrain",
+          "rect": [
+            330,
+            310,
+            560,
+            330
+          ],
+          "angles": "225 degrees, summer clear noon"
+        }
+      ]
+    },
+    {
+      "id": "ART-SURFACE-02",
+      "status": "partial",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        19
+      ],
+      "headings": [
+        155
+      ],
+      "finding": "Narrow vertical tonal lanes remain in the distant natural slope.",
+      "likelyCause": "Range-shell compaction retained extra distance samples at semantic transitions. Identical slopes therefore received different depth/haze steps according to material boundaries. Selected inner-ridge jumps also acquired thin vertical ink connectors.",
+      "change": "Retain every visible sample from the bounded LOD schedule, independently of semantic classification. Break disconnected inner-ridge accents without changing the factual terrain wash. Keep the restrained distance-contrast treatment separate from this geometric correction.",
+      "acceptance": "No rectangular tonal lanes in the distant slope or the corresponding GPU/canvas views.",
+      "result": "The identical-slope/material-transition regression and inner-ridge connector regression pass. A controlled native comparison at 19 uses the same texture seed and shows broad lanes removed. The actual viewer at verified 155 degrees no longer shows those lanes in daylight; eight targeted desktop/mobile cases complete without errors. All-angle/full-sample acceptance remains pending. The candidate-v4 all-angle native review still finds broad vertical tonal lanes in the opposing distant view at 19; targeted 155-degree improvement does not close the full finding.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/inspection/19-sector-1.png",
+          "role": "The near cliff is more expressive and enclosure is retained, but narrow vertical tonal lanes remain in the distant slope.",
+          "rect": [
+            160,
+            510,
+            620,
+            330
+          ],
+          "angles": "120–240 degrees; native panorama crop y=600…1470"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/band-debug/fields.png",
+          "role": "Diagnostic: material and distance fields before correction."
+        },
+        {
+          "path": "test-results/panorama-artist-review/depth-pilot-v1/controlled/comparison.png",
+          "role": "Controlled old/new geometry with the same painter and original texture seed.",
+          "angles": "100–210 degrees; -20 to +35 degrees; summer"
+        },
+        {
+          "path": "test-results/panorama-artist-review/depth-pilot-v2/viewer-v2/19-summer-noon-clear-1440-original.png",
+          "role": "Actual viewer after depth and disconnected-ridge fixes.",
+          "angles": "155 degrees; summer clear noon",
+          "rect": [
+            30,
+            550,
+            1370,
+            270
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ENG-CAPTURE-02",
+      "status": "resolved",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        15
+      ],
+      "headings": [
+        90
+      ],
+      "finding": "One weather-matrix screenshot captured a later renderer fade after expansion, making the landscape appear washed out.",
+      "likelyCause": "The first ready frame belonged to the inline render; ResizeObserver then started another render/fade after the initial readiness check.",
+      "change": "Require continuous renderer readiness and stable layout for 400 ms; add a browser regression with a delayed second fade. Preserve the original failure and recapture the affected case.",
+      "acceptance": "The delayed-fade fixture passes and repeated actual desktop/mobile captures contain settled terrain without a transient opacity wash.",
+      "result": "Delayed-second-fade browser regression passed. Targeted actual desktop/mobile recapture completed without errors; native desktop view now contains settled opaque terrain. Original failed screenshot is retained.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/matrix-autumn/15-autumn-noon-clear-1440-original.png",
+          "role": "Transient fade, retained as failure evidence",
+          "rect": [
+            20,
+            90,
+            1370,
+            600
+          ],
+          "angles": "90 degrees, autumn clear noon, 1440 by 900"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/capture-stability-v2/15-autumn-noon-clear-1440-original.png",
+          "role": "Settled recapture after continuous-readiness fix",
+          "rect": [
+            20,
+            90,
+            1370,
+            600
+          ],
+          "angles": "90 degrees, autumn clear noon, 1440 by 900"
+        }
+      ]
+    },
+    {
+      "id": "ART-SKY-01",
+      "status": "resolved",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        12,
+        14
+      ],
+      "headings": [
+        55,
+        70,
+        180,
+        305
+      ],
+      "finding": "Uniform cloudy activity weakened the skies, particularly in the minimal low-horizon view.",
+      "likelyCause": "Even procedural cloud distribution and unrelated smooth cloud interiors.",
+      "change": "Compose unequal cloud groups and derive interior pigment from the shared painting vocabulary, while retaining specified cover, night colour and angular wrap.",
+      "acceptance": "Quiet openings remain, overcast stays overcast, night clouds hide celestial objects appropriately, and sun/moon phases retain correct placement.",
+      "result": "Native current-stage light/broken/overcast and night views inspected at 12. Sunrise and crescent discs are visible in supplementary captures; the sunset disc is cloud-occluded. Four seasonal condition sheets were also inspected.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/quiet-sky/12-autumn-clouds-broken-1440-original.png",
+          "role": "Keep unequal cloud mass and quiet opening",
+          "rect": [
+            30,
+            100,
+            1360,
+            510
+          ],
+          "angles": "180 degrees, autumn broken cloud"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/visible-sky/12-summer-sunrise-1440-original.png",
+          "role": "Visible sunrise disc over the measured low horizon",
+          "rect": [
+            590,
+            510,
+            260,
+            160
+          ],
+          "angles": "55 degrees, summer sunrise"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/visible-sky/12-summer-sunset-1440-original.png",
+          "role": "Sunset colour and unequal cloud masses; disc is cloud-occluded",
+          "rect": [
+            20,
+            70,
+            1390,
+            550
+          ],
+          "angles": "305 degrees, summer sunset"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v1/visible-sky/12-summer-moon-crescent-1440-original.png",
+          "role": "Visible crescent and restrained star field",
+          "rect": [
+            540,
+            550,
+            350,
+            240
+          ],
+          "angles": "70 degrees, summer crescent moon"
+        }
+      ]
+    },
+    {
+      "id": "ENG-CAPTURE-03",
+      "status": "resolved",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        19
+      ],
+      "headings": [
+        155
+      ],
+      "finding": "The artist-review capture command silently ignored a numeric direction, producing 45-degree screenshots for a requested 155-degree diagnostic.",
+      "likelyCause": "The development route accepts artist or sky direction; the script passed numeric text without moving the viewer or checking the measured heading.",
+      "change": "Use actual keyboard controls for numeric bearings, verifying heading and projection offset after every step. Reject unreachable increments. Preserve and label the incorrect evidence.",
+      "acceptance": "Verified numeric target, horizontal wrap and frozen-control failure fixtures pass; actual diagnostic captures record and reach 155 degrees.",
+      "result": "Browser fixtures pass, including 155→355→5 degrees and rejected unresponsive controls. All eight replacement actual-viewer cases record 155 degrees with no browser/asset failures. Earlier incorrect captures remain marked invalid.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/depth-pilot-v2/viewer/INVALID_DIRECTION.json",
+          "role": "Preserved invalid-direction evidence."
+        },
+        {
+          "path": "test-results/panorama-artist-review/depth-pilot-v2/viewer-v2/manifest.json",
+          "role": "Replacement captures with actual measured projection."
+        }
+      ]
+    },
+    {
+      "id": "ENG-ROOF-03",
+      "status": "partial",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        1,
+        13,
+        15,
+        20
+      ],
+      "headings": [
+        150,
+        160,
+        170
+      ],
+      "finding": "Complex roof wings were joined into one eave-to-ridge roofing envelope, painting setback walls and hidden flat roofs as large red roof rectangles.",
+      "likelyCause": "One top/eaves pair cannot encode disconnected roof sections or the occlusion of rear roofs by their own front walls.",
+      "change": "Project the roof mesh as a near-to-far section envelope, retain separate visible roof intervals, and store them in capsule schema 5 with schema 1–4 compatibility. Paint measured intervals over the wall wash instead of filling the whole envelope.",
+      "acceptance": "Measured setbacks and front gables remain wall; flat roofs are hidden from below and visible from above; real pitched roof planes remain visible. Source, codec, painter and clipping tests pass, followed by native affected-angle and all-20 review.",
+      "result": "319 worker tests passed after the roof interval correction. Four actual desktop/mobile cases completed without errors, plus a matched 170-degree Cossonay comparison. Native review confirms the false red rectangle is reduced and the setback wall remains visible; 13/15/20 retain their main roof/ground relationships. Blank facades remain open. Full-angle/all-20 roof acceptance is still pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v3/inspection/01-sector-1.png",
+          "role": "False red roof rectangle crosses an unmeasured interval above the low front wing.",
+          "rect": [
+            490,
+            380,
+            350,
+            220
+          ],
+          "angles": "Approximately 156–182 degrees; native panorama crop y=600–1470."
+        },
+        {
+          "path": "test-results/panorama-artist-review/roof-sections-v1/source-diagnostic.json",
+          "role": "Actual source mesh projection before/after at six bearings."
+        },
+        {
+          "path": "test-results/panorama-artist-review/roof-sections-v1/after-170/01-autumn-noon-clear-1440-original.png",
+          "role": "Matched 170-degree corrected source rendering; setback wall remains warm instead of being filled as roofing.",
+          "rect": [
+            565,
+            405,
+            330,
+            185
+          ],
+          "angles": "170 degrees, autumn clear noon"
+        }
+      ]
+    },
+    {
+      "id": "ART-BLOCK-01",
+      "status": "partial",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        1,
+        15
+      ],
+      "headings": [
+        0,
+        90
+      ],
+      "finding": "A single authoritative solid can aggregate several real houses, so rendering one facade wash erases their source-supported divisions.",
+      "likelyCause": "Lower-priority nested OpenStreetMap house footprints were suppressed as duplicates of a whole 3-D block.",
+      "change": "Retain independently mapped, well-contained and non-overlapping OSM units as facade metadata while preserving the official silhouette and roof geometry. Canonicalize way/area duplicates, reject conflicts, and associate only units within 1.5 m of the authoritative front face. Use restrained separate wall washes and only explicit above-ground OSM level counts.",
+      "acceptance": "Mapped house divisions survive import, projection and capsule roundtrip; duplicate representations never add houses. The official outer extent is unchanged, ambiguous units remain unresolved, and native comparisons show a more readable row with no added generic windows.",
+      "result": "321 worker tests pass. The Cossonay capsule retains 38 mapped units across eight aggregate solids, with 1556 assigned rays; Cevio retains four units with only 20 assigned rays. All eight actual pilot/comparison captures complete without errors. Native 80-degree desktop/mobile review confirms that the Cossonay row separates into mapped houses while its silhouette/roof is preserved. The close original-heading facade and Cevio long wall remain unresolved; full-sample acceptance is pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/roof-sections-v1/principal-identities.json",
+          "role": "Multiple actual registered buildings lie inside several aggregated 3-D solids."
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v3/inspection/01-sector-0.png",
+          "role": "A whole row reads as one broad blank facade.",
+          "rect": [
+            550,
+            350,
+            1050,
+            400
+          ],
+          "angles": "Approximately 40–120 degrees, native lower panorama crop."
+        },
+        {
+          "path": "test-results/panorama-artist-review/unit-pilots-v1/before-row-80/01-autumn-noon-clear-1440-original.png",
+          "role": "Matched before: independently mapped row painted as one wall.",
+          "rect": [
+            175,
+            350,
+            1150,
+            400
+          ],
+          "angles": "80 degrees, autumn clear noon"
+        },
+        {
+          "path": "test-results/panorama-artist-review/unit-pilots-v1/row-80/01-autumn-noon-clear-1440-original.png",
+          "role": "After: separate source-backed wall washes; official silhouette and roof retained.",
+          "rect": [
+            175,
+            350,
+            1150,
+            400
+          ],
+          "angles": "80 degrees, autumn clear noon"
+        }
+      ]
+    },
+    {
+      "id": "ENG-CONTACT-04",
+      "status": "partial",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        10,
+        20
+      ],
+      "headings": [
+        30,
+        280
+      ],
+      "finding": "Near facades show periodic saw-tooth base clipping as their distance crosses terrain sampling shells.",
+      "likelyCause": "Terrain depth composition had no sample at the wall intersection. Buildings used grid-north LV95 offsets while terrain used true-north geodesic rays (2.12 degrees apart at location 10).",
+      "change": "Sample actual near-wall terrain with independent semantic classification, preserve missing-data evidence, and project measured footprints, roof vertices and mapped house units into the same true-north geodesic frame as terrain.",
+      "acceptance": "No sampling-shell cutouts along a continuous facade; correct real terrain occlusion and measured roof shape retained; all-20 full-angle review remains required.",
+      "result": "Controlled comparisons preserve the painter and texture seed. At location 10, within-face base jumps above one degree fall from 10 to 0. Ten actual desktop/mobile daylight, snow and moonlight cases have no browser/asset errors; native targeted review confirms removal of the periodic teeth. Architecture remains under-described and broader acceptance is pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/base-occlusion-v1/controlled-true-north/10-comparison.png",
+          "role": "Same painter and seed: old saw teeth above; measured contact and true-north alignment below.",
+          "rect": [
+            0,
+            970,
+            1090,
+            180
+          ],
+          "angles": "335–85 degrees, -20 to +30 degrees; diagnostic painting comparison"
+        },
+        {
+          "path": "test-results/panorama-artist-review/contact-pilots-v3/viewer-30/10-autumn-noon-clear-1440-original.png",
+          "role": "Actual expanded viewer: continuous near-wall base at 30 degrees.",
+          "rect": [
+            0,
+            580,
+            1250,
+            200
+          ],
+          "angles": "30 degree heading, autumn clear noon"
+        },
+        {
+          "path": "test-results/panorama-artist-review/base-occlusion-v1/worker-tests-schema7.txt",
+          "role": "326 worker tests passed, one skipped, with nine subtests."
+        }
+      ]
+    },
+    {
+      "id": "ENG-BEARING-05",
+      "status": "resolved",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        20
+      ],
+      "headings": [
+        280,
+        310
+      ],
+      "finding": "Thin false lines cross a close facade; adjacent stored building rays can also collapse onto one screen position.",
+      "likelyCause": "Float16 spacing reaches 0.25 degree although extraction uses 0.1-degree rays. Additionally, dropping an unrepresentable terrain slice left two matching facade intervals unmerged, so the painted outline crossed the face vertically.",
+      "change": "Schema 7 stores building bearings as float32 and reads schemas 1–6. Matching surfaces merge across gaps below 0.00001 degree; a real terrain occlusion remains separate. The codec participates in cache invalidation.",
+      "acceptance": "Adjacent source building rays remain distinct after encoding and decoding; no false vertical stripe appears; original roof/facade occlusions remain visible.",
+      "result": "327 worker tests pass, including true-bearing, historical-codec, tiny-gap and preserved-real-occlusion regressions. All 20 prior schema-6 capsules still decode. The new church capsule has 771 profiles at 771 distinct bearings, with both erroneous splits removed. Four actual desktop/mobile daylight/snow cases have no browser/asset errors. Native desktop before/after inspection confirms both false lines gone; principal-facade artistic identity remains open.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v5/precision-before/20-autumn-noon-clear-1440-original.png",
+          "role": "Before: two false ink lines crossing one facade.",
+          "rect": [
+            1000,
+            20,
+            170,
+            710
+          ],
+          "angles": "280 degree heading; columns at 302.4 and 310.3 degrees"
+        },
+        {
+          "path": "test-results/panorama-artist-review/contact-pilots-v4/viewer-280/20-autumn-noon-clear-1440-original.png",
+          "role": "After: false lines removed, real corner plane and continuous ground contact retained.",
+          "rect": [
+            1000,
+            20,
+            170,
+            710
+          ],
+          "angles": "Same 280 degree heading and fixed autumn clear-noon conditions"
+        },
+        {
+          "path": "test-results/panorama-artist-review/base-occlusion-v1/subpixel-gap-after.json",
+          "role": "Source-profile diagnosis after merging unrepresentable gaps"
+        },
+        {
+          "path": "test-results/panorama-artist-review/base-occlusion-v1/worker-tests-subpixel-final.txt",
+          "role": "327 passing worker tests, one skipped, nine subtests"
+        },
+        {
+          "path": "test-results/panorama-artist-review/base-occlusion-v1/annotated",
+          "role": "Annotated before/after exports, original input hashes and exact overlay boxes"
+        }
+      ]
+    },
+    {
+      "id": "ART-FACADE-REFERENCE-01",
+      "severity": "high",
+      "confidence": "medium",
+      "benches": [
+        15
+      ],
+      "headings": [
+        250
+      ],
+      "finding": "Principal buildings remain blank despite corrected roofs and contact; structural marks need verified face bindings.",
+      "likelyCause": "The earlier mass painter discards observed opening rhythm; a plausible photo can also be associated with the wrong side of a square.",
+      "change": "Added optional photo-bound wall planes and normalized observed marks, schema-8 metadata with legacy readers, checked isolated curation and versioned cache inputs. The Pretorio east face receives only its photographed opening rhythm and central entrance. Rejected the proposed photo-02 binding to E5CA2556 after the municipal chapel location identified the opposite row.",
+      "acceptance": "Photograph, exact building and visible face are traceable; marks obey measured perspective, roof/terrain/annex occlusion and wrap. Ground windows keep raised sills, only the entrance reaches ground, and frames remain quiet. Other facades require their own evidence.",
+      "result": "337 worker tests pass (one skip, nine subtests); the final painting refinement passes 38 targeted tests. Four-season controlled crops retain identical capsule bytes, material and all 76 lightmaps. Six revised actual-viewer daylight/snow/moon-condition desktop/mobile captures and two matching controls complete without browser or asset failures. Native review confirms the improved opening hierarchy. The first frame-heavy/door-like trial is preserved as rejected. Frescoes, other building identities and panorama-15 overall artistic acceptance remain open. The moon itself is outside this fixed 250-degree view; this verifies night styling, not moon placement.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/facade-reference-15/pretorio-native.png",
+          "role": "dated reference crop; attribution/license in curation and guide"
+        },
+        {
+          "path": "test-results/panorama-artist-review/facade-reference-15/aerial-binding-corrected.png",
+          "role": "verified face and rejected opposite-row binding"
+        },
+        {
+          "path": "test-results/panorama-artist-review/facade-control-v2/viewer-250/15-autumn-noon-clear-1440-original.png",
+          "role": "controlled before"
+        },
+        {
+          "path": "test-results/panorama-artist-review/facade-pilot-v2/viewer-250/15-autumn-noon-clear-1440-original.png",
+          "role": "targeted after; panorama 15 remains unresolved",
+          "rect": [
+            532,
+            340,
+            416,
+            310
+          ],
+          "angles": "236.265–264.266 degrees; measured eaves 16.081–21.051 degrees"
+        },
+        {
+          "path": "test-results/panorama-artist-review/facade-pilot-v1/visual-review.json",
+          "role": "rejected first trial"
+        },
+        {
+          "path": "test-results/panorama-artist-review/facade-reference-15/controlled-v2.json",
+          "role": "matched inputs and exact native crop coordinates"
+        }
+      ],
+      "status": "partial"
+    },
+    {
+      "id": "ENG-SURFACE-NORMAL-06",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "headings": [
+        185
+      ],
+      "finding": "Radial-only terrain inclines gave a single physical plane different lighting and snow response as the viewing ray turned.",
+      "likelyCause": "Compact geometry retained selected ridge slopes instead of a complete east/north/up orientation for each visible terrain span.",
+      "change": "Derive upward normals from neighbouring DEM samples, retain them through visibility and schema-9 capsules, use their solar dot product for lightmaps and actual steepness for snow. Readers preserve schemas 1–8. Missing orientation retains explicit legacy fallback.",
+      "acceptance": "A known tilted plane has one world normal and consistent lighting/snow response around the circle, including wrap; sun direction changes its brightness correctly. Measured projected geometry remains unchanged. Real all-20 and artistic checks remain required.",
+      "result": "353 worker tests pass (one skip, nine subtests), including constant-plane lighting/snow, metadata-independent pigment and visibility regression checks. All 20 schema-8 capsules decode. Corrected geography-normals-v16 matches every projected column and building of the old baseline exactly, excluding only the added normals. Controlled location-19 light-only browser studies pass without errors; broad painted patches remain after lighting alone, and are addressed separately by the final-distance wash.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/depth-lanes-v1/causal-study.json",
+          "role": "controlled attribution; remaining painted patches explicit"
+        },
+        {
+          "path": "test-results/panorama-artist-review/depth-lanes-v1/geometry-comparison.json",
+          "role": "location 19: identical projected geometry with new orientation metadata"
+        },
+        {
+          "path": "test-results/panorama-artist-review/depth-lanes-v1/v15-comparison-failure.json",
+          "role": "preserved full-sample regression evidence and cause"
+        },
+        {
+          "path": "test-results/panorama-artist-review/normal-original-control-v1/viewer-185/19-autumn-noon-clear-1440-clean.png",
+          "role": "original painting and lighting held fixed"
+        },
+        {
+          "path": "test-results/panorama-artist-review/normal-original-after-v1/viewer-185/19-autumn-noon-clear-1440-clean.png",
+          "role": "only lightmaps replaced; broad painted patches remain"
+        },
+        {
+          "path": "test-results/panorama-artist-review/depth-lanes-v1/v16-all20-geometry-comparison.json",
+          "role": "corrected full-sample geometry equivalence"
+        }
+      ],
+      "status": "partial"
+    },
+    {
+      "id": "ART-FINAL-DISTANCE-02",
+      "severity": "high",
+      "confidence": "high",
+      "benches": [
+        19,
+        8
+      ],
+      "headings": [
+        185,
+        225
+      ],
+      "finding": "Later pigment and material marks reassert distant contrast after the early atmospheric wash, weakening the near/far hierarchy.",
+      "likelyCause": "Aerial perspective was applied before several detail/volume passes; cache changes also shuffled pigment and confounded comparisons.",
+      "change": "Apply a final restrained, season-aware glaze to distant natural terrain before water details and buildings. Retain near accents, mapped snow and material IDs. Keep pigment stable per viewpoint across metadata revisions.",
+      "acceptance": "Distant terrain reads as quieter connected masses in colour and grayscale, with the bench hidden. Near banks/peaks, water identity, building geometry and season differences remain legible. Inspect all 20 and both seam boundaries before closing.",
+      "result": "Eight four-season pilot/control renders hold geometry, pigment seed, material and all 616 material/lightmap files fixed. Native before/after crops at all eight artist/diagnostic headings inspected. Location 19 has a quieter distant ridge with a distinct nearer green shoulder; 07 and 18 retain their forms and accents. Location 08 changes little in this close view and remains unresolved. Six required pilots pass 12 actual desktop/mobile daylight cases, with two additional location-19 cases and two matching controls; no browser or asset failures. Full-sample visual acceptance is pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/depth-lanes-v1/stage-trace/manifest.json",
+          "role": "actual summer-base trace, byte-identical to candidate-v7 input"
+        },
+        {
+          "path": "test-results/panorama-artist-review/depth-lanes-v1/atmosphere-comparison/manifest.json",
+          "role": "matched geometry, seed, material, lighting and exact crop coordinates"
+        },
+        {
+          "path": "test-results/panorama-artist-review/stable-paper-control-v1/viewer-185/19-autumn-noon-clear-1440-clean.png",
+          "role": "matched before"
+        },
+        {
+          "path": "test-results/panorama-artist-review/atmosphere-pilots-v1/viewer-185/19-autumn-noon-clear-1440-clean.png",
+          "role": "targeted after; full location remains open",
+          "rect": [
+            0,
+            560,
+            1250,
+            260
+          ],
+          "angles": "132–238 degrees within actual 185-degree view"
+        }
+      ],
+      "status": "partial"
+    },
+    {
+      "id": "ART-RIDGE-INK-02",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        8
+      ],
+      "headings": [
+        180,
+        225
+      ],
+      "finding": "Parallel inner lines cross a continuous near hill.",
+      "likelyCause": "The painter joined compacted distance-band endpoints as physical inner ridges. Whole-painting stage ablation isolates _paint_edges.",
+      "change": "Select substantial adjacent visible depth breaks from full spans; suppress agreeing normals and non-terrain boundaries. Retain break handling and source geometry.",
+      "acceptance": "Remove false parallel contours while retaining evidenced overlap accents and skyline; no new scratches or seams across all 20.",
+      "result": "Ridge-only 08 pilot and eight-location ground pilot inspected at native scale. Matched 08 daylight/snow/moon desktop/mobile comparisons show the long false lines removed. Candidate-v9 has 20 complete captures; its complete native review remains pending.",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/ground-direction-v1/delivery-v1/report.html",
+          "role": "Controlled native and actual-viewer comparisons"
+        },
+        {
+          "path": "test-results/panorama-artist-review/ground-direction-v1/trace.json",
+          "role": "One-stage-at-a-time diagnosis"
+        },
+        {
+          "path": "test-results/panorama-artist-review/ground-direction-v1/ridge-audit.json",
+          "role": "Full-20 eligibility audit; not physical-cliff verification"
+        }
+      ]
+    },
+    {
+      "id": "ART-SLOPE-WASH-01",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        2,
+        5,
+        7,
+        8,
+        14,
+        15,
+        18,
+        19
+      ],
+      "headings": [
+        180,
+        185
+      ],
+      "finding": "Baked ground volume uses coarse radial slopes and partial-span bands despite measured full surface normals being available.",
+      "likelyCause": "The painter reused compacted ridge slopes and shaded only the upper part of each projected span.",
+      "change": "Use measured east/north/up orientation for a normalized, smoothly wrapped studio wash across complete eligible ground spans. Keep actual solar LUTs separate, preserve canopy/water and retain a legacy fallback.",
+      "acceptance": "One physical plane has one coherent wash around the circle; sky/water/canopy boundaries introduce no false volume. Visual depth improves without changing mapped shapes or live solar response.",
+      "result": "Analytic plane, boundary and fallback tests pass. Eight native before/after crops and actual desktop/mobile daylight views inspected; differences are restrained. All 616 material/lightmap assets and input geometry are unchanged. This mathematical consistency does not close the whole depth finding at 08.",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/ground-direction-v1/controlled-comparison.json",
+          "role": "Unchanged geometry and all 616 material/lightmap assets"
+        },
+        {
+          "path": "test-results/panorama-artist-review/ground-direction-v1/delivery-v1/report.html",
+          "role": "Native painting and actual-viewer evidence"
+        }
+      ]
+    },
+    {
+      "id": "ENG-SNOW-SKYLINE-02",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        8,
+        3
+      ],
+      "headings": [
+        180,
+        90
+      ],
+      "finding": "A dotted dark edge is visible along the snow-covered distant skyline.",
+      "likelyCause": "Canvas image decoding premultiplies/unpremultiplies fractional alpha, changing small categorical material IDs at the fringe. Some snowy terrain is decoded as another valid material class and receives no snow. Actual lossless-file versus Canvas label distributions and exact opaque-transport roundtrips establish this cause.",
+      "change": "Store RGB facts and full eight-bit coverage in separate opaque planes with a version footer. Reconstruct canonical RGBA before direct typed-array GPU upload and CPU sampling. Keep existing masks readable.",
+      "acceptance": "Native desktop/mobile snow-cover views have a continuous natural boundary without dots, halo, shifted contour or erased terrain; GPU/canvas behavior agrees.",
+      "result": "All nine canonical masks, 36 base paintings and 684 lightmaps match controls exactly. A real browser preserves every tested byte through v2 decoding; the legacy alpha fixture demonstrates the loss. All 18 matched daylight screenshots are pixel-identical. Eighteen final desktop/mobile snow views inspected with no dotted skyline; five GPU/Canvas cases pass. Full-20 v2 generation and final acceptance remain pending.",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/ground-direction-v1/actual-08-before/08-autumn-snow-cover-390-clean.png",
+          "role": "Pre-existing snowy skyline"
+        },
+        {
+          "path": "test-results/panorama-artist-review/ground-planes-pilot-v1/actual-08-conditions/08-autumn-snow-cover-390-clean.png",
+          "role": "Same boundary in revised ground pilot"
+        },
+        {
+          "path": "test-results/panorama-artist-review/chapel-facade-pilot-v1/actual-viewer/03-autumn-snow-cover-1440-clean.png",
+          "role": "Also visible in the open terrain beside the chapel"
+        },
+        {
+          "path": "test-results/panorama-artist-review/snow-edge-study-v1/opaque-browser-byte-audit.json",
+          "role": "Actual decoding byte fidelity, including the real 08 mask"
+        },
+        {
+          "path": "test-results/panorama-artist-review/snow-edge-study-v1/annotations.json",
+          "role": "Four personally verified numbered exports"
+        },
+        {
+          "path": "test-results/panorama-artist-review/opaque-material-pilot-v1/actual-snow-water-only-v2/manifest.json",
+          "role": "Final nine-location desktop/mobile snow capture"
+        }
+      ]
+    },
+    {
+      "id": "ART-FACADE-REFERENCE-03",
+      "severity": "high",
+      "confidence": "medium",
+      "benches": [
+        3
+      ],
+      "headings": [
+        90,
+        125
+      ],
+      "finding": "The near Lugnez chapel wall lacks source-backed identity and human scale.",
+      "likelyCause": "The source solid retains roof/ground geometry but no openings; unsupported generic marks were removed earlier.",
+      "change": "Bind the verified north and west faces of EGID 191960767 to dated July 2026 exterior photos. Project one round opening, two arched windows and the central arched entrance onto their own visible wall planes. Schema 10 carries observed shapes; readers retain schemas 1–9 and default old marks to rectangles.",
+      "acceptance": "Observed forms follow the correct faces, perspective, occlusion and roof boundaries; the doorway provides scale without inferred generic decoration. Keep the quiet opening and document missing source detail.",
+      "result": "Two curated faces pass source/photo/roof-anchor validation. New extraction retains every column, normal and projected building sample unchanged. All 77 masks/lightmaps are byte-identical to controls. Six matched weather/device cases per side, two additional 125° entrance views and one complete full-range panorama pass capture checks. Three native full-range sectors and the six revised weather/device views inspected. Doorway improves scale; missing porch, belfry and individual trees prevent full-site acceptance.",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "config/panorama-facade-references.json",
+          "role": "Dated source-bound curation and explicit limits"
+        },
+        {
+          "path": "test-results/panorama-artist-review/chapel-reference-03/geometry-comparison.json",
+          "role": "Unchanged projected geometry"
+        },
+        {
+          "path": "test-results/panorama-artist-review/chapel-reference-03/asset-comparison.json",
+          "role": "Unchanged material and astronomical lightmaps"
+        },
+        {
+          "path": "test-results/panorama-artist-review/chapel-facade-pilot-v1/actual-entrance/03-autumn-noon-clear-390-original.png",
+          "role": "Actual 125-degree mobile entrance view"
+        }
+      ]
+    },
+    {
+      "id": "ENG-SNOW-SHORE-03",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        5
+      ],
+      "headings": [
+        330
+      ],
+      "finding": "Snow cover reveals a hard staircase along the lake shore.",
+      "likelyCause": "A continuous snow wash was clipped abruptly to categorical texel ownership at an ineligible water boundary.",
+      "change": "Fade the continuous snow response within the land beside water/river, retaining zero snow on known water. Keep building exclusion crisp. A broader erosion around all ineligible materials was rejected because it invented dark moats around buildings at 14.",
+      "acceptance": "The shoreline stays connected and calm in desktop/mobile snow views, without pixel steps, false ice, shifted source geometry or new thawed rings around houses. GPU and Canvas agree.",
+      "result": "Native 05 before/after and all 18 corrected pilot snow views inspected. The lake remains clear; the stepped snow edge is softened. The 14 guard view retains building contact after restricting the fade to water. The full-sample matrix remains open.",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/snow-edge-study-v1/05-shore-before-annotated.png",
+          "role": "Confirmed staircase, approximately 326–349 degrees"
+        },
+        {
+          "path": "test-results/panorama-artist-review/snow-edge-study-v1/05-shore-after-annotated.png",
+          "role": "Corrected shoreline-only fade"
+        },
+        {
+          "path": "test-results/panorama-artist-review/opaque-material-pilot-v1/actual-snow-final/REJECTED_SHORE_GATE.json",
+          "role": "Preserved rejected broad erosion and reason"
+        }
+      ]
+    },
+    {
+      "id": "ART-PIGMENT-REPEAT-01",
+      "status": "open",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        2,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12,
+        18,
+        19,
+        20
+      ],
+      "finding": "Large repeated pigment motifs and patch-like foliage compete with the forms and recur across different places.",
+      "likelyCause": "Artist, foliage and rock studies are resized into the same panorama coordinates without a location-specific transformation; the same motif is reused. Source inspection confirms this sampling pattern.",
+      "change": "Sample the brush vocabulary with a stable location seed and circular coordinates; reduce unsupported interior contrast and let measured slope/occlusion determine the main planes. Keep geographic coverage unchanged.",
+      "acceptance": "Matched native and grayscale comparisons show distinct, quieter subject-led marks; no obvious cross-location stencil, new wrap seam or altered geographic/material boundary.",
+      "result": "Confirmed in the all20 daylight review; implementation remains open.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v10/inspection/07-sector-1.png",
+          "role": "The large foliage motif is visible across the slope",
+          "rect": [
+            250,
+            350,
+            1120,
+            480
+          ],
+          "angles": "138.4–220.7°"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v10/inspection/12-sector-1.png",
+          "role": "The same brush vocabulary dominates the otherwise minimal near strip",
+          "rect": [
+            5,
+            600,
+            1600,
+            260
+          ],
+          "angles": "120–238°"
+        }
+      ]
+    },
+    {
+      "id": "ENG-CONTACT-CURRENT-09",
+      "status": "open",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [
+        9
+      ],
+      "finding": "A thin pale line separates part of a tall building base from the painted near slope.",
+      "likelyCause": "Unverified: trace measured base/terrain projection and the independent softened paint masks. This visible line does not establish an actual geographic ground gap.",
+      "change": "Compare geometry, canonical coverage and intermediate paint layers at this boundary; correct the responsible projection or raster coverage stage and retain the failing pixels as evidence.",
+      "acceptance": "The sloping base meets the terrain without a pale gap in base painting, GPU and Canvas paths, including snow/night and seam-adjacent tests; factual dimensions remain intact.",
+      "result": "Confirmed visually in the native sector and a tighter native crop; root-cause diagnosis remains open.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/candidate-v10/inspection/09-sector-2.png",
+          "role": "Pale base line in current native panorama",
+          "rect": [
+            205,
+            435,
+            170,
+            125
+          ],
+          "angles": "255.1–267.6°"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v10/inspection/09-contact-detail-2.png",
+          "role": "Tight untouched native crop of the base boundary"
+        }
+      ]
+    },
+    {
+      "id": "ART-BENCH-FOLLOWUP-06",
+      "severity": "medium",
+      "confidence": "high for observed detail reduction",
+      "benches": [
+        15
+      ],
+      "finding": "Remaining fine grain and modeled hardware compete with broad landscape planes.",
+      "change": "Six selected lossless800x400repaints;seven existing sprites retained after full-family review.",
+      "result": "Prototype gate passed;installed-viewer equivalence and broader fixed-sample validation pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/bench-repaint-family-v2/review.json",
+          "role": "104paired family scenes and native review"
+        }
+      ],
+      "acceptance": "Installed sprites match reviewed appearances and preserve material,geometry,transparency and framing;all20review and report remain required.",
+      "currentFollowup": {
+        "status": "installed and locally validated; wider artistic goal remains active",
+        "evidence": [
+          "test-results/panorama-artist-review/viewer-v22/matrix-validation.json",
+          "test-results/panorama-artist-review/viewer-v22/navigation-v2/manifest.json",
+          "test-results/panorama-artist-review/candidate-v17/delivery-interim-v2-verification.json"
+        ],
+        "scope": "104installed family cases,40all20defaults,288weather cases and30navigation cases; manual scope recorded in viewer-v22/native-review-progress.json."
+      }
+    },
+    {
+      "id": "ART-BENCH-BACKLESS-CROP-02",
+      "severity": "medium",
+      "confidence": "high",
+      "benches": [],
+      "finding": "Last-wide-row crop included an under-seat plastic brace and upper metal leg caps on the backless wooden bench.",
+      "change": "Plastic-backless seat row62.75→59.5percent;wood-backless64→59percent. Eleven other rows unchanged.",
+      "result": "16paired prototype cases hide supports;installed navigation validation pending.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/bench-repaint-family-v2/framing-correction-v1/validation.json",
+          "role": "Measured image shift and crop rows232/234above leg starts"
+        }
+      ],
+      "acceptance": "No leg/support strip visible below the seat at desktop/mobile resting views;no soil/shadow overlay.",
+      "currentFollowup": {
+        "status": "installed and locally validated; wider artistic goal remains active",
+        "evidence": [
+          "test-results/panorama-artist-review/viewer-v22/matrix-validation.json",
+          "test-results/panorama-artist-review/viewer-v22/navigation-v2/manifest.json",
+          "test-results/panorama-artist-review/candidate-v17/delivery-interim-v2-verification.json"
+        ],
+        "scope": "104installed family cases,40all20defaults,288weather cases and30navigation cases; manual scope recorded in viewer-v22/native-review-progress.json."
+      }
+    },
+    {
+      "id": "ART-GROUND-PERSPECTIVE-03",
+      "severity": "medium",
+      "confidence": "high observation; local tangent approximation documented",
+      "benches": [
+        4,
+        8,
+        11,
+        15,
+        16,
+        17,
+        20
+      ],
+      "finding": "Open ground uses nearly fixed apparent-size marks across close ranges, weakening surface recession and measured folds.",
+      "likelyCause": "The prior exponential mark scale changes little between2and80metres; image-space pigment does not project onto the local ground plane.",
+      "change": "Project restrained1.2m,0.3m and0.075m pigment onto measured local tangent planes, with analytic and neighbor-coordinate footprint filtering. Retain semantic coverage, geography and lighting; reject unstable intersections. Older capsules keep their prior gestures.",
+      "result": "Quiet75pilot improves open ground in72matched actual viewer pairs; strong150trial rejected as busy/ripple-like. Implemented source passes422worker tests. All20four-season paintings generated;9summer bases equal reviewed prototype and1540material/LUT files remain exact. Full-angle current capture/review remains pending.",
+      "acceptance": "Measured plane direction and recession read with bench hidden; no false hills, roads, paving, material boundaries or seams. Preserve pilot water/rock/canopy/sky and night/snow response. Check all20angles and the final weather matrix before accepting whole scenes.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/projected-ground-pilot-v2/review.json",
+          "role": "Native/reduced review scope, rejected trial and72matched viewer pairs"
+        },
+        {
+          "path": "test-results/panorama-artist-review/candidate-v18/painting-validation.json",
+          "role": "All20capsule/asset equality and9prototype painting matches"
+        },
+        {
+          "path": "test-results/panorama-artist-review/projected-ground-pilot-v2/worker-performance/result.json",
+          "role": "36matched measured render samples after12warmups; median3.10→3.59seconds"
+        }
+      ]
+    },
+    {
+      "id": "ART-FOLIAGE-TILE-04",
+      "severity": "medium",
+      "confidence": "high; actual-viewer pass isolation plus analytic repeat coordinates",
+      "benches": [
+        7,
+        15,
+        18,
+        6
+      ],
+      "finding": "Repeated narrow paint-study feather strips interrupt continuous canopy with near-horizontal value bands. At07the wraps predict screen rows500,687and883, matching the visible joins.",
+      "likelyCause": "The vertically repeated foliage study forces opposite source borders toward their average in a narrow strip; that artificial strip repeats nine times. Sampling also omits last-to-first interpolation.",
+      "change": "Use the globally periodic component of the unchanged foliage study, then bilinearly sample across last/first neighbours. Preserve the nine-cycle scale,55percent ink gain, measured canopy coverage, contours, lighting, other materials and bench framing.",
+      "result": "48actual pilot cases have identical camera and diagnostics to baseline;24mobile originals,10desktop originals and24desktop reduced pairs reviewed. Six installed summer paintings equal the reviewed prototype exactly. Worker suite428passes. All20trial is pending.",
+      "acceptance": "Repeated study joins disappear without losing unequal canopy clusters or measured broad turning values. Retain water/rock/architecture and day/night/snow character. All20angles, north joins, final weather matrix and GPU/Canvas agreement must pass before final acceptance.",
+      "evidence": [
+        {
+          "path": "test-results/panorama-artist-review/hillside-band-study-v2/browser.json",
+          "role": "Actual source-pass isolation and predicted texture wraps"
+        },
+        {
+          "path": "test-results/panorama-artist-review/foliage-periodic-pilot-v1/actual-validation.json",
+          "role": "48matched viewer cases and precise manual scope"
+        },
+        {
+          "path": "test-results/panorama-artist-review/foliage-periodic-study-v1/installed-equivalence.json",
+          "role": "Six installed paintings exactly match reviewed prototypes"
+        }
+      ]
+    },
+    {
+      "id": "ART-20-GABLE-STRUCTURE",
+      "status": "limitedsource-boundstudyaccepted;all20trialpending",
+      "source": "municipalfrontalphotographundated;noimageRedistribution",
+      "implemented": "TwoobservednarrowlightsandpalestructuralcrosswithintheexistingNEgablerecess. NoSEwallfeatures,porch,clocksorfloorcountinferred.",
+      "evidence": "test-results/panorama-artist-review/church20-structure-study-v1/validation.json"
+    }
+  ],
+  "candidateStage": "candidate-v20",
+  "manualReviewSummary": {
+    "stage": "candidate-v11",
+    "accepted": 0,
+    "unresolved": 20,
+    "evidence": "test-results/panorama-artist-review/candidate-v11/acceptance.json"
+  },
+  "latestEvidence": {
+    "fullCaptureStage": "candidate-v4",
+    "captures": 20,
+    "pilotStage": "contact-pilots-v3",
+    "newGeometryRoot": "geography-contact-final-v12",
+    "note": "Candidate-v4 remains an incomplete artistic iteration; later corrections require fresh all-20 captures and acceptance.",
+    "precisionPilot": "contact-pilots-v4",
+    "fourSeasonRender": "candidate-v5 (before the final tiny-gap merge)",
+    "newGeometryComplete": 20,
+    "geometryImplementation": "343e414a763fd848ee52e6dd17b52512152573022767d756a44986ecdd73d13f"
+  },
+  "latestFacadeEvidence": {
+    "stage": "chapel-facade-pilot-v1",
+    "control": "chapel-facade-control-v1",
+    "geometryRoot": "data/panorama-artist-review/geography-chapel-v17",
+    "location": 3,
+    "referencedFaces": 2,
+    "completeArtisticAcceptance": false,
+    "geometryComparison": "test-results/panorama-artist-review/chapel-reference-03/all20-geometry-comparison.json",
+    "geometryComplete": 20
+  },
+  "latestNormalEvidence": {
+    "schema": 9,
+    "pilot": "normal-pilot-v1",
+    "correctedGeometryRoot": "data/panorama-artist-review/geography-normals-v16",
+    "causalStudy": "test-results/panorama-artist-review/depth-lanes-v1/causal-study.json",
+    "fullArtisticAcceptance": false,
+    "geometryComparison": "test-results/panorama-artist-review/depth-lanes-v1/v16-all20-geometry-comparison.json"
+  },
+  "latestAtmosphereEvidence": {
+    "stage": "atmosphere-pilots-v1",
+    "control": "stable-paper-control-v1",
+    "geometryRoot": "data/panorama-artist-review/geography-normals-v16",
+    "fullSampleAccepted": false
+  },
+  "latestCandidateEvidence": {
+    "stage": "candidate-v12",
+    "viewer": "viewer-v14",
+    "sourceSnapshotSha256": "942cd94c5d1b19f5525555203a6f37aaa687f74a49ccc363c342b2c214e4de9f",
+    "completePanoramas": 20,
+    "fullSampleAccepted": false,
+    "nativeReview": "All60 lower sectors,2 changed upper sectors,20 north boundaries and20 foregrounds;58 upper sectors exact to reviewedv11.",
+    "matrix": "912 distinct current-source cases,zero failures;76 overviews+12 native views personally inspected.",
+    "geography": "20 material masks+1520 lightmaps byte-identical to v11.",
+    "performance": "Whole painter median CPU3127→3322ms,6.2% higher thanHEAD. Earlier browser timings retain v11 scope.",
+    "report": "test-results/panorama-artist-review/candidate-v12/delivery-interim-v1/report.html",
+    "lastDeliveredArchive": {
+      "stage": "candidate-v12",
+      "sha256": "2a249a74252fe21002fb68e20bb2c603bdbcdd787e0046028f2c7e33e31447f0",
+      "bytes": 2419854808,
+      "files": 5286,
+      "htmlReferencesVerified": 3839,
+      "extractedHashesVerified": 5285,
+      "offlineBrowser": {
+        "offline": true,
+        "locations": 20,
+        "noteImages": 6,
+        "imageCount": 998,
+        "localLinksVerified": 2128,
+        "errors": [],
+        "failed": [],
+        "outbound": [],
+        "zoom": {
+          "native": 4896,
+          "rendered": 4896
+        },
+        "mobile": {
+          "viewport": 390,
+          "bodyWidth": 390
+        }
+      }
+    },
+    "remaining": [
+      "Source-supported principal-facade identity",
+      "Connected depth, especially08",
+      "Recognisable foliage prints and residual ridges"
+    ]
+  },
+  "latestBenchStudy": {
+    "stage": "bench-cohesion-v4",
+    "adoptedLocally": true,
+    "result": "All13 quieter matte sprites accepted through156 native before/after crops and13full paper sprites. Source sizes800x400, minimum actual silhouetteIoU0.9587. Legs remain below the source-derived seat crop.",
+    "browserCases": 156,
+    "browserErrors": 0,
+    "cleanPixelExactPairs": 78,
+    "review": "test-results/panorama-artist-review/bench-cohesion-v4/review.json",
+    "installation": "test-results/panorama-artist-review/bench-cohesion-v4/installation.json",
+    "navigationEvidence": "test-results/panorama-artist-review/bench-cohesion-v4/navigation-installed-v2/check.json",
+    "postInstallNavigationRows": 60,
+    "postInstallNavigationFailures": 0
+  },
+  "precedingNativeReview": {
+    "stage": "candidate-v10",
+    "evidence": "test-results/panorama-artist-review/candidate-v10/acceptance.json"
+  },
+  "latestGroundStudy": {
+    "stage": "ground-gestures-pilot-v3",
+    "status": "pilot accepted for the ground-mark/rock-contrast correction; all20 artistic acceptance open",
+    "evidence": "test-results/panorama-artist-review/ground-gestures-pilot-v3/review.json",
+    "changes": [
+      "Replace both uniform hatch passes with fewer broader ground gestures, aligned to measured surface normal and angular projection; decrease scale/ink continuously with source distance.",
+      "Use the same complete stroke geometry at every horizontal wrap.",
+      "Keep rock pigment subordinate to measured planes."
+    ],
+    "tests": "387 worker tests passed,1 skipped,9 subtests;6 new functional ground-mark tests.",
+    "sourceEquivalence": "8 material masks and608 lightmaps byte-identical to v11.",
+    "actualViewer": "64 cases without browser/asset errors; all32 native mobile views and24 desktop lower native crops inspected, plus daylight overviews and8 summer native paint crops.",
+    "remaining": "Broad near/middle/distant value relationships at08; principal blank facades and full20 review."
+  },
+  "precedingFacadeEvidence": {
+    "stage": "facade-pilot-v2",
+    "control": "facade-control-v2",
+    "geometryRoot": "data/panorama-artist-review/geography-facade-v14",
+    "fixedSampleCount": 20,
+    "completeArtisticAcceptance": false,
+    "bindingAudit": "test-results/panorama-artist-review/facade-reference-15/binding-audit.json"
+  },
+  "latestTests": {
+    "workerPassed": 428,
+    "workerSkipped": 1,
+    "subtests": 9,
+    "workerLog": "test-results/panorama-artist-review/church20-structure-study-v1/worker-tests.log",
+    "frontend424": "Carried from unchanged frontend; not rerun"
+  },
+  "latestMaterialEvidence": {
+    "stage": "opaque-material-pilot-v1",
+    "materialContract": "opaque-facts-and-coverage-planes-v2",
+    "report": "test-results/panorama-artist-review/snow-edge-study-v1/delivery-v1/report.html",
+    "review": "test-results/panorama-artist-review/snow-edge-study-v1/review.json",
+    "fullSampleAccepted": false,
+    "note": "All20 materials use regenerated exact opaque transport. Earlier pilot counts remain historical; no production activation.",
+    "fullSampleRegenerated": true,
+    "fullSampleEvidence": "test-results/panorama-artist-review/candidate-v10/canonical-material-check.json",
+    "finalMatrixCases": 912
+  },
+  "sourceClarification02": "test-results/panorama-artist-review/facade-reference-02/binding-audit.json",
+  "latestContactEvidence": {
+    "geometryRoot": "data/panorama-artist-review/geography-contact-v18",
+    "review": "test-results/panorama-artist-review/contact-09-v1/gap-check.json",
+    "all20Audit": "test-results/panorama-artist-review/contact-09-v1/all20-contact-audit.json",
+    "result": "Exact source-anchored DEM contacts eliminate the measured09 wall-base gap and65 affected all20 columns. Same-palette fixed06 day/snow/moon device views inspected."
+  },
+  "latestBrushEvidence": {
+    "stage": "candidate-v11",
+    "result": "Stable place-specific circular, quieter pigment sampling and stable building-ID palettes adopted. Material/depth polish remains open.",
+    "optimizedStage": "brush-equivalent-v1",
+    "equivalence": "test-results/panorama-artist-review/brush-performance-v1/render-equivalence.json",
+    "equalEncodedAssets": 1620,
+    "performanceLimit": "Optimized painter still8.2% higher median CPU thanHEAD on the retained paired run; field-only generation is17% faster than its unoptimized version."
+  },
+  "latestBenchFraming": {
+    "userDirection": "Hide the legs; remove the inappropriate soil patch.",
+    "adopted": true,
+    "review": "test-results/panorama-artist-review/local-ground-v1/review.json",
+    "report": "test-results/panorama-artist-review/local-ground-v1/delivery-v1/report.html",
+    "cases": 118,
+    "navigationMeasurements": 58,
+    "matchedCleanImages": 12,
+    "remaining": "Installed13surface refinements have separate post-install navigation evidence; full artistic scene acceptance remains open."
+  },
+  "latestCloudStudy": {
+    "adoptedLocally": true,
+    "reviewRoot": "test-results/panorama-artist-review/sky-interiors-v1",
+    "matchedViewerCases": 12,
+    "fieldChecks": 16,
+    "result": "Quieter cloud interiors preserve every alpha byte in16field comparisons;912current viewer cases passed. All76representative overviews and12native selected matrix views inspected, alongside12matched daytime cloud views.",
+    "fullViewerMatrixCases": 912,
+    "weatherVisualReview": "test-results/panorama-artist-review/viewer-v12/weather-inspection/review.json"
+  },
+  "sourceClarification13": "test-results/panorama-artist-review/facade-reference-13/binding-audit.json",
+  "latestBrowserPerformance": {
+    "status": "complete-local-development-comparison",
+    "measuredSamples": 72,
+    "warmups": 24,
+    "source": "test-results/panorama-artist-review/browser-performance-v1/attempt2/summary.json",
+    "actualSources": "test-results/panorama-artist-review/browser-performance-v1/source-input-check.json",
+    "result": "Overall median navigation-to-ready1438→1447ms (about0.6%higher), expansion938→968ms. Both median frame intervals8.4ms and p95about33.4ms. Some night/mobile cells vary more; no production or significant speedup claim.",
+    "limits": "Initial fixture scanning and hidden-buffer instrumentation failures retained; measured attempt2 uses matched isolated webpack development servers with identical art and current reviewed sprites.",
+    "installedViewerMatch": "test-results/panorama-artist-review/browser-performance-v1/installed-viewer-match.json",
+    "actualCurrentSourceSha256": "c266268c8a4ba4545a8245171aa7eb2a5c8972b461cafc8a3474a7bb1c939523"
+  },
+  "latestFoliageStudy": {
+    "stage": "foliage-periodic-pilot-v1",
+    "status": "six-location pilot accepted for full20trial; whole artistic goal remains open",
+    "diagnosis": "test-results/panorama-artist-review/hillside-band-study-v2/browser.json",
+    "prototype": "test-results/panorama-artist-review/foliage-periodic-study-v1/prototype.py",
+    "actualCases": 48,
+    "manualScope": "24whole native mobile originals,10whole native desktop originals and24reduced desktop before/after pairs",
+    "evidence": "test-results/panorama-artist-review/foliage-periodic-pilot-v1/actual-validation.json",
+    "installedEquivalence": "test-results/panorama-artist-review/foliage-periodic-study-v1/installed-equivalence.json",
+    "methodReference": "https://helios2.mi.parisdescartes.fr/~moisan/papers/2009-11r.pdf",
+    "next": "All20four-season paintings, complete-angle/north review, final weather/render-path checks and matched browser performance.",
+    "completedFollowup": {
+      "stage": "candidate-v19",
+      "viewer": "viewer-v24",
+      "status": "delivered milestone verified",
+      "fullPanoramas": 20,
+      "weatherCases": 912,
+      "acceptedScopedCriteria": [
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        18,
+        19
+      ],
+      "remainingWholeLocationAssessments": 12,
+      "verification": "test-results/panorama-artist-review/candidate-v19/delivery-reviewed-v2-verification.json"
+    }
+  },
+  "latestChurchFacadeStudy": {
+    "stage": "church20-structure-study-v1",
+    "status": "limitedNEgable refinement adopted; whole20and12location assessments remainopen",
+    "reference": "https://www.brusio.ch/cultura-e-tempo-libero/chiese",
+    "observedAt": null,
+    "redistributionAllowed": false,
+    "actualCases": 32,
+    "matchedPairs": 16,
+    "manualScope": "All12changed native before/after crop pairs;4exact mobile285pairs;3additional whole native originals at330",
+    "validation": "test-results/panorama-artist-review/church20-structure-study-v1/validation.json",
+    "report": "test-results/panorama-artist-review/church20-structure-study-v1/report.html",
+    "geometryRoot": "data/panorama-artist-review/geography-church-structure-v21",
+    "next": "Verify all20physical geometry,4seasonpaintings,fullrange20,north/overlap,reference-specificweatherandrenderpaths. Preserve stage19delivery until new milestone gatespass."
+  },
+  "latestConnectedPlanesStudy": {
+    "stages": [
+      "connected-planes-study-v1",
+      "connected-planes-study-v2"
+    ],
+    "status": "Both rejected; no painter changes adopted",
+    "reason": "Direct measured-field gain introduces angular patches at11; smoothed/quiet alternative flattens04/08. Current accepted ground correction retained.",
+    "scope": "8locations,48prototypepaintings; all16controls exactv13. Native review18v1views plus16v2variants;8v2controls carry exact reviewedpixels."
+  },
+  "latestGroundOrientationStudy": {
+    "implementationSource": "candidate-v15",
+    "fullSampleCapture": "viewer-v17/full-autumn",
+    "review": "test-results/panorama-artist-review/candidate-v15/native-review-progress.json",
+    "status": "Narrow measured-ground brush accepted after all20native panorama/foreground/boundary reviews; broader artist acceptance remains open.",
+    "nativeLowerSectors": 60,
+    "freshUpperCrops": 4,
+    "upperCropsExactToPreviouslyReviewed": 56,
+    "fullWrapCrops": 20,
+    "foregroundCrops": 20,
+    "workerTests": "393passed,1skipped,9subtests",
+    "painterCpuMedianIncreasePercent": 15.69,
+    "next": "Combine with validated Rochat reference in next immutable candidate; then current weather/parity/report/package."
+  },
+  "latestRochatFacadeStudy": {
+    "pilot": "rochat01-facade-pilot-v2",
+    "report": "test-results/panorama-artist-review/rochat01-facade-pilot-v2/report.html",
+    "freshActualOriginals": 16,
+    "nativeOriginalsReviewed": 16,
+    "headingDegrees": 75,
+    "status": "Narrow optical pilot accepted for validated-reference adoption. Current source now supports explicit unknown dates, link-only references and source-edge interpolation. Re-extraction/full-sample validation pending.",
+    "canonicalReference": "cossonay-petite-rue8-west-undated",
+    "sourceGuide": "https://www.cossonay.ch/documents/36-tourisme/37-vieille-ville-de-cossonay?download=99%3Acossonay-tourisme",
+    "photoDate": null,
+    "redistributionAllowed": false,
+    "scope": "Only one approx6.3mwestfrontage within A87; no adjacent-face inference; whole01criterionstillopen."
+  },
+  "latestProjectedGroundEvidence": {
+    "stage": "candidate-v18",
+    "paintingSourceSnapshotSha256": "351cd4ffff74cd9f9915fe40d13489d16e0dd9245ce38ca584a60333c0163cb6",
+    "status": "implemented; full-range20review and final weather matrix pending",
+    "review": "test-results/panorama-artist-review/projected-ground-pilot-v2/review.json",
+    "paintingValidation": "test-results/panorama-artist-review/candidate-v18/painting-validation.json",
+    "tests": "test-results/panorama-artist-review/projected-ground-pilot-v2/implementation-worker-tests.log",
+    "performance": "test-results/panorama-artist-review/projected-ground-pilot-v2/worker-performance/result.json",
+    "acceptedWholeLocationAssessmentsChanged": false,
+    "completedFollowup": {
+      "fullPanoramas": 20,
+      "weatherCases": 912,
+      "evidence": "test-results/panorama-artist-review/viewer-v23/full-validation.json",
+      "manualWeather": "test-results/panorama-artist-review/viewer-v23/weather-selection.json",
+      "laterBrowserChecks": "test-results/panorama-artist-review/viewer-v23/browser-followup-validation.json",
+      "delivery": "test-results/panorama-artist-review/candidate-v18/delivery-interim-v1/report.html",
+      "note": "912weather plus40defaults,12GPU/Canvas pairs and extracted offline report acceptance complete; fresh browser performance remains pending."
+    }
+  },
+  "precedingFoliageStudy": {
+    "stage": "foliage-masses-pilot-v6",
+    "sourceSnapshotSha256": "142983c3b613a60668a00afabd8b285dc1743b669cd1a331d280e7a66e32f4c5",
+    "status": "narrow pilot accepted for all20 evaluation; complete artistic acceptance remains open",
+    "actualCases": 42,
+    "nativeViewerCases": 12,
+    "unchangedMasks": 9,
+    "unchangedLightmaps": 684,
+    "next": "Evaluate connected depth and source-bound principal facade refinements; new912-case matrix and updated delivery remain pending.",
+    "fullSampleStage": "candidate-v13",
+    "fullSampleCapture": "viewer-v15/full-autumn",
+    "fullSampleReview": "test-results/panorama-artist-review/candidate-v13/native-review.json",
+    "fullSamplePanoramas": 20,
+    "nativeLowerSectors": 60
+  },
+  "precedingChurchFacadeStudy": {
+    "stage": "church20-arch-pilot-v2",
+    "report": "test-results/panorama-artist-review/church20-arch-pilot-v2/report.html",
+    "actualPairedCases": 16,
+    "nativeOriginalViewsReviewed": 16,
+    "status": "Limited source-bound NE gable arch accepted for next full-sample candidate; complete20 architecture remains unresolved.",
+    "geographyRoot": "data/panorama-artist-review/geography-church-v19",
+    "all20PhysicalGeometryExact": true,
+    "fresh20LightmapsExact": 76,
+    "canonicalPhoto": "https://commons.wikimedia.org/wiki/File:Campocologno_railway_station-05.jpg"
+  }
+}

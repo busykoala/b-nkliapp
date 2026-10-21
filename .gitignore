@@ -28,4 +28,6 @@ data/panorama-fixtures/
 data/panorama-builder/
 data/panorama-repaint/
 data/panorama-local-review/
+data/panorama-artist-review/
+/panoramas.zip
 .osm-stage-v1/

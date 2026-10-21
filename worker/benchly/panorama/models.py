@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from bisect import bisect_right
 from enum import Enum
+import math
 from typing import Literal
 
 from sqlalchemy import Column, Text
@@ -19,9 +20,10 @@ from benchly.panorama.identity import implementation_key
 
 
 GEOMETRY_IMPLEMENTATION = implementation_key(
-    "../context/rasters.py", "datasets.py", "ground_elevation.py", "models.py", "visibility.py",
+    "../context/rasters.py", "../context/importer.py", "../context/geometry.py", "../context/paving.py", "../context/ground_cover.py",
+    "datasets.py", "paving.py", "ground_elevation.py", "models.py", "visibility.py", "binary.py",
 )
-RENDER_IMPLEMENTATION = implementation_key("material.py", "models.py", "watercolor.py", "assets/watercolor-pigment.png")
+RENDER_IMPLEMENTATION = implementation_key("material.py", "models.py", "watercolor.py", "facades.py", "assets/watercolor-pigment.png", "assets/foliage-pigment.png", "assets/foliage-masses-pigment.png", "assets/rock-pigment.png")
 LIGHTMAP_IMPLEMENTATION = implementation_key("models.py", "watercolor.py")
 LOD_SCHEDULE_IMPLEMENTATION = implementation_key("datasets.py")
 EARTH_RADIUS_METERS = 6_371_008.8
@@ -48,12 +50,25 @@ class SemanticClass(str, Enum):
     SETTLEMENT = "settlement"
     BUILDING = "building"
     UNKNOWN_TERRAIN = "unknown_terrain"
+    # Explicitly mapped concrete, bituminous concrete or paving-stone ground.
+    # Unspecified road/path finishes remain their existing class.
+    PAVED_GROUND = "paved_ground"
+    # Surveyed roads, paths and other hard ground; finish may be unpaved.
+    # Keep this distinct from explicitly qualified concrete/asphalt/pavers.
+    SURFACED_GROUND = "surfaced_ground"
 
 
 class SourceEvidence(Contract):
     source: str
     version: str | None = None
     confidence: float = Field(ge=0, le=1)
+
+
+def _surface_normal(value):
+    if value is not None and (any(not math.isfinite(v) for v in value)
+            or abs(math.sqrt(sum(v * v for v in value)) - 1) > .002 or value[2] < 0):
+        raise ValueError("terrain surface normal must be a finite upward unit vector")
+    return value
 
 
 class TerrainSample(Contract):
@@ -65,6 +80,14 @@ class TerrainSample(Contract):
     terrain_source: str = "unknown"
     slope_degrees: float | None = Field(default=None, ge=-90, le=90)
     relief_meters: float | None = Field(default=None, ge=0)
+    # True local east/north/up, derived from neighbouring measured elevations.
+    # A radial incline alone cannot describe transverse hillside orientation.
+    surface_normal: tuple[float, float, float] | None = None
+
+    @field_validator("surface_normal")
+    @classmethod
+    def valid_surface_normal(cls, value):
+        return _surface_normal(value)
 
 
 class TerrainRay(Contract):
@@ -86,6 +109,65 @@ class TerrainRay(Contract):
         return bool(self.samples) and (expected is None or len(self.samples) == expected)
 
 
+class BuildingFacadePart(Contract):
+    """An independently mapped building unit inside an aggregated 3-D solid."""
+
+    source_id: str
+    source_version: str | None = None
+    footprint: tuple[tuple[float, float], ...] = Field(min_length=3)
+    levels: int | None = Field(default=None, ge=1, le=100)
+    levels_source: str | None = None
+
+
+class FacadeMark(Contract):
+    """An observed opening/band in a reference face's normalized coordinates.
+
+    V runs from local ground (0) to measured eaves (1). Positions are an
+    illustrative reading of the photograph, not surveyed opening coordinates.
+    """
+
+    kind: Literal["opening", "entrance", "band"]
+    bounds: tuple[float, float, float, float]
+    shape: Literal["rectangle", "ellipse", "round-arch"] = "rectangle"
+
+    @field_validator("bounds")
+    @classmethod
+    def bounded_rectangle(cls, value):
+        u0, v0, u1, v1 = value
+        if not all(math.isfinite(item) for item in value) or not (0 <= u0 < u1 <= 1 and 0 <= v0 < v1 <= 1):
+            raise ValueError("facade marks require positive, finite normalized bounds")
+        return value
+
+
+class FacadeReference(Contract):
+    """One photo-bound face; right-hand normal of start→end faces outside.
+
+    Each anchor is true local east, north, absolute ground and eaves elevation.
+    Neither a building-wide style nor a recipe for inventing generic windows.
+    """
+
+    reference_id: str = Field(min_length=1, max_length=160)
+    source_url: str = Field(pattern=r"^https://", max_length=2048)
+    photo_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    # Explicit null means the source does not establish a capture date. Never
+    # substitute the download, publication or curation date for observation.
+    observed_at: str | None = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    confidence: Literal["medium", "high"]
+    description: str = Field(min_length=1, max_length=2000)
+    wall_tone: Literal["chalk", "rose", "ochre"]
+    start: tuple[float, float, float, float]
+    end: tuple[float, float, float, float]
+    marks: tuple[FacadeMark, ...] = Field(max_length=64)
+
+    @model_validator(mode="after")
+    def valid_plane(self):
+        if any(not math.isfinite(value) for point in (self.start, self.end) for value in point):
+            raise ValueError("facade anchors must be finite")
+        if math.dist(self.start[:2], self.end[:2]) < .5 or any(point[3] <= point[2] for point in (self.start, self.end)):
+            raise ValueError("facade anchors require a wall of positive width and height")
+        return self
+
+
 class BuildingGeometry(Contract):
     """A rendering-efficient building mass in local east/north metres."""
 
@@ -99,9 +181,21 @@ class BuildingGeometry(Contract):
     confidence: float = Field(ge=0, le=1)
     roof_kind: Literal["known-pitched", "flat-or-unknown"] = "flat-or-unknown"
     orientation_degrees: float | None = Field(default=None, ge=0, lt=180)
+    footprint_ground_elevations: tuple[float, ...] | None = None
+    levels: int | None = Field(default=None, ge=1, le=100)
+    levels_source: str | None = None
+    # GWR totals can include heated attic/lower-ground floors. They are
+    # reference facts, not an above-ground facade division.
+    registered_storeys: int | None = Field(default=None, ge=1, le=99)
+    registered_storeys_source: str | None = None
+    roof_faces: tuple[tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]], ...] = ()
+    facade_parts: tuple[BuildingFacadePart, ...] = ()
+    facade_references: tuple[FacadeReference, ...] = ()
 
     @model_validator(mode="after")
     def valid_heights(self):
+        if self.footprint_ground_elevations is not None and len(self.footprint_ground_elevations) != len(self.footprint):
+            raise ValueError("footprint ground profile must match its vertices")
         if self.eaves_elevation_meters < self.ground_elevation_meters:
             raise ValueError("building eaves must not be below ground")
         if self.roof_elevation_meters < self.eaves_elevation_meters:
@@ -118,6 +212,12 @@ class VisibleSpan(Contract):
     terrain_source: str | None = None
     confidence: float = Field(ge=0, le=1)
     object_id: str | None = None
+    surface_normal: tuple[float, float, float] | None = None
+
+    @field_validator("surface_normal")
+    @classmethod
+    def valid_surface_normal(cls, value):
+        return _surface_normal(value)
 
     @model_validator(mode="after")
     def valid_interval(self):
@@ -150,6 +250,12 @@ class BuildingProjectionSample(Contract):
     eaves_angle_degrees: float
     upper_angle_degrees: float
     distance_meters: float = Field(gt=0)
+    facade_index: int | None = Field(default=None, ge=0)
+    facade_normal_degrees: float | None = Field(default=None, ge=0, lt=360)
+    # None is a legacy/estimated envelope; an empty tuple is a measured wall
+    # with no visible roof plane. Separate intervals retain setbacks/annexes.
+    roof_intervals: tuple[tuple[float, float], ...] | None = None
+    facade_part_index: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def valid_profile(self):
@@ -157,6 +263,10 @@ class BuildingProjectionSample(Contract):
             raise ValueError("building projection must have positive angular height")
         if not self.lower_angle_degrees <= self.eaves_angle_degrees <= self.upper_angle_degrees:
             raise ValueError("building eaves must lie inside the projected silhouette")
+        if self.roof_intervals is not None:
+            for lower, upper in self.roof_intervals:
+                if not (self.lower_angle_degrees - .001 <= lower < upper <= self.upper_angle_degrees + .001):
+                    raise ValueError("measured roof interval must lie inside the projected silhouette")
         return self
 
 
@@ -166,6 +276,13 @@ class ProjectedBuilding(Contract):
     source_version: str | None = None
     confidence: float = Field(ge=0, le=1)
     orientation_degrees: float | None = Field(default=None, ge=0, lt=180)
+    roof_kind: Literal["known-pitched", "flat-or-unknown"] = "flat-or-unknown"
+    levels: int | None = Field(default=None, ge=1, le=100)
+    levels_source: str | None = None
+    registered_storeys: int | None = Field(default=None, ge=1, le=99)
+    registered_storeys_source: str | None = None
+    facade_parts: tuple[BuildingFacadePart, ...] = ()
+    facade_references: tuple[FacadeReference, ...] = ()
     samples: tuple[BuildingProjectionSample, ...]
 
 
@@ -221,6 +338,8 @@ class GeometryIdentity(Contract):
     algorithm_version: str = GEOMETRY_IMPLEMENTATION
     maximum_distance_meters: float = Field(default=150_000, gt=0)
     angular_resolution_degrees: float = Field(default=.1, gt=0)
+    minimum_elevation_angle: float = -32
+    maximum_elevation_angle: float = 58
     semantic_radius_meters: float = Field(default=20_000, gt=0)
     building_radius_meters: float = Field(default=2_000, gt=0)
 

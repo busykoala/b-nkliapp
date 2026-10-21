@@ -27,10 +27,13 @@ SEMANTIC_COLOURS = {
     SemanticClass.SETTLEMENT: (188, 137, 96),
     SemanticClass.BUILDING: (166, 86, 61),
     SemanticClass.UNKNOWN_TERRAIN: (137, 126, 147),
+    SemanticClass.PAVED_GROUND: (110, 139, 157),
+    SemanticClass.SURFACED_GROUND: (152, 123, 111),
 }
+_LEGACY_SEMANTICS = tuple(SemanticClass)[:10]
 LEGACY_IDS = {
-    round((index + 1) / len(SemanticClass) * 255): semantic
-    for index, semantic in enumerate(SemanticClass)
+    round((index + 1) / len(_LEGACY_SEMANTICS) * 255): semantic
+    for index, semantic in enumerate(_LEGACY_SEMANTICS)
 }
 
 

@@ -1,0 +1,370 @@
+{
+  "format": "benchly-panorama-artist-review",
+  "baseline": "test-results/panorama-review",
+  "pilotNumbers": [
+    2,
+    5,
+    7,
+    14,
+    15,
+    18
+  ],
+  "principles": [
+    "Muted earthy palette",
+    "Simplified but specific forms",
+    "Preserve factual geography and uncertainty",
+    "Purposeful marks and quiet viewing directions"
+  ],
+  "benches": [
+    {
+      "number": 1,
+      "id": "community-3ca05737-9a29-537c-aae3-ab2b9b11289b",
+      "name": "Cossonay",
+      "heading": 0,
+      "preserve": "Ochre and rose principal mass",
+      "improve": "Explain facade scale with source-supported structure",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 0
+    },
+    {
+      "number": 2,
+      "id": "community-3dc01695-17f0-4a9b-a961-d16f13f44520",
+      "name": "Platta",
+      "heading": 270,
+      "preserve": "Warm vertical landmark against green hills",
+      "improve": "Clarify measured top, base and opening rhythm",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 90,
+      "artistEvidence": {
+        "path": "test-results/panorama-review/community-3dc01695-17f0-4a9b-a961-d16f13f44520/clean-r0-c3.png",
+        "heading": 270,
+        "projection": {
+          "heading": 270,
+          "offset": -7848,
+          "top": -570,
+          "copyWidth": 4896,
+          "trackHeight": 1632,
+          "rasterHeight": 1224,
+          "zoom": 1,
+          "viewport": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 900
+          },
+          "clip": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 884
+          }
+        }
+      }
+    },
+    {
+      "number": 3,
+      "id": "community-50d95ccd-64cb-53f2-9f43-1b9910c0d8dd",
+      "name": "Lugnez",
+      "heading": 90,
+      "preserve": "Solitary warm building and quiet space",
+      "improve": "Improve ground relationship and verified identity; retain emptiness",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 90
+    },
+    {
+      "number": 4,
+      "id": "community-738a68c2-b641-5ae5-8c3d-d8682f730f42",
+      "name": "Grossaffoltern",
+      "heading": 45,
+      "preserve": "Small-to-large building progression",
+      "improve": "Separate principal buildings and organise ground plane",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 45
+    },
+    {
+      "number": 5,
+      "id": "osm-node-10942762655",
+      "name": "OSM 10942762655",
+      "heading": 330,
+      "preserve": "Cool counterpoints and valley opening",
+      "improve": "Verify blue semantics; clarify evidenced surface and shoreline",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 270,
+      "artistEvidence": {
+        "path": "test-results/panorama-review/osm-node-10942762655/clean-r0-c1.png",
+        "heading": 330,
+        "projection": {
+          "heading": 330,
+          "offset": -8664,
+          "top": -570,
+          "copyWidth": 4896,
+          "trackHeight": 1632,
+          "rasterHeight": 1224,
+          "zoom": 1,
+          "viewport": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 900
+          },
+          "clip": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 884
+          }
+        }
+      }
+    },
+    {
+      "number": 6,
+      "id": "osm-node-12710786178",
+      "name": "OSM 12710786178",
+      "heading": 180,
+      "preserve": "Green framing slope and warm settlement",
+      "improve": "Unequal foliage groups and quieter distant town",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 180
+    },
+    {
+      "number": 7,
+      "id": "osm-node-12945467215",
+      "name": "OSM 12945467215",
+      "heading": 135,
+      "preserve": "Rising mass and light-dark variation",
+      "improve": "Resolve staircase contour without inventing terrain",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 315,
+      "artistEvidence": {
+        "path": "test-results/panorama-review/osm-node-12945467215/clean-r0-c3.png",
+        "heading": 135,
+        "projection": {
+          "heading": 135,
+          "offset": -6012,
+          "top": -570,
+          "copyWidth": 4896,
+          "trackHeight": 1632,
+          "rasterHeight": 1224,
+          "zoom": 1,
+          "viewport": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 900
+          },
+          "clip": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 884
+          }
+        }
+      }
+    },
+    {
+      "number": 8,
+      "id": "osm-node-13713577262",
+      "name": "OSM 13713577262",
+      "heading": 225,
+      "preserve": "Restrained ochre and gentle landforms",
+      "improve": "Separate near, middle and distant slopes",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 225
+    },
+    {
+      "number": 9,
+      "id": "osm-node-3689643643",
+      "name": "Sion",
+      "heading": 180,
+      "preserve": "Ascending houses and summit accent",
+      "improve": "Describe plateau while retaining directional movement",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 180
+    },
+    {
+      "number": 10,
+      "id": "osm-node-4573435249",
+      "name": "OSM 4573435249",
+      "heading": 270,
+      "preserve": "Mountain ridge and resting valley view",
+      "improve": "Connect valley depth; balance architecture; diagnose ground gaps",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 270
+    },
+    {
+      "number": 11,
+      "id": "osm-node-473679626",
+      "name": "OSM 473679626",
+      "heading": 45,
+      "preserve": "Ochre mass against pale sky",
+      "improve": "Resolve fortress contour with source-derived rock planes",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 45
+    },
+    {
+      "number": 12,
+      "id": "osm-node-5859724001",
+      "name": "OSM 5859724001",
+      "heading": 180,
+      "preserve": "Minimal low horizon and calm",
+      "improve": "Unequal sky grouping without extra objects",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 180
+    },
+    {
+      "number": 13,
+      "id": "osm-node-6046386898",
+      "name": "OSM 6046386898",
+      "heading": 180,
+      "preserve": "Varied skyline and rose-ochre planes",
+      "improve": "Give tall landmark source-supported structure",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 180
+    },
+    {
+      "number": 14,
+      "id": "osm-node-645436489",
+      "name": "OSM 645436489",
+      "heading": 30,
+      "preserve": "Open blue sky and air",
+      "improve": "Quiet distant settlement; define nearest land",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 90,
+      "artistEvidence": {
+        "path": "test-results/panorama-review/osm-node-645436489/clean-r0-c5.png",
+        "heading": 30,
+        "projection": {
+          "heading": 30,
+          "offset": -4584,
+          "top": -570,
+          "copyWidth": 4896,
+          "trackHeight": 1632,
+          "rasterHeight": 1224,
+          "zoom": 1,
+          "viewport": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 900
+          },
+          "clip": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 884
+          }
+        }
+      }
+    },
+    {
+      "number": 15,
+      "id": "osm-node-693547093",
+      "name": "OSM 693547093",
+      "heading": 90,
+      "preserve": "Red roof rhythm and green hill",
+      "improve": "Unify bench and immediate landscape drawing language",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 90,
+      "artistEvidence": {
+        "path": "test-results/panorama-review/osm-node-693547093/clean-r0-c0.png",
+        "heading": 90,
+        "projection": {
+          "heading": 90,
+          "offset": -5400,
+          "top": -570,
+          "copyWidth": 4896,
+          "trackHeight": 1632,
+          "rasterHeight": 1224,
+          "zoom": 1,
+          "viewport": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 900
+          },
+          "clip": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 884
+          }
+        }
+      }
+    },
+    {
+      "number": 16,
+      "id": "osm-node-724971650",
+      "name": "OSM 724971650",
+      "heading": 0,
+      "preserve": "Readable gable and town opening",
+      "improve": "Separate building bases, ground and meaningful source features",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 0
+    },
+    {
+      "number": 17,
+      "id": "osm-node-767658293",
+      "name": "OSM 767658293",
+      "heading": 0,
+      "preserve": "Settlement rhythm along slope",
+      "improve": "Ground buildings and describe hillside structure",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 0
+    },
+    {
+      "number": 18,
+      "id": "osm-node-8068577652",
+      "name": "OSM 8068577652",
+      "heading": 180,
+      "preserve": "Asymmetric summit, pale rock and green shoulder",
+      "improve": "Directional rock planes and grouped vegetation",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 0,
+      "artistEvidence": {
+        "path": "test-results/panorama-review/osm-node-8068577652/clean-r0-c3.png",
+        "heading": 180,
+        "projection": {
+          "heading": 180,
+          "offset": -6624,
+          "top": -570,
+          "copyWidth": 4896,
+          "trackHeight": 1632,
+          "rasterHeight": 1224,
+          "zoom": 1,
+          "viewport": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 900
+          },
+          "clip": {
+            "x": 0,
+            "y": 16,
+            "width": 1440,
+            "height": 884
+          }
+        }
+      }
+    },
+    {
+      "number": 19,
+      "id": "osm-node-8911154098",
+      "name": "OSM 8911154098",
+      "heading": 45,
+      "preserve": "Enclosing masses and distance opening",
+      "improve": "Natural contours without losing enclosure",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 45
+    },
+    {
+      "number": 20,
+      "id": "osm-node-9159327028",
+      "name": "OSM 9159327028",
+      "heading": 225,
+      "preserve": "Warm village-to-valley sequence and red roofs",
+      "improve": "Separate houses from warm ground; articulate measured facade",
+      "referenceStatus": "Source geometry available; independent facade references not yet verified",
+      "recordedHeading": 225
+    }
+  ]
+}

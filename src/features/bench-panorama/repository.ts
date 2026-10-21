@@ -2,6 +2,7 @@ import "server-only";
 
 import { sqlite } from "@/db/client";
 import type { PanoramaDescriptor, PanoramaStatus } from "@/features/bench-panorama/types";
+import { panoramaRasterBounds } from "@/lib/panorama-scene";
 
 export type { PanoramaDescriptor, PanoramaStatus } from "@/features/bench-panorama/types";
 
@@ -16,6 +17,8 @@ export type PanoramaArtifact = {
   lightKey: string | null;
   materialKey: string | null;
   generationId: string;
+  minimumAltitude?: number | null;
+  maximumAltitude?: number | null;
 };
 
 export function readPanoramaArtifact(benchId: string): PanoramaArtifact | null {
@@ -24,6 +27,8 @@ export function readPanoramaArtifact(benchId: string): PanoramaArtifact | null {
     SELECT pr.artifact_path artifactPath,pr.render_key renderKey,pr.generated_at generatedAt,
       pr.source_completeness completeness,
       pr.material_key materialKey,pr.generation_id generationId,
+      json_extract(pg.source_versions_json,'$.minimum_elevation_angle') minimumAltitude,
+      json_extract(pg.source_versions_json,'$.maximum_elevation_angle') maximumAltitude,
       (SELECT light_key FROM bench_panorama_lightmaps pl
         WHERE pl.bench_row_id=b.row_id AND pl.geometry_key=pg.geometry_key
           AND pl.status='ready' AND pl.artifact_path IS NOT NULL
@@ -56,11 +61,16 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
     generatedAt: artifact.generatedAt,
     completeness: artifact.completeness,
     generationId: artifact.generationId,
+    rasterBounds: panoramaRasterBounds(artifact.minimumAltitude != null && artifact.maximumAltitude != null ? {
+      minimumAltitude: Number(artifact.minimumAltitude), maximumAltitude: Number(artifact.maximumAltitude),
+    } : undefined),
   };
   if (!BENCH_ID.test(benchId)) return { status: "unavailable" };
   const stale = sqlite.prepare(`
     SELECT pr.render_key renderKey,pr.generated_at generatedAt,pr.source_completeness completeness,
-      pr.material_key materialKey,pr.generation_id generationId
+      pr.material_key materialKey,pr.generation_id generationId,
+      json_extract(pg.source_versions_json,'$.minimum_elevation_angle') minimumAltitude,
+      json_extract(pg.source_versions_json,'$.maximum_elevation_angle') maximumAltitude
     FROM benches b
     JOIN bench_panorama_geometry pg ON pg.bench_row_id=b.row_id
     JOIN bench_panorama_renders pr ON pr.bench_row_id=b.row_id AND pr.geometry_key=pg.geometry_key
@@ -70,7 +80,7 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
       AND pr.status='ready' AND pr.horizontal_fov_degrees=360
       AND pr.artifact_format='webp' AND pr.artifact_path IS NOT NULL
     ORDER BY pr.generated_at DESC,pr.id DESC LIMIT 1
-  `).get(benchId) as Pick<PanoramaArtifact, "renderKey" | "generatedAt" | "completeness" | "materialKey" | "generationId"> | undefined;
+  `).get(benchId) as Pick<PanoramaArtifact, "renderKey" | "generatedAt" | "completeness" | "materialKey" | "generationId" | "minimumAltitude" | "maximumAltitude"> | undefined;
   const row = sqlite.prepare(`
     SELECT pg.status geometryStatus,
       EXISTS(SELECT 1 FROM bench_panorama_requests request WHERE request.bench_row_id=b.row_id) requested
@@ -86,6 +96,9 @@ export function readPanoramaDescriptor(benchId: string): PanoramaDescriptor {
     generatedAt: stale.generatedAt,
     completeness: stale.completeness,
     generationId: stale.generationId,
+    rasterBounds: panoramaRasterBounds(stale.minimumAltitude != null && stale.maximumAltitude != null ? {
+      minimumAltitude: Number(stale.minimumAltitude), maximumAltitude: Number(stale.maximumAltitude),
+    } : undefined),
     retryAfterMs: 1_000,
   };
   if (row.requested || row.geometryStatus === "generating" || row.geometryStatus === "stale") {

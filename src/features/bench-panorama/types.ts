@@ -10,4 +10,5 @@ export type PanoramaDescriptor = {
   completeness?: "complete" | "partial";
   retryAfterMs?: number;
   generationId?: string;
+  rasterBounds?: import("@/lib/panorama-scene").PanoramaRasterBounds;
 };

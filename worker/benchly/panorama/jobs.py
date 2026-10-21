@@ -23,6 +23,7 @@ from benchly.panorama.datasets import (
     load_buildings,
     load_semantic_index,
     raster_source_version,
+    refine_building_contact_rays,
     sample_terrain_rays,
 )
 from benchly.panorama.ground_elevation import resolve_ground_elevation
@@ -119,14 +120,21 @@ def panorama_batch_job(args: Namespace) -> None:
         swissbuildings_version = _optional_database_version(database, "swissBUILDINGS3D")
         semantic_version = f"tlm:{tlm_version}:osm:{osm_version}"
         building_version = f"swiss:{swissbuildings_version or 'absent'}:tlm:{tlm_version}:osm:{osm_version}"
+        for source, label in (("BFS-GWR", "gwr"), ("benchly-facade-references", "facades")):
+            reference_version = _optional_database_version(database, source)
+            if reference_version:
+                building_version += f":{label}:{reference_version}"
         config = PanoramaConfig(
             angular_resolution_degrees=args.angular_resolution,
+            maximum_elevation_angle=getattr(args, "maximum_elevation_angle", 58),
             maximum_distance_meters=args.maximum_distance_meters,
             local_terrain_distance_meters=args.local_terrain_distance_meters,
         )
         now = datetime.now(UTC)
         season = _season(now)
         source_versions = {
+            "minimum_elevation_angle": f"{config.minimum_elevation_angle:g}",
+            "maximum_elevation_angle": f"{config.maximum_elevation_angle:g}",
             "terrain": terrain_version,
             "near_terrain": near_terrain_version or "absent",
             "regional_terrain": regional_terrain_version or "absent",
@@ -149,7 +157,7 @@ def panorama_batch_job(args: Namespace) -> None:
             source_versions,
             RENDER_IMPLEMENTATION,
             args.preview_width,
-            args.preview_height,
+            args.preview_height or round(args.preview_width * (config.maximum_elevation_angle - config.minimum_elevation_angle) / 360),
             "dynamic",
             args.limit,
             getattr(args, "shard_index", 0),
@@ -190,6 +198,8 @@ def panorama_batch_job(args: Namespace) -> None:
                 angular_resolution_degrees=config.angular_resolution_degrees,
                 semantic_radius_meters=args.semantic_radius_meters,
                 building_radius_meters=args.building_radius_meters,
+                minimum_elevation_angle=config.minimum_elevation_angle,
+                maximum_elevation_angle=config.maximum_elevation_angle,
             )
             key = geometry_cache_key(identity)
             mark_generating(database, row, key, source_versions, generation_id)
@@ -219,6 +229,10 @@ def panorama_batch_job(args: Namespace) -> None:
                         database, float(row["latitude"]), float(row["longitude"]), terrain, args.building_radius_meters)
                     stats["building_seconds"] += time.perf_counter() - started
                     started = time.perf_counter()
+                    rays = refine_building_contact_rays(rays, buildings, float(row["latitude"]),
+                        float(row["longitude"]), terrain, config, semantic_index)
+                    stats["terrain_seconds"] += time.perf_counter() - started
+                    started = time.perf_counter()
                     geometry = build_panorama_geometry(identity, rays, buildings, (
                         SourceEvidence(source="swissALTI3D", version=terrain_version, confidence=1),
                         *(() if regional_terrain_version is None else (
@@ -247,7 +261,7 @@ def panorama_batch_job(args: Namespace) -> None:
                     center_azimuth_degrees=0,
                     horizontal_fov_degrees=360,
                     width=args.preview_width,
-                    height=args.preview_height,
+                    height=args.preview_height or round(args.preview_width * (config.maximum_elevation_angle - config.minimum_elevation_angle) / 360),
                     season_bucket="dynamic",
                     source_completeness=geometry.complete,
                 )

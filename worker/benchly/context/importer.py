@@ -17,6 +17,7 @@ from benchly.context.repository import (
 )
 from benchly.benches.domain import parse_height
 from benchly.context.geometry import (
+    WGS84_TO_LV95,
     building_footprint_wkb_from_geojson,
     classify_official_layer,
     feature_bounds_wgs84,
@@ -50,6 +51,34 @@ def _property_number(properties: dict, *tokens: str) -> Optional[float]:
     return None
 
 
+def _measured_roof_faces(geometry: dict, eaves: float | None) -> list:
+    """Retain real roof planes from the solid, excluding floors/vertical walls."""
+    if eaves is None or geometry.get("type") not in {"Polygon", "MultiPolygon"}:
+        return []
+    polygons = [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
+    result = []
+    for polygon in polygons:
+        ring = polygon[0]
+        if len(ring) < 4 or any(len(point) < 3 for point in ring):
+            continue
+        vertices = []
+        for point in ring[:-1]:
+            if not all(math.isfinite(value) for value in point[:3]):
+                break
+            east, north = WGS84_TO_LV95.transform(*point[:2])
+            vertices.append((round(east, 3), round(north, 3), round(point[2], 3)))
+        else:
+            for second, third in zip(vertices[1:], vertices[2:]):
+                face = (vertices[0], second, third)
+                # Building_solid is triangulated. Nonvertical upper faces are
+                # roof evidence; floor and wall triangles must not become roofs.
+                area = abs((second[0] - face[0][0]) * (third[1] - face[0][1]) -
+                           (second[1] - face[0][1]) * (third[0] - face[0][0]))
+                if area > .02 and min(point[2] for point in face) >= eaves - .5:
+                    result.append(face)
+    return result if len(result) <= 4096 else []
+
+
 def import_swissbuildings_gdb(connection: sqlite3.Connection, geodatabase: Path,
                               source_version: str, imported_at: str, source_prefix: str = "archive") -> dict[str, int]:
     layers = [layer for layer in geopackage_layers(geodatabase) if "building_solid" in layer.lower()]
@@ -68,7 +97,7 @@ def import_swissbuildings_gdb(connection: sqlite3.Connection, geodatabase: Path,
     for layer in layers:
         # Building solids are TINs; GeoJSON cannot represent them directly.
         # Keep the triangular faces and their Z coordinates for footprint/height.
-        for offset, feature in enumerate(iter_layer_features(geodatabase, layer, geometry_type="MULTIPOLYGON")):
+        for offset, feature in enumerate(iter_layer_features(geodatabase, layer, geometry_type="MULTIPOLYGONZ")):
             geometry_json = feature.get("geometry")
             properties = feature.get("properties") or {}
             if not geometry_json:
@@ -83,15 +112,29 @@ def import_swissbuildings_gdb(connection: sqlite3.Connection, geodatabase: Path,
             if max_lat < 45.7 or min_lat > 47.9 or max_lon < 5.7 or min_lon > 10.7:
                 continue
             heights = _geometry_z_values(geometry_json.get("coordinates"))
-            ground = min(heights) if heights else _property_number(properties, "boden", "kote")
-            roof = max(heights) if heights else (_property_number(properties, "dach", "max") or _property_number(properties, "max", "kote"))
+            # The solid may extend below the terrain into a basement. Official
+            # terrain/roof attributes share the source height datum and take
+            # precedence over its extrema.
+            ground = _property_number(properties, "gelaende", "punkt")
+            if ground is None:
+                ground = _property_number(properties, "boden", "kote")
+            if ground is None and heights:
+                ground = min(heights)
+            roof = _property_number(properties, "dach", "max")
+            if roof is None:
+                roof = max(heights) if heights else _property_number(properties, "max", "kote")
             eaves = _property_number(properties, "dach", "min") or _property_number(properties, "trauf")
+            if eaves is not None and ((ground is not None and eaves < ground) or (roof is not None and eaves > roof)):
+                eaves = None
             height = roof - ground if roof is not None and ground is not None else _property_number(properties, "gebaude", "hohe")
             if height is not None and not 1.5 <= height <= 300:
                 height = None
             source_id_value = feature.get("id") or properties.get("EGID") or properties.get("egid") or properties.get("UUID") or properties.get("uuid") or offset
             source_id = f"{source_prefix}:{layer}:{source_id_value}"
             compact_tags = {str(key): value for key, value in properties.items() if str(key).lower() in {"egid", "uuid", "objektart", "objecttype", "name"}}
+            roof_faces = _measured_roof_faces(geometry_json, eaves)
+            if roof_faces:
+                compact_tags["benchly:roof_mesh"] = {"version": 1, "crs": 2056, "faces": roof_faces}
             batch.append({
                 "source": "swissBUILDINGS3D",
                 "source_id": source_id,

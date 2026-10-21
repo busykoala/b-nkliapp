@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 
 from benchly.panorama.cache import geometry_cache_key, render_cache_key
+from benchly.panorama.binary import encode_geometry, decode_geometry
 from benchly.panorama.models import (
     BuildingProjectionSample,
     BuildingGeometry,
@@ -17,12 +18,13 @@ from benchly.panorama.models import (
     SemanticClass,
     TerrainRay,
     TerrainSample,
+    VisibleSpan,
 )
-from benchly.panorama.visibility import build_panorama_geometry, curvature_drop
+from benchly.panorama.visibility import build_panorama_geometry, curvature_drop, _compose_spans
 from benchly.panorama.watercolor import (
     _building_runs, _heal_water_wrap_cusp, _paint_buildings, _paint_measured_slope_volume,
     _paint_mountain_facets, _paint_water_details,
-    _periodic_pigment, _soften_narrow_water_view, _surface_masks, render_lightmap_webp, render_panorama_webp,
+    _periodic_pigment, _surface_masks, render_lightmap_webp, render_panorama_webp,
 )
 
 
@@ -38,29 +40,30 @@ IDENTITY = GeometryIdentity(
 )
 
 
-def test_narrow_water_ray_is_a_wash_but_broad_lake_and_wrap_are_preserved():
+def test_narrow_water_and_broad_lake_retain_their_source_coverage_at_wrap():
     mask = Image.new("L", (200, 80))
     draw = ImageDraw.Draw(mask)
     draw.rectangle((30, 20, 34, 79), fill=255)
     draw.rectangle((100, 20, 170, 79), fill=255)
     draw.rectangle((198, 20, 199, 79), fill=255)
     draw.rectangle((0, 20, 2, 79), fill=255)
-    softened = _soften_narrow_water_view(mask)
-    assert 0 < softened.getpixel((32, 65)) < 255
+    softened = _surface_masks({(SemanticClass.WATER, 0): mask})[SemanticClass.WATER]
+    assert softened.getpixel((32, 65)) > 150
     assert softened.getpixel((130, 65)) == 255
-    assert 0 < softened.getpixel((0, 65)) < 255
+    assert softened.getpixel((0, 65)) > 150
 
 
-def test_narrow_snow_chute_fades_into_connected_mountain_but_broad_snow_remains():
-    rock = Image.new("L", (200, 80), 255)
-    snow = Image.new("L", (200, 80))
-    ImageDraw.Draw(rock).rectangle((30, 10, 34, 79), fill=0)
-    ImageDraw.Draw(snow).rectangle((30, 10, 34, 79), fill=255)
-    ImageDraw.Draw(snow).rectangle((110, 10, 170, 79), fill=255)
+def test_mapped_snow_does_not_fade_with_screen_height_or_invent_rock_inside_it():
+    rock = Image.new("L", (1440, 480), 255)
+    snow = Image.new("L", rock.size)
+    ImageDraw.Draw(rock).rectangle((200, 100, 279, 479), fill=0)
+    ImageDraw.Draw(snow).rectangle((200, 100, 279, 479), fill=255)
+    ImageDraw.Draw(snow).rectangle((800, 100, 1200, 479), fill=255)
     surfaces = _surface_masks({(SemanticClass.ROCK, 0): rock, (SemanticClass.SNOW_OR_GLACIER, 0): snow})
-    assert surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((32, 20)) > surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((32, 70))
-    assert surfaces[SemanticClass.ROCK].getpixel((32, 60)) > 100
-    assert surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((140, 60)) > 200
+    assert abs(surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((240, 200)) -
+               surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((240, 350))) <= 1
+    assert surfaces[SemanticClass.ROCK].getpixel((240, 350)) < 5
+    assert surfaces[SemanticClass.SNOW_OR_GLACIER].getpixel((1000, 350)) > 250
 
 
 def rays(samples_by_direction=None):
@@ -75,6 +78,33 @@ def test_flat_terrain_forms_a_complete_circular_surface():
     assert result.complete
     assert len(result.columns) == 4
     assert all(column.spans[0].semantic == SemanticClass.OPEN_GRASSLAND for column in result.columns)
+
+
+def test_depth_intersections_do_not_emit_zero_height_float32_capsule_slices():
+    geometry = build_panorama_geometry(IDENTITY, rays(), config=CONFIG)
+    spans = _compose_spans([
+        VisibleSpan(lower_angle_degrees=0, upper_angle_degrees=32, distance_meters=100,
+            semantic=SemanticClass.OPEN_GRASSLAND, source="fixture", confidence=1),
+        VisibleSpan(lower_angle_degrees=32.0000002, upper_angle_degrees=32.0000006, distance_meters=101,
+            semantic=SemanticClass.ROCK, source="fixture", confidence=1),
+    ])
+    columns = tuple(column.model_copy(update={"spans":spans, "skyline_angle_degrees":32}) for column in geometry.columns)
+    restored = decode_geometry(encode_geometry(geometry.model_copy(update={"columns":columns})))
+    assert len(restored.columns[0].spans) == 1
+    assert restored.columns[0].spans[0].upper_angle_degrees == 32
+
+
+def test_unrepresentable_gap_does_not_split_a_facade_but_real_occlusion_remains():
+    wall = VisibleSpan(lower_angle_degrees=-8, upper_angle_degrees=62.8, distance_meters=6.196,
+        semantic=SemanticClass.BUILDING, source="fixture", confidence=1, object_id="wall")
+    tiny = VisibleSpan(lower_angle_degrees=1.4940432, upper_angle_degrees=1.4940438, distance_meters=5,
+        semantic=SemanticClass.OPEN_GRASSLAND, source="fixture", confidence=1)
+    visible = _compose_spans([wall,tiny])
+    assert len(visible) == 1
+    assert visible[0].lower_angle_degrees == -8 and visible[0].upper_angle_degrees == 62.8
+    actual = _compose_spans([wall,tiny.model_copy(update={"upper_angle_degrees":2.5})])
+    assert len(actual) == 3
+    assert [span.semantic for span in actual] == [SemanticClass.BUILDING,SemanticClass.OPEN_GRASSLAND,SemanticClass.BUILDING]
 
 
 def test_near_ridge_hides_a_lower_distant_ridge_but_retains_visible_layers():
@@ -315,7 +345,7 @@ def test_water_wrap_heals_a_dark_cusp_without_changing_land():
     assert tuple(corrected[30, 0]) == (90, 130, 160)
 
 
-def test_narrow_canopy_gap_becomes_dappled_but_wide_clearing_stays_open():
+def test_narrow_and_wide_mapped_clearings_remain_visible():
     forest = Image.new("L", (360, 120), 255)
     grass = Image.new("L", forest.size)
     for left, right in ((90, 92), (200, 250)):
@@ -323,8 +353,8 @@ def test_narrow_canopy_gap_becomes_dappled_but_wide_clearing_stays_open():
         ImageDraw.Draw(grass).rectangle((left, 40, right, 100), fill=255)
     result = _surface_masks({(SemanticClass.FOREST, 0): forest,
                              (SemanticClass.OPEN_GRASSLAND, 0): grass})
-    assert result[SemanticClass.FOREST].getpixel((91, 70)) > 200
-    assert result[SemanticClass.OPEN_GRASSLAND].getpixel((91, 70)) < 80
+    assert result[SemanticClass.FOREST].getpixel((91, 70)) < 200
+    assert result[SemanticClass.OPEN_GRASSLAND].getpixel((91, 70)) > 80
     assert result[SemanticClass.FOREST].getpixel((225, 70)) < 30
     assert result[SemanticClass.OPEN_GRASSLAND].getpixel((225, 70)) > 200
 
@@ -383,7 +413,7 @@ def test_near_facade_occludes_green_forest_wash():
                       for delta in (0, 1, 2, 3, 4)),
     ),)})
     canvas = Image.new("RGB", (720, 240), (32, 133, 58))
-    _building, _samples, walls, _roof = next(_building_runs(geometry, 720, 240))
+    _building, _samples, walls, _roof, _distance = next(_building_runs(geometry, 720, 240))
     _paint_buildings(canvas, geometry, 7, Image.new("L", canvas.size, 128))
     pixels = np.asarray(canvas)
     left = max(0, math.floor(min(x for x, _y in walls)))

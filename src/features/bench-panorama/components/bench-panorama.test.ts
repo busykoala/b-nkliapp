@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { clampPanoramaVertical, moonLightPath, panoramaBenchShadow, panoramaCelestialTop, panoramaMaterialIsSky, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "@/features/bench-panorama/components/bench-panorama";
-import { panoramaHasSnowCover, panoramaMaximumPitch, panoramaProjection, precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
+import { clampPanoramaVertical, moonLightPath, panoramaCelestialTop, panoramaMaterialIsSky, panoramaPollDelay, panoramaShadowContrast, panoramaTrackOffset, panoramaWrappedPositions } from "@/features/bench-panorama/components/bench-panorama";
+import { panoramaHasSnowCover, panoramaMaximumPitch, panoramaProjection, panoramaRasterBounds, precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
 
 describe("360 degree panorama track", () => {
   it("checks a cold painting promptly, then backs off without ignoring error retries", () => {
@@ -45,6 +45,17 @@ describe("360 degree panorama track", () => {
     expect(rest.top).toBeCloseTo(-316.6667);
     expect(zenith.top).toBeCloseTo(0);
     expect(zenith.pitch).toBeCloseTo(panoramaMaximumPitch(500));
+  });
+
+  it("keeps camera angles stable when newer artwork extends through the upper sky", () => {
+    const legacy = panoramaProjection(1440, 900, 270, 20);
+    const extended = panoramaProjection(1440, 900, 270, 20, 1, { minimumAltitude: -32, maximumAltitude: 88 });
+    expect(extended.copyWidth).toBe(legacy.copyWidth);
+    expect(extended.top).toBe(legacy.top);
+    expect(extended.rasterHeight).toBeCloseTo(legacy.rasterHeight * 120 / 90);
+    expect(extended.rasterBottom).toBe(0);
+    expect(panoramaRasterBounds()).toEqual({ minimumAltitude: -32, maximumAltitude: 58 });
+    expect(panoramaRasterBounds({ minimumAltitude: -90, maximumAltitude: 180 })).toEqual(panoramaRasterBounds());
   });
 
   it("scales deterministic precipitation with area, rate and explicit bounds", () => {
@@ -94,13 +105,6 @@ describe("panorama light", () => {
     expect(waxingQuarter).not.toBe(waningQuarter);
     expect(waxingQuarter).toContain("L 42.00 24.00");
     expect(waningQuarter).toContain("L 6.00 24.00");
-  });
-
-  it("projects a longer bench shadow away from a low sun", () => {
-    const low = panoramaBenchShadow(90, 6, 90);
-    const high = panoramaBenchShadow(90, 60, 90);
-    expect(low.turnDegrees).toBe(-180);
-    expect(low.lengthPercent).toBeGreaterThan(high.lengthPercent);
   });
 
   it("softens directional shadow contrast as cloud cover closes", () => {

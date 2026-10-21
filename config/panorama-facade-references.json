@@ -1,0 +1,869 @@
+{
+  "version": 1,
+  "crs": 2056,
+  "references": [
+    {
+      "number": 15,
+      "buildingSource": "swissBUILDINGS3D",
+      "buildingSourceId": "swissbuildings3d_3_0_2021_1291-24:Building_solid:{5D3FECD7-BAEB-4AEC-ADC7-D97E17F94043}",
+      "buildingSha256": "253b9fc6e6f9378288db1577cedc482be274b4e10c46908bd6c5e9506eb9f83d",
+      "photoPath": "data/panorama-artist-review/facade-references/15-piazza-2021-01.jpg",
+      "attribution": "SchmalspurDVZO, 2021 a Cevio sulla Piazza 01, 26 May 2021, Wikimedia Commons",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "bindingEvidence": [
+        {
+          "url": "https://cevio.ch/cultura/attivita-e-siti-culturali/cevio-pretorio/",
+          "fact": "Municipality identifies the square-facing Pretorio and its three-storey quadrangular mass at 46.31639, 8.60139."
+        },
+        {
+          "path": "data/panorama-artist-review/facade-references/15-aerial.jpg",
+          "fact": "West row, south end: matching measured east face and roof; photograph 01 shows five columns across three opening tiers, with a central entrance."
+        }
+      ],
+      "groundEvidence": {
+        "source": "swissALTI3D 2 m cached terrain",
+        "coordinatesLV95": [
+          [
+            2689565.168,
+            1130097.937
+          ],
+          [
+            2689567.596,
+            1130112.699
+          ]
+        ],
+        "sampleElevationMeters": [
+          419.800344843951,
+          419.036279127475
+        ],
+        "interpolation": "bilinear"
+      },
+      "limitations": [
+        "Opening positions are approximate normalized readings of a 2021 oblique photo, not a facade survey.",
+        "The source mesh establishes wall extent and eave height, not opening coordinates.",
+        "Historic coats of arms, fence, flag and hardware are omitted; this pass addresses structural scale.",
+        "This reference belongs to the west-side Pretorio; never transfer it to the east-side E5CA2556 terrace."
+      ],
+      "face": {
+        "reference_id": "cevio-pretorio-east-20210526",
+        "source_url": "https://commons.wikimedia.org/wiki/File:2021_a_Cevio_sulla_Piazza_01.jpg",
+        "photo_sha256": "3c07dd83dc0ba8ef5cbf8eb972cb1b307a03c676e4b8cceeb0fe1ed1a1279f10",
+        "observed_at": "2021-05-26",
+        "confidence": "medium",
+        "description": "Verified Pretorio east facade facing the square. Five observed opening columns across three tiers; central ground entrance. Approximate illustrative placement, preserving measured eaves and ground. Frescoes omitted. Ground windows retain raised sills; only the central entrance reaches ground.",
+        "wall_tone": "chalk",
+        "start": [
+          2689565.168,
+          1130097.937,
+          419.800344843951,
+          428.733
+        ],
+        "end": [
+          2689567.596,
+          1130112.699,
+          419.036279127475,
+          428.733
+        ],
+        "marks": [
+          {
+            "kind": "opening",
+            "bounds": [
+              0.09,
+              0.37,
+              0.18,
+              0.61
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.27,
+              0.37,
+              0.36,
+              0.61
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.455,
+              0.37,
+              0.545,
+              0.61
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.64,
+              0.37,
+              0.73,
+              0.61
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.82,
+              0.37,
+              0.91,
+              0.61
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.09,
+              0.75,
+              0.18,
+              0.96
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.27,
+              0.75,
+              0.36,
+              0.96
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.455,
+              0.75,
+              0.545,
+              0.96
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.64,
+              0.75,
+              0.73,
+              0.96
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.82,
+              0.75,
+              0.91,
+              0.96
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.09,
+              0.105,
+              0.18,
+              0.29
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.27,
+              0.105,
+              0.36,
+              0.29
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.64,
+              0.105,
+              0.73,
+              0.29
+            ]
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.82,
+              0.105,
+              0.91,
+              0.29
+            ]
+          },
+          {
+            "kind": "entrance",
+            "bounds": [
+              0.45,
+              0,
+              0.55,
+              0.3
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "number": 3,
+      "buildingSource": "swissBUILDINGS3D",
+      "buildingSourceId": "swissbuildings3d_3_0_2023_1065-32:Building_solid:191960767",
+      "buildingSha256": "4e2d0d14b7baadc8f478237e40c239354c8e9be91d105a5fab9064ff1d9e8062",
+      "photoPath": "data/panorama-artist-review/facade-references/03-chapel-2026-ne.jpg",
+      "attribution": "Zwantzig, Imier 20260725 140059, 25 July 2026, Wikimedia Commons",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "bindingEvidence": [
+        {
+          "url": "https://www.cath-ajoie.ch/cathajoie/Eau-Vive/Eglises-et-lieux-de-priere/Chapelle-de-Saint-Imier-Lugnez/Chapelle-de-Saint-Imier-Lugnez.html",
+          "fact": "Parish identifies the Saint-Imier chapel near Lugnez. Its approximate map position is contextual, not used as a facade anchor."
+        },
+        {
+          "path": "data/panorama-artist-review/facade-references/03-chapel-2026-ne.jpg",
+          "fact": "Photographer identifies the north face; measured elongated east-west footprint and matching gable/roof distinguish this chapel. Source solid has registered EGID 191960767 and object type Kapelle."
+        },
+        {
+          "path": "data/panorama-artist-review/facade-references/03-chapel-2016.jpg",
+          "fact": "Independent 2016 exterior corroborates the three-opening side-wall rhythm and the small east-gable oculus. No east-gable reference is adopted because it faces away from this bench."
+        }
+      ],
+      "groundEvidence": {
+        "source": "swissALTI3D 2 m cached terrain",
+        "path": "data/terrain-cache-v1/swissalti3d/cc0c156024faa263-swissalti3d_2024_2574-1259_2_2056_5728.tif",
+        "sha256": "afcc641c78277933c6f5ba0d117bdb387fd2d0365e1e1458ba9999de2e1b3547",
+        "coordinatesLV95": [
+          [
+            2574857.053,
+            1259847.353
+          ],
+          [
+            2574843.76,
+            1259846.446
+          ]
+        ],
+        "sampleElevationMeters": [
+          430.52242114619685,
+          430.51977364369134
+        ],
+        "interpolation": "bilinear"
+      },
+      "limitations": [
+        "Opening bounds are approximate interpretations of dated oblique photographs, not surveyed coordinates.",
+        "Measured roof vertices and DEM ground constrain the wall; colour is a muted reading of the photographed pale plaster.",
+        "The small entrance porch, roof belfry, freestanding lime trees, sign, stone surround and hardware are not present in the measured projection and are omitted. This is a limited facade refinement, not acceptance of the complete site representation.",
+        "No detail is transferred to another face or another building. The partly obscured west gable does not establish unseen upper openings."
+      ],
+      "face": {
+        "reference_id": "lugnez-saint-imier-north-20260725",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Imier_20260725_140059.jpg",
+        "photo_sha256": "e614297ece9d91a991049261026b1d0db968dea0fe428b976ecdf34fe1c9b561",
+        "observed_at": "2026-07-25",
+        "confidence": "medium",
+        "description": "One circular opening towards the east end and two tall round-arched windows towards the west. Bounds read through an approximate four-corner rectification of the dated north-wall photo.",
+        "wall_tone": "chalk",
+        "start": [
+          2574857.053,
+          1259847.353,
+          430.52242114619685,
+          435.471
+        ],
+        "end": [
+          2574843.76,
+          1259846.446,
+          430.51977364369134,
+          435.519
+        ],
+        "marks": [
+          {
+            "kind": "opening",
+            "shape": "ellipse",
+            "bounds": [
+              0.16,
+              0.634,
+              0.217,
+              0.816
+            ]
+          },
+          {
+            "kind": "opening",
+            "shape": "round-arch",
+            "bounds": [
+              0.491,
+              0.35,
+              0.543,
+              0.821
+            ]
+          },
+          {
+            "kind": "opening",
+            "shape": "round-arch",
+            "bounds": [
+              0.758,
+              0.342,
+              0.797,
+              0.823
+            ]
+          }
+        ]
+      },
+      "photoInterpretation": {
+        "nativePhotoSize": [
+          4000,
+          3000
+        ],
+        "approximateWallCornersPixels": [
+          [
+            1373,
+            1654
+          ],
+          [
+            2050,
+            1670
+          ],
+          [
+            2050,
+            1965
+          ],
+          [
+            1366,
+            2045
+          ]
+        ],
+        "cornerUV": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "darkOpeningBoundsPixels": [
+          [
+            1508,
+            1725,
+            1553,
+            1791
+          ],
+          [
+            1752,
+            1723,
+            1785,
+            1879
+          ],
+          [
+            1918,
+            1722,
+            1940,
+            1871
+          ]
+        ],
+        "method": "Four-point projective reading, rounded normalized bounds; photographic interpretation confidence medium."
+      }
+    },
+    {
+      "number": 3,
+      "buildingSource": "swissBUILDINGS3D",
+      "buildingSourceId": "swissbuildings3d_3_0_2023_1065-32:Building_solid:191960767",
+      "buildingSha256": "4e2d0d14b7baadc8f478237e40c239354c8e9be91d105a5fab9064ff1d9e8062",
+      "photoPath": "data/panorama-artist-review/facade-references/03-chapel-2026-nw.jpg",
+      "attribution": "Zwantzig, Imier 20260725 140154, 25 July 2026, Wikimedia Commons",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "bindingEvidence": [
+        {
+          "url": "https://www.cath-ajoie.ch/cathajoie/Eau-Vive/Eglises-et-lieux-de-priere/Chapelle-de-Saint-Imier-Lugnez/Chapelle-de-Saint-Imier-Lugnez.html",
+          "fact": "Parish identifies the Saint-Imier chapel near Lugnez. Its approximate map position is contextual, not used as a facade anchor."
+        },
+        {
+          "path": "data/panorama-artist-review/facade-references/03-chapel-2026-nw.jpg",
+          "fact": "Photographer identifies the west face; measured elongated east-west footprint and matching gable/roof distinguish this chapel. Source solid has registered EGID 191960767 and object type Kapelle."
+        },
+        {
+          "path": "data/panorama-artist-review/facade-references/03-chapel-2016.jpg",
+          "fact": "Independent 2016 exterior corroborates the three-opening side-wall rhythm and the small east-gable oculus. No east-gable reference is adopted because it faces away from this bench."
+        }
+      ],
+      "groundEvidence": {
+        "source": "swissALTI3D 2 m cached terrain",
+        "path": "data/terrain-cache-v1/swissalti3d/cc0c156024faa263-swissalti3d_2024_2574-1259_2_2056_5728.tif",
+        "sha256": "afcc641c78277933c6f5ba0d117bdb387fd2d0365e1e1458ba9999de2e1b3547",
+        "coordinatesLV95": [
+          [
+            2574843.76,
+            1259846.446
+          ],
+          [
+            2574844.038,
+            1259840.48
+          ]
+        ],
+        "sampleElevationMeters": [
+          430.51977364369134,
+          430.0377099853562
+        ],
+        "interpolation": "bilinear"
+      },
+      "limitations": [
+        "Opening bounds are approximate interpretations of dated oblique photographs, not surveyed coordinates.",
+        "Measured roof vertices and DEM ground constrain the wall; colour is a muted reading of the photographed pale plaster.",
+        "The small entrance porch, roof belfry, freestanding lime trees, sign, stone surround and hardware are not present in the measured projection and are omitted. This is a limited facade refinement, not acceptance of the complete site representation.",
+        "No detail is transferred to another face or another building. The partly obscured west gable does not establish unseen upper openings."
+      ],
+      "face": {
+        "reference_id": "lugnez-saint-imier-west-20260725",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Imier_20260725_140154.jpg",
+        "photo_sha256": "8dafb02dec9dfef3c12c06f9608ad012963fd78595e50ecd6de510a26bc88ec0",
+        "observed_at": "2026-07-25",
+        "confidence": "medium",
+        "description": "One central round-arched west entrance, visible beneath the photographed porch. Approximate scale and position within the measured wall; no unseen openings inferred.",
+        "wall_tone": "chalk",
+        "start": [
+          2574843.76,
+          1259846.446,
+          430.51977364369134,
+          435.519
+        ],
+        "end": [
+          2574844.038,
+          1259840.48,
+          430.0377099853562,
+          435.288
+        ],
+        "marks": [
+          {
+            "kind": "entrance",
+            "shape": "round-arch",
+            "bounds": [
+              0.41,
+              0,
+              0.59,
+              0.48
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "number": 20,
+      "buildingSource": "swissBUILDINGS3D",
+      "buildingSourceId": "swissbuildings3d_3_0_2022_1298-44:Building_solid:{F61BF5A9-E831-45F5-A33B-7B555A60CD65}",
+      "buildingSha256": "b09475a49eb0e9290edcb29dbd9802a1b4c5eae78568e0d8b5be0e41a5247677",
+      "photoPath": "data/panorama-artist-review/facade-references/20-brusio-municipal.jpg",
+      "attribution": "Comune di Brusio, municipal churches gallery; photographer and capture date unestablished",
+      "bindingEvidence": [
+        {
+          "path": "data/panorama-artist-review/facade-references/20-station-05.jpg",
+          "fact": "Dated2018 exterior shows the large round-arched recess on the NE gable; matching roof form and NW tower identify the measured sacred building."
+        },
+        {
+          "url": "https://www.brusio.ch/cultura-e-tempo-libero/chiese",
+          "imageUrl": "https://www.brusio.ch/images/Gallerie/Galleria_Chiese/4_campocologno.JPG",
+          "fact": "Primary municipal frontal photograph independently confirms the arch and plaster recess. Its capture date/reuse license are unknown; this image remains an analysis reference and is not redistributed in the review package."
+        },
+        {
+          "path": "test-results/panorama-artist-review/principal-building-audit-v1/20-projection-preflight-v2.json",
+          "fact": "Correct true-north projection confirms source wall ownership. Earlier grid-subtraction preflight is superseded; source bounds/eaves/DEM ground verified separately."
+        },
+        {
+          "url": "https://www.brusio.ch/cultura-e-tempo-libero/chiese",
+          "imageUrl": "https://www.brusio.ch/images/Gallerie/Galleria_Chiese/4_campocologno.JPG",
+          "fact": "Native frontal municipal photograph inspected: structural pale vertical/horizontal bars and two narrow lower lights inside the bound NEgable recess. Approximate illustrative normalized bounds only. This source has no established capture date."
+        }
+      ],
+      "groundEvidence": {
+        "source": "swissALTI3D 2m cached terrain",
+        "path": "data/terrain-cache-v1/swissalti3d/74f717741cab927a-swissalti3d_2023_2808-1123_2_2056_5728.tif",
+        "sha256": "a060e72c0782cdb547a5c462be6a3631c3e12d892b836245615d424482603e3e",
+        "coordinatesLV95": [
+          [
+            2808480.202,
+            1123750.955
+          ],
+          [
+            2808472.2,
+            1123761.927
+          ]
+        ],
+        "sampleElevationMeters": [
+          562.2694702148438,
+          562.2079467773438
+        ],
+        "interpolation": "bilinear at raster pixel centres"
+      },
+      "limitations": [
+        "All arch/window/cross bounds are approximate photographic readings, not a measured survey.",
+        "The dated2018photo independently establishes the same broad arch and building identity, but does not establish its obscured contents.",
+        "The municipal frontal photograph establishes the adopted structural cross and two lights; its capture date, photographer and reuse licence remain unknown. Use links only; do not redistribute it.",
+        "Porch, arcades, ornament, rooftop symbols, tower clocks and unseen details are omitted; measured geometry/occlusion remain authoritative.",
+        "No feature is transferred to the SElong side. Its supported facade identity and whole20artistic outcome remain unresolved."
+      ],
+      "face": {
+        "reference_id": "campocologno-ne-gable-structure-municipal-undated",
+        "source_url": "https://www.brusio.ch/cultura-e-tempo-libero/chiese",
+        "photo_sha256": "ff9c70e2026e7eba132513a7cffaf4101c27675ee9dbd5e1b4ee5fc24c34981b",
+        "observed_at": null,
+        "confidence": "medium",
+        "description": "Municipal frontal photograph, undated: large arched recess, structural plaster cross and two narrow lower windows. Approximate normalized interpretation on the independently bound NEgable only. No decorative painted cross, porch, clocks, unseen SEwall openings or invented floor count.",
+        "wall_tone": "ochre",
+        "start": [
+          2808480.202,
+          1123750.955,
+          562.2694702148438,
+          575.225
+        ],
+        "end": [
+          2808472.2,
+          1123761.927,
+          562.2079467773438,
+          574.945
+        ],
+        "marks": [
+          {
+            "kind": "opening",
+            "bounds": [
+              0.28,
+              0.2,
+              0.74,
+              0.82
+            ],
+            "shape": "round-arch"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.305,
+              0.2,
+              0.715,
+              0.79
+            ],
+            "shape": "round-arch"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.484,
+              0.32,
+              0.526,
+              0.765
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.335,
+              0.598,
+              0.685,
+              0.633
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.366,
+              0.382,
+              0.402,
+              0.538
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.607,
+              0.382,
+              0.643,
+              0.538
+            ],
+            "shape": "rectangle"
+          }
+        ]
+      },
+      "reuse": "link-only",
+      "redistributionAllowed": false
+    },
+    {
+      "number": 1,
+      "buildingSource": "swissBUILDINGS3D",
+      "buildingSourceId": "swissbuildings3d_3_0_2020_1222-42:Building_solid:{A87DEE17-B2C5-4ED9-8E79-9EE6BF4A25E2}",
+      "buildingSha256": "f4a3060a3ccdf01888b0ead6354e674d87916ce037be40609928c1d87a5ba5ea",
+      "photoPath": "data/panorama-artist-review/facade-references/01-rochat-municipal-guide-page6-crop.png",
+      "attribution": "Pierre-Édouard Monnier, www.pemimages.ch; municipal Cossonay tourism guide, photo on page 6, credit on page 19.",
+      "reuse": "link-only",
+      "redistributionAllowed": false,
+      "bindingEvidence": [
+        {
+          "url": "https://www.cossonay.ch/documents/36-tourisme/37-vieille-ville-de-cossonay?download=99%3Acossonay-tourisme",
+          "fact": "Guide page 6 names Maison Louis-Samuel Rochat; photograph shows blue number-8 plaque and one west street frontage. Guide map locates it on Petite Rue."
+        },
+        {
+          "path": "test-results/panorama-artist-review/cossonay-primary-followup-v2/rochat-address.json",
+          "fact": "Official GeoAdmin address Petite Rue 8: EGID 863190, latitude 46.61482238769531 longitude 6.50789737701416; binds west frontage inside A87, near OSM way 201349063."
+        },
+        {
+          "fact": "North eaves endpoint is interpolated on the measured straight west roof edge at the northern OSM frontage boundary; southern endpoint is an actual roof vertex. Do not assign observations to whole 60 m solid or adjacent Cafe des Bains."
+        }
+      ],
+      "groundEvidence": {
+        "eavesEdgeLV95": [
+          [
+            2528703.539,
+            1163049.179,
+            562.786
+          ],
+          [
+            2528703.577,
+            1163036.737,
+            562.786
+          ]
+        ],
+        "clippedNorthEndpoint": [
+          2528703.55775487,
+          1163043.0382607125,
+          562.786
+        ],
+        "southEndpoint": [
+          2528703.577,
+          1163036.737,
+          562.786
+        ],
+        "groundSamples": [
+          553.9241333007812,
+          554.4425659179688
+        ],
+        "terrainFile": "data/terrain-cache-v1/swissalti3d/83c4aa1e70a4389d-swissalti3d_2021_2528-1163_2_2056_5728.tif",
+        "terrainSha256": "b306d3652ef656d569c58dace9c6b8261b3fc54ab2598c3053ab4a130b5ea5eb",
+        "interpolation": "bilinear pixel-centre DEM; interpolated source eaves edge"
+      },
+      "limitations": [
+        "Photograph capture date is unknown; explicit null observation date, no publication/download date substituted.",
+        "Municipal photograph reuse licence unknown: local reference and source link only; photograph/PDF excluded from delivery.",
+        "Normalized marks are approximate photographic proportions, not calibrated or surveyed opening coordinates.",
+        "Three restrained entry-step groups summarize five photographed stairs; no new surveyed step mesh.",
+        "No shutters, roof skylights or adjacent facade details inferred.",
+        "Only this approximately 6.3 m west frontage is bound; wider architectural identity at 01 remains open."
+      ],
+      "face": {
+        "reference_id": "cossonay-petite-rue8-west-undated",
+        "source_url": "https://www.cossonay.ch/documents/36-tourisme/37-vieille-ville-de-cossonay?download=99%3Acossonay-tourisme",
+        "photo_sha256": "725f06ae7191b993faa96b8443cd9849fcf467bd05b93978c89fc483b51d3881",
+        "observed_at": null,
+        "confidence": "medium",
+        "description": "Municipal guide page 6 identifies Maison Louis-Samuel Rochat at Petite Rue 8. Official address and source footprint bind only this west street frontage within the aggregated solid. Three upper windows, two lower windows and left entrance/entry steps are approximate photographic readings; white joinery summarized, shutters omitted. Capture date unknown.",
+        "wall_tone": "ochre",
+        "start": [
+          2528703.55775487,
+          1163043.0382607125,
+          553.9241333007812,
+          562.786
+        ],
+        "end": [
+          2528703.577,
+          1163036.737,
+          554.4425659179688,
+          562.786
+        ],
+        "marks": [
+          {
+            "kind": "opening",
+            "bounds": [
+              0.145,
+              0.69,
+              0.28,
+              0.89
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.465,
+              0.69,
+              0.6,
+              0.89
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.78,
+              0.69,
+              0.91,
+              0.89
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.465,
+              0.23,
+              0.6,
+              0.42
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "opening",
+            "bounds": [
+              0.78,
+              0.23,
+              0.91,
+              0.42
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "entrance",
+            "bounds": [
+              0.155,
+              0.14,
+              0.29,
+              0.45
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.1,
+              0.01,
+              0.34,
+              0.04
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.12,
+              0.05,
+              0.32,
+              0.08
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.14,
+              0.09,
+              0.3,
+              0.14
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.20850000000000002,
+              0.69,
+              0.21650000000000003,
+              0.89
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.145,
+              0.786,
+              0.28,
+              0.794
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.5285,
+              0.69,
+              0.5365,
+              0.89
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.465,
+              0.786,
+              0.6,
+              0.794
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.841,
+              0.69,
+              0.849,
+              0.89
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.78,
+              0.786,
+              0.91,
+              0.794
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.5285,
+              0.23,
+              0.5365,
+              0.42
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.465,
+              0.321,
+              0.6,
+              0.329
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.841,
+              0.23,
+              0.849,
+              0.42
+            ],
+            "shape": "rectangle"
+          },
+          {
+            "kind": "band",
+            "bounds": [
+              0.78,
+              0.321,
+              0.91,
+              0.329
+            ],
+            "shape": "rectangle"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -21,6 +21,7 @@ COPY config ./config
 COPY worker ./worker
 COPY scripts/prune-panorama-orphans.py ./scripts/prune-panorama-orphans.py
 COPY scripts/publish-panorama-repaint.py ./scripts/publish-panorama-repaint.py
+COPY scripts/panorama-art ./scripts/panorama-art
 COPY src/db/migrations.ts src/db/knowledge-migrations.ts ./src/db/
 RUN uv run pytest -q
 

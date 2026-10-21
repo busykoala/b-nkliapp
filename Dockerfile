@@ -18,6 +18,7 @@ COPY deploy/charts/benchly/data-jobs.generated.json ./deploy/charts/benchly/data
 COPY scripts/generate-data-jobs.ts ./scripts/generate-data-jobs.ts
 COPY scripts/migrate.ts ./scripts/migrate.ts
 COPY scripts/prepare-map-worker.mjs ./scripts/prepare-map-worker.mjs
+COPY scripts/panorama-art/scenarios.ts ./scripts/panorama-art/scenarios.ts
 COPY public ./public
 COPY src ./src
 RUN npm run build:container

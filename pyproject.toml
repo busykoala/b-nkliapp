@@ -20,6 +20,7 @@ dependencies = [
 ]
 
 [dependency-groups]
+art = ["pyogrio==0.13.0"]
 test = [
   "pytest>=8.4,<10",
   "pytest-cov>=7,<8",

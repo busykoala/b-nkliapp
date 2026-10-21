@@ -1,6 +1,7 @@
 """Regressions for geometry-less official features and mislabelled image bodies."""
 
 from email.message import Message
+import json
 from io import BytesIO, StringIO
 from pathlib import Path
 import sqlite3
@@ -38,6 +39,27 @@ def test_building_stream_counts_null_geometry_and_continues_importing():
         assert imported[0]["height_meters"] == 10
         assert imported[0]["geometry_wkb"]
     connection.close()
+
+
+def test_building_import_preserves_roof_z_and_uses_terrain_above_basement():
+    # A solid floor at 490 must not replace the measured ground at 500.
+    floor = [[8, 47, 490], [8.001, 47, 490], [8, 47.001, 490], [8, 47, 490]]
+    roof = [[8, 47, 506], [8.001, 47, 510], [8, 47.001, 506], [8, 47, 506]]
+    features = [{"id": "house", "geometry": {"type": "MultiPolygon", "coordinates": [[floor], [roof]]},
+                 "properties": {"GELAENDEPUNKT": 500, "DACH_MIN": 506, "DACH_MAX": 510}}]
+    imported = []
+    with sqlite3.connect(":memory:") as connection, \
+            patch("benchly.context.importer.geopackage_layers", return_value=["Building_solid"]), \
+            patch("benchly.context.importer.iter_layer_features", return_value=features) as reader, \
+            patch("benchly.context.importer.upsert_environment_features", side_effect=lambda _, batch: imported.extend(batch)):
+        import_swissbuildings_gdb(connection, Path("fixture.gdb"), "current", "today")
+    assert reader.call_args.kwargs["geometry_type"] == "MULTIPOLYGONZ"
+    assert imported[0]["ground_elevation_meters"] == 500
+    assert imported[0]["height_meters"] == 10
+    mesh = json.loads(imported[0]["raw_tags"])["benchly:roof_mesh"]
+    assert mesh["crs"] == 2056
+    assert len(mesh["faces"]) == 1
+    assert {point[2] for point in mesh["faces"][0]} == {506, 510}
 
 
 @pytest.mark.parametrize("geometry", ["invalid", [], 42])

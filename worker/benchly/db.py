@@ -139,5 +139,9 @@ def write(database, statement, parameters: Optional[object] = None):
         dialect=sqlite.dialect(paramstyle="qmark"),
         compile_kwargs={"render_postcompile": True},
     )
-    values = tuple(compiled.params[name] for name in compiled.positiontup or ())
+    # ``params`` constructs a new dictionary on every access. Materialise it
+    # once: rebuilding all bindings for each placeholder made large cached
+    # geographic imports quadratic in the number of values.
+    bindings = compiled.params
+    values = tuple(bindings[name] for name in compiled.positiontup or ())
     return database.execute(str(compiled), values)

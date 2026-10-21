@@ -116,7 +116,7 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
             artifact_path=f"{prefix}/{capsule['relative_path']}",
             status="ready",
             complete=True,
-            source_versions_json="{}",
+            source_versions_json=json.dumps(capsule.get("projection", {}), separators=(",", ":")),
             algorithm_version=geometry_implementation,
             warnings_json="[]",
             artifact_bytes=int(capsule["bytes"]),
@@ -136,8 +136,8 @@ def activate_generation(database: Database, manifest: dict[str, object], manifes
             style_version=render_implementation,
             center_azimuth_degrees=0,
             horizontal_fov_degrees=360,
-            width=4096,
-            height=1024,
+            width=int(render.get("width", 4096)),
+            height=int(render.get("height", 1024)),
             weather_bucket="dynamic-client",
             solar_lunar_bucket="dynamic-client",
             bench_variant="overlay",
@@ -167,6 +167,7 @@ def publish_repaint_chunk(database, records: list[dict[str, object]], painter_ke
         render_key = hashlib.sha256(
             f"{record['sha256']}:{int(record['bench_row_id'])}".encode()
         ).hexdigest()
+        dimensions = {key: int(record[key]) for key in ("width", "height") if key in record}
         write(database, update(BenchPanoramaRenderState).where(
             BenchPanoramaRenderState.bench_row_id == int(record["bench_row_id"]),
             BenchPanoramaRenderState.geometry_key == str(record["geometry_key"]),
@@ -175,6 +176,7 @@ def publish_repaint_chunk(database, records: list[dict[str, object]], painter_ke
             render_key=render_key, artifact_path=path,
             style_version=painter_key, artifact_bytes=int(record["bytes"]),
             artifact_sha256=str(record["sha256"]), generated_at=now, updated_at=now,
+            **dimensions,
         ))
 
 
@@ -329,7 +331,9 @@ def install_fixture_geometry(database: Database, row, geometry, artifact_path: s
         geometry_key=geometry.identity_key, artifact_path=artifact_path, status="ready",
         complete=bool(geometry.complete),
         source_versions_json=json.dumps(
-            {item.source: item.version for item in geometry.sources}, separators=(",", ":")
+            {**{item.source: item.version for item in geometry.sources},
+             "minimum_elevation_angle": geometry.config.minimum_elevation_angle,
+             "maximum_elevation_angle": geometry.config.maximum_elevation_angle}, separators=(",", ":")
         ),
         algorithm_version=geometry.version,
         warnings_json=json.dumps(geometry.warnings, separators=(",", ":")),
