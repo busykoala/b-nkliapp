@@ -53,7 +53,7 @@ def test_building_import_preserves_roof_z_and_uses_terrain_above_basement():
             patch("benchly.context.importer.iter_layer_features", return_value=features) as reader, \
             patch("benchly.context.importer.upsert_environment_features", side_effect=lambda _, batch: imported.extend(batch)):
         import_swissbuildings_gdb(connection, Path("fixture.gdb"), "current", "today")
-    assert reader.call_args.kwargs["geometry_type"] == "MULTIPOLYGONZ"
+    assert reader.call_args.kwargs["geometry_type"] == "MULTIPOLYGON"
     assert imported[0]["ground_elevation_meters"] == 500
     assert imported[0]["height_meters"] == 10
     mesh = json.loads(imported[0]["raw_tags"])["benchly:roof_mesh"]

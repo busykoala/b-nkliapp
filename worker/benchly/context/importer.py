@@ -96,8 +96,9 @@ def import_swissbuildings_gdb(connection: sqlite3.Connection, geodatabase: Path,
 
     for layer in layers:
         # Building solids are TINs; GeoJSON cannot represent them directly.
-        # Keep the triangular faces and their Z coordinates for footprint/height.
-        for offset, feature in enumerate(iter_layer_features(geodatabase, layer, geometry_type="MULTIPOLYGONZ")):
+        # Force the base type; GDAL retains the input Z coordinates. The Z-suffixed
+        # type leaves TINs unconverted on Debian's GDAL 3.6.
+        for offset, feature in enumerate(iter_layer_features(geodatabase, layer, geometry_type="MULTIPOLYGON")):
             geometry_json = feature.get("geometry")
             properties = feature.get("properties") or {}
             if not geometry_json:
