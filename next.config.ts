@@ -5,6 +5,9 @@ const developmentScriptPolicy = process.env.NODE_ENV === "development" ? " 'unsa
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // CI keyboard journeys must match production, without a late-mounted
+  // framework Dev Tools button entering the application focus sequence.
+  devIndicators: process.env.CI ? false : undefined,
   serverExternalPackages: ["better-sqlite3"],
   async headers() {
     const securityHeaders = [

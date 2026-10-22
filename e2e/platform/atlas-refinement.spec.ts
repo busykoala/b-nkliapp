@@ -62,7 +62,10 @@ for (const { width, height } of [{ width: 390, height: 844 }, { width: 320, heig
     await page.locator(".map-search-results [role=option]").first().click();
     const sheet = page.locator(".bench-atlas-sheet");
     await expect(sheet.locator(".bench-header")).toBeVisible();
-    await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached();
+    // The full-size C30 artwork and mask must really render. Hosted WebKit
+    // also performs cold dev compilation and software rendering: keep a
+    // bounded readiness budget, without reducing or replacing the artwork.
+    await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached({ timeout: process.env.CI ? 15_000 : 5_000 });
     await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-camera-moving", "false");
     await page.waitForLoadState("networkidle");
     await shot(page, info, "bench-entry");
@@ -179,7 +182,7 @@ test("refinement bench composition preserves the place and gives enlarged text i
   await installReviewPainting();
   await page.goto("/?bank=osm-node-101");
   const sheet = page.locator(".bench-atlas-sheet");
-  await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached();
+  await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached({ timeout: process.env.CI ? 15_000 : 5_000 });
   await expect(sheet.getByRole("button", { name: "Vorschau", exact: true })).toBeVisible();
   await expect(sheet.locator(".atlas-wordmark")).toHaveCount(0);
   await expect(sheet.locator(".bench-panorama-foreground")).toBeHidden();
@@ -255,7 +258,7 @@ test("refinement panorama controls retain pose and search has a clear return", a
   await installReviewPainting();
   await page.goto("/?bank=osm-node-101");
   const sheet = page.locator(".bench-atlas-sheet");
-  await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached();
+  await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached({ timeout: process.env.CI ? 15_000 : 5_000 });
   const panorama = sheet.locator(".bench-panorama");
   await panorama.locator(".bench-panorama-expand").click();
   const viewport = panorama.locator(".bench-panorama-viewport");
@@ -302,7 +305,7 @@ test("refinement larger-screen reading panels and full-screen viewer have real b
     await page.setViewportSize(size);
     await page.goto("/?bank=osm-node-101");
     const sheet = page.locator(".bench-atlas-sheet");
-    await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached();
+    await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached({ timeout: process.env.CI ? 15_000 : 5_000 });
     const panel = (await sheet.boundingBox())!;
     if (size.width === 768) expect(panel.width).toBeLessThanOrEqual(640);
     else {
@@ -344,7 +347,7 @@ test("refinement sparse, conflicting and access facts stay honest in the reading
       VALUES(?,1,0,'[]','high','{}','test','2026-10-22')`).run(row);
     await installTerrainPanoramaFixture(id);
     await page.goto(`/?bank=${id}`);
-    await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached();
+    await expect(sheet.locator(".bench-panorama-webgl.is-ready").first()).toBeAttached({ timeout: process.env.CI ? 15_000 : 5_000 });
     await expect(sheet.locator(".bench-visit-warnings")).toContainText("Stufen");
     await expect(sheet.locator(".visit-essentials")).not.toContainText("Rückenlehne");
     await shot(page, info, "long-name-conflict-access");
