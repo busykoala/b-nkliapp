@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("announces only worker replacements and keeps open filters usable", async ({ page }) => {
+test("announces only worker replacements and keeps open filters usable", async ({ page }, info) => {
   test.skip(process.env.PLAYWRIGHT_PRODUCTION !== "1", "Service workers register only in production.");
   await page.addInitScript(() => {
     const serviceWorker = Object.assign(new EventTarget(), {
@@ -30,6 +30,12 @@ test("announces only worker replacements and keeps open filters usable", async (
   await expect(page.getByText("Eine frischere Karte ist bereit.")).toBeVisible();
   await panel.getByRole("button", { name: "Karte ansehen" }).click();
   await expect(panel).toHaveCount(0);
-  await page.getByLabel("Update-Hinweis schliessen").click();
+  const dismiss = page.getByLabel("Update-Hinweis schliessen");
+  const notice = page.getByRole("status").filter({ has: dismiss });
+  const nav = page.getByRole("navigation", { name: "Dein Atlas" });
+  const noticeBox = await notice.boundingBox(), navBox = await nav.boundingBox();
+  expect(noticeBox!.y + noticeBox!.height).toBeLessThanOrEqual(navBox!.y);
+  await page.screenshot({ path: info.outputPath("update-notice-above-navigation.png") });
+  await dismiss.click();
   await expect(page.getByText("Eine frischere Karte ist bereit.")).toHaveCount(0);
 });

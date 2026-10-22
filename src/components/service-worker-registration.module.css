@@ -1,0 +1,11 @@
+.notice {
+  position: fixed;
+  inset: auto .75rem calc(5rem + env(safe-area-inset-bottom));
+  z-index: 30;
+  max-width: 26rem;
+  margin-inline: auto;
+  color: var(--atlas-ink);
+}
+.notice > div { background: var(--atlas-paper); }
+.notice button:focus-visible { outline: 3px solid var(--atlas-lake); outline-offset: 2px; }
+@media (min-width: 1024px) { .notice { bottom: 1rem; } }
