@@ -12,6 +12,7 @@ import { TrailAvatar } from "@/features/account/components/trail-avatar";
 
 export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: BenchDetail; signedIn: boolean; onChanged?: () => void | Promise<void> }) {
   const t = useTranslations();
+  const [showAllMoments, setShowAllMoments] = useState(false);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [followingPlace, setFollowingPlace] = useState(bench.followingPlace);
@@ -33,12 +34,12 @@ export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: Ben
   return <section className="bench-place-community" aria-label={t("community.place.title")}>
     {hasStories && <header><h3>{t("community.place.title")}</h3></header>}
     {bench.operatorName && <p className="bench-caretaker"><Building2 size={17} /><span><small>{t("community.place.operator")}</small><strong>{bench.operatorName}</strong></span></p>}
-    {signedIn && <div className="follow-place-actions">
+    {signedIn && <details className="place-more-actions"><summary>{t("community.place.moreActions")}</summary><div className="follow-place-actions">
       {bench.locationName && <button type="button" disabled={pending} aria-pressed={followingPlace} onClick={follow}><MapPin size={17} /><span><strong>{followingPlace ? t("community.place.followingPlace") : t("community.place.followPlace")}</strong><small>{bench.locationName}</small></span></button>}
       {bench.followingBench && <Link className="ui-button" href="/lieblingsplaetze">{t("community.place.favourites")}</Link>}
-    </div>}
+    </div></details>}
     {careEntries.length > 0 && <div className="care-summary"><HeartHandshake size={17} /><p>{careEntries.map(([kind, count]) => `${count}× ${t(`community.care.events.${kind}`)}`).join(" · ")} <small>{t("community.place.recent")}</small></p></div>}
-    {bench.moments.length ? <div className="bench-moment-list">{bench.moments.map((moment) => {
+    {bench.moments.length ? <div className="bench-moment-list">{(showAllMoments ? bench.moments : bench.moments.slice(0, 2)).map((moment) => {
       const generatedCaption = moment.kind === "photo" && (!moment.body || moment.body === "Ein Blick von diesem Bänkli.");
       return <article key={moment.id}>
       <TrailAvatar seed={moment.avatarSeed} username={moment.username} compact />
@@ -47,6 +48,7 @@ export function BenchPlaceCommunity({ bench, signedIn, onChanged }: { bench: Ben
       </div>
       {moment.mine && <button type="button" disabled={pending} aria-label={t("community.place.deleteOwn")} onClick={() => remove(moment.id)}><Trash2 size={14} /></button>}
     </article>})}</div> : null}
+    {bench.moments.length > 2 && <button type="button" className="moments-toggle" aria-expanded={showAllMoments} onClick={() => setShowAllMoments(value => !value)}>{t(showAllMoments ? "community.place.fewerMoments" : "community.place.moreMoments")}</button>}
     {message && <p className="place-community-status" role="status">{message}</p>}
   </section>;
 }

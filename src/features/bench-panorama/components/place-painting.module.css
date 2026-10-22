@@ -1,0 +1,5 @@
+.painting { display: block; width: 100%; overflow: hidden; }
+.painting > span { display: block; }
+.window { display: block; position: relative; width: 100%; aspect-ratio: 1.9; overflow: hidden; }
+.window[data-treatment="thumbnail"] { aspect-ratio: 9 / 7; }
+.painting .window img { position: absolute; max-width: none; object-fit: contain; margin: 0; }

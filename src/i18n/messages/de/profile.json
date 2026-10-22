@@ -107,7 +107,9 @@
     "rated": "<bench>{name}</bench> eine Stimme dagelassen.",
     "confirmed": "<bench>{name}</bench> vor Ort bestätigt.",
     "missing": "<bench>{name}</bench> vermisst.",
-    "edited": "<bench>{name}</bench> ein Detail geschenkt."
+    "edited": "<bench>{name}</bench> ein Detail geschenkt.",
+    "moment": "Einen Moment bei <bench>{name}</bench> hinterlassen.",
+    "photo": "Ein Foto von <bench>{name}</bench> geteilt."
   },
   "time": {
     "today": "heute",
@@ -170,5 +172,23 @@
   "metadata": {
     "description": "{username}s Wanderbuch in der Bänkli App.",
     "notFound": "Profil nicht gefunden"
+  },
+  "journal": {
+    "collection": "Deine Sammlung",
+    "empty": "Hier ist Platz für deine ersten Entdeckungen. Merke dir einen Ort oder hinterlasse einen kleinen Eindruck.",
+    "discover": "Einen Platz entdecken",
+    "activity": "Deine Beiträge",
+    "publicEntries": "Geteilte Augenblicke",
+    "publicCollection": "Sammlung",
+    "kinds": {
+      "added": "Bänkli eingetragen",
+      "rated": "Bewertung",
+      "confirmed": "Bank bestätigt",
+      "missing": "Fehlende Bank gemeldet",
+      "edited": "Angaben ergänzt",
+      "corrected": "Korrektur",
+      "moment": "Erinnerung",
+      "photo": "Foto"
+    }
   }
 }

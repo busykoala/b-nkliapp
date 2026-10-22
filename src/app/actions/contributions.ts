@@ -14,10 +14,6 @@ import { z } from "zod";
 
 const ratingSchema = z.object({
   overall: z.coerce.number().int().min(1).max(5),
-  view: z.coerce.number().int().min(1).max(5).optional(),
-  comfort: z.coerce.number().int().min(1).max(5).optional(),
-  quiet: z.coerce.number().int().min(1).max(5).optional(),
-  clearDetails: z.literal("on").optional(),
   note: z.string().trim().max(280).optional(),
   website: z.string().max(0).optional(),
 });
@@ -63,16 +59,9 @@ export async function submitRating(benchId: string, _previous: ActionResult | nu
       INSERT INTO ratings (bench_row_id, contributor_hash, overall, view_score, comfort, quiet, note, visible, created_at, updated_at, user_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
       ON CONFLICT(bench_row_id, contributor_hash) DO UPDATE SET overall=excluded.overall,
-        view_score=CASE WHEN ? THEN NULL ELSE coalesce(excluded.view_score,ratings.view_score) END,
-        comfort=CASE WHEN ? THEN NULL ELSE coalesce(excluded.comfort,ratings.comfort) END,
-        quiet=CASE WHEN ? THEN NULL ELSE coalesce(excluded.quiet,ratings.quiet) END,
         note=excluded.note, visible=1, updated_at=excluded.updated_at,user_id=excluded.user_id
     `).run(rowId, contributorHash, parsed.data.overall,
-      parsed.data.clearDetails ? null : parsed.data.view ?? null,
-      parsed.data.clearDetails ? null : parsed.data.comfort ?? null,
-      parsed.data.clearDetails ? null : parsed.data.quiet ?? null,
-      parsed.data.note || null, now, now, user.id,
-      parsed.data.clearDetails ? 1 : 0, parsed.data.clearDetails ? 1 : 0, parsed.data.clearDetails ? 1 : 0);
+      null, null, null, parsed.data.note || null, now, now, user.id);
     refreshUserBadges(user.id, sqlite);
     revalidatePath("/");
     revalidatePath(`/bank/${benchId}`);

@@ -409,17 +409,20 @@
     "panoramaExpandedTitle": "Cielo e paesaggio a 360 gradi",
     "panoramaOpenExpanded": "Aprire il panorama grande in modalità 360 gradi",
     "panoramaCloseExpanded": "Chiudere la vista grande a 360 gradi",
-    "panorama360": "Vista 360°",
+    "panorama360": "Apri la vista",
     "panoramaClose": "Chiudere",
     "panoramaCalculated": "Calcolato dai dati del terreno e dell'ambiente",
     "panoramaZoomIn": "Ingrandire",
     "panoramaZoomOut": "Ridurre",
     "panoramaGenerating": "Il panorama viene dipinto…",
     "panoramaUnavailable": "Il panorama calcolato non è ancora disponibile.",
-    "panoramaRetry": "Riprova"
+    "panoramaRetry": "Riprova",
+    "panoramaHelp": "Comandi",
+    "panoramaHelpBody": "Trascina l’immagine o usa i tasti freccia per guardarti intorno. La piccola freccia della panchina riporta alla sua direzione di vista. Home ripristina la vista; Esc la chiude.",
+    "panoramaBenchDirection": "Torna alla vista dalla panchina"
   },
   "page": {
-    "description": "Panchina con analisi del sole e dei dintorni in Bänkli App.",
+    "description": "Scopri questo luogo per una pausa, la sua vista dipinta e il percorso per arrivarci.",
     "ratedDescription": "Panchina con vista valutata {score}/5 in Bänkli App.",
     "backToFeed": "Torna al feed delle panchine",
     "onMap": "Sulla mappa"
@@ -447,9 +450,30 @@
     "rate": "Valuta",
     "viewRatings": "Vedi",
     "contribute": "Contribuisci a questo luogo",
-    "improve": "Migliora",
+    "improve": "Dai un contributo",
     "addPhoto": "Aggiungi una foto",
     "addThought": "Condividi un pensiero",
     "sources": "Fonti e aggiornamento"
+  },
+  "visit": {
+    "title": "Per la tua visita",
+    "seatingAccess": "Seduta e accesso",
+    "weatherSun": "Meteo e sole",
+    "accessTitle": "Indicazioni sull’accesso",
+    "possiblyMissing": "È stato segnalato che questa panchina potrebbe non esserci più.",
+    "obstacle": "È noto un ostacolo lungo l’accesso o presso la panchina.",
+    "accessUnknown": "L’accesso non è ancora sufficientemente conosciuto.",
+    "accessScope": "Queste indicazioni riguardano la panchina e l’ultimo tratto. Non garantiscono un percorso interamente accessibile.",
+    "lightEstimate": "{value} · stima",
+    "sunEstimate": "Gli orari del sole sono stimati. Le nuvole e le condizioni sul posto possono cambiare la luce.",
+    "noiseUnknown": "Rumore del traffico non ancora rilevato",
+    "noiseLow": "Poco rumore del traffico previsto",
+    "noiseNoticeable": "Traffico probabilmente udibile",
+    "noiseHigh": "Rumore del traffico marcato previsto",
+    "noiseEstimate": "{source} · stima",
+    "goodToKnow": "Da sapere",
+    "noArmrest": "Senza braccioli",
+    "conflicting": "Alcune indicazioni sulla panchina sono discordanti.",
+    "sceneWeather": "{condition} · {temperature} °C"
   }
 }

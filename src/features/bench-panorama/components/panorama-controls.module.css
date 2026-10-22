@@ -1,0 +1,13 @@
+.viewer :global(.bench-panorama-hud) { position: absolute; inset: 0; max-width: none; display: block; pointer-events: none; }
+.viewer :global(.bench-panorama-expand) { display: inline-flex; align-items: center; gap: .5rem; white-space: nowrap; pointer-events: auto; position: absolute; top: max(16px,env(safe-area-inset-top)); right: 16px; min-height: 48px; padding: .5rem .75rem; border: 0; border-radius: .25rem; background: var(--atlas-paper); color: var(--atlas-ink); font: 500 1rem/1.5 var(--font-body); box-shadow: 0 2px 10px #203d3620; }
+.viewer :global(.bench-panorama-expand > span) { display: inline; }
+.bearingHelp { position: absolute; top: max(16px,env(safe-area-inset-top)); left: 12px; color: var(--atlas-ink); pointer-events: auto; }
+.bearingHelp summary { display: flex; align-items: center; min-width: 48px; min-height: 48px; list-style: none; cursor: help; }
+.bearingHelp summary::-webkit-details-marker { display: none; }
+.bearingHelp :global(.bench-panorama-bearing) { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .5rem; border-radius: .25rem; background: var(--atlas-paper); color: var(--atlas-ink); font: 400 .875rem/1.25rem var(--font-body); font-variant-numeric: tabular-nums; box-shadow: 0 1px 6px #203d3618; }
+.bearingHelp p { position: absolute; top: 100%; left: 0; width: min(20rem,calc(100vw - 24px)); margin: .5rem 0 0; padding: 1rem; background: var(--atlas-paper); color: var(--atlas-ink); font: 400 1rem/1.5 var(--font-body); box-shadow: 0 2px 10px #203d3620; }
+.benchDirection { position: absolute; top: 50%; translate: 0 -50%; display: flex; align-items: center; justify-content: center; gap: 2px; width: 48px; height: 48px; padding: 4px; border: 0; border-radius: 50%; background: var(--atlas-paper); color: var(--atlas-ink); box-shadow: 0 1px 6px #203d3618; pointer-events: auto; }
+.benchDirection[data-turn="left"] { left: max(12px,env(safe-area-inset-left)); }
+.benchDirection[data-turn="right"] { right: max(12px,env(safe-area-inset-right)); }
+.viewer :global(:is(button,summary,.bench-panorama-viewport):focus-visible) { outline: 3px solid var(--atlas-lake); outline-offset: 2px; box-shadow: 0 0 0 5px var(--atlas-paper); }
+@media (forced-colors: active) { .benchDirection, .bearingHelp :global(.bench-panorama-bearing), .viewer :global(.bench-panorama-expand) { border: 1px solid ButtonText; } }

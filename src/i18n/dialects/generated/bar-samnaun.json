@@ -542,17 +542,20 @@
       "panoramaExpandedTitle": "360-Grad-Himmel und Landschaft",
       "panoramaOpenExpanded": "Panorama gross im 360-Grad-Modus öffnen",
       "panoramaCloseExpanded": "360-Grad-Grossansicht zuemache",
-      "panorama360": "360° ansehen",
+      "panorama360": "Ussicht öffnen",
       "panoramaClose": "Zuemache",
       "panoramaCalculated": "Aus Gländ- und Umgebungsdaten berechnet",
       "panoramaZoomIn": "Vergrössern",
       "panoramaZoomOut": "Verkleinern",
       "panoramaGenerating": "Die Ussicht wird gerade gemalt …",
       "panoramaUnavailable": "Die berechnete Ussicht isch no nit verfügbar.",
-      "panoramaRetry": "Erneut versuchen"
+      "panoramaRetry": "Erneut versuchen",
+      "panoramaHelp": "Bedienung",
+      "panoramaHelpBody": "Ziehe das Bild, um dich umzusehen, oder verwende die Pfeiltasten. Der kleine Bankpfeil führt zur Blickrichtung der Bankl zurück. Home setzt den Blick zurück; Escape schliesst die Ussicht.",
+      "panoramaBenchDirection": "Zur Blickrichtung der Bankl"
     },
     "page": {
-      "description": "Bankl mit Sunne- und Umgebungsanalyse in der Bankl App.",
+      "description": "Entdecke diesen Platz zum Innehalten: mit gemalter Ussicht und einem Weg zum Bankl.",
       "ratedDescription": "Bankl mit Ussicht {score}/5 in der Bankl App.",
       "backToFeed": "Zrugg zum Bankl-Feed",
       "onMap": "Auf der Charte"
@@ -580,10 +583,31 @@
       "rate": "Bewerten",
       "viewRatings": "Ansehen",
       "contribute": "Diesen Ort mitgestalten",
-      "improve": "Verbessern",
+      "improve": "Etwas beitragen",
       "addPhoto": "Foto hinzufügen",
       "addThought": "Gedanken teilen",
       "sources": "Quellen & Datenstand"
+    },
+    "visit": {
+      "title": "Für deinen Besuch",
+      "seatingAccess": "Sitzplatz & Zugang",
+      "weatherSun": "Wetter & Sunne",
+      "accessTitle": "Hinweise zum Zugang",
+      "possiblyMissing": "Dieses Bankl wurde als möglicherweise nit mehr vorhanden gemeldet.",
+      "obstacle": "Beim Zugang oder direkt am Bankl isch ein Hindernis bekannt.",
+      "accessUnknown": "Der Zugang isch no nit ausreichend bekannt.",
+      "accessScope": "Diese Angaben betreffen den Platz und das letzte Wegstück. Sie bestätigen kei barrierefreie Gesamtroute.",
+      "lightEstimate": "{value} · gschätzt",
+      "sunEstimate": "Die Sonnenzeiten sind e Schätzung. Wolken und die Situation vor Ort chönd den Eindruck verändern.",
+      "noiseUnknown": "Verkehrslärm no nit erfasst",
+      "noiseLow": "Wenig Verkehrslärm erwartet",
+      "noiseNoticeable": "Verkehr voraussichtlich hörbar",
+      "noiseHigh": "Deutlicher Verkehrslärm erwartet",
+      "noiseEstimate": "{source} · gschätzt",
+      "goodToKnow": "Gut zu wissen",
+      "noArmrest": "Ohne Armlehnen",
+      "conflicting": "Einzelne Angaben zum Sitzplatz widersprechen sich.",
+      "sceneWeather": "{condition} · {temperature} °C"
     }
   },
   "common": {
@@ -884,7 +908,7 @@
         "environment": "Umgebung, Ussicht oder Liecht stimmt nit"
       },
       "observation": "Was hast du gesehen?",
-      "placeholder": "Zum Beispiel: Die Ruggelehne fehlt",
+      "placeholder": "Beschreibe kurz, was anders ist.",
       "publish": "Hinweis veröffentlichen",
       "fields": {
         "properties": "Ausstattung",
@@ -897,7 +921,7 @@
     "place": {
       "eyebrow": "Lüüt an diesem Platz",
       "title": "Bankl-Momente",
-      "share": "Moment teilen",
+      "share": "Bankl teilen",
       "shareShort": "Teilen",
       "shareText": "Es Bankl-Moment bei {bench}",
       "copied": "Link kopiert – bereit fürs Teilen, auch uf Instagram.",
@@ -913,7 +937,10 @@
       "favourites": "Alle Lieblingsplätze",
       "recent": "in den letzten 90 Tagen",
       "deleteOwn": "Eigenen Moment löschen",
-      "empty": "No kei Geschichte da. Das Bankl wartet geduldig."
+      "empty": "No kei Geschichte da. Das Bankl wartet geduldig.",
+      "moreActions": "Weitere Aktionen",
+      "moreMoments": "Weitere Momente ansehen",
+      "fewerMoments": "Weniger Momente zeige"
     },
     "features": {
       "progress": "{known}/{total} Angaben bekannt · Zum Ergänzen antippen",
@@ -1063,7 +1090,7 @@
     },
     "workspace": {
       "choose": "Bitrag auswählen",
-      "intro": "Es Foto, e Angabe, ein Eindruck: Wähle, was du da beitragen möchtest. Du musst nit alles wissen.",
+      "intro": "Es Foto, ein Eindruck, e hilfreiche Angabe.",
       "groups": {
         "place": "Den Platz zeige",
         "now": "Gerade vor Ort",
@@ -1110,6 +1137,27 @@
         "fireplaceNearby": "Gibt es in der Nähe e Feuerstelle?"
       },
       "viewDescription": "Bisherige Einordnung"
+    },
+    "concerns": {
+      "memory": {
+        "title": "Erinnerung teilen",
+        "hint": "Es Moment, ein Foto oder dein Gesamteindruck."
+      },
+      "facts": {
+        "title": "Angaben ergänzen",
+        "hint": "Was hilft beim Ankommen und Sitzen?"
+      },
+      "problem": {
+        "title": "Problem melden",
+        "hint": "Etwas stimmt nit oder braucht Pflege."
+      },
+      "moreFacts": "Weitere Angaben",
+      "rating": "Gesamteindruck bewerten"
+    },
+    "history": {
+      "title": "Deine bisherigen Beobachtungen",
+      "view": "Dein früherer Eindruck von der Ussicht",
+      "remove": "{kind} löschen"
     }
   },
   "knowledge": {
@@ -1354,6 +1402,134 @@
       "storageUnavailable": "Der Foto-Speicher macht gerade Pause.",
       "format": "Bitte verwende ein JPEG-, PNG- oder WebP-Foto.",
       "formatMismatch": "Das Bildformat passt nit zum Foto. Bitte wähle das Bild nochmals."
+    }
+  },
+  "poetry": {
+    "miniatures": {
+      "pause": {
+        "v1": "Für en Momänt mues de Wäg niene ane füehre. Du dörfsch eifach da sii.",
+        "v2": "D Wält gaht wiiter. Da hät en Gedanke Platz, wo no kein Name hät.",
+        "v3": "Mängisch bruucht en Tag kei Antwort, sondern en Platz zum Absitze.",
+        "v4": "Zwüschem Losgah und em Aacho liit die chli Pause.",
+        "v5": "Lah de nächscht Schritt no en Momänt warte.",
+        "v6": "En freie Platz, es bitzli Zyt. Villicht fangt s Underwägssii grad da aa.",
+        "v7": "Was du mitbracht häsch, dörf sich näbed di setze.",
+        "v8": "Au en Umwäg cha für en Momänt s Ziel sii."
+      },
+      "sun": {
+        "v1": "S Liecht findet de Platz. De Fade vom Tag chasch später wider uufnäh.",
+        "v2": "Es Stück vom Tag liit im Liecht. Hock di dezue.",
+        "v3": "D Sunne bruucht kein Grund zum Bliibe. Du villicht au nit.",
+        "v4": "Da hät s Liecht en Zwüschehalt iigleit.",
+        "v5": "Für de Momänt längts, em Liecht zuezluege.",
+        "v6": "S Liecht zieht wiiter. D Iil mues ihm nit naalaufe.",
+        "v7": "En helle Fläck im Tag. Du muesch en nit mitnäh, zum en z bhalte.",
+        "v8": "Villicht bliibt vom hütige Wäg vor allem das Liecht."
+      },
+      "shade": {
+        "v1": "De Schatte nimmt em Tag nüt wäg. Er git em e anderi Farb.",
+        "v2": "Da dörf s Helle en Schritt zrugg mache.",
+        "v3": "Im Schatte wird de Rand vom Tag weicher.",
+        "v4": "En Platz absiits vom Glanz. Au da lahts sich bliibe.",
+        "v5": "S Liecht isch anderschwo beschäftigt. Da ghört de Momänt dir.",
+        "v6": "Nit alles, wo en Tag treit, mues im Liecht stah.",
+        "v7": "E anderi Siite vom Tag wartet da uf di.",
+        "v8": "De Schatte laht d Sache bi sich sälber bliibe."
+      },
+      "rain": {
+        "v1": "De Räge schriibt über de Tag. Du muesch nit jedes Wort verstah.",
+        "v2": "Hüt hät d Landschaft Wasserfarbe gno.",
+        "v3": "D Tropfe setzed ihri chliine Pünkt. De Satz vom Tag bliibt offe.",
+        "v4": "De Räge kennt kei Abchürzig. Er chunnt überall aa.",
+        "v5": "En nasse Tag hät sin eigete Glanz.",
+        "v6": "Was grad no en Umriss gsi isch, überchunnt im Räge en zweite Rand.",
+        "v7": "Zwüsche de Tropfe häts no Platz für de Momänt.",
+        "v8": "De Himmel laht öppis los. Villicht dörfsch du das hüt au."
+      },
+      "snow": {
+        "v1": "D Flocke händ nit de gliich Wäg und chömed gliich aa.",
+        "v2": "Schnee fallt dur de Momänt, als hetti er alli Zyt.",
+        "v3": "E Flocke bruucht wenig Platz. De Blick gaht ere gliich naa.",
+        "v4": "De Tag wird neu zeichnet, Flocke für Flocke.",
+        "v5": "Was vom Himmel fallt, mues hüt kei Antwort sii.",
+        "v6": "D Luft treit chliini Aafäng us Wiiss.",
+        "v7": "Jedi Flocke findet es anders Ändi für ihre Fall.",
+        "v8": "Du luegsch em Schnee zue. Für einisch längt das als Vorhabe."
+      },
+      "night": {
+        "v1": "D Nacht laht öppis offe, wo de Tag hät welle erkläre.",
+        "v2": "Im Dunkle mues de Blick nit alles feschthebe.",
+        "v3": "De Tag isch gange. En Platz zum Bliibe isch no da.",
+        "v4": "D Nacht hät meh Ruum, als en Blick cha fasse.",
+        "v5": "Für en Momänt bruuchsch de nächscht Morge no nit.",
+        "v6": "Was du hüt gsuecht häsch, dörf bis morn ohni Name bliibe.",
+        "v7": "S Dunkle nimmt em Ort d Ränder, nit sin Platz.",
+        "v8": "Au ohni de ganz Wäg z gseh, dörfsch da aacho."
+      },
+      "mountains": {
+        "v1": "D Bärge chömed nit nöcher. De Blick dörf gliich bi ine aacho.",
+        "v2": "E Bärglinie längt, zum de Gedanke e anderi Richtig z gäh.",
+        "v3": "D Höchi bhaltet ihre Abstand. Da häts Zyt zum Luege.",
+        "v4": "Zwüsche dir und de Bärge liit Ruum für en lange Gedanke.",
+        "v5": "Me mues nit uufstiige, zum de Bärge es bitzli nöcher z sii.",
+        "v6": "D Bärge händ kein Grund zum Pressiere.",
+        "v7": "De Blick nimmt de Wäg nach obe. Du chasch sitze bliibe.",
+        "v8": "Am Rand vo de Bärge findet de Himmel e Form."
+      },
+      "water": {
+        "v1": "S Wasser bhaltet nüt vo dim Blick. Villicht isch grad das es Gschänk.",
+        "v2": "Am Wasser dörf en Gedanke wiiterzieh, ohni dass du em muesch folge.",
+        "v3": "En Blick ufs Wasser hät kei fertigs Ändi.",
+        "v4": "Du bisch aacho. S Wasser hät sini eigeti Art zum Underwägssii.",
+        "v5": "Mängisch längt Wasser im Blick, demit de Tag meh Ruum überchunnt.",
+        "v6": "S Wasser und du teiled de Momänt, ohni en feschtzhebe.",
+        "v7": "Da mues de Blick kei anders Ufer erreiche.",
+        "v8": "Was du im Wasser suechsch, mues kei Spiegelbild sii."
+      },
+      "forest": {
+        "v1": "Zwüsche de Bäum mues din Blick kei gradi Linie finde.",
+        "v2": "De Wald staht um de Momänt wie e Gschicht ohni letschti Siite.",
+        "v3": "En Baum bruucht Jahr für das, wo du i eim Momänt gsehsch.",
+        "v4": "Da stönd d Jahr näbedenand. Du chasch di e Wiili dezuesetze.",
+        "v5": "De Wald kennt vill Wäg. Für jetzt längt de Platz.",
+        "v6": "Du bliibsch nit lang. D Bäum nähmed sich meh Zyt.",
+        "v7": "Zwüsche Stämm und Gedanke häts Platz für e Pause.",
+        "v8": "Du muesch de Wald nit verstah, zum en Momänt dezuezghöre."
+      },
+      "autumn": {
+        "v1": "S Jahr hät scho vill verzellt. Da dörf e Siite offe bliibe.",
+        "v2": "De Herbscht hät Zyt für das, wo im Summer ligge blibe isch.",
+        "v3": "Es spöts Kapitel im Jahr. Kei schlächte Ort, zum churz innezhalte.",
+        "v4": "Was riif worde isch, mues hüt nit wiiterwachse.",
+        "v5": "De Herbscht cha loslah. Villicht chasch em en Momänt debii zueluege.",
+        "v6": "S Jahr wird chürzer, de Momänt nit chliiner.",
+        "v7": "Du sitzisch in eme Tag, wo scho öppis vom Abschied weiss.",
+        "v8": "S hät no Zyt im Jahr. Und da häts no Platz für di."
+      },
+      "spring": {
+        "v1": "S Jahr probiert en neue Aafang. Du muesch no nit wüsse, won er hiifüehrt.",
+        "v2": "Im Früehlig hät sälber s Warte öppis vom Uufbruch.",
+        "v3": "Villicht fangt öppis aa, während du da sitzisch.",
+        "v4": "De nächscht Aafang mues nit luut sii."
+      },
+      "summer": {
+        "v1": "De Summer cha vill vorhaa. Du dörfsch en Momänt uslah.",
+        "v2": "Mitt im Jahr häts Platz für e chliini Underbrächig.",
+        "v3": "En Summertag mues nit ganz voll sii, zum i Erinnerig z bliibe.",
+        "v4": "Villicht nimmsch vom Summer grad die Pause mit."
+      },
+      "winter": {
+        "v1": "De Winter laht em Jahr meh Rand. Da dörf öppis ungschribe bliibe.",
+        "v2": "Au en churze Wintertag hät Platz für en lange Gedanke.",
+        "v3": "S Jahr haltet sich zrugg. Du muesch es hüt nit aatriibe.",
+        "v4": "En Uufenthalt zwüsche dem, wo gsi isch, und dem, wo wider chunnt."
+      },
+      "twilight": {
+        "v1": "De Tag wechslet sini Farb. Für en Momänt dörf alles dezwüsche sii.",
+        "v2": "S Liecht isch underwägs zu ere andere Stund.",
+        "v3": "A de Schwelle vom Tag bruucht de Blick kei Ziel.",
+        "v4": "No ischs de Momänt. Gliich treit er e anderi Farb."
+      }
     }
   },
   "submission": {

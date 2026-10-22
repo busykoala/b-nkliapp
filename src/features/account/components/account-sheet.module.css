@@ -1,0 +1,16 @@
+.dialog:global(.modal) { top: var(--account-viewport-top,0); bottom: auto; height: var(--account-viewport-height,100dvh); }
+.sheet:global(.account-sheet) { width: min(100%,32rem); max-height: calc(var(--account-viewport-height,100dvh) - 1rem); padding: 1.5rem var(--atlas-reading-margin) max(1.5rem,env(safe-area-inset-bottom)); overflow-y: auto; scroll-padding-block: 1rem; background: var(--atlas-paper); color: var(--atlas-ink); }
+.sheet h2 { margin-block: .5rem; max-width: calc(100% - 3rem); font: 500 1.875rem/2.1875rem var(--font-display); letter-spacing: normal; overflow-wrap: break-word; }
+.sheet > p { font: 400 1rem/1.5 var(--font-body); }
+.sheet :global(.story-eyebrow) { font: 400 .875rem/1.25rem var(--font-body); color: var(--atlas-muted); }
+.sheet > button { min-width: 48px; min-height: 48px; border: 0; background: transparent; }
+.sheet :global(.account-mode-switch) { display: flex; justify-content: start; gap: .5rem; margin-block: 1.5rem; border: 0; background: transparent; }
+.sheet :global(.account-mode-switch > button) { flex: 0 1 auto; min-height: 48px; padding: .5rem .75rem; border: 1px solid var(--guide-rule); border-radius: .25rem; background: transparent; font: 400 1rem/1.5 var(--font-body); color: var(--atlas-ink); box-shadow: none; }
+.sheet :global(.account-mode-switch > button[aria-pressed="true"]) { border-color: var(--atlas-lake); background: var(--atlas-wash); font-weight: 600; }
+.sheet :global(.label) { font: 600 1rem/1.5 var(--font-body); }
+.sheet :global(.input) { min-height: 48px; padding: .5rem .25rem; border: 0; border-bottom: 1px solid var(--atlas-muted); border-radius: 0; background: transparent; font: 400 1rem/1.5 var(--font-body); }
+.sheet :global(.account-password-field button) { width: 48px; height: 48px; }
+.sheet :global(.btn-primary) { min-height: 48px; padding: .75rem; border: 0; border-radius: .25rem; background: var(--atlas-spruce); color: var(--atlas-paper); font: 600 1rem/1.5 var(--font-body); }
+.sheet :global(.account-privacy-note) { margin-top: 1rem; padding: .5rem 0; border: 0; background: transparent; font: 400 .875rem/1.25rem var(--font-body); }
+.sheet :global(.account-field-hint) { font: 400 .875rem/1.25rem var(--font-body); }
+.sheet :global(:is(input,button,a):focus-visible) { outline: 3px solid var(--atlas-lake); outline-offset: 2px; }

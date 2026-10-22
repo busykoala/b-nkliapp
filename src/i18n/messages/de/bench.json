@@ -409,17 +409,20 @@
     "panoramaExpandedTitle": "360-Grad-Himmel und Landschaft",
     "panoramaOpenExpanded": "Panorama gross im 360-Grad-Modus öffnen",
     "panoramaCloseExpanded": "360-Grad-Grossansicht schliessen",
-    "panorama360": "360° ansehen",
+    "panorama360": "Aussicht öffnen",
     "panoramaClose": "Schliessen",
     "panoramaCalculated": "Aus Gelände- und Umgebungsdaten berechnet",
     "panoramaZoomIn": "Vergrössern",
     "panoramaZoomOut": "Verkleinern",
     "panoramaGenerating": "Die Aussicht wird gerade gemalt …",
     "panoramaUnavailable": "Die berechnete Aussicht ist noch nicht verfügbar.",
-    "panoramaRetry": "Erneut versuchen"
+    "panoramaRetry": "Erneut versuchen",
+    "panoramaHelp": "Bedienung",
+    "panoramaHelpBody": "Ziehe das Bild, um dich umzusehen, oder verwende die Pfeiltasten. Der kleine Bankpfeil führt zur Blickrichtung der Bank zurück. Home setzt den Blick zurück; Escape schliesst die Aussicht.",
+    "panoramaBenchDirection": "Zur Blickrichtung der Bank"
   },
   "page": {
-    "description": "Sitzbank mit Sonnen- und Umgebungsanalyse in der Bänkli App.",
+    "description": "Entdecke diesen Platz zum Innehalten: mit gemalter Aussicht und einem Weg zum Bänkli.",
     "ratedDescription": "Sitzbank mit Aussicht {score}/5 in der Bänkli App.",
     "backToFeed": "Zurück zum Bänkli-Feed",
     "onMap": "Auf der Karte"
@@ -447,9 +450,30 @@
     "rate": "Bewerten",
     "viewRatings": "Ansehen",
     "contribute": "Diesen Ort mitgestalten",
-    "improve": "Verbessern",
+    "improve": "Etwas beitragen",
     "addPhoto": "Foto hinzufügen",
     "addThought": "Gedanken teilen",
     "sources": "Quellen & Datenstand"
+  },
+  "visit": {
+    "title": "Für deinen Besuch",
+    "seatingAccess": "Sitzplatz & Zugang",
+    "weatherSun": "Wetter & Sonne",
+    "accessTitle": "Hinweise zum Zugang",
+    "possiblyMissing": "Dieses Bänkli wurde als möglicherweise nicht mehr vorhanden gemeldet.",
+    "obstacle": "Beim Zugang oder direkt am Bänkli ist ein Hindernis bekannt.",
+    "accessUnknown": "Der Zugang ist noch nicht ausreichend bekannt.",
+    "accessScope": "Diese Angaben betreffen den Platz und das letzte Wegstück. Sie bestätigen keine barrierefreie Gesamtroute.",
+    "lightEstimate": "{value} · geschätzt",
+    "sunEstimate": "Die Sonnenzeiten sind eine Schätzung. Wolken und die Situation vor Ort können den Eindruck verändern.",
+    "noiseUnknown": "Verkehrslärm noch nicht erfasst",
+    "noiseLow": "Wenig Verkehrslärm erwartet",
+    "noiseNoticeable": "Verkehr voraussichtlich hörbar",
+    "noiseHigh": "Deutlicher Verkehrslärm erwartet",
+    "noiseEstimate": "{source} · geschätzt",
+    "goodToKnow": "Gut zu wissen",
+    "noArmrest": "Ohne Armlehnen",
+    "conflicting": "Einzelne Angaben zum Sitzplatz widersprechen sich.",
+    "sceneWeather": "{condition} · {temperature} °C"
   }
 }

@@ -1,0 +1,8 @@
+.frame { --painting-edge-height: 16px; }
+.frame:not([data-painting-treatment="thumbnail"]) {
+  mask-image: linear-gradient(#fff,#fff), var(--painting-edge);
+  mask-size: 100% calc(100% - var(--painting-edge-height) + 4px), 100% var(--painting-edge-height);
+  mask-position: top, bottom;
+  mask-repeat: no-repeat;
+}
+@media (forced-colors: active) { .frame { mask-image: none !important; } }

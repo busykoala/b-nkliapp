@@ -17,7 +17,7 @@ type PackSpec = {
 
 const root = resolve(import.meta.dirname, "..");
 const catalogue = JSON.parse(readFileSync(join(root, "config/dialects/catalogue.json"), "utf8")) as Catalogue;
-const namespaces = ["account", "avatar", "bench", "common", "community", "knowledge", "photos", "submission"] as const;
+const namespaces = ["account", "avatar", "bench", "common", "community", "knowledge", "photos", "poetry", "submission"] as const;
 const output = join(root, "src/i18n/dialects/generated");
 mkdirSync(output, { recursive: true });
 const checking = process.argv.includes("--check");
@@ -125,7 +125,7 @@ function transform(value: unknown, rules: Array<[string, string]>): unknown {
 
 for (const pack of packs) {
   const messages = Object.fromEntries(namespaces.map((namespace) => {
-    const source = JSON.parse(readFileSync(join(root, `src/i18n/messages/${pack.language}/${namespace}.json`), "utf8"));
+    const source = JSON.parse(readFileSync(join(root, namespace === "poetry" && pack.language === "de" ? "config/dialects/miniatures-gsw.json" : `src/i18n/messages/${pack.language}/${namespace}.json`), "utf8"));
     return [namespace, transform(source, pack.rules)];
   }));
   emit(join(output, `${pack.id}.json`), `${JSON.stringify(messages, null, 2)}\n`);

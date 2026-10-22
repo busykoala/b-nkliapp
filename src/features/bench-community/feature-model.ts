@@ -1,7 +1,7 @@
 import type { BenchProperty } from "@/lib/types";
 
 export type EditableBenchField = Exclude<BenchProperty["key"], "wasteBasketNearby"> | "direction";
-export const editableBenchFields: EditableBenchField[] = ["backrest", "armrest", "covered", "seats", "wheelchair", "material", "direction", "fireplaceNearby"];
+export const editableBenchFields: EditableBenchField[] = ["backrest", "armrest", "covered", "wheelchair", "material", "direction", "fireplaceNearby"];
 
 /** Store canonical values, not translated labels, in the editor's draft. */
 export function editablePropertyValue(property: BenchProperty | undefined): string | null {

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import { Crosshair, Footprints, Info, List, MapPin, SlidersHorizontal, X } from "lucide-react";
+import { Crosshair, Info, List, MapPin, SlidersHorizontal, X } from "lucide-react";
 import type { ReturnJourney } from "@/features/journey/model";
 import type { WalkDraftSnapshot } from "@/features/walks/model";
 import { discardWalkDraft, getWalkDraft } from "@/app/actions/walk-draft";
@@ -14,12 +14,16 @@ import { getBenchDetail, getMapBenchList, getMapFeatures } from "@/app/actions/m
 import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail, MapBenchListResult, MapFeature, MapFilters, PlaceResult } from "@/lib/types";
 import { activeMapFilterCount, activeMapFilters } from "@/features/map/filters";
+import atlasLayout from "./map-atlas-layout.module.css";
+import { AtlasNavigation } from "@/components/atlas-navigation";
+import type { BenchAtlasPresentation } from "@/components/bench-atlas-sheet";
 import { BenchSheet } from "@/features/bench-detail/components/bench-sheet";
 import { FilterPanel } from "@/features/map/components/filter-panel";
 import { SearchBox } from "@/features/map/components/search-box";
 import { AddBenchDialog } from "@/features/bench-submission/components/add-bench-dialog";
 import { AppMenu } from "@/components/app-menu";
 import { AccountDialog } from "@/features/account/components/account-controls";
+import { useAuthenticated } from "@/features/account/auth-session";
 import { MapSheetShell, type MapSheetPresentation } from "@/components/map-sheet-shell";
 import type { JourneyDraftSnapshot } from "@/features/journey/components/use-journey-planner";
 import { CORE_MAP_ART, DECORATIVE_MAP_ART, TRANSIT_MAP_ART, loadWatercolorMapStyle, MINIMAL_MAP_STYLE } from "@/features/map/watercolor-style";
@@ -41,6 +45,7 @@ type LastInspectedBench = Pick<BenchDetail, "id" | "longitude" | "latitude">;
 
 // Survives a client navigation/remount, but never storage, sharing, or reload.
 let sessionLastInspectedBench: LastInspectedBench | null = null;
+let sessionMapBrowse: { camera: ReturnType<typeof captureMapCamera>; filters: MapFilters } | null = null;
 
 function WalkLoading() {
   const t = useTranslations();
@@ -61,14 +66,16 @@ function WalkPlannerShell({ children, presentation, onPresentationChange, onClos
 }
 function JourneyPlannerShell({ children, presentation, onPresentationChange, onClose }: { children: ReactNode; presentation?: MapSheetPresentation | null; onPresentationChange?: (presentation: MapSheetPresentation) => void; onClose: () => void }) {
   const t = useTranslations();
-  return <MapSheetShell label={t("journey.planner.title")} resizeLabel={t("journey.planner.resize")} expandLabel={t("journey.planner.expand")} compactLabel={t("journey.planner.compact")} minimizeLabel={t("journey.planner.minimize")} minimizeActionLabel={t("journey.planner.minimizeAction")} closeLabel={t("journey.planner.close")} mapLabel={t("journey.planner.map")} onClose={onClose} initialSnap="half" initialPresentation={presentation} onPresentationChange={onPresentationChange}>{children}</MapSheetShell>;
+  return <MapSheetShell label={t("journey.planner.title")} resizeLabel={t("journey.planner.resize")} expandLabel={t("journey.planner.expand")} compactLabel={t("journey.planner.compact")} minimizeLabel={t("journey.planner.minimize")} minimizeActionLabel={t("journey.planner.minimizeAction")} closeLabel={t("journey.planner.close")} mapLabel={t("reading.atlas.openPlace")} onClose={onClose} initialSnap="half" initialPresentation={presentation} onPresentationChange={onPresentationChange}>{children}</MapSheetShell>;
 }
 
 export function MapExplorer({ user, initialBench = null }: { user: CurrentUser | null; initialBench?: BenchDetail | null }) {
   const t = useTranslations();
+  const authenticated = useAuthenticated(Boolean(user));
   const router = useRouter();
   const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const querySequence = useRef(0);
   const listSequence = useRef(0);
@@ -81,12 +88,12 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const pendingHistoryClose = useRef<PendingBenchHistoryClose | null>(null);
   const initialBenchRef = useRef(initialBench);
   const initialFocusDone = useRef(false);
-  const filtersRef = useRef<MapFilters>({});
+  const filtersRef = useRef<MapFilters>({ ...sessionMapBrowse?.filters });
   const listOpenRef = useRef(false);
   const listRef = useRef<HTMLOListElement>(null);
   const mapInteraction = useRef(0);
   const [features, setFeatures] = useState<MapFeature[]>([]);
-  const [filters, setFilters] = useState<MapFilters>({});
+  const [filters, setFilters] = useState<MapFilters>(() => ({ ...sessionMapBrowse?.filters }));
   const [filterOpen, setFilterOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [listResult, setListResult] = useState<MapBenchListResult>({ items: [], zoomRequired: true });
@@ -120,14 +127,14 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
   const handledAction = useRef<string | null>(null);
   const handledAmenity = useRef<string | null>(null);
   const [benchReturn, setBenchReturn] = useState<BenchReturnContext>({ kind: "map", cameraInteraction: 0 });
-  const benchPresentationRef = useRef<MapSheetPresentation | null>(null);
+  const benchPresentationRef = useRef<BenchAtlasPresentation | null>(null);
   const benchReturnRef = useRef(benchReturn);
   useEffect(() => { benchReturnRef.current = benchReturn; }, [benchReturn]);
   const updateBenchReturn = useCallback((context: BenchReturnContext) => {
     benchReturnRef.current = context;
     setBenchReturn(context);
   }, []);
-  useEffect(() => { canAdd.current = Boolean(user); }, [user]);
+  useEffect(() => { canAdd.current = authenticated; }, [authenticated]);
   const [addCoordinates, setAddCoordinates] = useState({ latitude: 46.82, longitude: 8.25 });
   useEffect(() => {
     let active = true;
@@ -353,8 +360,10 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       const sharedBench = initialBenchRef.current;
       const map = new Map({
         container: containerRef.current,
-        center: sharedBench ? [sharedBench.longitude, sharedBench.latitude] : [8.25, 46.82],
-        zoom: sharedBench ? 17 : 7.2,
+        center: sharedBench ? [sharedBench.longitude, sharedBench.latitude] : sessionMapBrowse?.camera.center ?? [8.25, 46.82],
+        zoom: sharedBench ? 17 : sessionMapBrowse?.camera.zoom ?? 7.2,
+        bearing: sharedBench ? 0 : sessionMapBrowse?.camera.bearing ?? 0,
+        pitch: sharedBench ? 0 : sessionMapBrowse?.camera.pitch ?? 0,
         minZoom: 6,
         maxZoom: 19,
         maxBounds: [[5.45, 45.55], [10.9, 48.05]],
@@ -535,6 +544,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       window.clearTimeout(decorationTimer);
       const browserWindow = window as Window & { cancelIdleCallback?: (handle: number) => void };
       if (decorationIdle !== undefined) browserWindow.cancelIdleCallback?.(decorationIdle);
+      if (mapRef.current) sessionMapBrowse = { camera: captureMapCamera(mapRef.current), filters: { ...filtersRef.current } };
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -819,17 +829,30 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
               : listOpen
                 ? { kind: "list" }
                 : { kind: "browse" };
+  useEffect(() => {
+    const toolbar = toolbarRef.current, container = containerRef.current;
+    if (!toolbar || !container) return;
+    const resize = () => {
+      if (matchMedia("(min-width: 1024px)").matches) container.parentElement?.style.setProperty("--atlas-header-height", `${toolbar.offsetHeight}px`);
+      mapRef.current?.resize();
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(toolbar); observer.observe(container); resize();
+    return () => observer.disconnect();
+  }, [mapReady]);
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-base-200" data-active-task={activeTask.kind}>
+    <main className={`atlas-explorer relative h-dvh w-full overflow-hidden bg-base-200 ${atlasLayout.layout}`} data-active-task={activeTask.kind}>
       <div ref={containerRef} className="benchly-map absolute inset-0" aria-label={t("map.canvas.label")} aria-busy={mapLoading} />
+      <div ref={toolbarRef} className="atlas-map-toolbar">
       <header className="map-topbar safe-top pointer-events-none absolute inset-x-0 top-0 z-20 px-3 md:max-w-xl md:px-4">
         <div className="pointer-events-auto flex items-center gap-2">
           <SearchBox onSelect={choosePlace} onLocate={locateFromSearch} />
-          <button id="map-filter-toggle" aria-label={t("map.filters.open")} aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>{t("map.filters.button")}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
           <AppMenu user={user} onAdd={openAdd} onWalk={openWalk} />
         </div>
         {activeFilterCount > 0 && <div className="active-filter-chips pointer-events-auto" aria-label={t("map.filters.active")}>{activeMapFilters(filters, t).map(({ key, label }) => <button key={key} type="button" aria-label={t("map.filters.remove", { label })} onClick={() => setFilters((current) => ({ ...current, [key]: undefined }))}>{label}<X size={14} /></button>)}</div>}
       </header>
+      {activeTask.kind === "browse" && !filterOpen && <AtlasNavigation current="map" signedIn={authenticated} onWalk={openWalk} />}
+      </div>
       {addStage === "position" && <>
         <div className="placement-crosshair" aria-hidden="true"><Crosshair size={38} /></div>
         <section className="placement-controls" aria-label={t("map.placement.title")}><h2>{t("map.placement.title")}</h2><p>{t("map.placement.instructions")}</p><button type="button" onClick={() => void locateForPlacement()}><Crosshair size={18} /> {t("map.location.use")}</button><div><button type="button" onClick={closeAdd}>{t("common.actions.cancel")}</button><button type="button" className="btn btn-primary" onClick={() => { const map = mapRef.current; if (!map) return; map.stop(); const point = map.getCenter(); setAddCoordinates({ latitude: point.lat, longitude: point.lng }); setAddStage("details"); }}>{t("map.placement.confirm")}</button></div></section>
@@ -838,8 +861,7 @@ export function MapExplorer({ user, initialBench = null }: { user: CurrentUser |
       {mapLoading && <div className="pointer-events-none absolute bottom-5 left-1/2 z-10 -translate-x-1/2"><div className="storybook-panel flex min-h-10 items-center gap-2 rounded-full px-3 text-xs text-base-content/65"><span className="loading loading-ring loading-sm text-primary" /><span>{t("map.canvas.loading")}</span></div></div>}
       {message && <div role="status" className="toast toast-center pointer-events-none top-36 z-30"><div className="storybook-panel flex min-h-11 items-center gap-2 rounded-2xl px-4 py-2 text-sm"><Info size={18} className="text-primary" /><span>{message === "map.canvas.failed" ? t("map.canvas.failed") : message}</span></div></div>}
       {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && !filterOpen && <LocationControl state={mapLocation.state} onToggle={mapLocation.toggle} onNorth={mapLocation.north} />}
-      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">
-        <button className="walk-entry" onClick={openWalk}><Footprints size={20} /><span className="walk-entry-long">{t(walkDraft?.result ? "walks.planner.resume" : "walks.planner.title")}</span><span className="walk-entry-short">{t("common.navigation.walk")}</span></button>
+      {!addStage && !journeyOpen && !walkOpen && !returnJourney && !selectedId && !listOpen && !facilityFocus && <div className="map-discovery-actions">          <button id="map-filter-toggle" aria-label={t("map.filters.open")} aria-expanded={filterOpen} className="map-filter-button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={19} /><span>{t("reading.atlas.wishes")}</span>{activeFilterCount > 0 && <b>{activeFilterCount}</b>}</button>
         <button className="list-entry" onClick={openList}><List size={20} /> {t("map.list.button")}</button>
       </div>}
       {listOpen && !selectedId && <BenchResultsList result={listResult} loading={listLoading} error={listError} activeFilterCount={activeFilterCount} scrollRef={listRef}

@@ -1,0 +1,13 @@
+.navigation { position: fixed; z-index: 24; inset: auto 0 0; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); padding: .3rem .75rem max(.4rem,env(safe-area-inset-bottom)); background: var(--atlas-paper); border-top: 1px solid var(--guide-rule); color: var(--atlas-muted); }
+.navigation > :is(a,button) { display: flex; position: relative; align-items: center; justify-content: center; flex-direction: column; gap: .2rem; min-height: 3.5rem; min-width: 0; padding: .35rem; font: 500 .875rem/1.25rem var(--font-body); cursor: pointer; text-decoration: none; }
+.navigation > [aria-current="page"] { color: var(--atlas-lake); font-weight: 650; }
+.navigation > [aria-current="page"]::before { content: ''; width: 1.75rem; height: 3px; background: var(--atlas-lake); position: absolute; top: 0; }
+.navigation :focus-visible { outline: 3px solid var(--atlas-lake); outline-offset: -3px; }
+.introduction h2 { font: 500 1.875rem/1.2 var(--font-display); }
+.introduction p { margin-block: 1rem 1.5rem; font-size: 1rem; line-height: 1.5; }
+.introduction svg:not(button svg) { width: 6rem; height: 4rem; color: var(--atlas-lake); }
+.close { position: absolute; top: .5rem; right: .5rem; display: grid; place-items: center; width: 3rem; height: 3rem; }
+@media (min-width: 1024px) {
+  .navigation { position: static; width: 24rem; max-width: 100%; border: 0; padding: 0; box-shadow: none; }
+  .navigation > :is(a,button) { flex-direction: row; min-height: 48px; gap: .5rem; }
+}

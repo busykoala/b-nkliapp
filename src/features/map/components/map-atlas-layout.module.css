@@ -1,0 +1,17 @@
+.layout { --atlas-header-height: 80px; --atlas-side-width: clamp(440px,36vw,520px); }
+.layout :global(.atlas-map-toolbar) { display: contents; }
+@media (min-width: 1024px) {
+  .layout :global(.atlas-map-toolbar) { position: absolute; inset: 0 0 auto; z-index: 20; display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; column-gap: 1.5rem; row-gap: .5rem; min-height: 80px; padding: 1rem max(20px,env(safe-area-inset-left)); border-bottom: 1px solid var(--guide-rule); background: var(--atlas-paper); }
+  .layout :global(.map-topbar), .layout :global(.map-topbar > div:first-child) { display: contents; }
+  .layout :global(.map-topbar .atlas-search) { grid-column: 1; grid-row: 1; width: 100%; max-width: 36rem; }
+  .layout :global(.map-topbar .calm-menu-button) { grid-column: 3; grid-row: 1; justify-self: end; }
+  .layout :global(.atlas-map-toolbar > nav) { grid-column: 2; grid-row: 1; }
+  .layout :global(.active-filter-chips) { grid-column: 1 / -1; grid-row: 2; padding: 0; }
+  .layout :global(.map-topbar .calm-search), .layout :global(.map-topbar .calm-menu-button) { border: 1px solid var(--guide-rule); box-shadow: none; }
+  .layout :global(.benchly-map) { top: var(--atlas-header-height); }
+  .layout:has(> :global(.bench-atlas-sheet)) :global(.benchly-map),
+  .layout:has(> :global(.map-sheet-planner:not([data-snap="peek"]))) :global(.benchly-map),
+  .layout:has(> :global(.bench-list-panel)) :global(.benchly-map) { right: var(--atlas-side-width); }
+  .layout :global(.map-sheet-planner.map-sheet-shell), .layout :global(.bench-list-panel) { inset: var(--atlas-header-height) 0 0 auto; width: var(--atlas-side-width); height: calc(100dvh - var(--atlas-header-height)); max-height: calc(100dvh - var(--atlas-header-height)); margin: 0; border: 0; border-left: 1px solid var(--guide-rule); border-radius: 0; }
+  .layout :global(.map-sheet-planner.map-sheet-shell[data-snap="peek"]) { top: auto; height: auto; }
+}

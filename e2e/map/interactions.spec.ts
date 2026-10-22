@@ -1,3 +1,4 @@
+import { installRatingFixture } from "../support/rating-fixture";
 import { devices, expect, test } from "@playwright/test";
 import { testTranslator } from "../../src/test/translations";
 
@@ -48,14 +49,14 @@ test("opens the mobile map and a bench detail", async ({ page }, testInfo) => {
   const map = page.getByLabel("Karte der Schweizer Sitzbänke");
   await expect(map).toBeVisible();
   await expect(map).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
-  await expect(page.getByLabel("Ort suchen")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Ort suchen", exact: true })).toBeVisible();
   await expect(page.getByLabel("Menü öffnen")).toBeVisible();
   await page.goto("/bank/osm-node-101");
   const painting = page.locator(".bench-panorama");
   await expect(painting).toBeVisible();
   await expect(painting.locator(".bench-panorama-art, .panorama-paper-wash").first()).toBeVisible();
   await painting.screenshot({ path: testInfo.outputPath("production-bench.png") });
-  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
   await expect(page).toHaveURL(/\/bank\/osm-node-101$/);
 });
@@ -95,7 +96,8 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await search.press("Escape");
   await expect(search).toHaveValue("Lindenhof");
   await expect(search).toHaveAttribute("aria-expanded", "false");
-  await expect(search).toBeFocused();
+  await expect(page.getByRole("search", { name: "Ort suchen", exact: true })).toBeFocused();
+  await search.focus();
   await search.press("ArrowDown");
   await expect(search).toHaveAttribute("aria-expanded", "true");
   await expect(firstResult).toHaveAttribute("aria-selected", "true");
@@ -107,6 +109,7 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await expect(locationSuggestion).toHaveCount(1);
   await expect(locationSuggestion).toContainText("Meinen Standort anzeigen");
 
+  await page.getByRole("button", { name: "Zur Karte", exact: true }).click();
   await page.getByRole("button", { name: "Filter öffnen" }).click();
   const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
   await expect(filters).toBeVisible();
@@ -127,9 +130,11 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await page.screenshot({ path: testInfo.outputPath("map-filters.png"), fullPage: false });
   const backrest = filters.getByRole("button", { name: "Rückenlehne" });
   await expect(backrest).toBeVisible();
+  await expect(filters.getByRole("button", { name: "Feuerstelle" })).toBeHidden();
+  await filters.locator(".filter-more > summary").click();
   await expect(filters.getByRole("button", { name: "Feuerstelle" })).toBeVisible();
   await expect(filters.getByRole("button", { name: "Abfalleimer" })).toHaveCount(0);
-  await filters.getByText("Mehr Wünsche", { exact: true }).click();
+  await expect(filters.locator(".filter-more")).toHaveAttribute("open", "");
   await expect(filters.getByRole("button", { name: "Ebener Platz am Bänkli" })).toBeVisible();
   await backrest.click();
   await expect(filters.getByText("2 Filter aktiv")).toBeVisible();
@@ -140,16 +145,18 @@ test("keeps map search and filters clear with keyboard input", async ({ page }, 
   await expect(page.getByLabel("Filter öffnen")).toBeFocused();
 });
 
-test("Escape closes a filter over a bench without dismissing the bench", async ({ page }) => {
+test("Escape closes focused search over a preview without dismissing the bench", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?bank=osm-node-101");
   const bench = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(bench).toBeVisible();
-  await page.getByRole("button", { name: "Filter öffnen" }).click();
-  const filter = page.getByRole("dialog", { name: "Was brauchst du?" });
-  await expect(filter).toBeVisible();
+  await bench.getByRole("button", { name: "Vorschau", exact: true }).click();
+  await page.getByRole("combobox", { name: "Ort suchen", exact: true }).fill("Lindenhof");
+  await expect(page.locator(".atlas-search")).toHaveAttribute("data-focused", "true");
   await page.keyboard.press("Escape");
-  await expect(filter).toHaveCount(0);
+  await expect(page.locator(".atlas-search")).toHaveAttribute("data-focused", "false");
   await expect(bench).toBeVisible();
+  await expect(bench).toHaveAttribute("data-presentation", "preview");
   await expect(page).toHaveURL(/bank=osm-node-101/);
 });
 
@@ -222,11 +229,11 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page, cont
   await expect(page.locator(".maplibregl-ctrl-attrib-inner")).toContainText("OpenStreetMap");
   await expect(page.getByRole("combobox", { name: "Ort suchen" })).toHaveAttribute("placeholder", "Ort oder Bänkli");
   await expect(page.locator(".map-filter-button > span")).toBeHidden();
-  const walk = await page.getByRole("button", { name: "Spaziergang" }).boundingBox();
+  const wishes = await page.getByRole("button", { name: "Filter öffnen", exact: true }).boundingBox();
   const list = await page.getByRole("button", { name: "Liste", exact: true }).boundingBox();
-  expect(walk).not.toBeNull();
+  expect(wishes).not.toBeNull();
   expect(list).not.toBeNull();
-  expect(Math.abs(walk!.y - list!.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(wishes!.y - list!.y)).toBeLessThanOrEqual(1);
 
   await page.evaluate(() => {
     class TestOrientationEvent extends Event {
@@ -313,8 +320,8 @@ test("keeps primary map decisions usable on a narrow phone", async ({ page, cont
   const filters = page.getByRole("dialog", { name: "Was brauchst du?" });
   await expect(filters.getByRole("button", { name: "Karte ansehen" })).toBeVisible();
   await expect(page.locator(".filter-modal-backdrop")).toBeVisible();
-  const nearbyGroup = filters.locator(".filter-group").nth(1);
-  const facilityNote = filters.getByText("Erfasste Einrichtungen", { exact: false });
+  const nearbyGroup = filters.locator(".filter-group").nth(2);
+  const facilityNote = filters.getByText("Entfernungen in Luftlinie.", { exact: false });
   const [nearbyBox, noteBox] = await Promise.all([nearbyGroup.boundingBox(), facilityNote.boundingBox()]);
   expect(nearbyBox).not.toBeNull();
   expect(noteBox).not.toBeNull();
@@ -330,12 +337,11 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute("data-snap", "full");
-  // On short phones the title and visit action lead; the panorama follows the
-  // compact facts. Check the first screen before scrolling to the illustration.
+  // On short phones the title and painting lead while the visit action stays
+  // available in the footer. Check both before scrolling.
   await expect(sheet.getByRole("heading", { name: "Lindenhof, Zürich", exact: true })).toBeInViewport({ ratio: 1 });
   await expect(sheet.getByRole("button", { name: "Weg planen", exact: true })).toBeInViewport({ ratio: 1 });
-  const resize = sheet.getByRole("button", { name: "Kompakter. Detailhöhe ändern", exact: true });
-  await expect(resize).toBeInViewport({ ratio: 1 });
+  await expect(sheet.locator(".atlas-place-toggle")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("short-phone-full-bench-sheet.png") });
   const panorama = sheet.locator(".bench-panorama");
   await panorama.scrollIntoViewIfNeeded();
@@ -346,14 +352,12 @@ test("reveals a bench name and a clear sheet action on a short phone", async ({ 
     return { chromeBottom: chrome.bottom, landscapeTop: landscape.top };
   });
   expect(positions.landscapeTop).toBeGreaterThanOrEqual(positions.chromeBottom - 1);
-  await resize.click();
-  await expect(sheet).toHaveAttribute("data-snap", "half");
-  await page.screenshot({ path: testInfo.outputPath("short-phone-collapsed-bench-sheet.png") });
+  await expect(sheet).toHaveAttribute("data-presentation", "place");
 
   await page.goto("/?action=walk");
   const title = page.getByRole("heading", { name: "Spaziergang entdecken" });
   await expect(title).toBeFocused();
-  expect(await title.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("none");
+  await expect(title).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("walk-heading-focus.png") });
 });
 
@@ -392,7 +396,7 @@ test("activates the raster fallback when the vector style fails", async ({ page 
   const map = page.getByLabel("Karte der Schweizer Sitzbänke");
   await expect(map).toHaveAttribute("data-basemap", "fallback", { timeout: 5_000 });
   await expect(map).toHaveAttribute("data-map-ready", "true");
-  await expect(page.getByLabel("Ort suchen")).toBeEnabled();
+  await expect(page.getByRole("combobox", { name: "Ort suchen", exact: true })).toBeEnabled();
   await page.screenshot({ path: testInfo.outputPath("map-raster-fallback.png"), fullPage: false });
 });
 
@@ -424,7 +428,7 @@ test.describe("native mobile rendering performance", () => {
     await client.send("Emulation.setCPUThrottlingRate", { rate: 4 });
 
     await page.goto("/");
-    await expect(page.getByLabel("Ort suchen")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Ort suchen", exact: true })).toBeVisible();
     await expect(page.getByLabel("Menü öffnen")).toBeVisible();
     const map = page.getByLabel("Karte der Schweizer Sitzbänke");
     await expect(map).toHaveAttribute("aria-busy", "false", { timeout: 3_500 });
@@ -465,38 +469,45 @@ test("location denial leaves the map usable", async ({ page, context }) => {
   await context.clearPermissions();
   await page.goto("/");
   await page.getByLabel("Meinen Standort anzeigen").click();
-  await expect(page.getByLabel("Ort suchen")).toBeEnabled();
+  await expect(page.getByRole("combobox", { name: "Ort suchen", exact: true })).toBeEnabled();
 });
 
 test("keeps browsing public but requires an account for contributions", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
+  installRatingFixture();
+  await page.reload();
   await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
   await page.getByRole("button", { name: "Zum Mitmachen kurz anmelden" }).click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
   const t = testTranslator();
-  await expect(page.getByRole("dialog", { name: "Willkommen zurück" }).locator(".auth-intent"))
-    .toHaveText(t("account.dialog.intent", { intent: t("bench.story.rateIntent") }));
+  await expect(page.getByRole("dialog", { name: "Willkommen zurück" }))
+    .toHaveAccessibleDescription(t("account.dialog.intent", { intent: t("bench.story.rateIntent") }));
   await expect(page.getByRole("button", { name: "Bewertung veröffentlichen" })).toHaveCount(0);
 });
 
 test("registers and writes a rating plus structured bench metadata", async ({ page, browserName }) => {
   await registerUser(page, `writer-${browserName}`);
   await page.goto("/bank/osm-node-101");
+  installRatingFixture();
+  await page.reload();
   await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
   await page.getByRole("button", { name: /Einen Eindruck beitragen|Meinen Beitrag bearbeiten/ }).click();
   const contribution = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await contribution.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
-  await contribution.locator(".rating-detail-disclosure summary").click();
-  await contribution.getByRole("group", { name: "Aussicht", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
-  await contribution.getByRole("group", { name: "Komfort", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
-  await contribution.getByRole("group", { name: "Ruhe", exact: true }).getByRole("radio", { name: "5 Sterne" }).check();
+  await expect(contribution.locator(".rating-control")).toHaveCount(1);
   await page.getByPlaceholder("Was hat dir hier gefallen?").fill("Playwright-Testbewertung");
   await page.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(page.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
+  const ratingDb = new (await import("better-sqlite3")).default(process.env.BENCHLY_E2E_DATABASE!);
+  try {
+    const stored = ratingDb.prepare("SELECT view_score,comfort,quiet FROM ratings WHERE note='Playwright-Testbewertung' ORDER BY id DESC LIMIT 1").get();
+    expect(stored).toEqual({ view_score: null, comfort: null, quiet: null });
+  } finally { ratingDb.close(); }
   await contribution.getByRole("button", { name: "Beiträge schliessen" }).click();
   await page.getByRole("button", { name: "Zum Platz" }).click();
-  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
-  const features = page.getByRole("dialog", { name: "Bänkli beschreiben" });
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
+  await page.locator(".contribution-dialog[open]").getByRole("button", { name: "Angaben ergänzen", exact: true }).click();
+  const features = page.getByRole("dialog", { name: "Angaben ergänzen" });
   await features.getByRole("button", { name: /Armlehnen/ }).click();
   await features.getByRole("button", { name: "Ja", exact: true }).click();
   await features.getByRole("button", { name: "Speichern", exact: true }).click();
@@ -506,6 +517,8 @@ test("registers and writes a rating plus structured bench metadata", async ({ pa
 test("publishes an overall rating without optional detail stars", async ({ page, browserName }) => {
   await registerUser(page, `overall-only-${browserName}`);
   await page.goto("/bank/osm-node-101");
+  installRatingFixture();
+  await page.reload();
   await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
   await page.getByRole("button", { name: /Einen Eindruck beitragen|Meinen Beitrag bearbeiten/ }).click();
   const contribution = page.getByRole("dialog", { name: "Wie war deine Pause?" });
@@ -518,8 +531,10 @@ test("publishes an overall rating without optional detail stars", async ({ page,
 test("fine-tunes the bench direction to one degree using the landscape preview", async ({ page, browserName }, testInfo) => {
   await registerUser(page, `bearing-${browserName}-${Date.now().toString().slice(-5)}`);
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
-  const features = page.getByRole("dialog", { name: "Bänkli beschreiben" });
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
+  await page.locator(".contribution-dialog[open]").getByRole("button", { name: "Angaben ergänzen", exact: true }).click();
+  const features = page.getByRole("dialog", { name: "Angaben ergänzen" });
+  await features.locator(".contribution-extra > summary").click();
   await features.getByRole("button", { name: /Blickrichtung/ }).click();
   const slider = features.getByRole("slider", { name: "Blickrichtung feinjustieren" });
   await slider.fill("213");
@@ -529,58 +544,42 @@ test("fine-tunes the bench direction to one degree using the landscape preview",
   await expect(features.getByRole("button", { name: /Blickrichtung SW · 213°/ })).toBeVisible();
 });
 
-test("bench, journey and walk use one mobile sheet handle with consistent snap gestures", async ({ page }, testInfo) => {
+test("bench preview and place retain reading state while planners keep their own shell", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?bank=osm-node-101");
   const shell = page.locator(".map-sheet-shell");
-  await expect(shell).toHaveAttribute("data-snap", "full");
+  await expect(shell).toHaveAttribute("data-presentation", "place");
   await expect(shell.locator(".map-sheet-close")).toContainText("Karte");
-  await expect(shell.locator(".map-sheet-minimize")).toHaveAccessibleName("Details auf eine Leiste minimieren");
-  await expect(shell.locator(".map-sheet-resize")).toHaveAccessibleName("Kompakter. Detailhöhe ändern");
-  await shell.locator(".map-sheet-resize").click();
-  await expect(shell).toHaveAttribute("data-snap", "half");
-  await shell.locator(".map-sheet-resize").click();
-  await expect(shell).toHaveAttribute("data-snap", "full");
+  await expect(shell.locator(".map-sheet-minimize,.map-sheet-resize")).toHaveCount(0);
+  await shell.locator(".bench-visit-details > details > summary").click();
   const content = shell.locator(".map-sheet-content");
-  const readingPosition = await content.evaluate((node) => {
-    node.scrollTop = Math.min(240, node.scrollHeight - node.clientHeight);
+  const readingPosition = await content.evaluate(node => {
+    node.scrollTop = Math.min(160, node.scrollHeight - node.clientHeight);
     return node.scrollTop;
   });
   expect(readingPosition).toBeGreaterThan(0);
-  await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
-  await expect(shell).toHaveAttribute("data-snap", "peek");
-  await expect(shell.locator(".map-sheet-resize")).toHaveAccessibleName("Ganz öffnen. Detailhöhe ändern");
-  await expect(shell.locator(".map-sheet-collapsed-title")).toHaveText("Bankdetails");
-  await expect(shell.locator(".map-sheet-content")).not.toBeVisible();
-  await expect(page.locator(".map-location-control")).toHaveCount(0);
-  await expect.poll(async () => (await shell.boundingBox())?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(90);
-  await page.screenshot({ path: testInfo.outputPath("minimized-detail-bar.png") });
-  await shell.locator(".map-sheet-resize").click();
-  await expect(shell).toHaveAttribute("data-snap", "full");
-  await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBe(readingPosition);
-  // Zero is also a deliberate reading position, not a missing saved value.
-  await content.evaluate((node) => { node.scrollTop = 0; });
-  await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBe(0);
-  await shell.locator(".map-sheet-minimize").click();
-  await expect(shell).toHaveAttribute("data-snap", "peek");
-  await shell.locator(".map-sheet-resize").click();
-  await expect(shell).toHaveAttribute("data-snap", "full");
-  await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBe(0);
-  await shell.locator(".map-sheet-resize").click();
-  await expect(shell).toHaveAttribute("data-snap", "half");
-  await shell.locator(".map-sheet-resize").dispatchEvent("touchstart", { touches: [{ identifier: 1, clientY: 200 }] });
-  await shell.locator(".map-sheet-resize").dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientY: 300 }] });
-  await expect(shell).toHaveAttribute("data-snap", "peek");
-  await page.waitForTimeout(400);
-  await shell.locator(".map-sheet-resize").click();
-  await expect(shell).toHaveAttribute("data-snap", "half");
+  await shell.getByRole("button", { name: "Vorschau", exact: true }).click();
+  await expect(shell).toHaveAttribute("data-presentation", "preview");
+  await expect(shell.locator(".map-sheet-footer")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("bench-preview.png") });
+  await shell.getByRole("button", { name: "Zum Bänkli", exact: true }).click();
+  await expect.poll(() => content.evaluate(node => node.scrollTop)).toBe(readingPosition);
+  await content.evaluate(node => { node.scrollTop = 0; });
+  await expect.poll(() => content.evaluate(node => node.scrollTop)).toBe(0);
+  await shell.getByRole("button", { name: "Vorschau", exact: true }).click();
+  await shell.getByRole("button", { name: "Zum Bänkli", exact: true }).click();
+  await expect.poll(() => content.evaluate(node => node.scrollTop)).toBe(0);
+  await shell.locator(".atlas-place-toggle").dispatchEvent("touchstart", { touches: [{ identifier: 1, clientY: 200 }] });
+  await shell.locator(".atlas-place-toggle").dispatchEvent("touchend", { changedTouches: [{ identifier: 1, clientY: 300 }] });
+  await expect(shell).toHaveAttribute("data-presentation", "preview");
   await shell.getByRole("button", { name: "Weg planen" }).click();
   await expect(shell).toHaveAttribute("aria-label", "Dein Weg zum Bänkli");
   await expect(shell.locator(".map-sheet-handle")).toBeVisible();
   await shell.locator(".map-sheet-close").click();
   await expect(shell).toHaveAttribute("aria-label", "Bankdetails");
+  await expect(shell).toHaveAttribute("data-presentation", "preview");
   await shell.locator(".map-sheet-close").click();
-  await expect(page.getByRole("complementary", { name: "Bankdetails" })).toHaveCount(0);
-  await page.locator(".walk-entry").click();
+  await page.getByRole("navigation", { name: "Dein Atlas" }).getByRole("button", { name: "Unterwegs", exact: true }).click();
   await expect(shell).toHaveAttribute("aria-label", "Spaziergang entdecken");
   await expect(shell.locator(".map-sheet-handle")).toBeVisible();
 });
@@ -589,35 +588,34 @@ test("keeps the bench task readable at 200% text on a 320 CSS-pixel viewport", a
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/?bank=osm-node-101");
   await page.addStyleTag({ content: ":root { font-size: 200% !important; }" });
-
   const shell = page.getByRole("complementary", { name: "Bankdetails" });
+  await expect(shell).toHaveAttribute("data-presentation", "place");
   await expect(shell.getByRole("heading", { name: "Lindenhof, Zürich" })).toBeVisible();
-  await expect(shell.getByRole("button", { name: "Weg planen" })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
-
-  await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
-  await expect(shell).toHaveAttribute("data-snap", "peek");
-  const chrome = shell.locator(".map-sheet-chrome");
-  const bounds = await chrome.boundingBox();
-  expect(bounds).not.toBeNull();
-  expect(bounds!.x).toBeGreaterThanOrEqual(-2);
-  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(322);
-  await expect(shell.getByRole("button", { name: "Bank schliessen" })).toBeVisible();
-  await expect(shell.getByRole("button", { name: "Ganz öffnen. Detailhöhe ändern" })).toBeVisible();
+  await expect(shell).toHaveAttribute("data-reading-layout", "flow");
+  await expect(shell.locator(".atlas-place-toggle")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  for (const selector of [".bench-poem", ".bench-visit-details > details > summary", ".bench-contribute", ".bench-route-action", ".bench-save-action"]) {
+    const item = shell.locator(selector);
+    await item.scrollIntoViewIfNeeded();
+    await expect(item).toBeInViewport();
+  }
   await page.screenshot({ path: testInfo.outputPath("bench-task-200-percent-text.png") });
 });
 
 test("renders task, selected-filter, muted, and watercolor text with sufficient contrast", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?bank=osm-node-101");
   const shell = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(shell.getByRole("heading", { name: "Lindenhof, Zürich" })).toBeVisible();
   expect(await renderedContrast(shell.getByRole("heading", { name: "Lindenhof, Zürich" }))).toBeGreaterThanOrEqual(4.5);
-  const muted = shell.locator(".bench-location").first();
+  await shell.locator(".bench-visit-details > details > summary").click();
+  const muted = shell.locator(".visit-access-unknown").first();
   await expect(muted).toBeVisible();
   expect(await renderedContrast(muted)).toBeGreaterThanOrEqual(4.5);
 
-  await shell.getByRole("button", { name: "Details auf eine Leiste minimieren" }).click();
-  expect(await renderedContrast(shell.locator(".map-sheet-collapsed-title"))).toBeGreaterThanOrEqual(4.5);
+  await shell.getByRole("button", { name: "Vorschau", exact: true }).click();
+  expect(await renderedContrast(shell.locator(".atlas-place-toggle"))).toBeGreaterThanOrEqual(4.5);
+  await shell.locator(".map-sheet-close").click();
   await page.getByRole("button", { name: "Filter öffnen" }).click();
   const shade = page.getByRole("dialog", { name: "Was brauchst du?" }).getByRole("button", { name: "Schatten", exact: true });
   await shade.click();
@@ -658,13 +656,14 @@ test("lets an authenticated user add an unverified Bänkli", async ({ page, brow
   // and a fresh page must find the persisted bench, not just optimistic state.
   await page.goto("/");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 5_000 });
-  await page.getByLabel("Ort suchen").fill(benchName);
+  await page.getByRole("combobox", { name: "Ort suchen", exact: true }).fill(benchName);
   await expect(page.getByRole("button", { name: new RegExp(benchName) })).toBeVisible({ timeout: 10_000 });
 });
 
 test("lets a user compose and persist a watercolor avatar", async ({ page, browserName }) => {
   await registerUser(page, `ava-${browserName}-${Date.now().toString().slice(-5)}`);
   await page.goto("/profil");
+  await page.locator(".journal-account > summary").click();
   await page.locator("summary").filter({ hasText: "Avatar gestalten" }).click();
   await page.getByRole("radio", { name: "Locken", exact: true }).check();
   await page.getByRole("radio", { name: "Wald", exact: true }).check();
@@ -672,6 +671,7 @@ test("lets a user compose and persist a watercolor avatar", async ({ page, brows
   await page.getByRole("button", { name: "Avatar speichern" }).click();
   await expect(page.getByText("Dein Aquarell-Avatar ist gespeichert.")).toBeVisible();
   await page.reload();
+  await page.locator(".journal-account > summary").click();
   await page.locator("summary").filter({ hasText: "Avatar gestalten" }).click();
   await expect(page.getByRole("radio", { name: "Locken", exact: true })).toBeChecked();
   await expect(page.getByRole("radio", { name: "Wald", exact: true })).toBeChecked();
@@ -681,11 +681,12 @@ test("lets a user compose and persist a watercolor avatar", async ({ page, brows
 test("shows useful sun and view information before terrain enrichment", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   await expect(page.getByRole("figure")).toBeVisible();
-  await expect(page.locator(".bench-overview").getByText("Sonne & Schatten", { exact: true })).toBeVisible();
-  await page.locator(".bench-sources > summary").click();
-  await expect(page.locator(".detail-panel-view").getByText("Was den Horizont prägt")).toBeVisible();
-  await expect(page.locator(".distance-ribbon")).toContainText("Weg oder Strasse");
-  await expect(page.locator(".distance-ribbon")).toContainText("direkt");
+  await expect(page.locator(".bench-visit-details summary").filter({ hasText: "Gut zu wissen" })).toBeVisible();
+  await expect(page.locator(".bench-sources")).toHaveCount(0);
+  await expect(page.locator(".bench-visit-warnings")).not.toContainText("noch nicht ausreichend bekannt");
+  await expect(page.locator(".bench-overview")).not.toContainText("Bergblick");
+  await page.locator(".bench-visit-details summary").filter({ hasText: "Gut zu wissen" }).click();
+  await expect(page.locator(".bench-visit-details details[open]")).toContainText("Sonnenfenster");
   await expect(page.getByText("Durchs Jahr")).toHaveCount(0);
 });
 

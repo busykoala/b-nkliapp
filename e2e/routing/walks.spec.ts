@@ -4,7 +4,7 @@ test("opens a separate calm walk planner without requesting location or routing"
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = () => { throw new Error("Unexpected location request"); }; });
   await page.goto("/");
-  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  await page.getByRole("button", { name: "Unterwegs", exact: true }).click();
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await expect(panel).toBeVisible();
   await page.getByLabel("Spaziergang vergrössern oder verkleinern").click();
@@ -28,7 +28,7 @@ test("opens a separate calm walk planner without requesting location or routing"
 test("denied walk location leaves address fallback and preserves privacy", async ({ page }) => {
   await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = (_ok, fail) => fail?.({ code: 1, message: "denied", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }); });
   await page.goto("/");
-  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  await page.getByRole("button", { name: "Unterwegs", exact: true }).click();
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await panel.getByRole("button", { name: "Mein Standort", exact: true }).click();
   await expect(panel.getByRole("status")).toContainText("Standort nicht verfügbar");
@@ -48,9 +48,12 @@ test("denied walk location leaves address fallback and preserves privacy", async
 
 test("offers several distinct Bänkli outings instead of one fixed route", async ({ page }, testInfo) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  await page.getByRole("button", { name: "Unterwegs", exact: true }).click();
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
-  await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
+  const originInput = panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" });
+  await originInput.fill("Zürich");
+  await expect(originInput).toHaveValue("Zürich");
+  await expect(originInput).toBeFocused();
   const address = panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" });
   // The address provider is an in-process fixture in browser checks. Fail fast
   // enough for Playwright's one retry to stay inside the release budget if a
@@ -58,6 +61,7 @@ test("offers several distinct Bänkli outings instead of one fixed route", async
   await expect(address).toBeVisible({ timeout: 5_000 });
   await address.click();
   await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
+  await panel.locator(".walk-alternatives > summary").click();
   const choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
   await expect(choices).toBeVisible({ timeout: 18_000 });
   await expect(choices.getByRole("button")).toHaveCount(3);
@@ -69,11 +73,15 @@ test("offers several distinct Bänkli outings instead of one fixed route", async
 test("chosen walk survives a bench interruption and reload until explicitly ended", async ({ page }, testInfo) => {
   test.setTimeout(60_000);
   await page.goto("/");
-  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  await page.getByRole("button", { name: "Unterwegs", exact: true }).click();
   let panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
-  await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
+  const originInput = panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" });
+  await originInput.fill("Zürich");
+  await expect(originInput).toHaveValue("Zürich");
+  await expect(originInput).toBeFocused();
   await panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" }).click();
   await panel.getByRole("button", { name: "Bänkli-Spaziergang finden", exact: true }).click();
+  await panel.locator(".walk-alternatives > summary").click();
   let choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
   await expect(choices).toBeVisible({ timeout: 18_000 });
   await choices.getByRole("button").nth(1).click();
@@ -84,30 +92,37 @@ test("chosen walk survives a bench interruption and reload until explicitly ende
   await expect(bench.getByRole("button", { name: "Spaziergang fortsetzen" })).toBeVisible();
   await bench.getByRole("button", { name: "Spaziergang fortsetzen" }).click();
   panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
-  choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
-  await expect(choices.getByRole("button").nth(1)).toHaveAttribute("aria-pressed", "true");
+  // Alternative choices resume closed; the selected route is retained underneath.
+  await expect(panel.locator(".walk-alternatives")).not.toHaveAttribute("open", "");
+  choices = panel.locator(".walk-suggestion-picker");
+  await expect(choices.locator("button").nth(1)).toHaveAttribute("aria-pressed", "true");
   await expect(panel.getByRole("region", { name: "Dein Spaziergang" })).toBeInViewport();
   await panel.screenshot({ path: testInfo.outputPath("walk-resumed-after-bench.png") });
   await page.reload();
   await page.getByRole("complementary", { name: "Bankdetails" }).getByRole("button", { name: "Spaziergang fortsetzen" }).click();
   panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
-  choices = panel.getByRole("group", { name: "3 Spaziergänge zur Auswahl" });
-  await expect(choices.getByRole("button").nth(1)).toHaveAttribute("aria-pressed", "true");
+  // Alternative choices resume closed; the selected route is retained underneath.
+  await expect(panel.locator(".walk-alternatives")).not.toHaveAttribute("open", "");
+  choices = panel.locator(".walk-suggestion-picker");
+  await expect(choices.locator("button").nth(1)).toHaveAttribute("aria-pressed", "true");
   await panel.getByRole("button", { name: "Spaziergang beenden" }).click();
   await expect(panel).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole("complementary", { name: "Bankdetails" }).getByRole("button", { name: "Spaziergang fortsetzen" })).toHaveCount(0);
   await page.getByRole("complementary", { name: "Bankdetails" }).getByRole("button", { name: "Bank schliessen" }).click();
-  await expect(page.getByRole("button", { name: "Spaziergang entdecken", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unterwegs", exact: true })).toBeVisible();
 });
 
 test("shows a Bänkli-centred route and opens a private return journey", async ({ page }, info) => {
   const errors: string[] = []; page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  await page.getByRole("button", { name: "Unterwegs", exact: true }).click();
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await panel.getByLabel("Spaziergang vergrössern oder verkleinern").click();
-  await panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" }).fill("Zürich");
+  const originInput = panel.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" });
+  await originInput.fill("Zürich");
+  await expect(originInput).toHaveValue("Zürich");
+  await expect(originInput).toBeFocused();
   const address = panel.getByRole("option", { name: "Bahnhofplatz 1, Zürich Adresse" });
   await expect(address).toBeVisible({ timeout: 5_000 });
   await address.click();

@@ -12,11 +12,13 @@ import { Footprints, Sun, Trees, MapPin } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { journeyMinutes, PACE_OPTIONS } from "@/features/journey/model";
 import { walkCopy } from "@/features/walks/model";
+import { RouteOpening } from "@/features/routing/components/route-opening";
 import { StartPicker } from "@/features/routing/components/start-picker";
 import { useWalkPlanner, walkLegs } from "@/features/walks/components/use-walk-planner";
 import type { ReturnJourney } from "@/features/journey/model";
 import type { WalkDraftSnapshot } from "@/features/walks/model";
 import { RouteAccessibilitySummary } from "@/features/routing/components/route-accessibility";
+import { useSheetHeadingFocus } from "@/components/use-sheet-heading-focus";
 
 export type WalkPlannerBodyProps = {
   getMap: () => MapLibreMap | null;
@@ -35,7 +37,7 @@ export function WalkPlannerBody({ getMap, initial, onSnapshot, onEnd, onReturn, 
   const restoredOnOpen = useRef(Boolean(initial?.result));
   const [ending, setEnding] = useState(false);
   const p = useWalkPlanner(getMap, initial, onSnapshot), s = p.settings;
-  useEffect(() => { title.current?.focus(); }, []);
+  useSheetHeadingFocus(title);
   useEffect(() => {
     if (!restoredOnOpen.current) return;
     let innerFrame = 0;
@@ -46,7 +48,9 @@ export function WalkPlannerBody({ getMap, initial, onSnapshot, onEnd, onReturn, 
   }, []); // A resumed route is revealed once; later edits should not jump the sheet.
   const copy = p.chosen && p.result ? walkCopy([p.chosen.bench], p.result.query.shape, p.chosen.extraBenches.length, t) : null;
   return <>
-    <header><span className="story-eyebrow">{t("walks.planner.eyebrow")}</span><h2 className="programmatic-focus-heading" ref={title} tabIndex={-1}>{t("walks.planner.title")}</h2><p>{t("walks.planner.intro")}</p></header>
+    <RouteOpening eyebrow={t("walks.planner.eyebrow")} title={t("walks.planner.title")} titleRef={title}><p>{t("walks.planner.intro")}</p></RouteOpening>
+      <details className={`journey-plan-controls${p.result ? " has-result" : ""}`} open={!p.result}>
+      <summary>{t("routing.controls.editPlan")}</summary>
       <section className="journey-controls" aria-label={t("walks.planner.label")}>
         <StartPicker origin={p.origin} onChange={p.chooseOrigin} getMap={getMap} />
         <fieldset className="walk-options"><legend>{t("walks.planner.duration")}</legend><div>{([30, 50, 120] as const).map((minutes) => <button key={minutes} aria-pressed={s.minutes === minutes} onClick={() => p.change({ minutes })}>{t("routing.controls.minutes", {minutes})}</button>)}</div></fieldset>
@@ -62,11 +66,12 @@ export function WalkPlannerBody({ getMap, initial, onSnapshot, onEnd, onReturn, 
         {p.dirty && p.result && <p role="status">{t("walks.planner.dirty")}</p>}
         {p.error && <p role="status">{p.error}</p>}
       </section>
+      </details>
       {p.result?.message && <p role="status">{translateMessage(t, p.result.message)}</p>}
       {p.chosen && p.result && copy && <section ref={restoredRoute} className="journey-results" aria-label={t("walks.results.title")}>
-        {p.result.suggestions.length > 1 && <fieldset className="walk-suggestion-picker"><legend>{t("walks.results.choice", {count: p.result.suggestions.length})}</legend><div>{p.result.suggestions.map((suggestion, index) => {
+        {p.result.suggestions.length > 1 && <details className="walk-alternatives"><summary>{t("walks.results.choice", { count: p.result.suggestions.length })}</summary><fieldset className="walk-suggestion-picker"><legend>{t("walks.results.choice", {count: p.result.suggestions.length})}</legend><div>{p.result.suggestions.map((suggestion, index) => {
           return <button type="button" key={suggestion.id} aria-pressed={suggestion.id === p.chosen?.id} onClick={() => p.select(suggestion)}><span>{index === 0 ? t("walks.results.recommended") : t("walks.results.variant", {number: index + 1})}</span><strong>{format.number(suggestion.path.distance / 1000, { maximumFractionDigits: 1 })} km</strong><small>{t("walks.results.summary", {duration: journeyMinutes(suggestion.durationSeconds), ascent: Math.round(suggestion.path.ascent)})}</small></button>;
-        })}</div></fieldset>}
+        })}</div></fieldset></details>}
         <div className="journey-recommendation"><span className="story-eyebrow">{t("walks.results.eyebrow")}</span><h2>{copy.title}</h2><p>{t("walks.results.routeSummary", {duration: journeyMinutes(p.chosen.durationSeconds), shape: p.result.query.shape === "loop" ? p.chosen.repeated ? t("walks.planner.outAndBack") : t("walks.planner.loop") : t("walks.planner.oneWay"), ascent: Math.round(p.chosen.path.ascent)})}</p><p>{p.chosen.evidence.reasons.map(reason => translateMessage(t, reason)).join(" · ")}</p><p className="walk-pause">{copy.pause}</p>{copy.discover && <button className="walk-discover" aria-pressed={p.extras} onClick={p.toggleExtras}>{copy.discover}</button>}</div>
         {p.chosen.rest && <section className="walk-rest-summary" aria-label={t("walks.rest.title")}><h3>{t("walks.rest.title")}</h3><p>{t("walks.rest.maximum", {minutes: Math.ceil(p.chosen.rest.maxGapSeconds / 60)})}</p><ol>{p.chosen.rest.stops.map((stop, index) => <li key={`${stop.bench.id}-${index}`}><button type="button" onClick={() => onInspectBench(stop.bench.id)}>{pointLabel(stop.bench, t)}</button><span>{t("walks.rest.after", {minutes: Math.round(stop.routeSeconds / 60)})}</span></li>)}</ol></section>}
         {p.result.query.difficulty === "t2" && <p className="journey-warning">{t("walks.results.t2")}</p>}

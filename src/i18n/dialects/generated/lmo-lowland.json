@@ -542,17 +542,20 @@
       "panoramaExpandedTitle": "Cielo e paesaggio a 360 gradi",
       "panoramaOpenExpanded": "Aprire il panorama grande in modalità 360 gradi",
       "panoramaCloseExpanded": "Chiudere la vista grande a 360 gradi",
-      "panorama360": "Vista 360°",
+      "panorama360": "Apri la vista",
       "panoramaClose": "Chiudere",
       "panoramaCalculated": "Calcolato dai dati del terreno e dell'ambiente",
       "panoramaZoomIn": "Ingrandire",
       "panoramaZoomOut": "Ridurre",
       "panoramaGenerating": "Il panorama viene dipinto…",
       "panoramaUnavailable": "Il panorama calcolato non è ancora disponibile.",
-      "panoramaRetry": "Riprova"
+      "panoramaRetry": "Riprova",
+      "panoramaHelp": "Comandi",
+      "panoramaHelpBody": "Trascina l’immagine o usa i tasti freccia per guardarti intorno. La piccola freccia della banchina riporta alla sua direzione di vista. Home ripristina la vista; Esc la chiude.",
+      "panoramaBenchDirection": "Torna alla vista dalla banchina"
     },
     "page": {
-      "description": "Banchina con analisi del sole e dei dintorni in Bänkli App.",
+      "description": "Scopri questo luogo per una pausa, la sua vista dipinta e il percorso per arrivarci.",
       "ratedDescription": "Banchina con vista valutata {score}/5 in Bänkli App.",
       "backToFeed": "Torna al feed delle panchine",
       "onMap": "Sulla mappa"
@@ -580,10 +583,31 @@
       "rate": "Valuta",
       "viewRatings": "Vedi",
       "contribute": "Contribuisci a questo luogo",
-      "improve": "Migliora",
+      "improve": "Dai un contributo",
       "addPhoto": "Aggiungi una foto",
       "addThought": "Condividi un pensiero",
       "sources": "Fonti e aggiornamento"
+    },
+    "visit": {
+      "title": "Per la tua visita",
+      "seatingAccess": "Seduta e accesso",
+      "weatherSun": "Meteo e sole",
+      "accessTitle": "Indicazioni sull’accesso",
+      "possiblyMissing": "È stato segnalato che questa banchina potrebbe non esserci più.",
+      "obstacle": "È noto un ostacolo lungo l’accesso o presso la banchina.",
+      "accessUnknown": "L’accesso non è ancora sufficientemente conosciuto.",
+      "accessScope": "Queste indicazioni riguardano la banchina e l’ultimo tratto. Non garantiscono un percorso interamente accessibile.",
+      "lightEstimate": "{value} · stima",
+      "sunEstimate": "Gli orari del sole sono stimati. Le nuvole e le condizioni sul posto possono cambiare la luce.",
+      "noiseUnknown": "Rumore del traffico non ancora rilevato",
+      "noiseLow": "Poco rumore del traffico previsto",
+      "noiseNoticeable": "Traffico probabilmente udibile",
+      "noiseHigh": "Rumore del traffico marcato previsto",
+      "noiseEstimate": "{source} · stima",
+      "goodToKnow": "Da sapere",
+      "noArmrest": "Senza braccioli",
+      "conflicting": "Alcune indicazioni sulla banchina sono discordanti.",
+      "sceneWeather": "{condition} · {temperature} °C"
     }
   },
   "common": {
@@ -884,7 +908,7 @@
         "environment": "Dintorni, panorama o luce non corrispondono"
       },
       "observation": "Cosa hai visto?",
-      "placeholder": "Per esempio: manca lo schienale",
+      "placeholder": "Descrivi brevemente che cosa è diverso.",
       "publish": "Pubblica la segnalazione",
       "fields": {
         "properties": "Dotazioni",
@@ -897,7 +921,7 @@
     "place": {
       "eyebrow": "Le persone di questo luogo",
       "title": "Momenti sulla banchina",
-      "share": "Condividi il momento",
+      "share": "Condividi questo posto",
       "shareShort": "Condividi",
       "shareText": "Un momento sulla banchina presso {bench}",
       "copied": "Link copiato, pronto da condividere, anche su Instagram.",
@@ -913,7 +937,10 @@
       "favourites": "Tutti i luoghi preferiti",
       "recent": "negli ultimi 90 giorni",
       "deleteOwn": "Elimina il mio momento",
-      "empty": "Ancora nessuna storia chì. La banchina aspetta pazientemente."
+      "empty": "Ancora nessuna storia chì. La banchina aspetta pazientemente.",
+      "moreActions": "Altre azioni",
+      "moreMoments": "Vedi altri momenti",
+      "fewerMoments": "Mostra meno momenti"
     },
     "features": {
       "progress": "{known}/{total} dati noti · Tocca per completare",
@@ -1063,7 +1090,7 @@
     },
     "workspace": {
       "choose": "Scegli un contributo",
-      "intro": "Una foto, un’informazione, un’impressione: scegli cosa vuoi condividere chì. Non devi sapere tutto.",
+      "intro": "Una foto, un’impressione, un’indicazione utile.",
       "groups": {
         "place": "Mostrare il luogo",
         "now": "Sul posto, adesso",
@@ -1110,6 +1137,27 @@
         "fireplaceNearby": "C’è un focolare nelle vicinanze?"
       },
       "viewDescription": "Descrizione attuale"
+    },
+    "concerns": {
+      "memory": {
+        "title": "Condividi un ricordo",
+        "hint": "Un momento, una foto o la tua impressione generale."
+      },
+      "facts": {
+        "title": "Completa le indicazioni",
+        "hint": "Quello che aiuta ad arrivare e a sedersi."
+      },
+      "problem": {
+        "title": "Segnala un problema",
+        "hint": "Un errore o qualcosa di cui prendersi cura."
+      },
+      "moreFacts": "Altre indicazioni",
+      "rating": "Valuta l’impressione generale"
+    },
+    "history": {
+      "title": "Le tue osservazioni precedenti",
+      "view": "La tua precedente impressione del panorama",
+      "remove": "Elimina: {kind}"
     }
   },
   "knowledge": {
@@ -1354,6 +1402,134 @@
       "storageUnavailable": "L’archivio fotografico fa una pausa.",
       "format": "Usa una foto JPEG, PNG o WebP.",
       "formatMismatch": "Il formato non corrisponde alla foto. Seleziona di nuovo l’immagine."
+    }
+  },
+  "poetry": {
+    "miniatures": {
+      "pause": {
+        "v1": "Per un momento il sentiero non deve portare da nessuna parte. Puoi esserci, e basta.",
+        "v2": "Il mondo prosegue. Chì c’è posto per un pensiero che non ha ancora un nome.",
+        "v3": "A volte una giornata chiede un posto dove sedersi, prima di una risposta.",
+        "v4": "Tra partire e arrivare c’è questa piccola sosta.",
+        "v5": "Lascia che il prossimo passo aspetti ancora un istante.",
+        "v6": "Un posto libero, un poco di tempo. Forse il viaggio comincia proprio chì.",
+        "v7": "Quello che porti con te può sedersi al tuo fianco.",
+        "v8": "Anche una deviazione può diventare, per un momento, la meta."
+      },
+      "sun": {
+        "v1": "La luce trova questo posto. Il filo della giornata puoi riprenderlo più tardi.",
+        "v2": "Un pezzo di giorno riposa nella luce. Siediti accanto.",
+        "v3": "Il sole non ha bisogno di un motivo per restare. Forse nemmeno tu.",
+        "v4": "Chì la luce si è fermata per una sosta.",
+        "v5": "Per questo istante basta guardare la luce.",
+        "v6": "La luce si sposta. Non occorre seguirla di corsa.",
+        "v7": "Un punto luminoso nel giorno. Non devi portarlo via per conservarlo.",
+        "v8": "Forse del cammino di incoeu resterà soprattutto questa luce."
+      },
+      "shade": {
+        "v1": "L’ombra non toglie nulla al giorno. Gli dà un altro colore.",
+        "v2": "Chì la luce può fare un passo indietro.",
+        "v3": "All’ombra il giorno smussa i suoi contorni.",
+        "v4": "Un posto fuori dal bagliore. Anche chì ci si può fermare.",
+        "v5": "La luce è impegnata altrove. Chì l’istante è tuo.",
+        "v6": "Non tutto ciò che sostiene un giorno deve stare in piena luce.",
+        "v7": "Un altro lato del giorno ti aspetta chì.",
+        "v8": "L’ombra lascia che le cose restino se stesse."
+      },
+      "rain": {
+        "v1": "La pioggia scrive sul giorno. Non devi capire ogni parola.",
+        "v2": "Incoeu il paesaggio ha scelto l’acquerello.",
+        "v3": "Le gocce mettono i loro piccoli punti. La frase del giorno resta aperta.",
+        "v4": "La pioggia non prende scorciatoie. Arriva dappertutto.",
+        "v5": "Un giorno bagnato ha una luce tutta sua.",
+        "v6": "Ciò che era soltanto un contorno trova nella pioggia un secondo margine.",
+        "v7": "Fra le gocce rimane posto per questo istante.",
+        "v8": "Il cielo lascia andare qualcosa. Forse incoeu puoi farlo anche tu."
+      },
+      "snow": {
+        "v1": "I fiocchi non seguono la stessa strada. Eppure arrivano.",
+        "v2": "La neve attraversa questo istante come se avesse tutto il tempo.",
+        "v3": "Un fiocco occupa poco spazio. Lo sguardo lo segue comunque.",
+        "v4": "Il giorno si ridisegna, fiocco dopo fiocco.",
+        "v5": "Quello che scende dal cielo incoeu non deve essere una risposta.",
+        "v6": "L’aria porta piccoli inizi di bianco.",
+        "v7": "Ogni fiocco trova una fine diversa alla sua caduta.",
+        "v8": "Guardi la neve. Per una volta basta questo come programma."
+      },
+      "night": {
+        "v1": "La notte lascia aperto ciò che il giorno voleva spiegare.",
+        "v2": "Nel buio lo sguardo non deve trattenere ogni cosa.",
+        "v3": "Il giorno se n’è andato. Un posto dove restare c’è ancora.",
+        "v4": "La notte ha più spazio di quanto uno sguardo possa abbracciare.",
+        "v5": "Per un momento non hai ancora bisogno del mattino dopo.",
+        "v6": "Quello che hai cercato incoeu può restare senza nome fino a domani.",
+        "v7": "Il buio toglie al luogo i contorni, non il suo posto.",
+        "v8": "Anche senza vedere tutta la strada puoi arrivare chì."
+      },
+      "mountains": {
+        "v1": "Le montagne non si avvicinano. Lo sguardo può raggiungerle lo stesso.",
+        "v2": "Basta una linea di montagna per dare ai pensieri un’altra direzione.",
+        "v3": "Le cime conservano la loro distanza. Chì c’è tempo per guardarle.",
+        "v4": "Fra te e le montagne c’è spazio per un pensiero lungo.",
+        "v5": "Non occorre salire per sentirsi un poco più vicini alle montagne.",
+        "v6": "Le montagne non hanno motivo di affrettarsi.",
+        "v7": "Lo sguardo prende la via delle cime. Tu puoi restare seduto.",
+        "v8": "Sul bordo delle montagne il cielo trova una forma."
+      },
+      "water": {
+        "v1": "L’acqua non trattiene nulla del tuo sguardo. Forse è proprio questo il suo dono.",
+        "v2": "Vicino all’acqua un pensiero può proseguire senza che tu debba seguirlo.",
+        "v3": "Uno sguardo sull’acqua non ha una fine già scritta.",
+        "v4": "Tu sei arrivato. L’acqua ha un modo tutto suo di essere in viaggio.",
+        "v5": "A volte basta l’acqua nello sguardo perché il giorno abbia più spazio.",
+        "v6": "Tu e l’acqua condividete questo istante senza trattenerlo.",
+        "v7": "Chì lo sguardo non deve raggiungere un’altra riva.",
+        "v8": "Quello che cerchi nell’acqua non deve essere per forza un riflesso."
+      },
+      "forest": {
+        "v1": "Fra gli alberi lo sguardo non deve trovare una linea retta.",
+        "v2": "Il bosco circonda questo istante come una storia senza ultima pagina.",
+        "v3": "Un albero impiega anni per ciò che tu vedi in un istante.",
+        "v4": "Chì gli anni stanno uno accanto all’altro. Puoi sederti fra loro per un poco.",
+        "v5": "Il bosco conosce molti sentieri. Per adesso basta questo posto.",
+        "v6": "La tua sosta è breve. Gli alberi si prendono più tempo.",
+        "v7": "Fra i tronchi e i pensieri c’è posto per una pausa.",
+        "v8": "Non devi capire il bosco per appartenergli un istante."
+      },
+      "autumn": {
+        "v1": "L’anno ha già raccontato molto. Chì una pagina può restare aperta.",
+        "v2": "L’autunno ha tempo per ciò che l’estate ha lasciato in sospeso.",
+        "v3": "Un capitolo avanzato dell’anno. Un buon posto per fermarsi un poco.",
+        "v4": "Ciò che è maturato incoeu non deve continuare a crescere.",
+        "v5": "L’autunno sa lasciare andare. Forse puoi guardarlo fare per un istante.",
+        "v6": "L’anno si accorcia, questo istante non diventa più piccolo.",
+        "v7": "Siedi in un giorno che sa già qualcosa degli addii.",
+        "v8": "C’è ancora tempo nell’anno. E chì c’è ancora posto per te."
+      },
+      "spring": {
+        "v1": "L’anno prova un nuovo inizio. Non devi ancora sapere dove porterà.",
+        "v2": "In primavera anche l’attesa somiglia a una partenza.",
+        "v3": "Forse qualcosa comincia mentre sei seduto chì.",
+        "v4": "Il prossimo inizio non deve fare rumore."
+      },
+      "summer": {
+        "v1": "L’estate può avere molti programmi. Tu puoi saltarne uno per un istante.",
+        "v2": "Nel mezzo dell’anno c’è posto per una piccola interruzione.",
+        "v3": "Un giorno d’estate non deve essere pieno per restare nella memoria.",
+        "v4": "Forse dell’estate porterai con te questa sosta."
+      },
+      "winter": {
+        "v1": "L’inverno lascia più margine all’anno. Chì qualcosa può restare da scrivere.",
+        "v2": "Anche un breve giorno d’inverno ha posto per un pensiero lungo.",
+        "v3": "L’anno si raccoglie. Incoeu non devi spingerlo avanti.",
+        "v4": "Una sosta fra quello che è stato e quello che tornerà."
+      },
+      "twilight": {
+        "v1": "Il giorno cambia colore. Per un istante tutto può stare nel mezzo.",
+        "v2": "La luce è in viaggio verso un’altra ora.",
+        "v3": "Sulla soglia del giorno lo sguardo non ha bisogno di una meta.",
+        "v4": "È ancora questo istante. Fra poco avrà un altro colore."
+      }
     }
   },
   "submission": {

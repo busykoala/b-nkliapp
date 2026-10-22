@@ -1,18 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Moon, X } from "lucide-react";
-import { viewLabel } from "@/i18n/bench-labels";
+import { ArrowLeft, X } from "lucide-react";
 import type { BenchDetail } from "@/lib/types";
-import { LightObservationPrompt, ViewObservationPrompt } from "@/features/bench-observations/bench-observation-prompts";
 import { BenchPhotoCapture } from "@/features/bench-photos/photo-capture";
 import { BenchFeatureEditor } from "./bench-feature-editor";
 import { BenchCommunityActions } from "./bench-community-actions";
 import { CorrectionForm, RatingForm } from "./contribution-forms";
 import { CareActions } from "./contribution-care";
 import { MetadataEditor, MomentForm } from "./contribution-writing";
-import { ContributionChooser, type ContributionMode, type ContributionTask } from "./contribution-chooser";
+import { ContributionChooser, contributionConcern, type ContributionMode, type ContributionTask } from "./contribution-chooser";
 import { ContributionSession, type ContributionWork } from "./contribution-session";
 import "./contribution-workspace.css";
 
@@ -86,21 +84,20 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
     heading.current?.focus({ preventScroll: true });
     return () => { element.close(); if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
   }, [open]);
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      if (!confirmDiscard && discardReturn.current) {
-        const previous = discardReturn.current;
-        discardReturn.current = null;
-        if (scroller.current) scroller.current.scrollTop = previous.scroll;
-        (previous.focus?.isConnected ? previous.focus : heading.current)?.focus({ preventScroll: true });
-        return;
-      }
-      if (scroller.current) scroller.current.scrollTop = active === "all" && !confirmDiscard ? homeScroll.current : 0;
-      const choice = active === "all" && !confirmDiscard && returnTask.current
-        ? dialog.current?.querySelector<HTMLButtonElement>(`[data-contribution-choice="${returnTask.current}"]`) : null;
-      (choice ?? heading.current)?.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
+  useLayoutEffect(() => {
+    // Finish task focus before input can begin; a delayed focus can interrupt
+    // WebKit editing and lose an input event during a fast task transition.
+    if (!confirmDiscard && discardReturn.current) {
+      const previous = discardReturn.current;
+      discardReturn.current = null;
+      if (scroller.current) scroller.current.scrollTop = previous.scroll;
+      (previous.focus?.isConnected ? previous.focus : heading.current)?.focus({ preventScroll: true });
+      return;
+    }
+    if (scroller.current) scroller.current.scrollTop = active === "all" && !confirmDiscard ? homeScroll.current : 0;
+    const choice = active === "all" && !confirmDiscard && returnTask.current
+      ? dialog.current?.querySelector<HTMLButtonElement>(`[data-contribution-choice="${returnTask.current}"]`) : null;
+    (choice ?? heading.current)?.focus({ preventScroll: true });
   }, [active, confirmDiscard]);
   useEffect(() => {
     if (!dirty && !pending) return;
@@ -120,12 +117,12 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
   };
   const choose = (task: ContributionTask) => {
     homeScroll.current = scroller.current?.scrollTop ?? 0;
-    returnTask.current = task;
+    returnTask.current = contributionConcern(task);
     setVisited((previous) => previous.includes(task) ? previous : [...previous, task]);
     setActive(task);
   };
   const title = confirmDiscard ? t("community.workspace.discardTitle")
-    : t(active === "all" ? "community.hub.title" : `community.chapters.${active}.title`);
+    : t(active === "all" ? "community.hub.title" : active === "moment" ? "community.concerns.memory.title" : active === "features" ? "community.concerns.facts.title" : active === "correction" ? "community.concerns.problem.title" : `community.chapters.${active}.title`);
 
   return <ContributionSession value={publish}>
     <dialog ref={dialog} aria-labelledby={titleId} className="contribution-dialog" onCancel={(event) => {
@@ -145,7 +142,7 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
         </header>
         <div ref={scroller} className="contribution-scroll">
           <div className="contribution-heading">
-            <p className="contribution-place">{bench.name || t("common.values.bench")}{bench.locationName && <span> · {bench.locationName}</span>}</p>
+            <p className="contribution-place">{bench.name || t("common.values.bench")}{bench.locationName && bench.locationName !== bench.name && <span> · {bench.locationName}</span>}</p>
             <h2 ref={heading} id={titleId} tabIndex={-1}>{title}</h2>
           </div>
           {confirmDiscard && <div className="contribution-discard">
@@ -155,15 +152,13 @@ export function BenchContributionHub({ bench, open, onClose, onChanged, initialC
           </div>}
           <div hidden={active !== "all" || confirmDiscard}><ContributionChooser bench={bench} onChoose={choose} /></div>
           {visited.map((task) => <section key={task} data-contribution-task={task} hidden={active !== task || confirmDiscard}>
-            {task === "features" && <><p className="contribution-intro">{t("community.workspace.featureIntro")}</p><BenchFeatureEditor bench={bench} onlyFields={onlyFields} onChanged={onChanged} />{!onlyFields && <MetadataEditor bench={bench} onChanged={onChanged} />}</>}
-            {task === "light" && (bench.dayPhase === "night" ? <p className="contribution-night"><Moon size={24} aria-hidden="true" />{t("community.chapters.light.night")}</p> : <LightObservationPrompt benchId={bench.id} observations={bench.observations.light} onChanged={onChanged} />)}
-            {task === "view" && <ViewObservationPrompt benchId={bench.id} observations={bench.observations.view} description={bench.viewLabels.filter(label => label !== "Aussicht noch offen").map(label => viewLabel(label, t)).join(" · ")} onChanged={onChanged} />}
+            {task === "features" && <><p className="contribution-intro">{t("community.workspace.featureIntro")}</p><BenchFeatureEditor bench={bench} onlyFields={onlyFields} groupSecondary={!onlyFields} onChanged={onChanged}>{!onlyFields && <MetadataEditor bench={bench} onChanged={onChanged} />}</BenchFeatureEditor></>}
             {task === "photo" && <BenchPhotoCapture benchId={bench.id} onChanged={onChanged} />}
-            {task === "moment" && <><p className="contribution-intro">{t("community.chapters.moment.summary")}</p><MomentForm bench={bench} onChanged={onChanged} /></>}
+            {task === "moment" && <><MomentForm bench={bench} onChanged={onChanged} /><nav className="contribution-related"><button type="button" onClick={() => choose("photo")}>{t("community.chapters.photo.title")}</button><button type="button" onClick={() => choose("rating")}>{t("community.concerns.rating")}</button></nav></>}
             {task === "rating" && <RatingForm benchId={bench.id} rating={bench.myRating} onChanged={onChanged} />}
             {task === "care" && <><p className="contribution-intro">{t("community.workspace.careIntro")}</p><CareActions bench={bench} onChanged={onChanged} /><BenchCommunityActions bench={bench} signedIn onChanged={onChanged} /></>}
             {task === "presence" && <BenchCommunityActions bench={bench} signedIn onChanged={onChanged} />}
-            {task === "correction" && <CorrectionForm benchId={bench.id} onChanged={onChanged} />}
+            {task === "correction" && <><CorrectionForm benchId={bench.id} onChanged={onChanged} /><nav className="contribution-related"><button type="button" onClick={() => choose("care")}>{t("community.chapters.care.title")}</button><button type="button" onClick={() => choose("presence")}>{t("community.chapters.presence.title")}</button></nav></>}
           </section>)}
         </div>
         {!confirmDiscard && <footer className="contribution-footer">

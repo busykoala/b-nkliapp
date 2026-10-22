@@ -20,6 +20,7 @@ test("credits a secret invitation only after a new account is created", async ({
   await page.goto("/profil");
   await expect(page).toHaveURL(/\/profil$/);
   const referrals = page.locator(".referral-card");
+  await page.locator(".journal-invite > summary").click();
   await referrals.scrollIntoViewIfNeeded();
   await referrals.getByRole("button", {name: "Geheimen Einladungslink erstellen"}).click();
   const invitationUrl = await referrals.getByLabel("Dein geheimer Link").inputValue();
@@ -38,7 +39,10 @@ test("credits a secret invitation only after a new account is created", async ({
   await invitedContext.close();
 
   await page.reload();
+  await page.locator(".journal-invite > summary").click();
   await referrals.scrollIntoViewIfNeeded();
-  await expect(referrals.getByText("eingeladenes Konto", {exact: true})).toBeVisible();
-  await expect(referrals.getByText("Noch 2 Einladungen bis zum Abzeichen.")).toBeVisible();
+  await page.locator(".journal-collection > summary").click();
+  const progress = page.locator(".referral-progress");
+  await expect(progress.getByText("eingeladenes Konto", {exact: true})).toBeVisible();
+  await expect(progress.getByText("Noch 2 Einladungen bis zum Abzeichen.")).toBeVisible();
 });

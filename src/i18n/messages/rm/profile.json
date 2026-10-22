@@ -107,7 +107,9 @@
     "rated": "Ina vusch laschada per <bench>{name}</bench>.",
     "confirmed": "<bench>{name}</bench> confermà al lieu.",
     "missing": "<bench>{name}</bench> annunzià sco absent.",
-    "edited": "In detagl agiunt a <bench>{name}</bench>."
+    "edited": "In detagl agiunt a <bench>{name}</bench>.",
+    "moment": "Laschà in mument tar <bench>{name}</bench>.",
+    "photo": "Partì ina fotografia da <bench>{name}</bench>."
   },
   "time": {
     "today": "oz",
@@ -170,5 +172,23 @@
   "metadata": {
     "description": "Il cudesch da viandar da {username} en Bänkli App.",
     "notFound": "Profil betg chattà"
+  },
+  "journal": {
+    "collection": "Tia collecziun",
+    "empty": "Qua è plazza per tias emprimas scuvertas. Memorisescha in lieu u lascha ina pitschna impressiun.",
+    "discover": "Scuvrir in lieu",
+    "activity": "Tias contribuziuns",
+    "publicEntries": "Muments partids",
+    "publicCollection": "Collecziun",
+    "kinds": {
+      "added": "Banc inscritta",
+      "rated": "Valitaziun",
+      "confirmed": "Banc confermada",
+      "missing": "Banc mancanta annunziada",
+      "edited": "Indicaziuns cumplettadas",
+      "corrected": "Correctura",
+      "moment": "Regurdientscha",
+      "photo": "Foto"
+    }
   }
 }

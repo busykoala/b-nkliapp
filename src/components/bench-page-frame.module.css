@@ -1,0 +1,7 @@
+.page { padding-bottom: var(--bench-actions-height,5rem); }
+.page :global(.bench-page-header) { position: sticky; top: 0; z-index: 20; background: var(--atlas-paper); }
+.page :global(.bench-page-footer) { position: fixed; z-index: 20; bottom: 0; left: 50%; translate: -50% 0; width: min(100%,42rem); padding: .75rem var(--atlas-reading-margin) max(.75rem,env(safe-area-inset-bottom)); background: var(--atlas-paper); border-top: 1px solid var(--guide-rule); }
+.page :global(.bench-page-footer .bench-actions) { margin: 0; }
+.page[data-reading-layout="flow"] { padding-bottom: 0; }
+.page[data-reading-layout="flow"] :global(.bench-page-header) { position: static; }
+.page[data-reading-layout="flow"] :global(.bench-page-footer) { position: static; margin-inline: auto; translate: none; }

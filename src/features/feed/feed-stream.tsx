@@ -42,7 +42,7 @@ export function FeedStream({ initial, scope }: { initial: FeedPage; scope: FeedS
   const periods = groupFeed(entries);
   return <div aria-busy={pending}>
     {periods.map((period) => <section className="feed-period" key={period.key} aria-labelledby={`feed-period-${period.key}`}>
-      <header className="feed-period-heading"><h2 id={`feed-period-${period.key}`}>{t(`feed.stream.period.${period.key}`)}</h2><span>{t("feed.stream.activityCount", {count: period.entries.length})}</span></header>
+      <header className="feed-period-heading"><h2 id={`feed-period-${period.key}`}>{t(`feed.stream.period.${period.key}`)}</h2></header>
       {groupBenchActivity(period.entries).map((group) => {
       const counts = new Map<FeedEntry["kind"], number>();
       group.entries.forEach((entry) => counts.set(entry.kind, (counts.get(entry.kind) ?? 0) + 1));
@@ -54,8 +54,8 @@ export function FeedStream({ initial, scope }: { initial: FeedPage; scope: FeedS
       const returnId = `feed-bench-${group.benchId}-${group.date}`;
       return <article className={`feed-bench-group feed-kind-${dominant}${routine ? " is-routine" : ""}${featured?.kind === "moment" ? " has-moment" : ""}`} key={group.key}>
         <header><span className="feed-event-mark"><Icon size={18} /></span><div><h3><SourceReturnLink focusId={returnId} href={`/bank/${group.benchId}?from=feed`}>{group.benchName ?? t("common.values.bench")}</SourceReturnLink></h3><time dateTime={group.date}>{formatDate(group.entries[0].createdAt, t, "long")}</time></div><SourceReturnLink focusId={`${returnId}-arrow`} className="feed-arrow" href={`/bank/${group.benchId}?from=feed`} ariaLabel={t("feed.stream.openBench", { name: group.benchName ?? t("common.values.bench") })}>→</SourceReturnLink></header>
-        {!routine && <div className="feed-event-chips">{[...counts].map(([kind, count]) => { const EventIcon = eventIcons[kind]; return <span key={kind}><EventIcon size={14} />{count > 1 && <b>{count}×</b>}{t(`feed.events.${kind}`)}</span>; })}</div>}
-        {routine && <p className="feed-routine-line">{[...counts].map(([kind, count]) => `${count > 1 ? `${count}× ` : ""}${t(`feed.events.${kind}`)}`).join(" · ")}</p>}
+
+        {routine && <p className="feed-routine-line">{[...counts].map(([kind]) => t(`feed.events.${kind}`)).join(" · ")}</p>}
         {featured && <blockquote>{featured.detail}</blockquote>}
         {!routine && <div className="feed-participants"><span className="feed-avatar-stack" aria-hidden="true">{people.slice(0, 3).map((name) => { const entry = group.entries.find((item) => item.username === name)!; return <TrailAvatar key={name} seed={entry.avatarSeed} username={name} compact />; })}</span><p>{people.slice(0, 3).map((name, index) => <span key={name}>{index > 0 && ", "}<Link href={`/profil/${encodeURIComponent(name)}`}>{name}</Link></span>)}{people.length > 3 && t("feed.stream.morePeople", {count: people.length - 3})}</p></div>}
         {(!routine || group.entries.length > 1) && <details><summary>{t("feed.stream.posts", {count: group.entries.length})} <ChevronDown size={16} /></summary><ul>{group.entries.map((entry) => <li key={entry.id}><Link href={`/profil/${encodeURIComponent(entry.username)}`}>{entry.username}</Link><span>{t(`feed.events.${entry.kind}`)}</span>{entry.detail && ["moment", "rated"].includes(entry.kind) && <q>{entry.detail}</q>}</li>)}</ul></details>}

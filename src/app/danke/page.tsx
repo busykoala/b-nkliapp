@@ -1,3 +1,4 @@
+import documentStyles from "@/components/atlas-document.module.css";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -19,7 +20,7 @@ export default async function AboutPage() {
   const t = await getTranslations();
   const user = await getCurrentUser();
   const sources = dataCatalog.sources.filter(({ lifecycle }) => lifecycle !== "research-only");
-  return <main className="thanks-page about-page min-h-dvh safe-bottom">
+  return <main className={`thanks-page about-page min-h-dvh safe-bottom ${documentStyles.page}`}>
     <header className="thanks-nav safe-top"><Link href="/" aria-label={t("common.navigation.map")} className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
     <header className="thanks-hero"><span><Sparkles size={15} /> {t("about.hero.eyebrow")}</span><h1> {t.rich("about.hero.title", { br: () => <br /> })}</h1><p>{t("about.hero.description")}</p></header>
     <nav className="about-jump-links" aria-label={t("about.navigation.label")}><a href="#so-gehts">{t("about.navigation.methods")}</a><a href="#quellen">{t("about.navigation.sources")}</a><a href="#datenschutz">{t("about.navigation.privacy")}</a><a href="#mitmachen">{t("about.navigation.contribute")}</a></nav>

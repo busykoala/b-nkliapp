@@ -117,7 +117,7 @@ export function readBenchDetail(benchId: string, currentUser: CurrentUser | null
     relief: communityComponents?.relief ?? components.relief ?? null,
     water: communityComponents?.water ?? components.water ?? null,
     naturalness: communityComponents?.naturalness ?? components.naturalness ?? null,
-    remoteness: communityComponents?.remoteness ?? components.remoteness ?? null,
+    remoteness: components.remoteness ?? null,
   };
   const objectiveNearOpenness = directionalOpenness(obstructionTypes, directionDegrees);
   const displayedNearOpenness = communityComponents?.openness ?? objectiveNearOpenness;

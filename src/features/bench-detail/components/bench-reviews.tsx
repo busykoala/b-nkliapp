@@ -22,9 +22,6 @@ export function BenchReviews({ bench, report, reported, user, onContribute }: { 
     <header><small>{t("community.reviews.eyebrow")}</small><h3>{t("community.reviews.title")}</h3></header>
     {bench.ratingBreakdown && <div className="rating-line">{([
       [t("community.rating.fields.overall"), bench.ratingBreakdown.overall, bench.ratingBreakdown.counts.overall],
-      [t("community.rating.fields.view"), bench.ratingBreakdown.view, bench.ratingBreakdown.counts.view],
-      [t("community.rating.fields.comfort"), bench.ratingBreakdown.comfort, bench.ratingBreakdown.counts.comfort],
-      [t("community.rating.fields.quiet"), bench.ratingBreakdown.quiet, bench.ratingBreakdown.counts.quiet],
     ] as const).filter(([, value]) => value !== null).map(([label, value, count]) => <span key={label}><strong>{format.number(value!, {maximumFractionDigits: 1})}</strong><small>{label} · {count}</small></span>)}</div>}
     {user
       ? <button type="button" className="community-contribute-entry" onClick={onContribute}><MessageCircleHeart size={17} /> {bench.myRating ? t("community.reviews.edit") : t("community.reviews.add")}</button>

@@ -1,0 +1,38 @@
+.opening { margin: 0 0 1.5rem; }
+.caption { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: var(--atlas-muted); font: 400 .875rem/1.25rem var(--font-body); }
+.caption > svg { width: 4rem; height: 2.5rem; }
+.opening h2 { margin: .25rem 0 .5rem; font: 500 1.875rem/2.1875rem var(--font-display); letter-spacing: normal; overflow-wrap: break-word; }
+.opening > p { margin: .5rem 0 0; font: 400 1rem/1.5 var(--font-body); }
+.sheet:global(.journey-panel) { container-type: inline-size; border-radius: 0; }
+.sheet :global(.journey-scroll) { padding: .5rem var(--atlas-reading-margin) 1.5rem; scroll-padding-block: 1rem; }
+.sheet :global(.map-sheet-close), .sheet :global(.map-sheet-minimize), .sheet :global(.map-sheet-resize) { min-height: 48px; min-width: 48px; border-radius: .25rem; color: var(--atlas-ink); font: 400 .875rem/1.25rem var(--font-body); }
+.sheet :global(.map-sheet-resize-label) { display: inline; }
+.sheet :global(:is(button,summary,input,select)) { min-height: 48px; }
+.sheet :global(.journey-start-card) { position: relative; margin: 0 0 1.5rem .25rem; padding: .25rem 0 .75rem 1rem; border: 0; border-inline-start: 1px solid var(--atlas-muted); border-radius: 0; background: transparent; box-shadow: none; }
+.sheet :global(.journey-start-card::before) { position: absolute; width: 7px; height: 7px; top: .75rem; left: -4px; border: 1px solid var(--atlas-lake); border-radius: 50%; background: var(--atlas-paper); content: ''; }
+.sheet :global(.journey-search-label) { border-bottom: 1px solid var(--guide-rule); }
+.sheet :global(.journey-origin-actions button), .sheet :global(.journey-start-card > small), .sheet :global(.journey-origins small) { font: 400 1rem/1.5 var(--font-body); }
+.sheet :global(summary) { color: var(--atlas-lake); font: 400 1rem/1.5 var(--font-body); }
+.sheet :global(.journey-plan-controls:not(.has-result) > summary) { display: none; }
+.sheet :global(.journey-warning) { border-inline-start: 3px solid var(--color-caution-text); border-radius: 0; }
+.sheet :global(.journey-controls) :is(h3,legend) { font: 600 1.125rem/1.5rem var(--font-body); }
+.sheet :global(.journey-time) { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,12rem),1fr)); gap: 1rem; margin-block: 1rem; }
+.sheet :global(.journey-controls) :is(select,input) { width: 100%; border: 1px solid var(--guide-rule); border-radius: .25rem; background: var(--atlas-paper); color: var(--atlas-ink); padding: .5rem; font: 400 1rem/1.5 var(--font-body); }
+.sheet :global(.journey-controls) :global(:is(.walk-options,.journey-modes,.journey-pace,.journey-buffer)) button { min-width: 0; padding: .5rem; border: 1px solid var(--guide-rule); border-radius: .25rem; background: transparent; font: 400 1rem/1.5 var(--font-body); white-space: normal; overflow-wrap: break-word; }
+.sheet :global(.journey-controls) :global(:is(.walk-options,.journey-modes,.journey-pace,.journey-buffer)) button[aria-pressed="true"] { border-color: var(--atlas-lake); background: var(--atlas-wash); box-shadow: none; font-weight: 600; }
+.sheet :global(.journey-pace strong) { font: 600 1rem/1.5 var(--font-body); }
+.sheet :global(.journey-controls .journey-submit) { margin: 1.5rem 0 .5rem; border: 0; border-radius: .25rem; padding: .75rem; background: var(--atlas-spruce); color: var(--atlas-paper); font: 600 1rem/1.5 var(--font-body); }
+.sheet :global(.journey-adjust) { border: 0; margin-block: 1rem; }
+.sheet :global(.journey-adjust > summary) { color: var(--atlas-lake); }
+.sheet :global(.journey-recommendation) { margin-block: 1rem 1.5rem; padding: 0; }
+.sheet :global(.journey-recommendation) :is(h2,h3) { margin-block: .5rem; font: 500 1.875rem/2.1875rem var(--font-display); letter-spacing: normal; }
+.sheet :global(.journey-recommendation p), .sheet :global(.journey-warning) { font: 400 1rem/1.5 var(--font-body); }
+.sheet :global(.journey-alternatives button), .sheet :global(.walk-suggestion-picker button) { min-height: 48px; padding: .75rem 0; border: 0; border-bottom: 1px solid var(--guide-rule); border-radius: 0; background: transparent; }
+.sheet :global(.journey-sources) { margin-top: 2rem; padding-block: 0; font: 400 .875rem/1.25rem var(--font-body); }
+@container (max-width: 18rem) {
+  .sheet :global(.map-sheet-chrome) { grid-template-columns: minmax(0,1fr) auto; }
+  .sheet :global(.map-sheet-resize) { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; }
+  .sheet :global(.map-sheet-minimize) { grid-column: 2; grid-row: 1; }
+  .sheet :global(.journey-controls) :global(:is(.journey-modes,.walk-options > div,.journey-pace > div,.journey-buffer > div)) { flex-wrap: wrap; }
+  .sheet :global(.journey-controls) :global(:is(.walk-options,.journey-modes,.journey-pace,.journey-buffer)) button { flex: 1 1 6rem; }
+}

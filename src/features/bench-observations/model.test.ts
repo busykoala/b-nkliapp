@@ -32,6 +32,7 @@ describe("community environment evidence", () => {
       { open: .8, trees: .1, buildings: .1 },
     );
     expect(result?.contributors).toBe(3);
+    expect(result?.components.remoteness).toBe(.2);
     expect(result?.components.relief).toBeGreaterThan(.65);
     expect(result?.components.sky).toBeGreaterThan(.65);
     expect(result?.components.naturalness).toBeGreaterThan(.4);

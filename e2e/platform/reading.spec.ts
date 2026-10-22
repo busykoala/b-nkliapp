@@ -5,6 +5,7 @@ import { essayHref } from "../../src/features/reading/model";
 
 // Reading is deliberately not a new map task: closing it must leave the visit untouched.
 test("reads over the menu and returns to the same bench, map and focus", async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toHaveAttribute("data-snap", "full");
@@ -16,6 +17,7 @@ test("reads over the menu and returns to the same bench, map and focus", async (
   const position = await content.evaluate((node) => node.scrollTop);
   await map.evaluate((node) => node.setAttribute("data-reading-context", "original"));
   const location = page.url();
+  await sheet.getByRole("button", { name: "Vorschau", exact: true }).click();
   const menuButton = page.getByRole("button", { name: "Menü öffnen", exact: true });
   await menuButton.click();
   const menu = page.locator(".app-menu-dialog");
@@ -41,6 +43,8 @@ test("reads over the menu and returns to the same bench, map and focus", async (
   await expect(menuButton).toBeFocused();
   await expect(menuButton).toHaveAttribute("aria-expanded", "false");
   await expect(map).toHaveAttribute("data-reading-context", "original");
+  await expect(sheet).toHaveAttribute("data-presentation", "preview");
+  await sheet.getByRole("button", { name: "Zum Bänkli", exact: true }).click();
   await expect(sheet).toHaveAttribute("data-snap", "full");
   expect(await content.evaluate((node) => node.scrollTop)).toBe(position);
   await expect(page).toHaveURL(location);

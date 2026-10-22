@@ -16,15 +16,6 @@ import { benchObservationNow, lightObservationContext, observationSeason } from 
 import { refreshEnvironmentEstimate } from "./repository";
 
 const lightSchema = z.enum(["sun", "shade", "mixed"]);
-const viewSchema = z.object({
-  openness: z.enum(["wide", "partial", "enclosed"]),
-  sky: z.enum(["open", "partial", "closed"]),
-  relief: z.enum(["flat", "gentle", "strong"]),
-  water: z.enum(["clear", "some", "none"]),
-  horizon: z.enum(["open", "trees", "buildings", "mixed"]),
-  naturalness: z.enum(["natural", "mixed", "built"]),
-  disturbance: z.enum(["quiet", "some", "strong"]),
-});
 
 type BenchRow = { row_id: number; latitude: number; longitude: number };
 
@@ -95,7 +86,7 @@ export async function undoLightObservation(benchId: string): Promise<ActionResul
   }
 }
 
-function replaceViewObservation(benchRowId: number, userId: number, kind: "agreement" | "correction", values: z.infer<typeof viewSchema> | null) {
+function replaceViewObservation(benchRowId: number, userId: number, kind: "agreement") {
   const now = benchObservationNow().toISOString();
   const season = observationSeason(new Date(now));
   const transaction = sqlite.transaction(() => {
@@ -104,8 +95,8 @@ function replaceViewObservation(benchRowId: number, userId: number, kind: "agree
     sqlite.prepare(`INSERT INTO bench_view_observations(
       bench_row_id,user_id,kind,openness,sky,relief,water,horizon,naturalness,disturbance,season,observed_at,created_at
     ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-      benchRowId, userId, kind, values?.openness ?? null, values?.sky ?? null, values?.relief ?? null,
-      values?.water ?? null, values?.horizon ?? null, values?.naturalness ?? null, values?.disturbance ?? null,
+      benchRowId, userId, kind, null, null, null,
+      null, null, null, null,
       season, now, now,
     );
     refreshEnvironmentEstimate(sqlite, benchRowId);
@@ -118,26 +109,11 @@ export async function submitViewAgreement(benchId: string): Promise<ActionResult
   try {
     const user = await actor("view-observation", 8);
     const bench = benchRow(benchId);
-    replaceViewObservation(bench.row_id, user.id, "agreement", null);
+    replaceViewObservation(bench.row_id, user.id, "agreement");
     refresh(benchId);
     return { ok: true, message: t("community.result.observationConfirmed") };
   } catch (error) {
     return { ok: false, message: actionError(t, error, "community.result.observationConfirmFailed") };
-  }
-}
-
-export async function submitViewObservation(benchId: string, input: unknown): Promise<ActionResult> {
-  const t = await getTranslations();
-  const values = viewSchema.safeParse(input);
-  if (!values.success) return { ok: false, message: t("community.result.viewInvalid") };
-  try {
-    const user = await actor("view-observation", 8);
-    const bench = benchRow(benchId);
-    replaceViewObservation(bench.row_id, user.id, "correction", values.data);
-    refresh(benchId);
-    return { ok: true, message: t("community.result.viewSaved") };
-  } catch (error) {
-    return { ok: false, message: actionError(t, error, "community.result.viewFailed") };
   }
 }
 

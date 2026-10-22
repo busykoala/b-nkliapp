@@ -1,0 +1,11 @@
+{
+  "mode": "Built-in image_gen; new generation; transparent background",
+  "purpose": "Abstract identity wash at the edge of a page, never evidence about an actual bench location",
+  "assets": [
+    {
+      "path": "public/ui-art/field-guide/horizon-wash-v1.webp",
+      "original": "test-results/ui-art-direction/artwork/horizon-wash-original.png",
+      "prompt": "Use case: illustration-story. Create one original watercolor horizon ribbon as a reusable part of the visual identity of Bänkli, a quiet Swiss landscape-and-poetry web app. It must look physically painted by a sensitive contemporary watercolor artist: very loose translucent washes, mineral pigment granulation, wet-in-wet bleeding, dry brush interruptions, lost and found edges. Entirely flat, not an illustration of a book or any object. Wide horizontal composition about 3:1. A few overlapping low, asymmetrical landform gestures along the bottom third only: pale blue-grey distant wash, muted moss green middle pigment, a small warm ochre trace. The right end rises somewhat, the left becomes extremely sparse. One or two tiny broken graphite-like contour fragments may accompany the wash. Upper half and especially upper-left are generous genuinely transparent empty space for real UI text. All outer boundaries dissolve irregularly into genuine alpha transparency, including the bottom; no paper rectangle, no frame. Restrained chroma and very light values, warm-paper compatible, no solid dark masses. No realistic identifiable scenery, detailed trees, buildings, bench, people, pencil, book, lettering, symbols, UI or watermark. This is an airy, painterly compositional ground at the edge of a real page, not a sticker, stock landscape, icon or detailed painting inside a rectangle."
+    }
+  ]
+}

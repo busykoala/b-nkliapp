@@ -14,5 +14,24 @@
     "original": "Lire l’original allemand",
     "note": "Traduction du texte allemand par intelligence artificielle.",
     "back": "Retour au menu"
+  },
+  "project": "Le projet",
+  "atlas": {
+    "navigation": "Votre atlas",
+    "map": "Carte",
+    "walk": "En chemin",
+    "book": "Mon carnet",
+    "more": "Plus",
+    "wishes": "Envies",
+    "openPlace": "Voir le banc",
+    "showMap": "Aperçu",
+    "closeSearch": "Retour à la carte",
+    "bookIntro": "Retrouvez ici vos lieux favoris et les souvenirs laissés en chemin. Connectez-vous pour commencer votre carnet.",
+    "journalTitle": "Mon carnet",
+    "journalSaved": "Pour la prochaine sortie",
+    "journalEntries": "Ce qui reste du chemin",
+    "savedPlaces": "Lieux favoris",
+    "account": "Votre compte",
+    "preferences": "Langue et affichage"
   }
 }

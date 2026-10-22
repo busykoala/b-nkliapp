@@ -1,3 +1,4 @@
+import documentStyles from "@/components/atlas-document.module.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -18,7 +19,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function ReadingPage({ searchParams }: Props) {
   const [query, locale, t, user] = await Promise.all([searchParams, getLocale(), getTranslations(), getCurrentUser()]);
   const language = resolveEssayLanguage(query.lang, locale);
-  return <main className="reading-page safe-bottom">
+  return <main className={`reading-page safe-bottom ${documentStyles.page}`}>
     <header className="reading-page-bar safe-top">
       <Link href="/" className="reading-map-link"><ArrowLeft size={18} aria-hidden="true" />{t("common.navigation.map")}</Link>
       <AppMenu user={user} />

@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 async function openPlanner(page: Page) {
   await page.goto("/?bank=osm-node-101");
   await expect(page.getByLabel("Karte der Schweizer Sitzbänke")).toHaveAttribute("data-map-ready", "true", { timeout: 8000 });
-  await page.getByLabel("Detailhöhe ändern").click();
+  await expect(page.locator(".bench-atlas-sheet .bench-header")).toBeVisible();
   await page.getByRole("button", { name: "Weg planen" }).click();
   const journal = page.getByRole("complementary", { name: "Dein Weg zum Bänkli" });
   await expect(journal).toBeVisible();
@@ -17,7 +17,7 @@ test("opens a lazy illustrated planner and returns to the selected bench", async
   await expect(journal.getByRole("heading", { name: "Dein Weg zum Bänkli" })).toBeVisible();
   await expect(journal.getByRole("button", { name: "Meinen Weg finden" })).toBeDisabled();
   await expect(journal.getByRole("button", { name: /Gemütlich/ })).not.toBeVisible();
-  await journal.locator("summary").filter({ hasText: "Anpassen" }).click();
+  await journal.locator(".journey-adjust > summary").click();
   await journal.getByRole("button", { name: /Gemütlich/ }).click();
   await expect(journal.getByText(/500 m in etwa 10 min/)).toBeVisible();
   await journal.getByRole("button", { name: "+6 min", exact: true }).click();
@@ -33,15 +33,15 @@ test("suspends and resumes a journey without losing the committed query", async 
   const origin = journal.getByRole("combobox", { name: "Start: Adresse oder Haltestelle" });
   await origin.fill("Bern");
   await journal.getByRole("option", { name: "Bern Haltestelle" }).click();
-  await journal.locator("summary").filter({ hasText: "Anpassen" }).click();
+  await journal.locator(".journey-adjust > summary").click();
   await journal.getByRole("button", { name: "+6 min", exact: true }).click();
   await page.getByLabel("Reiseplan schliessen").click();
   await expect(page.getByRole("complementary", { name: "Bankdetails" })).toBeVisible();
   await page.getByRole("button", { name: "Weg planen" }).first().click();
   const resumed = page.getByRole("complementary", { name: "Dein Weg zum Bänkli" });
   await expect(resumed.locator(".journey-start-summary")).toContainText("Bern");
-  await expect(resumed.locator("summary").filter({ hasText: "Anpassen" })).toContainText("+6 min");
-  await resumed.locator("summary").filter({ hasText: "Anpassen" }).click();
+  await expect(resumed.locator(".journey-adjust > summary")).toContainText("+6 min");
+  await resumed.locator(".journey-adjust > summary").click();
   await expect(resumed.getByRole("button", { name: "+6 min", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 

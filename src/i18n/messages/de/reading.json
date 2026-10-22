@@ -14,5 +14,24 @@
     "original": "Deutsches Original lesen",
     "note": "Ein Beitrag von Urs für die Bänkli App.",
     "back": "Zurück zum Menü"
+  },
+  "project": "Projekt",
+  "atlas": {
+    "navigation": "Dein Atlas",
+    "map": "Karte",
+    "walk": "Unterwegs",
+    "book": "Mein Buch",
+    "more": "Mehr",
+    "wishes": "Wünsche",
+    "openPlace": "Zum Bänkli",
+    "showMap": "Vorschau",
+    "closeSearch": "Zur Karte",
+    "bookIntro": "Hier sammeln sich deine Lieblingsplätze und die Erinnerungen, die du unterwegs hinterlässt. Melde dich an, um dein eigenes Buch zu beginnen.",
+    "journalTitle": "Mein Buch",
+    "journalSaved": "Für den nächsten Ausflug",
+    "journalEntries": "Was unterwegs bleibt",
+    "savedPlaces": "Lieblingsplätze",
+    "account": "Dein Konto",
+    "preferences": "Sprache & Darstellung"
   }
 }

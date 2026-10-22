@@ -14,5 +14,24 @@
     "original": "Leger l’original tudestg",
     "note": "Translaziun dal tudestg en rumantsch grischun cun intelligenza artifiziala.",
     "back": "Enavos al menu"
+  },
+  "project": "Il project",
+  "atlas": {
+    "navigation": "Tes atlas",
+    "map": "Charta",
+    "walk": "Sin via",
+    "book": "Mes cudesch",
+    "more": "Dapli",
+    "wishes": "Giavischs",
+    "openPlace": "Tar il banc",
+    "showMap": "Prevista",
+    "closeSearch": "Enavos a la charta",
+    "bookIntro": "Qua sa rimnan tes lieus preferids e las regurdientschas che ti laschas sin via. T’annunzia per cumenzar tes agen cudesch.",
+    "journalTitle": "Mes cudesch",
+    "journalSaved": "Per la proxima excursiun",
+    "journalEntries": "Quai che resta da la via",
+    "savedPlaces": "Plazs preferids",
+    "account": "Tes conto",
+    "preferences": "Lingua e preschentaziun"
   }
 }

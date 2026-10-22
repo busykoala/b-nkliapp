@@ -74,7 +74,8 @@
     "difficulty": "Difficulté",
     "time": "Départ (heure suisse ; vide = maintenant)",
     "goodToKnow": "Bon à savoir",
-    "directions": "Description du chemin"
+    "directions": "Description du chemin",
+    "editPlan": "Adapter le parcours"
   },
   "errors": {
     "time": "Cette heure suisse n’existe pas. Vérifie-la."

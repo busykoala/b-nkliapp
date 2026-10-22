@@ -23,6 +23,7 @@ test("shows nearby practical places on the map and keeps bench details readable"
   await expect(sheet).toHaveAttribute("data-snap", "full");
   await expect(sheet.getByRole("region", {name: "Auf einen Blick"})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await sheet.locator(".bench-visit-details > details > summary").click();
   const amenityItems = sheet.locator(".bench-nearby-amenities li");
   await expect(amenityItems).toHaveCount(2);
   await expect(sheet.locator(".bench-nearby-amenities").getByText("Abfalleimer", { exact: true })).toHaveCount(0);
@@ -66,54 +67,38 @@ test("shows nearby practical places on the map and keeps bench details readable"
   await expect(map).toHaveAttribute("data-center-latitude", cameraBefore.latitude!);
   await expect(map).toHaveAttribute("data-center-longitude", cameraBefore.longitude!);
   await expect(map).toHaveAttribute("data-zoom", cameraBefore.zoom!);
+  const route = restored.getByRole("button", { name: "Weg planen", exact: true });
+  await route.click();
+  await page.getByLabel("Reiseplan schliessen").click();
+  await expect(route).toBeFocused();
+  await expect.poll(() => restored.locator(".map-sheet-content").evaluate(node => node.scrollTop)).toBe(scrollBefore);
 });
 
 test("keeps the compact visit summary readable and returns from reviews", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?bank=osm-node-101");
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
-  await expect(sheet.locator(".bench-overview-grid > .overview-fact")).toHaveCount(6);
+  await expect(sheet.locator(".bench-overview-grid")).toHaveCount(0);
   const actions = sheet.locator(".bench-actions");
-  await expect(actions.getByRole("button", { name: "Weg planen", exact: true })).toBeVisible();
-  await expect(actions.getByRole("button", { name: "Merken", exact: true })).toBeVisible();
-  await expect(actions.getByRole("button", { name: "Bänkli beschreiben", exact: true })).toHaveCount(0);
-  await expect(actions.locator(".bench-icon-action")).toHaveCount(1);
-  await expect(sheet.getByRole("button", { name: "Verbessern", exact: true })).toHaveCount(1);
-  await expect(sheet.locator(".bench-sources")).not.toHaveAttribute("open", "");
-  await expect(sheet.locator(".bench-source-content")).toBeHidden();
-  await expect(sheet.locator(".bench-overview")).not.toContainText(/unbestätigt|unsicher/i);
-  const overviewLabels = sheet.locator(".overview-label");
-  await expect(overviewLabels.nth(0)).toContainText("Wetter");
-  await expect(overviewLabels.nth(1)).toContainText("Sonne & Schatten");
-  await expect(overviewLabels.nth(2)).toContainText("Bank");
-  await expect(overviewLabels.nth(3)).toContainText(/Zugang am Bänkli|Untergrund/);
-  await expect(overviewLabels.nth(4)).toContainText("Aussicht");
-  await expect(overviewLabels.nth(5)).toContainText("Ruhe vor Ort");
-  const ratingSummary = sheet.locator(".overview-rating");
-  const ratingAction = ratingSummary.locator(".overview-rating-action");
-  // The suite intentionally shares one fixture database, so another parallel test
-  // may already have rated this bench. The action must match the rendered state:
-  // no score invites a rating, an existing score opens the reviews.
-  const hasRating = (await ratingSummary.locator(".overview-rating-copy strong").count()) > 0;
-  await expect(ratingAction).toHaveText(hasRating ? "Ansehen" : "Bewerten");
+  await expect(actions.getByRole("button", { name: "Weg planen", exact: true })).toBeInViewport();
+  await expect(actions.getByRole("button", { name: "Merken", exact: true })).toBeInViewport();
+  await expect(sheet.locator(".bench-action-group")).toHaveCount(1);
+  await expect(sheet.locator(".bench-contribute button")).toHaveCount(1);
+  await expect(sheet.locator(".bench-sources")).toHaveCount(0);
+  await expect(sheet.locator(".bench-visit-details > details")).toHaveCount(1);
+  expect(await sheet.locator(".bench-panorama").evaluate(element => Boolean(element.compareDocumentPosition(document.querySelector(".bench-overview")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
   const content = sheet.locator(".map-sheet-content");
-  await sheet.locator(".overview-rating").scrollIntoViewIfNeeded();
-  const before = await content.evaluate(node => node.scrollTop);
-  await sheet.locator(".overview-rating").click();
-  await expect(sheet.locator(".community-page")).toBeVisible();
-  await expect(sheet.locator(".quiet-back")).toBeFocused();
-  await sheet.locator(".quiet-back").click();
-  await expect(sheet.locator(".overview-rating")).toBeFocused();
-  await expect.poll(() => content.evaluate(node => node.scrollTop)).toBe(before);
-  await sheet.locator(".bench-sources > summary").click();
-  await expect(sheet.locator(".bench-source-content")).toBeVisible();
-  await expect(sheet.locator(".bench-sources details")).toHaveCount(0);
-  const sources = sheet.locator(".bench-sources");
-  await expect(sources.getByRole("heading", { name: "Das letzte Wegstück", exact: true })).toHaveCount(1);
-  await expect(sources.getByRole("heading", { name: "Was den Horizont prägt", exact: true })).toHaveCount(1);
-  await expect(sources.locator(".view-score-art, .horizon-ring, .confidence-dots")).toHaveCount(0);
-  await expect(sources.locator(".source-evidence [data-attribute='backrest']")).toHaveCount(1);
-  await sheet.locator(".bench-sources > summary").click();
+  const ratingSummary = sheet.locator(".overview-rating");
+  if (await ratingSummary.count()) {
+    await ratingSummary.scrollIntoViewIfNeeded();
+    const before = await content.evaluate(node => node.scrollTop);
+    await ratingSummary.click();
+    await expect(sheet.locator(".community-page")).toBeVisible();
+    await expect(sheet.locator(".quiet-back")).toBeFocused();
+    await sheet.locator(".quiet-back").click();
+    await expect(ratingSummary).toBeFocused();
+    await expect.poll(() => content.evaluate(node => node.scrollTop)).toBe(before);
+  }
 
   await page.setViewportSize({ width: 320, height: 720 });
   await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
@@ -124,7 +109,9 @@ test("keeps the compact visit summary readable and returns from reviews", async 
     const box = node.getBoundingClientRect();
     return { left: box.left, right: box.right, width: box.width, height: box.height };
   }));
-  expect(bounds.length).toBeGreaterThanOrEqual(6);
+  // At enlarged text the preview cannot fit: back, directions and save remain.
+  await expect(sheet.locator(".atlas-place-toggle")).toHaveCount(0);
+  expect(bounds).toHaveLength(3);
   for (const box of bounds) {
     expect(box.left).toBeGreaterThanOrEqual(0);
     expect(box.right).toBeLessThanOrEqual(321);

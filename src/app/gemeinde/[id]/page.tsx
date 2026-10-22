@@ -1,3 +1,4 @@
+import documentStyles from "@/components/atlas-document.module.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -32,7 +33,7 @@ export default async function MunicipalityPage({ params }: { params: Promise<{ i
     ["direction", <Compass key="i" />, data.audit.missingDirection], ["freshness", <SearchCheck key="i" />, data.audit.unknownFreshness + data.audit.staleMapping],
   ] as const;
 
-  return <main className="statistics-page municipality-page min-h-dvh safe-bottom">
+  return <main className={`statistics-page municipality-page min-h-dvh safe-bottom ${documentStyles.page}`}>
     <header className="statistics-nav safe-top"><Link href="/statistiken" aria-label={t("statistics.municipality.back")} className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
     <section className="municipality-hero">
       <div className="statistics-kicker"><MapPin size={15} /> {data.canton ?? t("statistics.values.somewhere")} · BFS {data.id}</div>

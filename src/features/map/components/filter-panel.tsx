@@ -2,10 +2,11 @@
 import { useTranslations } from "next-intl";
 
 import { useEffect, useId, useRef } from "react";
-import { Armchair, CloudSun, Droplets, Flame, Footprints, Hand, RotateCcw, Star, Sun, Toilet, Umbrella, X } from "lucide-react";
+import { Armchair, Check, CloudSun, Droplets, Flame, Footprints, Hand, RotateCcw, Star, Sun, Toilet, Umbrella, X } from "lucide-react";
 import { activeMapFilterCount } from "@/features/map/filters";
 import type { MapFilters } from "@/lib/types";
 import { registerOverlayDismissal } from "@/lib/overlay-dismissal";
+import { useTaskIsolation } from "@/components/use-task-isolation";
 
 type Props = { filters: MapFilters; onChange: (filters: MapFilters) => void; onClose: () => void };
 
@@ -13,6 +14,8 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
   const t = useTranslations();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const taskRef = useRef<HTMLDivElement>(null);
+  useTaskIsolation(taskRef, true);
   const closeRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
@@ -44,37 +47,45 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
       window.clearTimeout(focusTimer);
       unregisterDismissal();
       document.removeEventListener("keydown", handleKey);
-      window.setTimeout(() => document.querySelector<HTMLButtonElement>('#map-filter-toggle')?.focus(), 0);
+      window.setTimeout(() => {
+        // A new action may already have focused search or another dialog. Return
+        // focus only while the removed filter still left the document unfocused.
+        const active = document.activeElement;
+        if (active?.isConnected && active !== document.body && active !== document.documentElement) return;
+        document.querySelector<HTMLButtonElement>('#map-filter-toggle')?.focus();
+      }, 0);
     };
   }, []);
   const toggle = (key: keyof MapFilters) => onChange({ ...filters, [key]: filters[key] === true ? undefined : true });
-  const setLight = (sunny: boolean) => onChange({ ...filters, sunnyNow: filters.sunnyNow === sunny ? undefined : sunny });
+  const setLight = (sunny: boolean | undefined) => onChange({ ...filters, sunnyNow: sunny });
   return (
-    <>
+    <div ref={taskRef} style={{ display: "contents" }}>
       <button type="button" tabIndex={-1} aria-hidden="true" className="filter-modal-backdrop" onClick={onClose} />
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="calm-filter-panel safe-bottom absolute inset-x-3 bottom-3 z-30 flex max-h-[calc(100dvh-6rem)] flex-col overflow-hidden md:bottom-auto md:left-4 md:right-auto md:top-20 md:w-[23rem]">
       <div className="filter-scroll">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="filter-opening mb-4 flex items-center justify-between gap-3">
           <div><p className="filter-eyebrow">{t("map.filters.eyebrow")}</p><h2 id={titleId}>{t("map.filters.title")}</h2>{activeCount > 0 && <p className="filter-count" role="status">{t("map.filters.count", { count: activeCount })}</p>}</div>
           <button ref={closeRef} autoFocus className="btn btn-circle btn-ghost btn-sm" aria-label={t("map.filters.close")} onClick={onClose}><X size={19} /></button>
         </div>
-        <p className="filter-intro">{t("map.filters.intro")}</p>
         <FilterGroup label={t("map.filters.pause")}>
           <FilterToggle active={filters.backrest === true} icon={<Armchair />} label={t("bench.attributes.backrest")} onClick={() => toggle("backrest")} />
-          <FilterToggle active={filters.covered === true} icon={<Umbrella />} label={t("bench.attributes.covered")} onClick={() => toggle("covered")} />
-          <FilterToggle active={filters.fireplaceNearby === true} icon={<Flame />} label={t("map.filters.fireplace")} onClick={() => toggle("fireplaceNearby")} />
+        </FilterGroup>
+        <FilterGroup label={t("map.filters.light")} paired>
+          <FilterToggle active={filters.sunnyNow === undefined} label={t("routing.controls.any")} onClick={() => setLight(undefined)} />
+          <FilterToggle active={filters.sunnyNow === true} icon={<Sun />} label={t("map.filters.sun")} onClick={() => setLight(true)} />
+          <FilterToggle active={filters.sunnyNow === false} icon={<CloudSun />} label={t("map.filters.shade")} onClick={() => setLight(false)} />
         </FilterGroup>
         <FilterGroup label={t("knowledge.nearby.title")}>
           <FilterToggle active={filters.toiletsNearby === true} icon={<Toilet />} label={t("map.filters.toilets")} onClick={() => toggle("toiletsNearby")} />
           <FilterToggle active={filters.drinkingWaterNearby === true} icon={<Droplets />} label={t("map.filters.drinkingWater")} onClick={() => toggle("drinkingWaterNearby")} />
         </FilterGroup>
         <p className="filter-intro">{t("map.filters.facilityDistance")}</p>
-        <FilterGroup label={t("map.filters.light")}>
-          <FilterToggle active={filters.sunnyNow === true} icon={<Sun />} label={t("map.filters.sun")} onClick={() => setLight(true)} />
-          <FilterToggle active={filters.sunnyNow === false} icon={<CloudSun />} label={t("map.filters.shade")} onClick={() => setLight(false)} />
-        </FilterGroup>
         <details className="filter-more">
           <summary>{t("map.filters.more")}</summary>
+          <FilterGroup label={t("map.filters.pause")}>
+            <FilterToggle active={filters.covered === true} icon={<Umbrella />} label={t("bench.attributes.covered")} onClick={() => toggle("covered")} />
+            <FilterToggle active={filters.fireplaceNearby === true} icon={<Flame />} label={t("map.filters.fireplace")} onClick={() => toggle("fireplaceNearby")} />
+          </FilterGroup>
           <FilterGroup label={t("map.filters.access")}>
             <FilterToggle active={filters.armrest === true} icon={<Hand />} label={t("bench.attributes.armrest")} onClick={() => toggle("armrest")} />
             <FilterToggle active={filters.wheelchair === true} icon={<Footprints />} label={t("bench.attributes.wheelchair")} onClick={() => toggle("wheelchair")} />
@@ -85,12 +96,6 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
               <span>{t("bench.attributes.material")}</span>
               <select className="select min-h-11 w-full" value={filters.material ?? ""} onChange={(event) => onChange({ ...filters, material: event.target.value || undefined })}>
                 <option value="">{t("map.filters.anyMaterial")}</option><option value="wood">{t("bench.materials.wood")}</option><option value="metal">{t("bench.materials.metal")}</option><option value="stone">{t("bench.materials.stone")}</option><option value="concrete">{t("bench.materials.concrete")}</option><option value="plastic">{t("bench.materials.plastic")}</option><option value="mixed">{t("bench.materials.mixed")}</option>
-              </select>
-            </label>
-            <label className="filter-material">
-              <span>{t("map.filters.roomFor")}</span>
-              <select className="select min-h-11 w-full" value={filters.minSeats ?? ""} onChange={(event) => onChange({ ...filters, minSeats: event.target.value ? Number(event.target.value) : undefined })}>
-                <option value="">{t("map.filters.anySeats")}</option><option value="2">{t("map.filters.minimumSeats", { count: 2 })}</option><option value="3">{t("map.filters.minimumSeats", { count: 3 })}</option><option value="4">{t("map.filters.minimumSeats", { count: 4 })}</option><option value="6">{t("map.filters.minimumSeats", { count: 6 })}</option>
               </select>
             </label>
           </div>
@@ -104,14 +109,18 @@ export function FilterPanel({ filters, onChange, onClose }: Props) {
         <button className="filter-done" onClick={onClose}>{t("map.filters.done")}</button>
       </div>
       </div>
-    </>
+    </div>
   );
 }
 
-function FilterToggle({ active, icon, label, onClick }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void }) {
-  return <button type="button" aria-pressed={active} className="filter-token" onClick={onClick}>{icon}<span>{label}</span></button>;
+function FilterToggle({ active, icon, label, onClick }: { active: boolean; icon?: React.ReactNode; label: string; onClick: () => void }) {
+  return <button type="button" aria-pressed={active} className="filter-token" onClick={onClick}>
+    {icon && <span className="filter-subject-icon" aria-hidden="true">{icon}</span>}
+    <span className="filter-name">{label}</span>
+    {active && <Check className="filter-choice-mark" size={18} aria-hidden="true" />}
+  </button>;
 }
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return <fieldset className="filter-group"><legend>{label}</legend><div className="filter-choices">{children}</div></fieldset>;
+function FilterGroup({ label, children, paired = false }: { label: string; children: React.ReactNode; paired?: boolean }) {
+  return <fieldset className={`filter-group${paired ? " is-paired" : ""}`}><legend>{label}</legend><div className="filter-choices">{children}</div></fieldset>;
 }

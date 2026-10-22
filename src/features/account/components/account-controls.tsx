@@ -1,20 +1,23 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { markAccountSession, useAuthenticated } from "@/features/account/auth-session";
 
 import Link from "next/link";
 import { useId, useRef, useState, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Armchair, Eye, EyeOff, LogIn, Plus, UserRound, X } from "lucide-react";
 import { login, register } from "@/app/actions/account";
+import styles from "./account-sheet.module.css";
 import type { CurrentUser } from "@/lib/security";
 
 export function AccountControls({ user, onAdd }: { user: CurrentUser | null; onAdd?: () => void }) {
   const t = useTranslations();
+  const authenticated = useAuthenticated(Boolean(user));
   const dialog = useRef<HTMLDialogElement>(null);
   const addAfterLogin = useRef(false);
   return <div className="flex gap-2">
-    {onAdd && <button aria-label={t("common.navigation.addBench")} className="btn btn-circle storybook-panel min-h-12 min-w-12 border-0 text-primary" onClick={() => { if (user) onAdd(); else { addAfterLogin.current = true; dialog.current?.showModal(); } }}><Plus size={21} /></button>}
-    {user ? <Link aria-label={t("common.navigation.profile")} href="/profil" className="btn btn-circle storybook-panel min-h-12 min-w-12 border-0 text-primary"><UserRound size={20} /></Link>
+    {onAdd && <button aria-label={t("common.navigation.addBench")} className="btn btn-circle storybook-panel min-h-12 min-w-12 border-0 text-primary" onClick={() => { if (authenticated) onAdd(); else { addAfterLogin.current = true; dialog.current?.showModal(); } }}><Plus size={21} /></button>}
+    {authenticated ? <Link aria-label={t("common.navigation.profile")} href="/profil" className="btn btn-circle storybook-panel min-h-12 min-w-12 border-0 text-primary"><UserRound size={20} /></Link>
       : <button aria-label={t("common.navigation.signIn")} className="btn btn-circle storybook-panel min-h-12 min-w-12 border-0 text-primary" onClick={() => dialog.current?.showModal()}><LogIn size={20} /></button>}
     <AccountDialog dialogRef={dialog} onAuthenticated={() => { if (addAfterLogin.current) { addAfterLogin.current = false; onAdd?.(); } }} />
   </div>;
@@ -36,22 +39,35 @@ export function AccountDialog({ dialogRef, onAuthenticated, intent }: { dialogRe
     observer.observe(dialog, { attributes: true, attributeFilter: ["open"] });
     return () => observer.disconnect();
   }, [dialogRef]);
-  return <dialog ref={dialogRef} className="modal modal-bottom sm:modal-middle" aria-labelledby={titleId} aria-describedby={descriptionId}>
-    <div className="modal-box utility-sheet max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
+  useEffect(() => {
+    const node = dialogRef.current;
+    const viewport = window.visualViewport;
+    if (!isOpen || !node || !viewport) return;
+    const measure = () => {
+      node.style.setProperty("--account-viewport-height", `${viewport.height}px`);
+      node.style.setProperty("--account-viewport-top", `${viewport.offsetTop}px`);
+    };
+    measure(); viewport.addEventListener("resize", measure); viewport.addEventListener("scroll", measure);
+    return () => {
+      viewport.removeEventListener("resize", measure); viewport.removeEventListener("scroll", measure);
+      node.style.removeProperty("--account-viewport-height"); node.style.removeProperty("--account-viewport-top");
+    };
+  }, [dialogRef, isOpen]);
+  return <dialog ref={dialogRef} className={`modal modal-bottom sm:modal-middle ${styles.dialog}`} aria-labelledby={titleId} aria-describedby={descriptionId}>
+    <div className={`modal-box utility-sheet account-sheet ${styles.sheet}`}>
       <button type="button" aria-label={t("common.actions.closeTitle")} className="btn btn-circle btn-ghost absolute right-3 top-3" onClick={() => dialogRef.current?.close()}><X size={19} /></button>
       <span className="story-icon mb-3"><Armchair size={21} /></span>
       <div className="story-eyebrow">{t("account.dialog.invitation")}</div>
       <h2 id={titleId} className="mt-1 text-2xl font-black">{mode === "login" ? t("account.dialog.welcome") : t("account.dialog.createTitle")}</h2>
-      <p id={descriptionId} className="mt-1 text-sm text-base-content/70">{t("account.dialog.description")}</p>
+      <p id={descriptionId} className="mt-1 text-base-content/70">{intent ? t("account.dialog.intent", { intent }) : t("account.dialog.description")}</p>
       <div className="account-mode-switch" role="group" aria-label={t("account.dialog.invitation")}>
         <button type="button" aria-pressed={mode === "login"} onClick={() => setMode("login")}>{t("account.dialog.login")}</button>
         <button type="button" aria-pressed={mode === "register"} onClick={() => setMode("register")}>{t("account.dialog.registerTab")}</button>
       </div>
-      <p className="account-privacy-note"><a href="/datenschutz" target="_blank" rel="noreferrer">{t("account.dialog.privacy")}</a></p>
-      {intent && <p className="auth-intent">{t("account.dialog.intent", { intent })}</p>}
       {isOpen && <AccountForm key={mode} mode={mode} onSuccess={() => { dialogRef.current?.close(); onAuthenticated?.(); router.refresh(); }} />}
+      <p className="account-privacy-note"><a href="/datenschutz" target="_blank" rel="noreferrer">{t("account.dialog.privacy")}</a></p>
     </div>
-    <form method="dialog" className="modal-backdrop"><button>{t("common.actions.close")}</button></form>
+    <form method="dialog" className="modal-backdrop" aria-hidden="true"><button tabIndex={-1}>{t("common.actions.close")}</button></form>
   </dialog>;
 }
 
@@ -60,7 +76,7 @@ function AccountForm({ mode, onSuccess, referralToken }: { mode: "login" | "regi
   const [showPassword, setShowPassword] = useState(false);
   const [state, formAction, pending] = useActionState(async (_previous: import("@/lib/types").ActionResult | null, data: FormData) => {
     const result = await (mode === "login" ? login : register)(null, data);
-    if (result.ok) onSuccess();
+    if (result.ok) { markAccountSession(true); onSuccess(); }
     return result;
   }, null);
   const statusId = useId();

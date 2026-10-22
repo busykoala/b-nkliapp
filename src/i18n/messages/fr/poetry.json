@@ -1,200 +1,128 @@
 {
-  "light": {
-    "moon": {
-      "v1": "Le clair de lune repose sur le banc",
-      "v2": "Une lumière argentée effleure ce lieu paisible",
-      "v3": "La lune dessine de discrets contours",
-      "v4": "Un doux clair de lune trouve le banc",
-      "v5": "La nuit dépose de l’argent sur ce lieu",
-      "v6": "Le clair de lune se rassemble au bord du chemin",
-      "v7": "Une lune claire veille sur ce lieu",
-      "v8": "Le banc rêve dans la lumière de la lune"
-    },
-    "night": {
-      "v1": "Ce lieu repose sous les étoiles",
-      "v2": "La nuit paisible enveloppe le banc",
-      "v3": "L’obscurité rend ce lieu tout silencieux",
-      "v4": "Le banc attend sous le vaste ciel nocturne",
-      "v5": "La nuit s’arrête ici un instant",
-      "v6": "Un lieu paisible dort sous le ciel sombre"
-    },
-    "unknown": {
-      "v1": "La lumière et l’ombre gardent encore ici un secret",
-      "v2": "Ce lieu attend encore sa trace de lumière",
-      "v3": "La lumière de ce lieu reste à explorer",
-      "v4": "Soleil et ombre sont encore en découverte ici"
+  "miniatures": {
+    "pause": {
+      "v1": "Un instant, le chemin n’a plus à mener quelque part. Tu peux simplement être là.",
+      "v2": "Le monde poursuit sa route. Ici, une pensée peut encore chercher son nom.",
+      "v3": "Parfois, une journée demande un endroit où s’asseoir plutôt qu’une réponse.",
+      "v4": "Entre partir et arriver, il y a cette petite halte.",
+      "v5": "Laisse le prochain pas attendre encore un instant.",
+      "v6": "Une place libre, un peu de temps. Le voyage commence peut-être ici.",
+      "v7": "Ce que tu portes en toi peut s’asseoir à côté de toi.",
+      "v8": "Même un détour peut, un instant, devenir la destination."
     },
     "sun": {
-      "v1": "La chaleur du soleil repose sur le banc",
-      "v2": "Une lumière dorée invite à rester",
-      "v3": "Le soleil réchauffe ce lieu paisible",
-      "v4": "Une lumière claire danse sur ce lieu",
-      "v5": "Un coin de soleil chaud attend ici",
-      "v6": "Le banc recueille la lumière du jour",
-      "v7": "Le soleil dessine de la chaleur sur le chemin",
-      "v8": "Le jour brille sur ce banc"
-    },
-    "building": {
-      "v1": "Une maison offre une ombre fraîche au banc",
-      "v2": "Une ombre protectrice repose sur ce lieu",
-      "v3": "Les maisons rendent ici la lumière plus douce",
-      "v4": "Entre les murs repose un instant de fraîcheur",
-      "v5": "L’ombre paisible d’un bâtiment invite à la pause"
-    },
-    "vegetation": {
-      "v1": "Les feuilles peignent des ombres sur le banc",
-      "v2": "Une ombre verte se balance sur ce lieu",
-      "v3": "La lumière murmure à travers les feuilles",
-      "v4": "Sous les feuilles, le monde devient silencieux",
-      "v5": "Des ombres dansantes reposent sur ce lieu",
-      "v6": "Une voûte de feuilles tamise le soleil"
-    },
-    "terrain": {
-      "v1": "La pente retient encore le soleil",
-      "v2": "Le terrain offre une ombre fraîche à ce lieu",
-      "v3": "Derrière les hauteurs, la lumière attend",
-      "v4": "L’horizon garde une ombre paisible"
-    },
-    "roof": {
-      "v1": "Un petit toit protège ce lieu paisible",
-      "v2": "À l’abri du ciel, le banc attend",
-      "v3": "Sous un toit, le jour trouve le repos",
-      "v4": "Le banc repose à l’abri de son toit"
+      "v1": "La lumière trouve cette place. Tu reprendras le fil du jour un peu plus tard.",
+      "v2": "Un morceau du jour repose dans la lumière. Prends place à ses côtés.",
+      "v3": "Le soleil n’a pas besoin de raison pour rester ici. Toi non plus, peut-être.",
+      "v4": "Ici, la lumière fait une escale.",
+      "v5": "Pour cet instant, il suffit de regarder la lumière.",
+      "v6": "La lumière se déplace. Rien n’oblige à la suivre dans sa course.",
+      "v7": "Une éclaircie dans le jour : nul besoin de l’emporter pour la garder.",
+      "v8": "Peut-être que de la route d’aujourd’hui, il restera surtout cette lumière."
     },
     "shade": {
-      "v1": "Une ombre paisible invite à s’attarder",
-      "v2": "La lumière devient ici toute discrète",
-      "v3": "Un instant de fraîcheur attend",
-      "v4": "Une ombre douce enlace ce lieu",
-      "v5": "Ici, le jour souffle un peu",
-      "v6": "Le banc repose à l’écart de la lumière vive"
-    }
-  },
-  "weather": {
-    "snow": {
-      "v1": "Les flocons adoucissent le monde",
-      "v2": "La neige tombe sans bruit",
-      "v3": "Le blanc de l’hiver se rassemble au bord du chemin",
-      "v4": "De discrets flocons cherchent le sol",
-      "v5": "La neige assourdit chaque pas"
+      "v1": "L’ombre n’enlève rien au jour. Elle lui donne une autre couleur.",
+      "v2": "Ici, la clarté peut faire un pas en retrait.",
+      "v3": "Dans l’ombre, le jour perd un peu de ses angles.",
+      "v4": "Une place à l’écart de l’éclat. On peut y demeurer aussi.",
+      "v5": "La lumière est occupée ailleurs. Ici, l’instant t’appartient.",
+      "v6": "Tout ce qui soutient une journée n’a pas à se tenir en pleine lumière.",
+      "v7": "Une autre face du jour t’attend ici.",
+      "v8": "L’ombre laisse les choses être à elles-mêmes."
     },
     "rain": {
-      "v1": "La pluie dessine des cercles dans le silence",
-      "v2": "Les gouttes racontent le ciel",
-      "v3": "La pluie fait doucement briller ce lieu",
-      "v4": "Un éclat humide repose sur le chemin",
-      "v5": "Les gouttes tracent des lignes argentées"
+      "v1": "La pluie écrit sur le jour. Tu n’as pas à comprendre chaque mot.",
+      "v2": "Aujourd’hui, le paysage a choisi l’aquarelle.",
+      "v3": "Les gouttes posent leurs petits points. La phrase du jour reste ouverte.",
+      "v4": "La pluie ne prend aucun raccourci. Elle arrive partout.",
+      "v5": "Un jour de pluie a son éclat à lui.",
+      "v6": "Ce qui n’était qu’un contour trouve dans la pluie une seconde lisière.",
+      "v7": "Entre les gouttes, il reste une place pour cet instant.",
+      "v8": "Le ciel laisse aller quelque chose. Peut-être peux-tu en faire autant aujourd’hui."
     },
-    "mixed": {
-      "v1": "La pluie et les flocons se rencontrent",
-      "v2": "Le ciel alterne entre eau et blanc",
-      "v3": "La neige mouillée passe doucement",
-      "v4": "Les flocons fondent sur le chemin paisible"
+    "snow": {
+      "v1": "Les flocons ne suivent pas le même chemin. Ils arrivent pourtant.",
+      "v2": "La neige traverse cet instant comme si elle avait tout son temps.",
+      "v3": "Un flocon prend peu de place. Le regard le suit pourtant.",
+      "v4": "Le jour se redessine, flocon après flocon.",
+      "v5": "Ce qui tombe du ciel n’a pas besoin d’être une réponse aujourd’hui.",
+      "v6": "L’air porte de petits commencements blancs.",
+      "v7": "Chaque flocon trouve une autre fin à sa chute.",
+      "v8": "Tu regardes la neige. Pour une fois, cela suffit comme projet."
     },
-    "overcast": {
-      "v1": "Les nuages rapprochent le ciel",
-      "v2": "Un doux ciel nuageux s’étend au-dessus",
-      "v3": "La lumière traverse doucement les nuages épais",
-      "v4": "Les nuages rendent le jour doux et paisible"
+    "night": {
+      "v1": "La nuit laisse ouvertes des choses que le jour voulait expliquer.",
+      "v2": "Dans le noir, le regard n’a pas à tout retenir.",
+      "v3": "Le jour est parti. Il reste une place où demeurer.",
+      "v4": "La nuit a plus d’espace qu’un regard ne peut en saisir.",
+      "v5": "Un instant, tu n’as pas encore besoin du lendemain.",
+      "v6": "Ce que tu as cherché aujourd’hui peut attendre demain pour trouver son nom.",
+      "v7": "L’obscurité enlève au lieu ses contours, pas sa place.",
+      "v8": "Même sans voir tout le chemin, tu peux arriver ici."
     },
-    "cloudy": {
-      "v1": "Les nuages passent lentement dans la lumière",
-      "v2": "Le soleil et les nuages se relaient doucement",
-      "v3": "Quelques nuages traversent ce lieu",
-      "v4": "Des îlots de lumière parcourent le paysage"
-    },
-    "wind": {
-      "v1": "Le vent emporte l’instant",
-      "v2": "Une brise fraîche caresse ce lieu",
-      "v3": "Le vent fait onduler doucement le paysage",
-      "v4": "L’air est éveillé et en mouvement"
-    }
-  },
-  "view": {
     "mountains": {
-      "v1": "Les montagnes veillent au loin",
-      "v2": "Les sommets portent le regard vers l’horizon",
-      "v3": "Les Alpes ouvrent une vaste perspective",
-      "v4": "Les lignes des montagnes flottent au-dessus du pays",
-      "v5": "Le regard monte vers les sommets",
-      "v6": "Les montagnes lointaines donnent de l’espace à ce lieu",
-      "v7": "Les montagnes restent immobiles à l’horizon",
-      "v8": "Les sommets retiennent le regard un instant"
-    },
-    "hills": {
-      "v1": "De douces collines portent le regard",
-      "v2": "Des hauteurs vertes bordent le lointain",
-      "v3": "L’horizon ondule en lignes douces",
-      "v4": "Les collines roulent doucement au loin",
-      "v5": "De douces hauteurs encadrent ce lieu",
-      "v6": "Le regard suit les collines paisibles"
+      "v1": "Les montagnes ne se rapprochent pas. Le regard peut pourtant les rejoindre.",
+      "v2": "Une ligne de montagne suffit à donner une autre direction aux pensées.",
+      "v3": "Les hauteurs gardent leur distance. Ici, on a le temps de les regarder.",
+      "v4": "Entre toi et les montagnes, il y a de la place pour une longue pensée.",
+      "v5": "Il n’est pas nécessaire de monter pour se sentir un peu plus près des montagnes.",
+      "v6": "Les montagnes n’ont aucune raison de se hâter.",
+      "v7": "Le regard prend le chemin des hauteurs. Tu peux rester assis.",
+      "v8": "Au bord des montagnes, le ciel trouve une forme."
     },
     "water": {
-      "v1": "L’eau emporte le regard",
-      "v2": "Au bord de l’eau, le temps s’élargit",
-      "v3": "La lumière voyage sur l’eau",
-      "v4": "L’eau offre du repos au regard",
-      "v5": "L’eau et le ciel ne font plus qu’un",
-      "v6": "La rive laisse dériver l’instant",
-      "v7": "Au-dessus de l’eau, le lointain s’ouvre"
+      "v1": "L’eau ne garde rien de ton regard. C’est peut-être là son cadeau.",
+      "v2": "Au bord de l’eau, une pensée peut poursuivre sa route sans que tu la suives.",
+      "v3": "Un regard sur l’eau n’a jamais tout à fait de fin.",
+      "v4": "Tu es arrivé. L’eau a sa propre manière d’être en chemin.",
+      "v5": "Parfois, de l’eau dans le regard suffit à donner plus d’espace au jour.",
+      "v6": "L’eau et toi partagez cet instant sans le retenir.",
+      "v7": "Ici, le regard n’a pas à atteindre une autre rive.",
+      "v8": "Ce que tu cherches dans l’eau n’est pas forcément un reflet."
     },
     "forest": {
-      "v1": "La forêt murmure tout autour",
-      "v2": "Le calme habite entre les arbres",
-      "v3": "La verdure tient le monde à distance un instant",
-      "v4": "Les feuilles encadrent ce lieu paisible",
-      "v5": "La forêt respire tout près",
-      "v6": "Entre les troncs, le temps s’oublie"
+      "v1": "Entre les arbres, le regard n’a pas à trouver une ligne droite.",
+      "v2": "La forêt entoure cet instant comme une histoire sans dernière page.",
+      "v3": "Un arbre met des années à faire ce que tu vois en un instant.",
+      "v4": "Ici, les années se tiennent côte à côte. Tu peux t’asseoir parmi elles un moment.",
+      "v5": "La forêt connaît bien des chemins. Pour l’instant, cette place suffit.",
+      "v6": "Ta halte sera brève. Les arbres prennent davantage leur temps.",
+      "v7": "Entre les troncs et les pensées, il reste une place pour une pause.",
+      "v8": "Tu n’as pas à comprendre la forêt pour lui appartenir un instant."
     },
-    "open": {
-      "v1": "Le ciel élargit le regard",
-      "v2": "L’étendue repose devant les yeux",
-      "v3": "L’horizon peut rester ouvert",
-      "v4": "Le regard trouve de l’espace libre",
-      "v5": "Ici, le ciel devient un peu plus grand",
-      "v6": "Le paysage s’ouvre tout doucement"
+    "autumn": {
+      "v1": "L’année a déjà beaucoup raconté. Ici, une page peut rester ouverte.",
+      "v2": "L’automne a du temps pour ce que l’été a laissé de côté.",
+      "v3": "Un chapitre avancé de l’année. Un bon endroit pour s’interrompre un peu.",
+      "v4": "Ce qui a mûri n’a plus à grandir aujourd’hui.",
+      "v5": "L’automne sait laisser aller. Tu peux peut-être le regarder faire un instant.",
+      "v6": "L’année raccourcit, pas cet instant.",
+      "v7": "Tu es assis dans un jour qui sait déjà quelque chose des départs.",
+      "v8": "Il reste du temps dans l’année. Et ici, une place pour toi."
     },
-    "limited": {
-      "v1": "La proximité rend ce lieu accueillant",
-      "v2": "Le regard reste proche et l’instant bien ici",
-      "v3": "À l’abri du lointain, le calme s’installe",
-      "v4": "Ce petit recoin garde le monde tout près",
-      "v5": "Près du chemin, le regard trouve le repos"
+    "spring": {
+      "v1": "L’année essaie un nouveau départ. Tu n’as pas encore à savoir où il mène.",
+      "v2": "Au printemps, même l’attente a quelque chose d’un départ.",
+      "v3": "Quelque chose commence peut-être pendant que tu es assis ici.",
+      "v4": "Le prochain commencement n’a pas besoin de faire du bruit."
     },
-    "quiet": {
-      "v1": "Un chemin paisible passe à côté",
-      "v2": "Le monde devient silencieux un instant",
-      "v3": "Ici, l’instant peut rester",
-      "v4": "Un petit lieu pour reprendre souffle",
-      "v5": "Le temps passe ici un peu plus lentement",
-      "v6": "Ce lieu attend sans se presser"
-    }
-  },
-  "seat": {
-    "roof": {
-      "v1": "Sous son toit, la pause peut durer plus longtemps",
-      "v2": "Un petit toit protège ce lieu",
-      "v3": "À l’abri, le banc attend une pause",
-      "v4": "On s’assied ici un peu mieux protégé"
+    "summer": {
+      "v1": "L’été peut avoir bien des projets. Tu peux laisser passer un instant.",
+      "v2": "Au milieu de l’année, il y a de la place pour une petite interruption.",
+      "v3": "Un jour d’été n’a pas à être rempli pour rester en mémoire.",
+      "v4": "Peut-être emporteras-tu de l’été cette halte."
     },
-    "support": {
-      "v1": "Le banc accueille les épaules fatiguées à bras ouverts",
-      "v2": "Ici, le dos et les mains peuvent se reposer",
-      "v3": "Le banc est prêt pour une longue pause",
-      "v4": "L’instant s’adosse confortablement"
+    "winter": {
+      "v1": "L’hiver laisse plus de marge à l’année. Ici, quelque chose peut rester à écrire.",
+      "v2": "Même un bref jour d’hiver a de la place pour une longue pensée.",
+      "v3": "L’année se tient en retrait. Tu n’as pas à la pousser en avant aujourd’hui.",
+      "v4": "Une halte entre ce qui fut et ce qui reviendra."
     },
-    "backrest": {
-      "v1": "Ici, le dos aussi peut se reposer",
-      "v2": "Le dossier invite à rester plus longtemps",
-      "v3": "Adossé, un arrêt devient une pause",
-      "v4": "Le banc offre du repos au dos",
-      "v5": "On contemple ici le lointain en toute détente"
-    },
-    "wood": {
-      "v1": "Du bois chaleureux attend une petite pause",
-      "v2": "Le bois porte les traces de nombreux instants paisibles",
-      "v3": "Un simple banc de bois invite à rester",
-      "v4": "Le bois rend cet arrêt un peu plus chaleureux"
+    "twilight": {
+      "v1": "Le jour change de couleur. Un instant, tout peut rester entre deux.",
+      "v2": "La lumière est en chemin vers une autre heure.",
+      "v3": "Au seuil du jour, le regard n’a pas besoin de destination.",
+      "v4": "C’est encore cet instant. Bientôt, il portera une autre couleur."
     }
   }
 }

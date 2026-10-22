@@ -11,7 +11,7 @@ type Refresh = () => void | Promise<void>;
 
 export function RatingForm({ benchId, rating, onChanged }: { benchId: string; rating: Rating | null; onChanged?: Refresh }) {
   const t = useTranslations();
-  const [draft, setDraft] = useState({ overall: rating?.overall ?? 0, view: rating?.view ?? 0, comfort: rating?.comfort ?? 0, quiet: rating?.quiet ?? 0, note: rating?.note ?? "", clearDetails: false });
+  const [draft, setDraft] = useState({ overall: rating?.overall ?? 0, note: rating?.note ?? "" });
   const [saved, setSaved] = useState(draft);
   const { state, pending, save } = useContributionSave(onChanged);
   useContributionWork(JSON.stringify(draft) !== JSON.stringify(saved), pending);
@@ -19,19 +19,12 @@ export function RatingForm({ benchId, rating, onChanged }: { benchId: string; ra
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     save(() => submitRating(benchId, null, data), () => {
-      const committed = draft.clearDetails ? { ...draft, view: 0, comfort: 0, quiet: 0, clearDetails: false } : draft;
-      setDraft(committed);
-      setSaved(committed);
+      setSaved(draft);
     });
   }}>
     <p className="contribution-intro">{t(rating ? "community.rating.existing" : "community.rating.intro")}</p>
     <div className="rating-controls">
       <StarRating name="overall" label={t("community.rating.fields.overall")} value={draft.overall} onChange={(value) => setDraft({ ...draft, overall: value })} pending={pending} required />
-      <details className="rating-detail-disclosure">
-        <summary>{t("community.rating.moreDetails")}</summary>
-        {(["view", "comfort", "quiet"] as const).map((name) => <StarRating key={name} name={name} label={t(`community.rating.fields.${name}`)} value={draft[name]} onChange={(value) => setDraft({ ...draft, [name]: value })} pending={pending} />)}
-        {rating && <label className="rating-clear-details"><input type="checkbox" name="clearDetails" checked={draft.clearDetails} disabled={pending} onChange={(event) => setDraft({ ...draft, clearDetails: event.target.checked })} />{t("community.rating.clearDetails")}</label>}
-      </details>
     </div>
     <label className="contribution-text-field"><span>{t("community.rating.note")} <small>{t("community.rating.optional")}</small></span><textarea name="note" value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} disabled={pending} maxLength={280} placeholder={t("community.rating.placeholder")} /></label>
     <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
@@ -40,21 +33,21 @@ export function RatingForm({ benchId, rating, onChanged }: { benchId: string; ra
   </form>;
 }
 
-export function CorrectionForm({ benchId, onChanged }: { benchId: string; onChanged?: Refresh }) {
+export function CorrectionForm({ benchId, onChanged, initialField = "" }: { benchId: string; onChanged?: Refresh; initialField?: "environment" | "" }) {
   const t = useTranslations();
-  const [draft, setDraft] = useState({ field: "", note: "" });
+  const [draft, setDraft] = useState({ field: initialField as string, note: "" });
   const { state, pending, save } = useContributionSave(onChanged);
-  useContributionWork(Boolean(draft.field || draft.note), pending);
+  useContributionWork(Boolean(draft.note || draft.field !== initialField), pending);
   return <form className="contribution-correction-form" aria-busy={pending} onSubmit={(event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    save(() => submitCorrection(benchId, null, data), () => setDraft({ field: "", note: "" }));
+    save(() => submitCorrection(benchId, null, data), () => setDraft({ field: initialField, note: "" }));
   }}>
     <p className="contribution-intro">{t("community.correction.intro")}</p>
-    <label className="contribution-text-field"><span>{t("community.correction.field")}</span><select name="field" required disabled={pending} value={draft.field} onChange={(event) => setDraft({ ...draft, field: event.target.value })}>
+    {initialField ? <input type="hidden" name="field" value={initialField} /> : <label className="contribution-text-field"><span>{t("community.correction.field")}</span><select name="field" required disabled={pending} value={draft.field} onChange={(event) => setDraft({ ...draft, field: event.target.value })}>
       <option value="" disabled>{t("community.correction.choose")}</option>
       {(["removed", "location", "properties", "condition", "environment"] as const).map((field) => <option key={field} value={field}>{t(`community.correction.options.${field}`)}</option>)}
-    </select></label>
+    </select></label>}
     <label className="contribution-text-field"><span>{t("community.correction.observation")} <small>{t("community.rating.optional")}</small></span><textarea name="note" maxLength={160} value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} disabled={pending} placeholder={t("community.correction.placeholder")} /></label>
     <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
     <button type="submit" className="contribution-primary" disabled={pending || !draft.field}><Send size={18} aria-hidden="true" />{t(pending ? "common.actions.saving" : "community.correction.publish")}</button>

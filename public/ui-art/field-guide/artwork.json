@@ -1,0 +1,24 @@
+{
+  "mode": "Built-in image_gen; generate; transparent background",
+  "purpose": "Decorative chapter illustrations, no real location claims",
+  "assets": [
+    {
+      "id": "pause",
+      "prompt": "Use case: illustration-story. Asset type: original watercolor vignette for Bänkli, a Swiss illustrated outing-book website. Style: an accomplished illustrator's actual loose watercolor and occasional broken graphite contour, translucent pigment blooms, granulation, irregular lost-and-found edges, expressive believable forms, generous breathing room. Palette: muted moss and sage, ochre wood, warm ivory reserves, small blue-grey accents. Not vector art, not an app icon, not photorealistic, not polished 3D. No typography, labels, numerals, borders or watermark. Genuine transparent background, with softly dissolving pigment at the outermost edges, no opaque paper rectangle. Subject: a modest weathered wooden park bench in three-quarter view, with a few freely brushed meadow stems and a suggested small footpath curling away. An inviting single connected composition for an illustrated book's opening page, restrained and poetic, with much unpainted space around the silhouette. Wide composition. No people, no signs, no elaborate scenery. This is decorative chapter artwork, not a representation of a real bench location.",
+      "path": "public/ui-art/field-guide/pause-v1.webp",
+      "original": "test-results/ui-watercolor-guide/artwork/pause-original.png"
+    },
+    {
+      "id": "journal",
+      "prompt": "Use case: illustration-story. Asset type: original watercolor vignette for Bänkli, a Swiss illustrated outing-book website. Style: an accomplished illustrator's actual loose watercolor and occasional broken graphite contour, translucent pigment blooms, granulation, irregular lost-and-found edges, expressive believable forms, generous breathing room. Palette: muted moss and sage, ochre wood, warm ivory reserves, small blue-grey accents. Not vector art, not an app icon, not photorealistic, not polished 3D. No typography, labels, numerals, borders or watermark. Genuine transparent background, with softly dissolving pigment at the outermost edges, no opaque paper rectangle. Subject: a well-loved open field sketchbook seen from a gentle overhead angle, one page carrying a small loose watercolor sketch of a bench and a few abstract landscape brushmarks, the other mostly blank; a graphite pencil and one pressed small leaf rest beside it. A coherent intimate vignette for a personal outing journal. Wide composition. No written or simulated text anywhere. Decorative still life, not a form or a UI.",
+      "path": "public/ui-art/field-guide/journal-v1.webp",
+      "original": "test-results/ui-watercolor-guide/artwork/journal-original.png"
+    },
+    {
+      "id": "path",
+      "prompt": "Use case: illustration-story. Asset type: original watercolor vignette for Bänkli, a Swiss illustrated outing-book website. Style: an accomplished illustrator's actual loose watercolor and occasional broken graphite contour, translucent pigment blooms, granulation, irregular lost-and-found edges, expressive believable forms, generous breathing room. Palette: muted moss and sage, ochre wood, warm ivory reserves, small blue-grey accents. Not vector art, not an app icon, not photorealistic, not polished 3D. No typography, labels, numerals, borders or watermark. Genuine transparent background, with softly dissolving pigment at the outermost edges, no opaque paper rectangle. Subject: a footpath makes one generous loose S-shaped turn through a few meadow grasses towards a tiny wooden bench, only a suggestion of distant blue-green hills. An airy elongated illustration for a walking chapter, not a detailed landscape or map. The curved brushstroke of the path is the main compositional gesture. All edges dissolve naturally into transparency. No people, no arrows, no location claims.",
+      "path": "public/ui-art/field-guide/path-v1.webp",
+      "original": "test-results/ui-watercolor-guide/artwork/path-original.png"
+    }
+  ]
+}

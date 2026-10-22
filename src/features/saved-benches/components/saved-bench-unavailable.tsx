@@ -3,17 +3,22 @@
 import { Bookmark, RotateCcw, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
+import { useSavedPlaceUndo } from "./saved-place-session";
 import { setBenchFollow } from "@/app/actions/bench-community";
 
 export function SavedBenchUnavailable({ id, title, detail }: { id: string; title: string; detail: string }) {
   const t = useTranslations();
+  const offerUndo = useSavedPlaceUndo();
   const [removed, setRemoved] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   const change = (following: boolean) => startTransition(async () => {
     const result = await setBenchFollow(id, following);
     setMessage(result.message);
-    if (result.ok) setRemoved(!following);
+    if (result.ok) {
+      if (!following && offerUndo) offerUndo(id, title, result.message);
+      else setRemoved(!following);
+    }
   });
 
   if (removed) return <div className="saved-bench-unavailable is-removed" role="status">

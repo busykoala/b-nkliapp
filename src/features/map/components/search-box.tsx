@@ -1,9 +1,10 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { Armchair, House, LocateFixed, MapPin, Search, TrainFront, X } from "lucide-react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { Armchair, ArrowLeft, House, LocateFixed, MapPin, Search, TrainFront, X } from "lucide-react";
 import { searchPlaces } from "@/app/actions/map";
 import type { PlaceResult } from "@/lib/types";
+import { useTaskIsolation } from "@/components/use-task-isolation";
 
 export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResult) => void; onLocate: () => void }) {
   const t = useTranslations();
@@ -12,12 +13,35 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
   const input = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
+  useTaskIsolation(root, focused, "(max-width: 639px)");
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [highlighted, setHighlighted] = useState(-1);
   const [feedback, setFeedback] = useState<"idle" | "empty" | "error">("idle");
   const [pending, startTransition] = useTransition();
   const sequence = useRef(0);
   const selectedQuery = useRef<string | null>(null);
+  const returningFocus = useRef(false);
+  const returnAfterCollapse = useRef(false);
+  useLayoutEffect(() => {
+    if (focused || !returnAfterCollapse.current) return;
+    const frame = requestAnimationFrame(() => {
+      returnAfterCollapse.current = false;
+      returningFocus.current = true;
+      const target = window.matchMedia("(max-width: 639px)").matches ? root.current : input.current;
+      target?.focus({ preventScroll: true });
+      returningFocus.current = false;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focused]);
+  useEffect(() => {
+    if (!focused || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const node = root.current;
+    const resize = () => node?.style.setProperty("--atlas-search-height", `${viewport.height}px`);
+    resize();
+    viewport.addEventListener("resize", resize);
+    return () => { viewport.removeEventListener("resize", resize); node?.style.removeProperty("--atlas-search-height"); };
+  }, [focused]);
   useEffect(() => {
     if (selectedQuery.current === query) return;
     if (query.trim().length < 2) return;
@@ -54,24 +78,29 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
     setQuery(""); setResults([]); setHighlighted(-1); setFeedback("idle"); setFocused(true);
     input.current?.focus();
   };
+  const closeSearch = () => {
+    returnAfterCollapse.current = true;
+    if (window.matchMedia("(max-width: 639px)").matches) input.current?.blur();
+    setFocused(false); setHighlighted(-1);
+  };
   const suggestLocation = query.trim().length === 0;
   const open = focused && (suggestLocation || (query.trim().length >= 2 && (pending || results.length > 0 || feedback !== "idle")));
   const optionCount = suggestLocation ? 1 : results.length;
-  return <div ref={root} className="relative flex min-w-0 flex-1" onBlur={(event) => {
+  return <div ref={root} role="search" aria-label={t("map.search.label")} tabIndex={-1} className="atlas-search relative flex min-w-0 flex-1" data-focused={focused} onBlur={(event) => {
     if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
   }}>
-    <div className="relative flex-1">
+    <div className="relative min-w-0 flex-1">
       <Search className="pointer-events-none absolute left-3.5 top-3.5 z-10 text-primary/65" size={18} aria-hidden="true" />
       <input ref={input} aria-label={t("map.search.label")} role="combobox" aria-autocomplete="list" aria-expanded={open}
         aria-controls={open ? listId : undefined} aria-activedescendant={open && highlighted >= 0 ? `${listId}-${highlighted}` : undefined}
         className="input calm-search min-h-12 w-full border-0 pl-10 pr-12 text-sm placeholder:text-base-content/55"
-        placeholder={t("map.search.placeholder")} value={query} onFocus={() => setFocused(true)}
+        placeholder={t("map.search.placeholder")} value={query} onFocus={() => { if (!returningFocus.current) setFocused(true); }} onClick={() => setFocused(true)}
         onChange={(event) => {
           sequence.current++; selectedQuery.current = null;
           setQuery(event.target.value); setResults([]); setHighlighted(-1); setFeedback("idle"); setFocused(true);
         }} onKeyDown={(event) => {
-          if (event.key === "Escape" && open) {
-            event.preventDefault(); event.stopPropagation(); setFocused(false); setHighlighted(-1); return;
+          if (event.key === "Escape" && focused) {
+            event.preventDefault(); event.stopPropagation(); closeSearch(); return;
           }
           if ((event.key === "ArrowDown" || event.key === "ArrowUp") && optionCount) {
             event.preventDefault(); setFocused(true);
@@ -85,6 +114,7 @@ export function SearchBox({ onSelect, onLocate }: { onSelect: (place: PlaceResul
         }} />
       {query && <button type="button" aria-label={t("map.search.clear")}
         className="btn btn-circle btn-ghost absolute right-0.5 top-0.5 z-10 min-h-11 min-w-11" onClick={clear}><X size={17} aria-hidden="true" /></button>}
+      <button type="button" className="atlas-search-close" aria-label={t("reading.atlas.closeSearch")} onClick={closeSearch}><ArrowLeft size={22} aria-hidden="true" /></button>
       {open && <ul id={listId} role="listbox" aria-label={t("map.search.results")}
         className="map-search-results storybook-panel absolute left-0 right-0 top-14 rounded-[1.25rem] p-2"
         onPointerDown={(event) => event.preventDefault()}>

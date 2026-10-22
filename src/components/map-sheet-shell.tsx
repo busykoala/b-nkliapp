@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowLeft, Maximize2, PanelBottomClose } from "lucide-react";
+import { ArrowLeft, ChevronDown, Maximize2 } from "lucide-react";
+import routeStyles from "@/features/routing/components/route-presentation.module.css";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { registerOverlayDismissal } from "@/lib/overlay-dismissal";
 
 export type MapSheetSnap = "peek" | "half" | "full";
-export type MapSheetPresentation = { snap: MapSheetSnap; scrollTop: number };
+export type MapSheetPresentation = { snap: MapSheetSnap; scrollTop: number; openSections?: string[]; focusKey?: string };
 
 type Props = {
   label: string;
@@ -22,6 +23,7 @@ type Props = {
   languageTag?: string;
   voiceId?: string;
   headerAction?: ReactNode;
+  footer?: ReactNode;
   initialPresentation?: MapSheetPresentation | null;
   onPresentationChange?: (presentation: MapSheetPresentation) => void;
   children: ReactNode | ((snap: MapSheetSnap, setSnap: (snap: MapSheetSnap) => void) => ReactNode);
@@ -42,7 +44,7 @@ function SheetContent({ children, snap, onSnapChange }: SheetContentProps) {
 const nextUp: Record<MapSheetSnap, MapSheetSnap> = { peek: "half", half: "full", full: "full" };
 const nextDown: Record<MapSheetSnap, MapSheetSnap> = { peek: "peek", half: "peek", full: "half" };
 
-export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, minimizeLabel, minimizeActionLabel, closeLabel, mapLabel, onClose, initialSnap = "half", variant = "planner", languageTag, voiceId, headerAction, initialPresentation, onPresentationChange, children }: Props) {
+export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, minimizeLabel, minimizeActionLabel, closeLabel, mapLabel, onClose, initialSnap = "half", variant = "planner", languageTag, voiceId, headerAction, initialPresentation, onPresentationChange, footer, children }: Props) {
   const startingSnap = initialPresentation?.snap ?? initialSnap;
   const [snap, setSnap] = useState<MapSheetSnap>(startingSnap);
   const [resumeSnap, setResumeSnap] = useState<Exclude<MapSheetSnap, "peek">>(startingSnap === "full" ? "full" : "half");
@@ -52,8 +54,10 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
   const returnFocus = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   const contentRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLElement>(null);
   const restoringScroll = useRef(false);
-  const presentationRef = useRef<MapSheetPresentation>({ snap: startingSnap, scrollTop: initialPresentation?.scrollTop ?? 0 });
+  const restoredFocus = useRef(false);
+  const presentationRef = useRef<MapSheetPresentation>({ ...initialPresentation, snap: startingSnap, scrollTop: initialPresentation?.scrollTop ?? 0 });
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
     returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -73,9 +77,16 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
     // display:none may discard the native scroll position. Restore from the
     // saved visible state before paint, then after the first expanded layout.
     restoringScroll.current = true;
+    content.querySelectorAll<HTMLDetailsElement>("details[data-sheet-section]").forEach(section => {
+      section.open = presentationRef.current.openSections?.includes(section.dataset.sheetSection!) ?? false;
+    });
     content.scrollTop = scrollTop;
     const frame = window.requestAnimationFrame(() => {
       content.scrollTop = scrollTop;
+      const focusKey = presentationRef.current.focusKey;
+      if (!restoredFocus.current && focusKey) [...shellRef.current!.querySelectorAll<HTMLElement>("[data-sheet-focus]")]
+        .find(node => node.dataset.sheetFocus === focusKey)?.focus({ preventScroll: true });
+      restoredFocus.current = true;
       restoringScroll.current = false;
     });
     return () => {
@@ -83,6 +94,19 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
       restoringScroll.current = false;
     };
   }, [snap, desktop]);
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+    // Native details toggles do not bubble; capture them without React-only attributes.
+    const rememberSections = (event: Event) => {
+      if (!(event.target instanceof HTMLDetailsElement) || !event.target.dataset.sheetSection || restoringScroll.current) return;
+      const openSections = [...content.querySelectorAll<HTMLDetailsElement>("details[data-sheet-section][open]")].map(section => section.dataset.sheetSection!);
+      presentationRef.current = { ...presentationRef.current, openSections };
+      onPresentationChange?.(presentationRef.current);
+    };
+    content.addEventListener("toggle", rememberSections, true);
+    return () => content.removeEventListener("toggle", rememberSections, true);
+  }, [onPresentationChange]);
   const visibleSnap = desktop ? (snap === "peek" ? "peek" : "full") : snap;
   const changeSnap = (next: MapSheetSnap) => {
     if (next !== "peek") setResumeSnap(next);
@@ -90,7 +114,7 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
     // Never replace the saved position with the zero reported by a hidden box.
     const canReadScroll = presentationRef.current.snap !== "peek" && !restoringScroll.current && content && content.clientHeight > 0;
     const scrollTop = canReadScroll ? content.scrollTop : presentationRef.current.scrollTop;
-    presentationRef.current = { snap: next, scrollTop };
+    presentationRef.current = { ...presentationRef.current, snap: next, scrollTop };
     onPresentationChange?.(presentationRef.current);
     setSnap(next);
   };
@@ -115,8 +139,13 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
     }
     startY.current = null;
   };
-  return <aside
-    className={`map-sheet-shell ${variant === "bench" ? "desktop-sheet storybook-sheet sheet-shadow map-sheet-bench" : "journey-panel storybook-panel map-sheet-planner"}`}
+  return <aside ref={shellRef} onFocusCapture={(event) => {
+      const focusKey = (event.target as HTMLElement).dataset.sheetFocus;
+      if (!focusKey || restoringScroll.current) return;
+      presentationRef.current = { ...presentationRef.current, focusKey };
+      onPresentationChange?.(presentationRef.current);
+    }}
+    className={`map-sheet-shell ${variant === "bench" ? "desktop-sheet storybook-sheet sheet-shadow map-sheet-bench" : `journey-panel storybook-panel map-sheet-planner ${routeStyles.sheet}`}`}
     aria-label={label} lang={languageTag} data-local-voice={voiceId} data-snap={visibleSnap}
   >
     <div className="map-sheet-chrome">
@@ -126,16 +155,18 @@ export function MapSheetShell({ label, resizeLabel, expandLabel, compactLabel, m
       </div>
       {(!desktop || visibleSnap === "peek") ? <button type="button" className="map-sheet-resize" aria-label={`${resizeActionLabel}. ${resizeLabel}`} title={resizeActionLabel} aria-expanded={visibleSnap !== "peek"} onClick={resize} onTouchStart={(event) => { startY.current = event.touches[0].clientY; }} onTouchEnd={(event) => release(event.changedTouches[0].clientY)}>
         <span className="map-sheet-handle" aria-hidden="true" />
+        {visibleSnap !== "peek" && <span className="map-sheet-resize-label">{resizeActionLabel}</span>}
         {visibleSnap === "peek" && <><span className="map-sheet-collapsed-title">{label}</span><Maximize2 className="map-sheet-expand-icon" size={17} aria-hidden="true" /></>}
-      </button> : <span className="map-sheet-chrome-title">{label}</span>}
-      {visibleSnap !== "peek" && <button type="button" className="map-sheet-minimize" aria-label={minimizeLabel} title={minimizeLabel} onClick={minimize}><PanelBottomClose size={18} aria-hidden="true" /><span className="sr-only">{minimizeActionLabel}</span></button>}
+      </button> : <span aria-hidden="true" />}
+      {visibleSnap !== "peek" && <button type="button" className="map-sheet-minimize" aria-label={minimizeLabel} title={minimizeLabel} onClick={minimize}><ChevronDown size={18} aria-hidden="true" /><span className="sr-only">{minimizeActionLabel}</span></button>}
     </div>
     <div ref={contentRef} onScroll={(event) => {
       if (presentationRef.current.snap === "peek" || restoringScroll.current || event.currentTarget.clientHeight === 0) return;
-      presentationRef.current = { snap, scrollTop: event.currentTarget.scrollTop };
+      presentationRef.current = { ...presentationRef.current, snap, scrollTop: event.currentTarget.scrollTop };
       onPresentationChange?.(presentationRef.current);
     }} className={variant === "bench" ? "map-sheet-content map-sheet-bench-content safe-bottom" : "map-sheet-content journey-scroll"}>
       <SheetContent snap={visibleSnap} onSnapChange={changeSnap}>{children}</SheetContent>
     </div>
+    {footer && <div className="map-sheet-footer" hidden={visibleSnap === "peek"}>{footer}</div>}
   </aside>;
 }

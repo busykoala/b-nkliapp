@@ -1,23 +1,22 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { reportContribution } from "@/app/actions/contributions";
 import type { BenchDetail } from "@/lib/types";
 import type { CurrentUser } from "@/lib/security";
-import { scenePoem } from "@/lib/scene-poetry";
+import { BenchPoem } from "./bench-poem";
 import { BenchPanorama } from "@/features/bench-panorama/components/bench-panorama";
 import { BenchPlaceCommunity } from "@/features/bench-community/components/bench-place-community";
 import { BenchContribute } from "@/features/bench-community/components/bench-contribute";
 import { useBenchContributions } from "@/features/bench-community/components/use-bench-contributions";
-import { BenchHeader } from "./bench-header";
-import { BenchOverview } from "./bench-overview";
-import { NearbyAmenities } from "./nearby-amenities";
+import { BenchHeader, BenchActions } from "./bench-header";
+import { BenchOverview, BenchRatingLink, BenchVisitWarnings } from "./bench-overview";
+import { BenchVisitDetails } from "./bench-visit-details";
 import { BenchPhotos } from "./bench-photos";
 import { BenchReviews } from "./bench-reviews";
-import { BenchSources } from "./bench-sources";
 import { useLocalBenchLanguage } from "./local-bench-language-provider";
 import type { NearbyAmenity } from "../overview";
 
@@ -30,10 +29,14 @@ export type BenchDetailContentProps = {
   onLocateAmenity?: (amenity: NearbyAmenity) => void;
   amenityMapHrefPrefix?: string;
   created?: boolean;
+  compact?: boolean;
+  hideActions?: boolean;
+  onDetails?: () => void;
 };
 
-export function BenchDetailContent({ bench, user, onBenchChange, onJourney, journeyHref, onLocateAmenity, amenityMapHrefPrefix, created = false }: BenchDetailContentProps) {
+export function BenchDetailContent({ bench, user, onBenchChange, onJourney, journeyHref, onLocateAmenity, amenityMapHrefPrefix, created = false, compact = false, hideActions = false, onDetails }: BenchDetailContentProps) {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const refresh = onBenchChange ?? (() => router.refresh());
   const { contribute, dialogs, signedIn } = useBenchContributions(bench, user, refresh);
@@ -45,7 +48,6 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
   const readingPosition = useRef(0);
   const localLanguage = useLocalBenchLanguage();
   const voice = localLanguage.active ? bench.dialectPresentation?.voice : undefined;
-  const poem = scenePoem(bench, t);
   const refreshVisible = useEffectEvent(() => {
     if (document.visibilityState !== "hidden") void Promise.resolve(refresh()).catch(() => {});
   });
@@ -71,22 +73,28 @@ export function BenchDetailContent({ bench, user, onBenchChange, onJourney, jour
       root.current?.querySelector<HTMLElement>(show ? ".quiet-back" : ".overview-rating")?.focus({ preventScroll: true });
     });
   };
-  return <div ref={root} className="bench-detail calm-detail" lang={voice?.languageTag} data-local-language={voice?.language}>
-    {reviews ? <>
+  return <div ref={root} className={`bench-detail calm-detail${compact ? " is-compact" : ""}`} lang={voice?.languageTag} data-local-language={voice?.language}>
+    {reviews && <>
       <button type="button" className="quiet-back" onClick={() => toggleReviews(false)}><ArrowLeft size={17} aria-hidden="true" />{t("bench.story.back")}</button>
       <BenchReviews bench={bench} user={user} reported={reported} report={report} onContribute={() => contribute("rating")} />
-    </> : <>
-      {created && <p role="status" className="bench-created-status">{t("bench.story.created")}</p>}
-      <BenchHeader bench={bench} user={user} onJourney={onJourney} journeyHref={journeyHref} onChanged={refresh} />
-      <BenchOverview bench={bench} onReviews={() => toggleReviews(true)} />
-      <NearbyAmenities bench={bench} onLocate={onLocateAmenity} hrefPrefix={amenityMapHrefPrefix} />
-      <p className="bench-poem">{voice?.first ?? poem.first} {voice?.second ?? poem.second}</p>
-      <BenchPanorama key={bench.id} bench={bench} />
-      <BenchPhotos bench={bench} onAdd={() => contribute("photo")} />
-      <BenchContribute onChoose={contribute} />
-      <BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refresh} />
-      <BenchSources bench={bench} />
     </>}
+    <div hidden={reviews}>
+      {created && <p role="status" className="bench-created-status">{t("bench.story.created")}</p>}
+      <BenchHeader bench={bench} />
+      <BenchPanorama key={bench.id} bench={bench} />
+      <BenchVisitWarnings bench={bench} />
+      {compact && !hideActions && <BenchActions bench={bench} user={user} onJourney={onJourney} journeyHref={journeyHref} onChanged={refresh} />}
+      {compact && !hideActions && onDetails && <button type="button" className="bench-details-link" onClick={onDetails}><ArrowUpRight size={18} aria-hidden="true" />{t("bench.sheet.showDetails")}</button>}
+      <div className="bench-further" hidden={compact}>
+      <BenchPoem key={`${bench.id}:${voice?.id ?? "standard"}:${locale}`} bench={bench} localText={voice?.first} />
+      <BenchOverview bench={bench} />
+      {!compact && !hideActions && <BenchActions bench={bench} user={user} onJourney={onJourney} journeyHref={journeyHref} onChanged={refresh} />}
+      <BenchVisitDetails bench={bench} onLocateAmenity={onLocateAmenity} amenityMapHrefPrefix={amenityMapHrefPrefix} onChanged={refresh} />
+      <BenchPhotos bench={bench} onAdd={() => contribute("photo")} />
+      <div className="bench-community-reading"><BenchRatingLink bench={bench} onReviews={() => toggleReviews(true)} /><BenchPlaceCommunity bench={bench} signedIn={signedIn} onChanged={refresh} /></div>
+      <BenchContribute onChoose={contribute} />
+      </div>
+    </div>
     {status && <p role="status" className="bench-action-status">{status}</p>}
     {dialogs}
   </div>;

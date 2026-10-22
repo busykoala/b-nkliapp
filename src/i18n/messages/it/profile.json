@@ -107,7 +107,9 @@
     "rated": "Un voto lasciato per <bench>{name}</bench>.",
     "confirmed": "<bench>{name}</bench> confermata sul posto.",
     "missing": "<bench>{name}</bench> segnalata assente.",
-    "edited": "Un dettaglio aggiunto a <bench>{name}</bench>."
+    "edited": "Un dettaglio aggiunto a <bench>{name}</bench>.",
+    "moment": "Un momento condiviso a <bench>{name}</bench>.",
+    "photo": "Una foto di <bench>{name}</bench> condivisa."
   },
   "time": {
     "today": "oggi",
@@ -170,5 +172,23 @@
   "metadata": {
     "description": "Il diario di cammino di {username} in Bänkli App.",
     "notFound": "Profilo non trovato"
+  },
+  "journal": {
+    "collection": "La tua raccolta",
+    "empty": "Qui c’è spazio per le tue prime scoperte. Salva un luogo o lascia una piccola impressione.",
+    "discover": "Scopri un luogo",
+    "activity": "I tuoi contributi",
+    "publicEntries": "Momenti condivisi",
+    "publicCollection": "Collezione",
+    "kinds": {
+      "added": "Panchina aggiunta",
+      "rated": "Recensione",
+      "confirmed": "Panchina confermata",
+      "missing": "Panchina assente segnalata",
+      "edited": "Informazioni aggiunte",
+      "corrected": "Correzione",
+      "moment": "Ricordo",
+      "photo": "Foto"
+    }
   }
 }

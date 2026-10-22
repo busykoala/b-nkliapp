@@ -3,12 +3,13 @@
 import { useId, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import Image from "next/image";
+import { AtlasDrawing, AtlasWordmark } from "./atlas-art";
 import { ArrowRight, BarChart3, Bookmark, BookOpen, Download, Footprints, Info, LogIn, LogOut, Map, Menu, Plus, Rss, Share, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { CurrentUser } from "@/lib/security";
 import { logout } from "@/app/actions/account";
 import { AccountDialog } from "@/features/account/components/account-controls";
+import { markAccountSession } from "@/features/account/auth-session";
 import { TrailAvatar } from "@/features/account/components/trail-avatar";
 import { LanguageSwitcher } from "./language-switcher";
 import { DialectToggle } from "./dialect-toggle";
@@ -69,12 +70,12 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
 
   return <>
     <button type="button" aria-label={t("common.navigation.open")} aria-haspopup="dialog" aria-controls={menuId} aria-expanded={open} className="calm-menu-button" onClick={(event) => openMenu(event.currentTarget)}>
-      <Menu size={20} aria-hidden="true" />
+      <Menu size={20} aria-hidden="true" /><span className="atlas-more-label">{t("reading.atlas.more")}</span>
     </button>
     <dialog ref={dialog} id={menuId} className="app-menu-dialog" aria-labelledby={`${menuId}-title`} onClose={() => { setOpen(false); setReading(false); }} onCancel={(event) => event.stopPropagation()}>
       <div className="app-menu-sheet">
         <header>
-          <div><h2 ref={heading} id={`${menuId}-title`} tabIndex={-1}>Bänkli App</h2><p>{t("reading.tagline")}</p></div>
+          <div><h2 ref={heading} id={`${menuId}-title`} tabIndex={-1}><AtlasWordmark /><span className="sr-only">Bänkli App</span></h2><p>{t("reading.tagline")}</p></div>
           <button type="button" aria-label={t("common.navigation.close")} onClick={close}><X size={19} aria-hidden="true" /></button>
         </header>
         <div className="app-menu-scroll">
@@ -87,7 +88,7 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
               {user && <Link href="/lieblingsplaetze" className="app-menu-row" aria-current={pathname === "/lieblingsplaetze" ? "page" : undefined} onClick={close}><Bookmark size={19} aria-hidden="true" />{t("common.navigation.favourites")}</Link>}
             </section>
             <button type="button" className="app-menu-reading" onClick={(event) => { event.currentTarget.focus({ preventScroll: true }); setReading(true); }} aria-haspopup="dialog">
-              <span className="app-menu-reading-art" aria-hidden="true"><Image src="/ui-art/benches/wood-back.webp" width={90} height={63} alt="" unoptimized /></span>
+              <AtlasDrawing kind="read" className="app-menu-reading-art" />
               <span className="app-menu-reading-copy"><small>{t("reading.pause")}</small><strong>{t("reading.essay")}</strong><span>{t("reading.essayHint")}</span></span>
               <BookOpen size={19} aria-hidden="true" />
             </button>
@@ -96,6 +97,9 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
               <Link aria-label={t("common.navigation.feed")} href="/feed" className="app-menu-row" aria-current={pathname === "/feed" ? "page" : undefined} onClick={close}><Rss size={19} aria-hidden="true" />{t("common.navigation.feed")}</Link>
               {onAdd ? <button type="button" aria-label={t("common.navigation.addBench")} className="app-menu-row" onClick={() => { close(); window.setTimeout(onAdd, 0); }}><Plus size={19} aria-hidden="true" />{t("common.navigation.addBench")}</button>
                 : <Link className="app-menu-row" href="/?action=add" onClick={close}><Plus size={19} aria-hidden="true" />{t("common.navigation.addBench")}</Link>}
+            </section>
+            <section aria-labelledby={`${menuId}-project`}>
+              <h3 id={`${menuId}-project`} className="app-menu-group-label">{t("reading.project")}</h3>
               <Link aria-label={t("common.navigation.statistics")} href="/statistiken" className="app-menu-row" aria-current={pathname === "/statistiken" || pathname.startsWith("/gemeinde/") ? "page" : undefined} onClick={close}><BarChart3 size={19} aria-hidden="true" />{t("common.navigation.statistics")}</Link>
               <Link aria-label={t("common.navigation.about")} href="/danke" className="app-menu-row" aria-current={pathname === "/danke" ? "page" : undefined} onClick={close}><Info size={19} aria-hidden="true" />{t("common.navigation.about")}</Link>
             </section>
@@ -104,11 +108,11 @@ export function AppMenu({ user, onAdd, onWalk }: { user: CurrentUser | null; onA
             <span className="app-menu-account-avatar"><TrailAvatar seed={user.avatarSeed} username={user.username} compact /></span>
             <span><small>{t("common.navigation.profile")}</small><strong>{user.username}</strong></span><ArrowRight size={17} aria-hidden="true" />
           </Link> : <button type="button" aria-label={t("common.navigation.signIn")} className="app-menu-row app-menu-login" onClick={openAccount}><LogIn size={19} aria-hidden="true" />{t("common.navigation.signIn")}</button>}
-          <div className="app-menu-preferences"><LanguageSwitcher /><DialectToggle /></div>
+          <details className="app-menu-preferences"><summary>{t("reading.atlas.preferences")}</summary><LanguageSwitcher /><DialectToggle /></details>
           {(ios || installEvent) && <button type="button" className="app-menu-row app-menu-install" disabled={installing} onClick={install}><Download size={19} aria-hidden="true" />{t("common.install.button")}</button>}
           {iosHelp && <p className="ios-help" role="status"><Share size={17} aria-hidden="true" />{t("common.install.ios")}</p>}
           {installFailed && <p className="ios-help" role="status">{t("reading.installFailed")}</p>}
-          {user && <form className="app-menu-signout" action={logout}><button onClick={close}><LogOut size={17} aria-hidden="true" />{t("common.navigation.signOut")}</button></form>}
+          {user && <form className="app-menu-signout" action={logout}><button onClick={() => { markAccountSession(false); close(); }}><LogOut size={17} aria-hidden="true" />{t("common.navigation.signOut")}</button></form>}
         </div>
       </div>
       <form method="dialog" className="modal-backdrop" aria-hidden="true"><button tabIndex={-1}>{t("common.actions.close")}</button></form>

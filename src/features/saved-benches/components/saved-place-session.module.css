@@ -1,0 +1,5 @@
+.feedback { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin: 0 auto 1rem; width: min(100%,42.5rem); padding: .75rem var(--atlas-reading-margin); color: var(--atlas-ink); background: var(--atlas-wash); font: 400 1rem/1.5 var(--font-body); scroll-margin-block: 5rem; }
+.feedback > span { flex: 1; min-width: 0; overflow-wrap: break-word; }
+.feedback small { display: block; font: 400 .875rem/1.25rem var(--font-body); }
+.feedback button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .5rem; color: var(--atlas-lake); }
+.feedback :focus-visible { outline: 3px solid var(--atlas-lake); outline-offset: 2px; }

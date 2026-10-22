@@ -1,3 +1,4 @@
+import documentStyles from "@/components/atlas-document.module.css";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
@@ -12,7 +13,7 @@ export async function generateMetadata() {
 
 export default async function PrivacyPage() {
   const t = await getTranslations();
-  return <main className="thanks-page legal-page min-h-dvh safe-bottom">
+  return <main className={`thanks-page legal-page min-h-dvh safe-bottom ${documentStyles.page}`}>
     <nav className="thanks-nav safe-top"><Link className="calm-menu-button" href="/danke" aria-label={t("about.metadata.title")}><ArrowLeft size={19} /></Link></nav>
     <div className="about-section"><h1>{t("privacy.title")}</h1><p>{t("privacy.updated")}</p><PrivacyFlow />
       <section><h2>{t("privacy.purposes.title")}</h2>{(["map", "account", "contributions"] as const).map((key) => <p key={key}>{t(`privacy.purposes.${key}`)}</p>)}</section>

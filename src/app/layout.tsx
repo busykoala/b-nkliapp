@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
+import "./field-guide.css";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -19,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = { themeColor: "#f6ecd5", viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#F7F5EF", viewportFit: "cover" };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();

@@ -44,10 +44,10 @@ export function MomentForm({ bench, onChanged }: Props) {
     const data = new FormData(event.currentTarget);
     save(() => submitBenchMoment(bench.id, null, data), () => setBody(""));
   }}>
-    <fieldset disabled={pending}><legend>{t("community.moments.choose")}</legend><div>{momentKinds.map((value) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)}>{t(`community.moments.kinds.${value}`)}</button>)}</div></fieldset>
     <input type="hidden" name="kind" value={kind} />
     <label><span>{t("community.moments.label")}</span><textarea disabled={pending} required name="body" minLength={2} maxLength={500} value={body} onChange={(event) => setBody(event.target.value)} placeholder={t(kind === "poem" ? "community.moments.poemPlaceholder" : "community.moments.placeholder")} /></label>
-    <small className="contribution-character-count">{body.length} / 500</small>
+    {body.length >= 400 && <small className="contribution-character-count">{body.length} / 500</small>}
+    <details className="moment-kind"><summary aria-label={`${t("community.moments.choose")} · ${t(`community.moments.kinds.${kind}`)}`}>{t(`community.moments.kinds.${kind}`)}</summary><fieldset disabled={pending}><legend className="sr-only">{t("community.moments.choose")}</legend><div>{momentKinds.map((value) => <button type="button" key={value} aria-pressed={kind === value} onClick={() => setKind(value)}>{t(`community.moments.kinds.${value}`)}</button>)}</div></fieldset></details>
     <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
     <button type="submit" disabled={pending || body.trim().length < 2}><Send size={16} aria-hidden="true" />{t(pending ? "common.actions.saving" : "community.moments.publish")}</button>
     <ContributionFeedback state={state} />

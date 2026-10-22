@@ -409,17 +409,20 @@
     "panoramaExpandedTitle": "Ciel et paysage à 360 degrés",
     "panoramaOpenExpanded": "Ouvrir le panorama en grand mode 360 degrés",
     "panoramaCloseExpanded": "Fermer le grand panorama à 360 degrés",
-    "panorama360": "Voir à 360°",
+    "panorama360": "Ouvrir la vue",
     "panoramaClose": "Fermer",
     "panoramaCalculated": "Calculé à partir des données du terrain et des environs",
     "panoramaZoomIn": "Agrandir",
     "panoramaZoomOut": "Réduire",
     "panoramaGenerating": "La vue est en train d’être peinte…",
     "panoramaUnavailable": "La vue calculée n’est pas encore disponible.",
-    "panoramaRetry": "Réessayer"
+    "panoramaRetry": "Réessayer",
+    "panoramaHelp": "Commandes",
+    "panoramaHelpBody": "Faites glisser l’image ou utilisez les flèches pour regarder autour de vous. La petite flèche du banc revient à sa direction de vue. Origine réinitialise la vue ; Échap la ferme.",
+    "panoramaBenchDirection": "Revenir à la vue depuis le banc"
   },
   "page": {
-    "description": "Banc avec analyse du soleil et des environs dans Bänkli App.",
+    "description": "Découvre ce lieu pour faire une pause, sa vue peinte et le chemin pour y aller.",
     "ratedDescription": "Banc avec vue notée {score}/5 dans Bänkli App.",
     "backToFeed": "Retour au fil des bancs",
     "onMap": "Sur la carte"
@@ -447,9 +450,30 @@
     "rate": "Évaluer",
     "viewRatings": "Voir",
     "contribute": "Contribuer à ce lieu",
-    "improve": "Améliorer",
+    "improve": "Apporter une contribution",
     "addPhoto": "Ajouter une photo",
     "addThought": "Partager une pensée",
     "sources": "Sources et mise à jour"
+  },
+  "visit": {
+    "title": "Pour ta visite",
+    "seatingAccess": "Assise et accès",
+    "weatherSun": "Météo et soleil",
+    "accessTitle": "À propos de l’accès",
+    "possiblyMissing": "Ce banc a été signalé comme peut-être disparu.",
+    "obstacle": "Un obstacle est connu sur l’accès ou près du banc.",
+    "accessUnknown": "L’accès n’est pas encore suffisamment connu.",
+    "accessScope": "Ces indications concernent le banc et le dernier tronçon. Elles ne garantissent pas un itinéraire entièrement accessible.",
+    "lightEstimate": "{value} · estimation",
+    "sunEstimate": "Les horaires d’ensoleillement sont estimés. Les nuages et les conditions sur place peuvent modifier la lumière.",
+    "noiseUnknown": "Bruit du trafic encore inconnu",
+    "noiseLow": "Peu de bruit de trafic attendu",
+    "noiseNoticeable": "Trafic probablement audible",
+    "noiseHigh": "Bruit de trafic marqué attendu",
+    "noiseEstimate": "{source} · estimation",
+    "goodToKnow": "Bon à savoir",
+    "noArmrest": "Sans accoudoirs",
+    "conflicting": "Certaines indications sur le banc se contredisent.",
+    "sceneWeather": "{condition} · {temperature} °C"
   }
 }

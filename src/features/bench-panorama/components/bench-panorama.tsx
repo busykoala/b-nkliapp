@@ -1,9 +1,9 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- immutable full-circle artifacts are repeated for seamless panning */
 
-import { Compass, LoaderCircle, Maximize2, Minimize2, Minus, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Armchair, Compass, LoaderCircle, Maximize2, X, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 import { loadBenchPanorama, requestBenchPanorama } from "@/app/actions/panorama";
 import type { PanoramaDescriptor } from "@/features/bench-panorama/types";
 import { retainPanoramaArtifact } from "../descriptor";
@@ -14,8 +14,12 @@ import { clampPanoramaPitch, normalizePanoramaHeading, panoramaHasSnowCover, pan
   panoramaRasterBounds, precipitationParticleCount, precipitationParticles } from "@/lib/panorama-scene";
 import { PanoramaWebgl } from "@/features/bench-panorama/components/panorama-webgl";
 import { PanoramaClouds } from "./panorama-clouds";
-import { panoramaCloudCover } from "@/features/weather/conditions";
+import { resolveWeatherCondition, panoramaCloudCover } from "@/features/weather/conditions";
+import { paintingFrameClass, paintingFrameStyle } from "@/components/painting-frame";
+import { useTaskIsolation } from "@/components/use-task-isolation";
+import controlsStyles from "./panorama-controls.module.css";
 import benchFraming from "../bench-framing.json";
+import { benchBearingTurn } from "../bearing";
 
 const PANORAMA_FAST_POLL_MS = 1_000;
 const PANORAMA_SLOW_POLL_MS = 5_000;
@@ -100,9 +104,10 @@ function MoonDisc({ phase, illumination }: { phase: number; illumination: number
   </svg>;
 }
 
-function PanoramaPlaceholder({ bench, status, children, onRetry }: {
+function PanoramaPlaceholder({ bench, status, children, onRetry, description }: {
   bench: BenchDetail;
   status: PanoramaDescriptor["status"];
+  description: string;
   children?: ReactNode;
   onRetry: () => void;
 }) {
@@ -115,29 +120,40 @@ function PanoramaPlaceholder({ bench, status, children, onRetry }: {
       <span>{t(loading ? "panoramaGenerating" : "panoramaUnavailable")}</span>
       {!loading && <button type="button" onClick={onRetry}>{t("panoramaRetry")}</button>}
     </div>
-    <span className="sr-only">{bench.title || bench.id}</span>
+    <span className="sr-only">{bench.title || bench.id} · {description}</span>
     {children}
   </figure>;
 }
 
 export function BenchPanorama({ bench, children }: { bench: BenchDetail; children?: ReactNode }) {
   const t = useTranslations("bench.landscape");
+  const all = useTranslations();
+  const condition = resolveWeatherCondition(bench.weather);
+  const conditionKey = condition === "partly-cloudy" ? "partlyCloudy" : condition;
+  const sceneDescription = [
+    t("panoramaDescription"),
+    bench.dayPhase === "night" ? all("bench.summary.night") : null,
+    condition !== "unknown" ? all(`bench.weather.conditions.${conditionKey}`) : null,
+    bench.weather && Number.isFinite(bench.weather.temperatureC) ? `${Math.round(bench.weather.temperatureC)} °C` : null,
+  ].filter(Boolean).join(" · ");
   const initialHeading = normalizePanoramaHeading(bench.directionDegrees ?? 0);
   const [heading, setHeading] = useState(initialHeading);
   const [descriptor, setDescriptor] = useState<PanoramaDescriptor>(bench.panorama ?? { status: bench.panoramaStatus });
   const [failed, setFailed] = useState(false);
+  const assetIdentity = `${descriptor.artifactUrl ?? ""}\n${descriptor.materialUrl ?? ""}`;
+  const activeArtwork = useRef(assetIdentity);
+  useLayoutEffect(() => { activeArtwork.current = assetIdentity; }, [assetIdentity]);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [dragging, setDragging] = useState(false);
   const [pitch, setPitch] = useState(0);
-  const [zoom, setZoom] = useState(1);
   const [expanded, setExpanded] = useState(false);
   const [terrainReadyUrl, setTerrainReadyUrl] = useState<string | null>(null);
   const figure = useRef<HTMLElement>(null);
+  useTaskIsolation(figure, expanded);
   const viewport = useRef<HTMLDivElement>(null);
   const expandButton = useRef<HTMLButtonElement>(null);
   const drag = useRef<{ pointer: number; x: number; y: number; heading: number; pitch: number } | null>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
   const hintId = useId();
   const markTerrainReady = useCallback(() => setTerrainReadyUrl(descriptor.materialUrl ?? null), [descriptor.materialUrl]);
   const markTerrainError = useCallback(() => setFailed(true), []);
@@ -156,8 +172,11 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     // The parent can learn of a finished worker render before our own poll.
     // Update its assets in-place instead of using status as a React key.
     const frame = requestAnimationFrame(() => {
+      const changed = `${incoming.artifactUrl}\n${incoming.materialUrl ?? ""}` !== activeArtwork.current;
       setDescriptor((current) => retainPanoramaArtifact(current, incoming));
-      setFailed(false);
+      // A parent refresh of the same immutable assets cannot repair a failed mask.
+      // Keep its error evidence visible until new assets or an explicit retry.
+      if (changed) setFailed(false);
     });
     return () => cancelAnimationFrame(frame);
   }, [bench.panorama]);
@@ -228,7 +247,7 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   [bench.dayPhase, bench.latitude, bench.longitude, observationTime]);
 
   if (failed || !descriptor.artifactUrl) {
-    return <PanoramaPlaceholder bench={bench} status={failed ? "error" : descriptor.status} onRetry={request}>{children}</PanoramaPlaceholder>;
+    return <PanoramaPlaceholder bench={bench} status={failed ? "error" : descriptor.status} description={sceneDescription} onRetry={request}>{children}</PanoramaPlaceholder>;
   }
   const artifactUrl = descriptor.artifactUrl;
 
@@ -237,31 +256,25 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     if (!active || active.pointer !== event.pointerId || !size.height) return;
     event.preventDefault();
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (pointers.current.size === 2) {
-      const [first, second] = [...pointers.current.values()];
-      const distance = Math.hypot(first.x - second.x, first.y - second.y);
-      if (!pinch.current) pinch.current = { distance, zoom };
-      else setZoom(Math.max(1, Math.min(2, pinch.current.zoom * distance / pinch.current.distance)));
-      return;
-    }
-    const projection = panoramaProjection(size.width, size.height, active.heading, active.pitch, zoom);
+    if (pointers.current.size > 1) return;
+    const projection = panoramaProjection(size.width, size.height, active.heading, active.pitch);
     setHeading(normalizePanoramaHeading(active.heading - (event.clientX - active.x) / projection.copyWidth * 360));
-    setPitch(clampPanoramaPitch(size.height, active.pitch + (event.clientY - active.y) / projection.pixelsPerDegree, zoom));
+    setPitch(clampPanoramaPitch(size.height, active.pitch + (event.clientY - active.y) / projection.pixelsPerDegree));
   };
   const finish = (event: PointerEvent<HTMLDivElement>) => {
     pointers.current.delete(event.pointerId);
-    if (pointers.current.size < 2) pinch.current = null;
     if (drag.current?.pointer !== event.pointerId) return;
     drag.current = null;
     setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
   // Inline art follows the recorded bench direction. An open 360 view belongs
-  // to the visitor; metadata refreshes must not reset their heading or zoom.
+  // to the visitor; metadata refreshes must not reset their heading or pitch.
   const visibleHeading = expanded ? heading : initialHeading;
   const rasterBounds = panoramaRasterBounds(descriptor.rasterBounds);
-  const projection = panoramaProjection(size.width, size.height, visibleHeading, expanded ? pitch : 0, expanded ? zoom : 1, rasterBounds);
+  const projection = panoramaProjection(size.width, size.height, visibleHeading, expanded ? pitch : 0, 1, rasterBounds);
   const degrees = Math.round(visibleHeading) % 360;
+  const benchTurn = benchBearingTurn(visibleHeading, bench.directionDegrees);
   const cloudContrast = panoramaShadowContrast(cloudCover);
   const precipitation = bench.weather?.precipitationType ?? "unknown";
   const raining = precipitation === "rain" || precipitation === "mixed";
@@ -312,23 +325,19 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
       setHeading((current) => normalizePanoramaHeading(current + (event.key === "ArrowRight" ? step : -step)));
     } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
-      setPitch((current) => clampPanoramaPitch(size.height, current + (event.key === "ArrowUp" ? 3 : -3), zoom));
+      setPitch((current) => clampPanoramaPitch(size.height, current + (event.key === "ArrowUp" ? 3 : -3)));
     } else if (event.key === "Home") {
       event.preventDefault();
       setHeading(initialHeading);
       setPitch(0);
-      setZoom(1);
-    } else if (event.key === "+" || event.key === "=") {
-      event.preventDefault(); setZoom((current) => Math.min(2, current + .1));
-    } else if (event.key === "-") {
-      event.preventDefault(); setZoom((current) => Math.max(1, current - .1));
+
     }
   };
   const wheel = (event: WheelEvent<HTMLDivElement>) => {
     if (!expanded) return;
     event.preventDefault();
     const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? size.height : 1;
-    setPitch((current) => clampPanoramaPitch(size.height, current - event.deltaY * units / 18, zoom));
+    setPitch((current) => clampPanoramaPitch(size.height, current - event.deltaY * units / 18));
   };
 
   const closeExpanded = () => {
@@ -337,9 +346,9 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
   };
   const modalKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (!expanded) return;
-    if (event.key === "Escape") { event.preventDefault(); closeExpanded(); return; }
+    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeExpanded(); return; }
     if (event.key !== "Tab" || !figure.current) return;
-    const controls = [...figure.current.querySelectorAll<HTMLElement>('button:not(:disabled), [href], [tabindex="0"]')]
+    const controls = [...figure.current.querySelectorAll<HTMLElement>('button:not(:disabled), summary, [href], [tabindex="0"]')]
       .filter((control) => control.offsetParent !== null);
     if (!controls.length) return;
     const first = controls[0]; const last = controls.at(-1)!;
@@ -349,17 +358,17 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
 
   return <figure ref={figure} data-recorded-direction={initialHeading} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined}
     aria-label={expanded ? t("panoramaExpandedTitle") : undefined} onKeyDown={modalKeyDown}
-    className={`bench-panorama phase-${bench.dayPhase} season-${bench.season}${expanded ? " is-expanded" : " is-static"}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}${snowing ? " is-snowing" : ""}${snowGround ? " has-snow-cover" : ""}${covered ? " has-shelter" : ""}${bench.sunnyNow ? " is-sunny" : " is-shaded"}`} style={panoramaStyle}>
-    <div ref={viewport} className="bench-panorama-viewport" role={expanded ? "group" : "img"} tabIndex={expanded ? 0 : -1}
-      aria-label={`${t("panoramaDescription")} · ${t("panoramaHeading", { degrees })}`} aria-describedby={hintId}
+    className={`bench-panorama ${expanded ? controlsStyles.viewer : ""} phase-${bench.dayPhase} season-${bench.season}${expanded ? " is-expanded" : " is-static"}${dragging ? " is-dragging" : ""}${raining ? " is-raining" : ""}${snowing ? " is-snowing" : ""}${snowGround ? " has-snow-cover" : ""}${covered ? " has-shelter" : ""}${bench.sunnyNow ? " is-sunny" : " is-shaded"}`} style={panoramaStyle}>
+    <div ref={viewport} className={`bench-panorama-viewport${expanded ? "" : ` ${paintingFrameClass}`}`} data-painting-treatment="hero" style={expanded ? undefined : paintingFrameStyle(bench.id)} role={expanded ? "group" : "img"} tabIndex={expanded ? 0 : -1}
+      aria-label={`${sceneDescription} · ${t("panoramaHeading", { degrees })}`} aria-describedby={hintId}
       onKeyDown={keyDown}
       onWheel={wheel}
-      onDoubleClick={expanded ? () => setZoom((current) => current > 1 ? 1 : 1.5) : undefined}
       onPointerDown={expanded ? (event) => {
         if (event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);
-        drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, heading, pitch: projection.pitch };
         pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.current.size > 1) return;
+        drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, heading, pitch: projection.pitch };
         setDragging(true);
       } : undefined}
       onPointerMove={expanded ? move : undefined} onPointerUp={expanded ? finish : undefined} onPointerCancel={expanded ? finish : undefined}>
@@ -393,7 +402,31 @@ export function BenchPanorama({ bench, children }: { bench: BenchDetail; childre
     </div>
     {covered && <div className="bench-panorama-shelter" aria-hidden="true"><i /><i /></div>}
     {covered && <div className="bench-panorama-shelter-shade" aria-hidden="true" />}
-    <div className="bench-panorama-hud"><span className="bench-panorama-bearing" title={t("panoramaCalculated")}><Compass size={15} aria-hidden="true" />{degrees}°</span>{expanded && <div className="bench-panorama-zoom-controls"><button type="button" aria-label={t("panoramaZoomOut")} title={t("panoramaZoomOut")} disabled={zoom <= 1} onClick={() => setZoom((current) => Math.max(1, current - .2))}><Minus size={14} /></button><span aria-live="polite">{zoom.toFixed(1)}×</span><button type="button" aria-label={t("panoramaZoomIn")} title={t("panoramaZoomIn")} disabled={zoom >= 2} onClick={() => setZoom((current) => Math.min(2, current + .2))}><Plus size={14} /></button></div>}<small id={hintId}>{t(expanded ? "panoramaExploreHint" : "panoramaStaticHint")}</small><button ref={expandButton} type="button" className="bench-panorama-expand" aria-expanded={expanded} aria-label={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} title={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} onClick={() => { if (expanded) closeExpanded(); else { setHeading(initialHeading); setPitch(0); setZoom(1); setExpanded(true); } }}>{expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}<span>{t(expanded ? "panoramaClose" : "panorama360")}</span></button></div>
+    <div className="bench-panorama-hud">
+      {expanded && <>
+        <details className={controlsStyles.bearingHelp}>
+          <summary aria-label={`${t("panoramaHeading", { degrees })} · ${t("panoramaHelp")}`} title={t("panoramaHelp")}>
+            <span className="bench-panorama-bearing"><Compass size={16} aria-hidden="true" />{degrees}°</span>
+          </summary>
+          <p id={hintId}>{t("panoramaHelpBody")}</p>
+        </details>
+        {benchTurn && <button type="button" className={controlsStyles.benchDirection} data-turn={benchTurn}
+          aria-label={t("panoramaBenchDirection")} title={t("panoramaBenchDirection")}
+          onClick={() => {
+            setHeading(initialHeading); setPitch(0);
+            // The cue disappears on arrival; return focus to the scene.
+            viewport.current?.focus();
+          }}>
+          {benchTurn === "left" && <ArrowLeft size={18} aria-hidden="true" />}
+          <Armchair size={16} aria-hidden="true" />
+          {benchTurn === "right" && <ArrowRight size={18} aria-hidden="true" />}
+        </button>}
+      </>}
+      {!expanded && <span id={hintId} className="sr-only">{t("panoramaStaticHint")}</span>}
+      <button ref={expandButton} type="button" className="bench-panorama-expand" aria-expanded={expanded} aria-label={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} title={t(expanded ? "panoramaCloseExpanded" : "panoramaOpenExpanded")} onClick={() => { if (expanded) closeExpanded(); else setExpanded(true); }}>
+        {expanded ? <X size={20} aria-hidden="true" /> : <Maximize2 size={17} aria-hidden="true" />}<span>{t(expanded ? "panoramaClose" : "panorama360")}</span>
+      </button>
+    </div>
     {children}
   </figure>;
 }

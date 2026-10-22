@@ -4,7 +4,7 @@
 import { useTranslations } from "next-intl";
 import { compassDirection, propertyValue } from "@/i18n/bench-labels";
 import { ArrowLeft, Check, ChevronRight, Compass, Minus, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { editBenchField } from "@/app/actions/benches";
 import type { BenchDetail } from "@/lib/types";
 import { editableBenchFields, editablePropertyValue, type EditableBenchField as Field } from "../feature-model";
@@ -12,7 +12,7 @@ import { ContributionFeedback, useContributionSave, useContributionWork } from "
 
 type Choice = { value: string; label: string };
 
-export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: BenchDetail; onlyFields?: Field[]; onChanged?: () => void | Promise<void> }) {
+export function BenchFeatureEditor({ bench, onChanged, onlyFields, groupSecondary = false, children }: { bench: BenchDetail; onlyFields?: Field[]; groupSecondary?: boolean; children?: ReactNode; onChanged?: () => void | Promise<void> }) {
   const t = useTranslations();
   const yesNo: Choice[] = [{ value: "yes", label: t("common.values.yes") }, { value: "no", label: t("common.values.no") }];
   const choices: Record<Field, Choice[]> = {
@@ -57,16 +57,7 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
       dismiss();
     });
   };
-  return <div ref={root} className="contribution-feature-list">
-    {active ? <div className="feature-question">
-      <button type="button" className="feature-back" disabled={pending} onClick={dismiss}><ArrowLeft size={17} aria-hidden="true" />{t("community.workspace.allFields")}</button>
-      <h3 className="feature-question-title" tabIndex={-1}>{t(`community.workspace.questions.${active}`)}</h3>
-      {active === "wheelchair" && <p className="contribution-intro">{t("community.workspace.accessHint")}</p>}
-      {active === "direction" ? <DirectionFineTuner bench={bench} value={Number(value(active) ?? 0)} pending={pending} onChange={(next) => setDrafts(previous => ({ ...previous, direction: String(next) }))} onSave={() => commit("direction")} canSave={canSave(active)} />
-        : <><div className={`field-choice-grid is-${active}`}>{choices[active].map(choice => <button type="button" key={choice.value} disabled={pending} aria-pressed={value(active) === choice.value} onClick={() => setDrafts(previous => ({ ...previous, [active]: choice.value }))}>{value(active) === choice.value && <Check size={15} aria-hidden="true" />}{choice.label}</button>)}</div>
-          <button type="button" className="contribution-primary" disabled={pending || !canSave(active)} onClick={() => commit(active)}><Check size={16} aria-hidden="true" />{t(pending ? "common.actions.saving" : "common.actions.save")}</button></>}
-      <button type="button" className="feature-skip" disabled={pending} onClick={() => { setDrafts(previous => { const next = { ...previous }; delete next[active]; return next; }); dismiss(); }}>{t("community.workspace.skip")}</button>
-    </div> : fields.map(field => {
+  const renderField = (field: Field) => {
       const property = bench.properties.find(item => item.key === field);
       const mine = saved[field] !== undefined || (field === "direction" ? bench.directionContributedByMe : property?.contributedByMe);
       const display = saved[field] !== undefined ? label(field, saved[field]!) : property?.evidenceState === "conflicting" ? t("community.workspace.conflicting") : property ? propertyValue(property, t) : label(field, original(field));
@@ -77,7 +68,24 @@ export function BenchFeatureEditor({ bench, onChanged, onlyFields }: { bench: Be
           <ChevronRight size={16} aria-hidden="true" />
         </button>
       </section>;
-    })}
+    };
+  return <div ref={root} className="contribution-feature-list">
+    {active && <div className="feature-question">
+      <button type="button" className="feature-back" disabled={pending} onClick={dismiss}><ArrowLeft size={17} aria-hidden="true" />{t("community.workspace.allFields")}</button>
+      <h3 className="feature-question-title" tabIndex={-1}>{t(`community.workspace.questions.${active}`)}</h3>
+      {active === "wheelchair" && <p className="contribution-intro">{t("community.workspace.accessHint")}</p>}
+      {active === "direction" ? <DirectionFineTuner bench={bench} value={Number(value(active) ?? 0)} pending={pending} onChange={(next) => setDrafts(previous => ({ ...previous, direction: String(next) }))} onSave={() => commit("direction")} canSave={canSave(active)} />
+        : <><div className={`field-choice-grid is-${active}`}>{choices[active].map(choice => <button type="button" key={choice.value} disabled={pending} aria-pressed={value(active) === choice.value} onClick={() => setDrafts(previous => ({ ...previous, [active]: choice.value }))}>{value(active) === choice.value && <Check size={15} aria-hidden="true" />}{choice.label}</button>)}</div>
+          <button type="button" className="contribution-primary" disabled={pending || !canSave(active)} onClick={() => commit(active)}><Check size={16} aria-hidden="true" />{t(pending ? "common.actions.saving" : "common.actions.save")}</button></>}
+      <button type="button" className="feature-skip" disabled={pending} onClick={() => { setDrafts(previous => { const next = { ...previous }; delete next[active]; return next; }); dismiss(); }}>{t("community.workspace.skip")}</button>
+    </div>}
+    <div hidden={Boolean(active)}>
+      {fields.filter(field => !groupSecondary || ["backrest", "armrest", "covered", "wheelchair"].includes(field)).map(renderField)}
+      {groupSecondary && <details className="contribution-extra"><summary>{t("community.concerns.moreFacts")}</summary>
+        {fields.filter(field => !["backrest", "armrest", "covered", "wheelchair"].includes(field)).map(renderField)}
+        {children}
+      </details>}
+    </div>
     <ContributionFeedback state={state} />
   </div>;
 }

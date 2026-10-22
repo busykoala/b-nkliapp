@@ -74,7 +74,8 @@
     "difficulty": "Difficultad",
     "time": "Temp da partenza (Svizra; vid = ussa)",
     "goodToKnow": "Bun da savair",
-    "directions": "Descripziun da la via"
+    "directions": "Descripziun da la via",
+    "editPlan": "Adattar il plan"
   },
   "errors": {
     "time": "Quest temp svizzer n’exista betg. Controllar per plaschair."

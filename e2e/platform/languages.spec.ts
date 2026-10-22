@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const labels = {
   de: {menu: "Menü öffnen", close: "Menü schliessen", language: "Sprache", search: "Ort suchen"},
@@ -7,8 +7,17 @@ const labels = {
   rm: {menu: "Avrir il menu", close: "Serrar il menu", language: "Lingua", search: "Tschertgar in lieu"},
 } as const;
 
+async function openMenuOptions(page: Page, label: string) {
+  const bench = page.locator('.bench-atlas-sheet[data-presentation="place"]');
+  if (await bench.count()) await bench.locator(".atlas-place-toggle").click();
+  await page.getByRole("button", { name: label, exact: true }).click();
+  const preferences = page.locator(".app-menu-preferences");
+  if (await preferences.getAttribute("open") === null) await preferences.locator("summary").click();
+}
+
 test("switches all four languages, preserves the map, and remembers the choice", async ({page, context}) => {
   test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.locator("[data-map-ready=true]")).toBeVisible();
   await page.getByRole("combobox", {name: labels.de.search}).fill("Lindenhof");
@@ -19,7 +28,7 @@ test("switches all four languages, preserves the map, and remembers the choice",
   await page.locator(".maplibregl-canvas").evaluate(canvas => {canvas.setAttribute("data-language-test", "original");});
   let previous: keyof typeof labels = "de";
   for (const language of ["fr", "it", "rm", "de"] as const) {
-    await page.getByRole("button", {name: labels[previous].menu, exact: true}).click();
+    await openMenuOptions(page, labels[previous].menu);
     await page.getByRole("combobox", {name: labels[previous].language, exact: true}).selectOption(language);
     await expect(page.locator("html")).toHaveAttribute("lang", `${language}-CH`);
     await expect(page.getByRole("combobox", {name: labels[language].language, exact: true})).toHaveValue(language);
@@ -31,7 +40,7 @@ test("switches all four languages, preserves the map, and remembers the choice",
     await expect(page).toHaveURL(location);
     previous = language;
   }
-  await page.getByRole("button", {name: labels.de.menu, exact: true}).click();
+  await openMenuOptions(page, labels.de.menu);
   await page.getByRole("combobox", {name: labels.de.language, exact: true}).selectOption("fr");
   await expect(page.locator("html")).toHaveAttribute("lang", "fr-CH");
   await page.reload();
@@ -59,17 +68,18 @@ test("keeps a highlighted origin through translation updates without repeating i
   let searches = 0;
   page.on("request", request => { if (request.method() === "POST" && request.postData() === '["Bern"]') searches++; });
   await page.goto("/");
-  await page.getByRole("button", { name: "Spaziergang entdecken", exact: true }).click();
+  await page.getByRole("button", { name: "Unterwegs", exact: true }).click();
   const panel = page.getByRole("complementary");
   await panel.getByRole("button", { name: "Mein Standort", exact: true }).click();
   await expect(panel.getByRole("status")).toContainText("Standort nicht verfügbar");
   const input = panel.getByRole("combobox");
   await input.fill("Bern");
-  const station = panel.getByRole("option").first();
+  await page.clock.runFor(500);
+  const station = panel.getByRole("listbox").getByRole("option").first();
   await expect(station).toContainText("Bern");
   await input.press("ArrowDown");
   await expect(station).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("button", { name: labels.de.menu, exact: true }).click();
+  await openMenuOptions(page, labels.de.menu);
   await page.getByRole("combobox", { name: labels.de.language, exact: true }).selectOption("fr");
   await expect(page.locator("html")).toHaveAttribute("lang", "fr-CH");
   await page.getByRole("button", { name: labels.fr.close, exact: true }).click();
@@ -129,8 +139,12 @@ for (const language of ["de", "fr", "it", "rm"] as const) {
     await expect(page.getByRole("link", { name: t("bench.page.onMap"), exact: true })).toBeVisible();
     const overview = page.getByRole("region", { name: t("bench.summary.title"), exact: true });
     await expect(overview).toBeVisible();
-    await expect(overview.locator(".overview-weather .overview-label")).toHaveText(t("bench.details.weather"));
-    await expect(overview.getByText(t("bench.overview.light"), { exact: true })).toBeVisible();
+    await expect(overview.locator("p").first()).toBeVisible();
+    const visitDetails = page.locator(".bench-visit-details > details > summary").filter({ hasText: t("bench.visit.goodToKnow") });
+    await expect(visitDetails).toBeVisible();
+    await visitDetails.click();
+    await expect(page.getByRole("heading", { name: t("bench.visit.weatherSun"), exact: true })).toBeVisible();
+    await expect(page.locator(".bench-sources")).toHaveCount(0);
     await page.getByRole("button", { name: t("common.navigation.open"), exact: true }).click();
     await page.getByRole("button", { name: t("common.navigation.signIn"), exact: true }).click();
     const dialog = page.locator("dialog[open]");
@@ -151,7 +165,7 @@ test("existing walk results and directions follow language changes without anoth
   await context.addCookies([{ name: "benchly_language", value: "fr", url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
   const fr = testTranslator("fr");
   await page.goto("/");
-  await page.getByRole("button", { name: fr("walks.planner.title"), exact: true }).click();
+  await page.getByRole("button", { name: fr("reading.atlas.walk"), exact: true }).click();
   const panel = page.getByRole("complementary");
   await panel.getByRole("combobox", { name: fr("routing.origin.input"), exact: true }).fill("Zürich");
   await panel.getByRole("option", { name: `Bahnhofplatz 1, Zürich ${fr("routing.origin.address")}` }).click();
@@ -163,7 +177,7 @@ test("existing walk results and directions follow language changes without anoth
   let previous = fr;
   for (const language of ["it", "rm"] as const) {
     const t = testTranslator(language);
-    await page.getByRole("button", { name: previous("common.navigation.open"), exact: true }).click();
+    await openMenuOptions(page, previous("common.navigation.open"));
     await page.getByRole("combobox", { name: previous("common.language.label"), exact: true }).selectOption(language);
     await expect(page.locator("html")).toHaveAttribute("lang", `${language}-CH`);
     await page.getByRole("button", { name: t("common.navigation.close"), exact: true }).click();

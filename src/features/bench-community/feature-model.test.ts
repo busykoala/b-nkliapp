@@ -21,6 +21,7 @@ describe("contribution field values", () => {
     expect(editablePropertyValue(property({ key: "material", value: "Holz" }))).toBe("wood");
     expect(editablePropertyValue(property({ value: "Nein" }))).toBe("no");
     expect(editableBenchFields).not.toContain("wasteBasketNearby");
+    expect(editableBenchFields).not.toContain("seats");
     expect(new Set(editableBenchFields).size).toBe(editableBenchFields.length);
   });
 });

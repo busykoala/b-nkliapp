@@ -189,7 +189,7 @@
       "environment": "Dintorni, panorama o luce non corrispondono"
     },
     "observation": "Cosa hai visto?",
-    "placeholder": "Per esempio: manca lo schienale",
+    "placeholder": "Descrivi brevemente che cosa è diverso.",
     "publish": "Pubblica la segnalazione",
     "fields": {
       "properties": "Dotazioni",
@@ -202,7 +202,7 @@
   "place": {
     "eyebrow": "Le persone di questo luogo",
     "title": "Momenti sulla panchina",
-    "share": "Condividi il momento",
+    "share": "Condividi questo posto",
     "shareShort": "Condividi",
     "shareText": "Un momento sulla panchina presso {bench}",
     "copied": "Link copiato, pronto da condividere, anche su Instagram.",
@@ -218,7 +218,10 @@
     "favourites": "Tutti i luoghi preferiti",
     "recent": "negli ultimi 90 giorni",
     "deleteOwn": "Elimina il mio momento",
-    "empty": "Ancora nessuna storia qui. La panchina aspetta pazientemente."
+    "empty": "Ancora nessuna storia qui. La panchina aspetta pazientemente.",
+    "moreActions": "Altre azioni",
+    "moreMoments": "Vedi altri momenti",
+    "fewerMoments": "Mostra meno momenti"
   },
   "features": {
     "progress": "{known}/{total} dati noti · Tocca per completare",
@@ -368,7 +371,7 @@
   },
   "workspace": {
     "choose": "Scegli un contributo",
-    "intro": "Una foto, un’informazione, un’impressione: scegli cosa vuoi condividere qui. Non devi sapere tutto.",
+    "intro": "Una foto, un’impressione, un’indicazione utile.",
     "groups": {
       "place": "Mostrare il luogo",
       "now": "Sul posto, adesso",
@@ -415,5 +418,26 @@
       "fireplaceNearby": "C’è un focolare nelle vicinanze?"
     },
     "viewDescription": "Descrizione attuale"
+  },
+  "concerns": {
+    "memory": {
+      "title": "Condividi un ricordo",
+      "hint": "Un momento, una foto o la tua impressione generale."
+    },
+    "facts": {
+      "title": "Completa le indicazioni",
+      "hint": "Quello che aiuta ad arrivare e a sedersi."
+    },
+    "problem": {
+      "title": "Segnala un problema",
+      "hint": "Un errore o qualcosa di cui prendersi cura."
+    },
+    "moreFacts": "Altre indicazioni",
+    "rating": "Valuta l’impressione generale"
+  },
+  "history": {
+    "title": "Le tue osservazioni precedenti",
+    "view": "La tua precedente impressione del panorama",
+    "remove": "Elimina: {kind}"
   }
 }

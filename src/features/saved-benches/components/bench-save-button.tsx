@@ -7,6 +7,7 @@ import { setBenchFollow } from "@/app/actions/bench-community";
 import type { CurrentUser } from "@/lib/security";
 import type { BenchDetail } from "@/lib/types";
 import { AccountDialog } from "@/features/account/components/account-controls";
+import { useAuthenticated } from "@/features/account/auth-session";
 
 export function BenchSaveButton({ bench, user, onChanged, className = "", compact = false }: {
   bench: BenchDetail;
@@ -18,7 +19,7 @@ export function BenchSaveButton({ bench, user, onChanged, className = "", compac
   const t = useTranslations();
   const dialog = useRef<HTMLDialogElement>(null);
   const saveAfterLogin = useRef(false);
-  const [authenticated, setAuthenticated] = useState(Boolean(user));
+  const authenticated = useAuthenticated(Boolean(user));
   const [following, setFollowing] = useState(bench.followingBench);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -41,13 +42,12 @@ export function BenchSaveButton({ bench, user, onChanged, className = "", compac
   };
 
   return <>
-    <button type="button" className={`bench-save-action ${compact ? "is-compact" : ""} ${className}`} title={following ? t("community.place.favourite") : t("community.place.save")} aria-pressed={following} disabled={pending} onClick={choose}>
+    <button type="button" className={`bench-save-action ${compact ? "is-compact" : ""} ${className}`} title={following ? t("community.place.favourite") : t("community.place.save")} aria-pressed={following} disabled={pending} onClick={(event) => { event.currentTarget.focus({ preventScroll: true }); choose(); }}>
       <Bookmark size={18} fill={following ? "currentColor" : "none"} aria-hidden="true" />
       <span>{following ? t("community.place.favourite") : t("community.place.save")}</span>
     </button>
     {message && <span className="bench-save-status" role="status">{message}</span>}
     <AccountDialog dialogRef={dialog} intent={t("community.place.save")} onAuthenticated={() => {
-      setAuthenticated(true);
       if (saveAfterLogin.current) { saveAfterLogin.current = false; save(true); }
     }} />
   </>;

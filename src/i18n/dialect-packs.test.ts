@@ -22,7 +22,7 @@ function argumentsOf(elements: MessageFormatElement[], found = new Set<string>()
 }
 
 function standard(language: string) {
-  const namespaces = ["account", "avatar", "bench", "common", "community", "knowledge", "photos", "submission"];
+  const namespaces = ["account", "avatar", "bench", "common", "community", "knowledge", "photos", "poetry", "submission"];
   return flatten(Object.fromEntries(namespaces.map((namespace) => [namespace, JSON.parse(readFileSync(join(process.cwd(), `src/i18n/messages/${language}/${namespace}.json`), "utf8"))])));
 }
 

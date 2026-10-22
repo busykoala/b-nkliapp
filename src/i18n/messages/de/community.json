@@ -189,7 +189,7 @@
       "environment": "Umgebung, Aussicht oder Licht stimmt nicht"
     },
     "observation": "Was hast du gesehen?",
-    "placeholder": "Zum Beispiel: Die Rückenlehne fehlt",
+    "placeholder": "Beschreibe kurz, was anders ist.",
     "publish": "Hinweis veröffentlichen",
     "fields": {
       "properties": "Ausstattung",
@@ -202,7 +202,7 @@
   "place": {
     "eyebrow": "Menschen an diesem Platz",
     "title": "Bänkli-Momente",
-    "share": "Moment teilen",
+    "share": "Bänkli teilen",
     "shareShort": "Teilen",
     "shareText": "Ein Bänkli-Moment bei {bench}",
     "copied": "Link kopiert – bereit fürs Teilen, auch auf Instagram.",
@@ -218,7 +218,10 @@
     "favourites": "Alle Lieblingsplätze",
     "recent": "in den letzten 90 Tagen",
     "deleteOwn": "Eigenen Moment löschen",
-    "empty": "Noch keine Geschichte hier. Das Bänkli wartet geduldig."
+    "empty": "Noch keine Geschichte hier. Das Bänkli wartet geduldig.",
+    "moreActions": "Weitere Aktionen",
+    "moreMoments": "Weitere Momente ansehen",
+    "fewerMoments": "Weniger Momente anzeigen"
   },
   "features": {
     "progress": "{known}/{total} Angaben bekannt · Zum Ergänzen antippen",
@@ -368,7 +371,7 @@
   },
   "workspace": {
     "choose": "Beitrag auswählen",
-    "intro": "Ein Foto, eine Angabe, ein Eindruck: Wähle, was du hier beitragen möchtest. Du musst nicht alles wissen.",
+    "intro": "Ein Foto, ein Eindruck, eine hilfreiche Angabe.",
     "groups": {
       "place": "Den Platz zeigen",
       "now": "Gerade vor Ort",
@@ -415,5 +418,26 @@
       "fireplaceNearby": "Gibt es in der Nähe eine Feuerstelle?"
     },
     "viewDescription": "Bisherige Einordnung"
+  },
+  "concerns": {
+    "memory": {
+      "title": "Erinnerung teilen",
+      "hint": "Ein Moment, ein Foto oder dein Gesamteindruck."
+    },
+    "facts": {
+      "title": "Angaben ergänzen",
+      "hint": "Was hilft beim Ankommen und Sitzen?"
+    },
+    "problem": {
+      "title": "Problem melden",
+      "hint": "Etwas stimmt nicht oder braucht Pflege."
+    },
+    "moreFacts": "Weitere Angaben",
+    "rating": "Gesamteindruck bewerten"
+  },
+  "history": {
+    "title": "Deine bisherigen Beobachtungen",
+    "view": "Dein früherer Eindruck von der Aussicht",
+    "remove": "{kind} löschen"
   }
 }

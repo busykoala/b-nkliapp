@@ -82,7 +82,7 @@
     "light": "Luce attuale · stimata",
     "sun": "Sole",
     "shade": "Ombra",
-    "more": "Altre preferenze",
+    "more": "Altri desideri",
     "access": "Accesso e comfort",
     "accessNote": "Lo spazio piano riguarda solo la panchina. Scale e condizioni del percorso appaiono dopo la pianificazione.",
     "anyMaterial": "Indifferente",
@@ -101,7 +101,7 @@
     "without": "Senza {label}",
     "toilets": "Toilette entro 250 m",
     "drinkingWater": "Acqua potabile entro 250 m",
-    "facilityDistance": "Servizi registrati, distanza in linea d’aria. Il percorso a piedi può essere più lungo; dati mancanti non significano assenza di servizi."
+    "facilityDistance": "Distanze in linea d’aria."
   },
   "placement": {
     "title": "Scegli la posizione",

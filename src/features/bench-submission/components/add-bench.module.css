@@ -1,0 +1,16 @@
+.sheet { background: var(--atlas-paper); color: var(--atlas-ink); font: 400 1rem/1.5 var(--font-body); border: 0; border-radius: .25rem; }
+.sheet :global(.add-bench-scroll) { padding: 1.5rem var(--atlas-reading-margin) .5rem; }
+.sheet h2 { font: 500 1.875rem/2.1875rem var(--font-display); overflow-wrap: break-word; }
+.sheet h3 { font: 600 1.125rem/1.5rem var(--font-body); }
+.sheet :global(.add-bench-steps) { color: var(--atlas-muted); font: 400 .875rem/1.25rem var(--font-body); }
+.sheet :global(.add-location) { margin-block: .75rem; color: var(--atlas-muted); }
+.sheet :global(.add-bench-actions) { padding: .75rem var(--atlas-reading-margin) max(.75rem,env(safe-area-inset-bottom)); border-top: 1px solid var(--guide-rule); background: var(--atlas-paper); box-shadow: none; }
+.sheet :is(button,input:not([type="hidden"]):not([type="checkbox"]),select,summary) { min-height: 48px; }
+.sheet :is(input:not([type="hidden"]):not([type="checkbox"]),textarea,select) { border: 1px solid var(--guide-rule); border-radius: .25rem; background: var(--atlas-paper); color: var(--atlas-ink); font: 400 1rem/1.5 var(--font-body); }
+.sheet :global(.form-control > .label) { justify-content: flex-start; gap: .5rem; padding-block: .5rem; font: 600 1rem/1.5 var(--font-body); }
+.sheet :global(.new-bench-features) { border: 0; background: transparent; }
+.sheet :global(.nearby-benches) { margin-block: 1rem; border: 0; border-left: 2px solid var(--atlas-lake); border-radius: 0; background: transparent; padding: .5rem 1rem; }
+.sheet :global(.nearby-benches li button) { border-radius: .25rem; background: var(--atlas-paper); }
+.sheet :global(.nearby-confirm) { min-height: 48px; align-items: center; padding-block: .5rem; }
+.sheet :global(.btn-primary) { border-radius: .25rem; background: var(--atlas-spruce); color: var(--atlas-paper); }
+.sheet :is(button,input,textarea,select,summary):focus-visible { outline: 3px solid var(--atlas-lake); outline-offset: 2px; }

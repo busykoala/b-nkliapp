@@ -26,18 +26,18 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   await page.setViewportSize({ width: 390, height: 844 });
   setCoveredFixture(panoramaBench);
   await page.goto(`/?bank=${panoramaBench}`);
-  await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "full");
+  await expect(page.locator(".bench-atlas-sheet")).toHaveAttribute("data-presentation", "place");
   await installTerrainPanoramaFixture(panoramaBench, true);
 
   const panorama = page.locator(".bench-panorama");
   // A panorama completed by the worker appears in the open detail without a reload.
   await expect(panorama).toBeVisible({ timeout: 7_000 });
-  await expect(page.locator(".desktop-sheet")).toHaveAttribute("data-snap", "full");
+  await expect(page.locator(".bench-atlas-sheet")).toHaveAttribute("data-presentation", "place");
   await expect(panorama.locator(".bench-panorama-shelter")).toBeVisible();
   await expect(panorama.locator(".bench-panorama-ground-patch, .bench-panorama-bench-shadow")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("panorama-overlay-full.png") });
   const bearing = panorama.locator(".bench-panorama-bearing");
-  await expect(bearing).toHaveText("325°");
+  await expect(bearing).toHaveCount(0);
   await expect(panorama.getByRole("slider")).toHaveCount(0);
   const zoom = panorama.locator(".bench-panorama-zoom-controls span");
   await expect(zoom).toHaveCount(0);
@@ -54,12 +54,19 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   expect(canvasBudget.height).toBeGreaterThanOrEqual(128);
   expect(canvasBudget.width).toBeLessThanOrEqual(2048);
   expect(canvasBudget.height).toBeLessThanOrEqual(512);
+  await expect(panorama.locator(".bench-panorama-foreground")).toBeHidden();
+  await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
+
+  const open = panorama.getByRole("button", { name: "Panorama gross im 360-Grad-Modus öffnen" });
+  await open.click();
+  await expect(panorama).toHaveClass(/is-expanded/);
+  await expect(panorama.locator(".bench-panorama-foreground")).toBeVisible();
   // Read all layout rectangles together so geometry assertions describe one
   // rendered frame rather than separate browser layout turns.
   const layout = await panorama.evaluate((element) => {
     const bench = element.querySelector<HTMLElement>(".bench-panorama-rear-bench");
     if (!bench) return null;
-    const panoramaBox = element.getBoundingClientRect();
+    const panoramaBox = element.querySelector(".bench-panorama-viewport")!.getBoundingClientRect();
     const benchBox = bench.getBoundingClientRect();
     return {
       panorama: { width: panoramaBox.width, height: panoramaBox.height, y: panoramaBox.y },
@@ -72,25 +79,24 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   expect(layout!.bench.y + layout!.bench.height).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height * .9);
   expect(layout!.bench.y).toBeLessThan(layout!.panorama.y + layout!.panorama.height * .95);
   expect(layout!.bench.y + layout!.bench.height).toBeGreaterThan(layout!.panorama.y + layout!.panorama.height);
-  await panorama.screenshot({ path: testInfo.outputPath("panorama-mobile-initial.png") });
 
-  const open = panorama.getByRole("button", { name: "Panorama gross im 360-Grad-Modus öffnen" });
-  await open.click();
-  await expect(panorama).toHaveClass(/is-expanded/);
+  await expect(bearing).toHaveText("325°");
   await expect(panorama).toHaveAttribute("role", "dialog");
   await expect(panorama).toHaveAttribute("aria-modal", "true");
   await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
-  await expect(zoom).toHaveText("1.0×");
+  await expect(zoom).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("panorama-quiet-controls.png") });
 
   const viewport = page.locator(".bench-panorama-viewport");
   const box = await viewport.boundingBox();
   expect(box).not.toBeNull();
   const before = await page.locator(".bench-panorama-track").getAttribute("style");
-  // Mobile WebKit has no mouse wheel. Double-tap/double-click exercises the
-  // same touch-friendly zoom affordance on every configured browser.
+  // Double-click and keyboard +/- no longer magnify the painting.
   await viewport.dblclick({ position: { x: box!.width * .5, y: box!.height * .5 } });
-  await expect(zoom).not.toHaveText("1.0×");
-  const zoomed = await page.locator(".bench-panorama-track").getAttribute("style");
+  await viewport.press("+");
+  await viewport.press("-");
+  expect(await page.locator(".bench-panorama-track").getAttribute("style")).toBe(before);
+  const zoomed = before;
   await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .32);
   await page.mouse.down();
   await page.mouse.move(box!.x + box!.width * .3, box!.y + box!.height * .65, { steps: 5 });
@@ -102,12 +108,16 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   expect(afterTop).toBeGreaterThan(beforeTop + 45);
   await expect(bearing).not.toHaveText("325°");
   await expect(panorama.locator(".bench-panorama-foreground .bench-panorama-rear-bench")).toBeVisible();
-  await panorama.locator(".bench-panorama-zoom-controls button").last().click();
-  await expect(zoom).not.toHaveText("1.5×");
+  const bankArrow = panorama.getByRole("button", { name: "Zur Blickrichtung der Bank" });
+  await expect(bankArrow).toBeVisible();
+  await bankArrow.click();
+  await expect(bearing).toHaveText("325°");
+  await expect(bankArrow).toHaveCount(0);
+  await expect(viewport).toBeFocused();
 
   await viewport.focus();
   await viewport.press("Home");
-  await expect(zoom).toHaveText("1.0×");
+  await expect(zoom).toHaveCount(0);
   await expect(bearing).toHaveText("325°");
   const homeStyle = await page.locator(".bench-panorama-track").getAttribute("style");
   const homeTop = Number(homeStyle?.match(/--panorama-track-top:\s*(-?[\d.]+)px/)?.[1]);
@@ -115,7 +125,7 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
   if (browserName !== "webkit") {
     await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
     await page.mouse.wheel(0, -600);
-    await expect(zoom).toHaveText("1.0×");
+    await expect(zoom).toHaveCount(0);
     const wheelUpStyle = await page.locator(".bench-panorama-track").getAttribute("style");
     const wheelUpTop = Number(wheelUpStyle?.match(/--panorama-track-top:\s*(-?[\d.]+)px/)?.[1]);
     expect(wheelUpTop).toBeGreaterThan(homeTop + 100);
@@ -125,17 +135,21 @@ test("keeps the inline painting calm and explores the full sky in an accessible 
     expect(wheelDownTop).toBeCloseTo(homeTop, 2);
   }
   const widthAtOne = Number(restStyle?.match(/--panorama-copy-width:\s*([\d.]+)px/)?.[1]);
-  for (let index = 0; index < 5; index++) await panorama.locator(".bench-panorama-zoom-controls button").last().click();
-  await expect(zoom).toHaveText("2.0×");
-  const zoomTwoStyle = await page.locator(".bench-panorama-track").getAttribute("style");
-  const widthAtTwo = Number(zoomTwoStyle?.match(/--panorama-copy-width:\s*([\d.]+)px/)?.[1]);
-  expect(widthAtTwo).toBeCloseTo(widthAtOne * 2, -1);
-  for (let index = 0; index < 5; index++) await panorama.locator(".bench-panorama-zoom-controls button").first().click();
-  await expect(zoom).toHaveText("1.0×");
+  await viewport.press("+");
+  const unchanged = await page.locator(".bench-panorama-track").getAttribute("style");
+  expect(Number(unchanged?.match(/--panorama-copy-width:\s*([\d.]+)px/)?.[1])).toBe(widthAtOne);
   for (let index = 0; index < 65; index++) await viewport.press("ArrowLeft");
   await expect(bearing).toHaveText("0°");
   await viewport.press("ArrowLeft");
   await expect(bearing).toHaveText("355°");
+  await expect(bankArrow).toHaveAttribute("data-turn", "left");
+  await page.screenshot({ path: testInfo.outputPath("panorama-bank-left.png") });
+  await bankArrow.click();
+  await viewport.press("Shift+ArrowLeft");
+  await expect(bankArrow).toHaveAttribute("data-turn", "right");
+  await page.screenshot({ path: testInfo.outputPath("panorama-bank-right.png") });
+  await bankArrow.click();
+  await expect(bearing).toHaveText("325°");
 
   // Centre the actual sun or moon before looking up. Its percentage is the
   // projected geographic azimuth, so this works for both the day CI fixture
@@ -219,7 +233,7 @@ test("keeps semantic sky transparent when WebGL is unavailable", async ({ page, 
   await panorama.screenshot({ path: testInfo.outputPath("panorama-canvas2d-fallback.png") });
 });
 
-test("offers a retry without displaying an unmasked landscape when the semantic mask fails", async ({ page, panoramaBench }) => {
+test("offers a retry without displaying an unmasked landscape when the semantic mask fails", async ({ page, panoramaBench }, info) => {
   await installTerrainPanoramaFixture(panoramaBench, false);
   const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
   const row = database.prepare(`SELECT pr.material_key materialKey FROM benches b
@@ -232,6 +246,12 @@ test("offers a retry without displaying an unmasked landscape when the semantic 
   await expect(panorama).toHaveAttribute("data-status", "error");
   await expect(panorama.getByRole("status")).toBeVisible();
   await expect(panorama.getByRole("button")).toBeVisible();
+  await Promise.all([
+    page.waitForResponse(response => response.request().method() === "POST" && Boolean(response.request().headers()["next-action"])),
+    page.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))),
+  ]);
+  await expect(panorama).toHaveAttribute("data-status", "error");
+  await page.screenshot({ path: info.outputPath("panorama-material-failure.png") });
   await expect(panorama.locator(".bench-panorama-art, .bench-panorama-celestial")).toHaveCount(0);
 });
 
@@ -244,7 +264,7 @@ test("keeps an expanded panorama and its pose through a detail refresh", async (
   await viewport.press("ArrowRight");
   await viewport.press("+");
   await expect(panorama.locator(".bench-panorama-bearing")).toHaveText("330°");
-  await expect(panorama.locator(".bench-panorama-zoom-controls span")).toHaveText("1.1×");
+  await expect(panorama.locator(".bench-panorama-zoom-controls")).toHaveCount(0);
   await panorama.evaluate((element) => element.setAttribute("data-viewer-instance", "original"));
   const database = new Database(process.env.BENCHLY_E2E_DATABASE!);
   try { database.prepare("UPDATE benches SET direction_degrees=90 WHERE id=?").run(panoramaBench); }
@@ -257,8 +277,8 @@ test("keeps an expanded panorama and its pose through a detail refresh", async (
   await expect(panorama).toHaveAttribute("data-viewer-instance", "original");
   await expect(panorama).toHaveClass(/is-expanded/);
   await expect(panorama.locator(".bench-panorama-bearing")).toHaveText("330°");
-  await expect(panorama.locator(".bench-panorama-zoom-controls span")).toHaveText("1.1×");
+  await expect(panorama.locator(".bench-panorama-zoom-controls")).toHaveCount(0);
   await panorama.getByRole("button", { name: "360-Grad-Grossansicht schliessen" }).click();
   await expect(panorama).toHaveClass(/is-static/);
-  await expect(panorama.locator(".bench-panorama-bearing")).toHaveText("90°");
+  await expect(panorama.locator(".bench-panorama-bearing")).toHaveCount(0);
 });

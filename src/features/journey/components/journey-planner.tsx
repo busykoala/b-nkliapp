@@ -12,12 +12,14 @@ import { useEffect, useRef } from "react";
 import { ChevronDown, Footprints, MapPin, RefreshCw } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { JourneyOrigin, JourneyPoint } from "@/features/journey/model";
+import { RouteOpening } from "@/features/routing/components/route-opening";
 import { StartPicker } from "@/features/routing/components/start-picker";
 import { journeyClock, journeyMinutes, PACE_OPTIONS, type JourneyLeg } from "@/features/journey/model";
 import { useJourneyPlanner, type JourneyDraftSnapshot } from "@/features/journey/components/use-journey-planner";
 import { finalWalkingLeg, journeyExternalLinks } from "@/features/journey/links";
 import { tightestTransfer, type JourneySettings } from "@/features/journey/planner";
 import { RouteAccessibilitySummary } from "@/features/routing/components/route-accessibility";
+import { useSheetHeadingFocus } from "@/components/use-sheet-heading-focus";
 
 export type JourneyPlannerBodyProps = {
   bench: { id: string; title: string };
@@ -40,15 +42,20 @@ export function JourneyPlannerBody({ bench, initial, draft, onSnapshot, getMap }
   const links = option ? journeyExternalLinks(option) : null;
   const finalWalk = option ? finalWalkingLeg(option) : null;
   const { mode, timeMode, time, speed, buffer } = settings;
-  useEffect(() => { title.current?.focus(); }, []);
+  useSheetHeadingFocus(title);
   useEffect(() => { if (result) resultSection.current?.scrollIntoView({ block: "start", behavior: "instant" }); }, [result]);
   return <>
-      <header><span className="story-eyebrow">{t("journey.planner.eyebrow")}</span><h2 tabIndex={-1} ref={title}>{initial ? t("journey.planner.return") : t("journey.planner.title")}</h2><p className="journey-destination"><MapPin size={15} /> {bench.title || t("common.values.bench")}</p></header>
+      <RouteOpening eyebrow={t("journey.planner.eyebrow")} title={initial ? t("journey.planner.return") : t("journey.planner.title")} titleRef={title}>
+        <p className="journey-destination"><MapPin size={15} /> {bench.title || t("common.values.bench")}</p>
+      </RouteOpening>
+      <details className={`journey-plan-controls${result ? " has-result" : ""}`} open={!result}>
+      <summary>{t("routing.controls.editPlan")}</summary>
       <section className="journey-controls" aria-label={t("journey.planner.label")}>
         <StartPicker origin={origin} onChange={chooseOrigin} getMap={getMap} />
         <div className="journey-modes">{(["transit", "walk"] as const).map((m) => <button key={m} aria-pressed={mode === m} onClick={() => updateSettings({ mode: m })}>{m === "walk" ? <Footprints size={19} /> : <TransportArt mode="rail" />}{m === "walk" ? t("journey.planner.walk") : t("journey.planner.transit")}</button>)}</div>
-        <div className="journey-time"><label>{t("journey.planner.when")}<select value={timeMode} onChange={(e) => updateSettings({ timeMode: e.target.value as JourneySettings["timeMode"] })}><option value="now">{t("journey.planner.leaveNow")}</option><option value="departure">{t("journey.planner.departAt")}</option><option value="arrival">{t("journey.planner.arriveBy")}</option></select></label>{timeMode !== "now" && <label>{t("journey.planner.swissTime")}<input type="datetime-local" value={time} onChange={(e) => updateSettings({ time: e.target.value })} /></label>}</div>
+
         <details className="journey-adjust"><summary>{t("journey.planner.adjust")} <small>{t(`routing.pace.${PACE_OPTIONS.find((p) => p.speed === speed)?.key ?? "normal"}`)}{mode === "transit" ? t("journey.planner.bufferSummary", {minutes: buffer}) : ""}</small></summary>
+        <div className="journey-time"><label>{t("journey.planner.when")}<select value={timeMode} onChange={(e) => updateSettings({ timeMode: e.target.value as JourneySettings["timeMode"] })}><option value="now">{t("journey.planner.leaveNow")}</option><option value="departure">{t("journey.planner.departAt")}</option><option value="arrival">{t("journey.planner.arriveBy")}</option></select></label>{timeMode !== "now" && <label>{t("journey.planner.swissTime")}<input type="datetime-local" value={time} onChange={(e) => updateSettings({ time: e.target.value })} /></label>}</div>
         <fieldset className="journey-pace"><legend>{t("routing.controls.pace")}</legend><div>{PACE_OPTIONS.map((p, i) => <button key={p.speed} aria-pressed={speed === p.speed} onClick={() => updateSettings({ speed: p.speed })}><span className={`pace-drawing pace-${i}`}><Footprints size={24 + i * 3} /></span><strong>{t(`routing.pace.${p.key}`)}</strong><small>{format.number(p.speed)} km/h</small></button>)}</div><small>{t("journey.planner.paceExample", {minutes: Math.ceil(500 / (speed / 3.6) / 60)})}</small></fieldset>
         {mode === "transit" && <fieldset className="journey-buffer"><legend>{t("journey.planner.buffer")}</legend><div>{([0, 3, 6, 10] as const).map((value) => <button key={value} aria-pressed={buffer === value} onClick={() => updateSettings({ buffer: value })}><span>+{value}</span><small>min</small></button>)}</div></fieldset>}
         </details>
@@ -57,6 +64,7 @@ export function JourneyPlannerBody({ bench, initial, draft, onSnapshot, getMap }
         {dirty && result && <p role="status">{t("journey.planner.dirty")}</p>}
         {error && <p role="status">{error}</p>}
       </section>
+      </details>
       {result && <section ref={resultSection} className="journey-results" aria-label={t("journey.results.title")}>
         {result.message && <p role="status">{translateMessage(t, result.message)}</p>}
         {option && <><div className="journey-recommendation"><span className="story-eyebrow">{t("journey.results.chosen")}</span><h3>{t("journey.results.arrival", {time: journeyClock(option.arrival)})}</h3><p className="journey-walking-summary"><Footprints size={18} /> {t("journey.results.totalWalking", {duration: journeyMinutes(option.walkingSeconds)})}</p>{finalWalk && <p>{t("journey.results.lastWalk", {duration: finalWalk.geometryQuality === "missing" ? t("journey.results.unknown") : journeyMinutes(finalWalk.durationSeconds)})}{finalWalk.distanceMeters !== undefined ? ` · ${Math.round(finalWalk.distanceMeters)} m` : ""}</p>}<p>{t("journey.results.duration", {duration: journeyMinutes(option.durationSeconds), changes: option.changes})}</p><details><summary>{t("journey.results.transfers")}</summary><p>{tightestTransfer(option, t)}</p></details>{(!option.complete || !option.feasible) && <p className="journey-warning">{t("journey.results.unverified")}</p>}</div><RouteAccessibilitySummary values={option.legs.filter((leg) => leg.mode === "walk").map((leg) => leg.accessibility)} /></>}

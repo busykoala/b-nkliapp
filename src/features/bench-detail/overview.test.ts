@@ -27,7 +27,7 @@ describe("bench overview: resolved facts, useful intervals and scoped measuremen
 
   it("summarizes equipment once, with no confidence or verification badges", () => {
     const bench = fixture({ properties: [fact("backrest", true), fact("covered", false), fact("armrest", true), fact("seats", 3)] });
-    expect(comfortSummary(bench, translate)).toEqual({ value: "Rückenlehne", detail: "Ohne Dach · Armlehnen · 3 Sitzplätze" });
+    expect(comfortSummary(bench, translate)).toEqual({ value: "Rückenlehne", detail: "Ohne Dach · Armlehnen" });
     expect(comfortSummary(fixture(), translate).value).toBe("–");
   });
 
@@ -56,26 +56,23 @@ describe("bench overview: resolved facts, useful intervals and scoped measuremen
   it("requires a valid scored review and count", () => {
     expect(validRating(4.5, 2)).toBe(4.5);
     for (const [value, count] of [[4.5, 0], [NaN, 2], [0, 3], [6, 1], [null, 1]] as const) expect(validRating(value, count)).toBeNull();
-    expect(quietSummary(fixture(), translate, String).value).toBe("–");
+    expect(quietSummary(fixture(), translate).value).toBe("Verkehrslärm noch nicht erfasst");
   });
 
-  it.each([
-    [1, "1 Ruhe-Bewertung"],
-    [2, "2 Ruhe-Bewertungen"],
-  ] as const)("formats %i quietness reviews with the real translator", (count, detail) => {
-    const bench = fixture({
-      ratingBreakdown: {
-        overall: 4, view: null, comfort: null, quiet: 4,
-        counts: { overall: count, view: 0, comfort: 0, quiet: count },
-      },
-    });
-    expect(quietSummary(bench, translate, String)).toEqual({ value: "4 / 5", detail });
-  });
-
-  it("keeps modelled noise human-readable while preserving the measurement", () => {
-    const bench = fixture({ knowledge: { noise: [{ period: "day", mode: "road", value: 51, unit: "dB(A)" }, { period: "night", mode: "rail", value: 38, unit: "dB(A)" }] } as BenchDetail["knowledge"] });
-    expect(quietSummary(bench, translate, String)).toEqual({ value: "Strassenlärm", detail: "51 dB(A) · Lärmmodell" });
-    expect(quietSummary({ ...bench, dayPhase: "night" }, translate, String)).toEqual({ value: "Bahnlärm", detail: "38 dB(A) · Lärmmodell" });
+  it("ignores manual quietness ratings and uses only current-period model data", () => {
+    const bench = fixture({ ratingBreakdown: { overall: 4, view: null, comfort: null, quiet: 5,
+      counts: { overall: 2, view: 0, comfort: 0, quiet: 2 } },
+      knowledge: { noise: [{ period: "day", mode: "road", value: 51, unit: "dB(A)" }, { period: "night", mode: "rail", value: 38, unit: "dB(A)" }] } as BenchDetail["knowledge"] });
+    expect(quietSummary(bench, translate)).toEqual({ value: "Verkehr voraussichtlich hörbar", detail: "Strassenlärm · geschätzt" });
+    expect(quietSummary({ ...bench, dayPhase: "night", localMinutesNow: 1380 }, translate)).toEqual({ value: "Wenig Verkehrslärm erwartet", detail: "Bahnlärm · geschätzt" });
+    expect(quietSummary({ ...bench, knowledge: undefined }, translate).value).toBe("Verkehrslärm noch nicht erfasst");
+    expect(quietSummary({ ...bench, dayPhase: "night", localMinutesNow: 18 * 60 }, translate).detail).toBe("Strassenlärm · geschätzt");
+    expect(quietSummary({ ...bench, dayPhase: "dawn", localMinutesNow: 5 * 60 }, translate).detail).toBe("Bahnlärm · geschätzt");
+    expect(quietSummary({ ...bench, localMinutesNow: NaN }, translate).value).toBe("Verkehrslärm noch nicht erfasst");
+    bench.knowledge!.noise.push({ ...bench.knowledge!.noise[0], value: 65 });
+    expect(quietSummary(bench, translate).value).toBe("Deutlicher Verkehrslärm erwartet");
+    bench.knowledge!.noise.forEach(row => { row.value = NaN; });
+    expect(quietSummary(bench, translate).value).toBe("Verkehrslärm noch nicht erfasst");
   });
 
   it("sorts useful nearby facilities and never calls an ordinary fountain potable", () => {

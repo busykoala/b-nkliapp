@@ -5,6 +5,7 @@ import { z } from "zod";
 import { sqlite } from "@/db/client";
 import { normalizeLocationKey, searchGeoAdminLocations } from "@/integrations/geoadmin/client";
 import type { PlaceResult } from "@/lib/types";
+import { distinctPlaceResults, placeLabel } from "./place-label";
 
 type BenchSearchRow = {
   id: string;
@@ -51,7 +52,7 @@ export async function searchMapPlaces(input: string): Promise<PlaceResult[]> {
   const results: PlaceResult[] = [
     ...benches.map((bench) => ({
       id: `bench-${bench.id}`,
-      label: [bench.label || t("common.values.bench"), bench.location_name, bench.location_canton].filter(Boolean).join(" · "),
+      label: placeLabel([bench.label || t("common.values.bench"), bench.location_name, bench.location_canton]),
       latitude: bench.latitude,
       longitude: bench.longitude,
       kind: "bench" as const,
@@ -59,14 +60,12 @@ export async function searchMapPlaces(input: string): Promise<PlaceResult[]> {
     })),
     ...[...official, ...places].map((place) => ({
       id: `local-${place.latitude}-${place.longitude}`,
-      label: [place.location_postcode, place.location_name, place.location_canton].filter(Boolean).join(" "),
+      label: placeLabel([place.location_postcode, place.location_name, place.location_canton], " "),
       latitude: place.latitude,
       longitude: place.longitude,
       kind: "place" as const,
     })),
     ...await searchGeoAdminLocations(query),
   ];
-  return results.filter((item, index) => results.findIndex((candidate) => (
-    candidate.label.toLocaleLowerCase("de-CH") === item.label.toLocaleLowerCase("de-CH")
-  )) === index).slice(0, 8);
+  return distinctPlaceResults(results).slice(0, 8);
 }

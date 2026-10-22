@@ -32,15 +32,16 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   const runId = `${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
   const moment = `Die Limmat klingt hier morgens besonders ruhig (${runId}).`;
   await registerUser(page, `p-${runId}`);
-  await page.getByRole("button", { name: "Verbessern", exact: true }).click();
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
   const dialog = page.locator(".contribution-dialog[open]");
 
-  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  await dialog.getByRole("button", { name: "Erinnerung teilen", exact: true }).click();
   await dialog.getByLabel("Dein Bänkli-Moment").fill(moment);
   await dialog.getByRole("button", { name: "Moment veröffentlichen" }).click();
   await expect(dialog.getByText("Dein Bänkli-Moment ist jetzt am Platz zu lesen.")).toBeVisible();
 
   await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
+  await dialog.getByRole("button", { name: "Problem melden", exact: true }).click();
   await dialog.getByRole("button", { name: "Sich ums Bänkli kümmern", exact: true }).click();
   await dialog.getByRole("button", { name: "Kurz gereinigt", exact: true }).click();
   await expect(dialog.getByRole("button", { name: "Kurz gereinigt · von dir" })).toBeDisabled();
@@ -51,6 +52,7 @@ test("leaves a moment, cares for and follows a Bänkli from one contribution pla
   await follow.click();
   await expect(page.getByRole("button", { name: "Gemerkt" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText(/\d+× gereinigt/)).toBeVisible();
+  await page.locator(".place-more-actions > summary").click();
   await page.getByRole("link", { name: "Alle Lieblingsplätze" }).click();
   await expect(page.getByRole("heading", { name: "Meine Lieblingsplätze" })).toBeVisible();
   await expect(page.locator(".saved-benches a[href^='/bank/osm-node-101']")).toBeVisible();
@@ -79,10 +81,12 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
   page.on("pageerror", (error) => pageErrors.push(error));
   const runId = `${testInfo.project.name.slice(-6)}-photo-${Date.now().toString().slice(-5)}`;
   await registerUser(page, runId);
-  await page.getByRole("button", { name: "Foto hinzufügen", exact: true }).click();
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
+  await page.locator("[data-contribution-choice=moment]").click();
+  await page.locator(".contribution-related").getByRole("button", { name: "Foto von diesem Platz", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Foto von diesem Platz" });
   await expect(dialog.locator("[data-contribution-task]:visible")).toHaveCount(1);
-  await expect(dialog.locator("details")).toHaveCount(0);
+  await expect(dialog.locator("[data-contribution-task]:visible details")).toHaveCount(0);
 
   await expect(dialog.getByText("Das Bänkli ins Bild setzen")).toBeVisible();
   await expect(dialog.getByText(/Aus Fotomediathek, Kamera oder Dateien wählen/)).toBeVisible();
@@ -135,11 +139,11 @@ test("offers a calm mobile Bänkli photo flow", async ({ page }, testInfo) => {
 test("keeps contribution drafts across tasks and protects closing the viewport-owned editor", async ({ page }, testInfo) => {
   const runId = `draft-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
   await registerUser(page, runId);
-  const trigger = page.getByRole("button", { name: "Verbessern", exact: true });
+  const trigger = page.getByRole("button", { name: "Etwas beitragen", exact: true });
   await trigger.click();
   const dialog = page.locator(".contribution-dialog[open]");
   await expect(dialog).toHaveAccessibleName("Zum Bänkli beitragen");
-  await expect(dialog.locator("[data-contribution-choice]")).toHaveCount(8);
+  await expect(dialog.locator("[data-contribution-choice]")).toHaveCount(3);
   await expect(dialog.getByText("Lindenhof", { exact: false }).first()).toBeVisible();
   const viewport = page.viewportSize()!;
   const box = await dialog.boundingBox();
@@ -149,7 +153,7 @@ test("keeps contribution drafts across tasks and protects closing the viewport-o
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height + 1);
   await expect(dialog.getByRole("button", { name: "Beiträge schliessen" })).toBeInViewport();
 
-  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  await dialog.getByRole("button", { name: "Erinnerung teilen", exact: true }).click();
   const text = `Noch nicht veröffentlichter Gedanke ${runId}`;
   await dialog.getByLabel("Dein Bänkli-Moment").fill(text);
   await page.setViewportSize({ width: viewport.width, height: 400 });
@@ -158,11 +162,11 @@ test("keeps contribution drafts across tasks and protects closing the viewport-o
   await expect(dialog.getByLabel("Dein Bänkli-Moment")).toHaveValue(text);
   await page.setViewportSize(viewport);
   await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
-  await expect(dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true })).toBeFocused();
-  await dialog.getByRole("button", { name: "Licht gerade jetzt", exact: true }).click();
-  await expect(dialog.getByLabel("Licht vor Ort melden")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Erinnerung teilen", exact: true })).toBeFocused();
+  await dialog.getByRole("button", { name: "Angaben ergänzen", exact: true }).click();
+  await expect(dialog.locator(".contribution-feature-list").first()).toBeVisible();
   await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
-  await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  await dialog.getByRole("button", { name: "Erinnerung teilen", exact: true }).click();
   await expect(dialog.getByLabel("Dein Bänkli-Moment")).toHaveValue(text);
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveAccessibleName("Entwurf verwerfen?");
@@ -174,7 +178,7 @@ test("keeps contribution drafts across tasks and protects closing the viewport-o
   await expect(trigger).toBeFocused();
   await expect(page).toHaveURL(/\/bank\/osm-node-101$/);
   await trigger.click();
-  await page.locator(".contribution-dialog[open]").getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+  await page.locator(".contribution-dialog[open]").getByRole("button", { name: "Erinnerung teilen", exact: true }).click();
   await expect(page.getByLabel("Dein Bänkli-Moment")).toHaveValue("");
 });
 
@@ -186,7 +190,8 @@ test.describe("controlled action requests", () => {
   test("saves chosen facts explicitly and retains a written contribution after a failed request", async ({ page }, testInfo) => {
     const runId = `save-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
     await registerUser(page, runId);
-    await page.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
+    await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
+    await page.locator("[data-contribution-choice=features]").click();
     const dialog = page.locator(".contribution-dialog[open]");
     await dialog.getByRole("button", { name: /Armlehnen/ }).click();
     let actionRequests = 0;
@@ -201,7 +206,7 @@ test.describe("controlled action requests", () => {
     await expect(field).toContainText("Nein");
     await expect(field).toBeFocused();
     await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
-    await dialog.getByRole("button", { name: "Einen Moment hinterlassen", exact: true }).click();
+    await dialog.getByRole("button", { name: "Erinnerung teilen", exact: true }).click();
     const draft = `Dieser Gedanke bleibt auch nach einem Fehler erhalten (${runId}).`;
     const body = dialog.getByLabel("Dein Bänkli-Moment");
     await body.fill(draft);

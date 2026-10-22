@@ -74,7 +74,8 @@
     "difficulty": "Schwierigkeit",
     "time": "Startzeit (Schweiz; leer = jetzt)",
     "goodToKnow": "Gut zu wissen",
-    "directions": "Wegbeschreibung"
+    "directions": "Wegbeschreibung",
+    "editPlan": "Plan anpassen"
   },
   "errors": {
     "time": "Diese Schweizer Uhrzeit existiert nicht. Bitte prüfen."

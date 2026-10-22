@@ -74,7 +74,8 @@
     "difficulty": "Difficoltà",
     "time": "Partenza (ora svizzera; vuoto = adesso)",
     "goodToKnow": "Da sapere",
-    "directions": "Indicazioni"
+    "directions": "Indicazioni",
+    "editPlan": "Modifica il percorso"
   },
   "errors": {
     "time": "Quest’ora svizzera non esiste. Controlla."

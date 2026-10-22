@@ -542,17 +542,20 @@
       "panoramaExpandedTitle": "Tschiel e cuntrada da 360 grads",
       "panoramaOpenExpanded": "Avrir il panorama grond en il modus da 360 grads",
       "panoramaCloseExpanded": "Serrar la vista gronda da 360 grads",
-      "panorama360": "Vesair 360°",
+      "panorama360": "Avrir la vista",
       "panoramaClose": "Serrar",
       "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient",
       "panoramaZoomIn": "Engrondir",
       "panoramaZoomOut": "Empitschnir",
       "panoramaGenerating": "La vista vegn gist malegiada…",
       "panoramaUnavailable": "La vista calculada n’è amo betg disponibla.",
-      "panoramaRetry": "Empruvar amo ina giada"
+      "panoramaRetry": "Empruvar amo ina giada",
+      "panoramaHelp": "Utilisaziun",
+      "panoramaHelpBody": "Tira il maletg u dovra las frizzas per guardar enturn. La pitschna frizza dal banc maina enavos a sia direcziun da vista. Home restituescha la vista; Escape la serra.",
+      "panoramaBenchDirection": "Enavos a la vista dal banc"
     },
     "page": {
-      "description": "Banc cun analisa dal sulegl e da l’ambient en Bänkli App.",
+      "description": "Scuvra quest lieu per far ina pausa, cun ina vista picturada e la via al banc.",
       "ratedDescription": "Banc cun vista valitada {score}/5 en Bänkli App.",
       "backToFeed": "Enavos al feed dals bancs",
       "onMap": "Sin la charta"
@@ -580,10 +583,31 @@
       "rate": "Valitar",
       "viewRatings": "Vesair",
       "contribute": "Contribuir a quest lieu",
-      "improve": "Meglierar",
+      "improve": "Contribuir insatge",
       "addPhoto": "Agiuntar ina foto",
       "addThought": "Parter in patratg",
       "sources": "Funtaunas e stadi da las datas"
+    },
+    "visit": {
+      "title": "Per tia visita",
+      "seatingAccess": "Seser ed access",
+      "weatherSun": "Aura e sulegl",
+      "accessTitle": "Indicaziuns davart l’access",
+      "possiblyMissing": "Igl è vegnì annunzià che quest banc na saja eventualmain betg pli qua.",
+      "obstacle": "In impediment è enconuschent sin l’access u sper il banc.",
+      "accessUnknown": "L’access n’è amo betg enconuschent avunda.",
+      "accessScope": "Questas indicaziuns pertutgan il banc ed il davos traject. Ellas na garanteschan betg ina ruta cumplettamain accessibla.",
+      "lightEstimate": "{value} · stimà",
+      "sunEstimate": "Ils temps da sulegl èn stimads. Ils nivels e las cundiziuns al lieu pon midar la glisch.",
+      "noiseUnknown": "Canera dal traffic amo betg registrada",
+      "noiseLow": "Pauca canera dal traffic spetgada",
+      "noiseNoticeable": "Traffic probablamain udibel",
+      "noiseHigh": "Clera canera dal traffic spetgada",
+      "noiseEstimate": "{source} · stimà",
+      "goodToKnow": "Bun da savair",
+      "noArmrest": "Senza pusabratgs",
+      "conflicting": "Singulas indicaziuns davart il banc sa cuntradin.",
+      "sceneWeather": "{condition} · {temperature} °C"
     }
   },
   "common": {
@@ -884,7 +908,7 @@
         "environment": "Conturns, vista u glisch na constattan betg"
       },
       "observation": "Tge has ti vis?",
-      "placeholder": "Per exempel: il spundal manca",
+      "placeholder": "Descriva curtamain tge ch’è auter.",
       "publish": "Publitgar l’indicaziun",
       "fields": {
         "properties": "Equipament",
@@ -897,7 +921,7 @@
     "place": {
       "eyebrow": "Persunas en quest lieu",
       "title": "Muments sin il banc",
-      "share": "Cundivider il mument",
+      "share": "Parter quest lieu",
       "shareShort": "Cundivider",
       "shareText": "In mument sin il banc tar {bench}",
       "copied": "Colliaziun copiada, pronta per cundivider, er sin Instagram.",
@@ -913,7 +937,10 @@
       "favourites": "Tut ils lieus preferids",
       "recent": "ils ultims 90 dis",
       "deleteOwn": "Stizzar l’agen mument",
-      "empty": "Anc nagina istorgia qua. Il banc spetga cun pazienza."
+      "empty": "Anc nagina istorgia qua. Il banc spetga cun pazienza.",
+      "moreActions": "Ulteriuras acziuns",
+      "moreMoments": "Guardar ulteriurs muments",
+      "fewerMoments": "Mussar damain muments"
     },
     "features": {
       "progress": "{known}/{total} indicaziuns enconuschentas · Tutga per cumplettar",
@@ -1063,7 +1090,7 @@
     },
     "workspace": {
       "choose": "Tscherner ina contribuziun",
-      "intro": "Ina fotografia, in’indicaziun, in’impressiun: tscherna tge che ti vuls contribuir qua. Ti na stos betg savair tut.",
+      "intro": "Ina fotografia, in’impressiun, in’indicaziun utila.",
       "groups": {
         "place": "Mussar il lieu",
         "now": "Ussa al lieu",
@@ -1110,6 +1137,27 @@
         "fireplaceNearby": "Datti in fieu en la vischinanza?"
       },
       "viewDescription": "Descripziun actuala"
+    },
+    "concerns": {
+      "memory": {
+        "title": "Parter ina regurdientscha",
+        "hint": "In mument, ina fotografia u tia impressiun generala."
+      },
+      "facts": {
+        "title": "Cumplettar las indicaziuns",
+        "hint": "Quai che gida ad arrivar ed a seser."
+      },
+      "problem": {
+        "title": "Annunziar in problem",
+        "hint": "In sbagl u insatge che dovra tgira."
+      },
+      "moreFacts": "Ulteriuras indicaziuns",
+      "rating": "Valitar l’impressiun generala"
+    },
+    "history": {
+      "title": "Tias observaziuns anteriuras",
+      "view": "Tia impressiun anteriura da la vista",
+      "remove": "Stizzar: {kind}"
     }
   },
   "knowledge": {
@@ -1354,6 +1402,134 @@
       "storageUnavailable": "La memoria da fotos fa gist pausa.",
       "format": "Dovra ina fotografia JPEG, PNG u WebP.",
       "formatMismatch": "Il format na correspunda betg a la fotografia. Tscherna il maletg amo ina giada."
+    }
+  },
+  "poetry": {
+    "miniatures": {
+      "pause": {
+        "v1": "Per in mument na sto la via manar nagliur. Ti dast simplamain esser qua.",
+        "v2": "Il mund va vinavant. Qua hai plaz per in patratg che n’ha amo nagin num.",
+        "v3": "Mintgatant dovra in di in lieu per seser, avant ch’ina resposta.",
+        "v4": "Tranter partir ed arrivar datti questa pitschna fermada.",
+        "v5": "Lascha spetgar il proxim pass amo in mument.",
+        "v6": "In plaz liber, in pau temp. Forsa cumenza il viadi gist qua.",
+        "v7": "Quai che ti has purtà cun tai dast ti laschar seser sper tai.",
+        "v8": "Er ina sviada po esser per in mument la finamira."
+      },
+      "sun": {
+        "v1": "La glisch chatta quest plaz. Il fil dal di pos ti puspè prender si pli tard.",
+        "v2": "In toc dal di ruaussa en la glisch. Sesa sper el.",
+        "v3": "Il sulegl na dovra nagin motiv per restar qua. Ti forsa er betg.",
+        "v4": "Qua ha la glisch fatg ina fermada intermediara.",
+        "v5": "Per quest mument basta da guardar la glisch.",
+        "v6": "La glisch sa mova vinavant. I na fa betg prescha da la suandar.",
+        "v7": "In punct cler en il di. Ti na stos betg prender el cun tai per al tegnair.",
+        "v8": "Forsa resta da la via dad oz surtut questa glisch."
+      },
+      "shade": {
+        "v1": "La sumbriva na prenda nagut dal di. Ella al dat in’autra colur.",
+        "v2": "Qua dastga la clerezza far in pass enavos.",
+        "v3": "En la sumbriva daventan ils urs dal di pli loms.",
+        "v4": "In plaz ordaifer la splendur. Er qua pon ins restar.",
+        "v5": "La glisch è occupada insanua auter. Qua tutga il mument a tai.",
+        "v6": "Betg tut quai che porta in di sto star en la glisch.",
+        "v7": "In’autra vart dal di spetga qua sin tai.",
+        "v8": "La sumbriva lascha las chaussas esser tar sasezzas."
+      },
+      "rain": {
+        "v1": "La plievgia scriva sur il di. Ti na stos betg chapir mintga pled.",
+        "v2": "Oz ha la cuntrada tschernì l’aquarel.",
+        "v3": "Ils daguts mettan lur pitschens puncts. La frasa dal di resta averta.",
+        "v4": "La plievgia na prenda naginas scursanidas. Ella arriva dapertut.",
+        "v5": "In di bletsch ha sia atgna splendur.",
+        "v6": "Quai ch’era be in contur survegn en la plievgia in segund ur.",
+        "v7": "Tranter ils daguts hai amo plaz per quest mument.",
+        "v8": "Il tschiel lascha ir insatge. Forsa dast ti far quai er oz."
+      },
+      "snow": {
+        "v1": "Las floccas na suondan betg la medema via. Tuttina arrivan ellas.",
+        "v2": "La naiv croda tras quest mument sco sch’ella avess tut il temp.",
+        "v3": "Ina flocca dovra pauc plaz. Il sguard la suonda tuttina.",
+        "v4": "Il di vegn dissegnà da nov, flocca per flocca.",
+        "v5": "Quai che croda dal tschiel na sto oz betg esser ina resposta.",
+        "v6": "L’aria porta pitschnas entschettas alvas.",
+        "v7": "Mintga flocca chatta in’autra fin per sia crudada.",
+        "v8": "Ti guardas la naiv. Per ina giada basta quai sco project."
+      },
+      "night": {
+        "v1": "La notg lascha avert chaussas ch’il di vuleva declerar.",
+        "v2": "En il stgir na sto il sguard betg tegnair tut.",
+        "v3": "Il di è ì. In plaz per restar è amo qua.",
+        "v4": "La notg ha dapli spazi ch’in sguard po cumpigliar.",
+        "v5": "Per in mument na dovras ti amo betg la proxima damaun.",
+        "v6": "Quai che ti has tschertgà oz dast ti laschar senza num fin damaun.",
+        "v7": "La stgiraglia prenda al lieu ils conturs, betg ses plaz.",
+        "v8": "Er senza vesair l’entira via dast ti arrivar qua."
+      },
+      "mountains": {
+        "v1": "Ils culms na vegnan betg pli datiers. Il sguard dastga tuttina arrivar tar els.",
+        "v2": "Ina lingia da muntogna basta per dar als patratgs in’autra direcziun.",
+        "v3": "Las autezzas mantegnan lur distanza. Qua hai temp per las guardar.",
+        "v4": "Tranter tai ed ils culms hai spazi per in lung patratg.",
+        "v5": "Ins na sto betg ascender per esser in pau pli datiers dals culms.",
+        "v6": "Ils culms n’han nagin motiv da far prescha.",
+        "v7": "Il sguard prenda la via ensi. Ti pos restar a seser.",
+        "v8": "A l’ur dals culms chatta il tschiel ina furma."
+      },
+      "water": {
+        "v1": "L’aua na tegna nagut da tes sguard. Forsa è gist quai in regal.",
+        "v2": "Sper l’aua dastga in patratg ir vinavant senza che ti al stos suandar.",
+        "v3": "In sguard sin l’aua n’ha nagina fin gia scritta.",
+        "v4": "Ti es arrivà. L’aua ha sia atgna moda dad esser sin via.",
+        "v5": "Mintgatant basta aua en il sguard per ch’il di survegnia dapli spazi.",
+        "v6": "L’aua e ti partgisais quest mument senza tegnair el.",
+        "v7": "Qua na sto il sguard betg cuntanscher in’autra riva.",
+        "v8": "Quai che ti tschertgas en l’aua na sto betg esser in maletg reflectà."
+      },
+      "forest": {
+        "v1": "Tranter las plantas na sto tes sguard betg chattar ina lingia guliva.",
+        "v2": "Il guaud stat enturn quest mument sco in’istorgia senza davosa pagina.",
+        "v3": "Ina planta dovra onns per quai che ti vesas en in mument.",
+        "v4": "Qua stattan ils onns in sper l’auter. Ti pos seser tranteren per in mument.",
+        "v5": "Il guaud enconuscha bleras vias. Per ussa basta quest plaz.",
+        "v6": "Tia fermada è curta. Las plantas prendan dapli temp.",
+        "v7": "Tranter ils mutagls ed ils patratgs hai plaz per ina pausa.",
+        "v8": "Ti na stos betg chapir il guaud per tutgar tar el per in mument."
+      },
+      "autumn": {
+        "v1": "L’onn ha gia raquintà bler. Qua dastga ina pagina restar averta.",
+        "v2": "L’atun ha temp per quai che la stad ha laschà enavos.",
+        "v3": "In chapitel avanzà da l’onn. In bun lieu per sa fermar in pau.",
+        "v4": "Quai ch’è madirà na sto oz betg crescher vinavant.",
+        "v5": "L’atun sa laschar ir. Forsa pos ti al guardar per in mument.",
+        "v6": "L’onn daventa pli curt, quest mument betg pli pitschen.",
+        "v7": "Ti sesas en in di che sa gia insatge dals cumiads.",
+        "v8": "I dat amo temp en l’onn. E qua hai amo plaz per tai."
+      },
+      "spring": {
+        "v1": "L’onn emprova in nov cumenzament. Ti na stos amo betg savair nua ch’el maina.",
+        "v2": "La primavaira ha schizunt il spetgar insatge d’ina partenza.",
+        "v3": "Forsa cumenza insatge entant che ti sesas qua.",
+        "v4": "Il proxim cumenzament na sto betg far canera."
+      },
+      "summer": {
+        "v1": "La stad po avair blers projects. Ti dast laschar ora in mument.",
+        "v2": "Entamez l’onn hai plaz per ina pitschna interrupziun.",
+        "v3": "In di da stad na sto betg esser plain per restar en memoria.",
+        "v4": "Forsa prendas ti cun tai da la stad questa fermada."
+      },
+      "winter": {
+        "v1": "L’enviern lascha dapli ur a l’onn. Qua dastga insatge restar nunscrit.",
+        "v2": "Er in curt di d’enviern ha plaz per in lung patratg.",
+        "v3": "L’onn sa retira. Ti na stos oz betg al chatschar vinavant.",
+        "v4": "Ina fermada tranter quai ch’era e quai che vegn puspè."
+      },
+      "twilight": {
+        "v1": "Il di mida sia colur. Per in mument dastga tut esser tranteren.",
+        "v2": "La glisch è sin via vers in’autra ura.",
+        "v3": "Sin la sava dal di na dovra il sguard nagina finamira.",
+        "v4": "Anc èsi quest mument. Prest porta el in’autra colur."
+      }
     }
   },
   "submission": {

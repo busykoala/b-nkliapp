@@ -1,200 +1,128 @@
 {
-  "light": {
-    "moon": {
-      "v1": "La luce lunare riposa sulla panchina",
-      "v2": "Una luce d’argento sfiora questo luogo quieto",
-      "v3": "La luna disegna contorni silenziosi",
-      "v4": "Un dolce chiaro di luna trova la panchina",
-      "v5": "La notte posa argento su questo luogo",
-      "v6": "La luce lunare si raccoglie lungo il sentiero",
-      "v7": "Una luna luminosa veglia su questo luogo",
-      "v8": "La panchina sogna nella luce della luna"
-    },
-    "night": {
-      "v1": "Il luogo riposa sotto le stelle",
-      "v2": "La notte silenziosa avvolge la panchina",
-      "v3": "Il buio rende questo luogo tutto quieto",
-      "v4": "La panchina aspetta sotto il vasto cielo notturno",
-      "v5": "La notte si ferma qui per un momento",
-      "v6": "Un luogo quieto dorme sotto il cielo scuro"
-    },
-    "unknown": {
-      "v1": "Luce e ombra custodiscono ancora un segreto qui",
-      "v2": "Il luogo aspetta ancora la sua traccia di luce",
-      "v3": "La luce di questo luogo è ancora da esplorare",
-      "v4": "Sole e ombra sono ancora in esplorazione qui"
+  "miniatures": {
+    "pause": {
+      "v1": "Per un momento il sentiero non deve portare da nessuna parte. Puoi esserci, e basta.",
+      "v2": "Il mondo prosegue. Qui c’è posto per un pensiero che non ha ancora un nome.",
+      "v3": "A volte una giornata chiede un posto dove sedersi, prima di una risposta.",
+      "v4": "Tra partire e arrivare c’è questa piccola sosta.",
+      "v5": "Lascia che il prossimo passo aspetti ancora un istante.",
+      "v6": "Un posto libero, un poco di tempo. Forse il viaggio comincia proprio qui.",
+      "v7": "Quello che porti con te può sedersi al tuo fianco.",
+      "v8": "Anche una deviazione può diventare, per un momento, la meta."
     },
     "sun": {
-      "v1": "Il calore del sole riposa sulla panchina",
-      "v2": "Una luce dorata invita a restare",
-      "v3": "Il sole riscalda questo luogo quieto",
-      "v4": "Una luce chiara danza su questo luogo",
-      "v5": "Un angolo caldo di sole aspetta qui",
-      "v6": "La panchina raccoglie la luce del giorno",
-      "v7": "Il sole disegna calore sul sentiero",
-      "v8": "Il giorno risplende su questa panchina"
-    },
-    "building": {
-      "v1": "Una casa regala ombra fresca alla panchina",
-      "v2": "Un’ombra riparata riposa su questo luogo",
-      "v3": "Le case rendono qui la luce più morbida",
-      "v4": "Tra i muri riposa un momento fresco",
-      "v5": "L’ombra quieta di un edificio invita a una pausa"
-    },
-    "vegetation": {
-      "v1": "Le foglie dipingono ombre sulla panchina",
-      "v2": "Un’ombra verde dondola su questo luogo",
-      "v3": "La luce sussurra tra le foglie",
-      "v4": "Sotto le foglie il mondo si fa silenzioso",
-      "v5": "Ombre danzanti riposano su questo luogo",
-      "v6": "Un tetto di foglie filtra il sole"
-    },
-    "terrain": {
-      "v1": "Il pendio trattiene ancora il sole",
-      "v2": "Il terreno regala un’ombra fresca a questo luogo",
-      "v3": "Dietro le alture aspetta la luce",
-      "v4": "L’orizzonte custodisce un’ombra quieta"
-    },
-    "roof": {
-      "v1": "Un piccolo tetto protegge questo luogo quieto",
-      "v2": "Riparata dal cielo, la panchina aspetta",
-      "v3": "Sotto un tetto il giorno trova riposo",
-      "v4": "La panchina riposa protetta sotto il suo tetto"
+      "v1": "La luce trova questo posto. Il filo della giornata puoi riprenderlo più tardi.",
+      "v2": "Un pezzo di giorno riposa nella luce. Siediti accanto.",
+      "v3": "Il sole non ha bisogno di un motivo per restare. Forse nemmeno tu.",
+      "v4": "Qui la luce si è fermata per una sosta.",
+      "v5": "Per questo istante basta guardare la luce.",
+      "v6": "La luce si sposta. Non occorre seguirla di corsa.",
+      "v7": "Un punto luminoso nel giorno. Non devi portarlo via per conservarlo.",
+      "v8": "Forse del cammino di oggi resterà soprattutto questa luce."
     },
     "shade": {
-      "v1": "Un’ombra quieta invita a fermarsi",
-      "v2": "La luce diventa qui tutta silenziosa",
-      "v3": "Aspetta un momento di freschezza",
-      "v4": "Un’ombra dolce abbraccia questo luogo",
-      "v5": "Qui il giorno tira un piccolo respiro",
-      "v6": "La panchina riposa lontana dalla luce forte"
-    }
-  },
-  "weather": {
-    "snow": {
-      "v1": "I fiocchi rendono morbido il mondo",
-      "v2": "La neve cade silenziosa nell’aria",
-      "v3": "Il bianco d’inverno si raccoglie sul sentiero",
-      "v4": "Fiocchi quieti cercano il suolo",
-      "v5": "La neve attutisce ogni passo"
+      "v1": "L’ombra non toglie nulla al giorno. Gli dà un altro colore.",
+      "v2": "Qui la luce può fare un passo indietro.",
+      "v3": "All’ombra il giorno smussa i suoi contorni.",
+      "v4": "Un posto fuori dal bagliore. Anche qui ci si può fermare.",
+      "v5": "La luce è impegnata altrove. Qui l’istante è tuo.",
+      "v6": "Non tutto ciò che sostiene un giorno deve stare in piena luce.",
+      "v7": "Un altro lato del giorno ti aspetta qui.",
+      "v8": "L’ombra lascia che le cose restino se stesse."
     },
     "rain": {
-      "v1": "La pioggia disegna cerchi nel silenzio",
-      "v2": "Le gocce raccontano il cielo",
-      "v3": "La pioggia fa brillare piano questo luogo",
-      "v4": "Un lucido bagnato si posa sul sentiero",
-      "v5": "Le gocce tracciano scie d’argento"
+      "v1": "La pioggia scrive sul giorno. Non devi capire ogni parola.",
+      "v2": "Oggi il paesaggio ha scelto l’acquerello.",
+      "v3": "Le gocce mettono i loro piccoli punti. La frase del giorno resta aperta.",
+      "v4": "La pioggia non prende scorciatoie. Arriva dappertutto.",
+      "v5": "Un giorno bagnato ha una luce tutta sua.",
+      "v6": "Ciò che era soltanto un contorno trova nella pioggia un secondo margine.",
+      "v7": "Fra le gocce rimane posto per questo istante.",
+      "v8": "Il cielo lascia andare qualcosa. Forse oggi puoi farlo anche tu."
     },
-    "mixed": {
-      "v1": "Pioggia e fiocchi si incontrano",
-      "v2": "Il cielo alterna acqua e bianco",
-      "v3": "La neve bagnata passa silenziosa",
-      "v4": "I fiocchi si sciolgono sul sentiero quieto"
+    "snow": {
+      "v1": "I fiocchi non seguono la stessa strada. Eppure arrivano.",
+      "v2": "La neve attraversa questo istante come se avesse tutto il tempo.",
+      "v3": "Un fiocco occupa poco spazio. Lo sguardo lo segue comunque.",
+      "v4": "Il giorno si ridisegna, fiocco dopo fiocco.",
+      "v5": "Quello che scende dal cielo oggi non deve essere una risposta.",
+      "v6": "L’aria porta piccoli inizi di bianco.",
+      "v7": "Ogni fiocco trova una fine diversa alla sua caduta.",
+      "v8": "Guardi la neve. Per una volta basta questo come programma."
     },
-    "overcast": {
-      "v1": "Le nuvole portano il cielo vicino",
-      "v2": "Un soffice cielo nuvoloso si stende sopra",
-      "v3": "La luce attraversa quieta le nuvole fitte",
-      "v4": "Le nuvole rendono il giorno dolce e quieto"
+    "night": {
+      "v1": "La notte lascia aperto ciò che il giorno voleva spiegare.",
+      "v2": "Nel buio lo sguardo non deve trattenere ogni cosa.",
+      "v3": "Il giorno se n’è andato. Un posto dove restare c’è ancora.",
+      "v4": "La notte ha più spazio di quanto uno sguardo possa abbracciare.",
+      "v5": "Per un momento non hai ancora bisogno del mattino dopo.",
+      "v6": "Quello che hai cercato oggi può restare senza nome fino a domani.",
+      "v7": "Il buio toglie al luogo i contorni, non il suo posto.",
+      "v8": "Anche senza vedere tutta la strada puoi arrivare qui."
     },
-    "cloudy": {
-      "v1": "Le nuvole passano lente nella luce",
-      "v2": "Sole e nuvole si alternano piano",
-      "v3": "Qualche nuvola passa sopra questo luogo",
-      "v4": "Isole di luce attraversano il paesaggio"
-    },
-    "wind": {
-      "v1": "Il vento porta avanti il momento",
-      "v2": "Una brezza fresca sfiora questo luogo",
-      "v3": "Il vento muove il paesaggio in onde quiete",
-      "v4": "L’aria è sveglia e in movimento"
-    }
-  },
-  "view": {
     "mountains": {
-      "v1": "Le montagne vegliano in lontananza",
-      "v2": "Le cime portano lo sguardo all’orizzonte",
-      "v3": "Le Alpi aprono una vasta lontananza",
-      "v4": "Linee di montagna fluttuano sopra il paesaggio",
-      "v5": "Lo sguardo sale verso le cime",
-      "v6": "Le montagne lontane danno spazio a questo luogo",
-      "v7": "Le montagne stanno ferme all’orizzonte",
-      "v8": "Le cime trattengono lo sguardo per un momento"
-    },
-    "hills": {
-      "v1": "Dolci colline portano lo sguardo",
-      "v2": "Alture verdi incorniciano la lontananza",
-      "v3": "L’orizzonte ondeggia in linee morbide",
-      "v4": "Le colline rotolano quiete lontano",
-      "v5": "Morbide alture incorniciano questo luogo",
-      "v6": "Lo sguardo segue le colline tranquille"
+      "v1": "Le montagne non si avvicinano. Lo sguardo può raggiungerle lo stesso.",
+      "v2": "Basta una linea di montagna per dare ai pensieri un’altra direzione.",
+      "v3": "Le cime conservano la loro distanza. Qui c’è tempo per guardarle.",
+      "v4": "Fra te e le montagne c’è spazio per un pensiero lungo.",
+      "v5": "Non occorre salire per sentirsi un poco più vicini alle montagne.",
+      "v6": "Le montagne non hanno motivo di affrettarsi.",
+      "v7": "Lo sguardo prende la via delle cime. Tu puoi restare seduto.",
+      "v8": "Sul bordo delle montagne il cielo trova una forma."
     },
     "water": {
-      "v1": "L’acqua porta via lo sguardo",
-      "v2": "Sulla riva il tempo si allarga",
-      "v3": "La luce viaggia sull’acqua",
-      "v4": "L’acqua regala riposo allo sguardo",
-      "v5": "Acqua e cielo diventano tutt’uno",
-      "v6": "La riva lascia galleggiare il momento",
-      "v7": "Sopra l’acqua si apre la lontananza"
+      "v1": "L’acqua non trattiene nulla del tuo sguardo. Forse è proprio questo il suo dono.",
+      "v2": "Vicino all’acqua un pensiero può proseguire senza che tu debba seguirlo.",
+      "v3": "Uno sguardo sull’acqua non ha una fine già scritta.",
+      "v4": "Tu sei arrivato. L’acqua ha un modo tutto suo di essere in viaggio.",
+      "v5": "A volte basta l’acqua nello sguardo perché il giorno abbia più spazio.",
+      "v6": "Tu e l’acqua condividete questo istante senza trattenerlo.",
+      "v7": "Qui lo sguardo non deve raggiungere un’altra riva.",
+      "v8": "Quello che cerchi nell’acqua non deve essere per forza un riflesso."
     },
     "forest": {
-      "v1": "Il bosco sussurra tutt’intorno",
-      "v2": "La quiete abita tra gli alberi",
-      "v3": "Il verde tiene lontano il mondo per un momento",
-      "v4": "Le foglie incorniciano questo luogo quieto",
-      "v5": "Il bosco respira molto vicino",
-      "v6": "Tra i tronchi il tempo si perde"
+      "v1": "Fra gli alberi lo sguardo non deve trovare una linea retta.",
+      "v2": "Il bosco circonda questo istante come una storia senza ultima pagina.",
+      "v3": "Un albero impiega anni per ciò che tu vedi in un istante.",
+      "v4": "Qui gli anni stanno uno accanto all’altro. Puoi sederti fra loro per un poco.",
+      "v5": "Il bosco conosce molti sentieri. Per adesso basta questo posto.",
+      "v6": "La tua sosta è breve. Gli alberi si prendono più tempo.",
+      "v7": "Fra i tronchi e i pensieri c’è posto per una pausa.",
+      "v8": "Non devi capire il bosco per appartenergli un istante."
     },
-    "open": {
-      "v1": "Il cielo allarga lo sguardo",
-      "v2": "La vastità riposa davanti agli occhi",
-      "v3": "L’orizzonte può restare aperto",
-      "v4": "Lo sguardo trova spazio libero",
-      "v5": "Qui il cielo diventa un po’ più grande",
-      "v6": "Il paesaggio si apre piano"
+    "autumn": {
+      "v1": "L’anno ha già raccontato molto. Qui una pagina può restare aperta.",
+      "v2": "L’autunno ha tempo per ciò che l’estate ha lasciato in sospeso.",
+      "v3": "Un capitolo avanzato dell’anno. Un buon posto per fermarsi un poco.",
+      "v4": "Ciò che è maturato oggi non deve continuare a crescere.",
+      "v5": "L’autunno sa lasciare andare. Forse puoi guardarlo fare per un istante.",
+      "v6": "L’anno si accorcia, questo istante non diventa più piccolo.",
+      "v7": "Siedi in un giorno che sa già qualcosa degli addii.",
+      "v8": "C’è ancora tempo nell’anno. E qui c’è ancora posto per te."
     },
-    "limited": {
-      "v1": "La vicinanza rende questo luogo accogliente",
-      "v2": "Lo sguardo resta vicino e il momento proprio qui",
-      "v3": "Al riparo dalla lontananza arriva il silenzio",
-      "v4": "Questo piccolo angolo tiene il mondo vicino",
-      "v5": "Vicino al sentiero lo sguardo trova riposo"
+    "spring": {
+      "v1": "L’anno prova un nuovo inizio. Non devi ancora sapere dove porterà.",
+      "v2": "In primavera anche l’attesa somiglia a una partenza.",
+      "v3": "Forse qualcosa comincia mentre sei seduto qui.",
+      "v4": "Il prossimo inizio non deve fare rumore."
     },
-    "quiet": {
-      "v1": "Un sentiero quieto passa accanto",
-      "v2": "Il mondo si fa silenzioso per un momento",
-      "v3": "Qui il momento può restare",
-      "v4": "Un piccolo luogo per respirare",
-      "v5": "Il tempo passa qui un po’ più piano",
-      "v6": "Il luogo aspetta senza fretta"
-    }
-  },
-  "seat": {
-    "roof": {
-      "v1": "Sotto il suo tetto la pausa può durare di più",
-      "v2": "Un piccolo tetto protegge questo luogo",
-      "v3": "Riparata, la panchina aspetta una pausa",
-      "v4": "Qui ci si siede un po’ più protetti"
+    "summer": {
+      "v1": "L’estate può avere molti programmi. Tu puoi saltarne uno per un istante.",
+      "v2": "Nel mezzo dell’anno c’è posto per una piccola interruzione.",
+      "v3": "Un giorno d’estate non deve essere pieno per restare nella memoria.",
+      "v4": "Forse dell’estate porterai con te questa sosta."
     },
-    "support": {
-      "v1": "La panchina accoglie spalle stanche a braccia aperte",
-      "v2": "Qui schiena e mani possono riposare",
-      "v3": "La panchina è pronta per una lunga pausa",
-      "v4": "Il momento si appoggia comodamente"
+    "winter": {
+      "v1": "L’inverno lascia più margine all’anno. Qui qualcosa può restare da scrivere.",
+      "v2": "Anche un breve giorno d’inverno ha posto per un pensiero lungo.",
+      "v3": "L’anno si raccoglie. Oggi non devi spingerlo avanti.",
+      "v4": "Una sosta fra quello che è stato e quello che tornerà."
     },
-    "backrest": {
-      "v1": "Qui anche la schiena può riposare",
-      "v2": "Lo schienale invita a restare più a lungo",
-      "v3": "Appoggiandosi, una sosta diventa una pausa",
-      "v4": "La panchina regala riposo alla schiena",
-      "v5": "Qui ci si siede rilassati verso la lontananza"
-    },
-    "wood": {
-      "v1": "Il legno caldo aspetta una piccola pausa",
-      "v2": "Il legno porta tracce di tanti momenti quieti",
-      "v3": "Una semplice panchina di legno invita a restare",
-      "v4": "Il legno rende questa sosta un po’ più calda"
+    "twilight": {
+      "v1": "Il giorno cambia colore. Per un istante tutto può stare nel mezzo.",
+      "v2": "La luce è in viaggio verso un’altra ora.",
+      "v3": "Sulla soglia del giorno lo sguardo non ha bisogno di una meta.",
+      "v4": "È ancora questo istante. Fra poco avrà un altro colore."
     }
   }
 }

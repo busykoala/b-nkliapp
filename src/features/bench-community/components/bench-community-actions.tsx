@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 
 import { useRef, useState } from "react";
 import { AccountDialog } from "@/features/account/components/account-controls";
+import { useAuthenticated } from "@/features/account/auth-session";
 import { CheckCircle2, Trash2 } from "lucide-react";
 import { confirmBench, requestBenchRemoval } from "@/app/actions/benches";
 import { useContributionSave, useContributionWork } from "./contribution-session";
@@ -11,14 +12,14 @@ import type { BenchDetail } from "@/lib/types";
 export function BenchCommunityActions({ bench, signedIn, onChanged }: { bench: BenchDetail; signedIn: boolean; onChanged?: () => void | Promise<void> }) {
   const t = useTranslations();
   const account = useRef<HTMLDialogElement>(null);
-  const [authenticated, setAuthenticated] = useState(false);
+  const authenticated = useAuthenticated(signedIn);
   const [confirmed, setConfirmed] = useState(false);
   const [missing, setMissing] = useState(false);
   const confirmedToday = confirmed || bench.myLastConfirmedAt?.slice(0, 10) === new Date().toISOString().slice(0, 10);
   const { state, pending, save } = useContributionSave(onChanged);
   useContributionWork(false, pending);
   const act = (action: () => Promise<{ ok: boolean; message: string }>) => save(action);
-  if (!signedIn && !authenticated) return <div><button className="btn" onClick={() => account.current?.showModal()}>{t("community.presence.signIn")}</button><AccountDialog dialogRef={account} intent={t("community.chapters.presence.title")} onAuthenticated={() => setAuthenticated(true)} /></div>;
+  if (!authenticated) return <div><button className="btn" onClick={() => account.current?.showModal()}>{t("community.presence.signIn")}</button><AccountDialog dialogRef={account} intent={t("community.chapters.presence.title")} /></div>;
   return <div className="space-y-3">
     <button disabled={pending || confirmedToday} className="btn btn-primary min-h-12 w-full rounded-2xl" onClick={() => act(async () => { const result = await confirmBench(bench.id); if (result.ok) setConfirmed(true); return result; })}><CheckCircle2 size={19} /> {confirmedToday ? t("community.presence.confirmedToday") : t("community.presence.confirm")}</button>
     {bench.removalConfirmationCount > 0 && <div className="rounded-2xl bg-warning/15 p-3 text-sm"><strong>{t("community.presence.question")}</strong><div className="mt-1 opacity-65">{t("community.presence.missingCount", { count: bench.removalConfirmationCount, threshold: bench.verificationThreshold })}</div></div>}

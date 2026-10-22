@@ -39,21 +39,22 @@ test("keeps the complete signed-in journey clear on a phone", async ({ page }, t
   await expect(page.locator(".app-menu-signout")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("02-authenticated-menu.png") });
   await page.getByText("Mein Profil").click();
-  await expect(page.getByRole("heading", { name: username })).toBeVisible();
-  await expect(page.locator(".profile-jump-links")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mein Buch", exact: true })).toBeVisible();
+  await expect(page.locator(".profile-intro")).toContainText(username);
+  await expect(page.locator(".profile-favourites")).toBeVisible();
+  await expect(page.locator(".journal-collection")).not.toHaveAttribute("open", "");
+  await expect(page.locator(".profile-numbers")).toBeHidden();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: testInfo.outputPath("03-profile-top.png") });
 
   const regularViewport = page.viewportSize()!;
   await page.setViewportSize({ width: 320, height: 568 });
-  const counters = page.locator(".profile-numbers > div > span");
-  const second = await counters.nth(1).boundingBox();
-  const third = await counters.nth(2).boundingBox();
-  expect(second?.y).toBeLessThan(third?.y ?? 0);
+  await expect(page.getByRole("heading", { name: "Mein Buch", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: testInfo.outputPath("03b-profile-narrow.png") });
   await page.setViewportSize(regularViewport);
 
+  await page.locator(".journal-account > summary").click();
   const avatarEditor = page.locator(".avatar-customizer");
   await avatarEditor.scrollIntoViewIfNeeded();
   await avatarEditor.locator("summary").click();
@@ -78,15 +79,16 @@ test("keeps contribution and add-bench tasks understandable on a phone", async (
   const username = `flow-${testInfo.project.name.slice(-6)}-${Date.now().toString().slice(-6)}`;
   await registerUser(page, username);
   await page.goto("/bank/osm-node-101");
-  await page.getByRole("button", { name: "Verbessern", exact: true }).click();
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
   const contribution = page.locator(".contribution-dialog[open]");
   await expect(contribution).toBeVisible();
-  await expect(contribution.locator("[data-contribution-choice]")).toHaveCount(8);
+  await expect(contribution.locator("[data-contribution-choice]")).toHaveCount(3);
   await expect(contribution.locator("details")).toHaveCount(0);
   await page.waitForTimeout(400);
   await page.screenshot({ path: testInfo.outputPath("06-contribution-overview.png") });
 
-  await contribution.getByRole("button", { name: "Wie war deine Pause?", exact: true }).click();
+  await contribution.getByRole("button", { name: "Erinnerung teilen", exact: true }).click();
+  await contribution.getByRole("button", { name: "Gesamteindruck bewerten", exact: true }).click();
   await page.waitForTimeout(200);
   await expect(contribution.locator("[data-contribution-task]:visible")).toHaveCount(1);
   await expect(contribution).toHaveAccessibleName("Wie war deine Pause?");
@@ -107,6 +109,7 @@ test("keeps contribution and add-bench tasks understandable on a phone", async (
   await expect(add).toBeVisible();
   await expect(add.locator(".nearby-benches")).not.toContainText("werden geprüft");
   await expect(add.locator(".add-bench-steps [aria-current='step']")).toContainText("Details");
+  await expect(add.locator("select[name=seats]")).toHaveCount(0);
   await expect(add.getByRole("button", { name: "Eintragen", exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("08-add-bench.png") });
 });

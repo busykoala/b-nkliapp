@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Check, MapPin, Plus, X } from "lucide-react";
 import { addBench, getNearbyBenches, resolveBenchLocation } from "@/app/actions/benches";
+import styles from "./add-bench.module.css";
 import type { AddBenchResult, NearbyBench } from "@/lib/types";
 
 type Props = {
@@ -71,7 +72,7 @@ export function AddBenchDialog({ coordinates, onChoosePosition, onClose, onCreat
     return () => { current = false; window.clearTimeout(timer); };
   }, [latitude, longitude, retry, t]);
   return <dialog ref={ref} onCancel={onClose} aria-labelledby="add-bench-title" className="modal modal-bottom sm:modal-middle">
-    <div className="modal-box utility-sheet add-bench-sheet">
+    <div className={`modal-box utility-sheet add-bench-sheet ${styles.sheet}`}>
       <button type="button" aria-label={t("common.actions.closeTitle")} className="btn btn-circle btn-ghost absolute right-3 top-3" onClick={onClose}><X size={19} /></button>
       <div className="add-bench-scroll">
       <ol className="add-bench-steps" aria-label={t("submission.steps.label")}><li className="is-complete"><Check size={14} /> {t("submission.steps.position")}</li><li aria-current="step"><span>2</span> {t("submission.steps.details")}</li></ol>
@@ -99,14 +100,13 @@ export function AddBenchDialog({ coordinates, onChoosePosition, onClose, onCreat
           <BenchSelect name="fireplaceNearby" label={t("bench.attributes.fireplaceNearby")} options={yesNoOptions} />
           <BenchSelect name="wasteBasketNearby" label={t("bench.attributes.wasteBasketNearby")} options={yesNoOptions} />
           <BenchSelect name="material" label={t("bench.attributes.material")} options={materialOptions} />
-          <BenchSelect name="seats" label={t("bench.attributes.seats")} options={Array.from({ length: 12 }, (_, index) => [String(index + 1), String(index + 1)])} />
           <BenchSelect name="direction" label={t("bench.attributes.direction")} options={[["0",t("bench.directions.n")],["45",t("bench.directions.ne")],["90",t("bench.directions.e")],["135",t("bench.directions.se")],["180",t("bench.directions.s")],["225",t("bench.directions.sw")],["270",t("bench.directions.w")],["315",t("bench.directions.nw")]]} />
         </div></fieldset><p>{t("submission.fields.accessNote")}</p></details>
       </form>
       </div>
       <footer className="add-bench-actions"><button form="add-bench-form" disabled={pending || nearby === null || lookupError || (!!nearby.length && !reviewed)} className="btn btn-primary min-h-12 w-full"><Plus size={18} /> {pending ? t("submission.form.pending") : t("submission.form.submit")}</button>
       {state && <p role={state.ok ? "status" : "alert"} className="contribution-inline-status">{state.message}</p>}</footer>
-    </div><form method="dialog" className="modal-backdrop"><button onClick={onClose}>{t("common.actions.close")}</button></form>
+    </div><form method="dialog" className="modal-backdrop" aria-hidden="true"><button tabIndex={-1} onClick={onClose}>{t("common.actions.close")}</button></form>
   </dialog>;
 }
 function BenchSelect({ name, label, options }: { name: string; label: string; options: string[][] }) {

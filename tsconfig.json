@@ -37,6 +37,9 @@
   ],
   "exclude": [
     "node_modules",
-    "worker"
+    "worker",
+    "test-results",
+    "playwright-report",
+    "data"
   ]
 }

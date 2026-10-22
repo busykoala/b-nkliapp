@@ -1,0 +1,61 @@
+{
+  "provenance": {
+    "source": "Existing approved C30 review; copied byte-for-byte, no repaint",
+    "sourceManifestSha256": "4042b497ab6edbc14bef89c40a72cd9d1d3206616b19bf06e49ebffe647d37dc",
+    "note": "Record 0 is used with labelled synthetic Lindenhof facts for UI comparisons; the other three retain their own public place IDs. These fixtures are not geographic reference evidence."
+  },
+  "records": [
+    {
+      "id": "community-3ca05737-9a29-537c-aae3-ab2b9b11289b",
+      "files": {
+        "render": {
+          "path": "0-render.webp",
+          "sha256": "a0f94691c3947fd896a8d326f93d9b2a3c3314e57a92d6a9005f7c33077bd3db"
+        },
+        "material": {
+          "path": "0-material.webp",
+          "sha256": "b79f32eb01c7e9750a2a6b9e339ec8fbab53cfc118a967df0f24dd2109b7810f"
+        }
+      }
+    },
+    {
+      "id": "osm-node-645436489",
+      "files": {
+        "render": {
+          "path": "1-render.webp",
+          "sha256": "bcd98f9291c13e8356c98626635e3bf1c161beab6d0a5b3851563efbfe070456"
+        },
+        "material": {
+          "path": "1-material.webp",
+          "sha256": "c6dcb0d4c687bcb878161e4137d24710e30182bd178f8e0ad62bce63ea8f7fcb"
+        }
+      }
+    },
+    {
+      "id": "osm-node-10942762655",
+      "files": {
+        "render": {
+          "path": "2-render.webp",
+          "sha256": "7b1e652dffb92f015186064baef35cb9df492f7cfeeef1750ee88f80e21e3f21"
+        },
+        "material": {
+          "path": "2-material.webp",
+          "sha256": "20fc5796428af8d5e8251fba88811e2578f2d83d7d35cca6adb20a9122d57eea"
+        }
+      }
+    },
+    {
+      "id": "osm-node-767658293",
+      "files": {
+        "render": {
+          "path": "3-render.webp",
+          "sha256": "b8a5dfa8cb4d599afedca74870e397bedf82f3301e265e810ce22e1bc96f0180"
+        },
+        "material": {
+          "path": "3-material.webp",
+          "sha256": "782402ded37d5fe1e170c95b475c352f8ad340921f1c4075c3b2f2c69bbf88de"
+        }
+      }
+    }
+  ]
+}

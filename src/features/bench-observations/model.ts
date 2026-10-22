@@ -58,7 +58,7 @@ function valueFor(row: ViewObservationChoice, key: keyof typeof componentWeights
   if (key === "relief") return ({ flat: .15, gentle: .5, strong: .9 } as const)[row.relief];
   if (key === "water") return ({ clear: .9, some: .45, none: .05 } as const)[row.water];
   if (key === "naturalness") return ({ natural: .9, mixed: .5, built: .15 } as const)[row.naturalness];
-  return ({ quiet: .9, some: .5, strong: .15 } as const)[row.disturbance];
+  return 0; // remoteness is model-only; never requested from observations.
 }
 
 export function directionalOpenness(obstructionTypes: string[], directionDegrees: number | null) {
@@ -94,6 +94,7 @@ export function blendedViewEstimate(
   const components = Object.fromEntries(Object.entries(componentWeights).map(([rawKey, priorWeight]) => {
     const key = rawKey as keyof typeof componentWeights;
     const prior = objective[key];
+    if (key === "remoteness") return [key, prior];
     if (prior === null) {
       if (!corrections.length) return [key, null];
       return [key, corrections.reduce((sum, row) => sum + valueFor(row.values, key), 0) / corrections.length];

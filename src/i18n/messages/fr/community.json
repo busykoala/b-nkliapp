@@ -189,7 +189,7 @@
       "environment": "Les environs, la vue ou la lumière ne correspondent pas"
     },
     "observation": "Qu’as-tu vu ?",
-    "placeholder": "Par exemple : le dossier manque",
+    "placeholder": "Décris brièvement ce qui est différent.",
     "publish": "Publier le signalement",
     "fields": {
       "properties": "Équipement",
@@ -202,7 +202,7 @@
   "place": {
     "eyebrow": "Les gens de ce lieu",
     "title": "Moments sur un banc",
-    "share": "Partager le moment",
+    "share": "Partager ce lieu",
     "shareShort": "Partager",
     "shareText": "Un moment sur un banc près de {bench}",
     "copied": "Lien copié, prêt à partager, aussi sur Instagram.",
@@ -218,7 +218,10 @@
     "favourites": "Tous les lieux favoris",
     "recent": "ces 90 derniers jours",
     "deleteOwn": "Supprimer mon moment",
-    "empty": "Pas encore d’histoire ici. Le banc attend patiemment."
+    "empty": "Pas encore d’histoire ici. Le banc attend patiemment.",
+    "moreActions": "Autres actions",
+    "moreMoments": "Voir d’autres moments",
+    "fewerMoments": "Afficher moins de moments"
   },
   "features": {
     "progress": "{known}/{total} indications connues · Appuie pour compléter",
@@ -368,7 +371,7 @@
   },
   "workspace": {
     "choose": "Choisir une contribution",
-    "intro": "Une photo, une information, une impression : choisis ce que tu souhaites partager ici. Tu ne dois pas tout savoir.",
+    "intro": "Une photo, une impression, une indication utile.",
     "groups": {
       "place": "Présenter le lieu",
       "now": "Sur place, maintenant",
@@ -415,5 +418,26 @@
       "fireplaceNearby": "Y a-t-il un foyer à proximité ?"
     },
     "viewDescription": "Description actuelle"
+  },
+  "concerns": {
+    "memory": {
+      "title": "Partager un souvenir",
+      "hint": "Un instant, une photo ou ton impression générale."
+    },
+    "facts": {
+      "title": "Compléter les indications",
+      "hint": "Ce qui aide à arriver et à s’installer."
+    },
+    "problem": {
+      "title": "Signaler un problème",
+      "hint": "Une erreur ou un besoin d’entretien."
+    },
+    "moreFacts": "Autres indications",
+    "rating": "Donner une appréciation générale"
+  },
+  "history": {
+    "title": "Tes observations précédentes",
+    "view": "Ton ancienne impression de la vue",
+    "remove": "Supprimer : {kind}"
   }
 }

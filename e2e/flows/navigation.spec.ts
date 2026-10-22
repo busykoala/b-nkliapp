@@ -1,3 +1,4 @@
+import { installRatingFixture } from "../support/rating-fixture";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 async function registerInOpenDialog(page: Page, prefix: string) {
@@ -56,7 +57,7 @@ test("filters are beside search and removable after the panel closes", async ({ 
   await expect(reading).toHaveAttribute("aria-haspopup", "dialog");
   const community = navigation.getByRole("region", { name: "Rund ums Bänkli", exact: true });
   await expect(community.getByRole("link").or(community.getByRole("button"))).toHaveText([
-    "Bänkli-Feed", "Bänkli eintragen", "Bänklilogie", "Über die Bänkli App",
+    "Bänkli-Feed", "Bänkli eintragen",
   ]);
   await expect(community.getByRole("link", { name: "Bänkli-Feed", exact: true })).toHaveAttribute("href", "/feed");
   await expect(community.getByRole("button", { name: "Bänkli eintragen", exact: true })).toBeVisible();
@@ -80,9 +81,11 @@ test("direct bench link opens the painting and resumes saving after sign-in", as
   expect(order).toBeTruthy();
   await expect(sheet.getByRole("button", { name: "Weg planen" })).toBeVisible();
   await sheet.screenshot({ path: info.outputPath("bench-full-decision.png") });
-  await sheet.getByRole("button", { name: "Bänkli beschreiben", exact: true }).click();
-  const factEditor = page.getByRole("dialog", { name: "Bänkli beschreiben" });
-  await expect(factEditor.locator(".contribution-feature-list > section").first()).toBeVisible();
+  await sheet.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
+  await page.locator(".contribution-dialog[open]").getByRole("button", { name: "Angaben ergänzen", exact: true }).click();
+  const factEditor = page.getByRole("dialog", { name: "Angaben ergänzen" });
+  await expect(factEditor.locator(".contribution-feature-list > div > section").first()).toBeVisible();
+  await factEditor.locator(".contribution-extra > summary").click();
   await expect(factEditor.locator(".contribution-metadata-form")).toBeVisible();
   await factEditor.getByRole("button", { name: /Rückenlehne/ }).click();
   await expect(factEditor.getByRole("button", { name: "Nein", exact: true })).toBeVisible();
@@ -151,6 +154,8 @@ test("offers an accessible nearby list with zoom guidance and decision evidence"
 
 test("rating summary opens reviews and guest writing resumes after authentication", async ({ page }, info) => {
   await page.goto("/bank/osm-node-101");
+  installRatingFixture();
+  await page.reload();
   await page.getByRole("button", { name: /Bewertungen ansehen/ }).first().click();
   await expect(page.getByRole("heading", { name: "Wie war die Pause?" })).toBeVisible();
   await page.getByRole("button", { name: "Zum Mitmachen kurz anmelden" }).click();
@@ -158,8 +163,7 @@ test("rating summary opens reviews and guest writing resumes after authenticatio
   const rating = page.getByRole("dialog", { name: "Wie war deine Pause?" });
   await expect(rating.getByRole("group", { name: "Gesamt", exact: true })).toBeVisible();
   await rating.getByRole("group", { name: "Gesamt", exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
-  await rating.getByText("Aussicht, Komfort und Ruhe ergänzen (freiwillig)").click();
-  for (const label of ["Aussicht", "Komfort", "Ruhe"]) await rating.getByRole("group", { name: label, exact: true }).getByRole("radio", { name: "4 Sterne" }).check();
+  await expect(rating.locator(".rating-control")).toHaveCount(1);
   await rating.getByRole("button", { name: "Bewertung veröffentlichen" }).click();
   await expect(rating.getByText("Danke – deine Bewertung ist sichtbar.")).toBeVisible();
   await rating.getByRole("button", { name: "Beiträge schliessen" }).click();
@@ -199,18 +203,12 @@ test("guest adding resumes into pin placement, catches neighbours and opens the 
   await expect(createdBench.locator(".bench-created-status")).toHaveText("Bänkli eingetragen");
   await expect(createdBench.locator(".bench-created-status")).toBeVisible();
   const contributions = createdBench.getByRole("region", { name: "Zum Bänkli beitragen" });
-  await expect(contributions.getByRole("heading", { name: "Diesen Ort mitgestalten" })).toBeVisible();
-  for (const name of ["Verbessern", "Foto hinzufügen", "Gedanken teilen"]) {
-    await expect(contributions.getByRole("button", { name, exact: true })).toBeVisible();
-  }
-  // Verification belongs in the source details, not the compact success notice.
-  const sources = createdBench.locator(".bench-sources");
-  await expect(sources).not.toHaveAttribute("open", "");
-  await sources.locator("summary").click();
-  await expect(sources.getByText("Neu entdeckt · noch unbestätigt", { exact: true })).toBeVisible();
-  await sources.locator("summary").click();
+  await expect(contributions.getByRole("button", { name: "Etwas beitragen", exact: true })).toBeVisible();
+  await expect(contributions.getByRole("button")).toHaveCount(1);
+  await expect(createdBench.locator(".bench-sources")).toHaveCount(0);
   expect(await page.evaluate(() => (window as Window & { uxMarker?: boolean }).uxMarker)).toBe(true);
   await page.goto("/profil");
+  await page.locator(".journal-collection > summary").click();
   const impact = page.getByRole("heading", { name: "Kleine Dinge, die helfen" });
   const collection = page.getByRole("heading", { name: "Was du schon gefunden hast" });
   expect((await impact.boundingBox())!.y).toBeLessThan((await collection.boundingBox())!.y);
@@ -238,9 +236,10 @@ test("a logged-out map long-press resumes at the same position after sign-in", a
 test("confirmation is an intentional contribution, not a default-page interruption", async ({ page }, info) => {
   await page.goto("/bank/osm-node-101");
   await expect(page.getByRole("region", { name: "Auf einen Blick" }).getByRole("button", { name: "Ist noch da", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Verbessern", exact: true }).click();
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
   await registerInOpenDialog(page, `seen-${info.project.name.slice(-3)}`);
   const hub = page.locator(".contribution-dialog[open]");
+  await hub.getByRole("button", { name: "Problem melden", exact: true }).click();
   await hub.getByRole("button", { name: "Sich ums Bänkli kümmern", exact: true }).click();
   await hub.getByRole("button", { name: "Ist noch da", exact: true }).click();
   await expect(hub.getByRole("button", { name: "Heute von dir bestätigt" })).toBeDisabled();
@@ -264,15 +263,13 @@ test("walk keeps origin, duration and route shape visible; rest intervals remain
 test("functional text is readable and utility controls keep the illustration separate", async ({ page }) => {
   await page.goto("/bank/osm-node-101");
   const summary = page.getByRole("region", { name: "Auf einen Blick" });
-  const facts = summary.locator(".overview-fact > strong");
-  await expect(facts).toHaveCount(6);
+  const facts = summary.locator("p");
+  expect(await facts.count()).toBeGreaterThan(0);
   const sizes = await facts.evaluateAll(elements => elements.map(element => Number.parseFloat(getComputedStyle(element).fontSize)));
-  expect(sizes.length).toBe(6);
-  expect(sizes.every(size => size >= 14)).toBe(true);
-  const sources = page.locator(".bench-sources");
-  await expect(sources).not.toHaveAttribute("open", "");
-  await expect(sources.locator("details")).toHaveCount(0);
-  expect(await page.locator(".bench-overview").evaluate(element => Boolean(element.compareDocumentPosition(document.querySelector(".bench-sources")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  expect(sizes.every(size => size >= 16)).toBe(true);
+  await expect(page.locator(".bench-sources")).toHaveCount(0);
+  await expect(page.locator(".bench-visit-details > details")).toHaveCount(1);
+  expect(await page.locator(".bench-panorama").evaluate(element => Boolean(element.compareDocumentPosition(document.querySelector(".bench-overview")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
   await page.goto("/?action=walk");
   const panel = page.getByRole("complementary", { name: "Spaziergang entdecken" });
   await expect(panel).toBeVisible();

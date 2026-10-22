@@ -1,0 +1,44 @@
+.page { background: var(--atlas-paper); color: var(--atlas-ink); font: 400 1rem/1.5 var(--font-body); }
+.page :is(h1,h2,h3) { letter-spacing: normal; overflow-wrap: break-word; }
+.page h1 { font: 500 1.875rem/2.1875rem var(--font-display); }
+.page h2 { font: 500 1.375rem/1.75rem var(--font-display); }
+.page h3 { font: 600 1.125rem/1.5rem var(--font-body); }
+.page :global(:is(.feed-nav,.thanks-nav,.statistics-nav,.reading-page-bar)) { min-height: 4rem; background: var(--atlas-paper); backdrop-filter: none; box-shadow: none; border: 0; padding: max(.5rem,env(safe-area-inset-top)) var(--atlas-reading-margin) .5rem; }
+.page :global(.calm-menu-button) { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-width: 48px; min-height: 48px; border: 0; border-radius: .25rem; background: transparent; color: var(--atlas-ink); box-shadow: none; backdrop-filter: none; }
+.page :global(.atlas-more-label) { font: 400 .875rem/1.25rem var(--font-body); }
+.page :global(:is(.feed-intro,.feed-scroll,.about-section,.about-jump-links,.about-footer,.thanks-hero)) { width: 100%; max-width: 42.5rem; margin-inline: auto; padding-inline: var(--atlas-reading-margin); }
+.page :global(:is(.feed-intro,.thanks-hero)) { margin-top: 1rem; padding-top: 1rem; padding-bottom: 1.5rem; }
+.page :global(:is(.feed-intro,.thanks-hero)) > span { color: var(--atlas-muted); font: 400 .875rem/1.25rem var(--font-body); text-transform: none; letter-spacing: normal; }
+.page :global(:is(.feed-intro,.thanks-hero)) h1 { margin-block: .5rem 1rem; }
+.page :global(:is(.feed-intro,.thanks-hero)) > p { margin: 0; font: 400 1rem/1.5 var(--font-body); color: var(--atlas-muted); }
+.page :global(.about-section) { margin-block: 2rem; }
+.page :global(.about-section) > section { margin-block: 2rem; }
+.page :global(.about-section) p { font: 400 1rem/1.5 var(--font-body); }
+.page :global(.about-methods) { grid-template-columns: minmax(0,1fr); gap: 1.5rem; }
+.page :global(.about-methods) h3 { font: 600 1.125rem/1.5rem var(--font-body); }
+.page :global(.about-jump-links) { gap: .5rem 1.5rem; margin-block: 1rem 2rem; }
+.page :global(:is(.about-jump-links a,.about-footer a,.about-actions a,.feed-load-more,.feed-filters a)) { min-height: 48px; align-items: center; font: 400 1rem/1.5 var(--font-body); }
+.page :global(.feed-rituals) { display: block; margin-block: 1.5rem 0; }
+.page :global(.feed-rituals > *) { padding: .75rem 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.page :global(.feed-bench-group) { margin-block: 0; padding-block: 1.5rem; border: 0; border-bottom: 1px solid var(--guide-rule); border-radius: 0; background: transparent; box-shadow: none; }
+.page :global(.feed-bench-group::before) { display: none; }
+.page :global(.feed-bench-group) h3 { font: 500 1.375rem/1.75rem var(--font-display); }
+.page :global(.feed-bench-group) blockquote { margin-block: 1rem; font: 400 1.25rem/1.875rem var(--font-display); }
+.page :global(.feed-bench-group) p { font: 400 1rem/1.5 var(--font-body); }
+.page :global(.feed-event-count) { border: 0; border-radius: 0; background: transparent; color: var(--atlas-muted); font: 400 .875rem/1.25rem var(--font-body); }
+.page :global(.feed-empty) { margin-block: 2rem; padding: 0; border: 0; background: transparent; }
+.page :global(.favourites-intro > div > b) { min-width: 0; min-height: 0; border: 0; border-radius: 0; background: transparent; font: 400 .875rem/1.25rem var(--font-body); color: var(--atlas-muted); }
+.page :global(:is(.statistics-hero,.statistics-section,.municipality-hero)) { padding-inline: var(--atlas-reading-margin); }
+.page :global(.statistics-hero) h1 { font: 500 2rem/2.375rem var(--font-display); }
+.page :global(.statistics-section) { border-radius: 0; background: transparent; box-shadow: none; }
+.page :global(.reading-article) { max-width: 42.5rem; }
+.page :global(.reading-article) p { font: 400 1rem/1.5 var(--font-display); }
+.page :global(:is(button,summary,input,select,textarea):focus-visible) { outline: 3px solid var(--atlas-lake); outline-offset: 2px; }
+@media (min-width: 640px) and (max-width: 1023px) {
+  .page :global(:is(.feed-intro,.feed-scroll,.about-section,.about-jump-links,.about-footer,.thanks-hero)) { max-width: 40rem; }
+}
+@media (min-width: 1024px) {
+  .page h1 { font-size: 2.25rem; line-height: 2.625rem; }
+  .page :global(.statistics-hero) h1 { font-size: 3rem; line-height: 3.375rem; }
+  .page :global(.about-methods) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}

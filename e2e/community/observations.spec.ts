@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
+import Database from "better-sqlite3";
 
-const benchId = process.env.BENCHLY_E2E_BENCH_ID ?? "osm-node-101";
-
-async function registerUser(page: import("@playwright/test").Page, username: string) {
+const benchId = "osm-node-101";
+async function registerUser(page: import("@playwright/test").Page) {
+  const username = `observ-${Date.now().toString(36)}`;
   await page.goto(`/bank/${benchId}`);
   await page.getByLabel("Menü öffnen").click();
   await page.getByLabel("Anmelden").click();
@@ -10,177 +11,70 @@ async function registerUser(page: import("@playwright/test").Page, username: str
   await page.getByLabel("Benutzername").fill(username);
   await page.getByLabel("Passwort", { exact: true }).fill("sicheres-passwort-2026");
   await page.getByRole("button", { name: "Konto erstellen" }).click();
-  await page.getByLabel("Menü öffnen").click();
-  await expect(page.getByText("Mein Profil")).toBeVisible();
-  await page.getByLabel("Menü schliessen").click();
+  await expect(page.getByRole("dialog", { name: "Dein Bänkli-Konto" })).toBeHidden();
+  return username;
 }
 
-async function openContributionChapter(page: import("@playwright/test").Page, title: string) {
-  await page.getByRole("button", { name: "Verbessern", exact: true }).click();
+test("uses three concerns and preserves a concrete correction draft without manual scales", async ({ page }, info) => {
+  await registerUser(page);
+  await page.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
   const dialog = page.locator(".contribution-dialog[open]");
-  await expect(dialog).toBeVisible();
-  const summary = dialog.getByRole("button", { name: title, exact: true });
-  await summary.click();
-  return dialog;
-}
-
-async function submitViewCorrection(page: import("@playwright/test").Page, targetBench: string) {
-  await page.goto(`/bank/${targetBench}`);
-  const dialog = await openContributionChapter(page, "Aussicht & Umgebung");
-  const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
-  await prompt.getByRole("button", { name: "Anders erlebt" }).click();
-  await prompt.getByRole("button", { name: "Fast rundum" }).click();
-  await prompt.getByRole("button", { name: "Offen", exact: true }).click();
-  await prompt.getByRole("button", { name: "Weiter" }).click();
-  await prompt.getByRole("button", { name: "Starkes Relief" }).click();
-  await prompt.getByRole("button", { name: "Klar sichtbar" }).click();
-  await prompt.getByRole("button", { name: "Weiter" }).click();
-  await prompt.getByRole("button", { name: "Überwiegend frei" }).click();
-  await prompt.getByRole("button", { name: "Weiter" }).click();
-  await prompt.getByRole("button", { name: "Natürlich" }).click();
-  await prompt.getByRole("button", { name: "Ruhig" }).click();
-  await prompt.getByRole("button", { name: "Eintragen" }).click();
-  await expect(prompt.getByText("Dein eigener Eindruck ist eingetragen")).toBeVisible();
-}
-
-test("keeps the view observation understandable in the mobile detail", async ({ page }, testInfo) => {
-  // This covers registration, all four steps, back navigation, save and undo.
-  // Linux WebKit spends 1–3 seconds per click; keep individual actions bounded.
-  test.setTimeout(60_000);
-  page.setDefaultTimeout(5_000);
-  await registerUser(page, `view-${Date.now().toString().slice(-8)}`);
-  await page.goto(`/bank/${benchId}`);
-  await expect(page.locator(".bench-overview").getByText("Aussicht", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Verbessern", exact: true })).toBeVisible();
-  await page.waitForTimeout(100);
-  await page.screenshot({ path: testInfo.outputPath("view-entry.png"), fullPage: false });
-  await page.getByRole("button", { name: "Verbessern", exact: true }).click();
-  const dialog = page.locator(".contribution-dialog[open]");
-  await expect(dialog).toBeVisible();
-  await page.waitForTimeout(250);
-  await dialog.screenshot({ path: testInfo.outputPath("contribution-hub.png") });
-  await dialog.getByRole("button", { name: "Aussicht & Umgebung", exact: true }).click();
-  const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
-  await expect(prompt).toBeVisible();
-  await prompt.getByRole("button", { name: "Anders erlebt" }).click();
-  const firstStep = prompt.getByText("Schritt 1 von 4").locator("..");
-  await expect(firstStep).toBeVisible();
-  await expect(firstStep).toBeFocused();
-  await expect(prompt.getByRole("button", { name: "Abbrechen" })).toBeVisible();
-  await page.waitForTimeout(250);
-  await page.screenshot({ path: testInfo.outputPath("view-editor.png"), fullPage: false });
-
-  await prompt.getByRole("button", { name: "Fast rundum" }).click();
-  await prompt.getByRole("button", { name: "Offen", exact: true }).click();
-  await prompt.getByRole("button", { name: "Weiter" }).click();
-  await expect(prompt.getByText("Schritt 2 von 4")).toBeVisible();
-  await expect(prompt.getByText("Schritt 2 von 4").locator("..")).toBeFocused();
-  await prompt.getByRole("button", { name: "Zurück" }).click();
-  await expect(prompt.getByText("Schritt 1 von 4").locator("..")).toBeFocused();
-  await prompt.getByRole("button", { name: "Weiter" }).click();
-  await prompt.getByRole("button", { name: "Starkes Relief" }).click();
-  await prompt.getByRole("button", { name: "Klar sichtbar" }).click();
-  await prompt.getByRole("button", { name: "Weiter" }).click();
-  await expect(prompt.getByText("Schritt 3 von 4")).toBeVisible();
-  await prompt.getByRole("button", { name: "Bäume" }).click();
-  await prompt.getByRole("button", { name: "Weiter" }).click();
-  await expect(prompt.getByText("Schritt 4 von 4")).toBeVisible();
-  await prompt.getByRole("button", { name: "Natürlich" }).click();
-  await prompt.getByRole("button", { name: "Ruhig" }).click();
-  await prompt.getByRole("button", { name: "Eintragen" }).click();
-  await expect(prompt.getByText("Dein eigener Eindruck ist eingetragen")).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("view-saved.png"), fullPage: false });
-
-  await prompt.getByRole("button", { name: "Löschen" }).click();
-  await expect(prompt.getByText("Dein Eindruck hilft, die Schätzung zu verbessern")).toBeVisible();
-  await prompt.getByRole("button", { name: "Passt ungefähr" }).click();
-  await expect(prompt.getByText("Von dir ungefähr bestätigt")).toBeVisible();
-  await prompt.getByRole("button", { name: "Löschen" }).click();
-  await expect(prompt.getByText("Dein Eindruck hilft, die Schätzung zu verbessern")).toBeVisible();
+  await expect(dialog.locator("[data-contribution-choice]")).toHaveCount(3);
+  await expect(dialog.getByRole("button", { name: "Licht gerade jetzt", exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Aussicht & Umgebung", exact: true })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Problem melden", exact: true }).click();
+  await dialog.locator("select[name=field]").selectOption("environment");
+  const note = dialog.locator("textarea[name=note]");
+  await note.fill("Die Aussicht ist durch neue Bäume verdeckt.");
+  await dialog.getByRole("button", { name: "Alle Beiträge", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Problem melden", exact: true })).toBeFocused();
+  await dialog.getByRole("button", { name: "Problem melden", exact: true }).click();
+  await expect(note).toHaveValue("Die Aussicht ist durch neue Bäume verdeckt.");
+  await dialog.getByRole("button", { name: "Hinweis veröffentlichen" }).click();
+  await expect(dialog.getByRole("status")).toContainText("Danke");
+  await dialog.screenshot({ path: info.outputPath("view-correction.png") });
 });
 
-test("does not turn observations into disabled decoration for guests", async ({ page }) => {
+test("keeps unknown traffic out of the overview and places uncertainty in visit details", async ({ page }) => {
   await page.goto(`/bank/${benchId}`);
-  await expect(page.getByRole("button", { name: "Verbessern", exact: true })).toBeVisible();
-  await expect(page.locator(".bench-overview").getByText("Aussicht", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Aussicht vor Ort einordnen")).toHaveCount(0);
-  await expect(page.locator(".bench-overview").getByText("Sonne & Schatten", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Licht vor Ort melden")).toHaveCount(0);
+  expect(await page.locator("[data-visit-hint]").count()).toBeLessThanOrEqual(3);
+  await expect(page.locator(".bench-overview")).not.toContainText("noch nicht erfasst");
+  await expect(page.locator(".bench-sources")).toHaveCount(0);
+  await expect(page.locator(".bench-visit-warnings")).not.toContainText("noch nicht ausreichend bekannt");
+  await page.locator(".bench-visit-details > details > summary").click();
+  await expect(page.locator(".bench-visit-details")).toContainText("Der Zugang ist noch nicht ausreichend bekannt.");
 });
 
-test("keeps observation controls calm, semantic and touchable with reduced motion", async ({ page }) => {
+test("preserves historical observations with private inspection and deletion, without new questionnaires", async ({ page, browser }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await registerUser(page, `access-${Date.now().toString().slice(-8)}`);
-  await page.goto(`/bank/${benchId}`);
-  const factsSummary = page.locator(".bench-sources > summary");
-  await factsSummary.focus();
-  await page.keyboard.press("Enter");
-  await expect(factsSummary.locator("..")).toHaveAttribute("open", "");
-  await expect(page.locator(".bench-overview").getByText("Sonne & Schatten", { exact: true })).toBeVisible();
-  await expect(page.locator(".bench-overview").getByText("Aussicht", { exact: true })).toBeVisible();
-  const dialog = await openContributionChapter(page, "Aussicht & Umgebung");
-  const prompt = dialog.getByLabel("Aussicht vor Ort einordnen");
-  await prompt.getByRole("button", { name: "Anders erlebt" }).click();
-  await expect(prompt.getByText("Schritt 1 von 4").locator("..")).toBeFocused();
-  const animationDuration = await prompt.locator(".view-observation-editor").evaluate((element) => getComputedStyle(element).animationDuration);
-  expect(Number.parseFloat(animationDuration)).toBeLessThanOrEqual(0.00001);
-  const undersized = await prompt.getByRole("button").evaluateAll((buttons) => buttons.filter((button) => {
-    const box = button.getBoundingClientRect();
-    return box.width < 44 || box.height < 44;
-  }).length);
-  expect(undersized).toBe(0);
-});
-
-test("saves every daylight impression and supports undo", async ({ page }, testInfo) => {
-  await registerUser(page, `light-${Date.now().toString().slice(-8)}`);
-  await page.goto(`/bank/${benchId}`);
-  await page.waitForTimeout(100);
-  const dialog = await openContributionChapter(page, "Licht gerade jetzt");
-  const prompt = dialog.getByLabel("Licht vor Ort melden");
-  await expect(prompt).toBeVisible();
-  for (const choice of ["Sonne", "Schatten", "Wechselhaft"]) {
-    await prompt.getByRole("button", { name: choice, exact: true }).click();
-    await expect(prompt.getByText(`Deine Beobachtung: ${choice}`)).toBeVisible();
-    await expect(prompt.getByRole("button", { name: choice, exact: true })).toHaveAttribute("aria-pressed", "true");
-  }
-  await page.screenshot({ path: testInfo.outputPath("light-observation-saved.png"), fullPage: false });
-  await prompt.getByRole("button", { name: "Rückgängig" }).click();
-  await expect(prompt.getByText("Ein kurzer Eindruck von vor Ort")).toBeVisible();
-  await expect(prompt.getByText("Deine Beobachtung wurde zurückgenommen.")).toBeVisible();
-});
-
-test("blends three real community impressions into the bench detail", async ({ browser }, testInfo) => {
-  test.skip(testInfo.project.name !== "mobile-chrome", "One exact shared-database aggregation run is sufficient; Safari covers the individual flow.");
-  const targetBench = "osm-node-103";
-  const run = `${Date.now().toString().slice(-7)}-${testInfo.workerIndex}`;
-  for (let person = 1; person <= 3; person += 1) {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    await registerUser(page, `blick-${run}-${person}`);
-    await submitViewCorrection(page, targetBench);
-    await context.close();
-  }
-
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  await page.goto(`/bank/${targetBench}`);
-  const sources = page.locator(".bench-sources");
-  await expect(sources).not.toHaveAttribute("open", "");
-  const communityEvidence = sources.locator(".community-evidence");
-  await expect(communityEvidence).toBeHidden();
-  await sources.locator(":scope > summary").click();
-  await expect(sources).toHaveAttribute("open", "");
-  await expect(communityEvidence).toBeVisible();
-  const contributionCount = Number(await communityEvidence.locator("strong").textContent());
-  expect(contributionCount).toBeGreaterThanOrEqual(3);
-  await expect(communityEvidence).toContainText(/(?:vorsichtig|gut) gestützt/);
-  await expect(communityEvidence).toHaveAccessibleName(/Eindrücke von Menschen vor Ort · (?:vorsichtig|gut) gestützt/);
-  // View metrics are now a plain section inside Sources, not another accordion.
-  const sky = sources.locator(".metric-sketch > div").filter({ hasText: "Himmelsoffenheit" });
-  await expect(sky).toHaveCount(1);
-  await sky.scrollIntoViewIfNeeded();
-  await expect(sky).toHaveAccessibleName("Himmelsoffenheit: 93%");
-  await expect(sky.locator("small")).toHaveText("93%");
-  await page.screenshot({ path: testInfo.outputPath("community-estimate.png"), fullPage: false });
-  await context.close();
+  const username = await registerUser(page);
+  const db = new Database(process.env.BENCHLY_E2E_DATABASE!);
+  let rowId: number;
+  try {
+    const user = db.prepare("SELECT id FROM users WHERE username_key=?").get(username) as { id: number };
+    const bench = db.prepare("SELECT row_id FROM benches WHERE id=?").get(benchId) as { row_id: number };
+    rowId = bench.row_id;
+    db.prepare("INSERT INTO bench_light_observations(bench_row_id,user_id,choice,observed_at,season,day_phase,created_at) VALUES(?,?,'shade','2026-09-05T10:00:00Z','autumn','day','2026-09-05T10:00:00Z')").run(rowId, user.id);
+    db.prepare("INSERT INTO bench_view_observations(bench_row_id,user_id,kind,season,observed_at,created_at) VALUES(?,?,'agreement','autumn','2026-09-05T10:00:00Z','2026-09-05T10:00:00Z')").run(rowId, user.id);
+  } finally { db.close(); }
+  await page.reload();
+  await page.locator(".bench-visit-details > details > summary").click();
+  const history = page.locator(".observation-history");
+  await expect(history).not.toHaveAttribute("open", "");
+  await history.locator("summary").click();
+  await expect(history).toContainText("Schatten");
+  await history.getByRole("button", { name: "Licht gerade jetzt löschen", exact: true }).click();
+  await expect(history.getByRole("button", { name: "Licht gerade jetzt löschen", exact: true })).toHaveCount(0);
+  await history.getByRole("button", { name: "Aussicht & Umgebung löschen", exact: true }).click();
+  await expect(history.getByRole("button")).toHaveCount(0);
+  const check = new Database(process.env.BENCHLY_E2E_DATABASE!);
+  try {
+    for (const table of ["bench_light_observations", "bench_view_observations"]) {
+      const row = check.prepare(`SELECT retracted_at FROM ${table} WHERE bench_row_id=? ORDER BY id DESC LIMIT 1`).get(rowId) as { retracted_at: string | null };
+      expect(row.retracted_at).not.toBeNull();
+    }
+  } finally { check.close(); }
+  const guest = await browser.newContext({ ignoreHTTPSErrors: true });
+  try { const publicPage = await guest.newPage(); await publicPage.goto(page.url()); await expect(publicPage.locator(".observation-history")).toHaveCount(0); } finally { await guest.close(); }
+  await page.screenshot({ path: info.outputPath("observation-history.png") });
 });

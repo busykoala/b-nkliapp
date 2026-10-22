@@ -1,3 +1,4 @@
+import documentStyles from "@/components/atlas-document.module.css";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
@@ -11,7 +12,7 @@ export async function generateMetadata() {
 
 export default async function ImprintPage() {
   const t = await getTranslations();
-  return <main className="thanks-page legal-page min-h-dvh safe-bottom">
+  return <main className={`thanks-page legal-page min-h-dvh safe-bottom ${documentStyles.page}`}>
     <nav className="thanks-nav safe-top"><Link className="calm-menu-button" href="/danke" aria-label={t("about.metadata.title")}><ArrowLeft size={19} /></Link></nav>
     <div className="about-section"><h1>{t("about.links.imprint")}</h1><p>{t("legal.introduction")}</p><OperatorContact />
       <section><h2>{t("legal.reliability.title")}</h2><p>{t("legal.reliability.description")}</p></section>

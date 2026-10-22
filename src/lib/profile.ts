@@ -8,7 +8,8 @@ export type SeasonKey = "spring" | "summer" | "autumn" | "winter";
 
 export type ProfileMoment = {
   id: string;
-  kind: "added" | "rated" | "confirmed" | "missing" | "edited" | "corrected";
+  kind: "added" | "rated" | "confirmed" | "missing" | "edited" | "corrected" | "moment" | "photo";
+  detail?: string;
   benchId: string;
   benchName: string | null;
   createdAt: string;
@@ -143,7 +144,7 @@ export function getTrailProfile(userId: number, database: Database.Database = sq
   const foundSeasons = new Set(timestamps.map((item) => seasonFor(item.created_at)));
   const seasons = seasonCatalog.map((item) => ({ ...item, found: foundSeasons.has(item.key) }));
 
-  const recent = database.prepare(`
+  const recent: ProfileMoment[] = database.prepare(`
     WITH raw AS (${rawInteractions}), latest AS (
       SELECT bench_row_id,kind,max(created_at) created_at FROM raw GROUP BY bench_row_id,kind
     )
@@ -156,6 +157,19 @@ export function getTrailProfile(userId: number, database: Database.Database = sq
     return { id: String(item.id), kind: String(item.kind) as ProfileMoment["kind"], benchId: String(item.bench_id), benchName: item.bench_name == null ? null : String(item.bench_name), createdAt: String(item.created_at) };
   });
 
+  // Public memories belong in the journal, without changing achievement calculations.
+  const memories = database.prepare(`SELECT m.id,m.kind,m.body,m.created_at,b.id bench_id,
+    coalesce(nullif(b.name,''),nullif(b.location_name,'')) bench_name
+    FROM bench_moments m JOIN benches b ON b.row_id=m.bench_row_id
+    WHERE m.user_id=? AND m.visible=1 AND b.active=1
+    ORDER BY m.created_at DESC,m.id DESC LIMIT 6`).all(userId) as Array<{
+      id: number; kind: string; body: string; created_at: string; bench_id: string; bench_name: string | null;
+    }>;
+  const journal: ProfileMoment[] = [...recent, ...memories.map(item => ({
+    id: `moment-${item.id}`, kind: item.kind === "photo" ? "photo" as const : "moment" as const,
+    detail: item.kind === "photo" && item.body === "Ein Blick von diesem Bänkli." ? undefined : item.body, benchId: item.bench_id, benchName: item.bench_name, createdAt: item.created_at,
+  }))].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 6);
+
   return {
     id: user.id,
     username: user.username,
@@ -166,7 +180,7 @@ export function getTrailProfile(userId: number, database: Database.Database = sq
     journey: journeyFor(uniquePlaces),
     landscapes,
     seasons,
-    recent,
+    recent: journal,
     awaitingConfirmation: (database.prepare(`SELECT b.id,coalesce(nullif(b.name,''),nullif(nullif(b.description,'Sitzbank'),'')) title,
       max(0,?-(SELECT count(*) FROM bench_confirmations c WHERE c.bench_row_id=b.row_id)) remaining
       FROM benches b WHERE b.created_by_user_id=? AND b.active=1 AND b.verification_status='unverified'

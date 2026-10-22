@@ -14,5 +14,24 @@
     "original": "Leggi l’originale tedesco",
     "note": "Traduzione dal tedesco con intelligenza artificiale.",
     "back": "Torna al menu"
+  },
+  "project": "Il progetto",
+  "atlas": {
+    "navigation": "Il tuo atlante",
+    "map": "Mappa",
+    "walk": "In cammino",
+    "book": "Il mio diario",
+    "more": "Altro",
+    "wishes": "Desideri",
+    "openPlace": "Alla panchina",
+    "showMap": "Anteprima",
+    "closeSearch": "Torna alla mappa",
+    "bookIntro": "Qui si raccolgono i tuoi luoghi preferiti e i ricordi che lasci lungo il cammino. Accedi per iniziare il tuo diario.",
+    "journalTitle": "Il mio diario",
+    "journalSaved": "Per la prossima uscita",
+    "journalEntries": "Quello che resta del cammino",
+    "savedPlaces": "Luoghi preferiti",
+    "account": "Il tuo account",
+    "preferences": "Lingua e aspetto"
   }
 }

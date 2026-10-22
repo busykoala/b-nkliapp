@@ -82,7 +82,7 @@
     "light": "Licht jetzt · geschätzt",
     "sun": "Sonne",
     "shade": "Schatten",
-    "more": "Mehr Wünsche",
+    "more": "Weitere Wünsche",
     "access": "Zugang & Komfort",
     "accessNote": "Der ebene Platz betrifft nur das Bänkli. Treppen und Wegbeschaffenheit erscheinen nach der Routenplanung.",
     "anyMaterial": "Ganz egal",
@@ -101,7 +101,7 @@
     "without": "Ohne {label}",
     "toilets": "Toilette bis 250 m",
     "drinkingWater": "Trinkwasser bis 250 m",
-    "facilityDistance": "Erfasste Einrichtungen, Abstand in Luftlinie. Der Fussweg kann länger sein; fehlende Einträge bedeuten nicht, dass es nichts gibt."
+    "facilityDistance": "Entfernungen in Luftlinie."
   },
   "placement": {
     "title": "Position wählen",

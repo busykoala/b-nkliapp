@@ -1,3 +1,4 @@
+import documentStyles from "@/components/atlas-document.module.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
@@ -53,7 +54,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
     mostBlockedView: { icon: <Eye />, value: (item) => `${number(item.metric ?? 0)}%` }, wildest: { icon: <Trees />, value: (item) => `${number((item.metric ?? 0) * 100)}/100` }, remotest: { icon: <MountainSnow />, value: (item) => `${number((item.metric ?? 0) * 100)}/100` },
   };
 
-  return <main className="statistics-page min-h-dvh safe-bottom">
+  return <main className={`statistics-page min-h-dvh safe-bottom ${documentStyles.page}`}>
     <RestoreSourceReturn />
     <header className="statistics-nav safe-top"><Link href="/" aria-label={t("common.navigation.map")} className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
     <section className="statistics-hero">

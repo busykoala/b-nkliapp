@@ -7,6 +7,7 @@ test("keeps four app languages and applies dialect only to the opened bench", as
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByLabel("Menü öffnen").click();
+  await page.locator(".app-menu-preferences > summary").click();
   const language = page.getByRole("combobox", { name: "Sprache" });
   await expect(language.locator("option")).toHaveText(["Deutsch", "Français", "Italiano", "Rumantsch"]);
   await language.selectOption("fr");
@@ -26,7 +27,7 @@ test("keeps four app languages and applies dialect only to the opened bench", as
 
   installPanoramaFixture("osm-node-101");
   await page.goto("/?bank=osm-node-101");
-  const sheet = page.locator(".desktop-sheet");
+  const sheet = page.locator(".bench-atlas-sheet");
   await expect(sheet).toHaveAttribute("lang", "gsw-CH");
   await expect(sheet).toHaveAttribute("data-local-voice", "gsw-zurich");
   await expect(sheet).toHaveAttribute("data-snap", "full");
@@ -45,24 +46,25 @@ test("keeps four app languages and applies dialect only to the opened bench", as
   await page.goto("/bank/osm-node-103");
   await expect(page.locator(".calm-detail")).toHaveAttribute("lang", "frp-CH");
   await expect(page.getByText("Patois romand occidental", { exact: false }).first()).toBeVisible();
-  await expect(page.locator(".bench-overview")).toContainText("En un coup d’œil");
+  await expect(page.locator(".bench-overview")).toHaveAccessibleName("En un coup d’œil");
   await expect(page.getByLabel("Ouvrir le menu")).toBeVisible();
   await page.locator(".bench-detail").screenshot({ path: testInfo.outputPath("vaud-local-french.png"), animations: "disabled" });
 
   await page.goto("/bank/osm-node-110");
   await expect(page.locator(".calm-detail")).toHaveAttribute("lang", "lmo-CH");
   await expect(page.getByText("Dialett dal Sottoceneri", { exact: false }).first()).toBeVisible();
-  await expect(page.locator(".bench-overview")).toContainText("A colpo d’occhio");
+  await expect(page.locator(".bench-overview")).toHaveAccessibleName("A colpo d’occhio");
   await expect(page.getByLabel("Ouvrir le menu")).toBeVisible();
   await page.locator(".bench-detail").screenshot({ path: testInfo.outputPath("ticino-local-italian.png"), animations: "disabled" });
 
   await page.getByLabel("Ouvrir le menu").click();
+  await page.locator(".app-menu-preferences > summary").click();
   const localToggle = page.getByRole("switch", { name: /Dialecte du banc/ });
   await localToggle.click();
   await expect(page.locator("html")).toHaveAttribute("data-language-mode", "fixed");
   await expect(page.locator(".calm-detail")).not.toHaveAttribute("lang", /.+/);
   await expect(page.locator(".bench-local-language")).toHaveCount(0);
-  await expect(page.locator(".bench-overview")).toContainText("En un coup d’œil");
+  await expect(page.locator(".bench-overview")).toHaveAccessibleName("En un coup d’œil");
 });
 
 test("keeps sun and covered shade states on the panorama", async ({ page }, testInfo) => {
@@ -73,7 +75,7 @@ test("keeps sun and covered shade states on the panorama", async ({ page }, test
   let scene = page.locator(".bench-panorama");
   await expect(scene).toBeVisible();
   await expect(scene).toHaveClass(/is-sunny/);
-  await expect(scene.locator(".bench-panorama-rear-bench")).toBeVisible();
+  await expect(scene.locator(".bench-panorama-rear-bench")).toBeHidden();
   await expect(scene.locator(".bench-panorama-ground-patch, .bench-panorama-bench-shadow")).toHaveCount(0);
   await scene.screenshot({ path: testInfo.outputPath("scene-direct-sun.png") });
 
@@ -114,7 +116,7 @@ test("keeps the Romansh local overlay readable at 430px and desktop", async ({ p
     await expect(detail).toHaveAttribute("lang", "rm-CH");
     await expect(detail.locator(".bench-local-language")).toContainText("Vallader");
     await expect(detail.locator(".bench-local-language")).toBeVisible();
-    await expect(detail.locator(".bench-overview")).toContainText("En in’egliada");
+    await expect(detail.getByRole("region", { name: "En in’egliada" })).toBeVisible();
     const overflow = await detail.locator("h2,h3,p,button,strong,small").evaluateAll((elements) => elements
       .filter((element) => {
         const style = getComputedStyle(element);
@@ -130,7 +132,7 @@ test("keeps the Romansh local overlay readable at 430px and desktop", async ({ p
   }
 
   await page.setViewportSize({ width: 430, height: 932 });
-  await page.locator(".bench-contribute").getByRole("button", { name: "Meglierar", exact: true }).click();
+  await page.locator(".bench-contribute").getByRole("button", { name: "Contribuir insatge", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   expect(await dialog.evaluate((element) => element.closest("[lang]")?.getAttribute("lang"))).toBe("rm-CH");

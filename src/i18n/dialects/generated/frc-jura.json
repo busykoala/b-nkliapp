@@ -542,17 +542,20 @@
       "panoramaExpandedTitle": "Ciel et paysage à 360 degrés",
       "panoramaOpenExpanded": "Ouvrir le panorama en grand mode 360 degrés",
       "panoramaCloseExpanded": "Cllôre le grand panorama à 360 degrés",
-      "panorama360": "Voir à 360°",
+      "panorama360": "Ouvrir la vue",
       "panoramaClose": "Cllôre",
       "panoramaCalculated": "Calculé à partir des données du terrain et des environs",
       "panoramaZoomIn": "Agrandir",
       "panoramaZoomOut": "Réduire",
       "panoramaGenerating": "La vue est en train d’être peinte…",
       "panoramaUnavailable": "La vue calculée n’est pas encore disponible.",
-      "panoramaRetry": "Réessayer"
+      "panoramaRetry": "Réessayer",
+      "panoramaHelp": "Commandes",
+      "panoramaHelpBody": "Faites glisser l’image ou utilisez les flèches pour regarder autour de vous. La petite flèche du banc du payis revient à sa direction de vue. Origine réinitialise la vue ; Échap la ferme.",
+      "panoramaBenchDirection": "Revenir à la vue depuis le banc du payis"
     },
     "page": {
-      "description": "Banc du payis avec analyse du soleil et des environs dans Bänkli App.",
+      "description": "Découvre ce lieu pour faire une pause, sa vue peinte et le chemin pour y aller.",
       "ratedDescription": "Banc du payis avec vue notée {score}/5 dans Bänkli App.",
       "backToFeed": "Retô au fil des bancs",
       "onMap": "Sur la carte"
@@ -580,10 +583,31 @@
       "rate": "Évaluer",
       "viewRatings": "Voir",
       "contribute": "Contribuer à ce lieu",
-      "improve": "Améliorer",
+      "improve": "Apporter une contribution",
       "addPhoto": "Ajouter une photo",
       "addThought": "Partager une pensée",
       "sources": "Sources et mise à jour"
+    },
+    "visit": {
+      "title": "Pour ta visite",
+      "seatingAccess": "Assise et accès",
+      "weatherSun": "Météo et soleil",
+      "accessTitle": "À propos de l’accès",
+      "possiblyMissing": "Ce banc du payis a été signalé comme peut-être disparu.",
+      "obstacle": "Un obstacle est connu sur l’accès ou près du banc du payis.",
+      "accessUnknown": "L’accès n’est pas encore suffisamment connu.",
+      "accessScope": "Ces indications concernent le banc du payis et le dernier tronçon. Elles ne garantissent pas un itinéraire entièrement accessible.",
+      "lightEstimate": "{value} · estimation",
+      "sunEstimate": "Les horaires d’ensoleillement sont estimés. Les nuages et les conditions sur place peuvent modifier la lumière.",
+      "noiseUnknown": "Bruit du trafic encore inconnu",
+      "noiseLow": "Peu de bruit de trafic attendu",
+      "noiseNoticeable": "Trafic probablement audible",
+      "noiseHigh": "Bruit de trafic marqué attendu",
+      "noiseEstimate": "{source} · estimation",
+      "goodToKnow": "Bon à savoir",
+      "noArmrest": "Sans accoudoirs",
+      "conflicting": "Certaines indications sur le banc du payis se contredisent.",
+      "sceneWeather": "{condition} · {temperature} °C"
     }
   },
   "common": {
@@ -884,7 +908,7 @@
         "environment": "Les environs, la vue ou la lumière ne correspondent pas"
       },
       "observation": "Qu’as-tu vu ?",
-      "placeholder": "Par exemple : le dossier manque",
+      "placeholder": "Décris brièvement ce qui est différent.",
       "publish": "Publier le signalement",
       "fields": {
         "properties": "Équipement",
@@ -897,7 +921,7 @@
     "place": {
       "eyebrow": "Les gens de ce lieu",
       "title": "Moments sur un banc du payis",
-      "share": "Partager le moment",
+      "share": "Partager ce lieu",
       "shareShort": "Partager",
       "shareText": "Un moment sur un banc du payis près de {bench}",
       "copied": "Lien copié, prêt à partager, aussi sur Instagram.",
@@ -913,7 +937,10 @@
       "favourites": "Tous les lieux favoris",
       "recent": "ces 90 derniers jours",
       "deleteOwn": "Supprimer mon moment",
-      "empty": "Pas encore d’histoire ique. Le banc du payis attend patiemment."
+      "empty": "Pas encore d’histoire ique. Le banc du payis attend patiemment.",
+      "moreActions": "Autres actions",
+      "moreMoments": "Voir d’autres moments",
+      "fewerMoments": "Afficher moins de moments"
     },
     "features": {
       "progress": "{known}/{total} indications connues · Appuie pour compléter",
@@ -1063,7 +1090,7 @@
     },
     "workspace": {
       "choose": "Choisir une contribution",
-      "intro": "Une photo, une information, une impression : choisis ce que tu souhaites partager ique. Tu ne dois pas tout savoir.",
+      "intro": "Une photo, une impression, une indication utile.",
       "groups": {
         "place": "Présenter le lieu",
         "now": "Sur place, maintenant",
@@ -1110,6 +1137,27 @@
         "fireplaceNearby": "Y a-t-il un foyer à proximité ?"
       },
       "viewDescription": "Description actuelle"
+    },
+    "concerns": {
+      "memory": {
+        "title": "Partager un souvenir",
+        "hint": "Un instant, une photo ou ton impression générale."
+      },
+      "facts": {
+        "title": "Compléter les indications",
+        "hint": "Ce qui aide à arriver et à s’installer."
+      },
+      "problem": {
+        "title": "Signaler un problème",
+        "hint": "Une erreur ou un besoin d’entretien."
+      },
+      "moreFacts": "Autres indications",
+      "rating": "Donner une appréciation générale"
+    },
+    "history": {
+      "title": "Tes observations précédentes",
+      "view": "Ton ancienne impression de la vue",
+      "remove": "Supprimer : {kind}"
     }
   },
   "knowledge": {
@@ -1354,6 +1402,134 @@
       "storageUnavailable": "Le stockage des photos fait une pause.",
       "format": "Utilise une photo JPEG, PNG ou WebP.",
       "formatMismatch": "Le format ne correspond pas à la photo. Sélectionne l’image à nouveau."
+    }
+  },
+  "poetry": {
+    "miniatures": {
+      "pause": {
+        "v1": "Un instant, le chemin n’a plus à mener quelque part. Tu peux simplement être là.",
+        "v2": "Le monde poursuit sa route. Ique, une pensée peut encore chercher son nom.",
+        "v3": "Parfois, une journée demande un endroit où s’asseoir plutôt qu’une réponse.",
+        "v4": "Entre partir et arriver, il y a cette petite halte.",
+        "v5": "Laisse le prochain pas attendre encore un instant.",
+        "v6": "Une place libre, un peu de temps. Le voyage commence peut-être ique.",
+        "v7": "Ce que tu portes en toi peut s’asseoir à côté de toi.",
+        "v8": "Même un détour peut, un instant, devenir la destination."
+      },
+      "sun": {
+        "v1": "La lumière trouve cette place. Tu reprendras le fil du jour un peu plus tard.",
+        "v2": "Un morceau du jour repose dans la lumière. Prends place à ses côtés.",
+        "v3": "Le soleil n’a pas besoin de raison pour rester ique. Toi non plus, peut-être.",
+        "v4": "Ique, la lumière fait une escale.",
+        "v5": "Pour cet instant, il suffit de regarder la lumière.",
+        "v6": "La lumière se déplace. Rien n’oblige à la suivre dans sa course.",
+        "v7": "Une éclaircie dans le jour : nul besoin de l’emporter pour la garder.",
+        "v8": "Peut-être que de la route d’houé, il restera surtout cette lumière."
+      },
+      "shade": {
+        "v1": "L’ombre n’enlève rien au jour. Elle lui donne une autre couleur.",
+        "v2": "Ique, la clarté peut faire un pas en retrait.",
+        "v3": "Dans l’ombre, le jour perd un peu de ses angles.",
+        "v4": "Une place à l’écart de l’éclat. On peut y demeurer aussi.",
+        "v5": "La lumière est occupée ailleurs. Ique, l’instant t’appartient.",
+        "v6": "Tout ce qui soutient une journée n’a pas à se tenir en pleine lumière.",
+        "v7": "Une autre face du jour t’attend ique.",
+        "v8": "L’ombre laisse les choses être à elles-mêmes."
+      },
+      "rain": {
+        "v1": "La pluie écrit sur le jour. Tu n’as pas à comprendre chaque mot.",
+        "v2": "Houé, le paysage a choisi l’aquarelle.",
+        "v3": "Les gouttes posent leurs petits points. La phrase du jour reste ouverte.",
+        "v4": "La pluie ne prend aucun raccourci. Elle arrive partout.",
+        "v5": "Un jour de pluie a son éclat à lui.",
+        "v6": "Ce qui n’était qu’un contour trouve dans la pluie une seconde lisière.",
+        "v7": "Entre les gouttes, il reste une place pour cet instant.",
+        "v8": "Le ciel laisse aller quelque chose. Peut-être peux-tu en faire autant houé."
+      },
+      "snow": {
+        "v1": "Les flocons ne suivent pas le même chemin. Ils arrivent pourtant.",
+        "v2": "La neige traverse cet instant comme si elle avait tout son temps.",
+        "v3": "Un flocon prend peu de place. Le regard le suit pourtant.",
+        "v4": "Le jour se redessine, flocon après flocon.",
+        "v5": "Ce qui tombe du ciel n’a pas besoin d’être une réponse houé.",
+        "v6": "L’air porte de petits commencements blancs.",
+        "v7": "Chaque flocon trouve une autre fin à sa chute.",
+        "v8": "Tu regardes la neige. Pour une fois, cela suffit comme projet."
+      },
+      "night": {
+        "v1": "La nuit laisse ouvertes des choses que le jour voulait expliquer.",
+        "v2": "Dans le noir, le regard n’a pas à tout retenir.",
+        "v3": "Le jour est parti. Il reste une place où demeurer.",
+        "v4": "La nuit a plus d’espace qu’un regard ne peut en saisir.",
+        "v5": "Un instant, tu n’as pas encore besoin du lendemain.",
+        "v6": "Ce que tu as cherché houé peut attendre demain pour trouver son nom.",
+        "v7": "L’obscurité enlève au lieu ses contours, pas sa place.",
+        "v8": "Même sans voir tout le chemin, tu peux arriver ique."
+      },
+      "mountains": {
+        "v1": "Les montagnes ne se rapprochent pas. Le regard peut pourtant les rejoindre.",
+        "v2": "Une ligne de montagne suffit à donner une autre direction aux pensées.",
+        "v3": "Les hauteurs gardent leur distance. Ique, on a le temps de les regarder.",
+        "v4": "Entre toi et les montagnes, il y a de la place pour une longue pensée.",
+        "v5": "Il n’est pas nécessaire de monter pour se sentir un peu plus près des montagnes.",
+        "v6": "Les montagnes n’ont aucune raison de se hâter.",
+        "v7": "Le regard prend le chemin des hauteurs. Tu peux rester assis.",
+        "v8": "Au bord des montagnes, le ciel trouve une forme."
+      },
+      "water": {
+        "v1": "L’eau ne garde rien de ton regard. C’est peut-être là son cadeau.",
+        "v2": "Au bord de l’eau, une pensée peut poursuivre sa route sans que tu la suives.",
+        "v3": "Un regard sur l’eau n’a jamais tout à fait de fin.",
+        "v4": "Tu es arrivé. L’eau a sa propre manière d’être en chemin.",
+        "v5": "Parfois, de l’eau dans le regard suffit à donner plus d’espace au jour.",
+        "v6": "L’eau et toi partagez cet instant sans le retenir.",
+        "v7": "Ique, le regard n’a pas à atteindre une autre rive.",
+        "v8": "Ce que tu cherches dans l’eau n’est pas forcément un reflet."
+      },
+      "forest": {
+        "v1": "Entre les arbres, le regard n’a pas à trouver une ligne droite.",
+        "v2": "La forêt entoure cet instant comme une histoire sans dernière page.",
+        "v3": "Un arbre met des années à faire ce que tu vois en un instant.",
+        "v4": "Ique, les années se tiennent côte à côte. Tu peux t’asseoir parmi elles un moment.",
+        "v5": "La forêt connaît bien des chemins. Pour l’instant, cette place suffit.",
+        "v6": "Ta halte sera brève. Les arbres prennent davantage leur temps.",
+        "v7": "Entre les troncs et les pensées, il reste une place pour une pause.",
+        "v8": "Tu n’as pas à comprendre la forêt pour lui appartenir un instant."
+      },
+      "autumn": {
+        "v1": "L’année a déjà beaucoup raconté. Ique, une page peut rester ouverte.",
+        "v2": "L’automne a du temps pour ce que l’été a laissé de côté.",
+        "v3": "Un chapitre avancé de l’année. Un bon endroit pour s’interrompre un peu.",
+        "v4": "Ce qui a mûri n’a plus à grandir houé.",
+        "v5": "L’automne sait laisser aller. Tu peux peut-être le regarder faire un instant.",
+        "v6": "L’année raccourcit, pas cet instant.",
+        "v7": "Tu es assis dans un jour qui sait déjà quelque chose des départs.",
+        "v8": "Il reste du temps dans l’année. Et ique, une place pour toi."
+      },
+      "spring": {
+        "v1": "L’année essaie un nouveau départ. Tu n’as pas encore à savoir où il mène.",
+        "v2": "Au printemps, même l’attente a quelque chose d’un départ.",
+        "v3": "Quelque chose commence peut-être pendant que tu es assis ique.",
+        "v4": "Le prochain commencement n’a pas besoin de faire du bruit."
+      },
+      "summer": {
+        "v1": "L’été peut avoir bien des projets. Tu peux laisser passer un instant.",
+        "v2": "Au milieu de l’année, il y a de la place pour une petite interruption.",
+        "v3": "Un jour d’été n’a pas à être rempli pour rester en mémoire.",
+        "v4": "Peut-être emporteras-tu de l’été cette halte."
+      },
+      "winter": {
+        "v1": "L’hiver laisse plus de marge à l’année. Ique, quelque chose peut rester à écrire.",
+        "v2": "Même un bref jour d’hiver a de la place pour une longue pensée.",
+        "v3": "L’année se tient en retrait. Tu n’as pas à la pousser en avant houé.",
+        "v4": "Une halte entre ce qui fut et ce qui reviendra."
+      },
+      "twilight": {
+        "v1": "Le jour change de couleur. Un instant, tout peut rester entre deux.",
+        "v2": "La lumière est en chemin vers une autre heure.",
+        "v3": "Au seuil du jour, le regard n’a pas besoin de destination.",
+        "v4": "C’est encore cet instant. Bientôt, il portera une autre couleur."
+      }
     }
   },
   "submission": {

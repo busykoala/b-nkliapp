@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 48" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="pigment" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="white"/>
+      <stop offset=".35" stop-color="white"/>
+      <stop offset=".65" stop-color="white" stop-opacity=".85"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="fibre" x="-1%" y="-10%" width="102%" height="120%">
+      <feTurbulence baseFrequency=".08 .2" numOctaves="2" seed="4" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <path fill="url(#pigment)" d="M0 0H1000V39C933 24 885 45 811 35S688 30 630 38 513 29 449 35 339 46 276 34 169 30 105 38 35 29 0 34Z" filter="url(#fibre)"/>
+</svg>

@@ -107,7 +107,9 @@
     "rated": "Un avis laissé pour <bench>{name}</bench>.",
     "confirmed": "<bench>{name}</bench> confirmé sur place.",
     "missing": "<bench>{name}</bench> signalé absent.",
-    "edited": "Un détail ajouté à <bench>{name}</bench>."
+    "edited": "Un détail ajouté à <bench>{name}</bench>.",
+    "moment": "Un moment partagé à <bench>{name}</bench>.",
+    "photo": "Une photo de <bench>{name}</bench> partagée."
   },
   "time": {
     "today": "aujourd’hui",
@@ -170,5 +172,23 @@
   "metadata": {
     "description": "Le carnet de balade de {username} dans Bänkli App.",
     "notFound": "Profil introuvable"
+  },
+  "journal": {
+    "collection": "Ta collection",
+    "empty": "Une place pour tes premières découvertes. Garde un lieu ou partage une petite impression.",
+    "discover": "Découvrir un lieu",
+    "activity": "Tes contributions",
+    "publicEntries": "Moments partagés",
+    "publicCollection": "Collection",
+    "kinds": {
+      "added": "Banc ajouté",
+      "rated": "Avis",
+      "confirmed": "Banc confirmé",
+      "missing": "Banc absent signalé",
+      "edited": "Informations complétées",
+      "corrected": "Correction",
+      "moment": "Souvenir",
+      "photo": "Photo"
+    }
   }
 }

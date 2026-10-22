@@ -1,0 +1,38 @@
+.page:global(.profile-page) { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+.page :global(.profile-nav) { display: flex; align-items: center; justify-content: space-between; min-height: 4rem; background: var(--atlas-paper); backdrop-filter: none; box-shadow: none; border: 0; padding: max(.5rem,env(safe-area-inset-top)) var(--atlas-reading-margin) .5rem; }
+.page :global(.profile-nav .atlas-wordmark) { width: 5.5rem; }
+.page :global(.profile-nav .atlas-more-label) { display: none; }
+.page :global(.profile-journal) { width: 100%; max-width: 42.5rem; padding: .5rem var(--atlas-reading-margin) 2rem; }
+.page :global(.journal-opening) { padding: 0 0 1rem; border: 0; }
+.title { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: .5rem 0 1rem; }
+.title h1 { order: -1; margin: 0; font: 500 2rem/2.375rem var(--font-display); letter-spacing: normal; overflow-wrap: break-word; }
+.title > svg { flex: 0 0 4rem; width: 4rem; height: 2.5rem; }
+.page :global(.profile-portrait) { grid-template-columns: 2rem minmax(0,1fr); align-items: center; gap: .75rem; }
+.page :global(.profile-avatar-wrap) { width: 2rem; }
+.page :global(.profile-intro) .username { margin: 0; color: var(--atlas-muted); font: 400 1rem/1.5 var(--font-body); overflow-wrap: break-word; }
+.page :global(.profile-intro > small) { margin: 0; font: 400 .875rem/1.25rem var(--font-body); }
+.page:global(.profile-page) :global(.profile-favourites) { display: flex; align-items: center; gap: .75rem; margin: 1rem 0 0; padding: .5rem 0; min-height: 3rem; width: 100%; background: transparent; color: var(--atlas-lake); text-align: start; text-decoration: none; border: 0; border-radius: 0; }
+.page :global(.profile-favourites > strong) { flex: 1; font: 600 1rem/1.5 var(--font-body); }
+.page :global(.profile-favourites .place-painting) { flex: 0 0 4.5rem; width: 4.5rem; margin: 0; }
+.page :global(.profile-section.profile-moments) { margin: 0; padding: 0; }
+.page :global(.profile-moments h2) { font: 500 1.375rem/1.75rem var(--font-display); letter-spacing: normal; }
+.page :global(.profile-moments > div) { display: block; margin-top: 1rem; }
+.page :global(.profile-moments .journal-entry) { display: block; padding: 0; margin: 0 0 2rem; border: 0; }
+.entryIdentity { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; margin: 0 0 .75rem; }
+.entryIdentity strong { flex: 1 1 10rem; font: 600 1rem/1.5 var(--font-body); overflow-wrap: break-word; }
+.entryIdentity time { font: 400 .875rem/1.25rem var(--font-body); color: var(--atlas-muted); }
+.page :global(.journal-entry-body) { width: 100%; }
+.page :global(.journal-entry-body .place-painting) { width: calc(100% + 2 * var(--atlas-reading-margin)); margin: 0 calc(-1 * var(--atlas-reading-margin)) 1rem; }
+.page :global(.journal-entry-body .journal-memory) { margin: .75rem 0; font: 400 1.25rem/1.875rem var(--font-display); }
+.page :global(.journal-entry-context) { font-size: .875rem; line-height: 1.25rem; }
+.page :global(.journal-account) { margin-block: 1.5rem; }
+.page :global(.journal-account > summary) { min-height: 48px; padding-block: .75rem; color: var(--atlas-lake); font-size: 1rem; cursor: pointer; }
+.page :global(.journal-account > p) { margin-block: .5rem 1rem; color: var(--atlas-muted); font-size: 1rem; }
+@media (min-width: 640px) { .page :global(.profile-journal), .page :global(.profile-nav) { margin-inline: auto; max-width: 40rem; } }
+@media (min-width: 1024px) {
+  .page:global(.profile-page) { padding-bottom: 2rem; }
+  .page :global(.profile-nav) { display: grid; grid-template-columns: 48px 5.5rem minmax(0,1fr) auto; gap: 1.5rem; max-width: none; padding: 1rem var(--atlas-reading-margin); border-bottom: 1px solid var(--guide-rule); }
+  .page :global(.profile-nav > nav) { grid-column: 3; grid-row: 1; justify-self: end; }
+  .page :global(.profile-nav-actions) { grid-column: 4; grid-row: 1; }
+  .page :global(.profile-journal) { padding-top: 2rem; max-width: 42.5rem; }
+}

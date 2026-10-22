@@ -7,24 +7,45 @@ import { benchFact } from "./facts";
 export type NearbyAmenity = NonNullable<BenchDetail["knowledge"]>["amenities"][number];
 export type OverviewFact = { value: string; detail?: string; label?: string };
 
-/** Only resolved observations belong in the visitor summary. Evidence stays in Sources. */
+/** Only resolved observations belong in the visitor summary. Technical evidence stays internal. */
 function knownBoolean(bench: BenchDetail, key: "backrest" | "armrest" | "covered" | "wheelchair") {
   const fact = benchFact(bench, key);
   return fact.state === "known" && typeof fact.value === "boolean" ? fact.value : null;
+}
+
+export type VisitHint = { kind: "light" | "seating" | "noise"; text: string };
+
+/** A bounded visitor presentation, independent of translated placeholders. */
+export function visitHints(bench: BenchDetail, t: Translator): VisitHint[] {
+  const hints: VisitHint[] = [];
+  if (bench.dayPhase !== "night" && bench.sunnyNow !== null) {
+    hints.push({ kind: "light", text: t("bench.visit.lightEstimate", { value: t(bench.sunnyNow ? "bench.overview.sun" : "bench.overview.shade") }) });
+  }
+  const seating: string[] = [];
+  const backrest = knownBoolean(bench, "backrest");
+  const armrest = knownBoolean(bench, "armrest");
+  if (backrest !== null) seating.push(t(backrest ? "bench.attributes.backrest" : "bench.summary.noBackrest"));
+  if (armrest !== null) seating.push(t(armrest ? "bench.attributes.armrest" : "bench.visit.noArmrest"));
+  if (seating.length) hints.push({ kind: "seating", text: seating.join(" · ") });
+  const minutes = bench.localMinutesNow;
+  const period = minutes >= 360 && minutes < 1320 ? "day" : "night";
+  const hasNoise = Number.isFinite(minutes) && minutes >= 0 && minutes < 1440
+    && bench.knowledge?.noise.some(item => item.period === period && item.value !== null && Number.isFinite(item.value) && item.value >= 0);
+  if (hasNoise) {
+    const noise = quietSummary(bench, t);
+    hints.push({ kind: "noise", text: [noise.value, noise.detail].filter(Boolean).join(" · ") });
+  }
+  return hints;
 }
 
 export function comfortSummary(bench: BenchDetail, t: Translator): OverviewFact {
   const backrest = knownBoolean(bench, "backrest");
   const covered = knownBoolean(bench, "covered");
   const armrest = knownBoolean(bench, "armrest");
-  const seats = benchFact(bench, "seats");
   const items: string[] = [];
   if (backrest !== null) items.push(t(backrest ? "bench.attributes.backrest" : "bench.summary.noBackrest"));
   if (covered !== null) items.push(t(covered ? "bench.attributes.covered" : "bench.overview.uncovered"));
   if (armrest === true) items.push(t("bench.attributes.armrest"));
-  if (seats.state === "known" && typeof seats.value === "number" && Number.isFinite(seats.value) && seats.value > 0) {
-    items.push(t("bench.overview.seats", { count: Math.round(seats.value) }));
-  }
   return { value: items.shift() ?? "–", detail: items.join(" · ") || undefined };
 }
 
@@ -78,17 +99,22 @@ export function validRating(value: number | null | undefined, count: number) {
   return count > 0 && typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 5 ? value : null;
 }
 
-export function quietSummary(bench: BenchDetail, t: Translator, number: (value: number) => string): OverviewFact {
-  const count = bench.ratingBreakdown?.counts.quiet ?? 0;
-  const score = validRating(bench.ratingBreakdown?.quiet, count);
-  if (score !== null) return { value: `${number(score)} / 5`, detail: t("bench.overview.quietRatings", { count }) };
-  const period = bench.dayPhase === "night" ? "night" : "day";
-  const noise = bench.knowledge?.noise.filter(item => item.period === period && item.value !== null && Number.isFinite(item.value))
+/** Only traffic-noise model data informs this summary, never subjective ratings.
+ * Product bands describe relative model levels, not health or legal limits.
+ * Missing layers cannot establish that a place is quiet. */
+export function quietSummary(bench: BenchDetail, t: Translator): OverviewFact {
+  // Match the existing traffic model convention used by walk evidence (06–22 h),
+  // independently of whether the sun has already set.
+  const minutes = bench.localMinutesNow;
+  if (!Number.isFinite(minutes) || minutes < 0 || minutes >= 1440) return { value: t("bench.visit.noiseUnknown") };
+  const period = minutes >= 360 && minutes < 1320 ? "day" : "night";
+  const noise = bench.knowledge?.noise.filter(item => item.period === period && item.value !== null && Number.isFinite(item.value) && item.value >= 0)
     .sort((a, b) => b.value! - a.value!)[0];
-  if (!noise) return { value: "–" };
+  if (!noise) return { value: t("bench.visit.noiseUnknown") };
+  const level = noise.value! < 45 ? "noiseLow" : noise.value! < 60 ? "noiseNoticeable" : "noiseHigh";
   return {
-    value: t(noise.mode === "rail" ? "bench.overview.railNoise" : "bench.overview.roadNoise"),
-    detail: t("bench.overview.modelNoiseValue", { value: number(noise.value!), unit: noise.unit }),
+    value: t(`bench.visit.${level}`),
+    detail: t("bench.visit.noiseEstimate", { source: t(noise.mode === "rail" ? "bench.overview.railNoise" : "bench.overview.roadNoise") }),
   };
 }
 
@@ -97,4 +123,16 @@ export function nearbyAmenities(bench: Pick<BenchDetail, "knowledge">): NearbyAm
   return (bench.knowledge?.amenities ?? [])
     .filter(item => ["toilets", "drinking_water", "fountain"].includes(item.category) && item.distanceMeters !== null && Number.isFinite(item.distanceMeters) && item.distanceMeters >= 0)
     .sort((a, b) => a.distanceMeters! - b.distanceMeters!);
+}
+
+/** Bench space and a mapped approach do not certify a complete journey. */
+export function visitAccessState(bench: Pick<BenchDetail, "properties" | "knowledge">) {
+  const approach = bench.knowledge?.approach;
+  const space = benchFact(bench, "wheelchair");
+  return {
+    steps: approach?.steps === true,
+    obstacle: approach?.stepFreePossible === false || (space.state === "known" && space.value === false),
+    unknown: !approach || approach.steps == null || approach.stepFreePossible == null
+      || (approach.unmappedLastMeters ?? 0) > 0 || Boolean(approach.terrainAmbiguity),
+  };
 }

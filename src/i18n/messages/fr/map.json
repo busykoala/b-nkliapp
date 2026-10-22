@@ -82,7 +82,7 @@
     "light": "Lumière actuelle · estimée",
     "sun": "Soleil",
     "shade": "Ombre",
-    "more": "Autres envies",
+    "more": "D’autres souhaits",
     "access": "Accès et confort",
     "accessNote": "L’espace plat concerne seulement le banc. Escaliers et état du chemin apparaissent après la planification.",
     "anyMaterial": "Peu importe",
@@ -101,7 +101,7 @@
     "without": "Sans {label}",
     "toilets": "Toilettes à moins de 250 m",
     "drinkingWater": "Eau potable à moins de 250 m",
-    "facilityDistance": "Équipements recensés, distance à vol d’oiseau. Le trajet à pied peut être plus long ; une absence de données ne signifie pas une absence sur place."
+    "facilityDistance": "Distances à vol d’oiseau."
   },
   "placement": {
     "title": "Choisir la position",

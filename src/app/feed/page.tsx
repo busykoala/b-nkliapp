@@ -1,3 +1,4 @@
+import documentStyles from "@/components/atlas-document.module.css";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
@@ -16,7 +17,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
   const scope = params.view === "following" && user ? "following" : "all";
   const feed = await getActivityFeed(48, scope);
   const theme = communityTheme(t);
-  return <main className="feed-page min-h-dvh safe-bottom">
+  return <main className={`feed-page min-h-dvh safe-bottom ${documentStyles.page}`}>
     <RestoreSourceReturn />
     <header className="feed-nav safe-top"><Link href="/" aria-label={t("feed.page.map")} className="calm-menu-button"><ArrowLeft size={19} /></Link><AppMenu user={user} /></header>
     <section className="feed-intro"><span><Sparkles size={14} /> {feed.personalized ? t("feed.page.following") : t("feed.page.all")}</span><h1>{t("feed.page.title")}</h1><p>{feed.personalized ? t("feed.page.followingIntro") : t("feed.page.intro")}</p>

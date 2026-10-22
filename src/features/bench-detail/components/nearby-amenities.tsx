@@ -28,7 +28,7 @@ function AmenityLocation({ amenity, bench, onLocate, href }: { amenity: NearbyAm
   const direction = located ? bearing(bench.latitude, bench.longitude, amenity.latitude!, amenity.longitude!) : 0;
   const content = <><span className={`amenity-icon is-${iconKind}`} data-amenity-icon={iconKind}><Icon size={18} /></span><span><strong>{label}</strong><small>{t("bench.summary.straightLine", {distance: Math.round(amenity.distanceMeters!)})}</small></span>{located && <span className="amenity-map-cue"><Navigation size={16} style={{transform: `rotate(${direction}deg)`}} />{t("bench.summary.showOnMap")}</span>}</>;
   if (!located) return <li><div className="amenity-location is-static">{content}</div></li>;
-  if (onLocate) return <li><button type="button" className="amenity-location" aria-label={t("bench.summary.showFacilityOnMap", {facility: label})} onClick={() => onLocate(amenity)}>{content}</button></li>;
+  if (onLocate) return <li><button type="button" className="amenity-location" data-sheet-focus={`amenity-${amenity.sourceId ?? amenity.category}`} aria-label={t("bench.summary.showFacilityOnMap", {facility: label})} onClick={(event) => { event.currentTarget.focus({ preventScroll: true }); onLocate(amenity); }}>{content}</button></li>;
   const locationHref = href ?? `https://www.openstreetmap.org/?mlat=${amenity.latitude}&mlon=${amenity.longitude}#map=19/${amenity.latitude}/${amenity.longitude}`;
   return <li><a className="amenity-location" href={locationHref} target={href ? undefined : "_blank"} rel={href ? undefined : "noreferrer"} aria-label={t("bench.summary.showFacilityOnMap", {facility: label})}>{content}</a></li>;
 }

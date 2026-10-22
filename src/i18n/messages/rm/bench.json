@@ -409,17 +409,20 @@
     "panoramaExpandedTitle": "Tschiel e cuntrada da 360 grads",
     "panoramaOpenExpanded": "Avrir il panorama grond en il modus da 360 grads",
     "panoramaCloseExpanded": "Serrar la vista gronda da 360 grads",
-    "panorama360": "Vesair 360°",
+    "panorama360": "Avrir la vista",
     "panoramaClose": "Serrar",
     "panoramaCalculated": "Calculà cun datas dal terren e da l’ambient",
     "panoramaZoomIn": "Engrondir",
     "panoramaZoomOut": "Empitschnir",
     "panoramaGenerating": "La vista vegn gist malegiada…",
     "panoramaUnavailable": "La vista calculada n’è anc betg disponibla.",
-    "panoramaRetry": "Empruvar anc ina giada"
+    "panoramaRetry": "Empruvar anc ina giada",
+    "panoramaHelp": "Utilisaziun",
+    "panoramaHelpBody": "Tira il maletg u dovra las frizzas per guardar enturn. La pitschna frizza dal banc maina enavos a sia direcziun da vista. Home restituescha la vista; Escape la serra.",
+    "panoramaBenchDirection": "Enavos a la vista dal banc"
   },
   "page": {
-    "description": "Banc cun analisa dal sulegl e da l’ambient en Bänkli App.",
+    "description": "Scuvra quest lieu per far ina pausa, cun ina vista picturada e la via al banc.",
     "ratedDescription": "Banc cun vista valitada {score}/5 en Bänkli App.",
     "backToFeed": "Enavos al feed dals bancs",
     "onMap": "Sin la charta"
@@ -447,9 +450,30 @@
     "rate": "Valitar",
     "viewRatings": "Vesair",
     "contribute": "Contribuir a quest lieu",
-    "improve": "Meglierar",
+    "improve": "Contribuir insatge",
     "addPhoto": "Agiuntar ina foto",
     "addThought": "Parter in patratg",
     "sources": "Funtaunas e stadi da las datas"
+  },
+  "visit": {
+    "title": "Per tia visita",
+    "seatingAccess": "Seser ed access",
+    "weatherSun": "Aura e sulegl",
+    "accessTitle": "Indicaziuns davart l’access",
+    "possiblyMissing": "Igl è vegnì annunzià che quest banc na saja eventualmain betg pli qua.",
+    "obstacle": "In impediment è enconuschent sin l’access u sper il banc.",
+    "accessUnknown": "L’access n’è anc betg enconuschent avunda.",
+    "accessScope": "Questas indicaziuns pertutgan il banc ed il davos traject. Ellas na garanteschan betg ina ruta cumplettamain accessibla.",
+    "lightEstimate": "{value} · stimà",
+    "sunEstimate": "Ils temps da sulegl èn stimads. Ils nivels e las cundiziuns al lieu pon midar la glisch.",
+    "noiseUnknown": "Canera dal traffic anc betg registrada",
+    "noiseLow": "Pauca canera dal traffic spetgada",
+    "noiseNoticeable": "Traffic probablamain udibel",
+    "noiseHigh": "Clera canera dal traffic spetgada",
+    "noiseEstimate": "{source} · stimà",
+    "goodToKnow": "Bun da savair",
+    "noArmrest": "Senza pusabratgs",
+    "conflicting": "Singulas indicaziuns davart il banc sa cuntradin.",
+    "sceneWeather": "{condition} · {temperature} °C"
   }
 }
