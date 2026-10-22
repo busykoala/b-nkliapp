@@ -129,7 +129,14 @@ test("signing out clears the immediate contribution permission hint", async ({ p
   await page.locator('.map-search-results [role="option"]').first().click();
   const sheet = page.getByRole("complementary", { name: "Bankdetails" });
   await expect(sheet).toBeVisible();
-  await sheet.getByRole("button", { name: "Etwas beitragen", exact: true }).click();
+  // Search opens the deliberate compact preview where it fits. Contributions
+  // belong to the place view; follow the same explicit step as a visitor.
+  const openPlace = sheet.getByRole("button", { name: "Zum Bänkli", exact: true });
+  const contribute = sheet.getByRole("button", { name: "Etwas beitragen", exact: true });
+  await expect(openPlace.or(contribute).first()).toBeVisible();
+  if (await openPlace.isVisible()) await openPlace.click();
+  await expect(sheet).toHaveAttribute("data-presentation", "place");
+  await contribute.click();
   await expect(page.getByRole("dialog", { name: "Willkommen zurück" })).toBeVisible();
   await expect(page.locator(".contribution-dialog[open]")).toHaveCount(0);
 });
