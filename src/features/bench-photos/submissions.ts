@@ -65,6 +65,8 @@ export async function processBenchPhotoSubmission(id: string) {
     if (!photo) throw new UserFacingError("photos.server.notFound");
     await ensurePeopleFreePhoto(photo.bytes, photo.contentType);
     const completedAt = new Date().toISOString();
+    // Reserve the WAL writer before reading the lease. A deferred transaction
+    // cannot upgrade its snapshot if an enrichment worker commits in between.
     const accept = sqlite.transaction(() => {
       const current = sqlite.prepare(`SELECT 1 present FROM bench_photo_submissions
         WHERE id=? AND status='processing' AND lease_token=?`).get(id, leaseToken);
@@ -82,7 +84,7 @@ export async function processBenchPhotoSubmission(id: string) {
         );
       if (updated.changes !== 1) throw new Error("Photo submission lease was lost");
       return true;
-    })();
+    }).immediate();
     if (accept) {
       const bench = sqlite.prepare("SELECT id FROM benches WHERE row_id=?").get(submission.bench_row_id) as { id: string } | undefined;
       if (bench) revalidatePath(`/bank/${bench.id}`);

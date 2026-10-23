@@ -67,6 +67,103 @@ describe("background bench photo moderation", () => {
     expect(cache.revalidatePath).toHaveBeenCalledWith("/feed");
   });
 
+  it("publishes when another WAL writer competes between the lease read and moment insert", async () => {
+    const id = "32345678-1234-4234-8234-123456789abc";
+    const url = await createSubmission(id);
+    const { default: DatabaseConstructor } = await import("better-sqlite3");
+    const competing = new DatabaseConstructor(join(folder, "test.sqlite"), { timeout: 0 });
+    const prepare = database.prepare.bind(database);
+    let competed = false;
+    vi.spyOn(database, "prepare").mockImplementation((sql) => {
+      const statement = prepare(sql);
+      if (sql.includes("SELECT 1 present FROM bench_photo_submissions")) {
+        const get = statement.get.bind(statement);
+        vi.spyOn(statement, "get").mockImplementation((...parameters) => {
+          const lease = get(...parameters);
+          competed = true;
+          // A real second connection attempts to advance the WAL after the read.
+          // A deferred transaction loses its snapshot; an immediate transaction
+          // keeps its writer reservation until publication is committed.
+          try {
+            competing.prepare("UPDATE users SET last_login_at=? WHERE id=?").run("2026-10-23", userId);
+          } catch (error) {
+            if (!(error instanceof Error) || !("code" in error) || error.code !== "SQLITE_BUSY") throw error;
+          }
+          return lease;
+        });
+      }
+      return statement;
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => moderationResponse(false)));
+    try {
+      const { processBenchPhotoSubmission } = await import("./submissions");
+      const { readBenchPhoto } = await import("./storage");
+      await processBenchPhotoSubmission(id);
+
+      expect(competed).toBe(true);
+      const submission = database.prepare(`SELECT status,error_key,attempts,lease_token,lease_until,moment_id
+        FROM bench_photo_submissions WHERE id=?`).get(id) as { moment_id: number };
+      expect(submission).toEqual({ status: "accepted", error_key: null, attempts: 1,
+        lease_token: null, lease_until: null, moment_id: expect.any(Number) });
+      expect(database.prepare(`SELECT id,bench_row_id,user_id,kind,body,visible
+        FROM bench_moments WHERE photo_url=?`).all(url))
+        .toEqual([{ id: submission.moment_id, bench_row_id: benchRowId, user_id: userId,
+          kind: "photo", body: "Aussicht", visible: 1 }]);
+      const photo = await readBenchPhoto(url);
+      expect(Array.from(photo?.bytes ?? [])).toEqual(Array.from(jpeg));
+      expect(photo?.contentType).toBe("image/jpeg");
+      // Publication must release the writer reservation again.
+      expect(competing.prepare("UPDATE users SET last_login_at=? WHERE id=?")
+        .run("2026-10-24", userId).changes).toBe(1);
+      expect(cache.revalidatePath).toHaveBeenCalledWith("/bank/osm-node-101");
+      expect(cache.revalidatePath).toHaveBeenCalledWith("/feed");
+    } finally {
+      competing.close();
+    }
+  });
+
+  it("publishes exactly once when another processor checks during moderation and retries after acceptance", async () => {
+    const id = "42345678-1234-4234-8234-123456789abc";
+    const url = await createSubmission(id);
+    const { processBenchPhotoSubmission } = await import("./submissions");
+    const moderate = vi.fn(async () => {
+      // Polling schedules another processor while the first one owns the lease.
+      await processBenchPhotoSubmission(id);
+      return moderationResponse(false);
+    });
+    vi.stubGlobal("fetch", moderate);
+
+    await processBenchPhotoSubmission(id);
+    await processBenchPhotoSubmission(id);
+
+    expect(moderate).toHaveBeenCalledTimes(1);
+    expect(database.prepare("SELECT status,attempts FROM bench_photo_submissions WHERE id=?").get(id))
+      .toEqual({ status: "accepted", attempts: 1 });
+    expect(database.prepare("SELECT count(*) count FROM bench_moments WHERE photo_url=?").get(url))
+      .toEqual({ count: 1 });
+    expect(cache.revalidatePath).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not publish or delete the image if its moderation lease has been replaced", async () => {
+    const id = "52345678-1234-4234-8234-123456789abc";
+    const url = await createSubmission(id);
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      database.prepare("UPDATE bench_photo_submissions SET lease_token='replacement-worker' WHERE id=?").run(id);
+      return moderationResponse(false);
+    }));
+    const { processBenchPhotoSubmission } = await import("./submissions");
+    const { readBenchPhoto } = await import("./storage");
+
+    await processBenchPhotoSubmission(id);
+
+    expect(database.prepare("SELECT status,lease_token,error_key,moment_id FROM bench_photo_submissions WHERE id=?").get(id))
+      .toEqual({ status: "processing", lease_token: "replacement-worker", error_key: null, moment_id: null });
+    expect(database.prepare("SELECT count(*) count FROM bench_moments WHERE photo_url=?").get(url))
+      .toEqual({ count: 0 });
+    expect(Array.from((await readBenchPhoto(url))?.bytes ?? [])).toEqual(Array.from(jpeg));
+    expect(cache.revalidatePath).not.toHaveBeenCalled();
+  });
+
   it("reports a rejected submission and removes its stored object", async () => {
     const id = "22345678-1234-4234-8234-123456789abc";
     const url = await createSubmission(id);
